@@ -98,6 +98,12 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     return (saved as SortOption) || 'budget_desc';
   });
 
+  // Proyecto seleccionado para mostrar detalles en panel lateral
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+
+  // Filtro: solo proyectos donde tengo tareas esta semana
+  const [showOnlyMyProjects, setShowOnlyMyProjects] = useState(true);
+
   const employee = employees.find(e => e.id === employeeId);
   const weeks = useMemo(() => getWeeksForMonth(viewDate), [viewDate]);
 
@@ -703,98 +709,6 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
               ? "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5"
               : "flex gap-6"
           )}>
-            {/* Panel lateral - Resumen mensual de proyectos (solo en vista semanal) */}
-            {!showAllWeeks && monthlyProjectSummary.length > 0 && (
-              <div className="w-72 flex-shrink-0 space-y-3">
-                <div className="sticky top-4 space-y-3">
-                  <div className="bg-white border rounded-xl shadow-sm p-4">
-                    <h3 className="font-bold text-sm text-slate-700 mb-3 flex items-center gap-2">
-                      <LayoutGrid className="w-4 h-4 text-indigo-500" />
-                      Resumen del mes
-                    </h3>
-                    {/* Totales del mes */}
-                    <div className="grid grid-cols-2 gap-2 mb-4 p-2 bg-slate-50 rounded-lg">
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-slate-700">
-                          {round2(monthlyProjectSummary.reduce((s, p) => s + p.estimated, 0))}h
-                        </div>
-                        <div className="text-[10px] text-slate-500 uppercase">Estimado</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-emerald-600">
-                          {round2(monthlyProjectSummary.reduce((s, p) => s + p.computed, 0))}h
-                        </div>
-                        <div className="text-[10px] text-slate-500 uppercase">Computado</div>
-                      </div>
-                    </div>
-
-                    {/* Lista de proyectos con progreso */}
-                    <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1">
-                      {monthlyProjectSummary.map(proj => (
-                        <div key={proj.projectId} className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="font-medium text-xs text-slate-700 truncate flex-1" title={proj.name}>
-                              {formatProjectName(proj.name)}
-                            </span>
-                            <span className={cn(
-                              "text-[10px] font-bold ml-2",
-                              proj.progress >= 100 ? "text-emerald-600" : "text-indigo-600"
-                            )}>
-                              {proj.progress}%
-                            </span>
-                          </div>
-                          {/* Barra de progreso */}
-                          <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden mb-1.5">
-                            <div
-                              className={cn(
-                                "h-full transition-all duration-300",
-                                proj.progress >= 100 ? "bg-emerald-500" : "bg-indigo-500"
-                              )}
-                              style={{ width: `${Math.min(proj.progress, 100)}%` }}
-                            />
-                          </div>
-                          {/* Métricas */}
-                          <div className="flex items-center justify-between text-[10px] text-slate-500">
-                            <span>{proj.completedTasks}/{proj.totalTasks} tareas</span>
-                            <span>
-                              <span className="text-emerald-600 font-medium">{proj.computed}h</span>
-                              <span className="mx-1">/</span>
-                              <span>{proj.estimated}h</span>
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Balance del mes */}
-                  {(() => {
-                    const totalReal = round2(monthlyProjectSummary.reduce((s, p) => s + p.completed, 0));
-                    const totalComp = round2(monthlyProjectSummary.reduce((s, p) => s + p.computed, 0));
-                    const balance = round2(totalComp - totalReal);
-                    return balance !== 0 ? (
-                      <div className={cn(
-                        "p-3 rounded-lg border text-center",
-                        balance >= 0 ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"
-                      )}>
-                        <div className="text-[10px] text-slate-500 uppercase mb-1">Balance del mes</div>
-                        <div className={cn(
-                          "text-lg font-bold flex items-center justify-center gap-1",
-                          balance >= 0 ? "text-emerald-600" : "text-amber-600"
-                        )}>
-                          {balance >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                          {balance >= 0 ? '+' : ''}{balance}h
-                        </div>
-                        <div className="text-[10px] text-slate-500 mt-1">
-                          Real: {totalReal}h → Comp: {totalComp}h
-                        </div>
-                      </div>
-                    ) : null;
-                  })()}
-                </div>
-              </div>
-            )}
-
             {/* Contenido principal de semanas */}
             <div className={cn(
               showAllWeeks ? "contents" : "flex-1 flex justify-center"
@@ -989,11 +903,20 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                     computed: round2(projAllocations.filter(a => a.status === 'completed').reduce((sum, a) => sum + (a.hoursComputed || 0), 0))
                                 };
 
+                                const isSelected = selectedProjectId === projId;
+
                                 return (
-                                    <Collapsible key={projId} open={!isCollapsed} onOpenChange={() => toggleProjectCollapse(projId)}>
+                                    <Collapsible key={projId} open={!isCollapsed} onOpenChange={() => {
+                                        toggleProjectCollapse(projId);
+                                        // En vista semanal, al hacer click también selecciona el proyecto
+                                        if (!showAllWeeks) {
+                                            setSelectedProjectId(projId);
+                                        }
+                                    }}>
                                         <div className={cn(
-                                            "bg-white border rounded-lg shadow-sm overflow-hidden transition-opacity",
-                                            allCompleted && "opacity-75 hover:opacity-100"
+                                            "bg-white border rounded-lg shadow-sm overflow-hidden transition-all",
+                                            allCompleted && "opacity-75 hover:opacity-100",
+                                            isSelected && !showAllWeeks && "ring-2 ring-indigo-400 border-indigo-300"
                                         )}>
                                             <CollapsibleTrigger asChild>
                                                 <div className="cursor-pointer relative">
@@ -1018,6 +941,212 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 );
             })}
             </div>
+
+            {/* Panel lateral derecho - Detalles del proyecto seleccionado (solo en vista semanal) */}
+            {!showAllWeeks && (
+              <div className="w-80 flex-shrink-0">
+                <div className="sticky top-4 space-y-3">
+                  {/* Contenido dinámico: proyecto seleccionado o resumen */}
+                  {selectedProjectId ? (
+                    // DETALLES DEL PROYECTO SELECCIONADO
+                    (() => {
+                      const project = getProjectById(selectedProjectId);
+                      const budgetStatus = getProjectBudgetStatus(selectedProjectId);
+                      const { totalComputed, totalPlanned, budgetMax, budgetMin, percentage, status, breakdown } = budgetStatus;
+
+                      // Buscar datos del empleado actual en breakdown
+                      const myData = breakdown.find(b => b.employeeId === employeeId);
+                      const myComputed = myData?.computed || 0;
+                      const myPlanned = myData?.planned || 0;
+
+                      const exceededBy = totalComputed > budgetMax ? totalComputed - budgetMax : 0;
+
+                      const statusConfig = {
+                        healthy: { color: 'bg-emerald-500', textColor: 'text-emerald-700', label: 'Saludable' },
+                        warning: { color: 'bg-amber-500', textColor: 'text-amber-700', label: 'Cerca del límite' },
+                        overload: { color: 'bg-red-500', textColor: 'text-red-700', label: 'Excedido' },
+                        under: { color: 'bg-blue-500', textColor: 'text-blue-700', label: 'Por debajo' }
+                      };
+                      const config = statusConfig[status];
+
+                      return (
+                        <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
+                          {/* Header con nombre y botón cerrar */}
+                          <div className="bg-indigo-50 border-b px-4 py-3 flex items-center justify-between">
+                            <h3 className="font-bold text-sm text-slate-800 truncate flex-1" title={project?.name}>
+                              {project?.name || 'Proyecto'}
+                            </h3>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 hover:bg-indigo-100"
+                              onClick={() => setSelectedProjectId(null)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          <div className="p-4 space-y-4">
+                            {/* Tus horas */}
+                            <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
+                              <div className="text-[10px] font-semibold text-indigo-600 uppercase mb-2">Tus horas (este mes)</div>
+                              <div className="flex gap-4">
+                                <div>
+                                  <div className="text-lg font-bold text-emerald-600">{myComputed.toFixed(1)}h</div>
+                                  <div className="text-[10px] text-slate-500">Computado</div>
+                                </div>
+                                <div>
+                                  <div className="text-lg font-bold text-blue-600">{myPlanned.toFixed(1)}h</div>
+                                  <div className="text-[10px] text-slate-500">Planificado</div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Total cliente */}
+                            {budgetMax > 0 && (
+                              <div className="space-y-2">
+                                <div className="text-[10px] font-semibold text-slate-500 uppercase">Total cliente</div>
+                                <div className="space-y-1.5 text-xs">
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-500">Contratadas:</span>
+                                    <span className="font-medium">{budgetMin > 0 ? `${budgetMin}-` : ''}{budgetMax}h</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-500">Computado (todos):</span>
+                                    <span className={cn("font-bold", status === 'overload' ? 'text-red-600' : 'text-emerald-600')}>
+                                      {totalComputed.toFixed(1)}h
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-500">Planificado:</span>
+                                    <span className="text-blue-600">{totalPlanned.toFixed(1)}h</span>
+                                  </div>
+                                </div>
+
+                                {/* Barra de progreso */}
+                                <div className="mt-3">
+                                  <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                                    <div className={cn("h-full", config.color)} style={{ width: `${Math.min(percentage, 100)}%` }} />
+                                  </div>
+                                  <div className="flex justify-between items-center mt-1">
+                                    <span className={cn("text-[10px] font-medium", config.textColor)}>
+                                      {Math.round(percentage)}% usado
+                                    </span>
+                                    {exceededBy > 0 && (
+                                      <span className="text-[10px] font-bold text-red-600">+{exceededBy.toFixed(1)}h exceso</span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Alertas de estado */}
+                                {status === 'overload' && (
+                                  <div className="bg-red-50 text-red-700 text-[11px] p-2 rounded border border-red-200 flex items-center gap-2">
+                                    <AlertOctagon className="w-4 h-4 flex-shrink-0" />
+                                    <span>Se ha excedido el presupuesto máximo</span>
+                                  </div>
+                                )}
+                                {status === 'warning' && (
+                                  <div className="bg-amber-50 text-amber-700 text-[11px] p-2 rounded border border-amber-200 flex items-center gap-2">
+                                    <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                                    <span>Quedan {(budgetMax - totalComputed).toFixed(1)}h disponibles</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Equipo */}
+                            {breakdown.length > 1 && (
+                              <div className="border-t pt-3">
+                                <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 uppercase mb-2">
+                                  <Users className="w-3 h-3" /> Equipo ({breakdown.length})
+                                </div>
+                                <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                                  {breakdown.map(({ employeeId: empId, employeeName, computed, planned }) => {
+                                    const isMe = empId === employeeId;
+                                    return (
+                                      <div key={empId} className={cn(
+                                        "text-xs px-2 py-1.5 rounded",
+                                        isMe ? "bg-indigo-50 border border-indigo-100" : "bg-slate-50"
+                                      )}>
+                                        <div className={cn("font-medium", isMe ? "text-indigo-700" : "text-slate-600")}>
+                                          {employeeName} {isMe && "(tú)"}
+                                        </div>
+                                        <div className="flex gap-3 text-[10px] mt-0.5">
+                                          <span className="text-emerald-600">Comp: {computed.toFixed(1)}h</span>
+                                          <span className="text-blue-600">Plan: {planned.toFixed(1)}h</span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    // RESUMEN DE LA SEMANA (por defecto)
+                    <div className="bg-white border rounded-xl shadow-sm p-4">
+                      <h3 className="font-bold text-sm text-slate-700 mb-3 flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-indigo-500" />
+                        Resumen de la semana
+                      </h3>
+                      <p className="text-xs text-slate-500 mb-4">
+                        Selecciona un proyecto para ver sus detalles
+                      </p>
+
+                      {/* Proyectos de esta semana */}
+                      {(() => {
+                        const weekStorageKey = getStorageKey(weeks[activeWeekIndex].weekStart, viewDate);
+                        const weekAllocs = getEmployeeAllocationsForWeek(employeeId, weekStorageKey);
+                        const projectIds = [...new Set(weekAllocs.map(a => a.projectId))];
+
+                        return (
+                          <div className="space-y-2">
+                            <div className="text-[10px] font-semibold text-slate-500 uppercase">
+                              Mis proyectos esta semana ({projectIds.length})
+                            </div>
+                            <div className="space-y-1.5 max-h-[40vh] overflow-y-auto">
+                              {projectIds.map(projId => {
+                                const project = getProjectById(projId);
+                                const projAllocs = weekAllocs.filter(a => a.projectId === projId);
+                                const est = round2(projAllocs.reduce((s, a) => s + (a.hoursAssigned || 0), 0));
+                                const completed = projAllocs.filter(a => a.status === 'completed').length;
+                                const total = projAllocs.length;
+
+                                return (
+                                  <button
+                                    key={projId}
+                                    onClick={() => setSelectedProjectId(projId)}
+                                    className="w-full text-left p-2.5 bg-slate-50 hover:bg-indigo-50 rounded-lg border border-slate-100 hover:border-indigo-200 transition-colors"
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-medium text-xs text-slate-700 truncate">
+                                        {formatProjectName(project?.name || '')}
+                                      </span>
+                                      <span className="text-[10px] text-slate-500 ml-2">{est}h</span>
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 mt-0.5">
+                                      {completed}/{total} tareas
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                              {projectIds.length === 0 && (
+                                <p className="text-xs text-slate-400 text-center py-4">
+                                  No tienes tareas esta semana
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           </TooltipProvider>
         </SheetContent>
