@@ -32,7 +32,9 @@ export function WeekCell({ allocations, hours, capacity, isCurrentWeek, breakdow
 
   // Lógica Semáforo (90-110%)
   const ratio = capacity > 0 ? (hours / capacity) : 0;
-  const isOverload = ratio > 1.1;
+  // Caso especial: tareas asignadas pero capacidad 0 (vacaciones completas)
+  const isZeroCapacityOverload = hours > 0 && capacity === 0;
+  const isOverload = ratio > 1.1 || isZeroCapacityOverload;
   const isUnderload = ratio < 0.9 && capacity > 0;
   const isHealthy = ratio >= 0.9 && ratio <= 1.1 && capacity > 0;
 
@@ -189,6 +191,13 @@ export function WeekCell({ allocations, hours, capacity, isCurrentWeek, breakdow
 
         {/* FOOTER - CARGA TOTAL */}
         <div className="mt-auto pt-2 border-t border-slate-200/50">
+          {/* Alerta especial: tareas en semana de vacaciones */}
+          {isZeroCapacityOverload && (
+            <div className="flex items-center gap-1 text-[10px] text-red-700 bg-red-100 border border-red-300 rounded px-1.5 py-1 mb-1.5">
+              <AlertCircle className="h-3 w-3 flex-shrink-0" />
+              <span className="font-medium">Tareas en vacaciones</span>
+            </div>
+          )}
           <div className={cn(
             "flex items-center justify-between text-[11px] font-bold",
             isOverload ? "text-red-600" :
