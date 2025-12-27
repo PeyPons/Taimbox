@@ -14,7 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useApp } from '@/contexts/AppContext';
 import { Allocation, Project } from '@/types';
-import { Plus, Pencil, CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, Check, TrendingUp, TrendingDown, Trash2, Link as LinkIcon, AlertOctagon, CheckCircle2, AlertTriangle, Users, ChevronDown, Palmtree, Zap, Clock } from 'lucide-react';
+import { Plus, Pencil, CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, Check, TrendingUp, TrendingDown, Trash2, Link as LinkIcon, AlertOctagon, CheckCircle2, AlertTriangle, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar } from 'lucide-react';
 import { cn, formatProjectName } from '@/lib/utils';
 import { getWeeksForMonth, getStorageKey } from '@/utils/dateUtils';
 import { format, addMonths, subMonths, isSameMonth, parseISO, addDays } from 'date-fns';
@@ -81,10 +81,27 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const [editDependencyId, setEditDependencyId] = useState<string>('none');
   
   const [openComboboxId, setOpenComboboxId] = useState<string | null>(null);
+  const [showAllWeeks, setShowAllWeeks] = useState(false);
 
   const employee = employees.find(e => e.id === employeeId);
   const weeks = useMemo(() => getWeeksForMonth(viewDate), [viewDate]);
-  
+
+  // Calcular índice de la semana actual
+  const currentWeekIndex = useMemo(() => {
+    const today = new Date();
+    const idx = weeks.findIndex(w => {
+      const weekEnd = addDays(w.weekStart, 6);
+      return today >= w.weekStart && today <= weekEnd;
+    });
+    return idx >= 0 ? idx : 0;
+  }, [weeks]);
+
+  // Semanas a mostrar según el modo
+  const visibleWeeks = useMemo(() => {
+    if (showAllWeeks) return weeks;
+    return [weeks[currentWeekIndex]];
+  }, [weeks, showAllWeeks, currentWeekIndex]);
+
   const monthName = format(viewDate, 'MMMM', { locale: es });
   const monthLabel = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} - ${format(viewDate, 'yyyy')}`;
 
@@ -363,7 +380,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
             
             <div className="text-xs space-y-1">
               <div className="flex justify-between">
-                <span className="text-slate-500">Presupuesto:</span>
+                <span className="text-slate-500">Contratadas:</span>
                 <span className="font-medium">{budgetMin > 0 ? `${budgetMin}-` : ''}{budgetMax}h</span>
               </div>
               <div className="flex justify-between">
@@ -435,6 +452,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="w-full sm:max-w-[95vw] overflow-y-auto px-6 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-xl border-l shadow-2xl pt-10">
+          <TooltipProvider delayDuration={200}>
           <SheetHeader className="pb-6 border-b mb-6 space-y-4">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
@@ -450,101 +468,53 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                     <div className="relative w-48 hidden sm:block">
                         <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
                         <Input placeholder="Buscar tarea..." className="pl-8 h-9 text-xs bg-background/50" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                     </div>
 
-                    <div className="flex items-center gap-4 bg-background/50 p-1.5 rounded-lg border shadow-sm">
+                    {/* Botón toggle vista semana/mes */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={showAllWeeks ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setShowAllWeeks(!showAllWeeks)}
+                          className={cn(
+                            "h-9 px-3 gap-2",
+                            showAllWeeks && "bg-indigo-600 hover:bg-indigo-700"
+                          )}
+                        >
+                          {showAllWeeks ? <Calendar className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+                          <span className="hidden sm:inline text-xs">{showAllWeeks ? "Semana actual" : "Ver todo el mes"}</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {showAllWeeks ? "Ver solo la semana actual" : "Ver todas las semanas del mes"}
+                      </TooltipContent>
+                    </Tooltip>
+
+                    <div className="flex items-center gap-2 bg-background/50 p-1.5 rounded-lg border shadow-sm">
                         <Button variant="ghost" size="icon" onClick={handlePrevMonth}><ChevronLeft className="h-5 w-5" /></Button>
-                        <span className="text-lg font-bold capitalize w-48 text-center select-none">{monthLabel}</span>
+                        <span className="text-lg font-bold capitalize w-40 text-center select-none">{monthLabel}</span>
                         <Button variant="ghost" size="icon" onClick={handleNextMonth}><ChevronRight className="h-5 w-5" /></Button>
                     </div>
                 </div>
             </div>
 
-            {/* LEYENDA DE MÉTRICAS */}
-            <TooltipProvider delayDuration={200}>
-            <div className="flex flex-wrap items-center justify-center gap-4 mt-4 pt-4 border-t border-dashed">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 cursor-help">
-                    <div className="w-2.5 h-2.5 rounded-full bg-slate-300"></div>
-                    <span className="font-medium">Est.</span>
-                    <span className="text-slate-400">= Estimado</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-[200px]">
-                  <p className="font-medium">Horas Estimadas</p>
-                  <p className="text-xs text-slate-400">Las horas que se planificaron para completar la tarea.</p>
-                </TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1.5 text-xs text-blue-600 cursor-help">
-                    <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
-                    <span className="font-medium">Real</span>
-                    <span className="text-blue-400">= Trabajado</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-[200px]">
-                  <p className="font-medium">Horas Reales</p>
-                  <p className="text-xs text-slate-400">Las horas que realmente se trabajaron en la tarea.</p>
-                </TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1.5 text-xs text-emerald-600 cursor-help">
-                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
-                    <span className="font-medium">Comp.</span>
-                    <span className="text-emerald-400">= Computado</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-[200px]">
-                  <p className="font-medium">Horas Computadas</p>
-                  <p className="text-xs text-slate-400">Las horas que se facturan/cuentan para el proyecto. Puede diferir de las reales por ajustes.</p>
-                </TooltipContent>
-              </Tooltip>
-
-              <div className="h-4 w-px bg-slate-200"></div>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1.5 text-xs cursor-help">
-                    <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
-                    <span className="text-emerald-600 font-medium">Ganancia</span>
-                    <span className="text-slate-400">= Comp &gt; Real</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-[220px]">
-                  <p className="font-medium text-emerald-600">Ganancia (+)</p>
-                  <p className="text-xs text-slate-400">Se computaron más horas de las que se trabajaron. Eficiencia positiva.</p>
-                </TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1.5 text-xs cursor-help">
-                    <TrendingDown className="w-3.5 h-3.5 text-red-600" />
-                    <span className="text-red-600 font-medium">Pérdida</span>
-                    <span className="text-slate-400">= Comp &lt; Real</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-[220px]">
-                  <p className="font-medium text-red-600">Pérdida (-)</p>
-                  <p className="text-xs text-slate-400">Se trabajaron más horas de las que se computan. Revisar estimaciones.</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            </TooltipProvider>
           </SheetHeader>
+          </TooltipProvider>
 
           <TooltipProvider delayDuration={300}>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 pb-20">
-            {weeks.map((week, index) => {
+          <div className={cn(
+            "gap-4 pb-20",
+            showAllWeeks
+              ? "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5"
+              : "flex justify-center"
+          )}>
+            {visibleWeeks.map((week, idx) => {
+                const index = showAllWeeks ? idx : currentWeekIndex;
                 const weekStr = week.weekStart.toISOString().split('T')[0];
                 const storageKey = getStorageKey(week.weekStart, viewDate);
                 let weekAllocations = getEmployeeAllocationsForWeek(employeeId, storageKey);
@@ -575,7 +545,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 const sortedGroups = sortProjectGroups(grouped);
 
                 return (
-                    <div key={weekStr} className="flex flex-col gap-3 p-3 rounded-xl border bg-card h-full min-h-[300px]">
+                    <div key={weekStr} className={cn(
+                      "flex flex-col gap-3 p-4 rounded-xl border bg-card min-h-[300px]",
+                      !showAllWeeks && "w-full max-w-2xl"
+                    )}>
                         {/* HEADER SEMANA MEJORADO */}
                         <div className="flex flex-col gap-2 pb-2 border-b">
                             <div className="flex items-center justify-between">
@@ -607,10 +580,12 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                     style={{ left: '67%' }}
                                     title="Capacidad máxima"
                                 />
-                                {/* Porcentaje */}
+                                {/* Porcentaje - con fondo para mejor legibilidad */}
                                 <div className={cn(
-                                    "absolute -top-0.5 text-[9px] font-bold",
-                                    load.percentage > 100 ? "text-red-600" : "text-slate-500"
+                                    "absolute -top-0.5 text-[9px] font-bold px-1 rounded",
+                                    load.percentage > 100
+                                      ? "text-red-700 bg-red-100"
+                                      : "text-slate-600 bg-slate-100"
                                 )} style={{ left: '72%' }}>
                                     {Math.round(load.percentage)}%
                                 </div>
@@ -686,21 +661,15 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                 const isCollapsed = collapsedProjects.has(projId);
                                 const sortedTasks = sortTasks(projAllocations);
                                 
-                                // Si todas completadas, usar Collapsible
+                                // Si todas completadas, usar Collapsible con tooltip
                                 if (allCompleted) {
                                     return (
                                         <Collapsible key={projId} open={!isCollapsed} onOpenChange={() => toggleProjectCollapse(projId)}>
                                             <div className="bg-white border rounded-lg shadow-sm overflow-hidden opacity-75 hover:opacity-100 transition-opacity">
                                                 <CollapsibleTrigger asChild>
-                                                    <div className="cursor-pointer">
-                                                        <div className="flex items-center justify-between px-3 py-2 bg-slate-100 border-b">
-                                                            <div className="flex items-center gap-2">
-                                                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                                                <span className="font-bold text-xs text-slate-500 truncate">{formatProjectName(project?.name || 'Desc.')}</span>
-                                                                <span className="text-[9px] text-slate-400">({projAllocations.length} tareas)</span>
-                                                            </div>
-                                                            <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", !isCollapsed && "rotate-180")} />
-                                                        </div>
+                                                    <div className="cursor-pointer relative">
+                                                        {renderProjectHeader(project, budgetStatus, allCompleted, projAllocations.length)}
+                                                        <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform absolute right-3 top-1/2 -translate-y-1/2", !isCollapsed && "rotate-180")} />
                                                     </div>
                                                 </CollapsibleTrigger>
                                                 <CollapsibleContent>
