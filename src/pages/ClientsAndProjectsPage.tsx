@@ -115,7 +115,7 @@ export default function ClientsAndProjectsPage() {
   const [newClient, setNewClient] = useState({ name: '', color: colorOptions[0] });
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('all');
   const [openEmployeeCombo, setOpenEmployeeCombo] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [activeFilter, setActiveFilter] = useState<FilterType>('needs-planning'); // Por defecto mostrar los que necesitan planificación
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active'); // Por defecto solo activos
   const [projectTypeFilter, setProjectTypeFilter] = useState<ProjectTypeFilter>('all');
   
@@ -238,9 +238,18 @@ export default function ClientsAndProjectsPage() {
       
       // Ganancia = computadas - reales
       const gain = computedHours - realHours;
-      
+
       // Presupuesto total del cliente
       const totalBudget = clientProjectsForStats.reduce((sum, p) => sum + (p.budgetHours || 0), 0);
+
+      // Por computar = contratadas - computadas (horas que faltan por facturar)
+      const pendingToCompute = totalBudget - computedHours;
+
+      // Contar proyectos con problemas de planificación
+      const projectsNeedingPlanning = clientProjectsForStats.filter(project => {
+        const analysis = projectsAnalysis.find(a => a.project.id === project.id);
+        return analysis?.needsPlanning || analysis?.noActivity;
+      }).length;
       
       // Porcentaje basado en horas planificadas (no computadas)
       const percentage = totalBudget > 0 ? round2((plannedHours / totalBudget) * 100) : 0;
@@ -279,14 +288,16 @@ export default function ClientsAndProjectsPage() {
 
       return {
         client,
-        stats: { 
+        stats: {
           used: plannedHours,  // Horas planificadas (estimadas)
           computed: computedHours,  // Horas computadas
           real: realHours,  // Horas reales
           gain: gain,  // Ganancia (computadas - reales)
-          budget: totalBudget, 
-          percentage, 
-          projects: clientProjects 
+          budget: totalBudget,  // Horas contratadas
+          pendingToCompute: pendingToCompute,  // Por computar (contratadas - computadas)
+          projectsNeedingPlanning: projectsNeedingPlanning,  // Proyectos sin planificar completa
+          percentage,
+          projects: clientProjects
         },
         prevStats: { used: prevPlannedHours, budget: totalBudget },
         employees: assignedEmployees
@@ -323,18 +334,24 @@ export default function ClientsAndProjectsPage() {
       const kitComputedHours = kitDigitalProjectsWithAnalysis.reduce((sum, p) => sum + (p.analysis?.hoursComputed || 0), 0);
       const kitRealHours = kitDigitalProjectsWithAnalysis.reduce((sum, p) => sum + (p.analysis?.hoursReal || 0), 0);
       const kitGain = kitComputedHours - kitRealHours;
+      const kitPendingToCompute = totalBudget - kitComputedHours;
       const kitPercentage = totalBudget > 0 ? round2((kitPlannedHours / totalBudget) * 100) : 0;
+      const kitProjectsNeedingPlanning = kitDigitalProjectsWithAnalysis.filter(p =>
+        p.analysis?.needsPlanning || p.analysis?.noActivity
+      ).length;
 
       regularClients.push({
         client: { id: 'kit-digital', name: 'Kit Digital', color: '#10b981' } as Client,
-        stats: { 
+        stats: {
           used: kitPlannedHours,  // Horas planificadas
           computed: kitComputedHours,  // Horas computadas
           real: kitRealHours,  // Horas reales
           gain: kitGain,  // Ganancia
-          budget: totalBudget, 
-          percentage: kitPercentage, 
-          projects: kitDigitalProjectsWithAnalysis 
+          budget: totalBudget,  // Horas contratadas
+          pendingToCompute: kitPendingToCompute,  // Por computar
+          projectsNeedingPlanning: kitProjectsNeedingPlanning,  // Proyectos sin planificar
+          percentage: kitPercentage,
+          projects: kitDigitalProjectsWithAnalysis
         },
         prevStats: { used: 0, budget: 0 },
         employees: assignedEmployees
@@ -434,9 +451,31 @@ export default function ClientsAndProjectsPage() {
           }
         });
 
+        // Ordenar proyectos dentro del cliente
+        const sortedProjects = filteredProjects.sort((a, b) => {
+          // 1. Proyectos con problemas primero (sin actividad, falta planificar)
+          const aHasIssue = a.analysis?.noActivity || a.analysis?.needsPlanning;
+          const bHasIssue = b.analysis?.noActivity || b.analysis?.needsPlanning;
+          if (aHasIssue && !bHasIssue) return -1;
+          if (!aHasIssue && bHasIssue) return 1;
+
+          // 2. Por horas contratadas (mayor a menor)
+          const aBudget = a.project.budgetHours || 0;
+          const bBudget = b.project.budgetHours || 0;
+          if (bBudget !== aBudget) return bBudget - aBudget;
+
+          // 3. Por horas NO computadas (más pendiente = más arriba)
+          const aPending = (a.analysis?.totalAssigned || 0) - (a.analysis?.hoursComputed || 0);
+          const bPending = (b.analysis?.totalAssigned || 0) - (b.analysis?.hoursComputed || 0);
+          if (bPending !== aPending) return bPending - aPending;
+
+          // 4. Alfabéticamente
+          return a.project.name.localeCompare(b.project.name);
+        });
+
         return {
           client,
-          stats: { ...stats, projects: filteredProjects },
+          stats: { ...stats, projects: sortedProjects },
           prevStats,
           employees
         };
@@ -451,10 +490,10 @@ export default function ClientsAndProjectsPage() {
         if (!aIsSpecial && bIsSpecial) return -1;
         if (aIsSpecial && bIsSpecial) return a.client.name.localeCompare(b.client.name);
         
-        // Ordenar por horas totales (mayor a menor)
-        const aTotalHours = a.stats.used || 0;
-        const bTotalHours = b.stats.used || 0;
-        if (bTotalHours !== aTotalHours) return bTotalHours - aTotalHours;
+        // Ordenar por horas CONTRATADAS (mayor a menor) - no por planificadas
+        const aBudget = a.stats.budget || 0;
+        const bBudget = b.stats.budget || 0;
+        if (bBudget !== aBudget) return bBudget - aBudget;
         
         // Si tienen las mismas horas, ordenar alfabéticamente
         return a.client.name.localeCompare(b.client.name);
@@ -1200,26 +1239,49 @@ export default function ClientsAndProjectsPage() {
                     style={{ backgroundColor: client.color }}
                   />
                   <span className="font-bold text-slate-800 flex-1 text-left">{client.name}</span>
-                  <div className="flex items-center gap-6 flex-shrink-0">
-                    {/* Resumen de horas - Rediseñado con mejor espaciado */}
-                    <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-4 flex-shrink-0">
+                    {/* Resumen de horas - Rediseñado para managers */}
+                    <div className="flex items-center gap-4">
+                      {/* Horas contratadas */}
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wide">Contratadas</span>
+                        <span className="font-bold text-base text-slate-800">
+                          {stats.budget.toFixed(0)}h
+                        </span>
+                      </div>
+
                       {/* Horas computadas */}
                       <div className="flex flex-col items-end gap-0.5">
                         <span className="text-[10px] text-slate-500 uppercase tracking-wide">Computadas</span>
-                        <div className="flex items-baseline gap-1">
-                          <span className={cn(
-                            "font-bold text-base",
-                            isOverBudget && "text-red-600",
-                            isNearLimit && "text-amber-600",
-                            !isOverBudget && !isNearLimit && "text-slate-800"
-                          )}>
-                            {stats.computed?.toFixed(1) || '0.0'}h
-                          </span>
-                          <span className="text-xs text-slate-400">/</span>
-                          <span className="text-sm text-slate-500">{stats.budget.toFixed(0)}h</span>
-                        </div>
+                        <span className={cn(
+                          "font-bold text-base",
+                          isOverBudget && "text-red-600",
+                          isNearLimit && "text-amber-600",
+                          !isOverBudget && !isNearLimit && "text-emerald-600"
+                        )}>
+                          {stats.computed?.toFixed(1) || '0.0'}h
+                        </span>
                       </div>
-                      
+
+                      {/* Horas por computar - NUEVA MÉTRICA DESTACADA */}
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wide">Por computar</span>
+                        <span className={cn(
+                          "font-bold text-base",
+                          (stats.pendingToCompute || 0) > 0 ? "text-blue-600" : "text-slate-400"
+                        )}>
+                          {(stats.pendingToCompute || 0).toFixed(1)}h
+                        </span>
+                      </div>
+
+                      {/* Horas planificadas/estimadas */}
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wide">Planificadas</span>
+                        <span className="text-sm font-semibold text-slate-600">
+                          {stats.used.toFixed(1)}h
+                        </span>
+                      </div>
+
                       {/* Horas ganadas */}
                       {stats.gain !== undefined && stats.gain > 0 && (
                         <div className="flex flex-col items-end gap-0.5">
@@ -1232,23 +1294,15 @@ export default function ClientsAndProjectsPage() {
                           </div>
                         </div>
                       )}
-                      
-                      {/* Horas estimadas */}
-                      <div className="flex flex-col items-end gap-0.5">
-                        <span className="text-[10px] text-slate-500 uppercase tracking-wide">Estimadas</span>
-                        <span className="text-sm font-semibold text-slate-700">
-                          {stats.used.toFixed(1)}h
-                        </span>
-                      </div>
-                      
+
                       {/* Barra de progreso y porcentaje */}
                       <div className="flex flex-col items-end gap-1">
                         <span className="text-[10px] text-slate-500 uppercase tracking-wide">Progreso</span>
                         <div className="flex items-center gap-2">
-                          <Progress 
-                            value={Math.min(stats.percentage, 100)} 
+                          <Progress
+                            value={Math.min(stats.percentage, 100)}
                             className={cn(
-                              "h-2.5 w-32",
+                              "h-2.5 w-28",
                               isOverBudget && "[&>div]:bg-red-500",
                               isNearLimit && "[&>div]:bg-amber-500",
                               !isOverBudget && !isNearLimit && "[&>div]:bg-emerald-500"
@@ -1265,7 +1319,7 @@ export default function ClientsAndProjectsPage() {
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Badges de estado */}
                     <div className="flex items-center gap-1.5">
                       {isOverBudget && (
@@ -1278,6 +1332,13 @@ export default function ClientsAndProjectsPage() {
                         <Badge className="text-[10px] h-5 gap-1 bg-amber-100 text-amber-700 border-amber-200">
                           <TrendingUp className="h-3 w-3" />
                           Casi lleno
+                        </Badge>
+                      )}
+                      {/* Badge de proyectos sin planificar - NUEVO */}
+                      {(stats.projectsNeedingPlanning || 0) > 0 && (
+                        <Badge className="text-[10px] h-5 gap-1 bg-orange-100 text-orange-700 border-orange-200">
+                          <CircleDashed className="h-3 w-3" />
+                          {stats.projectsNeedingPlanning} sin planificar
                         </Badge>
                       )}
                       <Badge variant="outline" className="text-[10px]">
