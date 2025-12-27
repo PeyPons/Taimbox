@@ -14,7 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useApp } from '@/contexts/AppContext';
 import { Allocation, Project } from '@/types';
-import { Plus, Pencil, CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, Check, TrendingUp, TrendingDown, Trash2, Link as LinkIcon, AlertOctagon, CheckCircle2, AlertTriangle, Users, ChevronDown, Palmtree, Zap } from 'lucide-react';
+import { Plus, Pencil, CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, Check, TrendingUp, TrendingDown, Trash2, Link as LinkIcon, AlertOctagon, CheckCircle2, AlertTriangle, Users, ChevronDown, Palmtree, Zap, Clock } from 'lucide-react';
 import { cn, formatProjectName } from '@/lib/utils';
 import { getWeeksForMonth, getStorageKey } from '@/utils/dateUtils';
 import { format, addMonths, subMonths, isSameMonth, parseISO, addDays } from 'date-fns';
@@ -463,6 +463,83 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                     </div>
                 </div>
             </div>
+
+            {/* LEYENDA DE MÉTRICAS */}
+            <TooltipProvider delayDuration={200}>
+            <div className="flex flex-wrap items-center justify-center gap-4 mt-4 pt-4 border-t border-dashed">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 cursor-help">
+                    <div className="w-2.5 h-2.5 rounded-full bg-slate-300"></div>
+                    <span className="font-medium">Est.</span>
+                    <span className="text-slate-400">= Estimado</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[200px]">
+                  <p className="font-medium">Horas Estimadas</p>
+                  <p className="text-xs text-slate-400">Las horas que se planificaron para completar la tarea.</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5 text-xs text-blue-600 cursor-help">
+                    <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+                    <span className="font-medium">Real</span>
+                    <span className="text-blue-400">= Trabajado</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[200px]">
+                  <p className="font-medium">Horas Reales</p>
+                  <p className="text-xs text-slate-400">Las horas que realmente se trabajaron en la tarea.</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5 text-xs text-emerald-600 cursor-help">
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                    <span className="font-medium">Comp.</span>
+                    <span className="text-emerald-400">= Computado</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[200px]">
+                  <p className="font-medium">Horas Computadas</p>
+                  <p className="text-xs text-slate-400">Las horas que se facturan/cuentan para el proyecto. Puede diferir de las reales por ajustes.</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <div className="h-4 w-px bg-slate-200"></div>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5 text-xs cursor-help">
+                    <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-emerald-600 font-medium">Ganancia</span>
+                    <span className="text-slate-400">= Comp &gt; Real</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[220px]">
+                  <p className="font-medium text-emerald-600">Ganancia (+)</p>
+                  <p className="text-xs text-slate-400">Se computaron más horas de las que se trabajaron. Eficiencia positiva.</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5 text-xs cursor-help">
+                    <TrendingDown className="w-3.5 h-3.5 text-red-600" />
+                    <span className="text-red-600 font-medium">Pérdida</span>
+                    <span className="text-slate-400">= Comp &lt; Real</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[220px]">
+                  <p className="font-medium text-red-600">Pérdida (-)</p>
+                  <p className="text-xs text-slate-400">Se trabajaron más horas de las que se computan. Revisar estimaciones.</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            </TooltipProvider>
           </SheetHeader>
 
           <TooltipProvider delayDuration={300}>
@@ -825,10 +902,22 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     const depOwner = depTask ? employees.find(e => e.id === depTask.employeeId) : null;
     const isDepReady = depTask?.status === 'completed';
     const blockingTasks = allocations.filter(a => a.dependencyId === alloc.id && a.status !== 'completed');
-    
+
+    // Calcular balance individual de la tarea
+    const taskBalance = isCompleted ? round2((alloc.hoursComputed || 0) - (alloc.hoursActual || 0)) : 0;
+
     return (
-      <div key={alloc.id} className="group flex items-start gap-2 p-2 hover:bg-slate-50/80 transition-colors">
-        <Checkbox checked={isCompleted} onCheckedChange={() => toggleTaskCompletion(alloc)} className="mt-1" />
+      <div key={alloc.id} className={cn(
+        "group flex items-start gap-2 p-2.5 transition-all",
+        isCompleted
+          ? "bg-slate-50/50 hover:bg-slate-100/50"
+          : "hover:bg-indigo-50/30"
+      )}>
+        <Checkbox
+          checked={isCompleted}
+          onCheckedChange={() => toggleTaskCompletion(alloc)}
+          className={cn("mt-1", isCompleted && "data-[state=checked]:bg-emerald-600")}
+        />
         <div className="flex-1 min-w-0">
           <div onDoubleClick={() => startInlineEdit(alloc)}>
             {inlineEditingId === alloc.id ? (
@@ -836,17 +925,25 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
             ) : (
               <div className="flex justify-between items-start">
                 <div className="flex flex-col w-full">
-                  <span className={cn("text-xs font-medium leading-tight", isCompleted && "line-through opacity-50")}>{alloc.taskName || 'Tarea'}</span>
-                  
+                  <span className={cn(
+                    "text-xs font-medium leading-tight",
+                    isCompleted && "line-through text-slate-400"
+                  )}>{alloc.taskName || 'Tarea'}</span>
+
                   {depTask && !isCompleted && (
-                    <div className={`flex items-center gap-1 mt-1 text-[9px] px-1.5 py-0.5 rounded w-fit border ${isDepReady ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-amber-700 bg-amber-50 border-amber-200'}`}>
+                    <div className={cn(
+                      "flex items-center gap-1 mt-1.5 text-[9px] px-1.5 py-0.5 rounded w-fit border",
+                      isDepReady
+                        ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                        : "text-amber-700 bg-amber-50 border-amber-200"
+                    )}>
                       {isDepReady ? <CheckCircle2 className="w-2.5 h-2.5" /> : <LinkIcon className="w-2.5 h-2.5" />}
                       <span className="truncate max-w-[120px]">{isDepReady ? 'Listo:' : 'Dep:'} {depTask.taskName} <strong>({depOwner?.name})</strong></span>
                     </div>
                   )}
 
                   {blockingTasks.length > 0 && !isCompleted && (
-                    <div className="flex flex-col gap-0.5 mt-1">
+                    <div className="flex flex-col gap-0.5 mt-1.5">
                       {blockingTasks.map(bt => {
                         const blockedUser = employees.find(e => e.id === bt.employeeId);
                         return (
@@ -859,7 +956,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                     </div>
                   )}
                 </div>
-                
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"><MoreHorizontal className="h-3 w-3" /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -870,22 +967,76 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
               </div>
             )}
           </div>
-          
-          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-            <span className="text-[10px] text-slate-500 font-medium bg-slate-100 px-1.5 py-0.5 rounded">EST {alloc.hoursAssigned}h</span>
-            
+
+          {/* MÉTRICAS REDISEÑADAS */}
+          <div className="mt-2 space-y-1.5">
+            {/* TAREA PENDIENTE: Solo muestra EST */}
+            {!isCompleted && (
+              <div className="flex items-center">
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-600 bg-slate-100 px-2 py-1 rounded-md">
+                  <Clock className="w-3 h-3 text-slate-400" />
+                  <span className="font-medium">Estimado:</span>
+                  <span className="font-bold font-mono">{alloc.hoursAssigned}h</span>
+                </div>
+              </div>
+            )}
+
+            {/* TAREA COMPLETADA: Flujo visual Est → Real → Comp */}
             {isCompleted && (
-              <>
-                <div className="flex items-center bg-blue-100 text-blue-700 rounded px-1.5 py-0.5">
-                  <span className="text-[10px] font-medium mr-1">Real:</span>
-                  <input type="number" step="0.5" min="0" defaultValue={alloc.hoursActual || 0} onBlur={(e) => updateInlineHours(alloc, 'hoursActual', e.target.value)} className="w-8 text-[10px] text-center bg-transparent border-0 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-300 rounded font-medium" />
+              <div className="space-y-1.5">
+                {/* Fila de métricas: EST → REAL → COMP */}
+                <div className="flex items-center gap-1 flex-wrap">
+                  {/* EST (atenuado) */}
+                  <div className="flex items-center gap-1 text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                    <span>Est:</span>
+                    <span className="font-mono">{alloc.hoursAssigned}h</span>
+                  </div>
+
+                  <span className="text-slate-300 text-[10px]">→</span>
+
+                  {/* REAL (editable) */}
+                  <div className="flex items-center bg-blue-100 text-blue-800 rounded px-1.5 py-0.5 border border-blue-200">
+                    <span className="text-[10px] font-medium mr-1">Real:</span>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      defaultValue={alloc.hoursActual || 0}
+                      onBlur={(e) => updateInlineHours(alloc, 'hoursActual', e.target.value)}
+                      className="w-10 text-[11px] text-center bg-transparent border-0 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-400 rounded font-bold font-mono"
+                    />
+                  </div>
+
+                  <span className="text-slate-300 text-[10px]">→</span>
+
+                  {/* COMP (editable) */}
+                  <div className="flex items-center bg-emerald-100 text-emerald-800 rounded px-1.5 py-0.5 border border-emerald-200">
+                    <span className="text-[10px] font-medium mr-1">Comp:</span>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      defaultValue={alloc.hoursComputed || 0}
+                      onBlur={(e) => updateInlineHours(alloc, 'hoursComputed', e.target.value)}
+                      className="w-10 text-[11px] text-center bg-transparent border-0 focus:outline-none focus:bg-white focus:ring-1 focus:ring-emerald-400 rounded font-bold font-mono"
+                    />
+                  </div>
                 </div>
-                
-                <div className="flex items-center bg-emerald-100 text-emerald-700 rounded px-1.5 py-0.5">
-                  <span className="text-[10px] font-medium mr-1">Comp:</span>
-                  <input type="number" step="0.5" min="0" defaultValue={alloc.hoursComputed || 0} onBlur={(e) => updateInlineHours(alloc, 'hoursComputed', e.target.value)} className="w-8 text-[10px] text-center bg-transparent border-0 focus:outline-none focus:bg-white focus:ring-1 focus:ring-emerald-300 rounded font-medium" />
-                </div>
-              </>
+
+                {/* BALANCE de la tarea (solo si hay diferencia) */}
+                {Math.abs(taskBalance) > 0.01 && (
+                  <div className={cn(
+                    "inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium",
+                    taskBalance >= 0
+                      ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                      : "bg-red-100 text-red-700 border border-red-200"
+                  )}>
+                    {taskBalance >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                    <span>{taskBalance >= 0 ? 'Ganancia' : 'Pérdida'}:</span>
+                    <span className="font-bold font-mono">{taskBalance > 0 ? '+' : ''}{taskBalance}h</span>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
