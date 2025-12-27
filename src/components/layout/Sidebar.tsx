@@ -71,14 +71,12 @@ export function Sidebar() {
               </NavLink>
             )}
 
-            {canAccess('/projects') && (
-              <NavLink to="/projects" icon={FolderKanban} active={location.pathname === '/projects'}>
-                Proyectos
-              </NavLink>
-            )}
-
-            {canAccess('/clients') && (
-              <NavLink to="/clients" icon={Briefcase} active={location.pathname === '/clients'}>
+            {(canAccess('/projects') || canAccess('/clients')) && (
+              <NavLink 
+                to={canAccess('/clients') ? "/clients" : "/projects"} 
+                icon={Briefcase} 
+                active={location.pathname === '/clients' || location.pathname === '/projects'}
+              >
                 Clientes
               </NavLink>
             )}
