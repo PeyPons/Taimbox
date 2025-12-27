@@ -112,7 +112,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           minimumHours: round2(p.minimum_hours || 0),
           monthlyFee: p.monthly_fee,
           externalId: p.external_id,
-          projectType: p.project_type
+          projectType: p.project_type,
+          isHidden: p.is_hidden || false
         })));
       }
       if (allocRes.data) {
@@ -423,7 +424,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       okrs: project.okrs,
       deliverables_log: project.deliverablesLog,
       external_id: project.externalId,
-      project_type: project.projectType
+      project_type: project.projectType,
+      is_hidden: project.isHidden || false
     }).eq('id', project.id);
   }, []);
 

@@ -60,6 +60,7 @@ export interface Project {
   deliverables_log?: Record<string, string[]>;
   externalId?: number;    // ID del proyecto en el CRM
   projectType?: string;   // 'PPC' | 'Entregable' | 'Mensual'
+  isHidden?: boolean;     // Si el proyecto está oculto
 }
 
 export interface OKR {

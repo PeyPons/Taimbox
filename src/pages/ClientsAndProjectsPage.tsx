@@ -19,7 +19,7 @@ import {
   AlertTriangle, TrendingUp, TrendingDown, Pencil, Trash2, Users, 
   FolderOpen, Clock, CalendarDays, ArrowUpRight, ArrowDownRight,
   Minus, Eye, X, ChevronsUpDown, User, Target, Filter, LayoutGrid,
-  AlertOctagon, CircleDashed, Ban, CheckCircle2, XCircle, Zap
+  AlertOctagon, CircleDashed, Ban, CheckCircle2, XCircle, Zap, EyeOff
 } from 'lucide-react';
 import { cn, isKitDigitalProject, formatProjectName } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -108,8 +108,7 @@ export default function ClientsAndProjectsPage() {
   const [isAddingProject, setIsAddingProject] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [deletingClient, setDeletingClient] = useState<Client | null>(null);
-  const [deletingProject, setDeletingProject] = useState<Project | null>(null);
+  const [hidingProject, setHidingProject] = useState<Project | null>(null);
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const [newClient, setNewClient] = useState({ name: '', color: colorOptions[0] });
@@ -214,12 +213,49 @@ export default function ClientsAndProjectsPage() {
 
     // Clientes regulares
     const regularClients = clients.map(client => {
-      const { used, budget, percentage } = getClientTotalHoursForMonth(client.id, currentMonth);
-      const prevStats = getClientTotalHoursForMonth(client.id, prevMonth);
+      // Calcular horas a nivel cliente: planificadas (estimadas), computadas y ganancia
+      const clientProjectsForStats = projects.filter(p => p.clientId === client.id && !kitDigitalProjectIds.has(p.id));
+      
+      // Horas planificadas (estimadas) - suma de todas las horas asignadas
+      const plannedHours = clientProjectsForStats.reduce((sum, project) => {
+        const analysis = projectsAnalysis.find(a => a.project.id === project.id);
+        return sum + (analysis?.totalAssigned || 0);
+      }, 0);
+      
+      // Horas computadas - suma de horas computadas de tareas completadas
+      const computedHours = clientProjectsForStats.reduce((sum, project) => {
+        const analysis = projectsAnalysis.find(a => a.project.id === project.id);
+        return sum + (analysis?.hoursComputed || 0);
+      }, 0);
+      
+      // Horas reales - suma de horas reales de tareas completadas
+      const realHours = clientProjectsForStats.reduce((sum, project) => {
+        const analysis = projectsAnalysis.find(a => a.project.id === project.id);
+        return sum + (analysis?.hoursReal || 0);
+      }, 0);
+      
+      // Ganancia = computadas - reales
+      const gain = computedHours - realHours;
+      
+      // Presupuesto total del cliente
+      const totalBudget = clientProjectsForStats.reduce((sum, p) => sum + (p.budgetHours || 0), 0);
+      
+      // Porcentaje basado en horas planificadas (no computadas)
+      const percentage = totalBudget > 0 ? round2((plannedHours / totalBudget) * 100) : 0;
+      
+      // Calcular prevStats (mes anterior)
+      const prevMonthProjects = projects.filter(p => p.clientId === client.id && !kitDigitalProjectIds.has(p.id));
+      const prevPlannedHours = prevMonthProjects.reduce((sum, project) => {
+        const monthTasks = allocations.filter(a => 
+          a.projectId === project.id && 
+          isSameMonth(parseISO(a.weekStartDate), prevMonth)
+        );
+        return sum + monthTasks.reduce((s, t) => s + t.hoursAssigned, 0);
+      }, 0);
 
       // Proyectos del cliente (excluyendo Kit Digital) - INCLUIR TODOS LOS ESTADOS
       const clientProjects = projects
-        .filter(p => p.clientId === client.id && !kitDigitalProjectIds.has(p.id))
+        .filter(p => p.clientId === client.id && !kitDigitalProjectIds.has(p.id) && !p.isHidden)
         .map(p => {
           const analysis = projectsAnalysis.find(a => a.project.id === p.id);
           return {
@@ -229,20 +265,28 @@ export default function ClientsAndProjectsPage() {
           };
         });
 
-      // Empleados asignados este mes
+      // Empleados asignados este mes (con objetos completos para avatares)
       const monthAllocations = allocations.filter(a =>
         isSameMonth(parseISO(a.weekStartDate), currentMonth) &&
         clientProjects.some(p => p.project.id === a.projectId)
       );
       const assignedEmployeeIds = [...new Set(monthAllocations.map(a => a.employeeId))];
       const assignedEmployees = assignedEmployeeIds
-        .map(id => employees.find(e => e.id === id)?.name || '')
-        .filter(Boolean);
+        .map(id => employees.find(e => e.id === id))
+        .filter(Boolean) as typeof employees;
 
       return {
         client,
-        stats: { used, budget, percentage, projects: clientProjects },
-        prevStats: { used: prevStats.used, budget: prevStats.budget },
+        stats: { 
+          used: plannedHours,  // Horas planificadas (estimadas)
+          computed: computedHours,  // Horas computadas
+          real: realHours,  // Horas reales
+          gain: gain,  // Ganancia (computadas - reales)
+          budget: totalBudget, 
+          percentage, 
+          projects: clientProjects 
+        },
+        prevStats: { used: prevPlannedHours, budget: totalBudget },
         employees: assignedEmployees
       };
     });
@@ -268,15 +312,25 @@ export default function ClientsAndProjectsPage() {
       );
       const assignedEmployeeIds = [...new Set(monthAllocations.map(a => a.employeeId))];
       const assignedEmployees = assignedEmployeeIds
-        .map(id => employees.find(e => e.id === id)?.name || '')
-        .filter(Boolean);
+        .map(id => employees.find(e => e.id === id))
+        .filter(Boolean) as typeof employees;
+
+      // Calcular horas planificadas, computadas y ganancia para Kit Digital
+      const kitPlannedHours = kitDigitalProjectsWithAnalysis.reduce((sum, p) => sum + (p.analysis?.totalAssigned || 0), 0);
+      const kitComputedHours = kitDigitalProjectsWithAnalysis.reduce((sum, p) => sum + (p.analysis?.hoursComputed || 0), 0);
+      const kitRealHours = kitDigitalProjectsWithAnalysis.reduce((sum, p) => sum + (p.analysis?.hoursReal || 0), 0);
+      const kitGain = kitComputedHours - kitRealHours;
+      const kitPercentage = totalBudget > 0 ? round2((kitPlannedHours / totalBudget) * 100) : 0;
 
       regularClients.push({
         client: { id: 'kit-digital', name: 'Kit Digital', color: '#10b981' } as Client,
         stats: { 
-          used: totalUsed, 
+          used: kitPlannedHours,  // Horas planificadas
+          computed: kitComputedHours,  // Horas computadas
+          real: kitRealHours,  // Horas reales
+          gain: kitGain,  // Ganancia
           budget: totalBudget, 
-          percentage, 
+          percentage: kitPercentage, 
           projects: kitDigitalProjectsWithAnalysis 
         },
         prevStats: { used: 0, budget: 0 },
@@ -285,7 +339,7 @@ export default function ClientsAndProjectsPage() {
     }
 
     return regularClients;
-  }, [clients, projects, projectsAnalysis, allocations, employees, currentMonth, prevMonth, getClientTotalHoursForMonth, getProjectHoursForMonth]);
+  }, [clients, projects, projectsAnalysis, allocations, employees, currentMonth, prevMonth, getProjectHoursForMonth]);
 
   // Filtrar clientes y proyectos
   const filteredClients = useMemo(() => {
@@ -326,6 +380,9 @@ export default function ClientsAndProjectsPage() {
         // Filtrar proyectos dentro de cada cliente
         const filteredProjects = stats.projects.filter(({ project, analysis }) => {
           if (!analysis) return false;
+
+          // Filtro de ocultos: excluir proyectos ocultos por defecto (a menos que se filtre específicamente)
+          if (project.isHidden && statusFilter !== 'all') return false;
 
           // Filtro de estado
           if (statusFilter !== 'all') {
@@ -403,10 +460,10 @@ export default function ClientsAndProjectsPage() {
   };
 
   const handleDeleteClient = () => {
-    if (!deletingClient) return;
-    deleteClient(deletingClient.id);
-    setDeletingClient(null);
-    toast.success(`${deletingClient.name} eliminado`);
+    if (!editingClient) return;
+    deleteClient(editingClient.id);
+    setEditingClient(null);
+    toast.success(`${editingClient.name} eliminado`);
   };
 
   const openNewProject = () => {
@@ -473,6 +530,18 @@ export default function ClientsAndProjectsPage() {
         console.error(e);
         toast.error("No se pudo eliminar");
       }
+    }
+  };
+
+  const handleHideProject = async () => {
+    if (!hidingProject) return;
+    try {
+      await updateProject({ ...hidingProject, isHidden: true });
+      setHidingProject(null);
+      toast.success('Proyecto ocultado');
+    } catch (e) {
+      console.error(e);
+      toast.error("No se pudo ocultar");
     }
   };
 
@@ -611,22 +680,43 @@ export default function ClientsAndProjectsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Cliente</Label>
-                  <Select value={formData.clientId} onValueChange={(value) => setFormData({ ...formData, clientId: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clients.map(client => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className="w-full justify-between"
+                      >
+                        {formData.clientId 
+                          ? clients.find(c => c.id === formData.clientId)?.name || "Seleccionar cliente"
+                          : "Seleccionar cliente"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Buscar cliente..." />
+                        <CommandList>
+                          <CommandEmpty>No se encontró el cliente.</CommandEmpty>
+                          <CommandGroup>
+                            {clients.map(client => (
+                              <CommandItem
+                                key={client.id}
+                                value={client.name}
+                                onSelect={() => setFormData({ ...formData, clientId: client.id })}
+                              >
+                                {client.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label>Horas asignadas</Label>
+                    <Label>Horas contratadas</Label>
                     <Input
                       type="number"
                       value={formData.budgetHours}
@@ -716,9 +806,13 @@ export default function ClientsAndProjectsPage() {
               </div>
               <DialogFooter>
                 {editingProject && (
-                  <Button
-                    variant="destructive"
-                    onClick={handleDeleteProject}
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => {
+                      if (confirm(`¿Estás seguro de eliminar "${editingProject.name}"? Se borrarán sus asignaciones.`)) {
+                        handleDeleteProject();
+                      }
+                    }}
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Eliminar
@@ -821,7 +915,7 @@ export default function ClientsAndProjectsPage() {
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-col md:flex-row gap-3">
+      <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
         {/* Buscador */}
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -829,7 +923,7 @@ export default function ClientsAndProjectsPage() {
             placeholder="Buscar cliente o proyecto..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 h-9"
           />
           {searchQuery && (
             <Button
@@ -845,7 +939,7 @@ export default function ClientsAndProjectsPage() {
 
         {/* Filtro de estado */}
         <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
-          <SelectTrigger className="w-full md:w-[180px]">
+          <SelectTrigger className="w-full md:w-[180px] h-9">
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
           <SelectContent>
@@ -857,7 +951,7 @@ export default function ClientsAndProjectsPage() {
         </Select>
 
         {/* Filtros de análisis */}
-        <div className="flex flex-wrap gap-2 flex-1">
+        <div className="flex flex-wrap gap-2 flex-1 items-center">
           <Button
             variant={activeFilter === 'all' ? 'default' : 'outline'}
             size="sm"
@@ -964,7 +1058,7 @@ export default function ClientsAndProjectsPage() {
         {/* Filtro de empleado */}
         <Popover open={openEmployeeCombo} onOpenChange={setOpenEmployeeCombo}>
           <PopoverTrigger asChild>
-            <Button variant="outline" role="combobox" className="w-full md:w-[220px] justify-between bg-white shrink-0">
+            <Button variant="outline" role="combobox" className="w-full md:w-[220px] h-9 justify-between bg-white shrink-0">
               <span className="flex items-center gap-2 truncate">
                 <User className="h-3.5 w-3.5 text-slate-400 shrink-0" /> 
                 <span className="truncate">{getSelectedEmployeeName()}</span>
@@ -1053,8 +1147,14 @@ export default function ClientsAndProjectsPage() {
                           isNearLimit && "text-amber-600",
                           !isOverBudget && !isNearLimit && "text-slate-700"
                         )}>
-                          {stats.used.toFixed(1)}h / {stats.budget.toFixed(0)}h
+                          {stats.computed?.toFixed(1) || stats.used.toFixed(1)}h / {stats.budget.toFixed(0)}h
                         </span>
+                        {stats.gain !== undefined && stats.gain > 0 && (
+                          <span className="flex items-center gap-0.5 text-xs font-medium text-emerald-600">
+                            <ArrowUpRight className="h-3 w-3" />
+                            {stats.gain.toFixed(1)}h
+                          </span>
+                        )}
                         {trend !== 0 && (
                           <span className={cn(
                             "flex items-center gap-0.5 text-xs font-medium",
@@ -1064,6 +1164,9 @@ export default function ClientsAndProjectsPage() {
                             {Math.abs(trend).toFixed(1)}h
                           </span>
                         )}
+                      </div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">
+                        {stats.used.toFixed(1)}h estimadas
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <Progress 
@@ -1104,7 +1207,7 @@ export default function ClientsAndProjectsPage() {
                       </Badge>
                     </div>
                     
-                    {/* Botones de acción */}
+                    {/* Botón de acción */}
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -1113,14 +1216,6 @@ export default function ClientsAndProjectsPage() {
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>Editar</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-red-600" onClick={(e) => { e.stopPropagation(); setDeletingClient(client); }}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Eliminar</TooltipContent>
                       </Tooltip>
                     </div>
                   </div>
@@ -1138,7 +1233,7 @@ export default function ClientsAndProjectsPage() {
                         const isProjectNearLimit = analysis.planningPct > 85 && !analysis.overBudget;
                         
                         return (
-                          <div key={project.id}>
+                          <div key={project.id} className="mb-2">
                             {/* Header del proyecto */}
                             <Collapsible 
                               open={isProjectExpanded} 
@@ -1146,13 +1241,14 @@ export default function ClientsAndProjectsPage() {
                             >
                               <CollapsibleTrigger asChild>
                                 <div className={cn(
-                                  "px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer",
-                                  isProjectOverBudget && "bg-red-50/40",
-                                  isProjectNearLimit && "bg-amber-50/40",
-                                  project.status === 'completed' && "bg-slate-50/60",
-                                  project.status === 'archived' && "bg-slate-100/60"
+                                  "px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer border-l-4",
+                                  isProjectOverBudget && "bg-red-50/40 border-l-red-500",
+                                  isProjectNearLimit && "bg-amber-50/40 border-l-amber-500",
+                                  project.status === 'completed' && "bg-slate-50/60 border-l-slate-400",
+                                  project.status === 'archived' && "bg-slate-100/60 border-l-slate-500",
+                                  !isProjectOverBudget && !isProjectNearLimit && project.status === 'active' && "border-l-emerald-500"
                                 )}>
-                                  <div className="flex items-center gap-3">
+                                  <div className="flex items-center gap-3 group">
                                     <ChevronDown className={cn(
                                       "h-4 w-4 text-slate-400 transition-transform shrink-0",
                                       isProjectExpanded && "rotate-180"
@@ -1214,11 +1310,11 @@ export default function ClientsAndProjectsPage() {
                                             <Tooltip>
                                               <TooltipTrigger>
                                                 <Badge variant="outline" className="text-[10px] bg-orange-50 text-orange-700 border-orange-200 cursor-help">
-                                                  {round2(analysis.executionPct)}% ejecutado
+                                                  {round2(analysis.executionPct)}% computado
                                                 </Badge>
                                               </TooltipTrigger>
                                               <TooltipContent>
-                                                <p className="text-xs">Va el {monthProgress}% del mes pero solo {round2(analysis.executionPct)}% ejecutado</p>
+                                                <p className="text-xs">Va el {monthProgress}% del mes pero solo {round2(analysis.executionPct)}% computado</p>
                                               </TooltipContent>
                                             </Tooltip>
                                           )}
@@ -1230,7 +1326,7 @@ export default function ClientsAndProjectsPage() {
                                                 </Badge>
                                               </TooltipTrigger>
                                               <TooltipContent>
-                                                <p className="text-xs">Se han planificado {round2(analysis.totalAssigned)}h de {analysis.budget}h asignadas</p>
+                                                <p className="text-xs">Se han estimado {round2(analysis.totalAssigned)}h de {analysis.budget}h contratadas</p>
                                               </TooltipContent>
                                             </Tooltip>
                                           )}
@@ -1261,17 +1357,17 @@ export default function ClientsAndProjectsPage() {
                                               analysis.overBudget ? "text-red-600" : 
                                               analysis.needsPlanning ? "text-amber-600" : "text-slate-700"
                                             )}>
-                                              {round2(analysis.totalAssigned)}h
+                                                  {round2(analysis.totalAssigned)}h
                                             </p>
                                             <p className="text-[10px] text-slate-400">
-                                              {analysis.budget > 0 ? `de ${analysis.budget}h` : 'planificado'}
+                                              {analysis.budget > 0 ? `de ${analysis.budget}h` : 'estimado'}
                                             </p>
                                           </div>
                                           <div className="text-center min-w-[70px]">
                                             <p className="font-mono font-bold text-xs text-emerald-600">
                                               {round2(analysis.hoursComputed)}h
                                             </p>
-                                            <p className="text-[10px] text-slate-400">ejecutado</p>
+                                            <p className="text-[10px] text-slate-400">computado</p>
                                           </div>
                                           {Math.abs(analysis.gain) > 0.01 && (
                                             <div className={cn(
@@ -1294,28 +1390,50 @@ export default function ClientsAndProjectsPage() {
                                       </div>
                                     </div>
 
-                                    {/* Botón editar */}
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      className="h-8 w-8 text-slate-400 hover:text-slate-600 shrink-0"
-                                      onClick={(e) => { e.stopPropagation(); openEditProject(project); }}
-                                    >
-                                      <Pencil className="h-4 w-4" />
-                                    </Button>
+                                    {/* Botones de acción */}
+                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-8 w-8 text-slate-400 hover:text-slate-600 shrink-0"
+                                            onClick={(e) => { e.stopPropagation(); openEditProject(project); }}
+                                          >
+                                            <Pencil className="h-4 w-4" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Editar</TooltipContent>
+                                      </Tooltip>
+                                      {!project.isHidden && (
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button 
+                                              variant="ghost" 
+                                              size="icon" 
+                                              className="h-8 w-8 text-slate-400 hover:text-slate-600 shrink-0"
+                                              onClick={(e) => { e.stopPropagation(); setHidingProject(project); }}
+                                            >
+                                              <EyeOff className="h-4 w-4" />
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent>Ocultar proyecto</TooltipContent>
+                                        </Tooltip>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </CollapsibleTrigger>
 
                               {/* Contenido expandido del proyecto */}
                               <CollapsibleContent>
-                                <div className="border-t bg-slate-50/50">
+                                <div className="border-t bg-slate-50/50 mb-2">
                                   {/* Barra de progreso detallada */}
                                   {analysis.budget > 0 && (
                                     <div className="px-4 py-3 border-b bg-white">
                                       <div className="flex justify-between text-xs mb-2">
                                         <span className="text-slate-600">
-                                          <span className="font-semibold text-slate-800">{round2(analysis.totalAssigned)}h</span> planificadas
+                                          <span className="font-semibold text-slate-800">{round2(analysis.totalAssigned)}h</span> estimadas
                                           {(() => {
                                             const targetHours = analysis.project.budgetHours > 0 
                                               ? analysis.project.budgetHours 
@@ -1350,10 +1468,10 @@ export default function ClientsAndProjectsPage() {
                                         </span>
                                       </div>
                                       
-                                      {/* Barras dobles: planificado vs ejecutado */}
+                                      {/* Barras: estimado (planificado), real y computado */}
                                       <div className="space-y-1">
                                         <div className="flex items-center gap-2">
-                                          <span className="text-[10px] text-slate-400 w-16">Planificado</span>
+                                          <span className="text-[10px] text-slate-400 w-16">Estimado</span>
                                           <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                                             <div 
                                               className={cn(
@@ -1369,7 +1487,19 @@ export default function ClientsAndProjectsPage() {
                                           </span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                          <span className="text-[10px] text-slate-400 w-16">Ejecutado</span>
+                                          <span className="text-[10px] text-slate-400 w-16">Real</span>
+                                          <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                            <div 
+                                              className="h-full bg-blue-500 rounded-full transition-all"
+                                              style={{ width: `${Math.min(100, analysis.budget > 0 ? (analysis.hoursReal / analysis.budget) * 100 : 0)}%` }}
+                                            />
+                                          </div>
+                                          <span className="text-[10px] font-medium text-blue-600 w-12 text-right">
+                                            {round2(analysis.budget > 0 ? (analysis.hoursReal / analysis.budget) * 100 : 0)}%
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-[10px] text-slate-400 w-16">Computado</span>
                                           <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                                             <div 
                                               className="h-full bg-emerald-500 rounded-full transition-all"
@@ -1412,7 +1542,7 @@ export default function ClientsAndProjectsPage() {
                                               </div>
                                               <div className="text-right shrink-0">
                                                 <p className="font-mono font-bold text-sm">{task.hoursAssigned}h</p>
-                                                <p className="text-[10px] text-slate-400">estimado</p>
+                                                <p className="text-[10px] text-slate-400">estimadas</p>
                                               </div>
                                             </div>
                                           );
@@ -1459,10 +1589,17 @@ export default function ClientsAndProjectsPage() {
                                                   </div>
                                                 </div>
                                                 <div className="text-right shrink-0">
-                                                  <p className="font-mono font-bold text-sm text-emerald-600">
-                                                    {task.hoursComputed || task.hoursActual || task.hoursAssigned}h
-                                                  </p>
-                                                  <p className="text-[10px] text-slate-400">computado</p>
+                                                  <div className="space-y-0.5">
+                                                    <p className="font-mono font-bold text-xs text-slate-700">
+                                                      Est: {task.hoursAssigned}h
+                                                    </p>
+                                                    <p className="font-mono font-bold text-xs text-blue-600">
+                                                      Real: {task.hoursActual || task.hoursAssigned}h
+                                                    </p>
+                                                    <p className="font-mono font-bold text-xs text-emerald-600">
+                                                      Comp: {task.hoursComputed || task.hoursAssigned}h
+                                                    </p>
+                                                  </div>
                                                 </div>
                                               </div>
                                             );
@@ -1492,13 +1629,19 @@ export default function ClientsAndProjectsPage() {
                           <Users className="h-3.5 w-3.5 text-slate-400" />
                           <span className="text-xs font-medium text-slate-600">Equipo asignado:</span>
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            {assignedEmployees.map((name, i) => (
-                              <span 
-                                key={i}
-                                className="text-[10px] bg-white text-slate-600 px-2 py-0.5 rounded-full border border-slate-200"
+                            {assignedEmployees.map((emp) => (
+                              <div 
+                                key={emp.id}
+                                className="flex items-center gap-1.5 text-[10px] bg-white text-slate-600 px-2 py-0.5 rounded-full border border-slate-200"
                               >
-                                {name}
-                              </span>
+                                <Avatar className="h-4 w-4 border shrink-0">
+                                  <AvatarImage src={emp.avatarUrl} />
+                                  <AvatarFallback className="bg-indigo-100 text-indigo-700 text-[8px] font-bold">
+                                    {emp.name.substring(0, 2).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span>{emp.name}</span>
+                              </div>
                             ))}
                           </div>
                         </div>
@@ -1512,7 +1655,7 @@ export default function ClientsAndProjectsPage() {
         )}
       </div>
 
-      {/* Diálogos de edición/eliminación de cliente */}
+      {/* Diálogo de edición de cliente */}
       {editingClient && (
         <Dialog open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)}>
           <DialogContent>
@@ -1546,6 +1689,18 @@ export default function ClientsAndProjectsPage() {
               </div>
             </div>
             <DialogFooter>
+              <Button 
+                variant="destructive" 
+                onClick={() => {
+                  if (confirm(`¿Estás seguro de eliminar "${editingClient.name}"? Esta acción no se puede deshacer.`)) {
+                    handleDeleteClient();
+                    setEditingClient(null);
+                  }
+                }}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Eliminar
+              </Button>
               <Button variant="outline" onClick={() => setEditingClient(null)}>Cancelar</Button>
               <Button onClick={handleUpdateClient} className="bg-gradient-to-r from-indigo-500 to-purple-600">
                 Guardar
@@ -1555,19 +1710,21 @@ export default function ClientsAndProjectsPage() {
         </Dialog>
       )}
 
-      {deletingClient && (
-        <Dialog open={!!deletingClient} onOpenChange={(open) => !open && setDeletingClient(null)}>
+      {/* Diálogo de ocultar proyecto */}
+      {hidingProject && (
+        <Dialog open={!!hidingProject} onOpenChange={(open) => !open && setHidingProject(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Eliminar cliente</DialogTitle>
+              <DialogTitle>Ocultar proyecto</DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground">
-              ¿Estás seguro de eliminar "{deletingClient.name}"? Esta acción no se puede deshacer.
+              ¿Estás seguro de ocultar "{hidingProject.name}"? El proyecto seguirá existiendo pero no se mostrará en la lista.
             </p>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setDeletingClient(null)}>Cancelar</Button>
-              <Button variant="destructive" onClick={handleDeleteClient}>
-                Eliminar
+              <Button variant="outline" onClick={() => setHidingProject(null)}>Cancelar</Button>
+              <Button onClick={handleHideProject} className="bg-gradient-to-r from-indigo-500 to-purple-600">
+                <EyeOff className="h-4 w-4 mr-2" />
+                Ocultar
               </Button>
             </DialogFooter>
           </DialogContent>
