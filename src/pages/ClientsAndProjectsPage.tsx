@@ -473,9 +473,31 @@ export default function ClientsAndProjectsPage() {
           return a.project.name.localeCompare(b.project.name);
         });
 
+        // RECALCULAR métricas basándose en proyectos FILTRADOS (no todos)
+        const filteredBudget = sortedProjects.reduce((sum, p) => sum + (p.project.budgetHours || 0), 0);
+        const filteredComputed = sortedProjects.reduce((sum, p) => sum + (p.analysis?.hoursComputed || 0), 0);
+        const filteredPlanned = sortedProjects.reduce((sum, p) => sum + (p.analysis?.totalAssigned || 0), 0);
+        const filteredReal = sortedProjects.reduce((sum, p) => sum + (p.analysis?.hoursReal || 0), 0);
+        const filteredGain = filteredComputed - filteredReal;
+        const filteredPendingToCompute = filteredBudget - filteredComputed;
+        const filteredPercentage = filteredBudget > 0 ? round2((filteredPlanned / filteredBudget) * 100) : 0;
+        const filteredProjectsNeedingPlanning = sortedProjects.filter(p =>
+          p.analysis?.needsPlanning || p.analysis?.noActivity
+        ).length;
+
         return {
           client,
-          stats: { ...stats, projects: sortedProjects },
+          stats: {
+            used: filteredPlanned,
+            computed: filteredComputed,
+            real: filteredReal,
+            gain: filteredGain,
+            budget: filteredBudget,
+            pendingToCompute: filteredPendingToCompute,
+            projectsNeedingPlanning: filteredProjectsNeedingPlanning,
+            percentage: filteredPercentage,
+            projects: sortedProjects
+          },
           prevStats,
           employees
         };
@@ -1239,22 +1261,20 @@ export default function ClientsAndProjectsPage() {
                     style={{ backgroundColor: client.color }}
                   />
                   <span className="font-bold text-slate-800 flex-1 text-left">{client.name}</span>
-                  <div className="flex items-center gap-4 flex-shrink-0">
-                    {/* Resumen de horas - Rediseñado para managers */}
-                    <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-5 flex-shrink-0">
+                    {/* Resumen de horas - Simplificado: 4 métricas principales */}
+                    <div className="flex items-center gap-5">
                       {/* Horas contratadas */}
-                      <div className="flex flex-col items-end gap-0.5">
-                        <span className="text-[10px] text-slate-500 uppercase tracking-wide">Contratadas</span>
-                        <span className="font-bold text-base text-slate-800">
-                          {stats.budget.toFixed(0)}h
-                        </span>
+                      <div className="text-right min-w-[70px]">
+                        <span className="text-[10px] text-slate-400 uppercase block">Contratadas</span>
+                        <span className="font-bold text-slate-800">{stats.budget.toFixed(0)}h</span>
                       </div>
 
                       {/* Horas computadas */}
-                      <div className="flex flex-col items-end gap-0.5">
-                        <span className="text-[10px] text-slate-500 uppercase tracking-wide">Computadas</span>
+                      <div className="text-right min-w-[70px]">
+                        <span className="text-[10px] text-slate-400 uppercase block">Computadas</span>
                         <span className={cn(
-                          "font-bold text-base",
+                          "font-bold",
                           isOverBudget && "text-red-600",
                           isNearLimit && "text-amber-600",
                           !isOverBudget && !isNearLimit && "text-emerald-600"
@@ -1263,60 +1283,36 @@ export default function ClientsAndProjectsPage() {
                         </span>
                       </div>
 
-                      {/* Horas por computar - NUEVA MÉTRICA DESTACADA */}
-                      <div className="flex flex-col items-end gap-0.5">
-                        <span className="text-[10px] text-slate-500 uppercase tracking-wide">Por computar</span>
+                      {/* Horas por computar */}
+                      <div className="text-right min-w-[80px]">
+                        <span className="text-[10px] text-slate-400 uppercase block">Por computar</span>
                         <span className={cn(
-                          "font-bold text-base",
+                          "font-bold",
                           (stats.pendingToCompute || 0) > 0 ? "text-blue-600" : "text-slate-400"
                         )}>
                           {(stats.pendingToCompute || 0).toFixed(1)}h
                         </span>
                       </div>
 
-                      {/* Horas planificadas/estimadas */}
-                      <div className="flex flex-col items-end gap-0.5">
-                        <span className="text-[10px] text-slate-500 uppercase tracking-wide">Planificadas</span>
-                        <span className="text-sm font-semibold text-slate-600">
-                          {stats.used.toFixed(1)}h
+                      {/* Barra de progreso compacta */}
+                      <div className="flex items-center gap-2">
+                        <Progress
+                          value={Math.min(stats.percentage, 100)}
+                          className={cn(
+                            "h-2 w-24",
+                            isOverBudget && "[&>div]:bg-red-500",
+                            isNearLimit && "[&>div]:bg-amber-500",
+                            !isOverBudget && !isNearLimit && "[&>div]:bg-emerald-500"
+                          )}
+                        />
+                        <span className={cn(
+                          "text-sm font-bold w-12 text-right",
+                          isOverBudget && "text-red-600",
+                          isNearLimit && "text-amber-600",
+                          !isOverBudget && !isNearLimit && "text-slate-600"
+                        )}>
+                          {stats.percentage.toFixed(0)}%
                         </span>
-                      </div>
-
-                      {/* Horas ganadas */}
-                      {stats.gain !== undefined && stats.gain > 0 && (
-                        <div className="flex flex-col items-end gap-0.5">
-                          <span className="text-[10px] text-slate-500 uppercase tracking-wide">Ganadas</span>
-                          <div className="flex items-center gap-1">
-                            <ArrowUpRight className="h-3.5 w-3.5 text-emerald-600" />
-                            <span className="text-sm font-semibold text-emerald-600">
-                              {stats.gain.toFixed(1)}h
-                            </span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Barra de progreso y porcentaje */}
-                      <div className="flex flex-col items-end gap-1">
-                        <span className="text-[10px] text-slate-500 uppercase tracking-wide">Progreso</span>
-                        <div className="flex items-center gap-2">
-                          <Progress
-                            value={Math.min(stats.percentage, 100)}
-                            className={cn(
-                              "h-2.5 w-28",
-                              isOverBudget && "[&>div]:bg-red-500",
-                              isNearLimit && "[&>div]:bg-amber-500",
-                              !isOverBudget && !isNearLimit && "[&>div]:bg-emerald-500"
-                            )}
-                          />
-                          <span className={cn(
-                            "text-sm font-semibold w-12 text-right",
-                            isOverBudget && "text-red-600",
-                            isNearLimit && "text-amber-600",
-                            !isOverBudget && !isNearLimit && "text-slate-700"
-                          )}>
-                            {stats.percentage.toFixed(0)}%
-                          </span>
-                        </div>
                       </div>
                     </div>
 
