@@ -19,7 +19,7 @@ import {
   AlertTriangle, TrendingUp, TrendingDown, Pencil, Trash2, Users, 
   FolderOpen, Clock, CalendarDays, ArrowUpRight, ArrowDownRight,
   Minus, Eye, X, ChevronsUpDown, User, Target, Filter, LayoutGrid,
-  AlertOctagon, CircleDashed, Ban, CheckCircle2, XCircle, Zap, EyeOff
+  AlertOctagon, CircleDashed, Ban, CheckCircle2, XCircle, Zap, EyeOff, Eye
 } from 'lucide-react';
 import { cn, isKitDigitalProject, formatProjectName } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -580,12 +580,13 @@ export default function ClientsAndProjectsPage() {
   const handleHideProject = async () => {
     if (!hidingProject) return;
     try {
-      await updateProject({ ...hidingProject, isHidden: true });
+      const newHiddenState = !hidingProject.isHidden;
+      await updateProject({ ...hidingProject, isHidden: newHiddenState });
       setHidingProject(null);
-      toast.success('Proyecto ocultado');
+      toast.success(newHiddenState ? 'Proyecto ocultado' : 'Proyecto visible');
     } catch (e) {
       console.error(e);
-      toast.error("No se pudo ocultar");
+      toast.error("No se pudo actualizar");
     }
   };
 
@@ -958,57 +959,92 @@ export default function ClientsAndProjectsPage() {
         />
       </div>
 
-      {/* Filtros */}
-      <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
-        {/* Buscador */}
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar cliente o proyecto..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-9"
-          />
-          {searchQuery && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-              onClick={() => setSearchQuery('')}
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          )}
+      {/* Filtros - Rediseñado */}
+      <div className="space-y-3">
+        {/* Primera fila: Búsqueda y filtros principales */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Buscador */}
+          <div className="relative flex-1 min-w-[200px] max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar cliente o proyecto..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-9"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                onClick={() => setSearchQuery('')}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+
+          {/* Filtro de estado */}
+          <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
+            <SelectTrigger className="w-[160px] h-9">
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los estados</SelectItem>
+              <SelectItem value="active">Solo activos</SelectItem>
+              <SelectItem value="completed">Solo completados</SelectItem>
+              <SelectItem value="archived">Solo archivados</SelectItem>
+              <SelectItem value="hidden">Solo ocultos</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Filtro de tipo de proyecto (SEO/PPC) */}
+          <Select value={projectTypeFilter} onValueChange={(value: ProjectTypeFilter) => setProjectTypeFilter(value)}>
+            <SelectTrigger className="w-[140px] h-9">
+              <SelectValue placeholder="Tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los tipos</SelectItem>
+              <SelectItem value="seo">Solo SEO</SelectItem>
+              <SelectItem value="ppc">Solo PPC</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Filtro de empleado */}
+          <Popover open={openEmployeeCombo} onOpenChange={setOpenEmployeeCombo}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" role="combobox" className="w-[180px] h-9 justify-between bg-white shrink-0">
+                <span className="flex items-center gap-2 truncate">
+                  <User className="h-3.5 w-3.5 text-slate-400 shrink-0" /> 
+                  <span className="truncate">{getSelectedEmployeeName()}</span>
+                </span>
+                <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50 shrink-0" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[180px] p-0">
+              <Command>
+                <CommandInput placeholder="Buscar..." />
+                <CommandList>
+                  <CommandEmpty>No se encontró el empleado.</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem onSelect={() => { setSelectedEmployeeId('all'); setOpenEmployeeCombo(false); }}>
+                      Todos los empleados
+                    </CommandItem>
+                    {employees.filter(e => e.isActive).map(e => (
+                      <CommandItem key={e.id} onSelect={() => { setSelectedEmployeeId(e.id); setOpenEmployeeCombo(false); }}>
+                        {e.name}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
 
-        {/* Filtro de estado */}
-        <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
-          <SelectTrigger className="w-full md:w-[180px] h-9">
-            <SelectValue placeholder="Estado" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos los estados</SelectItem>
-            <SelectItem value="active">Solo activos</SelectItem>
-            <SelectItem value="completed">Solo completados</SelectItem>
-            <SelectItem value="archived">Solo archivados</SelectItem>
-            <SelectItem value="hidden">Solo ocultos</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Filtro de tipo de proyecto (SEO/PPC) */}
-        <Select value={projectTypeFilter} onValueChange={(value: ProjectTypeFilter) => setProjectTypeFilter(value)}>
-          <SelectTrigger className="w-full md:w-[150px] h-9">
-            <SelectValue placeholder="Tipo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos los tipos</SelectItem>
-            <SelectItem value="seo">Solo SEO</SelectItem>
-            <SelectItem value="ppc">Solo PPC</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Filtros de análisis - Todos en una línea */}
-        <div className="flex flex-wrap gap-2 flex-1 items-center">
+        {/* Segunda fila: Filtros de análisis - Todos en una línea */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-slate-500 mr-1">Filtros:</span>
           <Button
             variant={activeFilter === 'all' ? 'default' : 'outline'}
             size="sm"
@@ -1111,36 +1147,6 @@ export default function ClientsAndProjectsPage() {
             </Tooltip>
           </TooltipProvider>
         </div>
-
-        {/* Filtro de empleado */}
-        <Popover open={openEmployeeCombo} onOpenChange={setOpenEmployeeCombo}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" role="combobox" className="w-full md:w-[220px] h-9 justify-between bg-white shrink-0">
-              <span className="flex items-center gap-2 truncate">
-                <User className="h-3.5 w-3.5 text-slate-400 shrink-0" /> 
-                <span className="truncate">{getSelectedEmployeeName()}</span>
-              </span>
-              <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50 shrink-0" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[220px] p-0">
-            <Command>
-              <CommandInput placeholder="Buscar..." />
-              <CommandList>
-                <CommandGroup>
-                  <CommandItem onSelect={() => { setSelectedEmployeeId('all'); setOpenEmployeeCombo(false); }}>
-                    Todos los empleados
-                  </CommandItem>
-                  {employees.filter(e => e.isActive).map(e => (
-                    <CommandItem key={e.id} onSelect={() => { setSelectedEmployeeId(e.id); setOpenEmployeeCombo(false); }}>
-                      {e.name}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
       </div>
 
       {/* Acciones de lista */}
@@ -1194,61 +1200,69 @@ export default function ClientsAndProjectsPage() {
                     style={{ backgroundColor: client.color }}
                   />
                   <span className="font-bold text-slate-800 flex-1 text-left">{client.name}</span>
-                  <div className="flex items-center gap-4 flex-shrink-0">
-                    {/* Resumen de horas - Más intuitivo */}
-                    <div className="text-right space-y-1">
-                      {/* Horas computadas / contratadas */}
-                      <div className="flex items-center gap-2 justify-end">
-                        <span className="text-[10px] text-slate-500">Computadas:</span>
-                        <span className={cn(
-                          "font-bold text-sm",
-                          isOverBudget && "text-red-600",
-                          isNearLimit && "text-amber-600",
-                          !isOverBudget && !isNearLimit && "text-slate-700"
-                        )}>
-                          {stats.computed?.toFixed(1) || '0.0'}h
-                        </span>
-                        <span className="text-xs text-slate-400">/</span>
-                        <span className="text-sm text-slate-600">{stats.budget.toFixed(0)}h</span>
-                      </div>
-                      
-                      {/* Horas ganadas y estimadas en línea */}
-                      <div className="flex items-center gap-3 justify-end">
-                        {stats.gain !== undefined && stats.gain > 0 && (
-                          <div className="flex items-center gap-1">
-                            <span className="text-[10px] text-slate-500">Ganadas:</span>
-                            <span className="flex items-center gap-0.5 text-xs font-medium text-emerald-600">
-                              <ArrowUpRight className="h-3 w-3" />
-                              {stats.gain.toFixed(1)}h
-                            </span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-1">
-                          <span className="text-[10px] text-slate-500">Estimadas:</span>
-                          <span className="text-xs font-medium text-slate-700">
-                            {stats.used.toFixed(1)}h
+                  <div className="flex items-center gap-6 flex-shrink-0">
+                    {/* Resumen de horas - Rediseñado con mejor espaciado */}
+                    <div className="flex items-center gap-6">
+                      {/* Horas computadas */}
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wide">Computadas</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className={cn(
+                            "font-bold text-base",
+                            isOverBudget && "text-red-600",
+                            isNearLimit && "text-amber-600",
+                            !isOverBudget && !isNearLimit && "text-slate-800"
+                          )}>
+                            {stats.computed?.toFixed(1) || '0.0'}h
                           </span>
+                          <span className="text-xs text-slate-400">/</span>
+                          <span className="text-sm text-slate-500">{stats.budget.toFixed(0)}h</span>
                         </div>
                       </div>
                       
-                      {/* Barra de progreso */}
-                      <div className="flex items-center gap-2 justify-end mt-1">
-                        <Progress 
-                          value={Math.min(stats.percentage, 100)} 
-                          className={cn(
-                            "h-2 w-24",
-                            isOverBudget && "[&>div]:bg-red-500",
-                            isNearLimit && "[&>div]:bg-amber-500",
-                            !isOverBudget && !isNearLimit && "[&>div]:bg-emerald-500"
-                          )}
-                        />
-                        <span className={cn(
-                          "text-xs font-medium w-10 text-right",
-                          isOverBudget && "text-red-600",
-                          isNearLimit && "text-amber-600"
-                        )}>
-                          {stats.percentage.toFixed(0)}%
+                      {/* Horas ganadas */}
+                      {stats.gain !== undefined && stats.gain > 0 && (
+                        <div className="flex flex-col items-end gap-0.5">
+                          <span className="text-[10px] text-slate-500 uppercase tracking-wide">Ganadas</span>
+                          <div className="flex items-center gap-1">
+                            <ArrowUpRight className="h-3.5 w-3.5 text-emerald-600" />
+                            <span className="text-sm font-semibold text-emerald-600">
+                              {stats.gain.toFixed(1)}h
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Horas estimadas */}
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wide">Estimadas</span>
+                        <span className="text-sm font-semibold text-slate-700">
+                          {stats.used.toFixed(1)}h
                         </span>
+                      </div>
+                      
+                      {/* Barra de progreso y porcentaje */}
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wide">Progreso</span>
+                        <div className="flex items-center gap-2">
+                          <Progress 
+                            value={Math.min(stats.percentage, 100)} 
+                            className={cn(
+                              "h-2.5 w-32",
+                              isOverBudget && "[&>div]:bg-red-500",
+                              isNearLimit && "[&>div]:bg-amber-500",
+                              !isOverBudget && !isNearLimit && "[&>div]:bg-emerald-500"
+                            )}
+                          />
+                          <span className={cn(
+                            "text-sm font-semibold w-12 text-right",
+                            isOverBudget && "text-red-600",
+                            isNearLimit && "text-amber-600",
+                            !isOverBudget && !isNearLimit && "text-slate-700"
+                          )}>
+                            {stats.percentage.toFixed(0)}%
+                          </span>
+                        </div>
                       </div>
                     </div>
                     
@@ -1469,21 +1483,19 @@ export default function ClientsAndProjectsPage() {
                                         </TooltipTrigger>
                                         <TooltipContent>Editar</TooltipContent>
                                       </Tooltip>
-                                      {!project.isHidden && (
-                                        <Tooltip>
-                                          <TooltipTrigger asChild>
-                                            <Button 
-                                              variant="ghost" 
-                                              size="icon" 
-                                              className="h-8 w-8 text-slate-400 hover:text-slate-600 shrink-0"
-                                              onClick={(e) => { e.stopPropagation(); setHidingProject(project); }}
-                                            >
-                                              <EyeOff className="h-4 w-4" />
-                                            </Button>
-                                          </TooltipTrigger>
-                                          <TooltipContent>Ocultar proyecto</TooltipContent>
-                                        </Tooltip>
-                                      )}
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-8 w-8 text-slate-400 hover:text-slate-600 shrink-0"
+                                            onClick={(e) => { e.stopPropagation(); setHidingProject(project); }}
+                                          >
+                                            {project.isHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>{project.isHidden ? 'Mostrar proyecto' : 'Ocultar proyecto'}</TooltipContent>
+                                      </Tooltip>
                                     </div>
                                   </div>
                                 </div>
@@ -1774,21 +1786,32 @@ export default function ClientsAndProjectsPage() {
         </Dialog>
       )}
 
-      {/* Diálogo de ocultar proyecto */}
+      {/* Diálogo de ocultar/mostrar proyecto */}
       {hidingProject && (
         <Dialog open={!!hidingProject} onOpenChange={(open) => !open && setHidingProject(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Ocultar proyecto</DialogTitle>
+              <DialogTitle>{hidingProject.isHidden ? 'Mostrar proyecto' : 'Ocultar proyecto'}</DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground">
-              ¿Estás seguro de ocultar "{hidingProject.name}"? El proyecto seguirá existiendo pero no se mostrará en la lista.
+              {hidingProject.isHidden 
+                ? `¿Quieres hacer visible "${hidingProject.name}"? El proyecto volverá a aparecer en la lista.`
+                : `¿Estás seguro de ocultar "${hidingProject.name}"? El proyecto seguirá existiendo pero no se mostrará en la lista.`}
             </p>
             <DialogFooter>
               <Button variant="outline" onClick={() => setHidingProject(null)}>Cancelar</Button>
               <Button onClick={handleHideProject} className="bg-gradient-to-r from-indigo-500 to-purple-600">
-                <EyeOff className="h-4 w-4 mr-2" />
-                Ocultar
+                {hidingProject.isHidden ? (
+                  <>
+                    <Eye className="h-4 w-4 mr-2" />
+                    Mostrar
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="h-4 w-4 mr-2" />
+                    Ocultar
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
