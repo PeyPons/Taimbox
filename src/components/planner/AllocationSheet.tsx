@@ -136,9 +136,61 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const monthName = format(viewDate, 'MMMM', { locale: es });
   const monthLabel = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} - ${format(viewDate, 'yyyy')}`;
 
-  const activeProjects = useMemo(() => 
+  const activeProjects = useMemo(() =>
     projects.filter(p => p.status === 'active').sort((a, b) => a.name.localeCompare(b.name)),
   [projects]);
+
+  // Resumen mensual de proyectos del empleado
+  const monthlyProjectSummary = useMemo(() => {
+    // Obtener todas las asignaciones del empleado en el mes
+    const monthAllocations = allocations.filter(a =>
+      a.employeeId === employeeId &&
+      isSameMonth(parseISO(a.weekStartDate), viewDate)
+    );
+
+    // Agrupar por proyecto
+    const projectMap: Record<string, {
+      projectId: string;
+      name: string;
+      estimated: number;
+      completed: number;
+      computed: number;
+      totalTasks: number;
+      completedTasks: number;
+    }> = {};
+
+    monthAllocations.forEach(a => {
+      if (!projectMap[a.projectId]) {
+        const project = getProjectById(a.projectId);
+        projectMap[a.projectId] = {
+          projectId: a.projectId,
+          name: project?.name || 'Desconocido',
+          estimated: 0,
+          completed: 0,
+          computed: 0,
+          totalTasks: 0,
+          completedTasks: 0
+        };
+      }
+      projectMap[a.projectId].estimated += a.hoursAssigned || 0;
+      projectMap[a.projectId].totalTasks += 1;
+      if (a.status === 'completed') {
+        projectMap[a.projectId].completed += a.hoursActual || 0;
+        projectMap[a.projectId].computed += a.hoursComputed || 0;
+        projectMap[a.projectId].completedTasks += 1;
+      }
+    });
+
+    return Object.values(projectMap)
+      .map(p => ({
+        ...p,
+        estimated: round2(p.estimated),
+        completed: round2(p.completed),
+        computed: round2(p.computed),
+        progress: p.estimated > 0 ? Math.round((p.computed / p.estimated) * 100) : 0
+      }))
+      .sort((a, b) => b.estimated - a.estimated);
+  }, [allocations, employeeId, viewDate, getProjectById]);
 
   // Calcular estado del presupuesto con desglose Plan + Comp
   const getProjectBudgetStatus = useMemo(() => {
@@ -383,11 +435,11 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     });
   };
 
-  const renderProjectHeader = (project: Project | undefined, budgetStatus: ProjectBudgetStatus, allCompleted: boolean, taskCount: number) => {
+  const renderProjectHeader = (project: Project | undefined, budgetStatus: ProjectBudgetStatus, allCompleted: boolean, taskCount: number, myHoursInProject: { estimated: number; completed: number; computed: number }) => {
     if (!project) return <span className="font-bold text-xs truncate">Desc.</span>;
 
     const { totalComputed, totalPlanned, budgetMax, budgetMin, percentage, status, breakdown } = budgetStatus;
-    
+
     const statusConfig = {
       healthy: { color: 'bg-emerald-500', bgLight: 'bg-emerald-50', textColor: 'text-emerald-700', icon: null },
       warning: { color: 'bg-amber-500', bgLight: 'bg-amber-50', textColor: 'text-amber-700', icon: <AlertTriangle className="w-3 h-3" /> },
@@ -398,6 +450,11 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     const config = statusConfig[status];
     const exceededBy = totalComputed > budgetMax ? totalComputed - budgetMax : 0;
     const projection = totalComputed + totalPlanned;
+
+    // Calcular progreso del empleado
+    const myProgress = myHoursInProject.estimated > 0
+      ? Math.round((myHoursInProject.computed / myHoursInProject.estimated) * 100)
+      : 0;
 
     return (
       <Tooltip>
@@ -412,22 +469,34 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 <span className={cn("font-bold text-xs truncate", allCompleted && "text-slate-500")}>{formatProjectName(project.name)}</span>
                 {allCompleted && <span className="text-[9px] text-slate-400">({taskCount})</span>}
               </div>
-              {budgetMax > 0 && (
-                <div className={cn("flex items-center gap-1 text-[10px] font-semibold", allCompleted ? "text-slate-400" : config.textColor)}>
-                  {config.icon}
-                  <span>{Math.round(percentage)}%</span>
-                </div>
-              )}
+              {/* Mostrar horas del empleado en lugar del % global */}
+              <div className={cn("flex items-center gap-1.5 text-[10px]", allCompleted ? "text-slate-400" : "text-slate-600")}>
+                <span className="font-medium">{myHoursInProject.estimated}h</span>
+                {myHoursInProject.computed > 0 && (
+                  <>
+                    <span className="text-slate-300">·</span>
+                    <span className="text-emerald-600 font-semibold">{myHoursInProject.computed}h comp</span>
+                  </>
+                )}
+              </div>
             </div>
-            
-            {budgetMax > 0 && !allCompleted && (
+
+            {/* Barra de progreso del empleado */}
+            {!allCompleted && myHoursInProject.estimated > 0 && (
               <div className="mt-1.5">
                 <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-                  <div className={cn("h-full transition-all duration-300", config.color)} style={{ width: `${Math.min(percentage, 100)}%` }} />
+                  <div
+                    className={cn("h-full transition-all duration-300", myProgress >= 100 ? "bg-emerald-500" : "bg-indigo-500")}
+                    style={{ width: `${Math.min(myProgress, 100)}%` }}
+                  />
                 </div>
                 <div className="flex justify-between items-center mt-1">
-                  <span className="text-[9px] text-slate-500">{totalComputed.toFixed(1)}h / {budgetMax}h</span>
-                  {exceededBy > 0 && <span className="text-[9px] font-bold text-red-600">+{exceededBy.toFixed(1)}h</span>}
+                  <span className="text-[9px] text-slate-500">
+                    {myHoursInProject.completed}/{taskCount} tareas
+                  </span>
+                  <span className={cn("text-[9px] font-medium", myProgress >= 100 ? "text-emerald-600" : "text-indigo-600")}>
+                    {myProgress}%
+                  </span>
                 </div>
               </div>
             )}
@@ -436,36 +505,50 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
         <TooltipContent side="right" className="max-w-xs p-0 z-50">
           <div className="p-3 space-y-2">
             <div className="font-bold text-sm border-b pb-2">{project.name}</div>
-            
-            <div className="text-xs space-y-1">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Contratadas:</span>
-                <span className="font-medium">{budgetMin > 0 ? `${budgetMin}-` : ''}{budgetMax}h</span>
+
+            {/* Horas del empleado actual */}
+            <div className="bg-indigo-50 rounded p-2 border border-indigo-100">
+              <div className="text-[10px] font-semibold text-indigo-600 uppercase mb-1">Tus horas</div>
+              <div className="flex gap-3 text-xs">
+                <span className="text-slate-600">Est: <strong>{myHoursInProject.estimated}h</strong></span>
+                <span className="text-emerald-600">Comp: <strong>{myHoursInProject.computed}h</strong></span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Computado:</span>
-                <span className={cn("font-bold", status === 'overload' ? 'text-red-600' : 'text-emerald-600')}>{totalComputed.toFixed(1)}h</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Planificado:</span>
-                <span className="text-blue-600">{totalPlanned.toFixed(1)}h</span>
-              </div>
-              <div className="flex justify-between border-t pt-1 mt-1">
-                <span className="text-slate-500">Proyección:</span>
-                <span className={cn("font-bold", projection > budgetMax ? 'text-red-600' : 'text-slate-700')}>{projection.toFixed(1)}h</span>
-              </div>
-              {exceededBy > 0 && (
-                <div className="flex justify-between text-red-600">
-                  <span>Exceso:</span>
-                  <span className="font-bold">+{exceededBy.toFixed(1)}h</span>
-                </div>
-              )}
             </div>
 
-            {breakdown.length > 0 && (
+            {/* Horas globales del cliente */}
+            {budgetMax > 0 && (
+              <div className="text-xs space-y-1 border-t pt-2">
+                <div className="text-[10px] font-semibold text-slate-500 uppercase mb-1">Total cliente</div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Contratadas:</span>
+                  <span className="font-medium">{budgetMin > 0 ? `${budgetMin}-` : ''}{budgetMax}h</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Computado (todos):</span>
+                  <span className={cn("font-bold", status === 'overload' ? 'text-red-600' : 'text-emerald-600')}>{totalComputed.toFixed(1)}h</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Planificado:</span>
+                  <span className="text-blue-600">{totalPlanned.toFixed(1)}h</span>
+                </div>
+
+                {/* Barra de progreso global */}
+                <div className="mt-2">
+                  <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                    <div className={cn("h-full", config.color)} style={{ width: `${Math.min(percentage, 100)}%` }} />
+                  </div>
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[9px] text-slate-400">{Math.round(percentage)}% usado</span>
+                    {exceededBy > 0 && <span className="text-[9px] font-bold text-red-600">+{exceededBy.toFixed(1)}h exceso</span>}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {breakdown.length > 1 && (
               <div className="border-t pt-2 mt-2">
                 <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 uppercase mb-1">
-                  <Users className="w-3 h-3" /> Desglose
+                  <Users className="w-3 h-3" /> Equipo
                 </div>
                 <div className="space-y-1">
                   {breakdown.map(({ employeeId: empId, employeeName, computed, planned }) => {
@@ -618,8 +701,104 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
             "gap-4 pb-20",
             showAllWeeks
               ? "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5"
-              : "flex justify-center"
+              : "flex gap-6"
           )}>
+            {/* Panel lateral - Resumen mensual de proyectos (solo en vista semanal) */}
+            {!showAllWeeks && monthlyProjectSummary.length > 0 && (
+              <div className="w-72 flex-shrink-0 space-y-3">
+                <div className="sticky top-4 space-y-3">
+                  <div className="bg-white border rounded-xl shadow-sm p-4">
+                    <h3 className="font-bold text-sm text-slate-700 mb-3 flex items-center gap-2">
+                      <LayoutGrid className="w-4 h-4 text-indigo-500" />
+                      Resumen del mes
+                    </h3>
+                    {/* Totales del mes */}
+                    <div className="grid grid-cols-2 gap-2 mb-4 p-2 bg-slate-50 rounded-lg">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-slate-700">
+                          {round2(monthlyProjectSummary.reduce((s, p) => s + p.estimated, 0))}h
+                        </div>
+                        <div className="text-[10px] text-slate-500 uppercase">Estimado</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-emerald-600">
+                          {round2(monthlyProjectSummary.reduce((s, p) => s + p.computed, 0))}h
+                        </div>
+                        <div className="text-[10px] text-slate-500 uppercase">Computado</div>
+                      </div>
+                    </div>
+
+                    {/* Lista de proyectos con progreso */}
+                    <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1">
+                      {monthlyProjectSummary.map(proj => (
+                        <div key={proj.projectId} className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="font-medium text-xs text-slate-700 truncate flex-1" title={proj.name}>
+                              {formatProjectName(proj.name)}
+                            </span>
+                            <span className={cn(
+                              "text-[10px] font-bold ml-2",
+                              proj.progress >= 100 ? "text-emerald-600" : "text-indigo-600"
+                            )}>
+                              {proj.progress}%
+                            </span>
+                          </div>
+                          {/* Barra de progreso */}
+                          <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden mb-1.5">
+                            <div
+                              className={cn(
+                                "h-full transition-all duration-300",
+                                proj.progress >= 100 ? "bg-emerald-500" : "bg-indigo-500"
+                              )}
+                              style={{ width: `${Math.min(proj.progress, 100)}%` }}
+                            />
+                          </div>
+                          {/* Métricas */}
+                          <div className="flex items-center justify-between text-[10px] text-slate-500">
+                            <span>{proj.completedTasks}/{proj.totalTasks} tareas</span>
+                            <span>
+                              <span className="text-emerald-600 font-medium">{proj.computed}h</span>
+                              <span className="mx-1">/</span>
+                              <span>{proj.estimated}h</span>
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Balance del mes */}
+                  {(() => {
+                    const totalReal = round2(monthlyProjectSummary.reduce((s, p) => s + p.completed, 0));
+                    const totalComp = round2(monthlyProjectSummary.reduce((s, p) => s + p.computed, 0));
+                    const balance = round2(totalComp - totalReal);
+                    return balance !== 0 ? (
+                      <div className={cn(
+                        "p-3 rounded-lg border text-center",
+                        balance >= 0 ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"
+                      )}>
+                        <div className="text-[10px] text-slate-500 uppercase mb-1">Balance del mes</div>
+                        <div className={cn(
+                          "text-lg font-bold flex items-center justify-center gap-1",
+                          balance >= 0 ? "text-emerald-600" : "text-amber-600"
+                        )}>
+                          {balance >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                          {balance >= 0 ? '+' : ''}{balance}h
+                        </div>
+                        <div className="text-[10px] text-slate-500 mt-1">
+                          Real: {totalReal}h → Comp: {totalComp}h
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {/* Contenido principal de semanas */}
+            <div className={cn(
+              showAllWeeks ? "contents" : "flex-1 flex justify-center"
+            )}>
             {visibleWeeks.map((week, idx) => {
                 const index = showAllWeeks ? idx : currentWeekIndex;
                 const weekStr = week.weekStart.toISOString().split('T')[0];
@@ -803,6 +982,13 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                 const isCollapsed = autoExpand ? collapsedProjects.has(projId) : !collapsedProjects.has(projId);
                                 const sortedTasks = sortTasks(projAllocations);
 
+                                // Calcular horas del empleado actual en este proyecto
+                                const myHoursInProject = {
+                                    estimated: round2(projAllocations.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0)),
+                                    completed: projAllocations.filter(a => a.status === 'completed').length,
+                                    computed: round2(projAllocations.filter(a => a.status === 'completed').reduce((sum, a) => sum + (a.hoursComputed || 0), 0))
+                                };
+
                                 return (
                                     <Collapsible key={projId} open={!isCollapsed} onOpenChange={() => toggleProjectCollapse(projId)}>
                                         <div className={cn(
@@ -811,7 +997,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                         )}>
                                             <CollapsibleTrigger asChild>
                                                 <div className="cursor-pointer relative">
-                                                    {renderProjectHeader(project, budgetStatus, allCompleted, projAllocations.length)}
+                                                    {renderProjectHeader(project, budgetStatus, allCompleted, projAllocations.length, myHoursInProject)}
                                                     <ChevronDown className={cn(
                                                         "w-4 h-4 text-slate-400 transition-transform absolute right-3 top-1/2 -translate-y-1/2",
                                                         !isCollapsed && "rotate-180"
@@ -831,6 +1017,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                     </div>
                 );
             })}
+            </div>
           </div>
           </TooltipProvider>
         </SheetContent>
