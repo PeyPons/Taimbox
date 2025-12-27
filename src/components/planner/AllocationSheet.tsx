@@ -14,7 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useApp } from '@/contexts/AppContext';
 import { Allocation, Project } from '@/types';
-import { Plus, Pencil, CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, Check, TrendingUp, TrendingDown, Trash2, Link as LinkIcon, AlertOctagon, CheckCircle2, AlertTriangle, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar } from 'lucide-react';
+import { Plus, Pencil, CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, Check, TrendingUp, TrendingDown, Trash2, Link as LinkIcon, AlertOctagon, CheckCircle2, AlertTriangle, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc } from 'lucide-react';
 import { cn, formatProjectName } from '@/lib/utils';
 import { getWeeksForMonth, getStorageKey } from '@/utils/dateUtils';
 import { format, addMonths, subMonths, isSameMonth, parseISO, addDays } from 'date-fns';
@@ -50,6 +50,8 @@ interface ProjectBudgetStatus {
   breakdown: { employeeId: string; employeeName: string; computed: number; planned: number }[];
 }
 
+type SortOption = 'budget_desc' | 'budget_asc' | 'my_hours_desc' | 'my_hours_asc' | 'name_asc' | 'name_desc';
+
 export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, viewDateContext }: AllocationSheetProps) {
   const { 
     employees, projects, allocations, getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getProjectById,
@@ -83,6 +85,18 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const [openComboboxId, setOpenComboboxId] = useState<string | null>(null);
   const [showAllWeeks, setShowAllWeeks] = useState(false);
   const [selectedWeekIndex, setSelectedWeekIndex] = useState<number | null>(null);
+
+  // Preferencia de visualización: auto-expandir o colapsar proyectos
+  const [autoExpand, setAutoExpand] = useState<boolean>(() => {
+    const saved = localStorage.getItem('planner_autoExpand');
+    return saved !== null ? JSON.parse(saved) : true; // Por defecto expandido
+  });
+
+  // Opción de ordenación
+  const [sortOption, setSortOption] = useState<SortOption>(() => {
+    const saved = localStorage.getItem('planner_sortOption');
+    return (saved as SortOption) || 'budget_desc';
+  });
 
   const employee = employees.find(e => e.id === employeeId);
   const weeks = useMemo(() => getWeeksForMonth(viewDate), [viewDate]);
@@ -190,6 +204,17 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   useEffect(() => {
     if (inlineEditingId && inlineInputRef.current) inlineInputRef.current.focus();
   }, [inlineEditingId]);
+
+  // Persistir preferencias en localStorage
+  useEffect(() => {
+    localStorage.setItem('planner_autoExpand', JSON.stringify(autoExpand));
+    // Limpiar toggles manuales cuando cambia la preferencia
+    setCollapsedProjects(new Set());
+  }, [autoExpand]);
+
+  useEffect(() => {
+    localStorage.setItem('planner_sortOption', sortOption);
+  }, [sortOption]);
 
   if (!employee) return null;
 
@@ -309,23 +334,40 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const saveInlineEdit = (allocation: Allocation) => { if (inlineNameValue.trim() !== allocation.taskName) { updateAllocation({ ...allocation, taskName: inlineNameValue }); } setInlineEditingId(null); };
   const moveTaskToWeek = (allocation: Allocation, targetWeekStartReal: Date) => { const targetKey = getStorageKey(targetWeekStartReal, viewDate); updateAllocation({ ...allocation, weekStartDate: targetKey }); };
 
-  // Ordenar proyectos: por presupuesto (mayor primero), completados al final
+  // Ordenar proyectos según la opción seleccionada
   const sortProjectGroups = (groups: Record<string, Allocation[]>) => {
     return Object.entries(groups).sort(([projIdA, allocsA], [projIdB, allocsB]) => {
       const projA = getProjectById(projIdA);
       const projB = getProjectById(projIdB);
-      
+
       const allCompletedA = allocsA.every(a => a.status === 'completed') && !allocsA.some(a => recentlyToggled.has(a.id));
       const allCompletedB = allocsB.every(a => a.status === 'completed') && !allocsB.some(a => recentlyToggled.has(a.id));
-      
-      // Proyectos completados al final
+
+      // Proyectos completados siempre al final
       if (allCompletedA && !allCompletedB) return 1;
       if (!allCompletedA && allCompletedB) return -1;
-      
-      // Ordenar por presupuesto (mayor primero)
-      const budgetA = projA?.budgetHours || 0;
-      const budgetB = projB?.budgetHours || 0;
-      return budgetB - budgetA;
+
+      // Calcular horas del empleado actual en cada proyecto
+      const myHoursA = allocsA.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0);
+      const myHoursB = allocsB.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0);
+
+      // Ordenar según opción seleccionada
+      switch (sortOption) {
+        case 'budget_desc':
+          return (projB?.budgetHours || 0) - (projA?.budgetHours || 0);
+        case 'budget_asc':
+          return (projA?.budgetHours || 0) - (projB?.budgetHours || 0);
+        case 'my_hours_desc':
+          return myHoursB - myHoursA;
+        case 'my_hours_asc':
+          return myHoursA - myHoursB;
+        case 'name_asc':
+          return (projA?.name || '').localeCompare(projB?.name || '');
+        case 'name_desc':
+          return (projB?.name || '').localeCompare(projA?.name || '');
+        default:
+          return (projB?.budgetHours || 0) - (projA?.budgetHours || 0);
+      }
     });
   };
 
@@ -491,6 +533,54 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                         <Input placeholder="Buscar tarea..." className="pl-8 h-9 text-xs bg-background/50" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                     </div>
 
+                    {/* Botón toggle expansión de proyectos */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setAutoExpand(!autoExpand)}
+                          className="h-9 px-3 gap-2"
+                        >
+                          {autoExpand ? <FoldVertical className="h-4 w-4" /> : <UnfoldVertical className="h-4 w-4" />}
+                          <span className="hidden lg:inline text-xs">{autoExpand ? "Colapsar" : "Expandir"}</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {autoExpand ? "Ver proyectos colapsados por defecto" : "Ver proyectos expandidos por defecto"}
+                      </TooltipContent>
+                    </Tooltip>
+
+                    {/* Selector de ordenación */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-9 px-3 gap-2">
+                          <ArrowUpDown className="h-4 w-4" />
+                          <span className="hidden lg:inline text-xs">Ordenar</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem onClick={() => setSortOption('budget_desc')} className={cn(sortOption === 'budget_desc' && "bg-accent")}>
+                          <SortDesc className="mr-2 h-4 w-4" /> Presupuesto (mayor)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setSortOption('budget_asc')} className={cn(sortOption === 'budget_asc' && "bg-accent")}>
+                          <SortAsc className="mr-2 h-4 w-4" /> Presupuesto (menor)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setSortOption('my_hours_desc')} className={cn(sortOption === 'my_hours_desc' && "bg-accent")}>
+                          <SortDesc className="mr-2 h-4 w-4" /> Mis horas (mayor)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setSortOption('my_hours_asc')} className={cn(sortOption === 'my_hours_asc' && "bg-accent")}>
+                          <SortAsc className="mr-2 h-4 w-4" /> Mis horas (menor)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setSortOption('name_asc')} className={cn(sortOption === 'name_asc' && "bg-accent")}>
+                          <SortAsc className="mr-2 h-4 w-4" /> Nombre (A-Z)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setSortOption('name_desc')} className={cn(sortOption === 'name_desc' && "bg-accent")}>
+                          <SortDesc className="mr-2 h-4 w-4" /> Nombre (Z-A)
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
                     {/* Botón toggle vista semana/mes */}
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -583,10 +673,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                     </Button>
                                     <div className="text-center min-w-[140px]">
                                       <div className="font-bold text-sm text-foreground/80 uppercase tracking-wider">
-                                        Semana {index + 1}
+                                        Semana {activeWeekIndex + 1}
                                       </div>
                                       <div className="text-[10px] text-slate-400">
-                                        {weekDateLabel} · <span className="text-slate-500">{index + 1} de {weeks.length}</span>
+                                        {weekDateLabel} · <span className="text-slate-500">{activeWeekIndex + 1} de {weeks.length}</span>
                                       </div>
                                     </div>
                                     <Button
@@ -707,37 +797,34 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                 const project = getProjectById(projId);
                                 const budgetStatus = getProjectBudgetStatus(projId);
                                 const allCompleted = projAllocations.every(a => a.status === 'completed') && !projAllocations.some(a => recentlyToggled.has(a.id));
-                                const isCollapsed = collapsedProjects.has(projId);
+                                // La lógica de colapso depende de autoExpand:
+                                // - autoExpand=true: expandido por defecto, collapsedProjects guarda los colapsados manualmente
+                                // - autoExpand=false: colapsado por defecto, collapsedProjects guarda los expandidos manualmente
+                                const isCollapsed = autoExpand ? collapsedProjects.has(projId) : !collapsedProjects.has(projId);
                                 const sortedTasks = sortTasks(projAllocations);
-                                
-                                // Si todas completadas, usar Collapsible con tooltip
-                                if (allCompleted) {
-                                    return (
-                                        <Collapsible key={projId} open={!isCollapsed} onOpenChange={() => toggleProjectCollapse(projId)}>
-                                            <div className="bg-white border rounded-lg shadow-sm overflow-hidden opacity-75 hover:opacity-100 transition-opacity">
-                                                <CollapsibleTrigger asChild>
-                                                    <div className="cursor-pointer relative">
-                                                        {renderProjectHeader(project, budgetStatus, allCompleted, projAllocations.length)}
-                                                        <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform absolute right-3 top-1/2 -translate-y-1/2", !isCollapsed && "rotate-180")} />
-                                                    </div>
-                                                </CollapsibleTrigger>
-                                                <CollapsibleContent>
-                                                    <div className="divide-y divide-slate-100">
-                                                        {sortedTasks.map(alloc => renderTask(alloc, index))}
-                                                    </div>
-                                                </CollapsibleContent>
-                                            </div>
-                                        </Collapsible>
-                                    );
-                                }
-                                
+
                                 return (
-                                    <div key={projId} className="bg-white border rounded-lg shadow-sm overflow-hidden">
-                                        {renderProjectHeader(project, budgetStatus, allCompleted, projAllocations.length)}
-                                        <div className="divide-y divide-slate-100">
-                                            {sortedTasks.map(alloc => renderTask(alloc, index))}
+                                    <Collapsible key={projId} open={!isCollapsed} onOpenChange={() => toggleProjectCollapse(projId)}>
+                                        <div className={cn(
+                                            "bg-white border rounded-lg shadow-sm overflow-hidden transition-opacity",
+                                            allCompleted && "opacity-75 hover:opacity-100"
+                                        )}>
+                                            <CollapsibleTrigger asChild>
+                                                <div className="cursor-pointer relative">
+                                                    {renderProjectHeader(project, budgetStatus, allCompleted, projAllocations.length)}
+                                                    <ChevronDown className={cn(
+                                                        "w-4 h-4 text-slate-400 transition-transform absolute right-3 top-1/2 -translate-y-1/2",
+                                                        !isCollapsed && "rotate-180"
+                                                    )} />
+                                                </div>
+                                            </CollapsibleTrigger>
+                                            <CollapsibleContent>
+                                                <div className="divide-y divide-slate-100">
+                                                    {sortedTasks.map(alloc => renderTask(alloc, index))}
+                                                </div>
+                                            </CollapsibleContent>
                                         </div>
-                                    </div>
+                                    </Collapsible>
                                 );
                             })}
                         </div>
