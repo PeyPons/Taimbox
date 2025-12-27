@@ -34,7 +34,8 @@ const colorOptions = [
 ];
 
 type FilterType = 'all' | 'needs-planning' | 'behind-schedule' | 'over-budget' | 'no-activity';
-type StatusFilter = 'all' | 'active' | 'completed' | 'archived';
+type StatusFilter = 'all' | 'active' | 'completed' | 'archived' | 'hidden';
+type ProjectTypeFilter = 'all' | 'seo' | 'ppc';
 
 // Componente para estadísticas del header
 function StatCard({ 
@@ -115,7 +116,8 @@ export default function ClientsAndProjectsPage() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('all');
   const [openEmployeeCombo, setOpenEmployeeCombo] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('active'); // Por defecto solo activos
+  const [projectTypeFilter, setProjectTypeFilter] = useState<ProjectTypeFilter>('all');
   
   const [formData, setFormData] = useState({
     name: '', clientId: '', budgetHours: '', minimumHours: '', monthlyFee: '',
@@ -253,9 +255,9 @@ export default function ClientsAndProjectsPage() {
         return sum + monthTasks.reduce((s, t) => s + t.hoursAssigned, 0);
       }, 0);
 
-      // Proyectos del cliente (excluyendo Kit Digital) - INCLUIR TODOS LOS ESTADOS
+      // Proyectos del cliente (excluyendo Kit Digital) - Excluir completados por defecto
       const clientProjects = projects
-        .filter(p => p.clientId === client.id && !kitDigitalProjectIds.has(p.id) && !p.isHidden)
+        .filter(p => p.clientId === client.id && !kitDigitalProjectIds.has(p.id) && p.status !== 'completed')
         .map(p => {
           const analysis = projectsAnalysis.find(a => a.project.id === p.id);
           return {
@@ -291,9 +293,10 @@ export default function ClientsAndProjectsPage() {
       };
     });
 
-    // Agregar cliente virtual "Kit Digital" si hay proyectos
-    if (kitDigitalProjects.length > 0) {
-      const kitDigitalProjectsWithAnalysis = kitDigitalProjects.map(p => {
+    // Agregar cliente virtual "Kit Digital" si hay proyectos (excluir completados por defecto)
+    const visibleKitDigitalProjects = kitDigitalProjects.filter(p => p.status !== 'completed');
+    if (visibleKitDigitalProjects.length > 0) {
+      const kitDigitalProjectsWithAnalysis = visibleKitDigitalProjects.map(p => {
         const analysis = projectsAnalysis.find(a => a.project.id === p.id);
         return {
           project: p,
@@ -308,7 +311,7 @@ export default function ClientsAndProjectsPage() {
 
       const monthAllocations = allocations.filter(a =>
         isSameMonth(parseISO(a.weekStartDate), currentMonth) &&
-        kitDigitalProjectIds.has(a.projectId)
+        visibleKitDigitalProjects.some(p => p.id === a.projectId)
       );
       const assignedEmployeeIds = [...new Set(monthAllocations.map(a => a.employeeId))];
       const assignedEmployees = assignedEmployeeIds
@@ -358,9 +361,10 @@ export default function ClientsAndProjectsPage() {
         // Filtro de estado
         if (statusFilter !== 'all') {
           const hasMatchingStatus = stats.projects.some(p => {
-            if (statusFilter === 'active') return p.project.status === 'active';
+            if (statusFilter === 'active') return p.project.status === 'active' && !p.project.isHidden;
             if (statusFilter === 'completed') return p.project.status === 'completed';
             if (statusFilter === 'archived') return p.project.status === 'archived';
+            if (statusFilter === 'hidden') return p.project.isHidden === true;
             return false;
           });
           if (!hasMatchingStatus) return false;
@@ -381,14 +385,38 @@ export default function ClientsAndProjectsPage() {
         const filteredProjects = stats.projects.filter(({ project, analysis }) => {
           if (!analysis) return false;
 
-          // Filtro de ocultos: excluir proyectos ocultos por defecto (a menos que se filtre específicamente)
-          if (project.isHidden && statusFilter !== 'all') return false;
-
           // Filtro de estado
           if (statusFilter !== 'all') {
-            if (statusFilter === 'active' && project.status !== 'active') return false;
+            if (statusFilter === 'active' && (project.status !== 'active' || project.isHidden)) return false;
             if (statusFilter === 'completed' && project.status !== 'completed') return false;
             if (statusFilter === 'archived' && project.status !== 'archived') return false;
+            if (statusFilter === 'hidden' && !project.isHidden) return false;
+          } else {
+            // Por defecto (statusFilter === 'all'), excluir ocultos a menos que se busque específicamente
+            if (project.isHidden) return false;
+          }
+
+          // Filtro de tipo de proyecto (SEO/PPC)
+          if (projectTypeFilter !== 'all') {
+            const projectNameUpper = project.name.toUpperCase();
+            if (projectTypeFilter === 'seo') {
+              // Solo SEO: excluir SEM, RRSS, Social, PPC, DV360
+              if (projectNameUpper.includes('SEM') || 
+                  projectNameUpper.includes('RRSS') || 
+                  projectNameUpper.includes('SOCIAL') || 
+                  projectNameUpper.includes('PPC') ||
+                  projectNameUpper.includes('DV360')) {
+                return false;
+              }
+            } else if (projectTypeFilter === 'ppc') {
+              // Solo PPC: incluir SEM, Social, PPC, DV360
+              if (!projectNameUpper.includes('SEM') && 
+                  !projectNameUpper.includes('SOCIAL') && 
+                  !projectNameUpper.includes('PPC') &&
+                  !projectNameUpper.includes('DV360')) {
+                return false;
+              }
+            }
           }
 
           // Filtro de análisis
@@ -413,9 +441,25 @@ export default function ClientsAndProjectsPage() {
           employees
         };
       })
-      .filter(({ stats }) => stats.projects.length > 0 || statusFilter === 'all') // Mostrar clientes sin proyectos solo si no hay filtro de estado
-      .sort((a, b) => a.client.name.localeCompare(b.client.name));
-  }, [clientsWithProjects, searchQuery, statusFilter, selectedEmployeeId, activeFilter]);
+      .filter(({ stats }) => stats.projects.length > 0) // Solo mostrar clientes con proyectos visibles
+      .sort((a, b) => {
+        // Kit Digital y entregables siempre al final
+        const aIsSpecial = a.client.id === 'kit-digital' || a.client.name.toLowerCase().includes('entregable');
+        const bIsSpecial = b.client.id === 'kit-digital' || b.client.name.toLowerCase().includes('entregable');
+        
+        if (aIsSpecial && !bIsSpecial) return 1;
+        if (!aIsSpecial && bIsSpecial) return -1;
+        if (aIsSpecial && bIsSpecial) return a.client.name.localeCompare(b.client.name);
+        
+        // Ordenar por horas totales (mayor a menor)
+        const aTotalHours = a.stats.used || 0;
+        const bTotalHours = b.stats.used || 0;
+        if (bTotalHours !== aTotalHours) return bTotalHours - aTotalHours;
+        
+        // Si tienen las mismas horas, ordenar alfabéticamente
+        return a.client.name.localeCompare(b.client.name);
+      });
+  }, [clientsWithProjects, searchQuery, statusFilter, selectedEmployeeId, activeFilter, projectTypeFilter]);
 
   // Estadísticas globales
   const globalStats = useMemo(() => {
@@ -947,10 +991,23 @@ export default function ClientsAndProjectsPage() {
             <SelectItem value="active">Solo activos</SelectItem>
             <SelectItem value="completed">Solo completados</SelectItem>
             <SelectItem value="archived">Solo archivados</SelectItem>
+            <SelectItem value="hidden">Solo ocultos</SelectItem>
           </SelectContent>
         </Select>
 
-        {/* Filtros de análisis */}
+        {/* Filtro de tipo de proyecto (SEO/PPC) */}
+        <Select value={projectTypeFilter} onValueChange={(value: ProjectTypeFilter) => setProjectTypeFilter(value)}>
+          <SelectTrigger className="w-full md:w-[150px] h-9">
+            <SelectValue placeholder="Tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los tipos</SelectItem>
+            <SelectItem value="seo">Solo SEO</SelectItem>
+            <SelectItem value="ppc">Solo PPC</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Filtros de análisis - Todos en una línea */}
         <div className="flex flex-wrap gap-2 flex-1 items-center">
           <Button
             variant={activeFilter === 'all' ? 'default' : 'outline'}
@@ -1138,37 +1195,44 @@ export default function ClientsAndProjectsPage() {
                   />
                   <span className="font-bold text-slate-800 flex-1 text-left">{client.name}</span>
                   <div className="flex items-center gap-4 flex-shrink-0">
-                    {/* Resumen de horas */}
-                    <div className="text-right">
-                      <div className="flex items-center gap-2">
+                    {/* Resumen de horas - Más intuitivo */}
+                    <div className="text-right space-y-1">
+                      {/* Horas computadas / contratadas */}
+                      <div className="flex items-center gap-2 justify-end">
+                        <span className="text-[10px] text-slate-500">Computadas:</span>
                         <span className={cn(
                           "font-bold text-sm",
                           isOverBudget && "text-red-600",
                           isNearLimit && "text-amber-600",
                           !isOverBudget && !isNearLimit && "text-slate-700"
                         )}>
-                          {stats.computed?.toFixed(1) || stats.used.toFixed(1)}h / {stats.budget.toFixed(0)}h
+                          {stats.computed?.toFixed(1) || '0.0'}h
                         </span>
+                        <span className="text-xs text-slate-400">/</span>
+                        <span className="text-sm text-slate-600">{stats.budget.toFixed(0)}h</span>
+                      </div>
+                      
+                      {/* Horas ganadas y estimadas en línea */}
+                      <div className="flex items-center gap-3 justify-end">
                         {stats.gain !== undefined && stats.gain > 0 && (
-                          <span className="flex items-center gap-0.5 text-xs font-medium text-emerald-600">
-                            <ArrowUpRight className="h-3 w-3" />
-                            {stats.gain.toFixed(1)}h
-                          </span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px] text-slate-500">Ganadas:</span>
+                            <span className="flex items-center gap-0.5 text-xs font-medium text-emerald-600">
+                              <ArrowUpRight className="h-3 w-3" />
+                              {stats.gain.toFixed(1)}h
+                            </span>
+                          </div>
                         )}
-                        {trend !== 0 && (
-                          <span className={cn(
-                            "flex items-center gap-0.5 text-xs font-medium",
-                            trend > 0 ? "text-emerald-600" : "text-red-600"
-                          )}>
-                            {trend > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                            {Math.abs(trend).toFixed(1)}h
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] text-slate-500">Estimadas:</span>
+                          <span className="text-xs font-medium text-slate-700">
+                            {stats.used.toFixed(1)}h
                           </span>
-                        )}
+                        </div>
                       </div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">
-                        {stats.used.toFixed(1)}h estimadas
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
+                      
+                      {/* Barra de progreso */}
+                      <div className="flex items-center gap-2 justify-end mt-1">
                         <Progress 
                           value={Math.min(stats.percentage, 100)} 
                           className={cn(
