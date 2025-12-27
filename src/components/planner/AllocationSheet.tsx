@@ -82,6 +82,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   
   const [openComboboxId, setOpenComboboxId] = useState<string | null>(null);
   const [showAllWeeks, setShowAllWeeks] = useState(false);
+  const [selectedWeekIndex, setSelectedWeekIndex] = useState<number | null>(null);
 
   const employee = employees.find(e => e.id === employeeId);
   const weeks = useMemo(() => getWeeksForMonth(viewDate), [viewDate]);
@@ -96,11 +97,27 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     return idx >= 0 ? idx : 0;
   }, [weeks]);
 
+  // Índice de semana activo (seleccionado por usuario o actual)
+  const activeWeekIndex = selectedWeekIndex !== null ? selectedWeekIndex : currentWeekIndex;
+
   // Semanas a mostrar según el modo
   const visibleWeeks = useMemo(() => {
     if (showAllWeeks) return weeks;
-    return [weeks[currentWeekIndex]];
-  }, [weeks, showAllWeeks, currentWeekIndex]);
+    return [weeks[activeWeekIndex]];
+  }, [weeks, showAllWeeks, activeWeekIndex]);
+
+  // Navegación entre semanas
+  const goToPrevWeek = () => {
+    if (activeWeekIndex > 0) {
+      setSelectedWeekIndex(activeWeekIndex - 1);
+    }
+  };
+
+  const goToNextWeek = () => {
+    if (activeWeekIndex < weeks.length - 1) {
+      setSelectedWeekIndex(activeWeekIndex + 1);
+    }
+  };
 
   const monthName = format(viewDate, 'MMMM', { locale: es });
   const monthLabel = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} - ${format(viewDate, 'yyyy')}`;
@@ -552,10 +569,42 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                         {/* HEADER SEMANA MEJORADO */}
                         <div className="flex flex-col gap-2 pb-2 border-b">
                             <div className="flex items-center justify-between">
-                                <div>
+                                {/* Navegación entre semanas (solo en vista de una semana) */}
+                                {!showAllWeeks ? (
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-8 w-8 p-0"
+                                      onClick={goToPrevWeek}
+                                      disabled={activeWeekIndex === 0}
+                                    >
+                                      <ChevronLeft className="h-4 w-4" />
+                                    </Button>
+                                    <div className="text-center min-w-[140px]">
+                                      <div className="font-bold text-sm text-foreground/80 uppercase tracking-wider">
+                                        Semana {index + 1}
+                                      </div>
+                                      <div className="text-[10px] text-slate-400">
+                                        {weekDateLabel} · <span className="text-slate-500">{index + 1} de {weeks.length}</span>
+                                      </div>
+                                    </div>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-8 w-8 p-0"
+                                      onClick={goToNextWeek}
+                                      disabled={activeWeekIndex === weeks.length - 1}
+                                    >
+                                      <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <div>
                                     <span className="font-bold text-sm text-foreground/80 uppercase tracking-wider">Semana {index + 1}</span>
                                     <span className="text-[10px] text-slate-400 ml-2">{weekDateLabel}</span>
-                                </div>
+                                  </div>
+                                )}
                                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-indigo-100 hover:text-indigo-700 rounded-full transition-colors" onClick={() => startAdd(week.weekStart)}>
                                     <Plus className="h-4 w-4" />
                                 </Button>
