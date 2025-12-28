@@ -365,7 +365,24 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     setIsFormOpen(true);
   };
 
-  const startInlineEdit = (allocation: Allocation) => { setInlineEditingId(allocation.id); setInlineNameValue(allocation.taskName || ''); };
+  const startInlineEdit = (allocation: Allocation) => {
+    // BLOQUEO: No permitir editar inline tareas de semanas pasadas
+    try {
+      const taskWeekDate = parseISO(allocation.weekStartDate);
+      const taskWeekEnd = addDays(taskWeekDate, 4);
+      const today = new Date();
+      
+      if (taskWeekEnd < today) {
+        toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
+        return;
+      }
+    } catch {
+      // Si hay error parseando la fecha, permitir editar (por seguridad)
+    }
+    
+    setInlineEditingId(allocation.id);
+    setInlineNameValue(allocation.taskName || '');
+  };
   const saveInlineEdit = (allocation: Allocation) => { if (inlineNameValue.trim() !== allocation.taskName) { updateAllocation({ ...allocation, taskName: inlineNameValue }); } setInlineEditingId(null); };
   const moveTaskToWeek = (allocation: Allocation, targetWeekStartReal: Date) => { 
     // Usar siempre la fecha real de la semana (lunes) para guardar tareas
@@ -1781,7 +1798,37 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"><MoreHorizontal className="h-3 w-3" /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => startEditFull(alloc)}><Pencil className="mr-2 h-3.5 w-3.5" /> Editar</DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => startEditFull(alloc)}
+                      disabled={(() => {
+                        try {
+                          const taskWeekDate = parseISO(alloc.weekStartDate);
+                          const taskWeekEnd = addDays(taskWeekDate, 4);
+                          return taskWeekEnd < new Date();
+                        } catch {
+                          return false;
+                        }
+                      })()}
+                    >
+                      <Pencil className="mr-2 h-3.5 w-3.5" /> Editar
+                    </DropdownMenuItem>
+                    {(() => {
+                      try {
+                        const taskWeekDate = parseISO(alloc.weekStartDate);
+                        const taskWeekEnd = addDays(taskWeekDate, 4);
+                        const isPastWeek = taskWeekEnd < new Date();
+                        if (isPastWeek) {
+                          return (
+                            <DropdownMenuItem disabled className="text-xs text-amber-600">
+                              <AlertTriangle className="mr-2 h-3.5 w-3.5" /> Usa Weekly para gestionar
+                            </DropdownMenuItem>
+                          );
+                        }
+                        return null;
+                      } catch {
+                        return null;
+                      }
+                    })()}
                     <DropdownMenuItem onClick={() => moveTaskToWeek(alloc, weeks[(weekIndex+1)%weeks.length].weekStart)}><ArrowRightCircle className="mr-2 h-3.5 w-3.5" /> Mover sem.</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
