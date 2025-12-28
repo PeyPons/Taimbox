@@ -187,7 +187,16 @@ export default function AdsPage() {
         }; 
       });
 
-      setRawData(adsRes.data || []);
+      const rawAdsData = adsRes.data || [];
+      // #region agent log
+      const totalCostFromDB = rawAdsData.reduce((sum: number, r: any) => sum + (Number(r.cost) || 0), 0);
+      const dateRange = rawAdsData.length > 0 ? {
+        minDate: Math.min(...rawAdsData.map((r: any) => new Date(r.date).getTime())),
+        maxDate: Math.max(...rawAdsData.map((r: any) => new Date(r.date).getTime()))
+      } : null;
+      fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:190',message:'Data loaded from DB',data:{rowsCount:rawAdsData.length,totalCost:totalCostFromDB,dateRange,sampleRow:rawAdsData[0]},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H6'})}).catch(()=>{});
+      // #endregion
+      setRawData(rawAdsData);
       setClientSettings(settingsMap);
       setSegmentationRules(rulesRes.data || []);
 
@@ -340,59 +349,75 @@ export default function AdsPage() {
       }
     });
 
+    let totalProcessedCost = 0;
+    let filteredOutCount = 0;
     rawData.forEach(row => {
       // Filtrar por todos los días del mes actual (del 1 al último día del mes)
-      if (row.date >= monthStart && row.date <= monthEnd) {
-        let finalId = row.client_id;
-        let finalName = row.client_name;
+      const isInRange = row.date >= monthStart && row.date <= monthEnd;
+      if (!isInRange) {
+        filteredOutCount++;
+        return;
+      }
+      let finalId = row.client_id;
+      let finalName = row.client_name;
 
-        // Aplicar reglas de segmentación
-        const rulesForAccount = segmentationRules.filter(r => normalizeId(r.account_id) === normalizeId(row.client_id));
-        if (rulesForAccount.length > 0) {
-          const match = rulesForAccount.find(r => row.campaign_name.toLowerCase().includes(r.keyword.toLowerCase()));
-          if (match) {
-            finalId = `${row.client_id}_${match.keyword.toUpperCase()}`; 
-            finalName = match.virtual_name;
-          }
-        }
-
-        const settings = clientSettings[finalId] || { budget: 0, group_name: '', is_hidden: false, is_sales_account: true };
-        const groupKey = settings.group_name?.trim() ? `GROUP-${settings.group_name}` : finalId;
-        const displayName = settings.group_name?.trim() ? settings.group_name : finalName;
-
-        const isGroupManual = groupKey.startsWith('GROUP-') && (clientSettings[groupKey]?.budget > 0);
-        const isIndividualManual = !groupKey.startsWith('GROUP-') && settings.budget > 0;
-
-        if (!stats.has(groupKey)) {
-          stats.set(groupKey, { 
-            name: displayName, spent: 0, budget: 0, total_conversions_val: 0,
-            is_group: groupKey.startsWith('GROUP-'), isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false,
-            realIds: [], realIdsNames: [], campaigns: [], isManualGroupBudget: isGroupManual, autoDailyBudgetSum: 0
-          });
-        }
-        
-        const entry = stats.get(groupKey)!;
-        
-        entry.spent += row.cost;
-        entry.total_conversions_val += (row.conversions_value || 0);
-        
-        if (row.status === 'ENABLED' && row.daily_budget > 0) entry.autoDailyBudgetSum += row.daily_budget;
-
-        if (!entry.realIds.includes(finalId)) {
-          entry.realIds.push(finalId);
-          entry.realIdsNames.push({id: finalId, name: finalName});
-          if (!entry.is_group && isIndividualManual) entry.budget = settings.budget; 
-        }
-
-        if (row.cost > 0) { 
-          entry.campaigns.push({
-            ...row,
-            original_client_name: finalName,
-            original_client_id: finalId
-          });
+      // Aplicar reglas de segmentación
+      const rulesForAccount = segmentationRules.filter(r => normalizeId(r.account_id) === normalizeId(row.client_id));
+      if (rulesForAccount.length > 0) {
+        const match = rulesForAccount.find(r => row.campaign_name.toLowerCase().includes(r.keyword.toLowerCase()));
+        if (match) {
+          finalId = `${row.client_id}_${match.keyword.toUpperCase()}`; 
+          finalName = match.virtual_name;
         }
       }
+
+      const settings = clientSettings[finalId] || { budget: 0, group_name: '', is_hidden: false, is_sales_account: true };
+      const groupKey = settings.group_name?.trim() ? `GROUP-${settings.group_name}` : finalId;
+      const displayName = settings.group_name?.trim() ? settings.group_name : finalName;
+
+      const isGroupManual = groupKey.startsWith('GROUP-') && (clientSettings[groupKey]?.budget > 0);
+      const isIndividualManual = !groupKey.startsWith('GROUP-') && settings.budget > 0;
+
+      if (!stats.has(groupKey)) {
+        stats.set(groupKey, { 
+          name: displayName, spent: 0, budget: 0, total_conversions_val: 0,
+          is_group: groupKey.startsWith('GROUP-'), isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false,
+          realIds: [], realIdsNames: [], campaigns: [], isManualGroupBudget: isGroupManual, autoDailyBudgetSum: 0
+        });
+      }
+      
+      const entry = stats.get(groupKey)!;
+      const costBefore = entry.spent;
+      const rowCost = Number(row.cost) || 0;
+      entry.spent += rowCost;
+      totalProcessedCost += rowCost;
+      // #region agent log
+      if (Math.random() < 0.05) { // Log 5% de las filas
+        fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:376',message:'Cost accumulation',data:{rowDate:row.date,rowCost,rowCostType:typeof row.cost,costBefore,costAfter:entry.spent,groupKey,monthStart,monthEnd},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H6'})}).catch(()=>{});
+      }
+      // #endregion
+      entry.total_conversions_val += (row.conversions_value || 0);
+      
+      if (row.status === 'ENABLED' && row.daily_budget > 0) entry.autoDailyBudgetSum += row.daily_budget;
+
+      if (!entry.realIds.includes(finalId)) {
+        entry.realIds.push(finalId);
+        entry.realIdsNames.push({id: finalId, name: finalName});
+        if (!entry.is_group && isIndividualManual) entry.budget = settings.budget; 
+      }
+
+      if (row.cost > 0) { 
+        entry.campaigns.push({
+          ...row,
+          original_client_name: finalName,
+          original_client_id: finalId
+        });
+      }
     });
+    // #region agent log
+    const finalTotalSpent = Array.from(stats.values()).reduce((sum, s) => sum + s.spent, 0);
+    fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:395',message:'Frontend aggregation totals',data:{monthStart,monthEnd,filteredOutCount,totalProcessedCost,finalTotalSpent,statsCount:stats.size},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H4,H6'})}).catch(()=>{});
+    // #endregion
 
     const report: ClientPacing[] = [];
     
