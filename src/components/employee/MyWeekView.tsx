@@ -287,11 +287,13 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
             }
           }
         } else if (action === 'complete') {
-          // Opción B: Marcar como completado (asumir desviación)
+          // Opción B: Terminado eficiente - actualizar hours_assigned = hours_actual para liberar presupuesto
+          const actualHours = task.hoursActual || task.hoursAssigned;
           await updateAllocation({
             ...task,
             status: 'completed',
-            hoursActual: task.hoursActual || task.hoursAssigned
+            hoursActual: actualHours,
+            hoursAssigned: actualHours // Liberar las horas sobrantes del presupuesto
           });
         } else if (action === 'justify') {
           // Opción C: Solo justificar (opcional, no bloquea)
@@ -309,13 +311,13 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
         }
       }
       
-      toast.success('Semana cerrada correctamente');
+      toast.success('Reporte semanal enviado correctamente');
       setShowCloseWeekDialog(false);
       setTaskActions({});
       setTaskComments({});
     } catch (error) {
-      console.error('Error cerrando semana:', error);
-      toast.error('Error al cerrar la semana');
+      console.error('Error enviando reporte semanal:', error);
+      toast.error('Error al enviar el reporte semanal');
     }
   };
   
@@ -325,26 +327,28 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
         {/* Header con título, KPIs y filtros */}
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900 capitalize flex items-center gap-2">
-                {monthLabel}
-              </h2>
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Target className="h-3.5 w-3.5" /> Rendimiento por proyecto
-              </p>
+            <div className="flex items-center gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 capitalize flex items-center gap-2">
+                  {monthLabel}
+                </h2>
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Target className="h-3.5 w-3.5" /> Rendimiento por proyecto
+                </p>
+              </div>
+              
+              {/* Botón Weekly en la cabecera */}
+              {canCloseWeek && (
+                <Button
+                  onClick={() => setShowCloseWeekDialog(true)}
+                  variant="outline"
+                  className="gap-2 border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+                >
+                  <CheckSquare className="h-4 w-4" />
+                  Weekly
+                </Button>
+              )}
             </div>
-            
-            {/* Botón Cerrar Semana */}
-            {canCloseWeek && (
-              <Button
-                onClick={() => setShowCloseWeekDialog(true)}
-                variant="outline"
-                className="gap-2 border-indigo-300 text-indigo-700 hover:bg-indigo-50"
-              >
-                <CheckSquare className="h-4 w-4" />
-                Cerrar Semana
-              </Button>
-            )}
             
             {/* KPIs compactos */}
             <div className="flex items-center gap-3 flex-wrap">
@@ -560,13 +564,13 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
           </div>
         )}
         
-        {/* Dialog Cerrar Semana */}
+        {/* Dialog Reporte Semanal */}
         <Dialog open={showCloseWeekDialog} onOpenChange={setShowCloseWeekDialog}>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <CheckSquare className="h-5 w-5" />
-                Cerrar Semana
+                Reporte Semanal
               </DialogTitle>
               <DialogDescription>
                 Revisa las tareas desviadas y elige cómo gestionarlas.
@@ -624,10 +628,10 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                               <Label htmlFor={`${task.id}-complete`} className="flex-1 cursor-pointer">
                                 <div className="flex items-center gap-2">
                                   <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                                  <span className="font-medium">Marcar como completado (Asumir desviación)</span>
+                                  <span className="font-medium">Terminado eficiente</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                  La diferencia de horas se perderá y la tarea quedará marcada como completada.
+                                  Las horas asignadas se ajustarán a las horas reales. Las horas liberadas volverán al presupuesto disponible del proyecto.
                                 </p>
                               </Label>
                             </div>
@@ -674,7 +678,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
               </Button>
               {deviatedTasks.length > 0 && (
                 <Button onClick={handleCloseWeek} className="bg-indigo-600 hover:bg-indigo-700">
-                  Cerrar Semana
+                  Enviar Reporte
                 </Button>
               )}
             </DialogFooter>

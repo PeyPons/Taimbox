@@ -74,7 +74,7 @@ export function Sidebar() {
 
             {canAccess('/weekly-forecast') && (
               <NavLink to="/weekly-forecast" icon={TrendingUp} active={location.pathname === '/weekly-forecast'}>
-                Forecast
+                Weekly
               </NavLink>
             )}
 

@@ -32,6 +32,8 @@ export default function WeeklyForecastPage() {
   const [redistributeHours, setRedistributeHours] = useState('');
   const [redistributeEmployee, setRedistributeEmployee] = useState('');
   const [redistributeWeek, setRedistributeWeek] = useState('');
+  const [filterFeedbackEmployee, setFilterFeedbackEmployee] = useState<string>('all');
+  const [filterFeedbackProject, setFilterFeedbackProject] = useState<string>('all');
   
   useEffect(() => {
     localStorage.setItem('forecast_date', currentMonth.toISOString());
@@ -107,15 +109,41 @@ export default function WeeklyForecastPage() {
     });
   }, [projects, allocations, clients, currentMonth]);
   
-  // Sección B: Feed de Bloqueos (semana en curso)
+  // Sección B: Feed de Bloqueos (semana en curso) con filtros
   const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
   const currentWeekStr = format(currentWeekStart, 'yyyy-MM-dd');
   
   const currentWeekFeedback = useMemo(() => {
-    return weeklyFeedback
-      .filter(fb => fb.weekStartDate === currentWeekStr)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [weeklyFeedback, currentWeekStr]);
+    let filtered = weeklyFeedback
+      .filter(fb => fb.weekStartDate === currentWeekStr);
+    
+    // Filtro por empleado
+    if (filterFeedbackEmployee !== 'all') {
+      filtered = filtered.filter(fb => fb.employeeId === filterFeedbackEmployee);
+    }
+    
+    // Filtro por proyecto
+    if (filterFeedbackProject !== 'all') {
+      filtered = filtered.filter(fb => fb.projectId === filterFeedbackProject);
+    }
+    
+    return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [weeklyFeedback, currentWeekStr, filterFeedbackEmployee, filterFeedbackProject]);
+  
+  // Semanas futuras para el selector de redistribución
+  const futureWeeks = useMemo(() => {
+    const today = new Date();
+    return weeks.filter(week => {
+      try {
+        const weekDate = parseISO(getStorageKey(week.weekStart, currentMonth));
+        // Incluir semana actual si aún no ha terminado (viernes)
+        const weekEnd = addDays(weekDate, 4); // Viernes
+        return weekEnd >= today;
+      } catch {
+        return false;
+      }
+    });
+  }, [weeks, currentMonth]);
   
   // Sección C: Redistribución Rápida
   const handleRedistribute = async () => {
@@ -349,10 +377,44 @@ export default function WeeklyForecastPage() {
       {/* Sección B: Feed de Bloqueos */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Feed de Bloqueos (Semana en curso)
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Feed de Bloqueos (Semana en curso)
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Select value={filterFeedbackEmployee} onValueChange={setFilterFeedbackEmployee}>
+                <SelectTrigger className="w-[180px] h-8 text-xs">
+                  <SelectValue placeholder="Todos los empleados" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los empleados</SelectItem>
+                  {employees
+                    .filter(e => e.isActive)
+                    .map(emp => (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        {emp.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterFeedbackProject} onValueChange={setFilterFeedbackProject}>
+                <SelectTrigger className="w-[180px] h-8 text-xs">
+                  <SelectValue placeholder="Todos los proyectos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los proyectos</SelectItem>
+                  {projects
+                    .filter(p => p.status === 'active' && !p.isHidden)
+                    .map(proj => (
+                      <SelectItem key={proj.id} value={proj.id}>
+                        {formatProjectName(proj.name)}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {currentWeekFeedback.length === 0 ? (
@@ -461,11 +523,12 @@ export default function WeeklyForecastPage() {
                       <SelectValue placeholder="Seleccionar semana" />
                     </SelectTrigger>
                     <SelectContent>
-                      {weeks.map((week, idx) => {
+                      {futureWeeks.map((week, idx) => {
                         const storageKey = getStorageKey(week.weekStart, currentMonth);
+                        const weekIndex = weeks.findIndex(w => getStorageKey(w.weekStart, currentMonth) === storageKey);
                         return (
                           <SelectItem key={storageKey} value={storageKey}>
-                            Semana {idx + 1} ({format(week.weekStart, 'd MMM', { locale: es })})
+                            Semana {weekIndex + 1} ({format(week.weekStart, 'd MMM', { locale: es })})
                           </SelectItem>
                         );
                       })}
