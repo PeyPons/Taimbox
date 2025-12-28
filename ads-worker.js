@@ -153,7 +153,7 @@ async function processSyncJob(jobId) {
     await supabase.from('ads_sync_logs').update({ status: 'running' }).eq('id', jobId);
     
     const range = getDateRange();
-    await log(`🚀 Iniciando Sync Google v22. Desde: ${range.firstDay}`);
+    await log(`🚀 Sincronizando Sync Google v22. Desde: ${range.firstDay}`);
     
     const token = await getAccessToken();
     const clients = await getClientAccounts(token);

@@ -298,7 +298,10 @@ export default function AdsPage() {
   const reportData = useMemo(() => {
     if (!rawData.length) return [];
     
-    const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
+    const monthEnd = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
 
     const stats = new Map<string, { 
       name: string, spent: number, budget: number, total_conversions_val: number,
@@ -326,7 +329,8 @@ export default function AdsPage() {
     });
 
     rawData.forEach(row => {
-      if (row.date === currentMonthPrefix) {
+      // Filtrar por todos los días del mes actual (del 1 al último día del mes)
+      if (row.date >= monthStart && row.date <= monthEnd) {
         let finalId = row.client_id;
         let finalName = row.client_name;
 
@@ -466,7 +470,7 @@ export default function AdsPage() {
                 </span>
                 <Badge variant="outline" className="text-xs">
                   <Calendar className="w-3 h-3 mr-1" />
-                  Día {currentDay} de {daysInMonth}
+                  Del 1 al {daysInMonth}
                 </Badge>
               </div>
             </div>
