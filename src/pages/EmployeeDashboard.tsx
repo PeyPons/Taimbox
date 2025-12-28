@@ -379,12 +379,11 @@ export default function EmployeeDashboard() {
     if (!isGlobalLoading && !isLoadingProfile) {
       const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
       
-      // Verificar si necesitamos cargar datos para este mes
+      // 1. Verificar si REALMENTE tenemos datos para este mes en el contexto
       const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
       
-      // Verificar si hay allocations para este mes
-      const hasDataForMonth = allocations.some(a => {
+      const hasDataInContext = allocations.some(a => {
         try {
           const allocDate = new Date(a.weekStartDate);
           return allocDate >= monthStart && allocDate <= monthEnd;
@@ -393,20 +392,36 @@ export default function EmployeeDashboard() {
         }
       });
       
-      // Si no hay datos para este mes, cargarlos (igual que loadDeadlines en DeadlinesPage)
-      if (!hasDataForMonth && !loadedMonthsRef.current.has(monthKey)) {
+      // 2. Si ya lo "cargamos" según el ref, PERO no hay datos (porque se limpió el contexto),
+      // forzamos a que se vuelva a cargar eliminándolo del ref.
+      if (loadedMonthsRef.current.has(monthKey) && !hasDataInContext) {
+        loadedMonthsRef.current.delete(monthKey);
+      }
+
+      // 3. Ahora sí, comprobamos el ref para evitar loops infinitos si la API devuelve array vacío
+      if (loadedMonthsRef.current.has(monthKey)) {
+        setIsLoadingMonth(false);
+        return;
+      }
+      
+      // 4. Si no hay datos y no hemos intentado cargar este mes, procedemos
+      if (!hasDataInContext) {
         setIsLoadingMonth(true);
-        loadDataForMonth(currentMonth).finally(() => {
-          loadedMonthsRef.current.add(monthKey);
-          setIsLoadingMonth(false);
-        });
+        loadDataForMonth(currentMonth)
+          .then(() => {
+            // Solo marcamos como cargado si terminó con éxito
+            loadedMonthsRef.current.add(monthKey);
+          })
+          .finally(() => {
+            setIsLoadingMonth(false);
+          });
       } else {
-        // Hay datos o ya se cargó, desactivar loading
-        loadedMonthsRef.current.add(monthKey);
+        // Hay datos y no necesitamos cargar
+        loadedMonthsRef.current.add(monthKey); // Marcamos para futuro
         setIsLoadingMonth(false);
       }
     }
-  }, [currentMonth, isGlobalLoading, isLoadingProfile, loadDataForMonth]);
+  }, [currentMonth, isGlobalLoading, isLoadingProfile, loadDataForMonth, allocations]); // Añadir allocations a dependencias
 
   // Mostrar loader mientras carga global o el perfil
   if (isGlobalLoading || isLoadingProfile) {
