@@ -573,20 +573,20 @@ export default function EmployeeDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div data-tour="priority-widget" className="flex">
           <div className="w-full">
-            <PriorityInsights employeeId={myEmployeeProfile.id} />
+            <PriorityInsights employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
           </div>
         </div>
         
         <div data-tour="dependencies-widget" className="flex">
           <div className="w-full">
-            <ProjectTeamPulse employeeId={myEmployeeProfile.id} />
+            <ProjectTeamPulse employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
           </div>
         </div>
       </div>
 
       {/* 6. PRECISIÓN DE PLANIFICACIÓN */}
       <div data-tour="reliability-index">
-        <ReliabilityIndexCard employeeId={myEmployeeProfile.id} />
+        <ReliabilityIndexCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
       </div>
 
       {/* 6.5. COHERENCIA DE PLANIFICACIÓN */}

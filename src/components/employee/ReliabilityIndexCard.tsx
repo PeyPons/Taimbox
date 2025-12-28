@@ -12,21 +12,34 @@ import { cn } from '@/lib/utils';
 
 interface ReliabilityIndexCardProps {
   employeeId: string;
+  viewDate?: Date;
 }
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
-export const ReliabilityIndexCard = memo(function ReliabilityIndexCard({ employeeId }: ReliabilityIndexCardProps) {
+export const ReliabilityIndexCard = memo(function ReliabilityIndexCard({ employeeId, viewDate }: ReliabilityIndexCardProps) {
   const { allocations, employees } = useApp();
   const employee = employees.find(e => e.id === employeeId);
+  const targetMonth = viewDate || new Date();
 
   const reliability = useMemo(() => {
-    const completedTasks = (allocations || []).filter(a => 
-      a.employeeId === employeeId && 
-      a.status === 'completed' &&
-      a.hoursAssigned > 0 &&
-      (a.hoursActual || 0) > 0
-    );
+    // Filtrar por mes si se proporciona viewDate, sino mostrar histórico completo
+    const completedTasks = (allocations || []).filter(a => {
+      if (a.employeeId !== employeeId || a.status !== 'completed' || a.hoursAssigned <= 0 || (a.hoursActual || 0) <= 0) {
+        return false;
+      }
+      // Si hay viewDate, filtrar por ese mes, sino incluir todas
+      if (viewDate) {
+        try {
+          const allocDate = new Date(a.weekStartDate);
+          return allocDate.getFullYear() === targetMonth.getFullYear() && 
+                 allocDate.getMonth() === targetMonth.getMonth();
+        } catch {
+          return false;
+        }
+      }
+      return true;
+    });
     
     const totalEstimated = round2(completedTasks.reduce((sum, a) => sum + a.hoursAssigned, 0));
     const totalReal = round2(completedTasks.reduce((sum, a) => sum + (a.hoursActual || 0), 0));

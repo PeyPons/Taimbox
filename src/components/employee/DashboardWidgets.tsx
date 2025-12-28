@@ -8,17 +8,18 @@ import { formatProjectName } from '@/lib/utils';
 
 interface WidgetProps {
   employeeId: string;
+  viewDate?: Date;
 }
 
 // WIDGET 1: RECOMENDACIONES - TONO GPS AMIGABLE
-export const PriorityInsights = memo(function PriorityInsights({ employeeId }: WidgetProps) {
+export const PriorityInsights = memo(function PriorityInsights({ employeeId, viewDate }: WidgetProps) {
   const { allocations, projects, employees } = useApp();
-  const today = new Date();
+  const targetMonth = viewDate || new Date();
   
   const myTasks = allocations.filter(a => 
     a.employeeId === employeeId && 
     a.status !== 'completed' &&
-    isSameMonth(parseISO(a.weekStartDate), today)
+    isSameMonth(parseISO(a.weekStartDate), targetMonth)
   );
 
   // Si no hay tareas pendientes, mostrar mensaje positivo
@@ -144,14 +145,14 @@ export const PriorityInsights = memo(function PriorityInsights({ employeeId }: W
 });
 
 // WIDGET 2: DEPENDENCIAS - TONO GPS AMIGABLE
-export const ProjectTeamPulse = memo(function ProjectTeamPulse({ employeeId }: WidgetProps) {
+export const ProjectTeamPulse = memo(function ProjectTeamPulse({ employeeId, viewDate }: WidgetProps) {
   const { allocations, projects, employees } = useApp();
-  const today = new Date();
+  const targetMonth = viewDate || new Date();
   
   const myAllocations = allocations.filter(a => 
     a.employeeId === employeeId && 
     a.status !== 'completed' && 
-    isSameMonth(parseISO(a.weekStartDate), today)
+    isSameMonth(parseISO(a.weekStartDate), targetMonth)
   );
 
   const incomingDependencies = myAllocations
