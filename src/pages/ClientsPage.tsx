@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Client } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -85,11 +85,13 @@ function StatCard({
 
 // Componente principal
 export default function ClientsPage() {
-  const { clients, projects, allocations, employees, addClient, updateClient, deleteClient, getClientTotalHoursForMonth, getProjectHoursForMonth } = useApp();
+  const { clients, projects, allocations, employees, addClient, updateClient, deleteClient, getClientTotalHoursForMonth, getProjectHoursForMonth, loadDataForMonth, isLoading: isGlobalLoading } = useApp();
   
   // Estados
   const [searchQuery, setSearchQuery] = useState('');
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isLoadingMonth, setIsLoadingMonth] = useState(false);
+  const loadedMonthsRef = useRef<Set<string>>(new Set());
   const [isAdding, setIsAdding] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
@@ -99,6 +101,46 @@ export default function ClientsPage() {
 
   // Mes anterior para comparación
   const prevMonth = subMonths(currentMonth, 1);
+
+  // Cargar datos del mes cuando cambia el mes visible (igual que EmployeeDashboard y PlannerGrid)
+  useEffect(() => {
+    if (!isGlobalLoading) {
+      const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
+      
+      // Si ya se cargó este mes, no hacer nada
+      if (loadedMonthsRef.current.has(monthKey)) {
+        setIsLoadingMonth(false);
+        return;
+      }
+      
+      // Verificar si necesitamos cargar datos para este mes
+      const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+      const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+      
+      // Verificar si hay allocations para este mes
+      const hasDataForMonth = allocations.some(a => {
+        try {
+          const allocDate = new Date(a.weekStartDate);
+          return allocDate >= monthStart && allocDate <= monthEnd;
+        } catch {
+          return false;
+        }
+      });
+      
+      // Si no hay datos para este mes, cargarlos
+      if (!hasDataForMonth) {
+        setIsLoadingMonth(true);
+        loadDataForMonth(currentMonth).finally(() => {
+          loadedMonthsRef.current.add(monthKey);
+          setIsLoadingMonth(false);
+        });
+      } else {
+        // Hay datos, marcar como cargado
+        loadedMonthsRef.current.add(monthKey);
+        setIsLoadingMonth(false);
+      }
+    }
+  }, [currentMonth, isGlobalLoading, loadDataForMonth, allocations]);
 
   // Calcular estadísticas para cada cliente
   const clientsWithStats = useMemo(() => {
