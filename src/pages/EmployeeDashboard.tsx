@@ -214,14 +214,16 @@ export default function EmployeeDashboard() {
   };
 
   const openAddTasksDialog = () => {
-    const defaultWeek = getStorageKey(weeks[0]?.weekStart || new Date(), currentMonth);
+    // Usar siempre la fecha real de la semana (lunes) para guardar tareas
+    const defaultWeek = weeks[0]?.weekStart ? format(weeks[0].weekStart, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
     setNewTasks([{ id: crypto.randomUUID(), projectId: '', taskName: '', hours: '', weekDate: defaultWeek }]);
     setIsAddingTasks(true);
   };
 
   const addTaskRow = () => {
     const lastTask = newTasks[newTasks.length - 1];
-    const defaultWeek = lastTask?.weekDate || getStorageKey(weeks[0]?.weekStart || new Date(), currentMonth);
+    // Usar siempre la fecha real de la semana (lunes) para guardar tareas
+    const defaultWeek = lastTask?.weekDate || (weeks[0]?.weekStart ? format(weeks[0].weekStart, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'));
     setNewTasks(prev => [...prev, { id: crypto.randomUUID(), projectId: lastTask?.projectId || '', taskName: '', hours: '', weekDate: defaultWeek }]);
   };
 
@@ -339,7 +341,8 @@ export default function EmployeeDashboard() {
         const hours = parseFloat(task.hours) || 0;
         if (hours > 0) {
           if (!weekImpact[task.weekDate]) {
-            const weekIndex = weeks.findIndex((w) => getStorageKey(w.weekStart, currentMonth) === task.weekDate);
+            // Usar siempre la fecha real de la semana (lunes) para buscar
+            const weekIndex = weeks.findIndex((w) => format(w.weekStart, 'yyyy-MM-dd') === task.weekDate);
             weekImpact[task.weekDate] = { weekIndex: weekIndex >= 0 ? weekIndex : 0, adding: 0 };
           }
           weekImpact[task.weekDate].adding += hours;
@@ -625,7 +628,7 @@ export default function EmployeeDashboard() {
                       <Select value={task.weekDate} onValueChange={(v) => updateTaskRow(task.id, 'weekDate', v)}>
                         <SelectTrigger className={cn("h-9 text-xs", weekExceeds && "border-amber-400 bg-amber-50")}><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {weeks.map((w, i) => <SelectItem key={w.weekStart.toISOString()} value={getStorageKey(w.weekStart, currentMonth)}>Sem {i + 1}</SelectItem>)}
+                          {weeks.map((w, i) => <SelectItem key={w.weekStart.toISOString()} value={format(w.weekStart, 'yyyy-MM-dd')}>Sem {i + 1}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>

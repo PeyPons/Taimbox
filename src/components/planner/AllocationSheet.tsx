@@ -188,17 +188,20 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   };
 
   const startAdd = (weekStartReal: Date) => {
-    const storageKey = getStorageKey(weekStartReal, viewDate);
+    // Usar siempre la fecha real de la semana (lunes) para guardar tareas
+    // No usar getStorageKey porque normaliza según el mes visible
+    const weekStartDate = format(weekStartReal, 'yyyy-MM-dd');
     setEditingAllocation(null);
     setNewTasks([{
-      id: crypto.randomUUID(), projectId: '', taskName: '', hours: '', weekDate: storageKey, description: '', dependencyId: 'none'
+      id: crypto.randomUUID(), projectId: '', taskName: '', hours: '', weekDate: weekStartDate, description: '', dependencyId: 'none'
     }]);
     setIsFormOpen(true);
   };
 
   const addTaskRow = () => {
     const lastTask = newTasks.length > 0 ? newTasks[newTasks.length - 1] : null;
-    const defaultKey = weeks.length > 0 ? getStorageKey(weeks[0].weekStart, viewDate) : getStorageKey(new Date(), viewDate);
+    // Usar siempre la fecha real de la semana (lunes) para guardar tareas
+    const defaultKey = weeks.length > 0 ? format(weeks[0].weekStart, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
     setNewTasks(prev => [...prev, {
       id: crypto.randomUUID(),
       projectId: lastTask ? lastTask.projectId : '', 
@@ -286,7 +289,11 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
   const startInlineEdit = (allocation: Allocation) => { setInlineEditingId(allocation.id); setInlineNameValue(allocation.taskName || ''); };
   const saveInlineEdit = (allocation: Allocation) => { if (inlineNameValue.trim() !== allocation.taskName) { updateAllocation({ ...allocation, taskName: inlineNameValue }); } setInlineEditingId(null); };
-  const moveTaskToWeek = (allocation: Allocation, targetWeekStartReal: Date) => { const targetKey = getStorageKey(targetWeekStartReal, viewDate); updateAllocation({ ...allocation, weekStartDate: targetKey }); };
+  const moveTaskToWeek = (allocation: Allocation, targetWeekStartReal: Date) => { 
+    // Usar siempre la fecha real de la semana (lunes) para guardar tareas
+    const targetKey = format(targetWeekStartReal, 'yyyy-MM-dd');
+    updateAllocation({ ...allocation, weekStartDate: targetKey }); 
+  };
 
   // Ordenar proyectos según la opción seleccionada
   const sortProjectGroups = (groups: Record<string, Allocation[]>) => {
@@ -627,9 +634,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
             )}>
             {visibleWeeks.map((week, idx) => {
                 const index = showAllWeeks ? idx : activeWeekIndex;
-                const weekStr = week.weekStart.toISOString().split('T')[0];
-                const storageKey = getStorageKey(week.weekStart, viewDate);
-                let weekAllocations = getEmployeeAllocationsForWeek(employeeId, storageKey);
+                // Usar siempre la fecha real de la semana (lunes) para buscar tareas
+                // No usar getStorageKey porque normaliza según el mes visible y puede cambiar
+                const weekStartDate = format(week.weekStart, 'yyyy-MM-dd');
+                let weekAllocations = getEmployeeAllocationsForWeek(employeeId, weekStartDate);
                 
                 if (searchTerm) {
                     weekAllocations = weekAllocations.filter(a => {
@@ -639,7 +647,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                     });
                 }
                 
-                const load = getEmployeeLoadForWeek(employeeId, storageKey, week.effectiveStart, week.effectiveEnd);
+                const load = getEmployeeLoadForWeek(employeeId, weekStartDate, week.effectiveStart, week.effectiveEnd);
                 
                 // Calcular Est, Real, Comp para el header
                 const weekEst = round2(weekAllocations.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0));
@@ -1362,8 +1370,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                         if (weeks.length === 0 || activeWeekIndex < 0 || activeWeekIndex >= weeks.length) {
                           return <p className="text-sm text-slate-500">No hay semanas disponibles</p>;
                         }
-                        const weekStorageKey = getStorageKey(weeks[activeWeekIndex].weekStart, viewDate);
-                        const weekAllocs = getEmployeeAllocationsForWeek(employeeId, weekStorageKey);
+                        // Usar siempre la fecha real de la semana (lunes) para buscar tareas
+                        const weekStartDate = format(weeks[activeWeekIndex].weekStart, 'yyyy-MM-dd');
+                        const weekAllocs = getEmployeeAllocationsForWeek(employeeId, weekStartDate);
                         const projectIds = [...new Set(weekAllocs.map(a => a.projectId))];
 
                         return (
@@ -1460,7 +1469,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2"><Label>Horas</Label><Input type="number" value={editHours} onChange={e=>setEditHours(e.target.value)} step="0.5" /></div>
-                    <div className="space-y-2"><Label>Semana</Label><Select value={editWeek} onValueChange={setEditWeek}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{weeks.map((w,i)=><SelectItem key={w.weekStart.toISOString()} value={getStorageKey(w.weekStart, viewDate)}>Sem {i+1}</SelectItem>)}</SelectContent></Select></div>
+                    <div className="space-y-2"><Label>Semana</Label><Select value={editWeek} onValueChange={setEditWeek}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{weeks.map((w,i)=><SelectItem key={w.weekStart.toISOString()} value={format(w.weekStart, 'yyyy-MM-dd')}>Sem {i+1}</SelectItem>)}</SelectContent></Select></div>
                 </div>
               </div>
             ) : (
@@ -1544,7 +1553,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                 <div className="w-36">
                                     <Select value={task.weekDate} onValueChange={(v) => updateTaskRow(task.id, 'weekDate', v)}>
                                         <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                                        <SelectContent>{weeks.map((w, i) => (<SelectItem key={w.weekStart.toISOString()} value={getStorageKey(w.weekStart, viewDate)}>Sem {i+1}</SelectItem>))}</SelectContent>
+                                        <SelectContent>{weeks.map((w, i) => (<SelectItem key={w.weekStart.toISOString()} value={format(w.weekStart, 'yyyy-MM-dd')}>Sem {i+1}</SelectItem>))}</SelectContent>
                                     </Select>
                                 </div>
 

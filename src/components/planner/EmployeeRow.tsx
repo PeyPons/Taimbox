@@ -1,7 +1,7 @@
 import { Employee, Project, Allocation, TeamEvent, Absence } from '@/types';
 import { WeekCell } from './WeekCell';
 import { useApp } from '@/contexts/AppContext';
-import { getStorageKey } from '@/utils/dateUtils';
+import { format } from 'date-fns';
 
 interface EmployeeRowProps {
   employee: Employee;
@@ -45,19 +45,20 @@ export function EmployeeRow({
 
       {/* Celdas de Semanas */}
       {weeks.map((week) => {
-        // Usamos getStorageKey para asegurar que el string de fecha coincide EXACTAMENTE con lo guardado en BD
-        const weekKey = getStorageKey(week.weekStart, viewDate);
+        // Usar siempre la fecha real de la semana (lunes) para buscar tareas
+        // No usar getStorageKey porque normaliza según el mes visible y puede cambiar
+        const weekStartDate = format(week.weekStart, 'yyyy-MM-dd');
         
         // 1. Filtrar tareas para pasar a la celda (Visualización detallada)
         const weekAllocations = allocations.filter(a => 
             a.employeeId === employee.id && 
-            a.weekStartDate === weekKey
+            a.weekStartDate === weekStartDate
         );
 
         // 2. Calcular carga total (Footer y Semáforo)
         const load = getEmployeeLoadForWeek(
             employee.id, 
-            weekKey, 
+            weekStartDate, 
             week.effectiveStart, 
             week.effectiveEnd
         );
