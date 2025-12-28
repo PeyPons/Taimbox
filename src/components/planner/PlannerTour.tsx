@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { 
@@ -371,8 +370,10 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
   const isLastStep = currentStep === tourSteps.length - 1;
   const isFirstStep = currentStep === 0;
 
-  return createPortal(
-    <div className="fixed inset-0 z-[99999]">
+  // Renderizamos directamente sin portal para que funcione dentro del Sheet
+  // El Sheet tiene z-50, así que usamos z-[9999] que es mayor
+  return (
+    <div className="fixed inset-0" style={{ zIndex: 999999 }}>
       {/* Overlay oscuro con recorte para el elemento destacado */}
       <div 
         className="absolute inset-0 bg-black/60 transition-opacity duration-300"
@@ -531,8 +532,7 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
           </div>
         )}
       </Card>
-    </div>,
-    document.body
+    </div>
   );
 }
 
