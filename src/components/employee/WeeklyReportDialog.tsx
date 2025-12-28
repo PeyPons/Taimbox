@@ -285,38 +285,43 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
           
           // Validar capacidad y presupuesto antes de crear tareas
           const warnings: string[] = [];
+          
+          // Calcular presupuesto del proyecto (suma de todas las tareas distribuidas)
+          const projectMonthAllocations = allocations.filter(a => 
+            a.projectId === task.projectId && 
+            isSameMonth(parseISO(a.weekStartDate), viewDate) &&
+            a.id !== task.id
+          );
+          const projectMonthHours = projectMonthAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
+          const projectBudget = projects.find(p => p.id === task.projectId)?.budgetHours || 0;
+          const newProjectMonthTotal = projectMonthHours + totalDistributed;
+          
+          if (projectBudget > 0 && newProjectMonthTotal > projectBudget) {
+            warnings.push(`Proyecto excede presupuesto: ${newProjectMonthTotal.toFixed(1)}h / ${projectBudget.toFixed(1)}h (+${(newProjectMonthTotal - projectBudget).toFixed(1)}h)`);
+          }
+          
+          // Validar capacidad por semana
+          const weekWarnings: Record<string, { hours: number; capacity: number }> = {};
           for (const distTask of validTasks) {
             const weekLoad = getEmployeeLoadForWeek(employeeId, distTask.weekDate);
             const currentWeekHours = weekLoad?.hours || 0;
             const weekCapacity = weekLoad?.capacity || 0;
-            const newWeekTotal = currentWeekHours + parseFloat(distTask.hours);
+            const taskHours = parseFloat(distTask.hours);
             
-            if (newWeekTotal > weekCapacity) {
+            // Sumar todas las tareas de esta semana
+            const weekTasks = validTasks.filter(t => t.weekDate === distTask.weekDate);
+            const weekTotalHours = weekTasks.reduce((sum, t) => sum + parseFloat(t.hours), 0);
+            const newWeekTotal = currentWeekHours + weekTotalHours;
+            
+            if (newWeekTotal > weekCapacity && !weekWarnings[distTask.weekDate]) {
+              weekWarnings[distTask.weekDate] = { hours: newWeekTotal, capacity: weekCapacity };
               warnings.push(`Semana ${format(parseISO(distTask.weekDate), 'd MMM')}: ${newWeekTotal.toFixed(1)}h exceden capacidad (${weekCapacity.toFixed(1)}h)`);
-            }
-            
-            // Validar presupuesto del proyecto
-            const projectMonthAllocations = allocations.filter(a => 
-              a.projectId === task.projectId && 
-              isSameMonth(parseISO(a.weekStartDate), viewDate) &&
-              a.id !== task.id
-            );
-            const projectMonthHours = projectMonthAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
-            const projectBudget = projects.find(p => p.id === task.projectId)?.budgetHours || 0;
-            const newProjectMonthTotal = projectMonthHours + parseFloat(distTask.hours);
-            
-            if (projectBudget > 0 && newProjectMonthTotal > projectBudget) {
-              warnings.push(`Proyecto: ${newProjectMonthTotal.toFixed(1)}h exceden presupuesto (${projectBudget.toFixed(1)}h)`);
             }
           }
           
           if (warnings.length > 0) {
-            toast.warning(`Advertencias: ${warnings.join('; ')}. ¿Continuar?`, {
-              duration: 5000,
-              action: {
-                label: 'Continuar',
-                onClick: () => {}
-              }
+            toast.warning(`⚠️ Advertencias: ${warnings.join('; ')}`, {
+              duration: 6000
             });
             // Continuar de todas formas, pero con advertencia
           }
@@ -415,7 +420,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                           <span className="text-indigo-600 font-medium">Distribuir entre tareas</span>
                         )}
                         {isTransferredTask && (
-                          <span className="text-purple-600 font-medium">Horas transferidas - Distribuir</span>
+                          <span className="text-purple-600 font-medium">Horas transferidas ({task.hoursAssigned}h) - Distribuir</span>
                         )}
                       </div>
                     </div>
@@ -587,26 +592,24 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                             const weekLoad = distRow.weekDate ? getEmployeeLoadForWeek(employeeId, distRow.weekDate) : null;
                             const currentWeekHours = weekLoad?.hours || 0;
                             const weekCapacity = weekLoad?.capacity || 0;
-                            const newWeekTotal = currentWeekHours + rowHours;
-                            const exceedsCapacity = newWeekTotal > weekCapacity;
                             
-                            // Calcular horas del proyecto en esa semana
-                            const projectWeekAllocations = allocations.filter(a => 
-                              a.projectId === task.projectId && 
-                              a.weekStartDate === distRow.weekDate &&
-                              a.id !== task.id // Excluir la tarea actual que se va a distribuir
-                            );
-                            const projectWeekHours = projectWeekAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
-                            const newProjectWeekTotal = projectWeekHours + rowHours;
-                            const projectBudget = projects.find(p => p.id === task.projectId)?.budgetHours || 0;
+                            // Calcular horas del proyecto en el mes (sumando todas las tareas distribuidas de esta fila y otras)
                             const projectMonthAllocations = allocations.filter(a => 
                               a.projectId === task.projectId && 
                               isSameMonth(parseISO(a.weekStartDate), viewDate) &&
                               a.id !== task.id
                             );
                             const projectMonthHours = projectMonthAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
-                            const newProjectMonthTotal = projectMonthHours + rowHours;
+                            
+                            // Sumar todas las horas distribuidas (esta fila + otras filas)
+                            const allDistributedHours = (distributionTasks[task.id] || []).reduce((sum, r) => sum + (parseFloat(r.hours) || 0), 0);
+                            const projectBudget = projects.find(p => p.id === task.projectId)?.budgetHours || 0;
+                            const newProjectMonthTotal = projectMonthHours + allDistributedHours;
                             const exceedsProjectBudget = projectBudget > 0 && newProjectMonthTotal > projectBudget;
+                            
+                            // Calcular si esta semana específica excede capacidad (sumando todas las tareas de esta semana)
+                            const weekDistributedHours = (distributionTasks[task.id] || []).filter(r => r.weekDate === distRow.weekDate).reduce((sum, r) => sum + (parseFloat(r.hours) || 0), 0);
+                            const newWeekTotal = currentWeekHours + weekDistributedHours;
                             
                             return (
                               <div key={distRow.id} className={cn(
@@ -632,13 +635,13 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                         className={cn("h-8 text-xs w-full", exceedsCapacity || exceedsProjectBudget && "border-red-300")}
                                       />
                                       {exceedsCapacity && (
-                                        <p className="text-xs text-red-600 mt-1">
-                                          ⚠️ Excede capacidad: {newWeekTotal.toFixed(1)}h / {weekCapacity.toFixed(1)}h
+                                        <p className="text-xs text-red-600 mt-1 font-medium">
+                                          ⚠️ Excede capacidad: {newWeekTotal.toFixed(1)}h / {weekCapacity.toFixed(1)}h (+{(newWeekTotal - weekCapacity).toFixed(1)}h)
                                         </p>
                                       )}
                                       {exceedsProjectBudget && (
-                                        <p className="text-xs text-red-600 mt-1">
-                                          ⚠️ Excede presupuesto proyecto: {newProjectMonthTotal.toFixed(1)}h / {projectBudget.toFixed(1)}h
+                                        <p className="text-xs text-red-600 mt-1 font-medium">
+                                          ⚠️ Excede presupuesto proyecto: {newProjectMonthTotal.toFixed(1)}h / {projectBudget.toFixed(1)}h (+{(newProjectMonthTotal - projectBudget).toFixed(1)}h)
                                         </p>
                                       )}
                                     </div>
