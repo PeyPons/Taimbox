@@ -527,10 +527,10 @@ export default function EmployeeDashboard() {
                 <Clock className="h-4 w-4" /> Gestión interna
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md" aria-describedby="internal-tasks-description">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2"><Clock className="h-5 w-5 text-slate-600" />Registrar gestión interna</DialogTitle>
-                <DialogDescription>Reuniones, formaciones, deadlines u otras tareas no asociadas a clientes.</DialogDescription>
+                <DialogDescription id="internal-tasks-description">Reuniones, formaciones, deadlines u otras tareas no asociadas a clientes.</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
@@ -663,10 +663,10 @@ export default function EmployeeDashboard() {
       )}
 
       <Dialog open={isAddingTasks} onOpenChange={setIsAddingTasks}>
-        <DialogContent className="sm:max-w-[900px]">
+        <DialogContent className="sm:max-w-[900px]" aria-describedby="add-tasks-description">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><ListPlus className="h-5 w-5 text-indigo-600" />Añadir tareas</DialogTitle>
-            <DialogDescription>Añade múltiples tareas a tu planificación de {getMonthName(currentMonth)}.</DialogDescription>
+            <DialogDescription id="add-tasks-description">Añade múltiples tareas a tu planificación de {getMonthName(currentMonth)}.</DialogDescription>
           </DialogHeader>
           
           <div className="py-4">

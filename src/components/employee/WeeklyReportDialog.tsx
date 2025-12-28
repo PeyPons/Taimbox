@@ -28,13 +28,14 @@ interface WeeklyReportDialogProps {
 }
 
 export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }: WeeklyReportDialogProps) {
-  const { allocations, projects, clients, employees, absences, teamEvents, updateAllocation, addAllocation, deleteAllocation, addWeeklyFeedback, getEmployeeLoadForWeek } = useApp();
+  const { allocations, projects, clients, employees, absences, teamEvents, weeklyFeedback, updateAllocation, addAllocation, deleteAllocation, addWeeklyFeedback, getEmployeeLoadForWeek } = useApp();
   
   const [taskActions, setTaskActions] = useState<Record<string, 'move' | 'moveToEmployee' | 'justify' | 'distribute' | 'keep' | null>>({});
   const [taskComments, setTaskComments] = useState<Record<string, string>>({});
   const [distributionTasks, setDistributionTasks] = useState<Record<string, Array<{ id: string; taskName: string; hours: string; weekDate: string }>>>({});
   const [moveToEmployee, setMoveToEmployee] = useState<Record<string, string>>({}); // taskId -> employeeId
   const [moveToWeek, setMoveToWeek] = useState<Record<string, string>>({}); // taskId -> weekStartDate
+  const [moveToMyWeek, setMoveToMyWeek] = useState<Record<string, string>>({}); // taskId -> weekStartDate (para "Mover a mi semana")
   
   // Detectar semana actual o última semana pasada del mes
   const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
@@ -63,9 +64,19 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
   const deviatedTasks = useMemo(() => {
     const today = new Date();
     
+    // Obtener IDs de tareas que ya tienen feedback de "keep" (mantener)
+    const keptTaskIds = new Set(
+      weeklyFeedback
+        .filter(fb => fb.allocationId && fb.comments?.includes('Tarea mantenida tal cual'))
+        .map(fb => fb.allocationId!)
+    );
+    
     // Buscar todas las tareas en semanas pasadas o actual que necesiten reporte
     const allDeviatedTasks = allocations.filter(a => {
       if (a.employeeId !== employeeId) return false;
+      
+      // Excluir tareas que ya fueron marcadas como "mantener"
+      if (keptTaskIds.has(a.id)) return false;
       
       try {
         const taskWeekDate = parseISO(a.weekStartDate);
@@ -95,7 +106,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
     
     // Eliminar duplicados
     return Array.from(new Map(allDeviatedTasks.map(t => [t.id, t])).values());
-  }, [allocations, employeeId, viewDate]);
+  }, [allocations, employeeId, viewDate, weeklyFeedback]);
   
   // Todas las semanas del mes (para calcular índices correctos)
   const allWeeks = useMemo(() => getWeeksForMonth(viewDate), [viewDate]);
@@ -181,42 +192,42 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
         const nextWeekStorageKey = getStorageKey(nextWeekStart, viewDate);
         
         if (action === 'move') {
-          // Mover horas restantes a la semana siguiente
-          // IMPORTANTE: Esto mantiene la integridad de los cálculos:
-          // - Tarea original: se completa con hoursAssigned = hoursActual (lo que realmente se hizo)
-          // - Nueva tarea: se crea con hoursAssigned = horas restantes (lo que falta)
-          // - Total del proyecto: se mantiene (hoursActual + horas restantes = hoursAssigned original)
+          // Mover horas restantes a una semana futura seleccionada
+          const targetWeek = moveToMyWeek[task.id];
+          if (!targetWeek) {
+            toast.error('Selecciona una semana destino');
+            continue;
+          }
+          
           const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
           if (remainingHours > 0) {
             // 1. Completar tarea actual con las horas realmente trabajadas
-            // Esto asegura que los reportes muestren correctamente las horas reales
             await updateAllocation({
               ...task,
-              hoursAssigned: task.hoursActual || 0, // Ajustar a lo realmente hecho
+              hoursAssigned: task.hoursActual || 0,
               status: 'completed'
             });
             
-            // 2. Crear/actualizar tarea en la semana siguiente con las horas restantes
-            // Esto mantiene el presupuesto total del proyecto correcto
-            const existingNextWeek = allocations.find(a => 
+            // 2. Crear/actualizar tarea en la semana destino con las horas restantes
+            const existingTargetWeek = allocations.find(a => 
               a.employeeId === employeeId &&
               a.projectId === task.projectId &&
-              a.weekStartDate === nextWeekStorageKey &&
+              a.weekStartDate === targetWeek &&
               a.taskName === task.taskName
             );
             
-            if (existingNextWeek) {
+            if (existingTargetWeek) {
               // Si ya existe una tarea similar, sumar las horas
               await updateAllocation({
-                ...existingNextWeek,
-                hoursAssigned: existingNextWeek.hoursAssigned + remainingHours
+                ...existingTargetWeek,
+                hoursAssigned: existingTargetWeek.hoursAssigned + remainingHours
               });
             } else {
               // Crear nueva tarea con las horas restantes
               await addAllocation({
                 employeeId,
                 projectId: task.projectId,
-                weekStartDate: nextWeekStorageKey,
+                weekStartDate: targetWeek,
                 hoursAssigned: remainingHours,
                 taskName: task.taskName || 'Tarea movida',
                 status: 'planned'
@@ -276,18 +287,16 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
           }
         } else if (action === 'keep') {
           // Mantener la tarea tal cual (sin cambios)
-          // No hacer nada, solo registrar feedback opcional si hay comentario
-          const comment = taskComments[task.id];
-          if (comment?.trim()) {
-            await addWeeklyFeedback({
-              employeeId,
-              weekStartDate: taskWeekStr,
-              projectId: task.projectId,
-              allocationId: task.id,
-              reason: 'other',
-              comments: comment
-            });
-          }
+          // Registrar feedback para marcarla como procesada y que no vuelva a aparecer
+          const comment = taskComments[task.id] || 'Tarea mantenida tal cual';
+          await addWeeklyFeedback({
+            employeeId,
+            weekStartDate: taskWeekStr,
+            projectId: task.projectId,
+            allocationId: task.id,
+            reason: 'other',
+            comments: comment
+          });
         } else if (action === 'distribute') {
           // Opción D: Distribuir asignación genérica [Distribuir] o transferida en múltiples tareas
           const distTasks = distributionTasks[task.id] || [];
@@ -359,6 +368,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
       setTaskComments({});
       setMoveToEmployee({});
       setMoveToWeek({});
+      setMoveToMyWeek({});
       setDistributionTasks({});
     } catch (error) {
       console.error('Error enviando reporte semanal:', error);
@@ -488,10 +498,10 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                               <Label htmlFor={`${task.id}-move`} className="flex-1 cursor-pointer">
                                 <div className="flex items-center gap-2">
                                   <ArrowRight className="h-4 w-4 text-indigo-600" />
-                                  <span className="font-medium">Mover {missingHours}h a mi semana siguiente</span>
+                                  <span className="font-medium">Mover {missingHours}h a una semana futura</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                  La tarea actual se recortará a lo hecho y se creará una nueva asignación para tu semana siguiente.
+                                  La tarea actual se recortará a lo hecho y se creará una nueva asignación en la semana que elijas.
                                 </p>
                               </Label>
                             </div>
@@ -525,6 +535,42 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                         )}
                       </div>
                     </RadioGroup>
+                    
+                    {/* Selector de semana cuando se selecciona "Mover a semana futura" */}
+                    {taskActions[task.id] === 'move' && !isDistributionTask && (
+                      <div className="mt-3 pl-6 space-y-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                        <Label className="text-xs font-medium mb-2 block text-indigo-900">
+                          Mover a semana futura
+                        </Label>
+                        <div>
+                          {futureWeeks.length > 0 ? (
+                            <Select
+                              value={moveToMyWeek[task.id] || ''}
+                              onValueChange={(value) => setMoveToMyWeek(prev => ({ ...prev, [task.id]: value }))}
+                            >
+                              <SelectTrigger className="h-8 text-xs">
+                                <SelectValue placeholder="Seleccionar semana" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {futureWeeks.map((week) => {
+                                  const storageKey = getStorageKey(week.weekStart, viewDate);
+                                  const weekNumber = getWeekNumber(week.weekStart);
+                                  return (
+                                    <SelectItem key={storageKey} value={storageKey}>
+                                      Sem {weekNumber} ({format(week.weekStart, 'd MMM', { locale: es })})
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
+                              ⚠️ No hay semanas futuras en este mes. Usa "Mover a otro empleado" para transferir las horas.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     
                     {/* Selector de empleado y semana cuando se selecciona "Mover a otro empleado" */}
                     {taskActions[task.id] === 'moveToEmployee' && !isDistributionTask && (
@@ -793,6 +839,16 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                     canSubmit = false;
                     validationErrors.push(`"${task.taskName}": semana ${format(parseISO(distTask.weekDate), 'd MMM')} excede capacidad (${newWeekTotal.toFixed(1)}h / ${weekCapacity.toFixed(1)}h)`);
                   }
+                }
+              } else if (action === 'move') {
+                const targetWeek = moveToMyWeek[task.id];
+                
+                if (!targetWeek) {
+                  canSubmit = false;
+                  validationErrors.push(`"${task.taskName}": selecciona semana destino`);
+                } else if (futureWeeks.length === 0) {
+                  canSubmit = false;
+                  validationErrors.push(`"${task.taskName}": no hay semanas futuras en este mes. Usa "Mover a otro empleado"`);
                 }
               } else if (action === 'moveToEmployee') {
                 const targetEmployeeId = moveToEmployee[task.id];
