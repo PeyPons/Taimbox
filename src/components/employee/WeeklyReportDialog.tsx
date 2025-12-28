@@ -314,33 +314,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                       }}
                     >
                       <div className="space-y-2">
-                        <div className="flex items-start space-x-2">
-                          <RadioGroupItem value="move" id={`${task.id}-move`} />
-                          <Label htmlFor={`${task.id}-move`} className="flex-1 cursor-pointer">
-                            <div className="flex items-center gap-2">
-                              <ArrowRight className="h-4 w-4 text-indigo-600" />
-                              <span className="font-medium">Mover {missingHours}h a la semana siguiente</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              La tarea actual se recortará a lo hecho y se creará una nueva asignación para la semana siguiente.
-                            </p>
-                          </Label>
-                        </div>
-                        
-                        <div className="flex items-start space-x-2">
-                          <RadioGroupItem value="complete" id={`${task.id}-complete`} />
-                          <Label htmlFor={`${task.id}-complete`} className="flex-1 cursor-pointer">
-                            <div className="flex items-center gap-2">
-                              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                              <span className="font-medium">Terminado eficiente</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Las horas asignadas se ajustarán a las horas reales. Las horas liberadas volverán al presupuesto disponible del proyecto.
-                            </p>
-                          </Label>
-                        </div>
-                        
-                        {isDistributionTask && (
+                        {isDistributionTask ? (
+                          // Para tareas [Distribuir], solo mostrar opción de distribuir
                           <div className="flex items-start space-x-2">
                             <RadioGroupItem value="distribute" id={`${task.id}-distribute`} />
                             <Label htmlFor={`${task.id}-distribute`} className="flex-1 cursor-pointer">
@@ -353,21 +328,48 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                               </p>
                             </Label>
                           </div>
-                        )}
-                        
-                        {!isDistributionTask && (
-                          <div className="flex items-start space-x-2">
-                            <RadioGroupItem value="justify" id={`${task.id}-justify`} />
-                            <Label htmlFor={`${task.id}-justify`} className="flex-1 cursor-pointer">
-                              <div className="flex items-center gap-2">
-                                <AlertCircle className="h-4 w-4 text-amber-600" />
-                                <span className="font-medium">Solo justificar (Opcional)</span>
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Añade un comentario explicando la desviación. No afecta el estado de la tarea.
-                              </p>
-                            </Label>
-                          </div>
+                        ) : (
+                          // Para tareas normales, mostrar las 3 opciones estándar
+                          <>
+                            <div className="flex items-start space-x-2">
+                              <RadioGroupItem value="move" id={`${task.id}-move`} />
+                              <Label htmlFor={`${task.id}-move`} className="flex-1 cursor-pointer">
+                                <div className="flex items-center gap-2">
+                                  <ArrowRight className="h-4 w-4 text-indigo-600" />
+                                  <span className="font-medium">Mover {missingHours}h a la semana siguiente</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  La tarea actual se recortará a lo hecho y se creará una nueva asignación para la semana siguiente.
+                                </p>
+                              </Label>
+                            </div>
+                            
+                            <div className="flex items-start space-x-2">
+                              <RadioGroupItem value="complete" id={`${task.id}-complete`} />
+                              <Label htmlFor={`${task.id}-complete`} className="flex-1 cursor-pointer">
+                                <div className="flex items-center gap-2">
+                                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                  <span className="font-medium">Terminado eficiente</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Las horas asignadas se ajustarán a las horas reales. Las horas liberadas volverán al presupuesto disponible del proyecto.
+                                </p>
+                              </Label>
+                            </div>
+                            
+                            <div className="flex items-start space-x-2">
+                              <RadioGroupItem value="justify" id={`${task.id}-justify`} />
+                              <Label htmlFor={`${task.id}-justify`} className="flex-1 cursor-pointer">
+                                <div className="flex items-center gap-2">
+                                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                                  <span className="font-medium">Solo justificar (Opcional)</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Añade un comentario explicando la desviación. No afecta el estado de la tarea.
+                                </p>
+                              </Label>
+                            </div>
+                          </>
                         )}
                       </div>
                     </RadioGroup>
@@ -394,10 +396,6 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                         </Label>
                         <div className="space-y-2">
                           {(distributionTasks[task.id] || []).map((distRow, idx) => {
-                            const rowHours = parseFloat(distRow.hours) || 0;
-                            const totalDistributed = (distributionTasks[task.id] || []).reduce((sum, r) => sum + (parseFloat(r.hours) || 0), 0);
-                            const remaining = task.hoursAssigned - totalDistributed;
-                            
                             return (
                               <div key={distRow.id} className="flex gap-2 items-start p-2 border rounded-lg bg-slate-50">
                                 <div className="flex-1">
@@ -451,22 +449,28 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                             );
                           })}
                         </div>
-                        <div className="flex items-center justify-between text-xs">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => addDistributionRow(task.id)}
-                            className="h-7"
-                          >
-                            <Plus className="h-3 w-3 mr-1" /> Añadir otra tarea
-                          </Button>
-                          <span className={cn(
-                            "font-medium",
-                            Math.abs(remaining) < 0.1 ? "text-emerald-600" : "text-amber-600"
-                          )}>
-                            {remaining > 0 ? `Faltan: ${remaining.toFixed(1)}h` : remaining < 0 ? `Sobran: ${Math.abs(remaining).toFixed(1)}h` : '✓ Distribución completa'}
-                          </span>
-                        </div>
+                        {(() => {
+                          const totalDistributed = (distributionTasks[task.id] || []).reduce((sum, r) => sum + (parseFloat(r.hours) || 0), 0);
+                          const remaining = task.hoursAssigned - totalDistributed;
+                          return (
+                            <div className="flex items-center justify-between text-xs">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addDistributionRow(task.id)}
+                                className="h-7"
+                              >
+                                <Plus className="h-3 w-3 mr-1" /> Añadir otra tarea
+                              </Button>
+                              <span className={cn(
+                                "font-medium",
+                                Math.abs(remaining) < 0.1 ? "text-emerald-600" : "text-amber-600"
+                              )}>
+                                {remaining > 0.1 ? `Faltan: ${remaining.toFixed(1)}h` : remaining < -0.1 ? `Sobran: ${Math.abs(remaining).toFixed(1)}h` : '✓ Distribución completa'}
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
