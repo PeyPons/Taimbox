@@ -6,6 +6,88 @@ import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange, getTeamEventDetailsInRange } from '@/utils/teamEventUtils';
 import { addDays } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+
+// Tipos para respuestas de Supabase (snake_case)
+interface SupabaseEmployee {
+  id: string;
+  name: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  user_id?: string;
+  role?: string;
+  department?: string;
+  avatar_url?: string;
+  default_weekly_capacity: number;
+  work_schedule?: any;
+  is_active: boolean;
+  hourly_rate?: number;
+  crm_user_id?: number;
+  welcome_tour_completed?: boolean;
+  deadlines_tour_completed?: boolean;
+  planner_tour_completed?: boolean;
+  permissions?: any;
+}
+
+interface SupabaseProject {
+  id: string;
+  client_id: string;
+  name: string;
+  status: string;
+  budget_hours: number;
+  minimum_hours?: number;
+  monthly_fee?: number;
+  external_id?: string;
+  project_type?: string;
+  is_hidden?: boolean;
+  okrs?: any;
+  deliverables_log?: any;
+}
+
+interface SupabaseAllocation {
+  id: string;
+  employee_id: string;
+  project_id: string;
+  week_start_date: string;
+  hours_assigned: number;
+  hours_actual?: number;
+  hours_computed?: number;
+  status: string;
+  description?: string;
+  task_name?: string;
+  dependency_id?: string;
+}
+
+interface SupabaseAbsence {
+  id: string;
+  employee_id: string;
+  start_date: string;
+  end_date: string;
+  type: string;
+  hours?: number;
+  description?: string;
+}
+
+interface SupabaseProfessionalGoal {
+  id: string;
+  employee_id: string;
+  title: string;
+  description?: string;
+  key_results?: any;
+  progress: number;
+  start_date?: string;
+  due_date?: string;
+  training_url?: string;
+}
+
+interface SupabaseTeamEvent {
+  id: string;
+  name: string;
+  date: string;
+  hours_reduction: number;
+  affected_employee_ids: string[] | 'all';
+}
 
 interface AppContextType {
   currentUser: Employee | undefined;
@@ -67,6 +149,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Ref para evitar vinculaciones duplicadas - DEBE estar ANTES de los useEffects
   const hasLinkedUserRef = useRef<string | null>(null);
+  // Ref para acceder a employees sin trigger re-renders
+  const employeesRef = useRef<Employee[]>([]);
 
   const fetchData = useCallback(async (skipLoading = false) => {
     if (!skipLoading) {
@@ -84,7 +168,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ]);
 
       if (empRes.data) {
-        const mappedEmployees = empRes.data.map((e: any) => ({
+        const mappedEmployees = empRes.data.map((e: SupabaseEmployee) => ({
           ...e,
           avatarUrl: e.avatar_url,
           defaultWeeklyCapacity: e.default_weekly_capacity,
@@ -102,11 +186,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           permissions: e.permissions || undefined
         }));
         setEmployees(mappedEmployees);
+        employeesRef.current = mappedEmployees; // Actualizar ref
       }
 
       if (cliRes.data) setClients(cliRes.data);
       if (projRes.data) {
-        setProjects(projRes.data.map((p: any) => ({
+        setProjects(projRes.data.map((p: SupabaseProject) => ({
           ...p,
           clientId: p.client_id,
           budgetHours: round2(p.budget_hours),
@@ -118,7 +203,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         })));
       }
       if (allocRes.data) {
-        setAllocations(allocRes.data.map((a: any) => ({
+        setAllocations(allocRes.data.map((a: SupabaseAllocation) => ({
           ...a,
           employeeId: a.employee_id,
           projectId: a.project_id,
@@ -131,7 +216,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         })));
       }
       if (absRes.data) {
-        setAbsences(absRes.data.map((ab: any) => ({
+        setAbsences(absRes.data.map((ab: SupabaseAbsence) => ({
           ...ab,
           employeeId: ab.employee_id,
           startDate: ab.start_date,
@@ -140,7 +225,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         })));
       }
       if (goalsRes.data) {
-        setProfessionalGoals(goalsRes.data.map((g: any) => ({
+        setProfessionalGoals(goalsRes.data.map((g: SupabaseProfessionalGoal) => ({
           ...g,
           employeeId: g.employee_id,
           keyResults: g.key_results,
@@ -150,14 +235,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         })));
       }
       if (evRes.data) {
-        setTeamEvents(evRes.data.map((te: any) => ({
+        setTeamEvents(evRes.data.map((te: SupabaseTeamEvent) => ({
           ...te,
           hoursReduction: te.hours_reduction,
           affectedEmployeeIds: te.affected_employee_ids
         })));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error cargando datos:", error);
+      const errorMessage = error?.message || error?.error?.message || "Error al cargar los datos. Por favor, recarga la página.";
+      toast.error(errorMessage);
       setIsLoading(false);
     } finally {
       if (!skipLoading) {
@@ -171,8 +258,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (isAuthInitialized) {
       fetchData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthInitialized]);
+  }, [isAuthInitialized, fetchData]);
 
   // Reaccionar a cambios de usuario (login/logout) - SOLO cuando employees esté cargado
   useEffect(() => {
@@ -182,8 +268,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // No hacer nada si aún estamos cargando datos iniciales
     if (isLoading) return;
     
-    // No hacer nada si employees aún no se ha cargado
-    if (employees.length === 0) return;
+    // No hacer nada si employees aún no se ha cargado (usar ref para evitar dependencia)
+    if (employeesRef.current.length === 0) return;
 
     if (authUser) {
       // Evitar vincular múltiples veces al mismo usuario
@@ -191,8 +277,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Buscar empleado por user_id o por email
-      const foundEmployee = employees.find(e => 
+      // Buscar empleado por user_id o por email (usar ref para evitar dependencia)
+      const foundEmployee = employeesRef.current.find(e => 
         e.user_id === authUser.id || 
         (e.email && authUser.email && e.email.toLowerCase() === authUser.email.toLowerCase())
       );
@@ -217,6 +303,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             .then(({ error }) => {
               if (error) {
                 console.error('[AppContext] Error actualizando user_id:', error);
+                toast.error('Error al vincular empleado con usuario. Por favor, contacta al administrador.');
               }
               // NO llamar a setEmployees aquí para evitar re-trigger del useEffect
             });
@@ -233,9 +320,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       hasLinkedUserRef.current = null;
       setCurrentUser(undefined);
     }
-  // IMPORTANTE: Quitar 'employees' de las dependencias para evitar re-ejecuciones innecesarias
+  // Usamos employeesRef para acceder al valor actual sin trigger re-renders
   // El efecto se ejecutará cuando authUser cambie o cuando isLoading pase de true a false
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser, isAuthInitialized, isLoading]);
 
   const addEmployee = useCallback(async (employee: Omit<Employee, 'id'>) => {
@@ -258,6 +344,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     if (error) {
       console.error('Error creando empleado:', error);
+      const errorMessage = error?.message || error?.error?.message || 'Error al crear el empleado';
+      toast.error(errorMessage);
       throw error;
     }
 
@@ -307,6 +395,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     
     if (error) {
       console.error('Error actualizando empleado:', error);
+      const errorMessage = error?.message || error?.error?.message || 'Error al actualizar el empleado';
+      toast.error(errorMessage);
       throw error;
     }
   }, []);

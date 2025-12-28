@@ -26,9 +26,13 @@ export default function SettingsPage() {
         });
 
         if (error) {
-            console.error(error);
-            if (error.code === '23505') toast.error("Esta cuenta ya está registrada.");
-            else toast.error("Error al guardar la cuenta.");
+            console.error('Error guardando cuenta:', error);
+            if (error.code === '23505') {
+                toast.error("Esta cuenta ya está registrada.");
+            } else {
+                const errorMessage = error.message || 'Error al guardar la cuenta';
+                toast.error(errorMessage);
+            }
         } else {
             toast.success(`Cuenta ${platform} añadida. Sincroniza ahora para ver datos.`);
             setAccountId('');

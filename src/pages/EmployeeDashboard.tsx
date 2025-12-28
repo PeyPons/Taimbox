@@ -171,9 +171,10 @@ export default function EmployeeDashboard() {
       toast.success(`Proyecto "${INTERNAL_PROJECT_NAME}" creado`);
       return projectData.id;
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creando proyecto interno:', error);
-      toast.error('Error al crear proyecto interno');
+      const errorMessage = error?.message || error?.error?.message || 'Error al crear proyecto interno';
+      toast.error(errorMessage);
       return null;
     } finally {
       setIsCreatingProject(false);
@@ -205,9 +206,10 @@ export default function EmployeeDashboard() {
       setExtraTaskName('');
       setExtraHours('1');
       setIsAddingExtra(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error añadiendo tarea interna:', error);
-      toast.error('Error al registrar la tarea');
+      const errorMessage = error?.message || error?.error?.message || 'Error al registrar la tarea';
+      toast.error(errorMessage);
     }
   };
 
