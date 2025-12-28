@@ -71,26 +71,42 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   useEffect(() => {
     if (open) {
       setViewDate(viewDateContext || new Date(weekStart));
-      // Activar loading cuando se abre o cambia el mes
+      // Activar loading cuando se abre
       setIsLoadingTasks(true);
-      // Simular un pequeño delay para mostrar el loading (similar a deadlines)
-      const timer = setTimeout(() => {
-        setIsLoadingTasks(false);
-      }, 300);
-      return () => clearTimeout(timer);
     }
   }, [open, weekStart, viewDateContext]);
+
+  // Desactivar loading cuando los datos globales estén listos
+  // Esperar a que isGlobalLoading sea false para asegurar que los datos están cargados
+  useEffect(() => {
+    if (open) {
+      if (!isGlobalLoading) {
+        // Los datos están listos, desactivar loading después de un pequeño delay
+        // para asegurar que React haya procesado los cambios
+        const timer = setTimeout(() => {
+          setIsLoadingTasks(false);
+        }, 150);
+        return () => clearTimeout(timer);
+      } else {
+        // Si aún está cargando, mantener el loading activo
+        setIsLoadingTasks(true);
+      }
+    }
+  }, [open, isGlobalLoading]);
 
   // También activar loading cuando cambia el mes visible
   useEffect(() => {
     if (open) {
       setIsLoadingTasks(true);
-      const timer = setTimeout(() => {
-        setIsLoadingTasks(false);
-      }, 200);
-      return () => clearTimeout(timer);
+      // Esperar a que los datos estén listos antes de desactivar
+      if (!isGlobalLoading) {
+        const timer = setTimeout(() => {
+          setIsLoadingTasks(false);
+        }, 150);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [viewDate, open]);
+  }, [viewDate, open, isGlobalLoading]);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAllocation, setEditingAllocation] = useState<Allocation | null>(null);
