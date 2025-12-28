@@ -29,6 +29,7 @@ export interface Employee {
   crmUserId?: number;  // NUEVO: ID del usuario en el CRM
   welcomeTourCompleted?: boolean;  // Si el usuario completó el tour de bienvenida
   deadlinesTourCompleted?: boolean;  // Si el usuario completó el tour de deadlines
+  plannerTourCompleted?: boolean;  // Si el usuario completó el tour del planificador
   permissions?: UserPermissions;  // Permisos de acceso a diferentes secciones
 }
 

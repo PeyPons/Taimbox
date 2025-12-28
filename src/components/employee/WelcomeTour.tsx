@@ -5,7 +5,8 @@ import { Card } from '@/components/ui/card';
 import { 
   X, ChevronLeft, ChevronRight, ListPlus, Clock, Calendar, 
   TrendingUp, Users, LayoutDashboard, Target, Sparkles, 
-  CheckCircle2, AlertOctagon, FileDown, Award
+  CheckCircle2, AlertOctagon, FileDown, Award, HeartHandshake,
+  Scale, Search
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
@@ -104,6 +105,15 @@ const tourSteps: TourStep[] = [
     highlight: true
   },
   {
+    id: 'collaboration-cards',
+    target: '[data-tour="collaboration-cards"]',
+    title: 'Tu equipo y apoyo',
+    description: 'Ve con quién colaboras más este mes y pide ayuda a compañeros cuando la necesites. Un click y el sistema notificará a quien pueda echarte una mano.',
+    icon: <HeartHandshake className="w-6 h-6 text-pink-500" />,
+    position: 'top',
+    highlight: true
+  },
+  {
     id: 'reliability-index',
     target: '[data-tour="reliability-index"]',
     title: 'Índice de fiabilidad',
@@ -113,11 +123,29 @@ const tourSteps: TourStep[] = [
     highlight: true
   },
   {
+    id: 'planning-inconsistencies',
+    target: '[data-tour="planning-inconsistencies"]',
+    title: 'Coherencia de planificación',
+    description: 'Detecta si tus horas planificadas coinciden con lo acordado en los deadlines. Si hay diferencias, te mostramos posibles intercambios de tareas con compañeros.',
+    icon: <Search className="w-6 h-6 text-amber-500" />,
+    position: 'top',
+    highlight: true
+  },
+  {
     id: 'projects-summary',
     target: '[data-tour="projects-summary"]',
     title: 'Resumen de proyectos',
-    description: 'Todos tus proyectos del mes con las horas asignadas, completadas y el estado del presupuesto. También verás con quién colaboras más.',
+    description: 'Todos tus proyectos del mes con las horas asignadas, completadas y el estado del presupuesto. Haz clic en cualquier semana para ver y editar tus tareas.',
     icon: <Target className="w-6 h-6 text-purple-500" />,
+    position: 'top',
+    highlight: true
+  },
+  {
+    id: 'monthly-balance',
+    target: '[data-tour="monthly-balance"]',
+    title: 'Balance del mes',
+    description: 'Resumen motivacional de tu mes: horas trabajadas, distribución de proyectos y un mensaje de ánimo personalizado según tu rendimiento.',
+    icon: <Scale className="w-6 h-6 text-indigo-500" />,
     position: 'top',
     highlight: true
   },

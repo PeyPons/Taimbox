@@ -20,6 +20,7 @@ import { cn, formatProjectName } from '@/lib/utils';
 import { getWeeksForMonth, getStorageKey } from '@/utils/dateUtils';
 import { format, addMonths, subMonths, isSameMonth, parseISO, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { PlannerTour } from './PlannerTour';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -635,6 +636,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                           size="sm"
                           onClick={() => setAutoExpand(!autoExpand)}
                           className="h-9 px-3 gap-2"
+                          data-tour="planner-collapse"
                         >
                           {autoExpand ? <FoldVertical className="h-4 w-4" /> : <UnfoldVertical className="h-4 w-4" />}
                           <span className="hidden lg:inline text-xs">{autoExpand ? "Colapsar" : "Expandir"}</span>
@@ -648,7 +650,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                     {/* Selector de ordenación */}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-9 px-3 gap-2">
+                        <Button variant="outline" size="sm" className="h-9 px-3 gap-2" data-tour="planner-sort">
                           <ArrowUpDown className="h-4 w-4" />
                           <span className="hidden lg:inline text-xs">Ordenar</span>
                         </Button>
@@ -686,6 +688,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                             "h-9 px-3 gap-2",
                             showAllWeeks && "bg-indigo-600 hover:bg-indigo-700"
                           )}
+                          data-tour="planner-view-toggle"
                         >
                           {showAllWeeks ? <Calendar className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
                           <span className="hidden sm:inline text-xs">{showAllWeeks ? "Semana actual" : "Ver todo el mes"}</span>
@@ -696,7 +699,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                       </TooltipContent>
                     </Tooltip>
 
-                    <div className="flex items-center gap-2 bg-background/50 p-1.5 rounded-lg border shadow-sm">
+                    <div className="flex items-center gap-2 bg-background/50 p-1.5 rounded-lg border shadow-sm" data-tour="planner-month-nav">
                         <Button variant="ghost" size="icon" onClick={handlePrevMonth}><ChevronLeft className="h-5 w-5" /></Button>
                         <span className="text-lg font-bold capitalize w-40 text-center select-none">{monthLabel}</span>
                         <Button variant="ghost" size="icon" onClick={handleNextMonth}><ChevronRight className="h-5 w-5" /></Button>
@@ -799,14 +802,14 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                             </>
                                         )}
                                     </div>
-                                    <Button variant="outline" size="sm" className="gap-2" onClick={() => startAdd(week.weekStart)}>
+                                    <Button variant="outline" size="sm" className="gap-2" onClick={() => startAdd(week.weekStart)} data-tour="planner-add-task">
                                         <Plus className="h-4 w-4" /> Añadir
                                     </Button>
                                 </div>
                             </div>
 
                             {/* Tabla de proyectos y tareas */}
-                            <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+                            <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2" data-tour="planner-projects">
                                 {sortedGroups.map(([projId, projAllocations]) => {
                                     const project = getProjectById(projId);
                                     const budgetStatus = getProjectBudgetStatus(projId);
@@ -864,13 +867,14 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100">
-                                                    {sortedTasks.map(alloc => {
+                                                    {sortedTasks.map((alloc, taskIndex) => {
                                                         const isCompleted = alloc.status === 'completed';
                                                         const taskBalance = isCompleted ? round2((alloc.hoursComputed || 0) - (alloc.hoursActual || 0)) : 0;
                                                         const depTask = alloc.dependencyId ? allocations.find(a => a.id === alloc.dependencyId) : null;
                                                         const depOwner = depTask ? employees.find(e => e.id === depTask.employeeId) : null;
                                                         const isDepReady = depTask?.status === 'completed';
                                                         const blockingTasks = allocations.filter(a => a.dependencyId === alloc.id && a.status !== 'completed');
+                                                        const isFirstTask = taskIndex === 0;
 
                                                         return (
                                                             <tr
@@ -880,8 +884,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                                     isCompleted && "bg-slate-50/50",
                                                                     !isCompleted && depTask && !isDepReady && "bg-amber-50/50"
                                                                 )}
+                                                                {...(isFirstTask && { 'data-tour': 'planner-task' })}
                                                             >
-                                                                <td className="py-2 px-3">
+                                                                <td className="py-2 px-3" {...(isFirstTask && { 'data-tour': 'planner-checkbox' })}>
                                                                     <Checkbox
                                                                         checked={isCompleted}
                                                                         onCheckedChange={() => toggleTaskCompletion(alloc)}
@@ -893,6 +898,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                                         <div 
                                                                             className={cn("font-medium cursor-pointer hover:bg-slate-100 rounded px-1 -mx-1", isCompleted && "line-through text-slate-400")}
                                                                             onDoubleClick={() => startInlineEdit(alloc)}
+                                                                            {...(isFirstTask && { 'data-tour': 'planner-task-name' })}
                                                                         >
                                                                             {inlineEditingId === alloc.id ? (
                                                                                 <input
@@ -912,12 +918,15 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                                             )}
                                                                         </div>
                                                                         {depTask && !isCompleted && (
-                                                                            <div className={cn(
-                                                                                "flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded w-fit border",
-                                                                                isDepReady
-                                                                                    ? "text-emerald-700 bg-emerald-50 border-emerald-200"
-                                                                                    : "text-amber-700 bg-amber-50 border-amber-200"
-                                                                            )}>
+                                                                            <div 
+                                                                                className={cn(
+                                                                                    "flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded w-fit border",
+                                                                                    isDepReady
+                                                                                        ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                                                                                        : "text-amber-700 bg-amber-50 border-amber-200"
+                                                                                )}
+                                                                                {...(isFirstTask && { 'data-tour': 'planner-dependency' })}
+                                                                            >
                                                                                 {isDepReady ? <CheckCircle2 className="w-2.5 h-2.5" /> : <LinkIcon className="w-2.5 h-2.5" />}
                                                                                 <span className="truncate max-w-[120px]">{isDepReady ? 'Listo:' : 'Dep:'} {depTask.taskName} <strong>({depOwner?.name})</strong></span>
                                                                             </div>
@@ -955,7 +964,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                                         <span className="text-slate-300">-</span>
                                                                     )}
                                                                 </td>
-                                                                <td className="py-2 px-3 text-center">
+                                                                <td className="py-2 px-3 text-center" {...(isFirstTask && { 'data-tour': 'planner-hours' })}>
                                                                     {isCompleted ? (
                                                                         <input
                                                                             type="number"
@@ -1598,6 +1607,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Tour interactivo del planificador */}
+      {open && <PlannerTour />}
     </>
   );
 

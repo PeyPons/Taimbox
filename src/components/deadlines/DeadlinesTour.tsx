@@ -20,6 +20,8 @@ interface TourStep {
   position: 'top' | 'bottom' | 'left' | 'right' | 'center';
   highlight?: boolean;
   customContent?: boolean;
+  interactive?: boolean; // Permite interacción con el elemento destacado
+  interactionHint?: string; // Hint para el usuario
 }
 
 const tourSteps: TourStep[] = [
@@ -38,7 +40,9 @@ const tourSteps: TourStep[] = [
     description: 'Cambia entre meses para ver y editar los deadlines de diferentes períodos. Los cambios se guardan automáticamente por mes.',
     icon: <Calendar className="w-6 h-6 text-indigo-500" />,
     position: 'bottom',
-    highlight: true
+    highlight: true,
+    interactive: true,
+    interactionHint: '👆 Prueba: haz clic en las flechas para cambiar de mes'
   },
   {
     id: 'filters',
@@ -47,7 +51,9 @@ const tourSteps: TourStep[] = [
     description: 'Busca proyectos por nombre o cliente, filtra solo proyectos SEO, muestra ocultos o encuentra proyectos sin asignar. Útil para encontrar rápidamente lo que necesitas.',
     icon: <Filter className="w-6 h-6 text-purple-500" />,
     position: 'bottom',
-    highlight: true
+    highlight: true,
+    interactive: true,
+    interactionHint: '🔍 Prueba: escribe en la barra de búsqueda'
   },
   {
     id: 'availability-panel',
@@ -56,7 +62,9 @@ const tourSteps: TourStep[] = [
     description: 'Panel sticky que muestra la carga de cada empleado. Pasa el ratón sobre un empleado para ver el desglose de ausencias y eventos. Los colores indican su nivel de ocupación.',
     icon: <Users className="w-6 h-6 text-emerald-500" />,
     position: 'left',
-    highlight: true
+    highlight: true,
+    interactive: true,
+    interactionHint: '🖱️ Pasa el ratón sobre un empleado para ver detalles'
   },
   {
     id: 'project-list',
@@ -65,7 +73,9 @@ const tourSteps: TourStep[] = [
     description: 'Proyectos agrupados por cliente. Haz clic en cualquier proyecto para editarlo. Verás quién está asignado y cuántas horas tiene cada uno. Los cambios se guardan automáticamente.',
     icon: <Target className="w-6 h-6 text-blue-500" />,
     position: 'top',
-    highlight: true
+    highlight: true,
+    interactive: true,
+    interactionHint: '👆 Prueba: haz clic en cualquier proyecto para ver su editor'
   },
   {
     id: 'inline-editing',
@@ -388,6 +398,9 @@ export function DeadlinesTour({ onComplete, forceShow = false }: DeadlinesTourPr
   const isCentered = step.position === 'center' || !highlightPos;
 
   // Renderizar en un portal
+  // Si el paso es interactivo, permitir clicks en el área destacada
+  const isInteractive = step.interactive === true;
+  
   const tourContent = (
     <div style={{ position: 'fixed', inset: 0, zIndex: 99999, pointerEvents: 'none' }}>
       {/* Overlay SVG con spotlight */}
@@ -398,7 +411,7 @@ export function DeadlinesTour({ onComplete, forceShow = false }: DeadlinesTourPr
           left: 0, 
           width: '100vw', 
           height: '100vh',
-          pointerEvents: 'auto'
+          pointerEvents: isInteractive ? 'none' : 'auto'
         }}
       >
         <defs>
@@ -519,7 +532,18 @@ export function DeadlinesTour({ onComplete, forceShow = false }: DeadlinesTourPr
                 </ul>
               </div>
             ) : (
-              <p className="text-sm text-slate-600 leading-relaxed">{step.description}</p>
+              <>
+                <p className="text-sm text-slate-600 leading-relaxed">{step.description}</p>
+                
+                {/* Hint de interacción si es un paso interactivo */}
+                {step.interactive && step.interactionHint && (
+                  <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-sm text-amber-800 font-medium">
+                      {step.interactionHint}
+                    </p>
+                  </div>
+                )}
+              </>
             )}
 
             {/* Progress dots */}

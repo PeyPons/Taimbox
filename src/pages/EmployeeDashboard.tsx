@@ -515,7 +515,9 @@ export default function EmployeeDashboard() {
       </Card>
 
       {/* 4. COLABORADORES Y AYUDA */}
-      <CollaborationCards employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+      <div data-tour="collaboration-cards">
+        <CollaborationCards employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+      </div>
 
       {/* 5. ALERTAS (izq) + DEPENDENCIAS (der) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -538,7 +540,9 @@ export default function EmployeeDashboard() {
       </div>
 
       {/* 6.5. COHERENCIA DE PLANIFICACIÓN */}
-      <PlanningInconsistenciesCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+      <div data-tour="planning-inconsistencies">
+        <PlanningInconsistenciesCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+      </div>
 
       {/* 7. PROYECTOS DEL MES */}
       <div data-tour="projects-summary">
@@ -546,7 +550,9 @@ export default function EmployeeDashboard() {
       </div>
 
       {/* 8. BALANCE MOTIVACIONAL DEL MES */}
-      <MonthlyBalanceCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+      <div data-tour="monthly-balance">
+        <MonthlyBalanceCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+      </div>
 
       {/* MODALES */}
       {selectedCell && (
