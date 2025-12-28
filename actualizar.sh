@@ -28,7 +28,21 @@ fi
 
 # Actualizar desde origin/main (CORREGIDO: era origin/master)
 echo "[$(date +'%H:%M:%S')] Actualizando desde origin/main..."
-git pull origin main
+
+# Verificar si hay ramas divergentes y resolverlas
+if ! git pull origin main --no-rebase 2>&1 | grep -q "divergent branches"; then
+    # Pull exitoso, continuar
+    :
+else
+    echo "[$(date +'%H:%M:%S')] ⚠️  Ramas divergentes detectadas. Forzando actualización desde origin/main..."
+    # Guardar cambios locales si existen (opcional, descomentar si quieres preservar cambios locales)
+    # git stash
+    
+    # Resetear a origin/main para que coincida exactamente con GitHub
+    git fetch origin main
+    git reset --hard origin/main
+    echo "[$(date +'%H:%M:%S')] ✅ Repositorio actualizado a origin/main"
+fi
 
 echo "[$(date +'%H:%M:%S')] ✅ Actualización completada"
 
