@@ -20,6 +20,7 @@ import { cn, formatProjectName } from '@/lib/utils';
 import { getWeeksForMonth, getStorageKey } from '@/utils/dateUtils';
 import { format, addMonths, subMonths, isSameMonth, parseISO, addDays, isBefore } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { toast } from 'sonner';
 import { PlannerTour } from './PlannerTour';
 import { WeekNavigation } from './WeekNavigation';
 import { ProjectImpactSummary } from './ProjectImpactSummary';
