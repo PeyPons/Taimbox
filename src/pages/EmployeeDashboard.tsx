@@ -524,8 +524,8 @@ export default function EmployeeDashboard() {
       </div>
 
       {/* 2. CONTROL MES */}
-      <div className="flex items-center gap-4 bg-white p-2 rounded-lg border shadow-sm w-fit">
-        <h2 className="text-lg font-bold capitalize text-slate-900 flex items-center gap-2 ml-2">
+      <div className="flex items-center gap-4 bg-white p-2 rounded-lg border shadow-sm min-w-[400px]">
+        <h2 className="text-lg font-bold capitalize text-slate-900 flex items-center gap-2 ml-2 min-w-[180px]">
           {getMonthName(currentMonth)} <Badge variant="outline" className="text-xs font-normal">{currentMonth.getFullYear()}</Badge>
         </h2>
         <div className="h-6 w-px bg-slate-200 mx-2" />
