@@ -14,6 +14,8 @@ import { CheckCircle2, ArrowRight, AlertCircle, Plus, X, Users } from 'lucide-re
 import { toast } from 'sonner';
 import { getStorageKey, getWeeksForMonth } from '@/utils/dateUtils';
 import { cn, formatProjectName } from '@/lib/utils';
+import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
+import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Check } from 'lucide-react';
@@ -26,7 +28,7 @@ interface WeeklyReportDialogProps {
 }
 
 export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }: WeeklyReportDialogProps) {
-  const { allocations, projects, clients, employees, updateAllocation, addAllocation, deleteAllocation, addWeeklyFeedback } = useApp();
+  const { allocations, projects, clients, employees, absences, teamEvents, updateAllocation, addAllocation, deleteAllocation, addWeeklyFeedback, getEmployeeLoadForWeek } = useApp();
   
   const [taskActions, setTaskActions] = useState<Record<string, 'move' | 'moveToEmployee' | 'justify' | 'distribute' | null>>({});
   const [taskComments, setTaskComments] = useState<Record<string, string>>({});
@@ -88,11 +90,13 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
     return Array.from(new Map(allDeviatedTasks.map(t => [t.id, t])).values());
   }, [allocations, employeeId, viewDate]);
   
+  // Todas las semanas del mes (para calcular índices correctos)
+  const allWeeks = useMemo(() => getWeeksForMonth(viewDate), [viewDate]);
+  
   // Semanas futuras del mes para distribución
   const futureWeeks = useMemo(() => {
     const today = new Date();
-    const weeks = getWeeksForMonth(viewDate);
-    return weeks.filter(week => {
+    return allWeeks.filter(week => {
       try {
         const weekDate = parseISO(getStorageKey(week.weekStart, viewDate));
         const weekEnd = addDays(weekDate, 4); // Viernes
@@ -101,7 +105,17 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
         return false;
       }
     });
-  }, [viewDate]);
+  }, [allWeeks, viewDate]);
+  
+  // Función para obtener el número de semana correcto
+  const getWeekNumber = (weekStartDate: Date): number => {
+    const storageKey = format(weekStartDate, 'yyyy-MM-dd');
+    const weekIndex = allWeeks.findIndex(w => {
+      const weekKey = getStorageKey(w.weekStart, viewDate);
+      return weekKey === storageKey;
+    });
+    return weekIndex >= 0 ? weekIndex + 1 : 0;
+  };
   
   // Inicializar distribución para tareas [Distribuir]
   const initializeDistribution = (taskId: string, totalHours: number) => {
@@ -254,7 +268,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
             });
           }
         } else if (action === 'distribute') {
-          // Opción D: Distribuir asignación genérica [Distribuir] en múltiples tareas
+          // Opción D: Distribuir asignación genérica [Distribuir] o transferida en múltiples tareas
           const distTasks = distributionTasks[task.id] || [];
           const validTasks = distTasks.filter(t => t.taskName.trim() && parseFloat(t.hours) > 0);
           
@@ -265,8 +279,46 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
           
           const totalDistributed = validTasks.reduce((sum, t) => sum + parseFloat(t.hours), 0);
           if (Math.abs(totalDistributed - task.hoursAssigned) > 0.1) {
-            toast.error(`La suma de horas (${totalDistributed}h) debe ser igual a las horas asignadas (${task.hoursAssigned}h)`);
+            toast.error(`La suma de horas (${totalDistributed.toFixed(1)}h) debe ser igual a las horas asignadas (${task.hoursAssigned}h)`);
             continue;
+          }
+          
+          // Validar capacidad y presupuesto antes de crear tareas
+          const warnings: string[] = [];
+          for (const distTask of validTasks) {
+            const weekLoad = getEmployeeLoadForWeek(employeeId, distTask.weekDate);
+            const currentWeekHours = weekLoad?.hours || 0;
+            const weekCapacity = weekLoad?.capacity || 0;
+            const newWeekTotal = currentWeekHours + parseFloat(distTask.hours);
+            
+            if (newWeekTotal > weekCapacity) {
+              warnings.push(`Semana ${format(parseISO(distTask.weekDate), 'd MMM')}: ${newWeekTotal.toFixed(1)}h exceden capacidad (${weekCapacity.toFixed(1)}h)`);
+            }
+            
+            // Validar presupuesto del proyecto
+            const projectMonthAllocations = allocations.filter(a => 
+              a.projectId === task.projectId && 
+              isSameMonth(parseISO(a.weekStartDate), viewDate) &&
+              a.id !== task.id
+            );
+            const projectMonthHours = projectMonthAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
+            const projectBudget = projects.find(p => p.id === task.projectId)?.budgetHours || 0;
+            const newProjectMonthTotal = projectMonthHours + parseFloat(distTask.hours);
+            
+            if (projectBudget > 0 && newProjectMonthTotal > projectBudget) {
+              warnings.push(`Proyecto: ${newProjectMonthTotal.toFixed(1)}h exceden presupuesto (${projectBudget.toFixed(1)}h)`);
+            }
+          }
+          
+          if (warnings.length > 0) {
+            toast.warning(`Advertencias: ${warnings.join('; ')}. ¿Continuar?`, {
+              duration: 5000,
+              action: {
+                label: 'Continuar',
+                onClick: () => {}
+              }
+            });
+            // Continuar de todas formas, pero con advertencia
           }
           
           // Eliminar la tarea genérica original
@@ -333,9 +385,10 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
               const client = clients.find(c => c.id === project?.clientId);
               const missingHours = task.hoursAssigned - (task.hoursActual || 0);
               const isDistributionTask = task.taskName?.includes('[Distribuir]');
+              const isTransferredTask = task.taskName?.includes('(transferida de');
               
-              // Inicializar distribución si es una tarea [Distribuir] y se selecciona la opción
-              if (isDistributionTask && taskActions[task.id] === 'distribute' && (!distributionTasks[task.id] || distributionTasks[task.id].length === 0)) {
+              // Inicializar distribución si es una tarea [Distribuir] o transferida y se selecciona la opción
+              if ((isDistributionTask || isTransferredTask) && taskActions[task.id] === 'distribute' && (!distributionTasks[task.id] || distributionTasks[task.id].length === 0)) {
                 initializeDistribution(task.id, task.hoursAssigned);
               }
               
@@ -361,6 +414,9 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                         {isDistributionTask && (
                           <span className="text-indigo-600 font-medium">Distribuir entre tareas</span>
                         )}
+                        {isTransferredTask && (
+                          <span className="text-purple-600 font-medium">Horas transferidas - Distribuir</span>
+                        )}
                       </div>
                     </div>
                     
@@ -379,8 +435,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                       }}
                     >
                       <div className="space-y-2">
-                        {isDistributionTask ? (
-                          // Para tareas [Distribuir], solo mostrar opción de distribuir
+                        {(isDistributionTask || isTransferredTask) ? (
+                          // Para tareas [Distribuir] o transferidas, mostrar opción de distribuir
                           <div className="flex items-start space-x-2">
                             <RadioGroupItem value="distribute" id={`${task.id}-distribute`} />
                             <Label htmlFor={`${task.id}-distribute`} className="flex-1 cursor-pointer">
@@ -389,7 +445,9 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                 <span className="font-medium">Distribuir en múltiples tareas</span>
                               </div>
                               <p className="text-xs text-muted-foreground mt-1">
-                                Crea varias tareas distribuyendo las {task.hoursAssigned}h entre las semanas restantes del mes.
+                                {isTransferredTask 
+                                  ? `Distribuye las ${task.hoursAssigned}h transferidas entre las semanas que mejor te vengan.`
+                                  : `Crea varias tareas distribuyendo las ${task.hoursAssigned}h entre las semanas restantes del mes.`}
                               </p>
                             </Label>
                           </div>
@@ -480,11 +538,12 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                 <SelectValue placeholder="Seleccionar semana" />
                               </SelectTrigger>
                               <SelectContent>
-                                {futureWeeks.map((week, i) => {
+                                {futureWeeks.map((week) => {
                                   const storageKey = getStorageKey(week.weekStart, viewDate);
+                                  const weekNumber = getWeekNumber(week.weekStart);
                                   return (
                                     <SelectItem key={storageKey} value={storageKey}>
-                                      Sem {i + 1} ({format(week.weekStart, 'd MMM', { locale: es })})
+                                      Sem {weekNumber} ({format(week.weekStart, 'd MMM', { locale: es })})
                                     </SelectItem>
                                   );
                                 })}
@@ -510,45 +569,93 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                       </div>
                     )}
                     
-                    {taskActions[task.id] === 'distribute' && isDistributionTask && (
+                    {taskActions[task.id] === 'distribute' && (isDistributionTask || isTransferredTask) && (
                       <div className="mt-3 pl-6 space-y-3">
                         <Label className="text-xs font-medium mb-2 block">
-                          Distribuir {task.hoursAssigned}h en tareas
+                          {isTransferredTask 
+                            ? `Distribuir ${task.hoursAssigned}h transferidas en tareas (máximo ${task.hoursAssigned}h)`
+                            : `Distribuir ${task.hoursAssigned}h en tareas`}
                         </Label>
+                        {isTransferredTask && (
+                          <p className="text-xs text-purple-600 bg-purple-50 p-2 rounded border border-purple-200">
+                            💡 Puedes distribuir estas horas entre múltiples tareas y semanas. El sistema te avisará si excedes tu capacidad o el presupuesto del proyecto.
+                          </p>
+                        )}
                         <div className="space-y-2">
                           {(distributionTasks[task.id] || []).map((distRow, idx) => {
+                            const rowHours = parseFloat(distRow.hours) || 0;
+                            const weekLoad = distRow.weekDate ? getEmployeeLoadForWeek(employeeId, distRow.weekDate) : null;
+                            const currentWeekHours = weekLoad?.hours || 0;
+                            const weekCapacity = weekLoad?.capacity || 0;
+                            const newWeekTotal = currentWeekHours + rowHours;
+                            const exceedsCapacity = newWeekTotal > weekCapacity;
+                            
+                            // Calcular horas del proyecto en esa semana
+                            const projectWeekAllocations = allocations.filter(a => 
+                              a.projectId === task.projectId && 
+                              a.weekStartDate === distRow.weekDate &&
+                              a.id !== task.id // Excluir la tarea actual que se va a distribuir
+                            );
+                            const projectWeekHours = projectWeekAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
+                            const newProjectWeekTotal = projectWeekHours + rowHours;
+                            const projectBudget = projects.find(p => p.id === task.projectId)?.budgetHours || 0;
+                            const projectMonthAllocations = allocations.filter(a => 
+                              a.projectId === task.projectId && 
+                              isSameMonth(parseISO(a.weekStartDate), viewDate) &&
+                              a.id !== task.id
+                            );
+                            const projectMonthHours = projectMonthAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
+                            const newProjectMonthTotal = projectMonthHours + rowHours;
+                            const exceedsProjectBudget = projectBudget > 0 && newProjectMonthTotal > projectBudget;
+                            
                             return (
-                              <div key={distRow.id} className="flex gap-2 items-start p-2 border rounded-lg bg-slate-50">
+                              <div key={distRow.id} className={cn(
+                                "flex gap-2 items-start p-2 border rounded-lg",
+                                exceedsCapacity || exceedsProjectBudget ? "bg-red-50 border-red-200" : "bg-slate-50"
+                              )}>
                                 <div className="flex-1">
                                   <Input
                                     placeholder="Nombre de la tarea"
                                     value={distRow.taskName}
                                     onChange={(e) => updateDistributionRow(task.id, distRow.id, 'taskName', e.target.value)}
-                                    className="h-8 text-xs mb-2"
+                                    className={cn("h-8 text-xs mb-2", exceedsCapacity || exceedsProjectBudget && "border-red-300")}
                                   />
                                   <div className="flex gap-2">
-                                    <Input
-                                      type="number"
-                                      min="0.5"
-                                      step="0.5"
-                                      placeholder="Horas"
-                                      value={distRow.hours}
-                                      onChange={(e) => updateDistributionRow(task.id, distRow.id, 'hours', e.target.value)}
-                                      className="h-8 text-xs w-24"
-                                    />
+                                    <div className="flex-1">
+                                      <Input
+                                        type="number"
+                                        min="0.5"
+                                        step="0.5"
+                                        placeholder="Horas"
+                                        value={distRow.hours}
+                                        onChange={(e) => updateDistributionRow(task.id, distRow.id, 'hours', e.target.value)}
+                                        className={cn("h-8 text-xs w-full", exceedsCapacity || exceedsProjectBudget && "border-red-300")}
+                                      />
+                                      {exceedsCapacity && (
+                                        <p className="text-xs text-red-600 mt-1">
+                                          ⚠️ Excede capacidad: {newWeekTotal.toFixed(1)}h / {weekCapacity.toFixed(1)}h
+                                        </p>
+                                      )}
+                                      {exceedsProjectBudget && (
+                                        <p className="text-xs text-red-600 mt-1">
+                                          ⚠️ Excede presupuesto proyecto: {newProjectMonthTotal.toFixed(1)}h / {projectBudget.toFixed(1)}h
+                                        </p>
+                                      )}
+                                    </div>
                                     <Select
                                       value={distRow.weekDate}
                                       onValueChange={(v) => updateDistributionRow(task.id, distRow.id, 'weekDate', v)}
                                     >
-                                      <SelectTrigger className="h-8 text-xs flex-1">
+                                      <SelectTrigger className={cn("h-8 text-xs flex-1", exceedsCapacity && "border-red-300")}>
                                         <SelectValue />
                                       </SelectTrigger>
                                       <SelectContent>
-                                        {futureWeeks.map((week, i) => {
+                                        {futureWeeks.map((week) => {
                                           const storageKey = getStorageKey(week.weekStart, viewDate);
+                                          const weekNumber = getWeekNumber(week.weekStart);
                                           return (
                                             <SelectItem key={storageKey} value={storageKey}>
-                                              Sem {i + 1} ({format(week.weekStart, 'd MMM', { locale: es })})
+                                              Sem {weekNumber} ({format(week.weekStart, 'd MMM', { locale: es })})
                                             </SelectItem>
                                           );
                                         })}
