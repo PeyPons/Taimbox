@@ -338,12 +338,13 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={resetForm} disabled={isSaving}>Cancelar</Button>
-              <Button onClick={handleSave} disabled={isSaving} className="bg-indigo-600 hover:bg-indigo-700">
-                {isSaving ? 'Guardando...' : 'Guardar objetivo'}
+              <Button type="button" variant="outline" onClick={resetForm} disabled={form.formState.isSubmitting}>Cancelar</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting} className="bg-indigo-600 hover:bg-indigo-700">
+                {form.formState.isSubmitting ? 'Guardando...' : 'Guardar objetivo'}
               </Button>
             </div>
-          </div>
+            </form>
+          </Form>
         ) : (
           <div className="py-6 space-y-4">
             <Button className="w-full bg-indigo-600 hover:bg-indigo-700" onClick={() => setIsAdding(true)}>
