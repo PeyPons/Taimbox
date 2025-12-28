@@ -1,6 +1,5 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { supabase } from '@/lib/supabase';
 import { MyWeekView } from '@/components/employee/MyWeekView';
 import { PriorityInsights, ProjectTeamPulse } from '@/components/employee/DashboardWidgets'; 
 import { ReliabilityIndexCard } from '@/components/employee/ReliabilityIndexCard';
@@ -58,12 +57,13 @@ interface ProjectBudgetStatus {
 export default function EmployeeDashboard() {
   const { 
     employees, allocations, absences, teamEvents, projects, clients,
-    addAllocation, isLoading: isGlobalLoading, getEmployeeMonthlyLoad, getEmployeeLoadForWeek
+    addAllocation, isLoading: isGlobalLoading, getEmployeeMonthlyLoad, getEmployeeLoadForWeek,
+    currentUser: appCurrentUser
   } = useApp();
   
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [myEmployeeProfile, setMyEmployeeProfile] = useState<Employee | null>(null);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  // Usar el currentUser del AppContext directamente (ya está vinculado)
+  const myEmployeeProfile = appCurrentUser || null;
+  const isLoadingProfile = isGlobalLoading;
   
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedCell, setSelectedCell] = useState<{ employeeId: string; weekStart: Date } | null>(null);
@@ -81,33 +81,6 @@ export default function EmployeeDashboard() {
   const [openComboboxId, setOpenComboboxId] = useState<string | null>(null);
 
   const { showTour, resetTour } = useWelcomeTour();
-
-  useEffect(() => {
-    const checkUserLink = async () => {
-      setIsLoadingProfile(true);
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          setCurrentUser(user);
-          // Buscar por user_id o por email (como hace AppContext)
-          const linked = employees.find(e => 
-            e.user_id === user.id || 
-            (e.email && user.email && e.email.toLowerCase() === user.email.toLowerCase())
-          );
-          if (linked) {
-            setMyEmployeeProfile(linked);
-          }
-        }
-      } finally {
-        setIsLoadingProfile(false);
-      }
-    };
-    if (!isGlobalLoading && employees.length > 0) {
-      checkUserLink();
-    } else if (isGlobalLoading) {
-      setIsLoadingProfile(true);
-    }
-  }, [employees, isGlobalLoading]);
 
   const weeks = useMemo(() => getWeeksForMonth(currentMonth), [currentMonth]);
   const internalClient = useMemo(() => clients.find(c => c.name === INTERNAL_CLIENT_NAME), [clients]);

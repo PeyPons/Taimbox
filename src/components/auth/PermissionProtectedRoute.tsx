@@ -2,7 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMemo, useEffect, useState, useRef } from 'react';
+import { useMemo, useRef, useEffect, useState } from 'react';
 
 interface PermissionProtectedRouteProps {
   children: React.ReactNode;
@@ -11,6 +11,7 @@ interface PermissionProtectedRouteProps {
 
 /**
  * Componente que protege rutas basándose en permisos del usuario
+ * OPTIMIZADO: Mínima espera, solo cuando realmente es necesario
  */
 export function PermissionProtectedRoute({ children, requiredPermission }: PermissionProtectedRouteProps) {
   const location = useLocation();
@@ -18,26 +19,22 @@ export function PermissionProtectedRoute({ children, requiredPermission }: Permi
   const { currentUser, isLoading: isAppLoading, employees } = useApp();
   const { session, isInitialized: isAuthInitialized } = useAuth();
   
-  // Estado para dar tiempo a la vinculación
-  const [hasWaitedForLink, setHasWaitedForLink] = useState(false);
-  
   // Ref para evitar logs duplicados
   const hasLoggedWarningRef = useRef(false);
-
-  // Dar un pequeño margen de tiempo para que AppContext vincule el usuario
+  
+  // Estado para espera mínima de vinculación (solo si es necesario)
+  const [linkWaitComplete, setLinkWaitComplete] = useState(false);
+  
+  // Espera corta SOLO si hay sesión + employees pero no currentUser
   useEffect(() => {
-    if (isAuthInitialized && !isAppLoading && session && !currentUser && employees.length > 0) {
-      // Si tenemos sesión, employees cargados, pero no currentUser, esperar un momento
-      const timeout = setTimeout(() => {
-        setHasWaitedForLink(true);
-      }, 500);
+    if (session && !isAppLoading && employees.length > 0 && !currentUser && !linkWaitComplete) {
+      // Espera mínima de 100ms para dar tiempo a la vinculación
+      const timeout = setTimeout(() => setLinkWaitComplete(true), 100);
       return () => clearTimeout(timeout);
     } else if (currentUser) {
-      // Si ya tenemos currentUser, no necesitamos esperar
-      setHasWaitedForLink(true);
-      hasLoggedWarningRef.current = false; // Reset para futuras sesiones
+      setLinkWaitComplete(true);
     }
-  }, [isAuthInitialized, isAppLoading, session, currentUser, employees]);
+  }, [session, isAppLoading, employees.length, currentUser, linkWaitComplete]);
 
   // Determinar si todavía estamos en proceso de carga
   const isStillLoading = useMemo(() => {
@@ -45,10 +42,10 @@ export function PermissionProtectedRoute({ children, requiredPermission }: Permi
     if (!isAuthInitialized) return true;
     // Si AppContext está cargando, seguimos cargando
     if (isAppLoading) return true;
-    // Si hay sesión pero aún no hemos esperado para la vinculación
-    if (session && !currentUser && !hasWaitedForLink) return true;
+    // Si hay sesión pero aún esperamos vinculación
+    if (session && employees.length > 0 && !currentUser && !linkWaitComplete) return true;
     return false;
-  }, [isAuthInitialized, isAppLoading, session, currentUser, hasWaitedForLink]);
+  }, [isAuthInitialized, isAppLoading, session, employees.length, currentUser, linkWaitComplete]);
 
   // Mientras carga, mostrar spinner
   if (isStillLoading) {
