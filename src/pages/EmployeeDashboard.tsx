@@ -348,7 +348,7 @@ export default function EmployeeDashboard() {
     });
 
     const weeksResult = Object.entries(weekImpact).map(([weekDate, data]) => {
-      const weekData = weeks[data.weekIndex];
+      const weekData = (data.weekIndex >= 0 && data.weekIndex < weeks.length) ? weeks[data.weekIndex] : undefined;
       const currentLoad = weekData ? getEmployeeLoadForWeek(
         myEmployeeProfile.id, weekDate, weekData.effectiveStart, weekData.effectiveEnd
       ) : { hours: 0, capacity: 40 };
