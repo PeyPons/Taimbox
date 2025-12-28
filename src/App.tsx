@@ -8,6 +8,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppProvider } from "@/contexts/AppContext";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { Button } from "@/components/ui/button";
 
 // Componentes de Auth
 import Login from "./pages/Login";
@@ -18,18 +19,19 @@ import { PermissionProtectedRoute } from "./components/auth/PermissionProtectedR
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 
 // Páginas con lazy loading (carga diferida para mejor rendimiento)
-const DashboardAI = lazy(() => import("./pages/DashboardAI"));
-const ClientReportsPage = lazy(() => import("@/pages/ClientReportsPage"));
-const Index = lazy(() => import("./pages/Index"));
-const TeamPage = lazy(() => import("./pages/TeamPage"));
-const ClientsAndProjectsPage = lazy(() => import("./pages/ClientsAndProjectsPage"));
-const ReportsPage = lazy(() => import("./pages/ReportsPage"));
-const SettingsPage = lazy(() => import("./pages/SettingsPage"));
-const MetaAdsPage = lazy(() => import("./pages/MetaAdsPage"));
-const AdsPage = lazy(() => import("@/pages/AdsPage"));
-const AdsReportGenerator = lazy(() => import("./pages/AdsReportGenerator"));
-const DeadlinesPage = lazy(() => import("./pages/DeadlinesPage"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+// Usando lazyWithRetry para manejar errores de carga de módulos
+const DashboardAI = lazyWithRetry(() => import("./pages/DashboardAI"));
+const ClientReportsPage = lazyWithRetry(() => import("@/pages/ClientReportsPage"));
+const Index = lazyWithRetry(() => import("./pages/Index"));
+const TeamPage = lazyWithRetry(() => import("./pages/TeamPage"));
+const ClientsAndProjectsPage = lazyWithRetry(() => import("./pages/ClientsAndProjectsPage"));
+const ReportsPage = lazyWithRetry(() => import("./pages/ReportsPage"));
+const SettingsPage = lazyWithRetry(() => import("./pages/SettingsPage"));
+const MetaAdsPage = lazyWithRetry(() => import("./pages/MetaAdsPage"));
+const AdsPage = lazyWithRetry(() => import("@/pages/AdsPage"));
+const AdsReportGenerator = lazyWithRetry(() => import("./pages/AdsReportGenerator"));
+const DeadlinesPage = lazyWithRetry(() => import("./pages/DeadlinesPage"));
+const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 // Loading fallback para páginas lazy
 const PageLoader = () => (
@@ -37,6 +39,35 @@ const PageLoader = () => (
     <div className="h-8 w-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
   </div>
 );
+
+// Error boundary para lazy loading
+const LazyErrorFallback = ({ error, retry }: { error: Error; retry: () => void }) => (
+  <div className="min-h-screen flex items-center justify-center bg-slate-50">
+    <div className="text-center p-8">
+      <h2 className="text-xl font-semibold text-slate-900 mb-2">Error al cargar la página</h2>
+      <p className="text-slate-600 mb-4">{error.message}</p>
+      <Button onClick={retry} className="bg-indigo-600 hover:bg-indigo-700">
+        Reintentar
+      </Button>
+    </div>
+  </div>
+);
+
+// Wrapper para lazy loading con manejo de errores
+const lazyWithRetry = (importFn: () => Promise<any>) => {
+  return lazy(() =>
+    importFn().catch((error) => {
+      console.error('Error cargando módulo:', error);
+      // Si el error es de tipo MIME o fetch, intentar recargar la página
+      if (error.message?.includes('MIME type') || error.message?.includes('Failed to fetch')) {
+        console.warn('Error de servidor detectado, recargando página...');
+        window.location.reload();
+        throw error;
+      }
+      throw error;
+    })
+  );
+};
 
 const queryClient = new QueryClient();
 

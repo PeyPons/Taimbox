@@ -59,13 +59,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
-          // Prevenir eventos duplicados (mismo evento, mismo usuario, dentro de 3 segundos)
+          // Prevenir eventos duplicados (mismo evento, mismo usuario, dentro de 1 segundo)
+          // Reducido de 3s a 1s para ser más estricto y evitar loops
           if (
             lastEventRef.current &&
             lastEventRef.current.event === event &&
             lastEventRef.current.userId === userId &&
-            now - lastEventRef.current.timestamp < 3000
+            now - lastEventRef.current.timestamp < 1000
           ) {
+            console.log('[AuthContext] Evento duplicado ignorado:', event, userId);
             return;
           }
 
