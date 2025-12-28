@@ -72,36 +72,16 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   useEffect(() => {
     if (open) {
       setViewDate(viewDateContext || new Date(weekStart));
-      // Activar loading cuando se abre
-      setIsLoadingTasks(true);
     }
   }, [open, weekStart, viewDateContext]);
-
-  // Desactivar loading cuando los datos globales estén listos
-  // Esperar a que isGlobalLoading sea false para asegurar que los datos están cargados
-  useEffect(() => {
-    if (open) {
-      if (!isGlobalLoading) {
-        // Los datos están listos, desactivar loading después de un pequeño delay
-        // para asegurar que React haya procesado los cambios
-        const timer = setTimeout(() => {
-          setIsLoadingTasks(false);
-        }, 150);
-        return () => clearTimeout(timer);
-      } else {
-        // Si aún está cargando, mantener el loading activo
-        setIsLoadingTasks(true);
-      }
-    }
-  }, [open, isGlobalLoading]);
 
   // Cargar datos del mes cuando cambia el mes visible
   useEffect(() => {
     if (open && !isGlobalLoading) {
       const monthKey = `${viewDate.getFullYear()}-${viewDate.getMonth()}`;
       
-      // Si ya se cargó este mes o está cargando, no hacer nada
-      if (loadedMonthsRef.current.has(monthKey) || loadingMonthRef.current === monthKey) {
+      // Si ya se cargó este mes, no hacer nada
+      if (loadedMonthsRef.current.has(monthKey)) {
         setIsLoadingTasks(false);
         return;
       }
@@ -120,13 +100,11 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
         }
       });
       
-      // Si no hay datos para este mes, cargarlos
+      // Si no hay datos para este mes, cargarlos (igual que loadDeadlines en DeadlinesPage)
       if (!hasDataForMonth) {
-        loadingMonthRef.current = monthKey;
         setIsLoadingTasks(true);
         loadDataForMonth(viewDate).finally(() => {
           loadedMonthsRef.current.add(monthKey);
-          loadingMonthRef.current = null;
           setIsLoadingTasks(false);
         });
       } else {
