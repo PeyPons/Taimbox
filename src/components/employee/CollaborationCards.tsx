@@ -158,39 +158,108 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
 
   const hasAnyHelpers = availableHelpers.length > 0 || busyButWillingHelpers.length > 0;
 
-  // Si no hay datos, mostrar estado vacío informativo
+  // Si no hay datos, mostrar datos de ejemplo
   const hasNoData = frequentCollaborators.length === 0 && !hasAnyHelpers;
+
+  // Datos de ejemplo para usuarios sin datos
+  const mockCollaborators = [
+    { id: '1', name: 'María García', sharedProjects: 3, totalHoursTogether: 24, occupancy: 65, avatarUrl: undefined },
+    { id: '2', name: 'Carlos Ruiz', sharedProjects: 2, totalHoursTogether: 12, occupancy: 78, avatarUrl: undefined },
+    { id: '3', name: 'Ana López', sharedProjects: 1, totalHoursTogether: 8, occupancy: 45, avatarUrl: undefined },
+  ];
+
+  const mockHelpers = [
+    { id: '4', name: 'Pablo Martín', occupancy: 55, avatarUrl: undefined },
+    { id: '5', name: 'Laura Sánchez', occupancy: 42, avatarUrl: undefined },
+  ];
 
   if (hasNoData) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="border-dashed border-slate-300 bg-slate-50/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2 text-slate-500">
-              <Sparkles className="h-4 w-4" />
-              Tu equipo este mes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-slate-400">
-              Aquí verás a los compañeros con los que compartes proyectos cuando tengas tareas planificadas.
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="border-dashed border-emerald-200 bg-emerald-50/30">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2 text-emerald-400">
-              <HeartHandshake className="h-4 w-4" />
-              ¿Necesitas apoyo?
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-emerald-400">
-              Cuando planifiques tareas, te mostraremos compañeros disponibles que pueden ayudarte.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <TooltipProvider>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Tu equipo este mes - EJEMPLO */}
+          <Card className="relative overflow-hidden">
+            <div className="absolute top-2 right-2 z-10">
+              <Badge variant="outline" className="text-[9px] bg-amber-50 border-amber-200 text-amber-700">
+                Ejemplo
+              </Badge>
+            </div>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-indigo-600" />
+                Tu equipo este mes
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xs text-slate-500">
+                Compañeros con los que compartes proyectos este mes:
+              </p>
+              <div className="space-y-2 opacity-75">
+                {mockCollaborators.map(collab => (
+                  <div key={collab.id} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="text-xs">{collab.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{collab.name.split(' ')[0]}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {collab.sharedProjects} proyectos · {round2(collab.totalHoursTogether)}h juntos
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-200">
+                      {collab.occupancy}% carga
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-amber-600 text-center pt-1">
+                ↑ Estos son datos de ejemplo. Planifica tareas para ver tu equipo real.
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* ¿Necesitas apoyo? - EJEMPLO */}
+          <Card className="border-emerald-200 bg-emerald-50/30 relative overflow-hidden">
+            <div className="absolute top-2 right-2 z-10">
+              <Badge variant="outline" className="text-[9px] bg-amber-50 border-amber-200 text-amber-700">
+                Ejemplo
+              </Badge>
+            </div>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2 text-emerald-700">
+                <HeartHandshake className="h-4 w-4" />
+                ¿Necesitas apoyo?
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xs text-emerald-600">
+                Estos compañeros comparten proyectos contigo y tienen margen para ayudarte:
+              </p>
+              <div className="space-y-2 opacity-75">
+                {mockHelpers.map(helper => (
+                  <div key={helper.id} className="flex items-center gap-3 p-2 rounded-lg bg-white border border-emerald-100">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="text-xs">{helper.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{helper.name.split(' ')[0]}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {helper.occupancy}% de carga
+                      </p>
+                    </div>
+                    <Badge className="bg-emerald-100 text-emerald-700 border-0">
+                      Disponible
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-amber-600 text-center pt-1">
+                ↑ Estos son datos de ejemplo. Planifica tareas para ver quién puede ayudarte.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </TooltipProvider>
     );
   }
 

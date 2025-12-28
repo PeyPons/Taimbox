@@ -1012,10 +1012,62 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                 })}
 
                                 {sortedGroups.length === 0 && (
-                                    <div className="text-center py-12 text-slate-400" data-tour="planner-empty-state">
-                                        <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                        <p className="font-medium mb-1">No tienes tareas esta semana</p>
-                                        <p className="text-xs text-slate-400">Usa el botón "Añadir" para planificar tu trabajo</p>
+                                    <div className="space-y-4" data-tour="planner-empty-state">
+                                        {/* Mensaje principal */}
+                                        <div className="text-center py-6 text-slate-400">
+                                            <Calendar className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                                            <p className="font-medium mb-1">No tienes tareas esta semana</p>
+                                            <p className="text-xs">Usa el botón "Añadir" para planificar tu trabajo</p>
+                                        </div>
+                                        
+                                        {/* Ejemplo visual de cómo se vería */}
+                                        <div className="border-t pt-4">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <span className="text-xs text-slate-400 uppercase tracking-wide">Vista previa de ejemplo</span>
+                                                <Badge variant="outline" className="text-[9px] bg-amber-50 border-amber-200 text-amber-700">Ejemplo</Badge>
+                                            </div>
+                                            
+                                            <div className="bg-white rounded-lg border shadow-sm overflow-hidden opacity-60" data-tour="planner-projects">
+                                                <div className="bg-indigo-500 text-white px-4 py-2.5 flex items-center justify-between">
+                                                    <span className="font-bold text-sm">SEO Mensual [Cliente Ejemplo]</span>
+                                                    <span className="text-xs opacity-80">(2 tareas)</span>
+                                                </div>
+                                                <table className="w-full text-sm">
+                                                    <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
+                                                        <tr>
+                                                            <th className="py-2 px-3 text-left font-medium w-8"></th>
+                                                            <th className="py-2 px-3 text-left font-medium">Tarea</th>
+                                                            <th className="py-2 px-3 text-center font-medium w-16">Horas</th>
+                                                            <th className="py-2 px-3 text-center font-medium w-16">Comp</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-100">
+                                                        <tr className="hover:bg-slate-50" data-tour="planner-task">
+                                                            <td className="py-2 px-3" data-tour="planner-checkbox">
+                                                                <Checkbox checked={false} />
+                                                            </td>
+                                                            <td className="py-2 px-3" data-tour="planner-task-name">
+                                                                <span className="font-medium">Análisis de keywords</span>
+                                                            </td>
+                                                            <td className="py-2 px-3 text-center font-mono">4h</td>
+                                                            <td className="py-2 px-3 text-center text-slate-300">-</td>
+                                                        </tr>
+                                                        <tr className="hover:bg-slate-50 bg-emerald-50/50">
+                                                            <td className="py-2 px-3">
+                                                                <Checkbox checked={true} className="data-[state=checked]:bg-emerald-600" />
+                                                            </td>
+                                                            <td className="py-2 px-3">
+                                                                <span className="font-medium line-through text-slate-400">Informe mensual</span>
+                                                            </td>
+                                                            <td className="py-2 px-3 text-center font-mono line-through text-slate-400">2h</td>
+                                                            <td className="py-2 px-3 text-center">
+                                                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-mono" data-tour="planner-hours">2h</span>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>
