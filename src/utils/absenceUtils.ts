@@ -1,5 +1,5 @@
 import { Absence, WorkSchedule } from '@/types';
-import { eachDayOfInterval, getDay, parseISO, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
+import { eachDayOfInterval, getDay, parseISO, startOfDay, endOfDay, isWithinInterval, format } from 'date-fns';
 
 const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
@@ -9,11 +9,13 @@ export const getAbsenceHoursInRange = (
   absences: Absence[],
   schedule: WorkSchedule
 ): number => {
-  let totalHours = 0;
-  
   // Normalizamos el rango de consulta al inicio y fin del día local para comparaciones precisas
   const rangeStart = startOfDay(start);
   const rangeEnd = endOfDay(end);
+
+  // Mapa para rastrear la reducción máxima por día (para manejar solapamientos)
+  // Clave: fecha en formato ISO string (YYYY-MM-DD), Valor: horas de reducción
+  const dayReductions = new Map<string, number>();
 
   absences.forEach(absence => {
     try {
@@ -52,7 +54,12 @@ export const getAbsenceHoursInRange = (
                         reduction = scheduledHours;
                     }
                     
-                    totalHours += reduction;
+                    // CORRECCIÓN DE SOLAPAMIENTO:
+                    // Si hay múltiples ausencias en el mismo día, tomamos la reducción MÁXIMA
+                    // (no sumamos, porque no puedes estar de vacaciones Y en el médico al mismo tiempo)
+                    const dayKey = format(day, 'yyyy-MM-dd');
+                    const existingReduction = dayReductions.get(dayKey) || 0;
+                    dayReductions.set(dayKey, Math.max(existingReduction, reduction));
                 }
             }
         });
@@ -60,6 +67,12 @@ export const getAbsenceHoursInRange = (
         // Prevenir rotura de la UI si hay datos corruptos
         console.warn("Error procesando ausencia:", absence, e);
     }
+  });
+
+  // Sumar todas las reducciones únicas por día (sin duplicar por solapamientos)
+  let totalHours = 0;
+  dayReductions.forEach((reduction) => {
+    totalHours += reduction;
   });
 
   return totalHours;

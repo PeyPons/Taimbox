@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { Project, OKR } from '@/types';
 import { cn, formatProjectName } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -213,36 +214,71 @@ export default function ProjectsPage() {
   };
 
   const handleSave = async () => {
+      // Validación mejorada
+      if (!formData.name || formData.name.trim() === '') {
+          toast.error("El nombre del proyecto es obligatorio");
+          return;
+      }
+
+      if (!formData.clientId || formData.clientId === '') {
+          toast.error("Debes seleccionar un cliente");
+          return;
+      }
+
+      const budgetHours = parseFloat(formData.budgetHours);
+      if (isNaN(budgetHours) || budgetHours < 0) {
+          toast.error("Las horas asignadas deben ser un número válido mayor o igual a 0");
+          return;
+      }
+
+      const minimumHours = parseFloat(formData.minimumHours);
+      if (isNaN(minimumHours) || minimumHours < 0) {
+          toast.error("Las horas mínimas deben ser un número válido mayor o igual a 0");
+          return;
+      }
+
+      const monthlyFee = parseFloat(formData.monthlyFee);
+      if (isNaN(monthlyFee) || monthlyFee < 0) {
+          toast.error("El fee mensual debe ser un número válido mayor o igual a 0");
+          return;
+      }
+
       try {
           if (isCreating) {
               await addProject({
-                  name: formData.name,
+                  name: formData.name.trim(),
                   clientId: formData.clientId,
-                  budgetHours: parseFloat(formData.budgetHours) || 0,
-                  minimumHours: parseFloat(formData.minimumHours) || 0,
-                  monthlyFee: parseFloat(formData.monthlyFee) || 0,
+                  budgetHours: budgetHours,
+                  minimumHours: minimumHours,
+                  monthlyFee: monthlyFee,
                   status: formData.status,
                   okrs: formData.okrs
               });
+              toast.success("Proyecto creado correctamente");
           } else if (editingId) {
               const existingProject = projects.find(p => p.id === editingId);
               if (existingProject) {
                   await updateProject({
                       ...existingProject,
-                      name: formData.name,
+                      name: formData.name.trim(),
                       clientId: formData.clientId,
-                      budgetHours: parseFloat(formData.budgetHours) || 0,
-                      minimumHours: parseFloat(formData.minimumHours) || 0,
-                      monthlyFee: parseFloat(formData.monthlyFee) || 0,
+                      budgetHours: budgetHours,
+                      minimumHours: minimumHours,
+                      monthlyFee: monthlyFee,
                       status: formData.status,
                       okrs: formData.okrs
                   });
+                  toast.success("Proyecto actualizado correctamente");
+              } else {
+                  toast.error("No se encontró el proyecto a editar");
+                  return;
               }
           }
           setIsDialogOpen(false);
-      } catch (error) {
-          console.error(error);
-          alert("Error al guardar.");
+      } catch (error: any) {
+          console.error("Error guardando proyecto:", error);
+          const errorMessage = error?.message || error?.error?.message || "Error al guardar el proyecto";
+          toast.error(errorMessage);
       }
   };
 
@@ -251,8 +287,13 @@ export default function ProjectsPage() {
       if (confirm("¿Estás seguro de eliminar este proyecto? Se borrarán sus asignaciones.")) {
           try {
               await deleteProject(editingId);
+              toast.success("Proyecto eliminado correctamente");
               setIsDialogOpen(false);
-          } catch (e) { console.error(e); alert("No se pudo eliminar."); }
+          } catch (e: any) {
+              console.error("Error eliminando proyecto:", e);
+              const errorMessage = e?.message || e?.error?.message || "No se pudo eliminar el proyecto";
+              toast.error(errorMessage);
+          }
       }
   };
 
