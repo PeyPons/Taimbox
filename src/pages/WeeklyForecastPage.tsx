@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -38,6 +39,7 @@ export default function WeeklyForecastPage() {
   const [filterFeedbackProject, setFilterFeedbackProject] = useState<string>('all');
   const [filterProjectStatus, setFilterProjectStatus] = useState<string>('all'); // all, red, yellow, green
   const [filterClient, setFilterClient] = useState<string>('all');
+  const [filterProjectType, setFilterProjectType] = useState<string>('all'); // all, SEO, PPC
   
   useEffect(() => {
     localStorage.setItem('forecast_date', currentMonth.toISOString());
@@ -60,6 +62,18 @@ export default function WeeklyForecastPage() {
     // Filtro por cliente
     if (filterClient !== 'all') {
       filteredProjects = filteredProjects.filter(p => p.clientId === filterClient);
+    }
+    
+    // Filtro por tipo de proyecto (SEO/PPC)
+    if (filterProjectType !== 'all') {
+      filteredProjects = filteredProjects.filter(p => {
+        if (filterProjectType === 'SEO') {
+          return p.projectType !== 'PPC';
+        } else if (filterProjectType === 'PPC') {
+          return p.projectType === 'PPC';
+        }
+        return true;
+      });
     }
     
     const today = new Date();
@@ -301,8 +315,26 @@ export default function WeeklyForecastPage() {
         </div>
       </div>
       
-      {/* Sección A: Semáforo de Proyectos */}
-      <Card>
+      {/* TABS */}
+      <Tabs defaultValue="traffic" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="traffic" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Semáforo de Proyectos
+          </TabsTrigger>
+          <TabsTrigger value="blockers" className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4" />
+            Feed de Bloqueos
+          </TabsTrigger>
+          <TabsTrigger value="redistribute" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Redistribución
+          </TabsTrigger>
+        </TabsList>
+        
+        {/* TAB 1: Semáforo de Proyectos */}
+        <TabsContent value="traffic" className="space-y-4">
+          <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
@@ -332,6 +364,16 @@ export default function WeeklyForecastPage() {
                   <SelectItem value="red">⚠️ En riesgo</SelectItem>
                   <SelectItem value="yellow">⏳ Pendiente</SelectItem>
                   <SelectItem value="green">✅ On Track</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterProjectType} onValueChange={setFilterProjectType}>
+                <SelectTrigger className="w-[120px] h-8 text-xs">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="SEO">SEO</SelectItem>
+                  <SelectItem value="PPC">PPC</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -408,6 +450,9 @@ export default function WeeklyForecastPage() {
                     {proj.status === 'green' && (
                       <p className="text-xs text-emerald-600 mt-2 font-medium">
                         En línea con el contrato
+                        {proj.contracted === 0 && proj.realized === 0 && (
+                          <span className="text-muted-foreground ml-1">(Sin horas planificadas aún)</span>
+                        )}
                       </p>
                     )}
                   </CardContent>
@@ -417,9 +462,11 @@ export default function WeeklyForecastPage() {
           )}
         </CardContent>
       </Card>
-      
-      {/* Sección B: Feed de Bloqueos */}
-      <Card>
+        </TabsContent>
+        
+        {/* TAB 2: Feed de Bloqueos */}
+        <TabsContent value="blockers" className="space-y-4">
+          <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -539,8 +586,61 @@ export default function WeeklyForecastPage() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+        
+        {/* TAB 3: Redistribución */}
+        <TabsContent value="redistribute" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Redistribución Rápida
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Selecciona un proyecto para redistribuir horas entre compañeros
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {projectForecast.map(proj => (
+                  <Card
+                    key={proj.projectId}
+                    className={cn(
+                      "cursor-pointer transition-all hover:shadow-md",
+                      selectedProject === proj.projectId && "ring-2 ring-indigo-500"
+                    )}
+                    onClick={() => setSelectedProject(proj.projectId)}
+                  >
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-bold truncate">
+                        {formatProjectName(proj.projectName)}
+                      </CardTitle>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: proj.clientColor }} />
+                        <span className="text-xs text-muted-foreground truncate">{proj.clientName}</span>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-muted-foreground">Contratado:</span>
+                          <span className="font-bold ml-1">{proj.contracted}h</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Realizado:</span>
+                          <span className="font-bold ml-1">{proj.realized}h</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
       
-      {/* Sección C: Redistribución Rápida (Sheet lateral) */}
+      {/* Sheet lateral para Redistribución (se abre desde cualquier tab) */}
       <Sheet open={selectedProject !== null} onOpenChange={(open) => !open && setSelectedProject(null)}>
         <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
           <SheetHeader>

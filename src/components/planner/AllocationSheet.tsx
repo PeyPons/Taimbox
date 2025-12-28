@@ -18,7 +18,7 @@ import { Allocation, Project } from '@/types';
 import { Plus, Pencil, CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, Check, TrendingUp, TrendingDown, Trash2, Link as LinkIcon, AlertOctagon, CheckCircle2, AlertTriangle, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc } from 'lucide-react';
 import { cn, formatProjectName } from '@/lib/utils';
 import { getWeeksForMonth, getStorageKey } from '@/utils/dateUtils';
-import { format, addMonths, subMonths, isSameMonth, parseISO, addDays } from 'date-fns';
+import { format, addMonths, subMonths, isSameMonth, parseISO, addDays, isBefore } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PlannerTour } from './PlannerTour';
 import { WeekNavigation } from './WeekNavigation';
@@ -341,6 +341,20 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   };
 
   const startEditFull = (allocation: Allocation) => {
+    // BLOQUEO: No permitir editar tareas de semanas pasadas
+    try {
+      const taskWeekDate = parseISO(allocation.weekStartDate);
+      const taskWeekEnd = addDays(taskWeekDate, 4); // Viernes de esa semana
+      const today = new Date();
+      
+      if (taskWeekEnd < today) {
+        toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
+        return;
+      }
+    } catch {
+      // Si hay error parseando la fecha, permitir editar (por seguridad)
+    }
+    
     setEditingAllocation(allocation);
     setEditProjectId(allocation.projectId);
     setEditTaskName(allocation.taskName || '');
@@ -1723,10 +1737,18 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
             ) : (
               <div className="flex justify-between items-start">
                 <div className="flex flex-col w-full">
-                  <span className={cn(
-                    "text-xs font-medium leading-tight",
-                    isCompleted && "line-through text-slate-400"
-                  )}>{alloc.taskName || 'Tarea'}</span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className={cn(
+                                      "text-xs font-medium leading-tight",
+                                      isCompleted && "line-through text-slate-400"
+                                    )}>{alloc.taskName || 'Tarea'}</span>
+                                    {/* Badge Weekly si la tarea fue actualizada vía Weekly */}
+                                    {alloc.taskName?.includes('(transferida de') && (
+                                      <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-indigo-50 text-indigo-700 border-indigo-200">
+                                        Weekly
+                                      </Badge>
+                                    )}
+                                  </div>
 
                   {depTask && !isCompleted && (
                     <div className={cn(
