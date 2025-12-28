@@ -154,11 +154,17 @@ interface HighlightPosition {
 interface PlannerTourProps {
   onComplete?: () => void;
   forceShow?: boolean;
+  onVisibilityChange?: (visible: boolean) => void;
 }
 
-export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps) {
+export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange }: PlannerTourProps) {
   const { currentUser, updateEmployee } = useApp();
   const [isVisible, setIsVisible] = useState(false);
+
+  // Notificar cambios de visibilidad al padre
+  useEffect(() => {
+    onVisibilityChange?.(isVisible);
+  }, [isVisible, onVisibilityChange]);
   const [currentStep, setCurrentStep] = useState(0);
   const [highlightPos, setHighlightPos] = useState<HighlightPosition | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);

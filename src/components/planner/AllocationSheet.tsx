@@ -62,6 +62,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
   const [viewDate, setViewDate] = useState(() => viewDateContext || new Date(weekStart));
   const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(new Set());
+  const [isTourActive, setIsTourActive] = useState(false);
 
   useEffect(() => {
     if (open) setViewDate(viewDateContext || new Date(weekStart));
@@ -605,7 +606,21 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="w-full sm:max-w-[95vw] overflow-y-auto px-6 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-xl border-l shadow-2xl pt-10">
+        <SheetContent 
+          className="w-full sm:max-w-[95vw] overflow-y-auto px-6 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-xl border-l shadow-2xl pt-10"
+          onInteractOutside={(e) => {
+            // Prevenir cierre del Sheet cuando el tour está activo
+            if (isTourActive) {
+              e.preventDefault();
+            }
+          }}
+          onPointerDownOutside={(e) => {
+            // Prevenir cierre del Sheet cuando el tour está activo
+            if (isTourActive) {
+              e.preventDefault();
+            }
+          }}
+        >
           <TooltipProvider delayDuration={200}>
           <SheetHeader className="pb-6 border-b mb-6 space-y-4">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -1402,10 +1417,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                         </Avatar>
                                         <div className="flex-1 min-w-0">
                                           <div className={cn("font-medium truncate", isMe ? "text-indigo-700" : "text-slate-600")}>
-                                            {employeeName} {isMe && "(tú)"}
-                                          </div>
-                                          <div className="flex gap-3 text-[10px] mt-0.5">
-                                            <span className="text-blue-600">Plan: {planned.toFixed(1)}h</span>
+                                          {employeeName} {isMe && "(tú)"}
+                                        </div>
+                                        <div className="flex gap-3 text-[10px] mt-0.5">
+                                          <span className="text-blue-600">Plan: {planned.toFixed(1)}h</span>
                                             <span className="text-emerald-600">Comp: {computed.toFixed(1)}h</span>
                                           </div>
                                         </div>
@@ -1662,7 +1677,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
       </Dialog>
 
       {/* Tour interactivo del planificador */}
-      {open && <PlannerTour />}
+      {open && <PlannerTour onVisibilityChange={setIsTourActive} />}
     </>
   );
 
