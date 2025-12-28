@@ -2,7 +2,6 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { MyWeekView } from '@/components/employee/MyWeekView';
 import { WeeklyReportDialog } from '@/components/employee/WeeklyReportDialog';
-import { CloseTasksDialog } from '@/components/employee/CloseTasksDialog';
 import { PriorityInsights, ProjectTeamPulse } from '@/components/employee/DashboardWidgets'; 
 import { ReliabilityIndexCard } from '@/components/employee/ReliabilityIndexCard';
 import { PlanningInconsistenciesCard } from '@/components/employee/PlanningInconsistenciesCard';
@@ -84,7 +83,6 @@ export default function EmployeeDashboard() {
   const [newTasks, setNewTasks] = useState<NewTaskRow[]>([]);
   const [openComboboxId, setOpenComboboxId] = useState<string | null>(null);
   const [showWeeklyDialog, setShowWeeklyDialog] = useState(false);
-  const [showCloseTasksDialog, setShowCloseTasksDialog] = useState(false);
 
   const { showTour, resetTour } = useWelcomeTour();
   
@@ -533,14 +531,6 @@ export default function EmployeeDashboard() {
             )}
           </Button>
           
-          <Button
-            onClick={() => setShowCloseTasksDialog(true)}
-            variant="outline"
-            className="gap-2 border-slate-300 hover:bg-slate-50"
-          >
-            <CheckCircle2 className="h-4 w-4" /> Cerrar
-          </Button>
-          
           <Button onClick={openAddTasksDialog} className="gap-2 bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm" data-tour="add-tasks">
             <ListPlus className="h-4 w-4" /> Añadir tareas
           </Button>
@@ -812,11 +802,6 @@ export default function EmployeeDashboard() {
             onOpenChange={setShowWeeklyDialog}
             employeeId={myEmployeeProfile.id}
             viewDate={currentMonth}
-          />
-          <CloseTasksDialog
-            open={showCloseTasksDialog}
-            onOpenChange={setShowCloseTasksDialog}
-            employeeId={myEmployeeProfile.id}
           />
         </>
       )}

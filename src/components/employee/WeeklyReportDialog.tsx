@@ -398,7 +398,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" aria-describedby="weekly-report-description">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col" aria-describedby="weekly-report-description">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-indigo-600" />
@@ -423,7 +423,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
             <p className="text-sm text-muted-foreground">No tienes tareas pendientes de revisar. Tu weekly está completo.</p>
           </div>
         ) : (
-          <div className="space-y-6 py-4">
+          <div className="space-y-6 py-4 overflow-y-auto flex-1 min-h-0">
             {/* Tareas Abiertas */}
             {openTasks.length > 0 && (() => {
               // Separar por tipo de proyecto

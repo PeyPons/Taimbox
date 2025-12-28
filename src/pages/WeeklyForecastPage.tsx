@@ -809,7 +809,9 @@ export default function WeeklyForecastPage() {
                 <Button
                   onClick={handleRedistribute}
                   className="w-full bg-indigo-600 hover:bg-indigo-700"
-                  disabled={!redistributeHours || !redistributeEmployee || !redistributeWeek}
+                  disabled={!redistributeFromEmployee || !redistributeToEmployee || !redistributeWeek || 
+                    (!redistributeUseGlobal && redistributeSelectedTasks.size === 0) ||
+                    (redistributeUseGlobal && (!redistributeGlobalHours || parseFloat(redistributeGlobalHours) <= 0))}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Añadir Horas

@@ -1005,7 +1005,22 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                                         variant="ghost"
                                                                         size="sm"
                                                                         className="h-7 w-7 p-0"
-                                                                        onClick={() => startEditFull(alloc)}
+                                                                        onClick={() => {
+                                                                          // BLOQUEO: No permitir editar tareas de semanas pasadas (también en vista reducida)
+                                                                          try {
+                                                                            const taskWeekDate = parseISO(alloc.weekStartDate);
+                                                                            const taskWeekEnd = addDays(taskWeekDate, 4);
+                                                                            const today = new Date();
+                                                                            
+                                                                            if (taskWeekEnd < today) {
+                                                                              toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
+                                                                              return;
+                                                                            }
+                                                                          } catch {
+                                                                            // Si hay error parseando la fecha, permitir editar (por seguridad)
+                                                                          }
+                                                                          startEditFull(alloc);
+                                                                        }}
                                                                     >
                                                                         <Pencil className="h-3.5 w-3.5" />
                                                                     </Button>
