@@ -61,7 +61,7 @@ type SortOption = 'budget_desc' | 'budget_asc' | 'my_hours_desc' | 'my_hours_asc
 export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, viewDateContext }: AllocationSheetProps) {
   const { 
     employees, projects, allocations, getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getProjectById,
-    addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading, loadDataForMonth
+    addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading, loadDataForMonth, weeklyFeedback
   } = useApp();
 
   const [viewDate, setViewDate] = useState(() => viewDateContext || new Date(weekStart));
@@ -904,27 +904,42 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                                 </td>
                                                                 <td className="py-2 px-3">
                                                                     <div className="space-y-1">
-                                                                        <div 
-                                                                            className={cn("font-medium cursor-pointer hover:bg-slate-100 rounded px-1 -mx-1", isCompleted && "line-through text-slate-400")}
-                                                                            onDoubleClick={() => startInlineEdit(alloc)}
-                                                                            {...(isFirstTask && { 'data-tour': 'planner-task-name' })}
-                                                                        >
-                                                                            {inlineEditingId === alloc.id ? (
-                                                                                <input
-                                                                                    ref={inlineInputRef}
-                                                                                    autoFocus
-                                                                                    value={inlineNameValue}
-                                                                                    onChange={(e) => setInlineNameValue(e.target.value)}
-                                                                                    onBlur={() => saveInlineEdit(alloc)}
-                                                                                    onKeyDown={(e) => {
-                                                                                        if (e.key === 'Enter') saveInlineEdit(alloc);
-                                                                                        if (e.key === 'Escape') setInlineEditingId(null);
-                                                                                    }}
-                                                                                    className="w-full px-1 py-0.5 text-sm border rounded bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                                                />
-                                                                            ) : (
-                                                                                alloc.taskName || 'Tarea'
-                                                                            )}
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <div 
+                                                                                className={cn("font-medium cursor-pointer hover:bg-slate-100 rounded px-1 -mx-1", isCompleted && "line-through text-slate-400")}
+                                                                                onDoubleClick={() => startInlineEdit(alloc)}
+                                                                                {...(isFirstTask && { 'data-tour': 'planner-task-name' })}
+                                                                            >
+                                                                                {inlineEditingId === alloc.id ? (
+                                                                                    <input
+                                                                                        ref={inlineInputRef}
+                                                                                        autoFocus
+                                                                                        value={inlineNameValue}
+                                                                                        onChange={(e) => setInlineNameValue(e.target.value)}
+                                                                                        onBlur={() => saveInlineEdit(alloc)}
+                                                                                        onKeyDown={(e) => {
+                                                                                            if (e.key === 'Enter') saveInlineEdit(alloc);
+                                                                                            if (e.key === 'Escape') setInlineEditingId(null);
+                                                                                        }}
+                                                                                        className="w-full px-1 py-0.5 text-sm border rounded bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                                                    />
+                                                                                ) : (
+                                                                                    alloc.taskName || 'Tarea'
+                                                                                )}
+                                                                            </div>
+                                                                            {/* Badge Weekly si la tarea fue ajustada vía Weekly (horas=0 o transferida) */}
+                                                                            {(() => {
+                                                                              const isTransferred = alloc.taskName?.includes('(transferida de');
+                                                                              const hasWeeklyFeedback = weeklyFeedback.some(fb => fb.allocationId === alloc.id);
+                                                                              const wasAdjustedViaWeekly = hasWeeklyFeedback || isTransferred || 
+                                                                                (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0 && alloc.status === 'completed');
+                                                                              
+                                                                              return wasAdjustedViaWeekly ? (
+                                                                                <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-indigo-50 text-indigo-700 border-indigo-200">
+                                                                                  Weekly
+                                                                                </Badge>
+                                                                              ) : null;
+                                                                            })()}
                                                                         </div>
                                                                         {depTask && !isCompleted && (
                                                                             <div 
@@ -956,8 +971,23 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                                         )}
                                                                     </div>
                                                                 </td>
-                                                                <td className="py-2 px-3 text-center font-mono">
-                                                                    {alloc.hoursAssigned}
+                                                                <td className="py-2 px-3 text-center">
+                                                                    <div className="flex items-center justify-center gap-1">
+                                                                        <span className="font-mono text-xs">{alloc.hoursAssigned || 0}</span>
+                                                                        {/* Badge Weekly si horas=0 por ajuste de weekly */}
+                                                                        {(() => {
+                                                                          const isTransferred = alloc.taskName?.includes('(transferida de');
+                                                                          const hasWeeklyFeedback = weeklyFeedback.some(fb => fb.allocationId === alloc.id);
+                                                                          const wasAdjustedViaWeekly = hasWeeklyFeedback || isTransferred;
+                                                                          const isZeroDueToWeekly = (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0) && wasAdjustedViaWeekly;
+                                                                          
+                                                                          return isZeroDueToWeekly ? (
+                                                                            <Badge variant="outline" className="h-3.5 px-1 text-[8px] bg-indigo-50 text-indigo-700 border-indigo-200">
+                                                                              Weekly
+                                                                            </Badge>
+                                                                          ) : null;
+                                                                        })()}
+                                                                    </div>
                                                                 </td>
                                                                 <td className="py-2 px-3 text-center">
                                                                     {isCompleted ? (
@@ -967,10 +997,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                                             min="0"
                                                                             defaultValue={alloc.hoursActual || 0}
                                                                             onBlur={(e) => updateInlineHours(alloc, 'hoursActual', e.target.value)}
-                                                                            className="w-16 px-2 py-1 text-center border rounded bg-blue-50 text-blue-700 font-mono"
+                                                                            className="w-14 px-1.5 py-0.5 text-xs text-center border rounded bg-blue-50 text-blue-700 font-mono"
                                                                         />
                                                                     ) : (
-                                                                        <span className="text-slate-300">-</span>
+                                                                        <span className="text-slate-300 text-xs">-</span>
                                                                     )}
                                                                 </td>
                                                                 <td className="py-2 px-3 text-center" {...(isFirstTask && { 'data-tour': 'planner-hours' })}>
@@ -981,10 +1011,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                                             min="0"
                                                                             defaultValue={alloc.hoursComputed || 0}
                                                                             onBlur={(e) => updateInlineHours(alloc, 'hoursComputed', e.target.value)}
-                                                                            className="w-16 px-2 py-1 text-center border rounded bg-emerald-50 text-emerald-700 font-mono"
+                                                                            className="w-14 px-1.5 py-0.5 text-xs text-center border rounded bg-emerald-50 text-emerald-700 font-mono"
                                                                         />
                                                                     ) : (
-                                                                        <span className="text-slate-300">-</span>
+                                                                        <span className="text-slate-300 text-xs">-</span>
                                                                     )}
                                                                 </td>
                                                                 <td className="py-2 px-3 text-center">
@@ -1920,6 +1950,20 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                     <span className="font-bold font-mono">{taskBalance > 0 ? '+' : ''}{taskBalance}h</span>
                   </div>
                 )}
+                
+                {/* Badge Weekly si horas=0 por ajuste de weekly */}
+                {(() => {
+                  const isTransferred = alloc.taskName?.includes('(transferida de');
+                  const hasWeeklyFeedback = weeklyFeedback.some(fb => fb.allocationId === alloc.id);
+                  const wasAdjustedViaWeekly = hasWeeklyFeedback || isTransferred;
+                  const isZeroDueToWeekly = (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0) && wasAdjustedViaWeekly;
+                  
+                  return isZeroDueToWeekly ? (
+                    <Badge variant="outline" className="h-3.5 px-1.5 text-[9px] bg-indigo-50 text-indigo-700 border-indigo-200 mt-1">
+                      Weekly
+                    </Badge>
+                  ) : null;
+                })()}
               </div>
             )}
           </div>

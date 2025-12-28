@@ -33,10 +33,7 @@ export default function WeeklyForecastPage() {
     return saved ? new Date(saved) : new Date();
   });
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
-  const [redistributeFromEmployee, setRedistributeFromEmployee] = useState('');
   const [redistributeSelectedTasks, setRedistributeSelectedTasks] = useState<Set<string>>(new Set());
-  const [redistributeUseGlobal, setRedistributeUseGlobal] = useState(false);
-  const [redistributeGlobalHours, setRedistributeGlobalHours] = useState('');
   const [redistributeToEmployee, setRedistributeToEmployee] = useState('');
   const [redistributeWeek, setRedistributeWeek] = useState('');
   const [filterFeedbackEmployee, setFilterFeedbackEmployee] = useState<string>('all');
@@ -184,13 +181,13 @@ export default function WeeklyForecastPage() {
     });
   }, [weeks, currentMonth]);
   
-  // Tareas abiertas del compañero de origen para el proyecto seleccionado
-  const sourceEmployeeOpenTasks = useMemo(() => {
-    if (!selectedProject || !redistributeFromEmployee) return [];
+  // NUEVO: Tareas retrasadas de TODOS los compañeros para el proyecto seleccionado
+  // Agrupadas por empleado con avatar y nombre
+  const delayedTasksByEmployee = useMemo(() => {
+    if (!selectedProject) return [];
     
     const today = new Date();
-    return allocations.filter(a => {
-      if (a.employeeId !== redistributeFromEmployee) return false;
+    const delayedTasks = allocations.filter(a => {
       if (a.projectId !== selectedProject) return false;
       if (a.status === 'completed') return false;
       
@@ -205,67 +202,75 @@ export default function WeeklyForecastPage() {
         return false;
       }
     });
-  }, [selectedProject, redistributeFromEmployee, allocations, currentMonth]);
+    
+    // Agrupar por empleado
+    const grouped: Record<string, typeof allocations> = {};
+    delayedTasks.forEach(task => {
+      if (!grouped[task.employeeId]) {
+        grouped[task.employeeId] = [];
+      }
+      grouped[task.employeeId].push(task);
+    });
+    
+    // Convertir a array con información del empleado
+    return Object.entries(grouped).map(([employeeId, tasks]) => {
+      const employee = employees.find(e => e.id === employeeId);
+      return {
+        employeeId,
+        employeeName: employee?.name || 'Desconocido',
+        employeeAvatar: employee?.avatarUrl,
+        tasks
+      };
+    }).filter(g => g.employeeName !== 'Desconocido');
+  }, [selectedProject, allocations, currentMonth, employees]);
   
-  // Sección C: Redistribución Rápida (mejorada)
+  // Sección C: Redistribución Rápida (mejorada - sin horas globales)
   const handleRedistribute = async () => {
-    if (!selectedProject || !redistributeFromEmployee || !redistributeToEmployee || !redistributeWeek) {
+    if (!selectedProject || !redistributeToEmployee || !redistributeWeek) {
       toast.error('Completa todos los campos');
       return;
     }
     
-    let totalHours = 0;
-    const tasksToTransfer: typeof allocations = [];
+    if (redistributeSelectedTasks.size === 0) {
+      toast.error('Selecciona al menos una tarea para redistribuir');
+      return;
+    }
     
-    if (redistributeUseGlobal) {
-      // Modo global: usar horas especificadas
-      const hours = parseFloat(redistributeGlobalHours);
-      if (isNaN(hours) || hours <= 0) {
-        toast.error('Las horas deben ser un número positivo');
-        return;
-      }
-      totalHours = hours;
-    } else {
-      // Modo específico: usar tareas seleccionadas
-      if (redistributeSelectedTasks.size === 0) {
-        toast.error('Selecciona al menos una tarea o usa el modo global');
-        return;
-      }
-      
-      sourceEmployeeOpenTasks.forEach(task => {
-        if (redistributeSelectedTasks.has(task.id)) {
-          const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
-          if (remainingHours > 0) {
-            totalHours += remainingHours;
-            tasksToTransfer.push(task);
-          }
+    // Obtener todas las tareas seleccionadas (pueden ser de diferentes empleados)
+    const allDelayedTasks = delayedTasksByEmployee.flatMap(g => g.tasks);
+    const tasksToTransfer = allDelayedTasks.filter(task => redistributeSelectedTasks.has(task.id));
+    
+    if (tasksToTransfer.length === 0) {
+      toast.error('No hay tareas seleccionadas');
+      return;
+    }
+    
+    let totalHours = 0;
+    const tasksByEmployee: Record<string, typeof allocations> = {};
+    
+    tasksToTransfer.forEach(task => {
+      const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
+      if (remainingHours > 0) {
+        totalHours += remainingHours;
+        if (!tasksByEmployee[task.employeeId]) {
+          tasksByEmployee[task.employeeId] = [];
         }
-      });
-      
-      if (totalHours <= 0) {
-        toast.error('Las tareas seleccionadas no tienen horas restantes');
-        return;
+        tasksByEmployee[task.employeeId].push(task);
       }
+    });
+    
+    if (totalHours <= 0) {
+      toast.error('Las tareas seleccionadas no tienen horas restantes');
+      return;
     }
     
     try {
-      if (redistributeUseGlobal) {
-        // Crear asignación genérica
-        await addAllocation({
-          employeeId: redistributeToEmployee,
-          projectId: selectedProject,
-          weekStartDate: redistributeWeek,
-          hoursAssigned: totalHours,
-          taskName: `[Distribuir] ${totalHours}h redistribuidas`,
-          description: `Horas redistribuidas desde ${employees.find(e => e.id === redistributeFromEmployee)?.name || 'compañero'}. Distribuye estas horas entre las tareas que necesites.`,
-          status: 'planned'
-        });
-      } else {
-        // Transferir tareas específicas
-        const fromEmployee = employees.find(e => e.id === redistributeFromEmployee);
+      // Transferir tareas específicas (pueden ser de diferentes empleados)
+      for (const [fromEmployeeId, employeeTasks] of Object.entries(tasksByEmployee)) {
+        const fromEmployee = employees.find(e => e.id === fromEmployeeId);
         const fromEmployeeName = fromEmployee?.name || 'compañero';
         
-        for (const task of tasksToTransfer) {
+        for (const task of employeeTasks) {
           const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
           if (remainingHours > 0) {
             // Completar tarea original
@@ -289,10 +294,7 @@ export default function WeeklyForecastPage() {
       }
       
       toast.success(`${totalHours.toFixed(1)}h redistribuidas correctamente`);
-      setRedistributeFromEmployee('');
       setRedistributeSelectedTasks(new Set());
-      setRedistributeUseGlobal(false);
-      setRedistributeGlobalHours('');
       setRedistributeToEmployee('');
       setRedistributeWeek('');
       setSelectedProject(null);
@@ -435,19 +437,35 @@ export default function WeeklyForecastPage() {
               Semáforo de Proyectos (Month-End Forecast)
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Select value={filterClient} onValueChange={setFilterClient}>
-                <SelectTrigger className="w-[180px] h-8 text-xs">
-                  <SelectValue placeholder="Todos los clientes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los clientes</SelectItem>
-                  {clients.map(cli => (
-                    <SelectItem key={cli.id} value={cli.id}>
-                      {cli.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" className="w-[180px] h-8 text-xs justify-between">
+                    <span className="truncate">
+                      {filterClient === 'all' ? 'Todos los clientes' : clients.find(c => c.id === filterClient)?.name || 'Cliente'}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[250px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar cliente..." />
+                    <CommandList>
+                      <CommandEmpty>No hay clientes</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem onSelect={() => setFilterClient('all')}>
+                          <Check className={cn("mr-2 h-4 w-4", filterClient === 'all' ? "opacity-100" : "opacity-0")} />
+                          Todos los clientes
+                        </CommandItem>
+                        {clients.map(cli => (
+                          <CommandItem key={cli.id} value={cli.name} onSelect={() => setFilterClient(cli.id)}>
+                            <Check className={cn("mr-2 h-4 w-4", filterClient === cli.id ? "opacity-100" : "opacity-0")} />
+                            {cli.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <Select value={filterProjectStatus} onValueChange={setFilterProjectStatus}>
                 <SelectTrigger className="w-[150px] h-8 text-xs">
                   <SelectValue placeholder="Todos los estados" />
@@ -459,16 +477,37 @@ export default function WeeklyForecastPage() {
                   <SelectItem value="green">✅ On Track</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={filterProjectType} onValueChange={setFilterProjectType}>
-                <SelectTrigger className="w-[120px] h-8 text-xs">
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="SEO">SEO</SelectItem>
-                  <SelectItem value="PPC">PPC</SelectItem>
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" className="w-[120px] h-8 text-xs justify-between">
+                    <span className="truncate">
+                      {filterProjectType === 'all' ? 'Todos' : filterProjectType}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar tipo..." />
+                    <CommandList>
+                      <CommandEmpty>No hay tipos</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem onSelect={() => setFilterProjectType('all')}>
+                          <Check className={cn("mr-2 h-4 w-4", filterProjectType === 'all' ? "opacity-100" : "opacity-0")} />
+                          Todos
+                        </CommandItem>
+                        <CommandItem onSelect={() => setFilterProjectType('SEO')}>
+                          <Check className={cn("mr-2 h-4 w-4", filterProjectType === 'SEO' ? "opacity-100" : "opacity-0")} />
+                          SEO
+                        </CommandItem>
+                        <CommandItem onSelect={() => setFilterProjectType('PPC')}>
+                          <Check className={cn("mr-2 h-4 w-4", filterProjectType === 'PPC' ? "opacity-100" : "opacity-0")} />
+                          PPC
+                        </CommandItem>
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </CardHeader>
@@ -572,21 +611,37 @@ export default function WeeklyForecastPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Select value={filterFeedbackEmployee} onValueChange={setFilterFeedbackEmployee}>
-                <SelectTrigger className="w-[180px] h-8 text-xs">
-                  <SelectValue placeholder="Todos los compañeros" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los compañeros</SelectItem>
-                  {employees
-                    .filter(e => e.isActive)
-                    .map(emp => (
-                      <SelectItem key={emp.id} value={emp.id}>
-                        {emp.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" className="w-[180px] h-8 text-xs justify-between">
+                    <span className="truncate">
+                      {filterFeedbackEmployee === 'all' ? 'Todos los compañeros' : employees.find(e => e.id === filterFeedbackEmployee)?.name || 'Compañero'}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[250px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar compañero..." />
+                    <CommandList>
+                      <CommandEmpty>No hay compañeros</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem onSelect={() => setFilterFeedbackEmployee('all')}>
+                          <Check className={cn("mr-2 h-4 w-4", filterFeedbackEmployee === 'all' ? "opacity-100" : "opacity-0")} />
+                          Todos los compañeros
+                        </CommandItem>
+                        {employees
+                          .filter(e => e.isActive)
+                          .map(emp => (
+                            <CommandItem key={emp.id} value={emp.name} onSelect={() => setFilterFeedbackEmployee(emp.id)}>
+                              <Check className={cn("mr-2 h-4 w-4", filterFeedbackEmployee === emp.id ? "opacity-100" : "opacity-0")} />
+                              {emp.name}
+                            </CommandItem>
+                          ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" role="combobox" className="w-[180px] h-8 text-xs justify-between">
@@ -733,14 +788,11 @@ export default function WeeklyForecastPage() {
         </TabsContent>
       </Tabs>
       
-      {/* Sheet lateral para Redistribución (se abre desde cualquier tab) - NUEVO FLUJO */}
+      {/* Sheet lateral para Redistribución - NUEVO FLUJO: mostrar tareas retrasadas directamente */}
       <Sheet open={selectedProject !== null} onOpenChange={(open) => {
         if (!open) {
           setSelectedProject(null);
-          setRedistributeFromEmployee('');
           setRedistributeSelectedTasks(new Set());
-          setRedistributeUseGlobal(false);
-          setRedistributeGlobalHours('');
           setRedistributeToEmployee('');
           setRedistributeWeek('');
         }
@@ -749,7 +801,7 @@ export default function WeeklyForecastPage() {
           <SheetHeader>
             <SheetTitle>Redistribuir Horas</SheetTitle>
             <SheetDescription>
-              Transfiere horas de un compañero a otro. Selecciona el proyecto, el compañero de origen, sus tareas abiertas y el destino.
+              Selecciona las tareas retrasadas que quieres redistribuir y elige a quién y cuándo transferirlas.
             </SheetDescription>
           </SheetHeader>
           
@@ -763,134 +815,100 @@ export default function WeeklyForecastPage() {
                 </p>
               </div>
               
-              {/* Paso 2: Compañero de origen */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">2. Compañero de origen (quien tiene las tareas abiertas)</Label>
-                <Select value={redistributeFromEmployee} onValueChange={setRedistributeFromEmployee}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar compañero de origen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees
-                      .filter(e => e.isActive)
-                      .map(emp => (
-                        <SelectItem key={emp.id} value={emp.id}>
-                          {emp.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Paso 3: Tareas abiertas del compañero de origen */}
-              {redistributeFromEmployee && sourceEmployeeOpenTasks.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">3. Tareas abiertas del compañero</Label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={redistributeUseGlobal}
-                        onChange={(e) => {
-                          setRedistributeUseGlobal(e.target.checked);
-                          if (e.target.checked) {
-                            setRedistributeSelectedTasks(new Set());
-                          }
-                        }}
-                        className="h-4 w-4"
-                      />
-                      <Label className="text-xs text-muted-foreground cursor-pointer">
-                        Usar horas globales en lugar de tareas específicas
-                      </Label>
-                    </div>
-                  </div>
-                  
-                  {redistributeUseGlobal ? (
-                    <div className="space-y-2">
-                      <Label htmlFor="global-hours">Horas a redistribuir</Label>
-                      <Input
-                        id="global-hours"
-                        type="number"
-                        min="0.5"
-                        step="0.5"
-                        value={redistributeGlobalHours}
-                        onChange={(e) => setRedistributeGlobalHours(e.target.value)}
-                        placeholder="Ej: 8"
-                      />
-                    </div>
-                  ) : (
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto border rounded-lg p-3">
-                      {sourceEmployeeOpenTasks.map(task => {
-                        const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
-                        const isSelected = redistributeSelectedTasks.has(task.id);
+              {/* Paso 2: Tareas retrasadas (agrupadas por empleado) */}
+              {delayedTasksByEmployee.length > 0 ? (
+                <div className="space-y-4">
+                  <Label className="text-sm font-medium">2. Tareas retrasadas</Label>
+                  <div className="space-y-3 max-h-[400px] overflow-y-auto border rounded-lg p-3">
+                    {delayedTasksByEmployee.map(group => (
+                      <div key={group.employeeId} className="space-y-2">
+                        {/* Header del empleado */}
+                        <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={group.employeeAvatar} alt={group.employeeName} />
+                            <AvatarFallback className="bg-indigo-500 text-white text-[10px]">
+                              {group.employeeName.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-semibold text-sm text-slate-900">{group.employeeName}</span>
+                          <Badge variant="outline" className="ml-auto text-xs bg-slate-50">
+                            {group.tasks.length} tarea(s)
+                          </Badge>
+                        </div>
                         
-                        return (
-                          <div
-                            key={task.id}
-                            className={cn(
-                              "flex items-center gap-3 p-2 rounded border cursor-pointer transition-colors",
-                              isSelected ? "bg-indigo-50 border-indigo-300" : "bg-white border-slate-200 hover:bg-slate-50"
-                            )}
-                            onClick={() => {
-                              setRedistributeSelectedTasks(prev => {
-                                const newSet = new Set(prev);
-                                if (newSet.has(task.id)) {
-                                  newSet.delete(task.id);
-                                } else {
-                                  newSet.add(task.id);
-                                }
-                                return newSet;
-                              });
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => {}}
-                              className="h-4 w-4"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{task.taskName || 'Sin nombre'}</p>
-                              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                                <span>Asignadas: {task.hoursAssigned}h</span>
-                                <span>Realizadas: {task.hoursActual || 0}h</span>
+                        {/* Tareas del empleado */}
+                        <div className="space-y-2 pl-8">
+                          {group.tasks.map(task => {
+                            const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
+                            const isSelected = redistributeSelectedTasks.has(task.id);
+                            
+                            return (
+                              <div
+                                key={task.id}
+                                className={cn(
+                                  "flex items-center gap-3 p-2 rounded border cursor-pointer transition-colors",
+                                  isSelected ? "bg-indigo-50 border-indigo-300" : "bg-white border-slate-200 hover:bg-slate-50"
+                                )}
+                                onClick={() => {
+                                  setRedistributeSelectedTasks(prev => {
+                                    const newSet = new Set(prev);
+                                    if (newSet.has(task.id)) {
+                                      newSet.delete(task.id);
+                                    } else {
+                                      newSet.add(task.id);
+                                    }
+                                    return newSet;
+                                  });
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {}}
+                                  className="h-4 w-4"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">{task.taskName || 'Sin nombre'}</p>
+                                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                                    <span>Asignadas: {task.hoursAssigned}h</span>
+                                    <span>Realizadas: {task.hoursActual || 0}h</span>
+                                    {remainingHours > 0 && (
+                                      <span className="text-amber-600 font-medium">Restantes: {remainingHours}h</span>
+                                    )}
+                                  </div>
+                                </div>
                                 {remainingHours > 0 && (
-                                  <span className="text-amber-600 font-medium">Restantes: {remainingHours}h</span>
+                                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                                    {remainingHours}h
+                                  </Badge>
                                 )}
                               </div>
-                            </div>
-                            {remainingHours > 0 && (
-                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                                {remainingHours}h
-                              </Badge>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              )}
-              
-              {redistributeFromEmployee && sourceEmployeeOpenTasks.length === 0 && (
+              ) : (
                 <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
                   <p className="text-sm text-amber-700">
-                    Este compañero no tiene tareas abiertas de semanas pasadas en este proyecto.
+                    No hay tareas retrasadas en este proyecto.
                   </p>
                 </div>
               )}
               
-              {/* Paso 4: Compañero destino */}
-              {redistributeFromEmployee && (
+              {/* Paso 3: Compañero destino */}
+              {redistributeSelectedTasks.size > 0 && (
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">4. Compañero destino</Label>
+                  <Label className="text-sm font-medium">3. Compañero destino</Label>
                   <Select value={redistributeToEmployee} onValueChange={setRedistributeToEmployee}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar compañero destino" />
                     </SelectTrigger>
                     <SelectContent>
                       {employees
-                        .filter(e => e.isActive && e.id !== redistributeFromEmployee)
+                        .filter(e => e.isActive)
                         .map(emp => (
                           <SelectItem key={emp.id} value={emp.id}>
                             {emp.name}
@@ -901,10 +919,10 @@ export default function WeeklyForecastPage() {
                 </div>
               )}
               
-              {/* Paso 5: Semana destino */}
+              {/* Paso 4: Semana destino */}
               {redistributeToEmployee && (
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">5. Semana destino</Label>
+                  <Label className="text-sm font-medium">4. Semana destino</Label>
                   <Select value={redistributeWeek} onValueChange={setRedistributeWeek}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar semana" />
@@ -945,16 +963,16 @@ export default function WeeklyForecastPage() {
                   
                   {/* Resumen de horas a transferir */}
                   {(() => {
+                    const allDelayedTasks = delayedTasksByEmployee.flatMap(g => g.tasks);
+                    const selectedTasks = allDelayedTasks.filter(t => redistributeSelectedTasks.has(t.id));
                     let totalTransfer = 0;
-                    if (redistributeUseGlobal) {
-                      totalTransfer = parseFloat(redistributeGlobalHours) || 0;
-                    } else {
-                      sourceEmployeeOpenTasks.forEach(task => {
-                        if (redistributeSelectedTasks.has(task.id)) {
-                          totalTransfer += task.hoursAssigned - (task.hoursActual || 0);
-                        }
-                      });
-                    }
+                    
+                    selectedTasks.forEach(task => {
+                      const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
+                      if (remainingHours > 0) {
+                        totalTransfer += remainingHours;
+                      }
+                    });
                     
                     if (totalTransfer > 0) {
                       const targetWeekLoad = employeeWorkloads
@@ -1004,9 +1022,7 @@ export default function WeeklyForecastPage() {
               <Button 
                 onClick={handleRedistribute} 
                 className="w-full bg-indigo-600 hover:bg-indigo-700"
-                disabled={!redistributeFromEmployee || !redistributeToEmployee || !redistributeWeek || 
-                  (!redistributeUseGlobal && redistributeSelectedTasks.size === 0) ||
-                  (redistributeUseGlobal && (!redistributeGlobalHours || parseFloat(redistributeGlobalHours) <= 0))}
+                disabled={redistributeSelectedTasks.size === 0 || !redistributeToEmployee || !redistributeWeek}
               >
                 Redistribuir Horas
               </Button>

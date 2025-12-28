@@ -59,7 +59,7 @@ export default function EmployeeDashboard() {
   const { 
     employees, allocations, absences, teamEvents, projects, clients,
     addAllocation, isLoading: isGlobalLoading, getEmployeeMonthlyLoad, getEmployeeLoadForWeek,
-    currentUser: appCurrentUser, loadDataForMonth
+    currentUser: appCurrentUser, loadDataForMonth, weeklyFeedback
   } = useApp();
   
   // Usar el currentUser del AppContext directamente (ya está vinculado)
@@ -87,14 +87,28 @@ export default function EmployeeDashboard() {
   const { showTour, resetTour } = useWelcomeTour();
   
   // Detectar si hay tareas pendientes para Weekly (semanas pasadas, actual O transferidas)
+  // Excluir tareas que ya han sido gestionadas (distribuidas, movidas, mantenidas)
   const hasPendingWeeklyTasks = useMemo(() => {
     if (!myEmployeeProfile) return false;
     const today = new Date();
     
-    // Buscar tareas en semanas pasadas o actual que no estén completadas
+    // Obtener IDs de tareas ya gestionadas desde weeklyFeedback
+    const processedTaskIds = new Set(
+      weeklyFeedback
+        .filter(fb => fb.allocationId && (
+          fb.comments?.includes('Tarea mantenida tal cual') ||
+          fb.comments?.includes('Tarea movida a semana futura') ||
+          fb.comments?.includes('Tarea transferida a') ||
+          fb.comments?.includes('Distribuidas en')
+        ))
+        .map(fb => fb.allocationId!)
+    );
+    
+    // Buscar tareas en semanas pasadas o actual que no estén completadas Y no hayan sido procesadas
     const hasOpenTasks = allocations.some(a => {
       if (a.employeeId !== myEmployeeProfile.id) return false;
       if (a.status === 'completed') return false;
+      if (processedTaskIds.has(a.id)) return false; // Excluir tareas ya procesadas
       
       try {
         const taskWeekDate = parseISO(a.weekStartDate);
@@ -107,9 +121,11 @@ export default function EmployeeDashboard() {
     });
     
     // También buscar tareas transferidas (aunque estén en semanas futuras)
+    // PERO excluir si ya tienen feedback de "keep" o si ya fueron distribuidas
     const hasTransferredTasks = allocations.some(a => {
       if (a.employeeId !== myEmployeeProfile.id) return false;
       if (a.status === 'completed') return false;
+      if (processedTaskIds.has(a.id)) return false; // Excluir tareas ya procesadas
       
       // Tareas transferidas tienen "(transferida de" en el nombre
       const isTransferred = a.taskName?.includes('(transferida de');
@@ -124,7 +140,7 @@ export default function EmployeeDashboard() {
     });
     
     return hasOpenTasks || hasTransferredTasks;
-  }, [allocations, myEmployeeProfile, currentMonth]);
+  }, [allocations, myEmployeeProfile, currentMonth, weeklyFeedback]);
 
   const weeks = useMemo(() => getWeeksForMonth(currentMonth), [currentMonth]);
   const internalClient = useMemo(() => clients.find(c => c.name === INTERNAL_CLIENT_NAME), [clients]);
