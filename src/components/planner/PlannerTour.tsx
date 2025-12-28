@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { 
@@ -392,66 +393,95 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
   const step = tourSteps[currentStep];
   const isLastStep = currentStep === tourSteps.length - 1;
   const isFirstStep = currentStep === 0;
+  const isCentered = step.position === 'center' || !highlightPos;
 
-  // Renderizamos directamente sin portal
-  // El Sheet padre tiene onInteractOutside para prevenir cierre, así que aquí solo 
-  // necesitamos manejar la UI del tour sin bloquear eventos agresivamente
-  return (
-    <div 
-      className="fixed inset-0" 
-      style={{ zIndex: 999999, pointerEvents: 'none' }}
-    >
-      {/* Overlay oscuro con spotlight usando box-shadow */}
-      {highlightPos ? (
-        <>
-          {/* Overlay invisible para capturar clics */}
+  // Renderizamos en un portal igual que WelcomeTour para mejor posicionamiento
+  const tourContent = (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 99999, pointerEvents: 'none' }}>
+      {/* Overlay SVG con spotlight - mismo enfoque que WelcomeTour */}
+      <svg 
+        style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          width: '100vw', 
+          height: '100vh',
+          pointerEvents: 'auto'
+        }}
+        onClick={handleOverlayClick}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <defs>
+          <mask id="planner-tour-spotlight-mask">
+            <rect x="0" y="0" width="100%" height="100%" fill="white" />
+            {highlightPos && isReady && (
+              <rect 
+                x={highlightPos.left - 2}
+                y={highlightPos.top - 2}
+                width={highlightPos.width + 4}
+                height={highlightPos.height + 4}
+                rx="10"
+                fill="black"
+              />
+            )}
+          </mask>
+        </defs>
+        <rect 
+          x="0" 
+          y="0" 
+          width="100%" 
+          height="100%" 
+          fill="rgba(0, 0, 0, 0.75)" 
+          mask="url(#planner-tour-spotlight-mask)"
+        />
+      </svg>
+
+      {/* Borde del highlight con animación */}
+      {highlightPos && isReady && (
+        <div
+          style={{
+            position: 'fixed',
+            top: highlightPos.top - 2,
+            left: highlightPos.left - 2,
+            width: highlightPos.width + 4,
+            height: highlightPos.height + 4,
+            border: '3px solid #818cf8',
+            borderRadius: '10px',
+            boxShadow: '0 0 0 4px rgba(129, 140, 248, 0.3), 0 0 20px rgba(129, 140, 248, 0.4)',
+            pointerEvents: 'none',
+            zIndex: 100000
+          }}
+        >
           <div 
-            className="absolute inset-0"
-            style={{ pointerEvents: 'auto' }}
-            onClick={handleOverlayClick}
-            onMouseDown={(e) => e.stopPropagation()}
-          />
-          {/* Spotlight con box-shadow */}
-          <div 
-            className="absolute rounded-lg transition-all duration-300"
             style={{
-              top: highlightPos.top,
-              left: highlightPos.left,
-              width: highlightPos.width,
-              height: highlightPos.height,
-              // box-shadow enorme para crear el overlay oscuro alrededor
-              boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.6), 0 0 0 4px rgba(99, 102, 241, 0.8)',
-              pointerEvents: 'none'
+              position: 'absolute',
+              inset: 0,
+              borderRadius: '10px',
+              border: '2px solid #a5b4fc',
+              animation: 'planner-tour-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite',
+              opacity: 0.3
             }}
           />
-        </>
-      ) : (
-        /* Sin elemento destacado - overlay completo */
-        <div 
-          className="absolute inset-0 bg-black/60"
-          style={{ pointerEvents: 'auto' }}
-          onClick={handleOverlayClick}
-          onMouseDown={(e) => e.stopPropagation()}
-        />
+        </div>
       )}
 
       {/* Tooltip */}
-      <Card 
-        className={cn(
-          "absolute p-0 shadow-2xl border-0 overflow-hidden transition-all duration-300",
-          !isReady && "opacity-0",
-          step.position === 'center' && "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-        )}
-      ref={cardRef}
-        style={{
-          width: 360,
-          zIndex: 1000000,
-          pointerEvents: 'auto',
-          ...(step.position !== 'center' && tooltipPos ? { top: tooltipPos.top, left: tooltipPos.left } : {})
-        }}
-        onClick={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
+      {isReady && (
+        <Card 
+          className="shadow-2xl border-0 overflow-hidden"
+          ref={cardRef}
+          style={{
+            position: 'fixed',
+            width: 360,
+            top: isCentered ? '50%' : tooltipPos?.top,
+            left: isCentered ? '50%' : tooltipPos?.left,
+            transform: isCentered ? 'translate(-50%, -50%)' : undefined,
+            zIndex: 100001,
+            pointerEvents: 'auto'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
         {/* Header con gradiente */}
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 text-white">
           <div className="flex items-center justify-between">
@@ -562,7 +592,21 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
           </div>
         )}
       </Card>
+      )}
+
+      {/* Estilos de animación */}
+      <style>{`
+        @keyframes planner-tour-ping {
+          75%, 100% {
+            transform: scale(1.05);
+            opacity: 0;
+          }
+        }
+      `}</style>
     </div>
   );
+
+  // Usar portal para renderizar fuera del árbol DOM del Sheet
+  return createPortal(tourContent, document.body);
 }
 
