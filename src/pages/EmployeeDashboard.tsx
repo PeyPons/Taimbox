@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { MyWeekView } from '@/components/employee/MyWeekView';
 import { PriorityInsights, ProjectTeamPulse } from '@/components/employee/DashboardWidgets'; 
 import { ReliabilityIndexCard } from '@/components/employee/ReliabilityIndexCard';
+import { PlanningInconsistenciesCard } from '@/components/employee/PlanningInconsistenciesCard';
 import { CollaborationCards } from '@/components/employee/CollaborationCards';
 import { MonthlyBalanceCard } from '@/components/employee/MonthlyBalanceCard';
 import { WelcomeTour, useWelcomeTour } from '@/components/employee/WelcomeTour';
@@ -562,6 +563,9 @@ export default function EmployeeDashboard() {
       <div data-tour="reliability-index">
         <ReliabilityIndexCard employeeId={myEmployeeProfile.id} />
       </div>
+
+      {/* 6.5. COHERENCIA DE PLANIFICACIÓN */}
+      <PlanningInconsistenciesCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
 
       {/* 7. PROYECTOS DEL MES */}
       <div data-tour="projects-summary">

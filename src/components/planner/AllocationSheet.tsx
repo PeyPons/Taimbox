@@ -1188,39 +1188,24 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                           </div>
 
                           <div className="p-4 space-y-4">
-                            {/* Tus horas */}
-                            <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
-                              <div className="text-[10px] font-semibold text-indigo-600 uppercase mb-2">Tus horas (este mes)</div>
-                              <div className="flex gap-4">
-                                <div>
-                                  <div className="text-lg font-bold text-emerald-600">{myComputed.toFixed(1)}h</div>
-                                  <div className="text-[10px] text-slate-500">Computado</div>
-                                </div>
-                                <div>
-                                  <div className="text-lg font-bold text-blue-600">{myPlanned.toFixed(1)}h</div>
-                                  <div className="text-[10px] text-slate-500">Planificado</div>
-                                </div>
-                              </div>
-                            </div>
-
                             {/* Total cliente */}
                             {budgetMax > 0 && (
                               <div className="space-y-2">
                                 <div className="text-[10px] font-semibold text-slate-500 uppercase">Total cliente</div>
                                 <div className="space-y-1.5 text-xs">
                                   <div className="flex justify-between">
-                                    <span className="text-slate-500">Contratadas:</span>
+                                    <span className="text-slate-500">Presupuestadas:</span>
                                     <span className="font-medium">{budgetMin > 0 ? `${budgetMin}-` : ''}{budgetMax}h</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-500">Planificado:</span>
+                                    <span className="text-blue-600">{totalPlanned.toFixed(1)}h</span>
                                   </div>
                                   <div className="flex justify-between">
                                     <span className="text-slate-500">Computado (todos):</span>
                                     <span className={cn("font-bold", status === 'overload' ? 'text-red-600' : 'text-emerald-600')}>
                                       {totalComputed.toFixed(1)}h
                                     </span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-slate-500">Planificado:</span>
-                                    <span className="text-blue-600">{totalPlanned.toFixed(1)}h</span>
                                   </div>
                                 </div>
 
@@ -1273,8 +1258,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                           {employeeName} {isMe && "(tú)"}
                                         </div>
                                         <div className="flex gap-3 text-[10px] mt-0.5">
-                                          <span className="text-emerald-600">Comp: {computed.toFixed(1)}h</span>
                                           <span className="text-blue-600">Plan: {planned.toFixed(1)}h</span>
+                                          <span className="text-emerald-600">Comp: {computed.toFixed(1)}h</span>
                                         </div>
                                       </div>
                                     );
@@ -1282,6 +1267,23 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                 </div>
                               </div>
                             )}
+
+                            {/* Tus horas */}
+                            <div className="border-t pt-3">
+                              <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
+                                <div className="text-[10px] font-semibold text-indigo-600 uppercase mb-2">Tus horas</div>
+                                <div className="flex gap-4">
+                                  <div>
+                                    <div className="text-lg font-bold text-blue-600">{myPlanned.toFixed(1)}h</div>
+                                    <div className="text-[10px] text-slate-500">Planificado</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-lg font-bold text-emerald-600">{myComputed.toFixed(1)}h</div>
+                                    <div className="text-[10px] text-slate-500">Computado</div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       );
@@ -1315,6 +1317,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                 const est = round2(projAllocs.reduce((s, a) => s + (a.hoursAssigned || 0), 0));
                                 const completed = projAllocs.filter(a => a.status === 'completed').length;
                                 const total = projAllocs.length;
+                                const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
                                 return (
                                   <button
@@ -1328,9 +1331,20 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                       </span>
                                       <span className="text-[10px] text-slate-500 ml-2">{est}h</span>
                                     </div>
-                                    <div className="text-[10px] text-slate-400 mt-0.5">
+                                    <div className="text-[10px] text-slate-400 mt-0.5 mb-1.5">
                                       {completed}/{total} tareas
                                     </div>
+                                    {/* Barra de progreso */}
+                                    {total > 0 && (
+                                      <div className="mt-1.5">
+                                        <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                                          <div
+                                            className={cn("h-full transition-all duration-300", progress === 100 ? "bg-emerald-500" : "bg-indigo-500")}
+                                            style={{ width: `${progress}%` }}
+                                          />
+                                        </div>
+                                      </div>
+                                    )}
                                   </button>
                                 );
                               })}
