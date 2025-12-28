@@ -231,6 +231,15 @@ export default function ClientsPage() {
     ).sort((a, b) => a.client.name.localeCompare(b.client.name));
   }, [clientsWithStats, searchQuery]);
 
+  // Mostrar loading del mes igual que EmployeeDashboard y PlannerGrid (retorno temprano DESPUÉS de todos los hooks)
+  if (isLoadingMonth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-slate-400">Cargando datos del mes...</div>
+      </div>
+    );
+  }
+
   // Estadísticas globales
   const globalStats = useMemo(() => {
     const totalClients = clients.length;
