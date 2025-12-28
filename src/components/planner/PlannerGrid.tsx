@@ -34,12 +34,15 @@ async function callAI(prompt: string): Promise<AIResponse> {
 
 export function PlannerGrid() {
   // AÑADIDO: currentUser para filtrar correctamente
-  const { employees, getEmployeeMonthlyLoad, projects, allocations, absences, teamEvents, currentUser } = useApp();
+  const { employees, getEmployeeMonthlyLoad, projects, allocations, absences, teamEvents, currentUser, loadDataForMonth, isLoading: isGlobalLoading } = useApp();
   
   const [currentMonth, setCurrentMonth] = useState(() => {
     const saved = localStorage.getItem('planner_date');
     return saved ? new Date(saved) : new Date();
   });
+  const [isLoadingMonth, setIsLoadingMonth] = useState(false);
+  const loadedMonthsRef = useRef<Set<string>>(new Set());
+  const loadingMonthRef = useRef<string | null>(null);
 
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
@@ -53,6 +56,48 @@ export function PlannerGrid() {
 
   useEffect(() => { localStorage.setItem('planner_date', currentMonth.toISOString()); }, [currentMonth]);
   useEffect(() => { localStorage.setItem('planner_only_me', String(showOnlyMe)); }, [showOnlyMe]);
+
+  // Cargar datos del mes cuando cambia el mes visible
+  useEffect(() => {
+    if (!isGlobalLoading) {
+      const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
+      
+      // Si ya se cargó este mes o está cargando, no hacer nada
+      if (loadedMonthsRef.current.has(monthKey) || loadingMonthRef.current === monthKey) {
+        setIsLoadingMonth(false);
+        return;
+      }
+      
+      // Verificar si necesitamos cargar datos para este mes
+      const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+      const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+      
+      // Verificar si hay allocations para este mes
+      const hasDataForMonth = allocations.some(a => {
+        try {
+          const allocDate = new Date(a.weekStartDate);
+          return allocDate >= monthStart && allocDate <= monthEnd;
+        } catch {
+          return false;
+        }
+      });
+      
+      // Si no hay datos para este mes, cargarlos
+      if (!hasDataForMonth) {
+        loadingMonthRef.current = monthKey;
+        setIsLoadingMonth(true);
+        loadDataForMonth(currentMonth).finally(() => {
+          loadedMonthsRef.current.add(monthKey);
+          loadingMonthRef.current = null;
+          setIsLoadingMonth(false);
+        });
+      } else {
+        // Hay datos, marcar como cargado
+        loadedMonthsRef.current.add(monthKey);
+        setIsLoadingMonth(false);
+      }
+    }
+  }, [currentMonth, isGlobalLoading, allocations, loadDataForMonth]);
 
   const weeks = getWeeksForMonth(currentMonth);
   const year = currentMonth.getFullYear();

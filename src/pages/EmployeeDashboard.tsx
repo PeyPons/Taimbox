@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { MyWeekView } from '@/components/employee/MyWeekView';
 import { PriorityInsights, ProjectTeamPulse } from '@/components/employee/DashboardWidgets'; 
@@ -58,7 +58,7 @@ export default function EmployeeDashboard() {
   const { 
     employees, allocations, absences, teamEvents, projects, clients,
     addAllocation, isLoading: isGlobalLoading, getEmployeeMonthlyLoad, getEmployeeLoadForWeek,
-    currentUser: appCurrentUser
+    currentUser: appCurrentUser, loadDataForMonth
   } = useApp();
   
   // Usar el currentUser del AppContext directamente (ya está vinculado)
@@ -66,6 +66,9 @@ export default function EmployeeDashboard() {
   const isLoadingProfile = isGlobalLoading;
   
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isLoadingMonth, setIsLoadingMonth] = useState(false);
+  const loadedMonthsRef = useRef<Set<string>>(new Set());
+  const loadingMonthRef = useRef<string | null>(null);
   const [selectedCell, setSelectedCell] = useState<{ employeeId: string; weekStart: Date } | null>(null);
   
   const [showGoals, setShowGoals] = useState(false);
@@ -372,8 +375,50 @@ export default function EmployeeDashboard() {
   const handleNextMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   const handleToday = () => setCurrentMonth(new Date());
 
-  // Mostrar loader mientras carga global o el perfil
-  if (isGlobalLoading || isLoadingProfile) {
+  // Cargar datos del mes cuando cambia el mes visible
+  useEffect(() => {
+    if (!isGlobalLoading && !isLoadingProfile) {
+      const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
+      
+      // Si ya se cargó este mes o está cargando, no hacer nada
+      if (loadedMonthsRef.current.has(monthKey) || loadingMonthRef.current === monthKey) {
+        setIsLoadingMonth(false);
+        return;
+      }
+      
+      // Verificar si necesitamos cargar datos para este mes
+      const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+      const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+      
+      // Verificar si hay allocations para este mes
+      const hasDataForMonth = allocations.some(a => {
+        try {
+          const allocDate = new Date(a.weekStartDate);
+          return allocDate >= monthStart && allocDate <= monthEnd;
+        } catch {
+          return false;
+        }
+      });
+      
+      // Si no hay datos para este mes, cargarlos
+      if (!hasDataForMonth) {
+        loadingMonthRef.current = monthKey;
+        setIsLoadingMonth(true);
+        loadDataForMonth(currentMonth).finally(() => {
+          loadedMonthsRef.current.add(monthKey);
+          loadingMonthRef.current = null;
+          setIsLoadingMonth(false);
+        });
+      } else {
+        // Hay datos, marcar como cargado
+        loadedMonthsRef.current.add(monthKey);
+        setIsLoadingMonth(false);
+      }
+    }
+  }, [currentMonth, isGlobalLoading, isLoadingProfile, allocations, loadDataForMonth]);
+
+  // Mostrar loader mientras carga global, el perfil o el mes
+  if (isGlobalLoading || isLoadingProfile || isLoadingMonth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">

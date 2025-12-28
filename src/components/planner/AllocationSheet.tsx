@@ -67,6 +67,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(new Set());
   const [isTourActive, setIsTourActive] = useState(false);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
+  const loadedMonthsRef = useRef<Set<string>>(new Set());
+  const loadingMonthRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -97,25 +99,44 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   // Cargar datos del mes cuando cambia el mes visible
   useEffect(() => {
     if (open && !isGlobalLoading) {
+      const monthKey = `${viewDate.getFullYear()}-${viewDate.getMonth()}`;
+      
+      // Si ya se cargó este mes o está cargando, no hacer nada
+      if (loadedMonthsRef.current.has(monthKey) || loadingMonthRef.current === monthKey) {
+        setIsLoadingTasks(false);
+        return;
+      }
+      
       // Verificar si necesitamos cargar datos para este mes
       const monthStart = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
       const monthEnd = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0);
       
       // Verificar si hay allocations para este mes
       const hasDataForMonth = allocations.some(a => {
-        const allocDate = new Date(a.weekStartDate);
-        return allocDate >= monthStart && allocDate <= monthEnd;
+        try {
+          const allocDate = new Date(a.weekStartDate);
+          return allocDate >= monthStart && allocDate <= monthEnd;
+        } catch {
+          return false;
+        }
       });
       
       // Si no hay datos para este mes, cargarlos
       if (!hasDataForMonth) {
+        loadingMonthRef.current = monthKey;
         setIsLoadingTasks(true);
         loadDataForMonth(viewDate).finally(() => {
+          loadedMonthsRef.current.add(monthKey);
+          loadingMonthRef.current = null;
           setIsLoadingTasks(false);
         });
+      } else {
+        // Hay datos, marcar como cargado
+        loadedMonthsRef.current.add(monthKey);
+        setIsLoadingTasks(false);
       }
     }
-  }, [viewDate, open, isGlobalLoading, allocations, loadDataForMonth]);
+  }, [viewDate, open, isGlobalLoading, loadDataForMonth]);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAllocation, setEditingAllocation] = useState<Allocation | null>(null);
