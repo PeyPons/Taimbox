@@ -77,6 +77,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
   const [inlineNameValue, setInlineNameValue] = useState('');
   const inlineInputRef = useRef<HTMLInputElement>(null);
+  // #region agent log
+  const toggleTimeoutRefs = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const isMountedRef = useRef(true);
+  // #endregion
 
   const [editProjectId, setEditProjectId] = useState('');
   const [editTaskName, setEditTaskName] = useState('');
@@ -270,6 +274,21 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     if (inlineEditingId && inlineInputRef.current) inlineInputRef.current.focus();
   }, [inlineEditingId]);
 
+  // #region agent log
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AllocationSheet.tsx:cleanup',message:'Component unmounting',data:{activeTimeouts:toggleTimeoutRefs.current.size},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      toggleTimeoutRefs.current.forEach((timeout, allocationId) => {
+        fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AllocationSheet.tsx:cleanup',message:'Clearing timeout on unmount',data:{allocationId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        clearTimeout(timeout);
+      });
+      toggleTimeoutRefs.current.clear();
+    };
+  }, []);
+  // #endregion
+
   // Persistir preferencias en localStorage
   useEffect(() => {
     localStorage.setItem('planner_autoExpand', JSON.stringify(autoExpand));
@@ -366,6 +385,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   };
 
   const toggleTaskCompletion = (allocation: Allocation) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AllocationSheet.tsx:toggleTaskCompletion',message:'Task completion toggled',data:{allocationId:allocation.id,currentStatus:allocation.status,isMounted:isMountedRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
       const isCompleting = allocation.status !== 'completed';
       setRecentlyToggled(prev => { const newSet = new Set(prev); newSet.add(allocation.id); return newSet; });
       updateAllocation({
@@ -374,7 +396,21 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
           hoursActual: isCompleting ? allocation.hoursAssigned : 0,
           hoursComputed: isCompleting ? allocation.hoursAssigned : 0
       });
-      setTimeout(() => { setRecentlyToggled(prev => { const newSet = new Set(prev); newSet.delete(allocation.id); return newSet; }); }, 120000); // 2 minutos para dar tiempo a poner horas reales y computadas
+      // Limpiar timeout anterior si existe
+      const existingTimeout = toggleTimeoutRefs.current.get(allocation.id);
+      if (existingTimeout) {
+        clearTimeout(existingTimeout);
+      }
+      const timeout = setTimeout(() => {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AllocationSheet.tsx:timeout-callback',message:'Timeout callback executing',data:{allocationId:allocation.id,isMounted:isMountedRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
+        if (isMountedRef.current) {
+          setRecentlyToggled(prev => { const newSet = new Set(prev); newSet.delete(allocation.id); return newSet; });
+        }
+        toggleTimeoutRefs.current.delete(allocation.id);
+      }, 120000); // 2 minutos para dar tiempo a poner horas reales y computadas
+      toggleTimeoutRefs.current.set(allocation.id, timeout);
   };
 
   const updateInlineHours = (allocation: Allocation, field: 'hoursActual' | 'hoursComputed', value: string) => {

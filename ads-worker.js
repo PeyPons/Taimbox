@@ -21,7 +21,32 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // --- UTILIDADES ---
 
+// #region agent log helper
+async function agentLog(payload) {
+  try {
+    await fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: 'debug-session',
+        runId: 'ads-worker',
+        timestamp: Date.now(),
+        ...payload
+      })
+    });
+  } catch (_) { /* noop */ }
+}
+// #endregion
+
 function getDateRange() {
+  const formatter = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Atlantic/Canary',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  const format = (date) => formatter.format(date); // YYYY-MM-DD en zona horaria Canarias
+
   const now = new Date();
   const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const year = currentMonth.getFullYear();
@@ -87,6 +112,14 @@ async function getAccountData(customerId, accessToken, dateRange) {
       segments.date BETWEEN '${dateRange.firstDay}' AND '${dateRange.today}'
       AND metrics.cost_micros > 0`; 
    
+  // #region agent log
+  agentLog({
+    location: 'ads-worker.js:getAccountData',
+    message: 'Fetching account data',
+    data: { customerId, dateRange }
+  });
+  // #endregion
+
   const response = await fetch(`https://googleads.googleapis.com/${API_VERSION}/customers/${customerId}/googleAds:searchStream`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${accessToken}`, 'developer-token': DEVELOPER_TOKEN, 'Content-Type': 'application/json', 'login-customer-id': MCC_ID },
@@ -132,8 +165,36 @@ async function getAccountData(customerId, accessToken, dateRange) {
         } 
       });
     }
+    
+    // Calcular totales para logs
+    const totalCost = Array.from(aggregator.values()).reduce((sum, e) => sum + e.cost, 0);
+    const dateRange = Array.from(aggregator.values()).map(e => e.date).sort();
+    const minDate = dateRange[0] || 'N/A';
+    const maxDate = dateRange[dateRange.length - 1] || 'N/A';
+    
+    // #region agent log
+    console.log(`[ads-worker] ${customerId}: ${aggregator.size} filas, coste total: ${Math.round(totalCost * 100) / 100}€, fechas: ${minDate} a ${maxDate}`);
+    agentLog({
+      location: 'ads-worker.js:getAccountData',
+      message: 'Aggregated account data',
+      data: { 
+        customerId, 
+        rows: aggregator.size,
+        totalCost: Math.round(totalCost * 100) / 100,
+        dateRange: { min: minDate, max: maxDate },
+        sampleDates: dateRange.slice(0, 5)
+      }
+    });
+    // #endregion
   } else {
       console.warn(`⚠️ Aviso cuenta ${customerId}: ${response.statusText}`);
+      // #region agent log
+      agentLog({
+        location: 'ads-worker.js:getAccountData',
+        message: 'Account fetch failed',
+        data: { customerId, status: response.status, statusText: response.statusText }
+      });
+      // #endregion
   }
   
   // Devolvemos los valores del Map como array limpio
@@ -153,13 +214,15 @@ async function processSyncJob(jobId) {
     await supabase.from('ads_sync_logs').update({ status: 'running' }).eq('id', jobId);
     
     const range = getDateRange();
-    await log(`🚀 Iniciando Sync Google v22. Desde: ${range.firstDay}`);
+    await log(`🚀 Iniciando Sync Google v22. Desde: ${range.firstDay} hasta ${range.today}`);
+    console.log(`[ads-worker] Rango de fechas: ${range.firstDay} a ${range.today}`);
     
     const token = await getAccessToken();
     const clients = await getClientAccounts(token);
     await log(`📋 ${clients.length} cuentas encontradas.`);
 
     let totalRows = 0;
+    let totalCost = 0;
     
     for (const [index, client] of clients.entries()) {
       await log(`[${index + 1}/${clients.length}] ${client.name}...`);
@@ -168,6 +231,9 @@ async function processSyncJob(jobId) {
           const campaignData = await getAccountData(client.id, token, range);
           
           if (campaignData.length > 0) {
+             const clientCost = campaignData.reduce((sum, d) => sum + (d.cost || 0), 0);
+             totalCost += clientCost;
+             
              const rowsToInsert = campaignData.map(d => ({ ...d, client_name: client.name }));
              
              // Upsert masivo (ahora seguro porque no hay duplicados)
@@ -175,15 +241,20 @@ async function processSyncJob(jobId) {
                 .from('google_ads_campaigns')
                 .upsert(rowsToInsert, { onConflict: 'campaign_id, date' });
              
-             if (error) console.error(`❌ Error DB ${client.name}: ${error.message}`);
-             else totalRows += campaignData.length;
+             if (error) {
+               console.error(`❌ Error DB ${client.name}: ${error.message}`);
+             } else {
+               totalRows += campaignData.length;
+               console.log(`[ads-worker] ${client.name}: ${campaignData.length} filas, ${Math.round(clientCost * 100) / 100}€`);
+             }
           }
       } catch (err) {
           console.error(`Skip ${client.name}:`, err.message);
       }
     }
     
-    await log(`🎉 Finalizado. ${totalRows} filas actualizadas.`);
+    await log(`🎉 Finalizado. ${totalRows} filas actualizadas. Coste total: ${Math.round(totalCost * 100) / 100}€`);
+    console.log(`[ads-worker] Resumen: ${totalRows} filas, ${Math.round(totalCost * 100) / 100}€ total`);
     await supabase.from('ads_sync_logs').update({ status: 'completed' }).eq('id', jobId);
 
   } catch (err) {
