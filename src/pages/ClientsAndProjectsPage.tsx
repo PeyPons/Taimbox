@@ -1203,7 +1203,7 @@ export default function ClientsAndProjectsPage() {
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p className="text-xs">Proyectos con más horas planificadas que asignadas</p>
+                <p className="text-xs">Proyectos con más horas planificadas que presupuestadas</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

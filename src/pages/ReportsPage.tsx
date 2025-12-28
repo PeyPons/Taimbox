@@ -1085,7 +1085,7 @@ export default function ReportsPage() {
       bgColor: 'bg-indigo-50',
     },
     {
-      title: 'Real (Incurrido)',
+      title: 'Reales',
       value: `${monthStats.real}h`,
       subtitle: `Trabajo de reloj`,
       icon: Zap,
@@ -1095,7 +1095,7 @@ export default function ReportsPage() {
     {
       title: 'Computado',
       value: `${monthStats.computed}h`,
-      subtitle: 'Facturable',
+      subtitle: 'Computadas',
       icon: CheckCircle2,
       color: 'text-emerald-600',
       bgColor: 'bg-emerald-50',
@@ -1752,7 +1752,7 @@ export default function ReportsPage() {
             <Card className="col-span-4">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" /> Eficiencia & Rentabilidad</CardTitle>
-                <CardDescription>Análisis de ocupación y conversión de horas reales a facturables.</CardDescription>
+                <CardDescription>Análisis de ocupación y conversión de horas reales a computadas.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-8">
                 <div className="space-y-2">

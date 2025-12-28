@@ -82,7 +82,7 @@ export const MonthlyBalanceCard = memo(function MonthlyBalanceCard({ employeeId,
             <div className="text-slate-300 text-lg">→</div>
             <div className="text-center">
               <p className="text-xl font-bold text-emerald-600">{monthlyStats.totalComputed}h</p>
-              <p className="text-[10px] text-emerald-500 font-medium">Facturadas</p>
+              <p className="text-[10px] text-emerald-500 font-medium">Computadas</p>
             </div>
             {monthlyBalance !== 0 && (
               <>
