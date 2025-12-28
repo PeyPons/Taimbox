@@ -25,7 +25,7 @@ const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 export default function WeeklyForecastPage() {
   const { 
     projects, allocations, employees, clients, weeklyFeedback, 
-    addAllocation, currentUser, absences, teamEvents
+    addAllocation, updateAllocation, currentUser, absences, teamEvents
   } = useApp();
   
   const [currentMonth, setCurrentMonth] = useState(() => {
