@@ -1359,6 +1359,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
                       {/* Proyectos de esta semana */}
                       {(() => {
+                        if (weeks.length === 0 || activeWeekIndex < 0 || activeWeekIndex >= weeks.length) {
+                          return <p className="text-sm text-slate-500">No hay semanas disponibles</p>;
+                        }
                         const weekStorageKey = getStorageKey(weeks[activeWeekIndex].weekStart, viewDate);
                         const weekAllocs = getEmployeeAllocationsForWeek(employeeId, weekStorageKey);
                         const projectIds = [...new Set(weekAllocs.map(a => a.projectId))];
