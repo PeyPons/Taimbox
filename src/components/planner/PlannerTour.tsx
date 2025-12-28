@@ -371,65 +371,12 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isVisible, handleNext, handlePrev, handleSkip]);
 
-  // Handler para capturar clics en el overlay sin cerrar el Sheet
+  // Handler para capturar clics en el overlay (ya no cierra nada, solo bloquea propagación)
   // IMPORTANTE: Debe estar ANTES del return condicional para cumplir reglas de hooks
   const handleOverlayClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    e.preventDefault();
-    // No cerramos el tour al hacer clic en el overlay, solo capturamos el evento
-    // El usuario debe usar los botones para navegar o saltar
+    // No hacemos nada más - el Sheet ya tiene onInteractOutside para prevenir cierre
   }, []);
-
-  // Función para saber si un click cae dentro de la zona destacada
-  const isInsideHighlight = useCallback((e: React.MouseEvent) => {
-    if (!highlightPos) return false;
-    const { clientX, clientY } = e;
-    return (
-      clientX >= highlightPos.left &&
-      clientX <= highlightPos.left + highlightPos.width &&
-      clientY >= highlightPos.top &&
-      clientY <= highlightPos.top + highlightPos.height
-    );
-  }, [highlightPos]);
-
-  // Captura global para evitar que el Sheet se cierre por clic fuera
-  useEffect(() => {
-    if (!isVisible) return;
-
-    const step = tourSteps[currentStep];
-
-    const handler = (e: MouseEvent | PointerEvent) => {
-      // Permitir interacción dentro del tooltip
-      if (cardRef.current && e.target instanceof Node && cardRef.current.contains(e.target)) {
-        return;
-      }
-
-      // Permitir interacción dentro del área destacada si el paso es interactivo
-      if (step.interactive && highlightPos) {
-        const { clientX, clientY } = e as PointerEvent;
-        if (
-          clientX >= highlightPos.left &&
-          clientX <= highlightPos.left + highlightPos.width &&
-          clientY >= highlightPos.top &&
-          clientY <= highlightPos.top + highlightPos.height
-        ) {
-          return;
-        }
-      }
-
-      e.stopPropagation();
-      e.preventDefault();
-    };
-
-    const options = { capture: true };
-    window.addEventListener('pointerdown', handler, options);
-    window.addEventListener('click', handler, options);
-
-    return () => {
-      window.removeEventListener('pointerdown', handler, options);
-      window.removeEventListener('click', handler, options);
-    };
-  }, [isVisible, currentStep, highlightPos]);
 
   if (!isVisible) return null;
 
@@ -438,21 +385,12 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
   const isFirstStep = currentStep === 0;
 
   // Renderizamos directamente sin portal
+  // El Sheet padre tiene onInteractOutside para prevenir cierre, así que aquí solo 
+  // necesitamos manejar la UI del tour sin bloquear eventos agresivamente
   return (
     <div 
       className="fixed inset-0" 
-      style={{ zIndex: 999999, pointerEvents: 'auto' }}
-      onMouseDownCapture={(e) => {
-        // Permitir interacción solo dentro de la zona destacada cuando es interactivo
-        if (step.interactive && isInsideHighlight(e)) return;
-        e.stopPropagation();
-        e.preventDefault();
-      }}
-      onClickCapture={(e) => {
-        if (step.interactive && isInsideHighlight(e)) return;
-        e.stopPropagation();
-        e.preventDefault();
-      }}
+      style={{ zIndex: 999999, pointerEvents: 'none' }}
     >
       {/* Overlay oscuro - 4 partes para permitir interacción con elemento destacado */}
       {highlightPos ? (
