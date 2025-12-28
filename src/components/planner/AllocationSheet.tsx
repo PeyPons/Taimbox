@@ -142,6 +142,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     }
   };
 
+  const monthName = format(viewDate, 'MMMM', { locale: es });
+  const monthLabel = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} - ${format(viewDate, 'yyyy')}`;
+
   const getAvailableDependencies = (projectId: string, currentTaskId?: string) => {
       if (!projectId) return [];
       return allocations.filter(a => 
