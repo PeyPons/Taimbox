@@ -744,11 +744,212 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 const grouped = weekAllocations.reduce((acc, a) => ({...acc, [a.projectId]: [...(acc[a.projectId]||[]), a]}), {} as Record<string, Allocation[]>);
                 const sortedGroups = sortProjectGroups(grouped);
 
+                // VISTA TABULAR para semana individual
+                if (!showAllWeeks) {
+                    return (
+                        <div key={weekStr} className="flex-1 min-w-0">
+                            {/* Header compacto de la semana */}
+                            <div className="flex items-center justify-between mb-4 pb-3 border-b">
+                                <div className="flex items-center gap-3">
+                                    <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={goToPrevWeek} disabled={activeWeekIndex === 0}>
+                                        <ChevronLeft className="h-4 w-4" />
+                                    </Button>
+                                    <div>
+                                        <div className="font-bold text-lg text-foreground">Semana {activeWeekIndex + 1}</div>
+                                        <div className="text-xs text-slate-500">{weekDateLabel}</div>
+                                    </div>
+                                    <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={goToNextWeek} disabled={activeWeekIndex === weeks.length - 1}>
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
+
+                                <div className="flex items-center gap-4">
+                                    {/* Resumen de la semana */}
+                                    <div className="flex items-center gap-3 text-sm">
+                                        <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 rounded">
+                                            <span className="text-slate-500">Plan:</span>
+                                            <span className="font-bold">{weekEst}h</span>
+                                            <span className="text-slate-400">/</span>
+                                            <span className="text-slate-500">{load.capacity}h</span>
+                                        </div>
+                                        {completedTasks.length > 0 && (
+                                            <>
+                                                <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 rounded">
+                                                    <span className="text-blue-600">Real:</span>
+                                                    <span className="font-bold text-blue-700">{weekReal}h</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 rounded">
+                                                    <span className="text-emerald-600">Comp:</span>
+                                                    <span className="font-bold text-emerald-700">{weekComp}h</span>
+                                                </div>
+                                                {weekBalance !== 0 && (
+                                                    <div className={cn(
+                                                        "flex items-center gap-1 px-2 py-1 rounded font-bold",
+                                                        weekBalance >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                                                    )}>
+                                                        {weekBalance >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                                                        {weekBalance >= 0 ? '+' : ''}{weekBalance}h
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                    <Button variant="outline" size="sm" className="gap-2" onClick={() => startAdd(week.weekStart)}>
+                                        <Plus className="h-4 w-4" /> Añadir
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Tabla de proyectos y tareas */}
+                            <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+                                {sortedGroups.map(([projId, projAllocations]) => {
+                                    const project = getProjectById(projId);
+                                    const budgetStatus = getProjectBudgetStatus(projId);
+                                    const allCompleted = projAllocations.every(a => a.status === 'completed') && !projAllocations.some(a => recentlyToggled.has(a.id));
+                                    const isSelected = selectedProjectId === projId;
+                                    const sortedTasks = sortTasks(projAllocations);
+
+                                    // Totales del proyecto esta semana
+                                    const projEst = round2(projAllocations.reduce((s, a) => s + (a.hoursAssigned || 0), 0));
+                                    const projReal = round2(projAllocations.filter(a => a.status === 'completed').reduce((s, a) => s + (a.hoursActual || 0), 0));
+                                    const projComp = round2(projAllocations.filter(a => a.status === 'completed').reduce((s, a) => s + (a.hoursComputed || 0), 0));
+
+                                    return (
+                                        <div
+                                            key={projId}
+                                            className={cn(
+                                                "bg-white rounded-lg border shadow-sm overflow-hidden transition-all",
+                                                isSelected && "ring-2 ring-indigo-400",
+                                                allCompleted && "opacity-80"
+                                            )}
+                                        >
+                                            {/* Header del proyecto - clickeable para seleccionar */}
+                                            <div
+                                                className={cn(
+                                                    "px-4 py-2.5 cursor-pointer flex items-center justify-between",
+                                                    budgetStatus.status === 'overload' ? "bg-red-500 text-white" :
+                                                    budgetStatus.status === 'warning' ? "bg-amber-500 text-white" :
+                                                    allCompleted ? "bg-slate-200 text-slate-700" : "bg-indigo-500 text-white"
+                                                )}
+                                                onClick={() => setSelectedProjectId(isSelected ? null : projId)}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    {allCompleted && <CheckCircle2 className="w-4 h-4" />}
+                                                    <span className="font-bold">{project?.name || 'Proyecto'}</span>
+                                                    <span className="text-sm opacity-80">({projAllocations.length} tareas)</span>
+                                                </div>
+                                                <div className="flex items-center gap-4 text-sm">
+                                                    <span className="opacity-80">{projEst}h est</span>
+                                                    {projReal > 0 && <span>{projReal}h real</span>}
+                                                    {projComp > 0 && <span className="font-bold">{projComp}h comp</span>}
+                                                </div>
+                                            </div>
+
+                                            {/* Tabla de tareas */}
+                                            <table className="w-full text-sm">
+                                                <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
+                                                    <tr>
+                                                        <th className="py-2 px-3 text-left font-medium w-8"></th>
+                                                        <th className="py-2 px-3 text-left font-medium">Tarea</th>
+                                                        <th className="py-2 px-3 text-center font-medium w-20">Horas</th>
+                                                        <th className="py-2 px-3 text-center font-medium w-24">Real</th>
+                                                        <th className="py-2 px-3 text-center font-medium w-24">Comp</th>
+                                                        <th className="py-2 px-3 text-center font-medium w-20">Balance</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100">
+                                                    {sortedTasks.map(alloc => {
+                                                        const isCompleted = alloc.status === 'completed';
+                                                        const taskBalance = isCompleted ? round2((alloc.hoursComputed || 0) - (alloc.hoursActual || 0)) : 0;
+
+                                                        return (
+                                                            <tr
+                                                                key={alloc.id}
+                                                                className={cn(
+                                                                    "hover:bg-slate-50 transition-colors",
+                                                                    isCompleted && "bg-slate-50/50"
+                                                                )}
+                                                            >
+                                                                <td className="py-2 px-3">
+                                                                    <Checkbox
+                                                                        checked={isCompleted}
+                                                                        onCheckedChange={() => toggleTaskCompletion(alloc)}
+                                                                        className={cn(isCompleted && "data-[state=checked]:bg-emerald-600")}
+                                                                    />
+                                                                </td>
+                                                                <td className="py-2 px-3">
+                                                                    <div className={cn("font-medium", isCompleted && "line-through text-slate-400")}>
+                                                                        {alloc.taskName || 'Tarea'}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="py-2 px-3 text-center font-mono">
+                                                                    {alloc.hoursAssigned}
+                                                                </td>
+                                                                <td className="py-2 px-3 text-center">
+                                                                    {isCompleted ? (
+                                                                        <input
+                                                                            type="number"
+                                                                            step="0.25"
+                                                                            min="0"
+                                                                            defaultValue={alloc.hoursActual || 0}
+                                                                            onBlur={(e) => updateInlineHours(alloc, 'hoursActual', e.target.value)}
+                                                                            className="w-16 px-2 py-1 text-center border rounded bg-blue-50 text-blue-700 font-mono"
+                                                                        />
+                                                                    ) : (
+                                                                        <span className="text-slate-300">-</span>
+                                                                    )}
+                                                                </td>
+                                                                <td className="py-2 px-3 text-center">
+                                                                    {isCompleted ? (
+                                                                        <input
+                                                                            type="number"
+                                                                            step="0.25"
+                                                                            min="0"
+                                                                            defaultValue={alloc.hoursComputed || 0}
+                                                                            onBlur={(e) => updateInlineHours(alloc, 'hoursComputed', e.target.value)}
+                                                                            className="w-16 px-2 py-1 text-center border rounded bg-emerald-50 text-emerald-700 font-mono"
+                                                                        />
+                                                                    ) : (
+                                                                        <span className="text-slate-300">-</span>
+                                                                    )}
+                                                                </td>
+                                                                <td className="py-2 px-3 text-center">
+                                                                    {isCompleted && taskBalance !== 0 ? (
+                                                                        <span className={cn(
+                                                                            "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold",
+                                                                            taskBalance >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+                                                                        )}>
+                                                                            {taskBalance >= 0 ? '+' : ''}{taskBalance}
+                                                                        </span>
+                                                                    ) : isCompleted ? (
+                                                                        <span className="text-slate-400">0</span>
+                                                                    ) : (
+                                                                        <span className="text-slate-300">-</span>
+                                                                    )}
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    );
+                                })}
+
+                                {sortedGroups.length === 0 && (
+                                    <div className="text-center py-12 text-slate-400">
+                                        <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                                        <p>No tienes tareas esta semana</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    );
+                }
+
+                // VISTA COMPACTA para vista mensual (múltiples semanas)
                 return (
-                    <div key={weekStr} className={cn(
-                      "flex flex-col gap-3 p-4 rounded-xl border bg-card min-h-[300px]",
-                      !showAllWeeks && "w-full max-w-2xl"
-                    )}>
+                    <div key={weekStr} className="flex flex-col gap-3 p-4 rounded-xl border bg-card min-h-[300px]">
                         {/* HEADER SEMANA MEJORADO */}
                         <div className="flex flex-col gap-2 pb-2 border-b">
                             <div className="flex items-center justify-between">
