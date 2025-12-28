@@ -1,6 +1,7 @@
 import { useMemo, memo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { isSameMonth, parseISO } from 'date-fns';
 import { Rocket, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -36,9 +37,54 @@ export const MonthlyBalanceCard = memo(function MonthlyBalanceCard({ employeeId,
   const monthlyBalance = round2(monthlyStats.totalComputed - monthlyStats.totalReal);
   const isPositiveBalance = monthlyBalance >= 0;
 
-  // No mostrar si no hay datos
+  // Si no hay datos, mostrar ejemplo
   if (!monthlyStats.hasData) {
-    return null;
+    return (
+      <Card className="border-l-4 overflow-hidden border-l-emerald-500 bg-gradient-to-r from-emerald-50/80 to-emerald-50/30 relative" data-tour="balance-card">
+        <div className="absolute top-2 right-2 z-10">
+          <Badge variant="outline" className="text-[9px] bg-amber-50 border-amber-200 text-amber-700">
+            Ejemplo
+          </Badge>
+        </div>
+        <CardContent className="py-4 px-5 opacity-75">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                <Rocket className="h-6 w-6 text-emerald-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-slate-800 text-base">
+                  ¡Qué buen ritmo llevas! 🎉
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Has aportado 6h de valor extra que el cliente agradecerá.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-6">
+              <div className="text-center">
+                <p className="text-xl font-bold text-blue-600">3h</p>
+                <p className="text-[10px] text-blue-500 font-medium">Dedicadas</p>
+              </div>
+              <div className="text-slate-300 text-lg">→</div>
+              <div className="text-center">
+                <p className="text-xl font-bold text-emerald-600">9h</p>
+                <p className="text-[10px] text-emerald-500 font-medium">Computadas</p>
+              </div>
+              <div className="text-slate-300 text-lg">=</div>
+              <div className="text-center">
+                <p className="text-xl font-bold text-emerald-600">+6h</p>
+                <p className="text-[10px] font-medium text-emerald-500">Valor extra</p>
+              </div>
+            </div>
+          </div>
+          <p className="text-[10px] text-slate-400 mt-3">
+            Esto es un ejemplo. Completa tareas para ver tu balance real.
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -47,7 +93,7 @@ export const MonthlyBalanceCard = memo(function MonthlyBalanceCard({ employeeId,
       isPositiveBalance 
         ? "border-l-emerald-500 bg-gradient-to-r from-emerald-50/80 to-emerald-50/30" 
         : "border-l-amber-500 bg-gradient-to-r from-amber-50/80 to-amber-50/30"
-    )}>
+    )} data-tour="balance-card">
       <CardContent className="py-4 px-5">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">

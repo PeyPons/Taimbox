@@ -459,7 +459,7 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
               variant="ghost" 
               size="icon" 
               className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20"
-              onClick={handleSkip}
+              onClick={(e) => { e.stopPropagation(); handleSkip(); }}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -493,7 +493,7 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
               </ul>
               <Button 
                 className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
-                onClick={handleComplete}
+                onClick={(e) => { e.stopPropagation(); handleComplete(); }}
               >
                 ¡Empezar a planificar!
               </Button>
@@ -528,7 +528,7 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={handleSkip} 
+                  onClick={(e) => { e.stopPropagation(); handleSkip(); }} 
                   className="text-slate-400 hover:text-slate-600 h-8 px-2"
                 >
                   Saltar
@@ -537,7 +537,7 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={handlePrev}
+                    onClick={(e) => { e.stopPropagation(); handlePrev(); }}
                     className="h-8 px-3"
                   >
                     <ChevronLeft className="h-4 w-4" />
@@ -546,7 +546,7 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
                 <Button 
                   size="sm"
                   className="bg-indigo-600 hover:bg-indigo-700 h-8 px-4"
-                  onClick={isLastStep ? handleComplete : handleNext}
+                  onClick={(e) => { e.stopPropagation(); isLastStep ? handleComplete() : handleNext(); }}
                 >
                   {isLastStep ? '¡Listo!' : 'Siguiente'}
                   <ChevronRight className="h-4 w-4 ml-1" />
