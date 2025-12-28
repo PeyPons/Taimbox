@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { EmployeeRow } from './EmployeeRow';
 import { AllocationSheet } from './AllocationSheet';
