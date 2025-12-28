@@ -1342,7 +1342,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                           {/* Header con nombre y botón cerrar */}
                           <div className="bg-indigo-50 border-b px-4 py-3 flex items-center justify-between">
                             <h3 className="font-bold text-sm text-slate-800 truncate flex-1" title={project?.name}>
-                              {project?.name || 'Proyecto'}
+                              {formatProjectName(project?.name || 'Proyecto')}
                             </h3>
                             <Button
                               variant="ghost"
@@ -1422,7 +1422,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                 <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 uppercase mb-2">
                                   <Users className="w-3 h-3" /> Equipo ({breakdown.length})
                                 </div>
-                                <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                                <div className="space-y-1.5">
                                   {breakdown.map(({ employeeId: empId, employeeName, computed, planned }) => {
                                     const isMe = empId === employeeId;
                                     const emp = employees.find(e => e.id === empId);
