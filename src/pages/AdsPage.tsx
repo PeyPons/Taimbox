@@ -144,6 +144,11 @@ export default function AdsPage() {
   const [newRuleName, setNewRuleName] = useState('');
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  // #region agent log
+  const syncChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMountedRef = useRef(true);
+  // #endregion
 
   // Datos del mes actual
   const now = new Date();
@@ -189,7 +194,40 @@ export default function AdsPage() {
 
   useEffect(() => { fetchData(); }, []);
 
+  // #region agent log
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:cleanup',message:'Component unmounting',data:{hasChannel:!!syncChannelRef.current,hasTimeout:!!syncTimeoutRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      if (syncChannelRef.current) {
+        fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:cleanup',message:'Cleaning up channel on unmount',data:{channelId:syncChannelRef.current.topic},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        supabase.removeChannel(syncChannelRef.current);
+        syncChannelRef.current = null;
+      }
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+        syncTimeoutRef.current = null;
+      }
+    };
+  }, []);
+  // #endregion
+
   const handleStartSync = async () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:handleStartSync',message:'Sync started',data:{isSyncing,hasExistingChannel:!!syncChannelRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
+    if (syncChannelRef.current) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:handleStartSync',message:'Cleaning previous channel',data:{previousChannelId:syncChannelRef.current.topic},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
+      supabase.removeChannel(syncChannelRef.current);
+      syncChannelRef.current = null;
+    }
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+      syncTimeoutRef.current = null;
+    }
     setIsSyncing(true);
     setSyncStatus('running');
     setSyncLogs(['🚀 Iniciando conexión con Google Ads...']);
@@ -204,6 +242,15 @@ export default function AdsPage() {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'ads_sync_logs', filter: `id=eq.${jobId}` },
         (payload) => {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:channel-callback',message:'Channel event received',data:{status:payload.new.status,isMounted:isMountedRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+          // #endregion
+          if (!isMountedRef.current) {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:channel-callback',message:'Component unmounted, skipping state update',data:{status:payload.new.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
+            return;
+          }
           const newRow = payload.new;
           if (newRow.logs) setSyncLogs(newRow.logs);
           if (newRow.status === 'completed') {
@@ -211,16 +258,44 @@ export default function AdsPage() {
             setSyncProgress(100);
             toast.success('Sincronización completada');
             fetchData(); 
-            setTimeout(() => { supabase.removeChannel(channel); setIsSyncing(false); }, 2000);
+            syncTimeoutRef.current = setTimeout(() => {
+              // #region agent log
+              fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:timeout-callback',message:'Timeout callback executing',data:{isMounted:isMountedRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+              // #endregion
+              if (isMountedRef.current && syncChannelRef.current) {
+                supabase.removeChannel(syncChannelRef.current);
+                syncChannelRef.current = null;
+                setIsSyncing(false);
+              }
+              syncTimeoutRef.current = null;
+            }, 2000);
           } else if (newRow.status === 'error') {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:channel-callback',message:'Sync error status',data:{hasChannel:!!syncChannelRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+            // #endregion
             setSyncStatus('error');
             toast.error('Error en el proceso');
+            if (syncChannelRef.current) {
+              supabase.removeChannel(syncChannelRef.current);
+              syncChannelRef.current = null;
+            }
           }
         }
       ).subscribe();
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:handleStartSync',message:'Channel subscribed',data:{channelId:channel.topic,jobId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
+      syncChannelRef.current = channel;
     } catch (err) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:handleStartSync',message:'Sync error caught',data:{error:err instanceof Error ? err.message : String(err),hasChannel:!!syncChannelRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       setSyncStatus('error');
       setSyncLogs(prev => [...prev, '❌ Error al conectar.']);
+      if (syncChannelRef.current) {
+        supabase.removeChannel(syncChannelRef.current);
+        syncChannelRef.current = null;
+      }
     }
   };
 

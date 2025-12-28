@@ -47,6 +47,11 @@ export default function MetaAdsPage() {
   const [newRuleKeyword, setNewRuleKeyword] = useState('');
   const [newRuleName, setNewRuleName] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+  // #region agent log
+  const syncChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMountedRef = useRef(true);
+  // #endregion
 
   const now = new Date();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
@@ -75,19 +80,101 @@ export default function MetaAdsPage() {
 
   useEffect(() => { fetchData(); }, []);
 
+  // #region agent log
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MetaAdsPage.tsx:cleanup',message:'Component unmounting',data:{hasChannel:!!syncChannelRef.current,hasTimeout:!!syncTimeoutRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      if (syncChannelRef.current) {
+        fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MetaAdsPage.tsx:cleanup',message:'Cleaning up channel on unmount',data:{channelId:syncChannelRef.current.topic},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        supabase.removeChannel(syncChannelRef.current);
+        syncChannelRef.current = null;
+      }
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+        syncTimeoutRef.current = null;
+      }
+    };
+  }, []);
+  // #endregion
+
   const handleStartSync = async () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MetaAdsPage.tsx:handleStartSync',message:'Sync started',data:{isSyncing,hasExistingChannel:!!syncChannelRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
+    if (syncChannelRef.current) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MetaAdsPage.tsx:handleStartSync',message:'Cleaning previous channel',data:{previousChannelId:syncChannelRef.current.topic},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
+      supabase.removeChannel(syncChannelRef.current);
+      syncChannelRef.current = null;
+    }
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+      syncTimeoutRef.current = null;
+    }
     setIsSyncing(true); setSyncStatus('running'); setSyncLogs(['🚀 Conectando con Meta API...']); setSyncProgress(0);
     try {
       const { data, error } = await supabase.from('meta_sync_logs').insert({ status: 'pending', logs: ['Iniciando worker...'] }).select().single();
       if (error) throw error;
       const jobId = data.id;
       const channel = supabase.channel(`meta-sync-${jobId}`).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'meta_sync_logs', filter: `id=eq.${jobId}` }, (payload) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MetaAdsPage.tsx:channel-callback',message:'Channel event received',data:{status:payload.new.status,isMounted:isMountedRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        if (!isMountedRef.current) {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MetaAdsPage.tsx:channel-callback',message:'Component unmounted, skipping state update',data:{status:payload.new.status},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+          // #endregion
+          return;
+        }
         const newRow = payload.new;
         if (newRow.logs) setSyncLogs(newRow.logs);
-        if (newRow.status === 'completed') { setSyncStatus('completed'); setSyncProgress(100); toast.success('Sincronización completada'); fetchData(); setTimeout(() => { supabase.removeChannel(channel); setIsSyncing(false); }, 2000); }
-        else if (newRow.status === 'error') { setSyncStatus('error'); toast.error('Error en el proceso'); }
+        if (newRow.status === 'completed') { 
+          setSyncStatus('completed'); 
+          setSyncProgress(100); 
+          toast.success('Sincronización completada'); 
+          fetchData(); 
+          syncTimeoutRef.current = setTimeout(() => {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MetaAdsPage.tsx:timeout-callback',message:'Timeout callback executing',data:{isMounted:isMountedRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
+            if (isMountedRef.current && syncChannelRef.current) {
+              supabase.removeChannel(syncChannelRef.current);
+              syncChannelRef.current = null;
+              setIsSyncing(false);
+            }
+            syncTimeoutRef.current = null;
+          }, 2000);
+        }
+        else if (newRow.status === 'error') { 
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MetaAdsPage.tsx:channel-callback',message:'Sync error status',data:{hasChannel:!!syncChannelRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+          // #endregion
+          setSyncStatus('error'); 
+          toast.error('Error en el proceso');
+          if (syncChannelRef.current) {
+            supabase.removeChannel(syncChannelRef.current);
+            syncChannelRef.current = null;
+          }
+        }
       }).subscribe();
-    } catch (err) { setSyncStatus('error'); setSyncLogs(prev => [...prev, '❌ Error al conectar.']); }
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MetaAdsPage.tsx:handleStartSync',message:'Channel subscribed',data:{channelId:channel.topic,jobId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
+      syncChannelRef.current = channel;
+    } catch (err) { 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MetaAdsPage.tsx:handleStartSync',message:'Sync error caught',data:{error:err instanceof Error ? err.message : String(err),hasChannel:!!syncChannelRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+      setSyncStatus('error'); 
+      setSyncLogs(prev => [...prev, '❌ Error al conectar.']);
+      if (syncChannelRef.current) {
+        supabase.removeChannel(syncChannelRef.current);
+        syncChannelRef.current = null;
+      }
+    }
   };
 
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [syncLogs, isSyncing]);
