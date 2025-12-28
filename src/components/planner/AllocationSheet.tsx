@@ -526,16 +526,16 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
               <div className="text-xs space-y-1 border-t pt-2">
                 <div className="text-[10px] font-semibold text-slate-500 uppercase mb-1">Total cliente</div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Contratadas:</span>
+                  <span className="text-slate-500">Presupuestadas:</span>
                   <span className="font-medium">{budgetMin > 0 ? `${budgetMin}-` : ''}{budgetMax}h</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Computado (todos):</span>
-                  <span className={cn("font-bold", status === 'overload' ? 'text-red-600' : 'text-emerald-600')}>{totalComputed.toFixed(1)}h</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Planificado:</span>
                   <span className="text-blue-600">{totalPlanned.toFixed(1)}h</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Computado (todos):</span>
+                  <span className={cn("font-bold", status === 'overload' ? 'text-red-600' : 'text-emerald-600')}>{totalComputed.toFixed(1)}h</span>
                 </div>
 
                 {/* Barra de progreso global */}
@@ -565,8 +565,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                           {employeeName} {isCurrentEmployee && "(tú)"}
                         </div>
                         <div className="flex gap-3 text-[10px] mt-0.5">
-                          <span className="text-emerald-600">Comp: {computed.toFixed(1)}h</span>
                           <span className="text-blue-600">Plan: {planned.toFixed(1)}h</span>
+                          <span className="text-emerald-600">Comp: {computed.toFixed(1)}h</span>
                         </div>
                       </div>
                     );
