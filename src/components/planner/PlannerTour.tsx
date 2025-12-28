@@ -372,7 +372,7 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
   const isFirstStep = currentStep === 0;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999]">
+    <div className="fixed inset-0 z-[99999]">
       {/* Overlay oscuro con recorte para el elemento destacado */}
       <div 
         className="absolute inset-0 bg-black/60 transition-opacity duration-300"
@@ -509,6 +509,9 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
                 ))}
               </div>
               <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={handleSkip} className="text-slate-400 hover:text-slate-600">
+                  Saltar
+                </Button>
                 {!isFirstStep && (
                   <Button variant="ghost" size="sm" onClick={handlePrev}>
                     <ChevronLeft className="h-4 w-4 mr-1" />
@@ -518,9 +521,9 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
                 <Button 
                   size="sm"
                   className="bg-indigo-600 hover:bg-indigo-700"
-                  onClick={handleNext}
+                  onClick={isLastStep ? handleComplete : handleNext}
                 >
-                  Siguiente
+                  {isLastStep ? '¡Listo!' : 'Siguiente'}
                   <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               </div>

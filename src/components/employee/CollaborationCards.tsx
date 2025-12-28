@@ -158,6 +158,42 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
 
   const hasAnyHelpers = availableHelpers.length > 0 || busyButWillingHelpers.length > 0;
 
+  // Si no hay datos, mostrar estado vacío informativo
+  const hasNoData = frequentCollaborators.length === 0 && !hasAnyHelpers;
+
+  if (hasNoData) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="border-dashed border-slate-300 bg-slate-50/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2 text-slate-500">
+              <Sparkles className="h-4 w-4" />
+              Tu equipo este mes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-slate-400">
+              Aquí verás a los compañeros con los que compartes proyectos cuando tengas tareas planificadas.
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="border-dashed border-emerald-200 bg-emerald-50/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2 text-emerald-400">
+              <HeartHandshake className="h-4 w-4" />
+              ¿Necesitas apoyo?
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-emerald-400">
+              Cuando planifiques tareas, te mostraremos compañeros disponibles que pueden ayudarte.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <TooltipProvider>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

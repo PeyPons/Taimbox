@@ -1012,9 +1012,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                 })}
 
                                 {sortedGroups.length === 0 && (
-                                    <div className="text-center py-12 text-slate-400">
+                                    <div className="text-center py-12 text-slate-400" data-tour="planner-empty-state">
                                         <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                        <p>No tienes tareas esta semana</p>
+                                        <p className="font-medium mb-1">No tienes tareas esta semana</p>
+                                        <p className="text-xs text-slate-400">Usa el botón "Añadir" para planificar tu trabajo</p>
                                     </div>
                                 )}
                             </div>
