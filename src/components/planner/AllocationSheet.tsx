@@ -68,7 +68,6 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const [isTourActive, setIsTourActive] = useState(false);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
   const loadedMonthsRef = useRef<Set<string>>(new Set());
-  const loadingMonthRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (open) {
