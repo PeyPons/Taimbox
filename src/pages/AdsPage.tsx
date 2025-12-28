@@ -373,7 +373,21 @@ export default function AdsPage() {
   const reportData = useMemo(() => {
     if (!rawData.length) return [];
     
-    const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    // Filtrar por mes actual: desde el día 1 hasta hoy
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    const currentDay = now.getDate();
+    const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
+    const todayStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
+    
+    // #region agent log
+    console.log('[AdsPage] Filtrado de datos:', {
+      monthStart,
+      todayStr,
+      totalRows: rawData.length,
+      sampleDates: rawData.slice(0, 5).map(r => r.date)
+    });
+    // #endregion
 
     const stats = new Map<string, { 
       name: string, spent: number, budget: number, total_conversions_val: number,
@@ -400,8 +414,13 @@ export default function AdsPage() {
       }
     });
 
+    let totalSpentThisMonth = 0;
+    let rowsInMonth = 0;
     rawData.forEach(row => {
-      if (row.date === currentMonthPrefix) {
+      // Filtrar por mes actual: fecha entre mesStart y todayStr (inclusive)
+      if (row.date && row.date >= monthStart && row.date <= todayStr) {
+        rowsInMonth++;
+        totalSpentThisMonth += row.cost || 0;
         let finalId = row.client_id;
         let finalName = row.client_name;
 

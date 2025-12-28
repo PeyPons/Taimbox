@@ -206,13 +206,15 @@ async function processSyncJob(jobId) {
     await supabase.from('ads_sync_logs').update({ status: 'running' }).eq('id', jobId);
     
     const range = getDateRange();
-    await log(`🚀 Iniciando Sync Google v22. Desde: ${range.firstDay}`);
+    await log(`🚀 Iniciando Sync Google v22. Desde: ${range.firstDay} hasta ${range.today}`);
+    console.log(`[ads-worker] Rango de fechas: ${range.firstDay} a ${range.today}`);
     
     const token = await getAccessToken();
     const clients = await getClientAccounts(token);
     await log(`📋 ${clients.length} cuentas encontradas.`);
 
     let totalRows = 0;
+    let totalCost = 0;
     
     for (const [index, client] of clients.entries()) {
       await log(`[${index + 1}/${clients.length}] ${client.name}...`);
@@ -221,6 +223,9 @@ async function processSyncJob(jobId) {
           const campaignData = await getAccountData(client.id, token, range);
           
           if (campaignData.length > 0) {
+             const clientCost = campaignData.reduce((sum, d) => sum + (d.cost || 0), 0);
+             totalCost += clientCost;
+             
              const rowsToInsert = campaignData.map(d => ({ ...d, client_name: client.name }));
              
              // Upsert masivo (ahora seguro porque no hay duplicados)
@@ -228,15 +233,20 @@ async function processSyncJob(jobId) {
                 .from('google_ads_campaigns')
                 .upsert(rowsToInsert, { onConflict: 'campaign_id, date' });
              
-             if (error) console.error(`❌ Error DB ${client.name}: ${error.message}`);
-             else totalRows += campaignData.length;
+             if (error) {
+               console.error(`❌ Error DB ${client.name}: ${error.message}`);
+             } else {
+               totalRows += campaignData.length;
+               console.log(`[ads-worker] ${client.name}: ${campaignData.length} filas, ${Math.round(clientCost * 100) / 100}€`);
+             }
           }
       } catch (err) {
           console.error(`Skip ${client.name}:`, err.message);
       }
     }
     
-    await log(`🎉 Finalizado. ${totalRows} filas actualizadas.`);
+    await log(`🎉 Finalizado. ${totalRows} filas actualizadas. Coste total: ${Math.round(totalCost * 100) / 100}€`);
+    console.log(`[ads-worker] Resumen: ${totalRows} filas, ${Math.round(totalCost * 100) / 100}€ total`);
     await supabase.from('ads_sync_logs').update({ status: 'completed' }).eq('id', jobId);
 
   } catch (err) {
