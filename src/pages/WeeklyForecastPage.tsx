@@ -10,6 +10,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { format, startOfMonth, endOfMonth, isSameMonth, parseISO, addDays, startOfWeek, subMonths, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { AlertCircle, TrendingUp, TrendingDown, CheckCircle2, Users, Plus, ArrowRight, ChevronLeft, ChevronRight, CalendarDays, Check } from 'lucide-react';
@@ -32,8 +33,11 @@ export default function WeeklyForecastPage() {
     return saved ? new Date(saved) : new Date();
   });
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
-  const [redistributeHours, setRedistributeHours] = useState('');
-  const [redistributeEmployee, setRedistributeEmployee] = useState('');
+  const [redistributeFromEmployee, setRedistributeFromEmployee] = useState('');
+  const [redistributeSelectedTasks, setRedistributeSelectedTasks] = useState<Set<string>>(new Set());
+  const [redistributeUseGlobal, setRedistributeUseGlobal] = useState(false);
+  const [redistributeGlobalHours, setRedistributeGlobalHours] = useState('');
+  const [redistributeToEmployee, setRedistributeToEmployee] = useState('');
   const [redistributeWeek, setRedistributeWeek] = useState('');
   const [filterFeedbackEmployee, setFilterFeedbackEmployee] = useState<string>('all');
   const [filterFeedbackProject, setFilterFeedbackProject] = useState<string>('all');
@@ -110,9 +114,16 @@ export default function WeeklyForecastPage() {
       const difference = round2(contracted - realized);
       
       let status: 'red' | 'yellow' | 'green';
-      if (difference < -5) status = 'red'; // Nos pasamos por más de 5 horas
-      else if (difference > 5) status = 'yellow'; // Faltan más de 5 horas
-      else status = 'green'; // On track (±5 horas de margen)
+      // Si no hay horas planificadas pero hay presupuesto, es "yellow" (pendiente)
+      if (contracted > 0 && realized === 0 && plannedHours === 0) {
+        status = 'yellow'; // Faltan horas por asignar
+      } else if (difference < -5) {
+        status = 'red'; // Nos pasamos por más de 5 horas
+      } else if (difference > 5) {
+        status = 'yellow'; // Faltan más de 5 horas
+      } else {
+        status = 'green'; // On track (±5 horas de margen)
+      }
       
       return {
         projectId: project.id,
@@ -173,34 +184,116 @@ export default function WeeklyForecastPage() {
     });
   }, [weeks, currentMonth]);
   
-  // Sección C: Redistribución Rápida
+  // Tareas abiertas del compañero de origen para el proyecto seleccionado
+  const sourceEmployeeOpenTasks = useMemo(() => {
+    if (!selectedProject || !redistributeFromEmployee) return [];
+    
+    const today = new Date();
+    return allocations.filter(a => {
+      if (a.employeeId !== redistributeFromEmployee) return false;
+      if (a.projectId !== selectedProject) return false;
+      if (a.status === 'completed') return false;
+      
+      try {
+        const taskWeekDate = parseISO(a.weekStartDate);
+        if (!isSameMonth(taskWeekDate, currentMonth)) return false;
+        
+        const taskWeekEnd = addDays(taskWeekDate, 4);
+        // Solo tareas de semanas pasadas o actual
+        return taskWeekEnd <= today;
+      } catch {
+        return false;
+      }
+    });
+  }, [selectedProject, redistributeFromEmployee, allocations, currentMonth]);
+  
+  // Sección C: Redistribución Rápida (mejorada)
   const handleRedistribute = async () => {
-    if (!selectedProject || !redistributeEmployee || !redistributeWeek || !redistributeHours) {
+    if (!selectedProject || !redistributeFromEmployee || !redistributeToEmployee || !redistributeWeek) {
       toast.error('Completa todos los campos');
       return;
     }
     
-    const hours = parseFloat(redistributeHours);
-    if (isNaN(hours) || hours <= 0) {
-      toast.error('Las horas deben ser un número positivo');
-      return;
+    let totalHours = 0;
+    const tasksToTransfer: typeof allocations = [];
+    
+    if (redistributeUseGlobal) {
+      // Modo global: usar horas especificadas
+      const hours = parseFloat(redistributeGlobalHours);
+      if (isNaN(hours) || hours <= 0) {
+        toast.error('Las horas deben ser un número positivo');
+        return;
+      }
+      totalHours = hours;
+    } else {
+      // Modo específico: usar tareas seleccionadas
+      if (redistributeSelectedTasks.size === 0) {
+        toast.error('Selecciona al menos una tarea o usa el modo global');
+        return;
+      }
+      
+      sourceEmployeeOpenTasks.forEach(task => {
+        if (redistributeSelectedTasks.has(task.id)) {
+          const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
+          if (remainingHours > 0) {
+            totalHours += remainingHours;
+            tasksToTransfer.push(task);
+          }
+        }
+      });
+      
+      if (totalHours <= 0) {
+        toast.error('Las tareas seleccionadas no tienen horas restantes');
+        return;
+      }
     }
     
     try {
-      // Crear asignación genérica que el compañero pueda distribuir
-      await addAllocation({
-        employeeId: redistributeEmployee,
-        projectId: selectedProject,
-        weekStartDate: redistributeWeek,
-        hoursAssigned: hours,
-        taskName: `[Distribuir] ${hours}h pendientes`,
-        description: 'Asignación genérica creada desde Weekly. Distribuye estas horas entre las tareas que necesites.',
-        status: 'planned'
-      });
+      if (redistributeUseGlobal) {
+        // Crear asignación genérica
+        await addAllocation({
+          employeeId: redistributeToEmployee,
+          projectId: selectedProject,
+          weekStartDate: redistributeWeek,
+          hoursAssigned: totalHours,
+          taskName: `[Distribuir] ${totalHours}h redistribuidas`,
+          description: `Horas redistribuidas desde ${employees.find(e => e.id === redistributeFromEmployee)?.name || 'compañero'}. Distribuye estas horas entre las tareas que necesites.`,
+          status: 'planned'
+        });
+      } else {
+        // Transferir tareas específicas
+        const fromEmployee = employees.find(e => e.id === redistributeFromEmployee);
+        const fromEmployeeName = fromEmployee?.name || 'compañero';
+        
+        for (const task of tasksToTransfer) {
+          const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
+          if (remainingHours > 0) {
+            // Completar tarea original
+            await updateAllocation({
+              ...task,
+              hoursAssigned: task.hoursActual || 0,
+              status: 'completed'
+            });
+            
+            // Crear tarea para el compañero destino
+            await addAllocation({
+              employeeId: redistributeToEmployee,
+              projectId: selectedProject,
+              weekStartDate: redistributeWeek,
+              hoursAssigned: remainingHours,
+              taskName: `${task.taskName || 'Tarea'} (transferida de ${fromEmployeeName})`,
+              status: 'planned'
+            });
+          }
+        }
+      }
       
-      toast.success(`${hours}h añadidas correctamente`);
-      setRedistributeHours('');
-      setRedistributeEmployee('');
+      toast.success(`${totalHours.toFixed(1)}h redistribuidas correctamente`);
+      setRedistributeFromEmployee('');
+      setRedistributeSelectedTasks(new Set());
+      setRedistributeUseGlobal(false);
+      setRedistributeGlobalHours('');
+      setRedistributeToEmployee('');
       setRedistributeWeek('');
       setSelectedProject(null);
     } catch (error) {
