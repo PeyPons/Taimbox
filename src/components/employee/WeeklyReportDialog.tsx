@@ -154,14 +154,23 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
         const nextWeekStorageKey = getStorageKey(nextWeekStart, viewDate);
         
         if (action === 'move') {
+          // Mover horas restantes a la semana siguiente
+          // IMPORTANTE: Esto mantiene la integridad de los cálculos:
+          // - Tarea original: se completa con hoursAssigned = hoursActual (lo que realmente se hizo)
+          // - Nueva tarea: se crea con hoursAssigned = horas restantes (lo que falta)
+          // - Total del proyecto: se mantiene (hoursActual + horas restantes = hoursAssigned original)
           const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
           if (remainingHours > 0) {
+            // 1. Completar tarea actual con las horas realmente trabajadas
+            // Esto asegura que los reportes muestren correctamente las horas reales
             await updateAllocation({
               ...task,
-              hoursAssigned: task.hoursActual || 0,
+              hoursAssigned: task.hoursActual || 0, // Ajustar a lo realmente hecho
               status: 'completed'
             });
             
+            // 2. Crear/actualizar tarea en la semana siguiente con las horas restantes
+            // Esto mantiene el presupuesto total del proyecto correcto
             const existingNextWeek = allocations.find(a => 
               a.employeeId === employeeId &&
               a.projectId === task.projectId &&
@@ -170,11 +179,13 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
             );
             
             if (existingNextWeek) {
+              // Si ya existe una tarea similar, sumar las horas
               await updateAllocation({
                 ...existingNextWeek,
                 hoursAssigned: existingNextWeek.hoursAssigned + remainingHours
               });
             } else {
+              // Crear nueva tarea con las horas restantes
               await addAllocation({
                 employeeId,
                 projectId: task.projectId,
