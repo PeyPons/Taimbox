@@ -365,6 +365,17 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
             }
           }
           
+          // Registrar feedback ANTES de eliminar para que hasPendingWeeklyTasks detecte que fue procesada
+          const comment = `Distribuidas en ${validTasks.length} tarea(s): ${validTasks.map(t => `${t.taskName} (${t.hours}h)`).join(', ')}`;
+          await addWeeklyFeedback({
+            employeeId,
+            weekStartDate: taskWeekStr,
+            projectId: task.projectId,
+            allocationId: task.id,
+            reason: 'other',
+            comments: comment
+          });
+          
           // Eliminar la tarea genérica original
           await deleteAllocation(task.id);
           

@@ -12,9 +12,10 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Switch } from '@/components/ui/switch';
 import { format, startOfMonth, endOfMonth, isSameMonth, parseISO, addDays, startOfWeek, subMonths, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { AlertCircle, TrendingUp, TrendingDown, CheckCircle2, Users, Plus, ArrowRight, ChevronLeft, ChevronRight, CalendarDays, Check } from 'lucide-react';
+import { AlertCircle, TrendingUp, TrendingDown, CheckCircle2, Users, Plus, ArrowRight, ChevronLeft, ChevronRight, CalendarDays, Check, ChevronDown, ArrowUpDown, Search } from 'lucide-react';
 import { cn, formatProjectName } from '@/lib/utils';
 import { toast } from 'sonner';
 import { getStorageKey, getWeeksForMonth, getMonthlyCapacity } from '@/utils/dateUtils';
@@ -26,7 +27,7 @@ const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 export default function WeeklyForecastPage() {
   const { 
     projects, allocations, employees, clients, weeklyFeedback, 
-    addAllocation, updateAllocation, currentUser, absences, teamEvents
+    addAllocation, updateAllocation, currentUser, absences, teamEvents, getEmployeeLoadForWeek
   } = useApp();
   
   const [currentMonth, setCurrentMonth] = useState(() => {
@@ -42,6 +43,9 @@ export default function WeeklyForecastPage() {
   const [filterProjectStatus, setFilterProjectStatus] = useState<string>('all'); // all, red, yellow, green
   const [filterClient, setFilterClient] = useState<string>('all');
   const [filterProjectType, setFilterProjectType] = useState<string>('all'); // all, SEO, PPC
+  const [sortBy, setSortBy] = useState<'name' | 'status' | 'difference' | 'contracted'>('status');
+  const [onlySEO, setOnlySEO] = useState(false);
+  const [onlyPPC, setOnlyPPC] = useState(false);
   
   useEffect(() => {
     localStorage.setItem('forecast_date', currentMonth.toISOString());
@@ -66,21 +70,17 @@ export default function WeeklyForecastPage() {
       filteredProjects = filteredProjects.filter(p => p.clientId === filterClient);
     }
     
-    // Filtro por tipo de proyecto (SEO/PPC)
-    if (filterProjectType !== 'all') {
-      filteredProjects = filteredProjects.filter(p => {
-        if (filterProjectType === 'SEO') {
-          return p.projectType !== 'PPC';
-        } else if (filterProjectType === 'PPC') {
-          return p.projectType === 'PPC';
-        }
-        return true;
-      });
+    // Filtro por tipo de proyecto (SEO/PPC) - ahora con switches
+    if (onlySEO) {
+      filteredProjects = filteredProjects.filter(p => p.projectType !== 'PPC');
+    }
+    if (onlyPPC) {
+      filteredProjects = filteredProjects.filter(p => p.projectType === 'PPC');
     }
     
     const today = new Date();
     
-    return filteredProjects.map(project => {
+    const forecastData = filteredProjects.map(project => {
       // Total Contratado (Budget/Fee mensual)
       const contracted = project.budgetHours || 0;
       
@@ -146,26 +146,151 @@ export default function WeeklyForecastPage() {
     });
   }, [projects, allocations, clients, currentMonth, filterClient, filterProjectStatus]);
   
-  // Sección B: Feed de Bloqueos (semana en curso) con filtros
+  // Sección B: Transferencias de Horas (rediseñado) - muestra quién le pasó a quién
   const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
   const currentWeekStr = format(currentWeekStart, 'yyyy-MM-dd');
   
-  const currentWeekFeedback = useMemo(() => {
-    let filtered = weeklyFeedback
-      .filter(fb => fb.weekStartDate === currentWeekStr);
+  // Obtener todas las transferencias de esta semana
+  const transfers = useMemo(() => {
+    // Buscar feedback que indique transferencias
+    const transferFeedbacks = weeklyFeedback.filter(fb => {
+      if (fb.weekStartDate !== currentWeekStr) return false;
+      const comment = fb.comments || '';
+      return comment.includes('transferida a') || comment.includes('Tarea transferida a');
+    });
     
-    // Filtro por compañero
+    // Buscar tareas transferidas (tienen "(transferida de" en el nombre)
+    const transferredTasks = allocations.filter(a => {
+      if (!a.taskName?.includes('(transferida de')) return false;
+      try {
+        return isSameMonth(parseISO(a.weekStartDate), currentMonth);
+      } catch {
+        return false;
+      }
+    });
+    
+    // Combinar información de feedback y tareas
+    const transferMap = new Map<string, {
+      fromEmployeeId: string;
+      fromEmployeeName: string;
+      fromEmployeeAvatar?: string;
+      toEmployeeId: string;
+      toEmployeeName: string;
+      toEmployeeAvatar?: string;
+      projectId: string;
+      projectName: string;
+      hours: number;
+      taskName: string;
+      status: 'pending' | 'kept' | 'distributed';
+      feedbackId?: string;
+      allocationId?: string;
+      createdAt: string;
+      comments?: string;
+    }>();
+    
+    // Procesar feedback de transferencias
+    transferFeedbacks.forEach(fb => {
+      const fromEmployee = employees.find(e => e.id === fb.employeeId);
+      const match = fb.comments?.match(/transferida a (.+?) \(/);
+      const toEmployeeName = match ? match[1] : null;
+      const toEmployee = toEmployeeName ? employees.find(e => e.name === toEmployeeName) : null;
+      const hoursMatch = fb.comments?.match(/\((\d+(?:\.\d+)?)h restantes\)/);
+      const hours = hoursMatch ? parseFloat(hoursMatch[1]) : 0;
+      
+      if (fromEmployee && toEmployee && fb.allocationId) {
+        const key = `${fb.allocationId}-${toEmployee.id}`;
+        const transferredTask = transferredTasks.find(t => t.id === fb.allocationId || t.taskName?.includes(`(transferida de ${fromEmployee.name})`));
+        
+        // Verificar si el empleado destino ya procesó la tarea
+        let status: 'pending' | 'kept' | 'distributed' = 'pending';
+        if (transferredTask) {
+          const taskFeedback = weeklyFeedback.find(f => f.allocationId === transferredTask.id);
+          if (taskFeedback) {
+            if (taskFeedback.comments?.includes('Tarea mantenida tal cual')) {
+              status = 'kept';
+            } else if (taskFeedback.comments?.includes('Distribuidas en')) {
+              status = 'distributed';
+            }
+          }
+        }
+        
+        transferMap.set(key, {
+          fromEmployeeId: fromEmployee.id,
+          fromEmployeeName: fromEmployee.name,
+          fromEmployeeAvatar: fromEmployee.avatarUrl,
+          toEmployeeId: toEmployee.id,
+          toEmployeeName: toEmployee.name,
+          toEmployeeAvatar: toEmployee.avatarUrl,
+          projectId: fb.projectId || '',
+          projectName: projects.find(p => p.id === fb.projectId)?.name || 'Sin proyecto',
+          hours: hours || (transferredTask?.hoursAssigned || 0),
+          taskName: transferredTask?.taskName?.replace(/\(transferida de .+\)/, '').trim() || 'Tarea transferida',
+          status,
+          feedbackId: fb.id,
+          allocationId: transferredTask?.id,
+          createdAt: fb.createdAt,
+          comments: fb.comments
+        });
+      }
+    });
+    
+    // Añadir tareas transferidas que no tienen feedback explícito
+    transferredTasks.forEach(task => {
+      const match = task.taskName?.match(/\(transferida de (.+)\)/);
+      const fromEmployeeName = match ? match[1] : null;
+      const fromEmployee = fromEmployeeName ? employees.find(e => e.name === fromEmployeeName) : null;
+      
+      if (fromEmployee && task.employeeId) {
+        const toEmployee = employees.find(e => e.id === task.employeeId);
+        if (toEmployee) {
+          const key = `${task.id}-${toEmployee.id}`;
+          if (!transferMap.has(key)) {
+            const taskFeedback = weeklyFeedback.find(f => f.allocationId === task.id);
+            let status: 'pending' | 'kept' | 'distributed' = 'pending';
+            if (taskFeedback) {
+              if (taskFeedback.comments?.includes('Tarea mantenida tal cual')) {
+                status = 'kept';
+              } else if (taskFeedback.comments?.includes('Distribuidas en')) {
+                status = 'distributed';
+              }
+            }
+            
+            transferMap.set(key, {
+              fromEmployeeId: fromEmployee.id,
+              fromEmployeeName: fromEmployee.name,
+              fromEmployeeAvatar: fromEmployee.avatarUrl,
+              toEmployeeId: toEmployee.id,
+              toEmployeeName: toEmployee.name,
+              toEmployeeAvatar: toEmployee.avatarUrl,
+              projectId: task.projectId,
+              projectName: projects.find(p => p.id === task.projectId)?.name || 'Sin proyecto',
+              hours: task.hoursAssigned,
+              taskName: task.taskName?.replace(/\(transferida de .+\)/, '').trim() || 'Tarea transferida',
+              status,
+              allocationId: task.id,
+              createdAt: task.weekStartDate
+            });
+          }
+        }
+      }
+    });
+    
+    let filtered = Array.from(transferMap.values());
+    
+    // Filtro por compañero (origen o destino)
     if (filterFeedbackEmployee !== 'all') {
-      filtered = filtered.filter(fb => fb.employeeId === filterFeedbackEmployee);
+      filtered = filtered.filter(t => 
+        t.fromEmployeeId === filterFeedbackEmployee || t.toEmployeeId === filterFeedbackEmployee
+      );
     }
     
     // Filtro por proyecto
     if (filterFeedbackProject !== 'all') {
-      filtered = filtered.filter(fb => fb.projectId === filterFeedbackProject);
+      filtered = filtered.filter(t => t.projectId === filterFeedbackProject);
     }
     
     return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [weeklyFeedback, currentWeekStr, filterFeedbackEmployee, filterFeedbackProject]);
+  }, [weeklyFeedback, allocations, employees, projects, currentWeekStr, currentMonth, filterFeedbackEmployee, filterFeedbackProject]);
   
   // Semanas futuras para el selector de redistribución
   const futureWeeks = useMemo(() => {
@@ -430,20 +555,16 @@ export default function WeeklyForecastPage() {
         
         {/* TAB 1: Semáforo de Proyectos */}
         <TabsContent value="traffic" className="space-y-4">
-          <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Semáforo de Proyectos (Month-End Forecast)
-            </CardTitle>
-            <div className="flex items-center gap-2">
+          {/* Filtros estilo Deadlines/Planner */}
+          <div className="flex flex-wrap items-center gap-3 bg-white rounded-xl border shadow-sm p-3">
+            <div className="flex-1 min-w-[200px]">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" role="combobox" className="w-[180px] h-8 text-xs justify-between">
+                  <Button variant="outline" role="combobox" className="w-full h-8 text-xs justify-between bg-white">
                     <span className="truncate">
                       {filterClient === 'all' ? 'Todos los clientes' : clients.find(c => c.id === filterClient)?.name || 'Cliente'}
                     </span>
+                    <ChevronDown className="ml-2 h-3 w-3 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[250px] p-0">
@@ -467,50 +588,107 @@ export default function WeeklyForecastPage() {
                   </Command>
                 </PopoverContent>
               </Popover>
-              <Select value={filterProjectStatus} onValueChange={setFilterProjectStatus}>
-                <SelectTrigger className="w-[150px] h-8 text-xs">
-                  <SelectValue placeholder="Todos los estados" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los estados</SelectItem>
-                  <SelectItem value="red">⚠️ En riesgo</SelectItem>
-                  <SelectItem value="yellow">⏳ Pendiente</SelectItem>
-                  <SelectItem value="green">✅ On Track</SelectItem>
-                </SelectContent>
-              </Select>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" role="combobox" className="w-[120px] h-8 text-xs justify-between">
-                    <span className="truncate">
-                      {filterProjectType === 'all' ? 'Todos' : filterProjectType}
-                    </span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0">
-                  <Command>
-                    <CommandInput placeholder="Buscar tipo..." />
-                    <CommandList>
-                      <CommandEmpty>No hay tipos</CommandEmpty>
-                      <CommandGroup>
-                        <CommandItem onSelect={() => setFilterProjectType('all')}>
-                          <Check className={cn("mr-2 h-4 w-4", filterProjectType === 'all' ? "opacity-100" : "opacity-0")} />
-                          Todos
-                        </CommandItem>
-                        <CommandItem onSelect={() => setFilterProjectType('SEO')}>
-                          <Check className={cn("mr-2 h-4 w-4", filterProjectType === 'SEO' ? "opacity-100" : "opacity-0")} />
-                          SEO
-                        </CommandItem>
-                        <CommandItem onSelect={() => setFilterProjectType('PPC')}>
-                          <Check className={cn("mr-2 h-4 w-4", filterProjectType === 'PPC' ? "opacity-100" : "opacity-0")} />
-                          PPC
-                        </CommandItem>
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
             </div>
+            <div className="flex items-center gap-4 text-sm">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <span className="text-slate-600 whitespace-nowrap">Solo SEO</span>
+                <Switch
+                  id="only-seo"
+                  checked={onlySEO}
+                  onCheckedChange={(checked) => {
+                    setOnlySEO(checked);
+                    if (checked) setOnlyPPC(false);
+                  }}
+                  className="scale-90"
+                />
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <span className="text-slate-600 whitespace-nowrap">Solo PPC</span>
+                <Switch
+                  id="only-ppc"
+                  checked={onlyPPC}
+                  onCheckedChange={(checked) => {
+                    setOnlyPPC(checked);
+                    if (checked) setOnlySEO(false);
+                  }}
+                  className="scale-90"
+                />
+              </label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={filterProjectStatus === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterProjectStatus('all')}
+                className="h-8 text-xs"
+              >
+                Todos
+              </Button>
+              <Button
+                variant={filterProjectStatus === 'red' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterProjectStatus('red')}
+                className={cn("h-8 text-xs", filterProjectStatus === 'red' && "bg-red-600 hover:bg-red-700")}
+              >
+                ⚠️ En riesgo
+              </Button>
+              <Button
+                variant={filterProjectStatus === 'yellow' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterProjectStatus('yellow')}
+                className={cn("h-8 text-xs", filterProjectStatus === 'yellow' && "bg-amber-600 hover:bg-amber-700")}
+              >
+                ⏳ Pendiente
+              </Button>
+              <Button
+                variant={filterProjectStatus === 'green' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterProjectStatus('green')}
+                className={cn("h-8 text-xs", filterProjectStatus === 'green' && "bg-emerald-600 hover:bg-emerald-700")}
+              >
+                ✅ On Track
+              </Button>
+            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
+                  <ArrowUpDown className="h-3 w-3" />
+                  Ordenar
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[200px] p-0">
+                <Command>
+                  <CommandList>
+                    <CommandGroup>
+                      <CommandItem onSelect={() => setSortBy('status')}>
+                        <Check className={cn("mr-2 h-4 w-4", sortBy === 'status' ? "opacity-100" : "opacity-0")} />
+                        Por estado
+                      </CommandItem>
+                      <CommandItem onSelect={() => setSortBy('name')}>
+                        <Check className={cn("mr-2 h-4 w-4", sortBy === 'name' ? "opacity-100" : "opacity-0")} />
+                        Por nombre
+                      </CommandItem>
+                      <CommandItem onSelect={() => setSortBy('difference')}>
+                        <Check className={cn("mr-2 h-4 w-4", sortBy === 'difference' ? "opacity-100" : "opacity-0")} />
+                        Por diferencia
+                      </CommandItem>
+                      <CommandItem onSelect={() => setSortBy('contracted')}>
+                        <Check className={cn("mr-2 h-4 w-4", sortBy === 'contracted' ? "opacity-100" : "opacity-0")} />
+                        Por horas contratadas
+                      </CommandItem>
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
+          
+          <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Semáforo de Proyectos (Month-End Forecast)
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {projectForecast.length === 0 ? (
@@ -597,27 +775,18 @@ export default function WeeklyForecastPage() {
       </Card>
         </TabsContent>
         
-        {/* TAB 2: Feed de Bloqueos */}
+        {/* TAB 2: Transferencias de Horas */}
         <TabsContent value="blockers" className="space-y-4">
-          <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5" />
-                Feed de Bloqueos
-              </CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">
-                Semana del <strong>{format(currentWeekStart, "d 'de' MMMM", { locale: es })}</strong>
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
+          {/* Filtros */}
+          <div className="flex flex-wrap items-center gap-3 bg-white rounded-xl border shadow-sm p-3">
+            <div className="flex-1 min-w-[200px]">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" role="combobox" className="w-[180px] h-8 text-xs justify-between">
+                  <Button variant="outline" role="combobox" className="w-full h-8 text-xs justify-between bg-white">
                     <span className="truncate">
                       {filterFeedbackEmployee === 'all' ? 'Todos los compañeros' : employees.find(e => e.id === filterFeedbackEmployee)?.name || 'Compañero'}
                     </span>
+                    <ChevronDown className="ml-2 h-3 w-3 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[250px] p-0">
@@ -643,14 +812,17 @@ export default function WeeklyForecastPage() {
                   </Command>
                 </PopoverContent>
               </Popover>
+            </div>
+            <div className="flex-1 min-w-[200px]">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" role="combobox" className="w-[180px] h-8 text-xs justify-between">
+                  <Button variant="outline" role="combobox" className="w-full h-8 text-xs justify-between bg-white">
                     <span className="truncate">
                       {filterFeedbackProject === 'all' 
                         ? 'Todos los proyectos' 
                         : formatProjectName(projects.find(p => p.id === filterFeedbackProject)?.name || '')}
                     </span>
+                    <ChevronDown className="ml-2 h-3 w-3 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[300px] p-0">
@@ -659,10 +831,7 @@ export default function WeeklyForecastPage() {
                     <CommandList>
                       <CommandEmpty>No hay proyectos</CommandEmpty>
                       <CommandGroup>
-                        <CommandItem 
-                          value="all" 
-                          onSelect={() => setFilterFeedbackProject('all')}
-                        >
+                        <CommandItem value="all" onSelect={() => setFilterFeedbackProject('all')}>
                           <Check className={cn("mr-2 h-4 w-4", filterFeedbackProject === 'all' ? "opacity-100" : "opacity-0")} />
                           Todos los proyectos
                         </CommandItem>
@@ -688,349 +857,388 @@ export default function WeeklyForecastPage() {
               </Popover>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          {currentWeekFeedback.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No hay bloqueos reportados esta semana
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {currentWeekFeedback.map(feedback => {
-                const employee = employees.find(e => e.id === feedback.employeeId);
-                const project = projects.find(p => p.id === feedback.projectId);
-                
-                return (
-                  <div key={feedback.id} className="flex items-start gap-3 p-3 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-sm">{employee?.name || 'Desconocido'}</span>
-                        {project && (
-                          <>
-                            <span className="text-muted-foreground">•</span>
-                            <span className="text-sm text-muted-foreground">{formatProjectName(project.name)}</span>
-                          </>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ArrowRight className="h-5 w-5" />
+                Transferencias de Horas
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Semana del <strong>{format(currentWeekStart, "d 'de' MMMM", { locale: es })}</strong>
+              </p>
+            </CardHeader>
+            <CardContent>
+              {transfers.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No hay transferencias de horas esta semana
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {transfers.map((transfer, idx) => {
+                    const project = projects.find(p => p.id === transfer.projectId);
+                    const client = clients.find(c => c.id === project?.clientId);
+                    
+                    return (
+                      <div 
+                        key={transfer.allocationId || transfer.feedbackId || idx} 
+                        className={cn(
+                          "p-4 rounded-lg border-2 transition-all",
+                          transfer.status === 'pending' && "bg-amber-50/50 border-amber-200",
+                          transfer.status === 'kept' && "bg-blue-50/50 border-blue-200",
+                          transfer.status === 'distributed' && "bg-purple-50/50 border-purple-200"
                         )}
-                        {feedback.reason && (
-                          <Badge variant="outline" className="text-xs">
-                            {feedback.reason === 'technical_issue' && 'Problema técnico'}
-                            {feedback.reason === 'client_blocker' && 'Bloqueo cliente'}
-                            {feedback.reason === 'bad_estimation' && 'Estimación incorrecta'}
-                            {feedback.reason === 'personal_absence' && 'Ausencia personal'}
-                            {feedback.reason === 'other' && 'Otro'}
-                          </Badge>
-                        )}
+                      >
+                        <div className="flex items-start gap-3">
+                          {/* Avatar origen */}
+                          <Avatar className="h-10 w-10 border-2 border-slate-200">
+                            <AvatarImage src={transfer.fromEmployeeAvatar} alt={transfer.fromEmployeeName} />
+                            <AvatarFallback className="bg-indigo-500 text-white text-xs font-bold">
+                              {transfer.fromEmployeeName.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          
+                          {/* Flecha y horas */}
+                          <div className="flex flex-col items-center justify-center gap-1">
+                            <ArrowRight className="h-5 w-5 text-indigo-600" />
+                            <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 font-bold">
+                              {transfer.hours}h
+                            </Badge>
+                          </div>
+                          
+                          {/* Avatar destino */}
+                          <Avatar className="h-10 w-10 border-2 border-slate-200">
+                            <AvatarImage src={transfer.toEmployeeAvatar} alt={transfer.toEmployeeName} />
+                            <AvatarFallback className="bg-purple-500 text-white text-xs font-bold">
+                              {transfer.toEmployeeName.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          
+                          {/* Información */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <span className="font-semibold text-sm text-slate-900">{transfer.fromEmployeeName}</span>
+                              <span className="text-slate-400">→</span>
+                              <span className="font-semibold text-sm text-slate-900">{transfer.toEmployeeName}</span>
+                              {project && (
+                                <>
+                                  <span className="text-slate-400">•</span>
+                                  <span className="text-sm font-medium text-slate-700">{formatProjectName(transfer.projectName)}</span>
+                                </>
+                              )}
+                            </div>
+                            <p className="text-sm text-slate-600 mb-2">{transfer.taskName}</p>
+                            
+                            {/* Estado */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {transfer.status === 'pending' && (
+                                <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-300">
+                                  <AlertCircle className="h-3 w-3 mr-1" />
+                                  Pendiente de aceptación
+                                </Badge>
+                              )}
+                              {transfer.status === 'kept' && (
+                                <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
+                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                  Mantenida tal cual
+                                </Badge>
+                              )}
+                              {transfer.status === 'distributed' && (
+                                <Badge variant="outline" className="bg-purple-100 text-purple-700 border-purple-300">
+                                  <Users className="h-3 w-3 mr-1" />
+                                  Redistribuida
+                                </Badge>
+                              )}
+                              <span className="text-xs text-slate-500">
+                                {format(parseISO(transfer.createdAt), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      {feedback.comments && (
-                        <p className="text-sm text-muted-foreground">{feedback.comments}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {format(parseISO(feedback.createdAt), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
         
-        {/* TAB 3: Redistribución */}
+        {/* TAB 3: Redistribución - Formulario directo */}
         <TabsContent value="redistribute" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                Redistribución Rápida
+                Redistribución de Horas
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Selecciona un proyecto para redistribuir horas entre compañeros
+                Selecciona un proyecto y redistribuye horas entre compañeros
               </p>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {projectForecast.map(proj => (
-                  <Card
-                    key={proj.projectId}
-                    className={cn(
-                      "cursor-pointer transition-all hover:shadow-md",
-                      selectedProject === proj.projectId && "ring-2 ring-indigo-500"
-                    )}
-                    onClick={() => setSelectedProject(proj.projectId)}
-                  >
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-bold truncate">
-                        {formatProjectName(proj.projectName)}
-                      </CardTitle>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: proj.clientColor }} />
-                        <span className="text-xs text-muted-foreground truncate">{proj.clientName}</span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <span className="text-muted-foreground">Contratado:</span>
-                          <span className="font-bold ml-1">{proj.contracted}h</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Realizado:</span>
-                          <span className="font-bold ml-1">{proj.realized}h</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+              {/* Selector de proyecto */}
+              <div className="mb-6">
+                <Label className="text-sm font-medium mb-2 block">Proyecto</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" role="combobox" className="w-full h-10 justify-between">
+                      <span className="truncate">
+                        {selectedProject 
+                          ? formatProjectName(projects.find(p => p.id === selectedProject)?.name || '')
+                          : 'Seleccionar proyecto...'}
+                      </span>
+                      <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar proyecto..." />
+                      <CommandList>
+                        <CommandEmpty>No hay proyectos</CommandEmpty>
+                        <CommandGroup>
+                          {projectForecast.map(proj => {
+                            const client = clients.find(c => c.id === projects.find(p => p.id === proj.projectId)?.clientId);
+                            return (
+                              <CommandItem 
+                                key={proj.projectId} 
+                                value={`${client?.name || ''} ${proj.projectName}`}
+                                onSelect={() => setSelectedProject(proj.projectId)}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", selectedProject === proj.projectId ? "opacity-100" : "opacity-0")} />
+                                <div className="flex items-center gap-2">
+                                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: proj.clientColor }} />
+                                  <span className="truncate">{client?.name} - {formatProjectName(proj.projectName)}</span>
+                                </div>
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
+              
+              {/* Formulario de redistribución (solo si hay proyecto seleccionado) */}
+              {selectedProject && (
+                <div className="space-y-6 pt-4 border-t">
+                  {/* Mostrar el contenido del Sheet aquí directamente */}
+                  {delayedTasksByEmployee.length > 0 ? (
+                    <div className="space-y-4">
+                      <Label className="text-sm font-medium">Tareas retrasadas</Label>
+                      <div className="space-y-3 max-h-[400px] overflow-y-auto border rounded-lg p-3">
+                        {delayedTasksByEmployee.map(group => (
+                          <div key={group.employeeId} className="space-y-2">
+                            {/* Header del empleado */}
+                            <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage src={group.employeeAvatar} alt={group.employeeName} />
+                                <AvatarFallback className="bg-indigo-500 text-white text-[10px]">
+                                  {group.employeeName.substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="font-semibold text-sm text-slate-900">{group.employeeName}</span>
+                              <Badge variant="outline" className="ml-auto text-xs bg-slate-50">
+                                {group.tasks.length} tarea(s)
+                              </Badge>
+                            </div>
+                            
+                            {/* Tareas del empleado */}
+                            <div className="space-y-2 pl-8">
+                              {group.tasks.map(task => {
+                                const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
+                                const isSelected = redistributeSelectedTasks.has(task.id);
+                                
+                                return (
+                                  <div
+                                    key={task.id}
+                                    className={cn(
+                                      "flex items-center gap-3 p-2 rounded border cursor-pointer transition-colors",
+                                      isSelected ? "bg-indigo-50 border-indigo-300" : "bg-white border-slate-200 hover:bg-slate-50"
+                                    )}
+                                    onClick={() => {
+                                      setRedistributeSelectedTasks(prev => {
+                                        const newSet = new Set(prev);
+                                        if (newSet.has(task.id)) {
+                                          newSet.delete(task.id);
+                                        } else {
+                                          newSet.add(task.id);
+                                        }
+                                        return newSet;
+                                      });
+                                    }}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={() => {}}
+                                      className="h-4 w-4"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium truncate">{task.taskName || 'Sin nombre'}</p>
+                                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                                        <span>Asignadas: {task.hoursAssigned}h</span>
+                                        <span>Realizadas: {task.hoursActual || 0}h</span>
+                                        {remainingHours > 0 && (
+                                          <span className="text-amber-600 font-medium">Restantes: {remainingHours}h</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {remainingHours > 0 && (
+                                      <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                                        {remainingHours}h
+                                      </Badge>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Compañero destino */}
+                      {redistributeSelectedTasks.size > 0 && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Compañero destino</Label>
+                          <Select value={redistributeToEmployee} onValueChange={setRedistributeToEmployee}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar compañero destino" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {employees
+                                .filter(e => e.isActive)
+                                .map(emp => (
+                                  <SelectItem key={emp.id} value={emp.id}>
+                                    {emp.name}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                      
+                      {/* Semana destino */}
+                      {redistributeToEmployee && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Semana destino</Label>
+                          <Select value={redistributeWeek} onValueChange={setRedistributeWeek}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar semana" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {futureWeeks.map((week, idx) => {
+                                const storageKey = getStorageKey(week.weekStart, currentMonth);
+                                return (
+                                  <SelectItem key={storageKey} value={storageKey}>
+                                    Sem {idx + 1} ({format(week.weekStart, 'd MMM', { locale: es })})
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                      
+                      {/* Resumen y carga */}
+                      {redistributeToEmployee && redistributeWeek && (() => {
+                        const allDelayedTasks = delayedTasksByEmployee.flatMap(g => g.tasks);
+                        const selectedTasks = allDelayedTasks.filter(t => redistributeSelectedTasks.has(t.id));
+                        let totalTransfer = 0;
+                        selectedTasks.forEach(task => {
+                          const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
+                          if (remainingHours > 0) {
+                            totalTransfer += remainingHours;
+                          }
+                        });
+                        
+                        // Calcular carga usando getEmployeeLoadForWeek
+                        const weekData = futureWeeks.find(w => {
+                          const storageKey = getStorageKey(w.weekStart, currentMonth);
+                          return storageKey === redistributeWeek;
+                        });
+                        
+                        if (weekData) {
+                          const weekLoad = getEmployeeLoadForWeek(
+                            redistributeToEmployee,
+                            redistributeWeek,
+                            weekData.effectiveStart,
+                            weekData.effectiveEnd
+                          );
+                          
+                          const newTotal = weekLoad.hours + totalTransfer;
+                          const exceeds = newTotal > weekLoad.capacity;
+                          
+                          return (
+                            <div className="space-y-3 p-3 bg-slate-50 rounded-lg">
+                              <Label className="text-sm font-medium">Carga del compañero destino</Label>
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between p-2 bg-white rounded text-xs">
+                                  <span>Semana {format(weekData.weekStart, 'd MMM', { locale: es })}</span>
+                                  <span className={cn(
+                                    "font-semibold",
+                                    weekLoad.percentage > 110 ? "text-red-600" : weekLoad.percentage > 100 ? "text-amber-600" : "text-emerald-600"
+                                  )}>
+                                    {weekLoad.hours}h / {weekLoad.capacity}h ({weekLoad.percentage}%)
+                                  </span>
+                                </div>
+                                {totalTransfer > 0 && (
+                                  <div className={cn(
+                                    "p-3 rounded border",
+                                    exceeds ? "bg-red-50 border-red-200" : "bg-emerald-50 border-emerald-200"
+                                  )}>
+                                    <div className="flex items-center justify-between text-sm">
+                                      <span className="font-medium">Total a transferir:</span>
+                                      <span className="font-bold">{totalTransfer.toFixed(1)}h</span>
+                                    </div>
+                                    <div className="mt-2 text-xs">
+                                      <div className="flex items-center justify-between">
+                                        <span>Carga actual:</span>
+                                        <span>{weekLoad.hours}h / {weekLoad.capacity}h</span>
+                                      </div>
+                                      <div className={cn(
+                                        "flex items-center justify-between mt-1 font-medium",
+                                        exceeds ? "text-red-600" : "text-emerald-600"
+                                      )}>
+                                        <span>Nueva carga:</span>
+                                        <span>
+                                          {newTotal.toFixed(1)}h / {weekLoad.capacity}h
+                                          {exceeds && ` (+${(newTotal - weekLoad.capacity).toFixed(1)}h exceso)`}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                      
+                      {/* Botón de redistribuir */}
+                      <Button 
+                        onClick={handleRedistribute} 
+                        className="w-full bg-indigo-600 hover:bg-indigo-700"
+                        disabled={redistributeSelectedTasks.size === 0 || !redistributeToEmployee || !redistributeWeek}
+                      >
+                        Redistribuir Horas
+                      </Button>
+                    </div>
+                  ) : selectedProject ? (
+                    <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                      <p className="text-sm text-amber-700">
+                        No hay tareas retrasadas en este proyecto.
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
-      
-      {/* Sheet lateral para Redistribución - NUEVO FLUJO: mostrar tareas retrasadas directamente */}
-      <Sheet open={selectedProject !== null} onOpenChange={(open) => {
-        if (!open) {
-          setSelectedProject(null);
-          setRedistributeSelectedTasks(new Set());
-          setRedistributeToEmployee('');
-          setRedistributeWeek('');
-        }
-      }}>
-        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Redistribuir Horas</SheetTitle>
-            <SheetDescription>
-              Selecciona las tareas retrasadas que quieres redistribuir y elige a quién y cuándo transferirlas.
-            </SheetDescription>
-          </SheetHeader>
-          
-          {selectedProject && (
-            <div className="space-y-6 mt-6">
-              {/* Paso 1: Proyecto seleccionado */}
-              <div className="p-3 bg-slate-50 rounded-lg border-l-4 border-indigo-500">
-                <Label className="text-xs text-muted-foreground mb-1 block">1. Proyecto</Label>
-                <p className="font-semibold">
-                  {formatProjectName(projects.find(p => p.id === selectedProject)?.name || '')}
-                </p>
-              </div>
-              
-              {/* Paso 2: Tareas retrasadas (agrupadas por empleado) */}
-              {delayedTasksByEmployee.length > 0 ? (
-                <div className="space-y-4">
-                  <Label className="text-sm font-medium">2. Tareas retrasadas</Label>
-                  <div className="space-y-3 max-h-[400px] overflow-y-auto border rounded-lg p-3">
-                    {delayedTasksByEmployee.map(group => (
-                      <div key={group.employeeId} className="space-y-2">
-                        {/* Header del empleado */}
-                        <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={group.employeeAvatar} alt={group.employeeName} />
-                            <AvatarFallback className="bg-indigo-500 text-white text-[10px]">
-                              {group.employeeName.substring(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-semibold text-sm text-slate-900">{group.employeeName}</span>
-                          <Badge variant="outline" className="ml-auto text-xs bg-slate-50">
-                            {group.tasks.length} tarea(s)
-                          </Badge>
-                        </div>
-                        
-                        {/* Tareas del empleado */}
-                        <div className="space-y-2 pl-8">
-                          {group.tasks.map(task => {
-                            const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
-                            const isSelected = redistributeSelectedTasks.has(task.id);
-                            
-                            return (
-                              <div
-                                key={task.id}
-                                className={cn(
-                                  "flex items-center gap-3 p-2 rounded border cursor-pointer transition-colors",
-                                  isSelected ? "bg-indigo-50 border-indigo-300" : "bg-white border-slate-200 hover:bg-slate-50"
-                                )}
-                                onClick={() => {
-                                  setRedistributeSelectedTasks(prev => {
-                                    const newSet = new Set(prev);
-                                    if (newSet.has(task.id)) {
-                                      newSet.delete(task.id);
-                                    } else {
-                                      newSet.add(task.id);
-                                    }
-                                    return newSet;
-                                  });
-                                }}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => {}}
-                                  className="h-4 w-4"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium truncate">{task.taskName || 'Sin nombre'}</p>
-                                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                                    <span>Asignadas: {task.hoursAssigned}h</span>
-                                    <span>Realizadas: {task.hoursActual || 0}h</span>
-                                    {remainingHours > 0 && (
-                                      <span className="text-amber-600 font-medium">Restantes: {remainingHours}h</span>
-                                    )}
-                                  </div>
-                                </div>
-                                {remainingHours > 0 && (
-                                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                                    {remainingHours}h
-                                  </Badge>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
-                  <p className="text-sm text-amber-700">
-                    No hay tareas retrasadas en este proyecto.
-                  </p>
-                </div>
-              )}
-              
-              {/* Paso 3: Compañero destino */}
-              {redistributeSelectedTasks.size > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">3. Compañero destino</Label>
-                  <Select value={redistributeToEmployee} onValueChange={setRedistributeToEmployee}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar compañero destino" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {employees
-                        .filter(e => e.isActive)
-                        .map(emp => (
-                          <SelectItem key={emp.id} value={emp.id}>
-                            {emp.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              
-              {/* Paso 4: Semana destino */}
-              {redistributeToEmployee && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">4. Semana destino</Label>
-                  <Select value={redistributeWeek} onValueChange={setRedistributeWeek}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar semana" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {futureWeeks.map((week, idx) => {
-                        const storageKey = getStorageKey(week.weekStart, currentMonth);
-                        return (
-                          <SelectItem key={storageKey} value={storageKey}>
-                            Sem {idx + 1} ({format(week.weekStart, 'd MMM', { locale: es })})
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              
-              {/* Resumen y carga del compañero destino */}
-              {redistributeToEmployee && redistributeWeek && (
-                <div className="space-y-3 p-3 bg-slate-50 rounded-lg">
-                  <Label className="text-sm font-medium">Carga del compañero destino</Label>
-                  {employeeWorkloads
-                    .find(w => w.employeeId === redistributeToEmployee)
-                    ?.weekLoads
-                    .filter(wl => wl.weekStart === redistributeWeek)
-                    .map(wl => (
-                      <div key={wl.weekStart} className="flex items-center justify-between p-2 bg-white rounded text-xs">
-                        <span>{wl.weekLabel}</span>
-                        <span className={cn(
-                          "font-semibold",
-                          wl.percentage > 110 ? "text-red-600" : wl.percentage > 100 ? "text-amber-600" : "text-emerald-600"
-                        )}>
-                          {wl.hours}h / {wl.capacity}h ({wl.percentage}%)
-                        </span>
-                      </div>
-                    ))}
-                  
-                  {/* Resumen de horas a transferir */}
-                  {(() => {
-                    const allDelayedTasks = delayedTasksByEmployee.flatMap(g => g.tasks);
-                    const selectedTasks = allDelayedTasks.filter(t => redistributeSelectedTasks.has(t.id));
-                    let totalTransfer = 0;
-                    
-                    selectedTasks.forEach(task => {
-                      const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
-                      if (remainingHours > 0) {
-                        totalTransfer += remainingHours;
-                      }
-                    });
-                    
-                    if (totalTransfer > 0) {
-                      const targetWeekLoad = employeeWorkloads
-                        .find(w => w.employeeId === redistributeToEmployee)
-                        ?.weekLoads
-                        .find(wl => wl.weekStart === redistributeWeek);
-                      
-                      const newTotal = (targetWeekLoad?.hours || 0) + totalTransfer;
-                      const newCapacity = targetWeekLoad?.capacity || 0;
-                      const exceeds = newTotal > newCapacity;
-                      
-                      return (
-                        <div className={cn(
-                          "mt-3 p-3 rounded border",
-                          exceeds ? "bg-red-50 border-red-200" : "bg-emerald-50 border-emerald-200"
-                        )}>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="font-medium">Total a transferir:</span>
-                            <span className="font-bold">{totalTransfer.toFixed(1)}h</span>
-                          </div>
-                          {targetWeekLoad && (
-                            <div className="mt-2 text-xs">
-                              <div className="flex items-center justify-between">
-                                <span>Carga actual:</span>
-                                <span>{targetWeekLoad.hours}h / {targetWeekLoad.capacity}h</span>
-                              </div>
-                              <div className={cn(
-                                "flex items-center justify-between mt-1 font-medium",
-                                exceeds ? "text-red-600" : "text-emerald-600"
-                              )}>
-                                <span>Nueva carga:</span>
-                                <span>
-                                  {newTotal.toFixed(1)}h / {newCapacity}h
-                                  {exceeds && ` (+${(newTotal - newCapacity).toFixed(1)}h exceso)`}
-                                </span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
-                </div>
-              )}
-              
-              <Button 
-                onClick={handleRedistribute} 
-                className="w-full bg-indigo-600 hover:bg-indigo-700"
-                disabled={redistributeSelectedTasks.size === 0 || !redistributeToEmployee || !redistributeWeek}
-              >
-                Redistribuir Horas
-              </Button>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }

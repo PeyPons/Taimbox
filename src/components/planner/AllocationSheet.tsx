@@ -997,7 +997,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                                             min="0"
                                                                             defaultValue={alloc.hoursActual || 0}
                                                                             onBlur={(e) => updateInlineHours(alloc, 'hoursActual', e.target.value)}
-                                                                            className="w-14 px-1.5 py-0.5 text-xs text-center border rounded bg-blue-50 text-blue-700 font-mono"
+                                                                            className="w-12 px-1 py-0.5 text-[10px] text-center border rounded bg-blue-50 text-blue-700 font-mono"
                                                                         />
                                                                     ) : (
                                                                         <span className="text-slate-300 text-xs">-</span>
@@ -1011,7 +1011,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                                             min="0"
                                                                             defaultValue={alloc.hoursComputed || 0}
                                                                             onBlur={(e) => updateInlineHours(alloc, 'hoursComputed', e.target.value)}
-                                                                            className="w-14 px-1.5 py-0.5 text-xs text-center border rounded bg-emerald-50 text-emerald-700 font-mono"
+                                                                            className="w-12 px-1 py-0.5 text-[10px] text-center border rounded bg-emerald-50 text-emerald-700 font-mono"
                                                                         />
                                                                     ) : (
                                                                         <span className="text-slate-300 text-xs">-</span>
@@ -1103,8 +1103,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                         <tr>
                                                             <th className="py-2 px-3 text-left font-medium w-8"></th>
                                                             <th className="py-2 px-3 text-left font-medium">Tarea</th>
-                                                            <th className="py-2 px-3 text-center font-medium w-16">Horas</th>
-                                                            <th className="py-2 px-3 text-center font-medium w-16">Comp</th>
+                                                            <th className="py-2 px-2 text-center font-medium w-12">Horas</th>
+                                                            <th className="py-2 px-2 text-center font-medium w-12">Comp</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-slate-100">
@@ -1806,11 +1806,18 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                       isCompleted && "line-through text-slate-400"
                                     )}>{alloc.taskName || 'Tarea'}</span>
                                     {/* Badge Weekly si la tarea fue actualizada vía Weekly */}
-                                    {alloc.taskName?.includes('(transferida de') && (
-                                      <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-indigo-50 text-indigo-700 border-indigo-200">
-                                        Weekly
-                                      </Badge>
-                                    )}
+                                    {(() => {
+                                      const isTransferred = alloc.taskName?.includes('(transferida de');
+                                      const hasWeeklyFeedback = weeklyFeedback.some(fb => fb.allocationId === alloc.id);
+                                      const wasAdjustedViaWeekly = hasWeeklyFeedback || isTransferred || 
+                                        (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0 && alloc.status === 'completed');
+                                      
+                                      return wasAdjustedViaWeekly ? (
+                                        <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-indigo-50 text-indigo-700 border-indigo-200">
+                                          Weekly
+                                        </Badge>
+                                      ) : null;
+                                    })()}
                                   </div>
 
                   {depTask && !isCompleted && (
