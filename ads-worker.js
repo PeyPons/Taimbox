@@ -171,11 +171,25 @@ async function getAccountData(customerId, accessToken, dateRange) {
         } 
       });
     }
+    
+    // Calcular totales para logs
+    const totalCost = Array.from(aggregator.values()).reduce((sum, e) => sum + e.cost, 0);
+    const dateRange = Array.from(aggregator.values()).map(e => e.date).sort();
+    const minDate = dateRange[0] || 'N/A';
+    const maxDate = dateRange[dateRange.length - 1] || 'N/A';
+    
     // #region agent log
+    console.log(`[ads-worker] ${customerId}: ${aggregator.size} filas, coste total: ${Math.round(totalCost * 100) / 100}€, fechas: ${minDate} a ${maxDate}`);
     agentLog({
       location: 'ads-worker.js:getAccountData',
       message: 'Aggregated account data',
-      data: { customerId, rows: aggregator.size }
+      data: { 
+        customerId, 
+        rows: aggregator.size,
+        totalCost: Math.round(totalCost * 100) / 100,
+        dateRange: { min: minDate, max: maxDate },
+        sampleDates: dateRange.slice(0, 5)
+      }
     });
     // #endregion
   } else {
