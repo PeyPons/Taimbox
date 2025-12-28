@@ -379,12 +379,34 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
   const isLastStep = currentStep === tourSteps.length - 1;
   const isFirstStep = currentStep === 0;
 
+  // Función para saber si un click cae dentro de la zona destacada
+  const isInsideHighlight = useCallback((e: React.MouseEvent) => {
+    if (!highlightPos) return false;
+    const { clientX, clientY } = e;
+    return (
+      clientX >= highlightPos.left &&
+      clientX <= highlightPos.left + highlightPos.width &&
+      clientY >= highlightPos.top &&
+      clientY <= highlightPos.top + highlightPos.height
+    );
+  }, [highlightPos]);
+
   // Renderizamos directamente sin portal
   return (
     <div 
       className="fixed inset-0" 
-      style={{ zIndex: 999999, pointerEvents: 'none' }}
-      onMouseDown={(e) => e.stopPropagation()}
+      style={{ zIndex: 999999, pointerEvents: 'auto' }}
+      onMouseDownCapture={(e) => {
+        // Permitir interacción solo dentro de la zona destacada cuando es interactivo
+        if (step.interactive && isInsideHighlight(e)) return;
+        e.stopPropagation();
+        e.preventDefault();
+      }}
+      onClickCapture={(e) => {
+        if (step.interactive && isInsideHighlight(e)) return;
+        e.stopPropagation();
+        e.preventDefault();
+      }}
     >
       {/* Overlay oscuro - 4 partes para permitir interacción con elemento destacado */}
       {highlightPos ? (
