@@ -1,4 +1,8 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -75,11 +79,23 @@ export default function DeadlinesPage() {
     isHidden: false
   });
 
-  const [globalFormData, setGlobalFormData] = useState({
-    name: '',
-    hours: 0,
-    affectsAll: true,
-    affectedEmployeeIds: [] as string[]
+  const globalAssignmentFormSchema = z.object({
+    name: z.string().min(1, 'El nombre es obligatorio'),
+    hours: z.number().min(0.1, 'Las horas deben ser mayores a 0'),
+    affectsAll: z.boolean(),
+    affectedEmployeeIds: z.array(z.string()).optional().default([]),
+  });
+
+  type GlobalAssignmentFormValues = z.infer<typeof globalAssignmentFormSchema>;
+
+  const globalAssignmentForm = useForm<GlobalAssignmentFormValues>({
+    resolver: zodResolver(globalAssignmentFormSchema),
+    defaultValues: {
+      name: '',
+      hours: 0,
+      affectsAll: true,
+      affectedEmployeeIds: [],
+    },
   });
 
   // Cargar deadlines desde Supabase
@@ -113,7 +129,8 @@ export default function DeadlinesPage() {
       }
     } catch (error: any) {
       console.error('Error cargando deadlines:', error);
-      toast.error('Error al cargar deadlines');
+      const errorMessage = error?.message || error?.error?.message || 'Error al cargar deadlines';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -683,7 +700,7 @@ export default function DeadlinesPage() {
   const openGlobalDialog = (assignment?: GlobalAssignment) => {
     if (assignment) {
       setEditingGlobal(assignment);
-      setGlobalFormData({
+      globalAssignmentForm.reset({
         name: assignment.name,
         hours: assignment.hours,
         affectsAll: assignment.affectsAll,
@@ -691,7 +708,7 @@ export default function DeadlinesPage() {
       });
     } else {
       setEditingGlobal(null);
-      setGlobalFormData({
+      globalAssignmentForm.reset({
         name: '',
         hours: 0,
         affectsAll: true,
@@ -773,19 +790,15 @@ export default function DeadlinesPage() {
     }
   };
 
-  const handleSaveGlobal = async () => {
-    if (!globalFormData.name || globalFormData.hours <= 0) {
-      toast.error('Completa todos los campos');
-      return;
-    }
+  const onSaveGlobal = async (data: GlobalAssignmentFormValues) => {
 
     try {
       const assignmentData: any = {
         month: selectedMonth,
-        name: globalFormData.name,
-        hours: globalFormData.hours,
-        affects_all: globalFormData.affectsAll,
-        affected_employee_ids: globalFormData.affectsAll ? null : globalFormData.affectedEmployeeIds
+        name: data.name,
+        hours: data.hours,
+        affects_all: data.affectsAll,
+        affected_employee_ids: data.affectsAll ? null : data.affectedEmployeeIds
       };
 
       // Al crear, guardar el employee_id del usuario actual
@@ -803,7 +816,7 @@ export default function DeadlinesPage() {
 
         setGlobalAssignments(prev => prev.map(a => 
           a.id === editingGlobal.id 
-            ? { ...a, ...assignmentData, month: selectedMonth, name: globalFormData.name, hours: globalFormData.hours, affectsAll: globalFormData.affectsAll, affectedEmployeeIds: globalFormData.affectedEmployeeIds, employeeId: editingGlobal.employeeId }
+            ? { ...a, ...assignmentData, month: selectedMonth, name: data.name, hours: data.hours, affectsAll: data.affectsAll, affectedEmployeeIds: data.affectedEmployeeIds || [], employeeId: editingGlobal.employeeId }
             : a
         ));
         toast.success('Asignación global actualizada');
@@ -831,7 +844,8 @@ export default function DeadlinesPage() {
       setIsGlobalDialogOpen(false);
     } catch (error: any) {
       console.error('Error guardando asignación global:', error);
-      toast.error(error.message || 'Error al guardar asignación global');
+      const errorMessage = error?.message || error?.error?.message || 'Error al guardar asignación global';
+      toast.error(errorMessage);
     }
   };
 
@@ -2092,78 +2106,111 @@ export default function DeadlinesPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Nombre de la tarea</Label>
-              <Input
-                placeholder="Ej: Deadline afecta a todos, Creación timeboxing"
-                value={globalFormData.name}
-                onChange={(e) => setGlobalFormData(prev => ({ ...prev, name: e.target.value }))}
+          <Form {...globalAssignmentForm}>
+            <form onSubmit={globalAssignmentForm.handleSubmit(onSaveGlobal)} className="space-y-4 py-4">
+              <FormField
+                control={globalAssignmentForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nombre de la tarea</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ej: Deadline afecta a todos, Creación timeboxing" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label>Horas</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.5"
-                value={globalFormData.hours || ''}
-                onChange={(e) => setGlobalFormData(prev => ({ ...prev, hours: parseFloat(e.target.value) || 0 }))}
-                placeholder="Ej: 2.5"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Switch
-                id="affects-all"
-                checked={globalFormData.affectsAll}
-                onCheckedChange={(checked) => setGlobalFormData(prev => ({ ...prev, affectsAll: checked }))}
-              />
-              <Label htmlFor="affects-all" className="cursor-pointer">
-                Afecta a todos los empleados
-              </Label>
-            </div>
-
-            {!globalFormData.affectsAll && (
-              <div className="space-y-2">
-                <Label>Seleccionar empleados</Label>
-                <div className="space-y-2 max-h-[200px] overflow-y-auto border rounded-lg p-3">
-                  {activeEmployees.map(emp => (
-                    <div key={emp.id} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id={`emp-${emp.id}`}
-                        checked={globalFormData.affectedEmployeeIds?.includes(emp.id)}
-                        onChange={(e) => {
-                          const ids = (globalFormData.affectedEmployeeIds || []) as string[];
-                          if (e.target.checked) {
-                            setGlobalFormData(prev => ({ ...prev, affectedEmployeeIds: [...ids, emp.id] }));
-                          } else {
-                            setGlobalFormData(prev => ({ ...prev, affectedEmployeeIds: ids.filter(id => id !== emp.id) }));
-                          }
-                        }}
-                        className="rounded"
+              <FormField
+                control={globalAssignmentForm.control}
+                name="hours"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Horas</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        placeholder="Ej: 2.5"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        value={field.value || ''}
                       />
-                      <Label htmlFor={`emp-${emp.id}`} className="cursor-pointer text-sm">
-                        {emp.first_name || emp.name}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsGlobalDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSaveGlobal} className="bg-indigo-600 hover:bg-indigo-700">
-              <Save className="h-4 w-4 mr-2" />
-              Guardar
-            </Button>
-          </DialogFooter>
+              <FormField
+                control={globalAssignmentForm.control}
+                name="affectsAll"
+                render={({ field }) => (
+                  <FormItem className="flex items-center gap-2">
+                    <FormControl>
+                      <Switch
+                        id="affects-all"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel htmlFor="affects-all" className="cursor-pointer">
+                      Afecta a todos los empleados
+                    </FormLabel>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {!globalAssignmentForm.watch('affectsAll') && (
+                <FormField
+                  control={globalAssignmentForm.control}
+                  name="affectedEmployeeIds"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Seleccionar empleados</FormLabel>
+                      <div className="space-y-2 max-h-[200px] overflow-y-auto border rounded-lg p-3">
+                        {activeEmployees.map(emp => (
+                          <div key={emp.id} className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id={`emp-${emp.id}`}
+                              checked={(field.value || []).includes(emp.id)}
+                              onChange={(e) => {
+                                const ids = field.value || [];
+                                if (e.target.checked) {
+                                  field.onChange([...ids, emp.id]);
+                                } else {
+                                  field.onChange(ids.filter(id => id !== emp.id));
+                                }
+                              }}
+                              className="rounded"
+                            />
+                            <Label htmlFor={`emp-${emp.id}`} className="cursor-pointer text-sm">
+                              {emp.first_name || emp.name}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsGlobalDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700">
+                  <Save className="h-4 w-4 mr-2" />
+                  Guardar
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>
