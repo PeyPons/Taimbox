@@ -392,55 +392,26 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
       className="fixed inset-0" 
       style={{ zIndex: 999999, pointerEvents: 'none' }}
     >
-      {/* Overlay oscuro - 4 partes para permitir interacción con elemento destacado */}
+      {/* Overlay oscuro con spotlight usando box-shadow */}
       {highlightPos ? (
         <>
-          {/* Arriba */}
+          {/* Overlay invisible para capturar clics */}
           <div 
-            className="absolute left-0 right-0 top-0 bg-black/60"
-            style={{ height: highlightPos.top, pointerEvents: 'auto' }}
+            className="absolute inset-0"
+            style={{ pointerEvents: 'auto' }}
             onClick={handleOverlayClick}
             onMouseDown={(e) => e.stopPropagation()}
           />
-          {/* Izquierda */}
+          {/* Spotlight con box-shadow */}
           <div 
-            className="absolute left-0 bg-black/60"
-            style={{ 
-              top: highlightPos.top, 
-              width: highlightPos.left, 
-              height: highlightPos.height,
-              pointerEvents: 'auto'
-            }}
-            onClick={handleOverlayClick}
-            onMouseDown={(e) => e.stopPropagation()}
-          />
-          {/* Derecha */}
-          <div 
-            className="absolute right-0 bg-black/60"
-            style={{ 
-              top: highlightPos.top, 
-              left: highlightPos.left + highlightPos.width, 
-              height: highlightPos.height,
-              pointerEvents: 'auto'
-            }}
-            onClick={handleOverlayClick}
-            onMouseDown={(e) => e.stopPropagation()}
-          />
-          {/* Abajo */}
-          <div 
-            className="absolute left-0 right-0 bottom-0 bg-black/60"
-            style={{ top: highlightPos.top + highlightPos.height, pointerEvents: 'auto' }}
-            onClick={handleOverlayClick}
-            onMouseDown={(e) => e.stopPropagation()}
-          />
-          {/* Borde brillante */}
-          <div 
-            className="absolute rounded-lg ring-4 ring-indigo-400 ring-opacity-80 transition-all duration-300"
+            className="absolute rounded-lg transition-all duration-300"
             style={{
               top: highlightPos.top,
               left: highlightPos.left,
               width: highlightPos.width,
               height: highlightPos.height,
+              // box-shadow enorme para crear el overlay oscuro alrededor
+              boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.6), 0 0 0 4px rgba(99, 102, 241, 0.8)',
               pointerEvents: 'none'
             }}
           />
