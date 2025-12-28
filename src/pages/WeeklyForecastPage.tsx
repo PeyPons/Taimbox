@@ -303,7 +303,7 @@ export default function WeeklyForecastPage() {
   };
   
   // Carga de trabajo de compañeros para semanas restantes del mes (considerando ausencias y eventos)
-  const employeeWorkload = useMemo(() => {
+  const employeeWorkloads = useMemo(() => {
     if (!selectedProject) return [];
     
     const today = new Date();
