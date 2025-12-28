@@ -16,13 +16,14 @@ import {
   FileDown,
   LogOut,
   Home,
-  Calendar
+  Calendar,
+  TrendingUp
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function Sidebar() {
   const location = useLocation();
-  const { currentUser } = useApp(); // Obtenemos el usuario real
+  const { currentUser, isAdmin } = useApp(); // Obtenemos el usuario real
   const { canAccess } = usePermissions(); // Verificamos permisos
 
   const handleLogout = async () => {
@@ -68,6 +69,12 @@ export function Sidebar() {
             {canAccess('/planner') && (
               <NavLink to="/planner" icon={LayoutDashboard} active={location.pathname === '/planner'}>
                 Planificador
+              </NavLink>
+            )}
+
+            {isAdmin && canAccess('/planner') && (
+              <NavLink to="/weekly-forecast" icon={TrendingUp} active={location.pathname === '/weekly-forecast'}>
+                Forecast
               </NavLink>
             )}
 

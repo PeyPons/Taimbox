@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Employee, Client, Project, Allocation, LoadStatus, Absence, TeamEvent, ProfessionalGoal } from '@/types';
+import { Employee, Client, Project, Allocation, LoadStatus, Absence, TeamEvent, ProfessionalGoal, WeeklyFeedback } from '@/types';
 import { getWorkingDaysInRange, getMonthlyCapacity, getWeeksForMonth, getStorageKey } from '@/utils/dateUtils';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange, getTeamEventDetailsInRange } from '@/utils/teamEventUtils';
@@ -98,6 +98,7 @@ interface AppContextType {
   allocations: Allocation[];
   absences: Absence[];
   teamEvents: TeamEvent[];
+  weeklyFeedback: WeeklyFeedback[];
   isLoading: boolean;
   addEmployee: (employee: Omit<Employee, 'id'>) => Promise<void>;
   updateEmployee: (employee: Employee) => Promise<void>;
@@ -130,6 +131,7 @@ interface AppContextType {
   deleteProfessionalGoal: (id: string) => void;
   getEmployeeGoals: (employeeId: string) => ProfessionalGoal[];
   loadDataForMonth: (month: Date) => Promise<void>;
+  addWeeklyFeedback: (feedback: Omit<WeeklyFeedback, 'id' | 'createdAt'>) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -145,6 +147,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [allocations, setAllocations] = useState<Allocation[]>([]);
   const [absences, setAbsences] = useState<Absence[]>([]);
   const [teamEvents, setTeamEvents] = useState<TeamEvent[]>([]);
+  const [weeklyFeedback, setWeeklyFeedback] = useState<WeeklyFeedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [professionalGoals, setProfessionalGoals] = useState<ProfessionalGoal[]>([]);
 
@@ -171,7 +174,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       // Tablas pequeñas: cargar todo
       // Tablas grandes con fechas: filtrar por rango
-      const [empRes, cliRes, projRes, allocRes, absRes, evRes, goalsRes] = await Promise.all([
+      const [empRes, cliRes, projRes, allocRes, absRes, evRes, goalsRes, feedbackRes] = await Promise.all([
         supabase.from('employees').select('*'),
         supabase.from('clients').select('*'),
         supabase.from('projects').select('*'),
@@ -191,6 +194,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           .gte('date', startStr)
           .lte('date', endStr),
         supabase.from('professional_goals').select('*'),
+        supabase.from('weekly_feedback')
+          .select('*')
+          .gte('week_start_date', startStr)
+          .lte('week_start_date', endStr),
       ]);
 
       if (empRes.data) {
@@ -278,6 +285,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           ...te,
           hoursReduction: te.hours_reduction,
           affectedEmployeeIds: te.affected_employee_ids
+        })));
+      }
+      if (feedbackRes.data) {
+        setWeeklyFeedback(feedbackRes.data.map((fb: any) => ({
+          ...fb,
+          employeeId: fb.employee_id,
+          weekStartDate: fb.week_start_date,
+          projectId: fb.project_id,
+          allocationId: fb.allocation_id,
+          createdAt: fb.created_at
         })));
       }
     } catch (error: any) {
@@ -743,6 +760,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return professionalGoals.filter(g => g.employeeId === employeeId);
   }, [professionalGoals]);
 
+  // --- WEEKLY FEEDBACK ---
+  const addWeeklyFeedback = useCallback(async (feedback: Omit<WeeklyFeedback, 'id' | 'createdAt'>) => {
+    const { data } = await supabase.from('weekly_feedback').insert({
+      employee_id: feedback.employeeId,
+      week_start_date: feedback.weekStartDate,
+      project_id: feedback.projectId || null,
+      allocation_id: feedback.allocationId || null,
+      reason: feedback.reason || null,
+      comments: feedback.comments || null
+    }).select().single();
+    if (data) setWeeklyFeedback(prev => [...prev, {
+      ...data,
+      employeeId: data.employee_id,
+      weekStartDate: data.week_start_date,
+      projectId: data.project_id,
+      allocationId: data.allocation_id,
+      createdAt: data.created_at
+    }]);
+  }, []);
+
   // --- QUERIES ---
   const getEmployeeAllocationsForWeek = useCallback((employeeId: string, weekStart: string) => {
     return allocations.filter(a => a.employeeId === employeeId && a.weekStartDate === weekStart);
@@ -875,7 +912,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(() => ({
     currentUser,
     isAdmin: currentUser?.role === 'admin' || currentUser?.role === 'manager',
-    employees, clients, projects, allocations, absences, teamEvents, isLoading,
+    employees, clients, projects, allocations, absences, teamEvents, weeklyFeedback, isLoading,
     addEmployee, updateEmployee, deleteEmployee, toggleEmployeeActive,
     addClient, updateClient, deleteClient,
     addProject, updateProject, deleteProject,
@@ -885,8 +922,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getEmployeeMonthlyLoad,
     getProjectHoursForMonth, getClientTotalHoursForMonth, getProjectById, getClientById,
     professionalGoals, addProfessionalGoal, updateProfessionalGoal, deleteProfessionalGoal, getEmployeeGoals,
-    loadDataForMonth
-  }), [currentUser, employees, clients, projects, allocations, absences, teamEvents, isLoading,
+    loadDataForMonth,
+    addWeeklyFeedback
+  }), [currentUser, employees, clients, projects, allocations, absences, teamEvents, weeklyFeedback, isLoading,
     addEmployee, updateEmployee, deleteEmployee, toggleEmployeeActive,
     addClient, updateClient, deleteClient,
     addProject, updateProject, deleteProject,
@@ -896,7 +934,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getEmployeeMonthlyLoad,
     getProjectHoursForMonth, getClientTotalHoursForMonth, getProjectById, getClientById,
     professionalGoals, addProfessionalGoal, updateProfessionalGoal, deleteProfessionalGoal, getEmployeeGoals,
-    loadDataForMonth]);
+    loadDataForMonth,
+    addWeeklyFeedback]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

@@ -134,3 +134,14 @@ export interface GlobalAssignment {
   affectedEmployeeIds?: string[]; // Si no afecta a todos, lista de IDs
   employeeId?: string; // ID del empleado que creó la asignación
 }
+
+export interface WeeklyFeedback {
+  id: string;
+  employeeId: string;
+  weekStartDate: string; // Formato: 'YYYY-MM-DD' (lunes de la semana)
+  projectId?: string;
+  allocationId?: string;
+  reason?: 'technical_issue' | 'client_blocker' | 'bad_estimation' | 'personal_absence' | 'other';
+  comments?: string;
+  createdAt: string;
+}
