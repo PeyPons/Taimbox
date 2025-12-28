@@ -712,18 +712,38 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                       <div className="mt-3 pl-6">
                         <Label htmlFor={`${task.id}-comment`} className="text-xs font-medium mb-2 block">
                           {(taskActions[task.id] === 'move' || taskActions[task.id] === 'moveToEmployee') ? (
-                            <span>Nota <strong className="text-red-600">*</strong> (obligatoria)</span>
+                            <span className="flex items-center gap-2">
+                              <span className="text-red-600 font-bold">*</span>
+                              <span>Nota obligatoria</span>
+                              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-[10px]">
+                                Requerida
+                              </Badge>
+                            </span>
                           ) : (
                             'Comentario (opcional)'
                           )}
                         </Label>
+                        {(taskActions[task.id] === 'move' || taskActions[task.id] === 'moveToEmployee') && (
+                          <p className="text-xs text-amber-600 mb-2 bg-amber-50 p-2 rounded border border-amber-200">
+                            ⚠️ Debes explicar por qué mueves/transfieres estas horas. Esta información es importante para la trazabilidad.
+                          </p>
+                        )}
                         <Textarea
                           id={`${task.id}-comment`}
-                          placeholder={taskActions[task.id] === 'keep' ? "Añade un comentario si lo deseas..." : "Explica la razón de la desviación..."}
+                          placeholder={taskActions[task.id] === 'keep' ? "Añade un comentario si lo deseas..." : taskActions[task.id] === 'move' || taskActions[task.id] === 'moveToEmployee' ? "Ej: 'No tuve tiempo suficiente por bloqueo del cliente' o 'Necesito ayuda de un compañero con más experiencia'" : "Explica la razón de la desviación..."}
                           value={taskComments[task.id] || ''}
                           onChange={(e) => setTaskComments(prev => ({ ...prev, [task.id]: e.target.value }))}
-                          className="min-h-[80px] text-sm"
+                          className={cn(
+                            "min-h-[80px] text-sm",
+                            (taskActions[task.id] === 'move' || taskActions[task.id] === 'moveToEmployee') && 
+                            (!taskComments[task.id] || !taskComments[task.id].trim()) && 
+                            "border-red-300 focus:border-red-500"
+                          )}
                         />
+                        {(taskActions[task.id] === 'move' || taskActions[task.id] === 'moveToEmployee') && 
+                         (!taskComments[task.id] || !taskComments[task.id].trim()) && (
+                          <p className="text-xs text-red-600 mt-1">Este campo es obligatorio</p>
+                        )}
                       </div>
                     )}
                     
@@ -1128,18 +1148,38 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                 <div className="mt-3 pl-6">
                                   <Label htmlFor={`${task.id}-comment`} className="text-xs font-medium mb-2 block">
                                     {(taskActions[task.id] === 'move' || taskActions[task.id] === 'moveToEmployee') ? (
-                                      <span>Nota <strong className="text-red-600">*</strong> (obligatoria)</span>
+                                      <span className="flex items-center gap-2">
+                                        <span className="text-red-600 font-bold">*</span>
+                                        <span>Nota obligatoria</span>
+                                        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-[10px]">
+                                          Requerida
+                                        </Badge>
+                                      </span>
                                     ) : (
                                       'Comentario (opcional)'
                                     )}
                                   </Label>
+                                  {(taskActions[task.id] === 'move' || taskActions[task.id] === 'moveToEmployee') && (
+                                    <p className="text-xs text-amber-600 mb-2 bg-amber-50 p-2 rounded border border-amber-200">
+                                      ⚠️ Debes explicar por qué mueves/transfieres estas horas. Esta información es importante para la trazabilidad.
+                                    </p>
+                                  )}
                                   <Textarea
                                     id={`${task.id}-comment`}
-                                    placeholder={taskActions[task.id] === 'keep' ? "Añade un comentario si lo deseas..." : taskActions[task.id] === 'move' || taskActions[task.id] === 'moveToEmployee' ? "Explica por qué mueves/transfieres esta tarea..." : "Explica la razón de la desviación..."}
+                                    placeholder={taskActions[task.id] === 'keep' ? "Añade un comentario si lo deseas..." : taskActions[task.id] === 'move' || taskActions[task.id] === 'moveToEmployee' ? "Ej: 'No tuve tiempo suficiente por bloqueo del cliente' o 'Necesito ayuda de un compañero con más experiencia'" : "Explica la razón de la desviación..."}
                                     value={taskComments[task.id] || ''}
                                     onChange={(e) => setTaskComments(prev => ({ ...prev, [task.id]: e.target.value }))}
-                                    className="min-h-[80px] text-sm"
+                                    className={cn(
+                                      "min-h-[80px] text-sm",
+                                      (taskActions[task.id] === 'move' || taskActions[task.id] === 'moveToEmployee') && 
+                                      (!taskComments[task.id] || !taskComments[task.id].trim()) && 
+                                      "border-red-300 focus:border-red-500"
+                                    )}
                                   />
+                                  {(taskActions[task.id] === 'move' || taskActions[task.id] === 'moveToEmployee') && 
+                                   (!taskComments[task.id] || !taskComments[task.id].trim()) && (
+                                    <p className="text-xs text-red-600 mt-1">Este campo es obligatorio</p>
+                                  )}
                                 </div>
                               )}
                               
