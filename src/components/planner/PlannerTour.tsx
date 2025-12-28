@@ -29,7 +29,7 @@ const tourSteps: TourStep[] = [
     target: 'body',
     title: '¡Bienvenido al Planificador! 📋',
     description: 'Aquí organizas tus tareas de forma visual. Podrás ver qué tienes pendiente, marcar como completado y gestionar tu tiempo eficientemente.',
-    icon: <Sparkles className="w-6 h-6 text-indigo-500" />,
+    icon: <Sparkles className="w-6 h-6 text-white" />,
     position: 'center'
   },
   {
@@ -37,7 +37,7 @@ const tourSteps: TourStep[] = [
     target: '[data-tour="planner-view-toggle"]',
     title: 'Cambiar vista',
     description: 'Alterna entre la vista semanal (tareas de una semana) y mensual (todas las tareas del mes en una tabla compacta). Cada vista tiene sus ventajas.',
-    icon: <LayoutGrid className="w-6 h-6 text-indigo-500" />,
+    icon: <LayoutGrid className="w-6 h-6 text-white" />,
     position: 'bottom',
     highlight: true
   },
@@ -46,7 +46,7 @@ const tourSteps: TourStep[] = [
     target: '[data-tour="planner-month-nav"]',
     title: 'Navegar entre meses',
     description: 'Cambia de mes para ver tareas pasadas o planificar el futuro. Las flechas te llevan al mes anterior o siguiente.',
-    icon: <Calendar className="w-6 h-6 text-blue-500" />,
+    icon: <Calendar className="w-6 h-6 text-white" />,
     position: 'bottom',
     highlight: true
   },
@@ -55,7 +55,7 @@ const tourSteps: TourStep[] = [
     target: '[data-tour="planner-projects"]',
     title: 'Tus proyectos',
     description: 'Cada proyecto muestra un resumen: horas asignadas, computadas, planificadas y el estado del presupuesto. Los colores te indican si vas bien (verde), ajustado (amarillo) o pasado (rojo).',
-    icon: <Palette className="w-6 h-6 text-purple-500" />,
+    icon: <Palette className="w-6 h-6 text-white" />,
     position: 'right',
     highlight: true
   },
@@ -64,7 +64,7 @@ const tourSteps: TourStep[] = [
     target: '[data-tour="planner-collapse"]',
     title: 'Expandir/Colapsar',
     description: 'Haz clic en un proyecto para ver sus tareas. Usa el botón de expandir/colapsar todo para gestionar la vista rápidamente.',
-    icon: <FoldVertical className="w-6 h-6 text-slate-500" />,
+    icon: <FoldVertical className="w-6 h-6 text-white" />,
     position: 'bottom',
     highlight: true
   },
@@ -73,7 +73,7 @@ const tourSteps: TourStep[] = [
     target: '[data-tour="planner-task"]',
     title: 'Tus tareas',
     description: 'Cada tarea muestra: nombre, horas planificadas, computadas y si tiene dependencias. Los íconos de colores te indican el estado.',
-    icon: <Check className="w-6 h-6 text-emerald-500" />,
+    icon: <Check className="w-6 h-6 text-white" />,
     position: 'bottom',
     highlight: true
   },
@@ -82,7 +82,7 @@ const tourSteps: TourStep[] = [
     target: '[data-tour="planner-task-name"]',
     title: 'Edición rápida',
     description: 'Haz doble clic en el nombre de cualquier tarea para editarlo directamente. Pulsa Enter para guardar o Escape para cancelar.',
-    icon: <MousePointerClick className="w-6 h-6 text-amber-500" />,
+    icon: <MousePointerClick className="w-6 h-6 text-white" />,
     position: 'bottom',
     highlight: true,
     interactive: true,
@@ -93,7 +93,7 @@ const tourSteps: TourStep[] = [
     target: '[data-tour="planner-checkbox"]',
     title: 'Marcar completado',
     description: 'Marca la casilla para indicar que una tarea está terminada. La tarea bajará al final de la lista después de unos segundos, dándote tiempo para ajustar las horas computadas.',
-    icon: <CheckCircle2 className="w-6 h-6 text-emerald-500" />,
+    icon: <CheckCircle2 className="w-6 h-6 text-white" />,
     position: 'right',
     highlight: true
   },
@@ -102,7 +102,7 @@ const tourSteps: TourStep[] = [
     target: '[data-tour="planner-hours"]',
     title: 'Registrar horas',
     description: 'Introduce las horas planificadas y computadas (reales). El sistema calcula automáticamente los totales y te avisa si te pasas del presupuesto.',
-    icon: <Clock className="w-6 h-6 text-blue-500" />,
+    icon: <Clock className="w-6 h-6 text-white" />,
     position: 'left',
     highlight: true
   },
@@ -111,7 +111,7 @@ const tourSteps: TourStep[] = [
     target: '[data-tour="planner-dependency"]',
     title: 'Dependencias',
     description: 'Si una tarea depende de otra, verás un mensaje indicando de quién esperas. Si tú bloqueas a alguien, aparecerá "te espera" con su nombre.',
-    icon: <Link className="w-6 h-6 text-orange-500" />,
+    icon: <Link className="w-6 h-6 text-white" />,
     position: 'bottom',
     highlight: true
   },
@@ -120,7 +120,7 @@ const tourSteps: TourStep[] = [
     target: '[data-tour="planner-sort"]',
     title: 'Ordenar proyectos',
     description: 'Ordena los proyectos por presupuesto usado, tus horas o nombre. Encuentra rápidamente lo más urgente o lo que más tiempo te lleva.',
-    icon: <ArrowUpDown className="w-6 h-6 text-slate-500" />,
+    icon: <ArrowUpDown className="w-6 h-6 text-white" />,
     position: 'bottom',
     highlight: true
   },
@@ -129,7 +129,7 @@ const tourSteps: TourStep[] = [
     target: '[data-tour="planner-add-task"]',
     title: 'Añadir tarea',
     description: 'Usa el botón + para añadir una nueva tarea al proyecto. Puedes especificar nombre, horas, semana y si depende de otra tarea.',
-    icon: <Edit className="w-6 h-6 text-indigo-500" />,
+    icon: <Edit className="w-6 h-6 text-white" />,
     position: 'left',
     highlight: true
   },
@@ -138,7 +138,7 @@ const tourSteps: TourStep[] = [
     target: 'body',
     title: '¡Listo para planificar! 🚀',
     description: '',
-    icon: <CheckCircle2 className="w-6 h-6 text-emerald-500" />,
+    icon: <CheckCircle2 className="w-6 h-6 text-white" />,
     position: 'center',
     customContent: true
   }
@@ -299,11 +299,20 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
 
     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-    const timer = setTimeout(() => {
+    // Primer cálculo después del scroll
+    const timer1 = setTimeout(() => {
       calculatePositions();
-    }, 400);
+    }, 500);
 
-    return () => clearTimeout(timer);
+    // Segundo cálculo para asegurar precisión después de animaciones
+    const timer2 = setTimeout(() => {
+      calculatePositions();
+    }, 800);
+
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
   }, [currentStep, isVisible, calculatePositions]);
 
   useEffect(() => {
