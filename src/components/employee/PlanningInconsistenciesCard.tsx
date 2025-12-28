@@ -111,6 +111,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         employeeId: string;
         employeeName: string;
         avatarUrl?: string;
+        deadlineHours: number;
         plannedHours: number;
         computedHours: number;
         difference: number;
@@ -148,6 +149,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
           employeeId: string;
           employeeName: string;
           avatarUrl?: string;
+          deadlineHours: number;
           plannedHours: number;
           computedHours: number;
           difference: number;
@@ -184,6 +186,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                 employeeId: empId,
                 employeeName: emp?.name || 'Desconocido',
                 avatarUrl: emp?.avatarUrl,
+                deadlineHours: deadlineHrs,
                 plannedHours: round2(empAllocs.planned),
                 computedHours: round2(empAllocs.computed),
                 difference: empDiff
@@ -378,10 +381,15 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                               </Avatar>
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium text-slate-700 truncate">{tm.employeeName}</div>
-                                <div className="flex items-center gap-3 mt-1 text-[10px]">
+                                <div className="flex items-center gap-2 mt-1 text-[10px] flex-wrap">
                                   <span className="text-slate-500">
-                                    Planificado: <span className="font-medium">{round2(tm.plannedHours + tm.computedHours)}h</span>
+                                    Deadline: <span className="font-medium">{tm.deadlineHours}h</span>
                                   </span>
+                                  <span className="text-slate-400">→</span>
+                                  <span className="text-slate-500">
+                                    Real: <span className="font-medium">{round2(tm.plannedHours + tm.computedHours)}h</span>
+                                  </span>
+                                  <span className="text-slate-400">→</span>
                                   <span className={cn("font-bold", tmIsPositive ? "text-amber-600" : "text-blue-600")}>
                                     {tmIsPositive ? '+' : ''}{tm.difference}h
                                   </span>

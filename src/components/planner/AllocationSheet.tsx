@@ -890,8 +890,26 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                                 </td>
                                                                 <td className="py-2 px-3">
                                                                     <div className="space-y-1">
-                                                                        <div className={cn("font-medium", isCompleted && "line-through text-slate-400")}>
-                                                                            {alloc.taskName || 'Tarea'}
+                                                                        <div 
+                                                                            className={cn("font-medium cursor-pointer hover:bg-slate-100 rounded px-1 -mx-1", isCompleted && "line-through text-slate-400")}
+                                                                            onDoubleClick={() => startInlineEdit(alloc)}
+                                                                        >
+                                                                            {inlineEditingId === alloc.id ? (
+                                                                                <input
+                                                                                    ref={inlineInputRef}
+                                                                                    autoFocus
+                                                                                    value={inlineNameValue}
+                                                                                    onChange={(e) => setInlineNameValue(e.target.value)}
+                                                                                    onBlur={() => saveInlineEdit(alloc)}
+                                                                                    onKeyDown={(e) => {
+                                                                                        if (e.key === 'Enter') saveInlineEdit(alloc);
+                                                                                        if (e.key === 'Escape') setInlineEditingId(null);
+                                                                                    }}
+                                                                                    className="w-full px-1 py-0.5 text-sm border rounded bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                                                />
+                                                                            ) : (
+                                                                                alloc.taskName || 'Tarea'
+                                                                            )}
                                                                         </div>
                                                                         {depTask && !isCompleted && (
                                                                             <div className={cn(
