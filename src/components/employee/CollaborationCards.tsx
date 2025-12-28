@@ -170,7 +170,11 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
                 Tu equipo este mes
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-3">
+              <p className="text-xs text-slate-500">
+                Compañeros con los que compartes proyectos este mes:
+              </p>
+              <div className="space-y-2">
               {frequentCollaborators.map(collab => (
                 <div key={collab.id} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50">
                   <Avatar className="h-8 w-8">
@@ -193,6 +197,7 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
                   </Badge>
                 </div>
               ))}
+              </div>
             </CardContent>
           </Card>
         )}
