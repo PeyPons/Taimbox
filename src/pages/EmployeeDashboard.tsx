@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { MyWeekView } from '@/components/employee/MyWeekView';
 import { WeeklyReportDialog } from '@/components/employee/WeeklyReportDialog';
+import { CloseTasksDialog } from '@/components/employee/CloseTasksDialog';
 import { PriorityInsights, ProjectTeamPulse } from '@/components/employee/DashboardWidgets'; 
 import { ReliabilityIndexCard } from '@/components/employee/ReliabilityIndexCard';
 import { PlanningInconsistenciesCard } from '@/components/employee/PlanningInconsistenciesCard';
@@ -28,7 +29,7 @@ import {
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, Plus, X, Check, ListPlus, AlertTriangle, CheckCircle2, HelpCircle, RotateCcw, FileDown, CheckSquare, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, CheckCircle2, Plus, X, Check, ListPlus, AlertTriangle, CheckCircle2, HelpCircle, RotateCcw, FileDown, CheckSquare, AlertCircle } from 'lucide-react';
 import { startOfMonth, endOfMonth, max, min, format, startOfWeek, isSameMonth, parseISO, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Employee } from '@/types';
@@ -83,6 +84,7 @@ export default function EmployeeDashboard() {
   const [newTasks, setNewTasks] = useState<NewTaskRow[]>([]);
   const [openComboboxId, setOpenComboboxId] = useState<string | null>(null);
   const [showWeeklyDialog, setShowWeeklyDialog] = useState(false);
+  const [showCloseTasksDialog, setShowCloseTasksDialog] = useState(false);
 
   const { showTour, resetTour } = useWelcomeTour();
   
@@ -492,24 +494,32 @@ export default function EmployeeDashboard() {
         </div>
         
         <div className="flex flex-wrap items-center gap-2">
-          <Button 
-            onClick={() => setShowWeeklyDialog(true)} 
+          <Button
+            onClick={() => setShowWeeklyDialog(true)}
             className={cn(
-              "gap-2 shadow-sm",
-              hasPendingWeeklyTasks 
-                ? "bg-amber-600 text-white hover:bg-amber-700" 
+              "gap-2 shadow-sm transition-all",
+              hasPendingWeeklyTasks
+                ? "bg-amber-600 text-white hover:bg-amber-700 animate-pulse shadow-lg shadow-amber-500/50"
                 : "bg-indigo-600 text-white hover:bg-indigo-700"
             )}
           >
             {hasPendingWeeklyTasks ? (
               <>
-                <AlertCircle className="h-4 w-4" /> Weekly
+                <AlertCircle className="h-4 w-4 animate-bounce" /> Weekly
               </>
             ) : (
               <>
                 <CheckSquare className="h-4 w-4" /> Weekly
               </>
             )}
+          </Button>
+          
+          <Button
+            onClick={() => setShowCloseTasksDialog(true)}
+            variant="outline"
+            className="gap-2 border-slate-300 hover:bg-slate-50"
+          >
+            <CheckCircle2 className="h-4 w-4" /> Cerrar
           </Button>
           
           <Button onClick={openAddTasksDialog} className="gap-2 bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm" data-tour="add-tasks">
@@ -777,12 +787,19 @@ export default function EmployeeDashboard() {
       {showAbsences && <AbsencesSheet open={showAbsences} onOpenChange={setShowAbsences} employeeId={myEmployeeProfile.id} />}
       
       {myEmployeeProfile && (
-        <WeeklyReportDialog 
-          open={showWeeklyDialog} 
-          onOpenChange={setShowWeeklyDialog} 
-          employeeId={myEmployeeProfile.id}
-          viewDate={currentMonth}
-        />
+        <>
+          <WeeklyReportDialog
+            open={showWeeklyDialog}
+            onOpenChange={setShowWeeklyDialog}
+            employeeId={myEmployeeProfile.id}
+            viewDate={currentMonth}
+          />
+          <CloseTasksDialog
+            open={showCloseTasksDialog}
+            onOpenChange={setShowCloseTasksDialog}
+            employeeId={myEmployeeProfile.id}
+          />
+        </>
       )}
       
       <WelcomeTour forceShow={showTour} />
