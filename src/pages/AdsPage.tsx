@@ -245,24 +245,6 @@ export default function AdsPage() {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; 
   }, [syncLogs, isSyncing]);
 
-  // Gestión de reglas
-  const ruleFormSchema = z.object({
-    account: z.string().min(1, 'Debes seleccionar una cuenta'),
-    keyword: z.string().min(1, 'La palabra clave es obligatoria'),
-    name: z.string().min(1, 'El nombre es obligatorio'),
-  });
-
-  type RuleFormValues = z.infer<typeof ruleFormSchema>;
-
-  const ruleForm = useForm<RuleFormValues>({
-    resolver: zodResolver(ruleFormSchema),
-    defaultValues: {
-      account: '',
-      keyword: '',
-      name: '',
-    },
-  });
-
   const onAddRule = async (data: RuleFormValues) => {
     const newRule = {
       platform: 'google',
