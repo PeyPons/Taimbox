@@ -1,7 +1,8 @@
 import { Employee, Project, Allocation, TeamEvent, Absence } from '@/types';
 import { WeekCell } from './WeekCell';
 import { useApp } from '@/contexts/AppContext';
-import { format } from 'date-fns';
+import { format, startOfWeek } from 'date-fns';
+import { isCurrentWeek } from '@/utils/dateUtils';
 
 interface EmployeeRowProps {
   employee: Employee;
@@ -26,7 +27,14 @@ export function EmployeeRow({
       <div className="sticky left-0 z-10 bg-background/95 backdrop-blur border-r p-3 flex items-center group-hover:bg-slate-50/80 transition-colors">
         <div 
           className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity w-full"
-          onClick={() => onOpenSheet(employee.id, weeks[0].weekStart)}
+          onClick={() => {
+            // Buscar la semana actual, si no existe usar la primera
+            const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+            const currentWeek = weeks.find(w => 
+              w.weekStart.getTime() === currentWeekStart.getTime()
+            );
+            onOpenSheet(employee.id, currentWeek?.weekStart || weeks[0].weekStart);
+          }}
           title="Ver detalle de tareas"
         >
           <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm border border-indigo-200 shrink-0">

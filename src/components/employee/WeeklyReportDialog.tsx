@@ -59,7 +59,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
   
   const targetWeek = getTargetWeek();
   
-  // Tareas desviadas (incluye todas las semanas pasadas y actual)
+  // Tareas desviadas (incluye todas las semanas pasadas y actual + tareas transferidas)
   const deviatedTasks = useMemo(() => {
     const today = new Date();
     
@@ -70,6 +70,13 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
       try {
         const taskWeekDate = parseISO(a.weekStartDate);
         if (!isSameMonth(taskWeekDate, viewDate)) return false;
+        
+        // IMPORTANTE: Incluir tareas transferidas aunque estén en semanas futuras
+        const isTransferredTask = a.taskName?.includes('(transferida de');
+        if (isTransferredTask && a.status !== 'completed') {
+          // Las tareas transferidas siempre aparecen para que el empleado las distribuya
+          return true;
+        }
         
         const taskWeekEnd = addDays(taskWeekDate, 4); // Viernes de esa semana
         
@@ -358,22 +365,22 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" aria-describedby="weekly-report-description">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5" />
             Reporte Semanal
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription id="weekly-report-description">
             {targetWeek ? (
               <div className="space-y-1">
                 <p>Revisa las tareas desviadas de la semana <strong>{format(parseISO(targetWeek), "d 'de' MMMM", { locale: es })}</strong> y elige cómo gestionarlas.</p>
                 <p className="text-xs text-muted-foreground">
-                  Incluye todas las semanas pasadas y la actual que necesitan atención.
+                  Incluye todas las semanas pasadas y la actual que necesitan atención, así como tareas transferidas que puedes distribuir.
                 </p>
               </div>
             ) : (
-              'Revisa las tareas desviadas y elige cómo gestionarlas.'
+              'Revisa las tareas desviadas y elige cómo gestionarlas. Incluye tareas transferidas que puedes distribuir.'
             )}
           </DialogDescription>
         </DialogHeader>
