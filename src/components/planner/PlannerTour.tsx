@@ -373,12 +373,6 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
     // El usuario debe usar los botones para navegar o saltar
   }, []);
 
-  if (!isVisible) return null;
-
-  const step = tourSteps[currentStep];
-  const isLastStep = currentStep === tourSteps.length - 1;
-  const isFirstStep = currentStep === 0;
-
   // Función para saber si un click cae dentro de la zona destacada
   const isInsideHighlight = useCallback((e: React.MouseEvent) => {
     if (!highlightPos) return false;
@@ -390,6 +384,12 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
       clientY <= highlightPos.top + highlightPos.height
     );
   }, [highlightPos]);
+
+  if (!isVisible) return null;
+
+  const step = tourSteps[currentStep];
+  const isLastStep = currentStep === tourSteps.length - 1;
+  const isFirstStep = currentStep === 0;
 
   // Renderizamos directamente sin portal
   return (
