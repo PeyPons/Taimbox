@@ -926,10 +926,11 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                                             <div className="flex flex-col gap-0.5">
                                                                                 {blockingTasks.map(bt => {
                                                                                     const blockedUser = employees.find(e => e.id === bt.employeeId);
+                                                                                    const firstName = blockedUser?.name?.split(' ')[0] || 'Compañero';
                                                                                     return (
-                                                                                        <div key={bt.id} className="flex items-center gap-1 text-[9px] text-red-700 bg-red-50 px-1.5 py-0.5 rounded w-fit border border-red-200">
-                                                                                            <AlertOctagon className="w-2.5 h-2.5" />
-                                                                                            <span>Bloquea a: <strong>{blockedUser?.name}</strong></span>
+                                                                                        <div key={bt.id} className="flex items-center gap-1 text-[9px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded w-fit border border-amber-200">
+                                                                                            <Users className="w-2.5 h-2.5" />
+                                                                                            <span>💡 <strong>{firstName}</strong> te espera</span>
                                                                                         </div>
                                                                                     );
                                                                                 })}
@@ -1453,7 +1454,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 <div className="space-y-2"><Label>Tarea</Label><Input value={editTaskName} onChange={e=>setEditTaskName(e.target.value)} /></div>
                 
                 <div className="space-y-2">
-                    <Label className="flex items-center gap-2 text-xs text-slate-500"><LinkIcon className="w-3 h-3"/> Dependencia (Bloqueante)</Label>
+                    <Label className="flex items-center gap-2 text-xs text-slate-500"><LinkIcon className="w-3 h-3"/> Depende de otra tarea</Label>
                     <Select value={editDependencyId} onValueChange={setEditDependencyId} disabled={!editProjectId}>
                         <SelectTrigger className="h-9"><SelectValue placeholder="Sin dependencia" /></SelectTrigger>
                         <SelectContent>
@@ -1651,10 +1652,11 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                     <div className="flex flex-col gap-0.5 mt-1.5">
                       {blockingTasks.map(bt => {
                         const blockedUser = employees.find(e => e.id === bt.employeeId);
+                        const firstName = blockedUser?.name?.split(' ')[0] || 'Compañero';
                         return (
-                          <div key={bt.id} className="flex items-center gap-1 text-[9px] text-red-700 bg-red-50 px-1.5 py-0.5 rounded w-fit border border-red-200">
-                            <AlertOctagon className="w-2.5 h-2.5" />
-                            <span>Bloquea a: <strong>{blockedUser?.name}</strong></span>
+                          <div key={bt.id} className="flex items-center gap-1 text-[9px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded w-fit border border-amber-200">
+                            <Users className="w-2.5 h-2.5" />
+                            <span>💡 <strong>{firstName}</strong> te espera</span>
                           </div>
                         );
                       })}
