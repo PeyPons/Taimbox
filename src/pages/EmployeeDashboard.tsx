@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { MyWeekView } from '@/components/employee/MyWeekView';
+import { WeeklyReportDialog } from '@/components/employee/WeeklyReportDialog';
 import { PriorityInsights, ProjectTeamPulse } from '@/components/employee/DashboardWidgets'; 
 import { ReliabilityIndexCard } from '@/components/employee/ReliabilityIndexCard';
 import { PlanningInconsistenciesCard } from '@/components/employee/PlanningInconsistenciesCard';
@@ -27,7 +28,7 @@ import {
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, Plus, X, Check, ListPlus, AlertTriangle, CheckCircle2, HelpCircle, RotateCcw, FileDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, Plus, X, Check, ListPlus, AlertTriangle, CheckCircle2, HelpCircle, RotateCcw, FileDown, CheckSquare, AlertCircle } from 'lucide-react';
 import { startOfMonth, endOfMonth, max, min, format, startOfWeek, isSameMonth, parseISO, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Employee } from '@/types';
@@ -81,8 +82,30 @@ export default function EmployeeDashboard() {
 
   const [newTasks, setNewTasks] = useState<NewTaskRow[]>([]);
   const [openComboboxId, setOpenComboboxId] = useState<string | null>(null);
+  const [showWeeklyDialog, setShowWeeklyDialog] = useState(false);
 
   const { showTour, resetTour } = useWelcomeTour();
+  
+  // Detectar si hay tareas pendientes para Weekly (semanas pasadas o actual)
+  const hasPendingWeeklyTasks = useMemo(() => {
+    if (!myEmployeeProfile) return false;
+    const today = new Date();
+    
+    // Buscar tareas en semanas pasadas o actual que no estén completadas
+    return allocations.some(a => {
+      if (a.employeeId !== myEmployeeProfile.id) return false;
+      if (a.status === 'completed') return false;
+      
+      try {
+        const taskWeekDate = parseISO(a.weekStartDate);
+        const taskWeekEnd = addDays(taskWeekDate, 4); // Viernes de esa semana
+        // Incluir si la semana ya pasó (viernes ya pasó) o es la actual
+        return taskWeekEnd <= today && isSameMonth(taskWeekDate, currentMonth);
+      } catch {
+        return false;
+      }
+    });
+  }, [allocations, myEmployeeProfile, currentMonth]);
 
   const weeks = useMemo(() => getWeeksForMonth(currentMonth), [currentMonth]);
   const internalClient = useMemo(() => clients.find(c => c.name === INTERNAL_CLIENT_NAME), [clients]);
@@ -469,6 +492,26 @@ export default function EmployeeDashboard() {
         </div>
         
         <div className="flex flex-wrap items-center gap-2">
+          <Button 
+            onClick={() => setShowWeeklyDialog(true)} 
+            className={cn(
+              "gap-2 shadow-sm",
+              hasPendingWeeklyTasks 
+                ? "bg-amber-600 text-white hover:bg-amber-700" 
+                : "bg-indigo-600 text-white hover:bg-indigo-700"
+            )}
+          >
+            {hasPendingWeeklyTasks ? (
+              <>
+                <AlertCircle className="h-4 w-4" /> Weekly
+              </>
+            ) : (
+              <>
+                <CheckSquare className="h-4 w-4" /> Weekly
+              </>
+            )}
+          </Button>
+          
           <Button onClick={openAddTasksDialog} className="gap-2 bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm" data-tour="add-tasks">
             <ListPlus className="h-4 w-4" /> Añadir tareas
           </Button>
@@ -732,6 +775,15 @@ export default function EmployeeDashboard() {
 
       {showGoals && <ProfessionalGoalsSheet open={showGoals} onOpenChange={setShowGoals} employeeId={myEmployeeProfile.id} />}
       {showAbsences && <AbsencesSheet open={showAbsences} onOpenChange={setShowAbsences} employeeId={myEmployeeProfile.id} />}
+      
+      {myEmployeeProfile && (
+        <WeeklyReportDialog 
+          open={showWeeklyDialog} 
+          onOpenChange={setShowWeeklyDialog} 
+          employeeId={myEmployeeProfile.id}
+          viewDate={currentMonth}
+        />
+      )}
       
       <WelcomeTour forceShow={showTour} />
     </div>

@@ -34,6 +34,8 @@ export default function WeeklyForecastPage() {
   const [redistributeWeek, setRedistributeWeek] = useState('');
   const [filterFeedbackEmployee, setFilterFeedbackEmployee] = useState<string>('all');
   const [filterFeedbackProject, setFilterFeedbackProject] = useState<string>('all');
+  const [filterProjectStatus, setFilterProjectStatus] = useState<string>('all'); // all, red, yellow, green
+  const [filterClient, setFilterClient] = useState<string>('all');
   
   useEffect(() => {
     localStorage.setItem('forecast_date', currentMonth.toISOString());
@@ -49,12 +51,18 @@ export default function WeeklyForecastPage() {
   const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
   const handleToday = () => setCurrentMonth(new Date());
   
-  // Sección A: Semáforo de Proyectos (Month-End Forecast)
+      // Sección A: Semáforo de Proyectos (Month-End Forecast) con filtros
   const projectForecast = useMemo(() => {
-    const activeProjects = projects.filter(p => p.status === 'active' && !p.isHidden);
+    let filteredProjects = projects.filter(p => p.status === 'active' && !p.isHidden);
+    
+    // Filtro por cliente
+    if (filterClient !== 'all') {
+      filteredProjects = filteredProjects.filter(p => p.clientId === filterClient);
+    }
+    
     const today = new Date();
     
-    return activeProjects.map(project => {
+    return filteredProjects.map(project => {
       // Total Contratado (Budget/Fee mensual)
       const contracted = project.budgetHours || 0;
       
@@ -102,12 +110,16 @@ export default function WeeklyForecastPage() {
         difference,
         status
       };
+    }).filter(proj => {
+      // Filtro por estado del semáforo
+      if (filterProjectStatus === 'all') return true;
+      return proj.status === filterProjectStatus;
     }).sort((a, b) => {
       // Ordenar: rojos primero, luego amarillos, luego verdes
       const statusOrder = { red: 0, yellow: 1, green: 2 };
       return statusOrder[a.status] - statusOrder[b.status] || Math.abs(b.difference) - Math.abs(a.difference);
     });
-  }, [projects, allocations, clients, currentMonth]);
+  }, [projects, allocations, clients, currentMonth, filterClient, filterProjectStatus]);
   
   // Sección B: Feed de Bloqueos (semana en curso) con filtros
   const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
@@ -159,12 +171,14 @@ export default function WeeklyForecastPage() {
     }
     
     try {
+      // Crear asignación genérica que el empleado pueda distribuir
       await addAllocation({
         employeeId: redistributeEmployee,
         projectId: selectedProject,
         weekStartDate: redistributeWeek,
         hoursAssigned: hours,
-        taskName: 'Redistribución rápida',
+        taskName: `[Distribuir] ${hours}h pendientes`,
+        description: 'Asignación genérica creada desde Weekly. Distribuye estas horas entre las tareas que necesites.',
         status: 'planned'
       });
       
@@ -288,10 +302,38 @@ export default function WeeklyForecastPage() {
       {/* Sección A: Semáforo de Proyectos */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Semáforo de Proyectos (Month-End Forecast)
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Semáforo de Proyectos (Month-End Forecast)
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Select value={filterClient} onValueChange={setFilterClient}>
+                <SelectTrigger className="w-[180px] h-8 text-xs">
+                  <SelectValue placeholder="Todos los clientes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los clientes</SelectItem>
+                  {clients.map(cli => (
+                    <SelectItem key={cli.id} value={cli.id}>
+                      {cli.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterProjectStatus} onValueChange={setFilterProjectStatus}>
+                <SelectTrigger className="w-[150px] h-8 text-xs">
+                  <SelectValue placeholder="Todos los estados" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los estados</SelectItem>
+                  <SelectItem value="red">⚠️ En riesgo</SelectItem>
+                  <SelectItem value="yellow">⏳ Pendiente</SelectItem>
+                  <SelectItem value="green">✅ On Track</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {projectForecast.length === 0 ? (
