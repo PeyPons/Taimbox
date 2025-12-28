@@ -30,7 +30,7 @@ interface WeeklyReportDialogProps {
 export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }: WeeklyReportDialogProps) {
   const { allocations, projects, clients, employees, absences, teamEvents, updateAllocation, addAllocation, deleteAllocation, addWeeklyFeedback, getEmployeeLoadForWeek } = useApp();
   
-  const [taskActions, setTaskActions] = useState<Record<string, 'move' | 'moveToEmployee' | 'justify' | 'distribute' | null>>({});
+  const [taskActions, setTaskActions] = useState<Record<string, 'move' | 'moveToEmployee' | 'justify' | 'distribute' | 'keep' | null>>({});
   const [taskComments, setTaskComments] = useState<Record<string, string>>({});
   const [distributionTasks, setDistributionTasks] = useState<Record<string, Array<{ id: string; taskName: string; hours: string; weekDate: string }>>>({});
   const [moveToEmployee, setMoveToEmployee] = useState<Record<string, string>>({}); // taskId -> employeeId
@@ -274,6 +274,20 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
               comments: comment
             });
           }
+        } else if (action === 'keep') {
+          // Mantener la tarea tal cual (sin cambios)
+          // No hacer nada, solo registrar feedback opcional si hay comentario
+          const comment = taskComments[task.id];
+          if (comment?.trim()) {
+            await addWeeklyFeedback({
+              employeeId,
+              weekStartDate: taskWeekStr,
+              projectId: task.projectId,
+              allocationId: task.id,
+              reason: 'other',
+              comments: comment
+            });
+          }
         } else if (action === 'distribute') {
           // Opción D: Distribuir asignación genérica [Distribuir] o transferida en múltiples tareas
           const distTasks = distributionTasks[task.id] || [];
@@ -291,9 +305,6 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
           }
           
           // Validar capacidad y presupuesto antes de crear tareas
-          const warnings: string[] = [];
-          
-          // Calcular presupuesto del proyecto (suma de todas las tareas distribuidas)
           const projectMonthAllocations = allocations.filter(a => 
             a.projectId === task.projectId && 
             isSameMonth(parseISO(a.weekStartDate), viewDate) &&
@@ -304,33 +315,25 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
           const newProjectMonthTotal = projectMonthHours + totalDistributed;
           
           if (projectBudget > 0 && newProjectMonthTotal > projectBudget) {
-            warnings.push(`Proyecto excede presupuesto: ${newProjectMonthTotal.toFixed(1)}h / ${projectBudget.toFixed(1)}h (+${(newProjectMonthTotal - projectBudget).toFixed(1)}h)`);
+            toast.error(`No se puede guardar: Proyecto excede presupuesto (${newProjectMonthTotal.toFixed(1)}h / ${projectBudget.toFixed(1)}h)`);
+            continue;
           }
           
           // Validar capacidad por semana
-          const weekWarnings: Record<string, { hours: number; capacity: number }> = {};
           for (const distTask of validTasks) {
             const weekLoad = getEmployeeLoadForWeek(employeeId, distTask.weekDate);
             const currentWeekHours = weekLoad?.hours || 0;
             const weekCapacity = weekLoad?.capacity || 0;
-            const taskHours = parseFloat(distTask.hours);
             
             // Sumar todas las tareas de esta semana
             const weekTasks = validTasks.filter(t => t.weekDate === distTask.weekDate);
             const weekTotalHours = weekTasks.reduce((sum, t) => sum + parseFloat(t.hours), 0);
             const newWeekTotal = currentWeekHours + weekTotalHours;
             
-            if (newWeekTotal > weekCapacity && !weekWarnings[distTask.weekDate]) {
-              weekWarnings[distTask.weekDate] = { hours: newWeekTotal, capacity: weekCapacity };
-              warnings.push(`Semana ${format(parseISO(distTask.weekDate), 'd MMM')}: ${newWeekTotal.toFixed(1)}h exceden capacidad (${weekCapacity.toFixed(1)}h)`);
+            if (newWeekTotal > weekCapacity) {
+              toast.error(`No se puede guardar: Semana ${format(parseISO(distTask.weekDate), 'd MMM')} excede capacidad (${newWeekTotal.toFixed(1)}h / ${weekCapacity.toFixed(1)}h)`);
+              continue;
             }
-          }
-          
-          if (warnings.length > 0) {
-            toast.warning(`⚠️ Advertencias: ${warnings.join('; ')}`, {
-              duration: 6000
-            });
-            // Continuar de todas formas, pero con advertencia
           }
           
           // Eliminar la tarea genérica original
@@ -435,8 +438,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                     <RadioGroup
                       value={taskActions[task.id] || ''}
                       onValueChange={(value) => {
-                        setTaskActions(prev => ({ ...prev, [task.id]: value as 'move' | 'moveToEmployee' | 'justify' | 'distribute' }));
-                        if (value === 'distribute' && isDistributionTask) {
+                        setTaskActions(prev => ({ ...prev, [task.id]: value as 'move' | 'moveToEmployee' | 'justify' | 'distribute' | 'keep' }));
+                        if (value === 'distribute' && (isDistributionTask || isTransferredTask)) {
                           initializeDistribution(task.id, task.hoursAssigned);
                         }
                         // Inicializar semana por defecto para mover a otro empleado
@@ -448,21 +451,35 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                     >
                       <div className="space-y-2">
                         {(isDistributionTask || isTransferredTask) ? (
-                          // Para tareas [Distribuir] o transferidas, mostrar opción de distribuir
-                          <div className="flex items-start space-x-2">
-                            <RadioGroupItem value="distribute" id={`${task.id}-distribute`} />
-                            <Label htmlFor={`${task.id}-distribute`} className="flex-1 cursor-pointer">
-                              <div className="flex items-center gap-2">
-                                <ArrowRight className="h-4 w-4 text-indigo-600" />
-                                <span className="font-medium">Distribuir en múltiples tareas</span>
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {isTransferredTask 
-                                  ? `Distribuye las ${task.hoursAssigned}h transferidas entre las semanas que mejor te vengan.`
-                                  : `Crea varias tareas distribuyendo las ${task.hoursAssigned}h entre las semanas restantes del mes.`}
-                              </p>
-                            </Label>
-                          </div>
+                          // Para tareas [Distribuir] o transferidas, mostrar opciones de mantener o distribuir
+                          <>
+                            <div className="flex items-start space-x-2">
+                              <RadioGroupItem value="keep" id={`${task.id}-keep`} />
+                              <Label htmlFor={`${task.id}-keep`} className="flex-1 cursor-pointer">
+                                <div className="flex items-center gap-2">
+                                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                  <span className="font-medium">Mantener la misma tarea</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Mantén la tarea tal cual está. No necesitas distribuirla ni hacer cambios.
+                                </p>
+                              </Label>
+                            </div>
+                            <div className="flex items-start space-x-2">
+                              <RadioGroupItem value="distribute" id={`${task.id}-distribute`} />
+                              <Label htmlFor={`${task.id}-distribute`} className="flex-1 cursor-pointer">
+                                <div className="flex items-center gap-2">
+                                  <ArrowRight className="h-4 w-4 text-indigo-600" />
+                                  <span className="font-medium">Distribuir en múltiples tareas</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {isTransferredTask 
+                                    ? `Distribuye las ${task.hoursAssigned}h transferidas entre las semanas que mejor te vengan.`
+                                    : `Crea varias tareas distribuyendo las ${task.hoursAssigned}h entre las semanas restantes del mes.`}
+                                </p>
+                              </Label>
+                            </div>
+                          </>
                         ) : (
                           // Para tareas normales, mostrar opciones sin "Terminado eficiente"
                           <>
@@ -566,14 +583,14 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                       </div>
                     )}
                     
-                    {taskActions[task.id] === 'justify' && (
+                    {(taskActions[task.id] === 'justify' || taskActions[task.id] === 'keep') && (
                       <div className="mt-3 pl-6">
                         <Label htmlFor={`${task.id}-comment`} className="text-xs font-medium mb-2 block">
                           Comentario (opcional)
                         </Label>
                         <Textarea
                           id={`${task.id}-comment`}
-                          placeholder="Explica la razón de la desviación..."
+                          placeholder={taskActions[task.id] === 'keep' ? "Añade un comentario si lo deseas..." : "Explica la razón de la desviación..."}
                           value={taskComments[task.id] || ''}
                           onChange={(e) => setTaskComments(prev => ({ ...prev, [task.id]: e.target.value }))}
                           className="min-h-[80px] text-sm"
@@ -723,11 +740,82 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          {deviatedTasks.length > 0 && (
-            <Button onClick={handleCloseWeek} className="bg-indigo-600 hover:bg-indigo-700">
-              Enviar Reporte
-            </Button>
-          )}
+          {deviatedTasks.length > 0 && (() => {
+            // Validar que todas las tareas con acción "distribute" tengan la suma correcta
+            let canSubmit = true;
+            const validationErrors: string[] = [];
+            
+            for (const task of deviatedTasks) {
+              const action = taskActions[task.id];
+              
+              if (action === 'distribute') {
+                const distTasks = distributionTasks[task.id] || [];
+                const validTasks = distTasks.filter(t => t.taskName.trim() && parseFloat(t.hours) > 0);
+                
+                if (validTasks.length === 0) {
+                  canSubmit = false;
+                  validationErrors.push(`"${task.taskName}" necesita al menos una tarea válida`);
+                  continue;
+                }
+                
+                const totalDistributed = validTasks.reduce((sum, t) => sum + parseFloat(t.hours), 0);
+                if (Math.abs(totalDistributed - task.hoursAssigned) > 0.1) {
+                  canSubmit = false;
+                  validationErrors.push(`"${task.taskName}": suma ${totalDistributed.toFixed(1)}h debe ser ${task.hoursAssigned}h`);
+                }
+                
+                // Validar capacidad y presupuesto
+                const projectMonthAllocations = allocations.filter(a => 
+                  a.projectId === task.projectId && 
+                  isSameMonth(parseISO(a.weekStartDate), viewDate) &&
+                  a.id !== task.id
+                );
+                const projectMonthHours = projectMonthAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
+                const projectBudget = projects.find(p => p.id === task.projectId)?.budgetHours || 0;
+                const newProjectMonthTotal = projectMonthHours + totalDistributed;
+                
+                if (projectBudget > 0 && newProjectMonthTotal > projectBudget) {
+                  canSubmit = false;
+                  validationErrors.push(`"${task.taskName}": excede presupuesto (${newProjectMonthTotal.toFixed(1)}h / ${projectBudget.toFixed(1)}h)`);
+                }
+                
+                // Validar capacidad por semana
+                for (const distTask of validTasks) {
+                  const weekLoad = getEmployeeLoadForWeek(employeeId, distTask.weekDate);
+                  const currentWeekHours = weekLoad?.hours || 0;
+                  const weekCapacity = weekLoad?.capacity || 0;
+                  
+                  const weekTasks = validTasks.filter(t => t.weekDate === distTask.weekDate);
+                  const weekTotalHours = weekTasks.reduce((sum, t) => sum + parseFloat(t.hours), 0);
+                  const newWeekTotal = currentWeekHours + weekTotalHours;
+                  
+                  if (newWeekTotal > weekCapacity) {
+                    canSubmit = false;
+                    validationErrors.push(`"${task.taskName}": semana ${format(parseISO(distTask.weekDate), 'd MMM')} excede capacidad (${newWeekTotal.toFixed(1)}h / ${weekCapacity.toFixed(1)}h)`);
+                  }
+                }
+              } else if (action === 'moveToEmployee') {
+                const targetEmployeeId = moveToEmployee[task.id];
+                const targetWeek = moveToWeek[task.id];
+                
+                if (!targetEmployeeId || !targetWeek) {
+                  canSubmit = false;
+                  validationErrors.push(`"${task.taskName}": selecciona empleado y semana destino`);
+                }
+              }
+            }
+            
+            return (
+              <Button 
+                onClick={handleCloseWeek} 
+                className="bg-indigo-600 hover:bg-indigo-700"
+                disabled={!canSubmit}
+                title={!canSubmit ? validationErrors.join('; ') : ''}
+              >
+                Enviar Reporte
+              </Button>
+            );
+          })()}
         </DialogFooter>
       </DialogContent>
     </Dialog>
