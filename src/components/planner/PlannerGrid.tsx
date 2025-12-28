@@ -42,7 +42,6 @@ export function PlannerGrid() {
   });
   const [isLoadingMonth, setIsLoadingMonth] = useState(false);
   const loadedMonthsRef = useRef<Set<string>>(new Set());
-  const loadingMonthRef = useRef<string | null>(null);
 
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
@@ -57,16 +56,10 @@ export function PlannerGrid() {
   useEffect(() => { localStorage.setItem('planner_date', currentMonth.toISOString()); }, [currentMonth]);
   useEffect(() => { localStorage.setItem('planner_only_me', String(showOnlyMe)); }, [showOnlyMe]);
 
-  // Cargar datos del mes cuando cambia el mes visible
+  // Cargar datos del mes cuando cambia el mes visible (igual que DeadlinesPage)
   useEffect(() => {
     if (!isGlobalLoading) {
       const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
-      
-      // Si ya se cargó este mes o está cargando, no hacer nada
-      if (loadedMonthsRef.current.has(monthKey) || loadingMonthRef.current === monthKey) {
-        setIsLoadingMonth(false);
-        return;
-      }
       
       // Verificar si necesitamos cargar datos para este mes
       const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
@@ -82,22 +75,20 @@ export function PlannerGrid() {
         }
       });
       
-      // Si no hay datos para este mes, cargarlos
-      if (!hasDataForMonth) {
-        loadingMonthRef.current = monthKey;
+      // Si no hay datos para este mes, cargarlos (igual que loadDeadlines en DeadlinesPage)
+      if (!hasDataForMonth && !loadedMonthsRef.current.has(monthKey)) {
         setIsLoadingMonth(true);
         loadDataForMonth(currentMonth).finally(() => {
           loadedMonthsRef.current.add(monthKey);
-          loadingMonthRef.current = null;
           setIsLoadingMonth(false);
         });
       } else {
-        // Hay datos, marcar como cargado
+        // Hay datos o ya se cargó, desactivar loading
         loadedMonthsRef.current.add(monthKey);
         setIsLoadingMonth(false);
       }
     }
-  }, [currentMonth, isGlobalLoading, allocations, loadDataForMonth]);
+  }, [currentMonth, isGlobalLoading, loadDataForMonth]);
 
   const weeks = getWeeksForMonth(currentMonth);
   const year = currentMonth.getFullYear();
@@ -313,6 +304,15 @@ Responde SOLO JSON válido:
         setIsAnalyzing(false);
     }
   };
+
+  // Mostrar loading del mes igual que DeadlinesPage (retorno temprano)
+  if (isLoadingMonth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-slate-400">Cargando tareas...</div>
+      </div>
+    );
+  }
 
   const gridTemplate = `250px repeat(${weeks.length}, minmax(0, 1fr)) 100px`;
   const sortedProjects = useMemo(() => [...(projects || [])].sort((a,b) => a.name.localeCompare(b.name)), [projects]);

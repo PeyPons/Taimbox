@@ -68,7 +68,6 @@ export default function EmployeeDashboard() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isLoadingMonth, setIsLoadingMonth] = useState(false);
   const loadedMonthsRef = useRef<Set<string>>(new Set());
-  const loadingMonthRef = useRef<string | null>(null);
   const [selectedCell, setSelectedCell] = useState<{ employeeId: string; weekStart: Date } | null>(null);
   
   const [showGoals, setShowGoals] = useState(false);
@@ -375,16 +374,10 @@ export default function EmployeeDashboard() {
   const handleNextMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   const handleToday = () => setCurrentMonth(new Date());
 
-  // Cargar datos del mes cuando cambia el mes visible
+  // Cargar datos del mes cuando cambia el mes visible (igual que DeadlinesPage)
   useEffect(() => {
     if (!isGlobalLoading && !isLoadingProfile) {
       const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
-      
-      // Si ya se cargó este mes o está cargando, no hacer nada
-      if (loadedMonthsRef.current.has(monthKey) || loadingMonthRef.current === monthKey) {
-        setIsLoadingMonth(false);
-        return;
-      }
       
       // Verificar si necesitamos cargar datos para este mes
       const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
@@ -400,30 +393,37 @@ export default function EmployeeDashboard() {
         }
       });
       
-      // Si no hay datos para este mes, cargarlos
-      if (!hasDataForMonth) {
-        loadingMonthRef.current = monthKey;
+      // Si no hay datos para este mes, cargarlos (igual que loadDeadlines en DeadlinesPage)
+      if (!hasDataForMonth && !loadedMonthsRef.current.has(monthKey)) {
         setIsLoadingMonth(true);
         loadDataForMonth(currentMonth).finally(() => {
           loadedMonthsRef.current.add(monthKey);
-          loadingMonthRef.current = null;
           setIsLoadingMonth(false);
         });
       } else {
-        // Hay datos, marcar como cargado
+        // Hay datos o ya se cargó, desactivar loading
         loadedMonthsRef.current.add(monthKey);
         setIsLoadingMonth(false);
       }
     }
-  }, [currentMonth, isGlobalLoading, isLoadingProfile, allocations, loadDataForMonth]);
+  }, [currentMonth, isGlobalLoading, isLoadingProfile, loadDataForMonth]);
 
-  // Mostrar loader mientras carga global, el perfil o el mes
-  if (isGlobalLoading || isLoadingProfile || isLoadingMonth) {
+  // Mostrar loader mientras carga global o el perfil
+  if (isGlobalLoading || isLoadingProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin opacity-60" />
         </div>
+      </div>
+    );
+  }
+
+  // Mostrar loading del mes igual que DeadlinesPage (retorno temprano)
+  if (isLoadingMonth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-slate-400">Cargando tareas...</div>
       </div>
     );
   }
