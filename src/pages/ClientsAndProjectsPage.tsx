@@ -1,4 +1,8 @@
 import { useState, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useApp } from '@/contexts/AppContext';
 import { Client, Project, OKR } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -112,18 +116,41 @@ export default function ClientsAndProjectsPage() {
   const [hidingProject, setHidingProject] = useState<Project | null>(null);
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
-  const [newClient, setNewClient] = useState({ name: '', color: colorOptions[0] });
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('all');
   const [openEmployeeCombo, setOpenEmployeeCombo] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>('needs-planning'); // Por defecto mostrar los que necesitan planificación
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active'); // Por defecto solo activos
   const [projectTypeFilter, setProjectTypeFilter] = useState<ProjectTypeFilter>('all');
   
-  const [formData, setFormData] = useState({
-    name: '', clientId: '', budgetHours: '', minimumHours: '', monthlyFee: '',
-    status: 'active' as 'active' | 'archived' | 'completed',
-    okrs: [] as OKR[]
+  const projectFormSchema = z.object({
+    name: z.string().min(1, 'El nombre es obligatorio'),
+    clientId: z.string().min(1, 'Debes seleccionar un cliente'),
+    budgetHours: z.string().transform((val) => parseFloat(val) || 0).pipe(z.number().min(0, 'Las horas asignadas no pueden ser negativas')),
+    minimumHours: z.string().transform((val) => parseFloat(val) || 0).pipe(z.number().min(0, 'Las horas mínimas no pueden ser negativas')),
+    monthlyFee: z.string().transform((val) => parseFloat(val) || 0).pipe(z.number().min(0, 'El fee mensual no puede ser negativo')),
+    status: z.enum(['active', 'archived', 'completed']),
+    okrs: z.array(z.object({
+      id: z.string(),
+      title: z.string(),
+      progress: z.number().min(0).max(100),
+    })).optional().default([]),
   });
+
+  type ProjectFormValues = z.infer<typeof projectFormSchema>;
+
+  const projectForm = useForm<ProjectFormValues>({
+    resolver: zodResolver(projectFormSchema),
+    defaultValues: {
+      name: '',
+      clientId: '',
+      budgetHours: '0',
+      minimumHours: '0',
+      monthlyFee: '0',
+      status: 'active',
+      okrs: [],
+    },
+  });
+
   const [newOkrTitle, setNewOkrTitle] = useState('');
 
   // Mes anterior para comparación
@@ -543,15 +570,26 @@ export default function ClientsAndProjectsPage() {
   }, [filteredClients]);
 
   // Handlers
-  const handleAddClient = () => {
-    if (!newClient.name.trim()) {
-      toast.error("El nombre es obligatorio");
-      return;
-    }
-    addClient(newClient);
-    setNewClient({ name: '', color: colorOptions[0] });
+  const clientFormSchema = z.object({
+    name: z.string().min(1, 'El nombre es obligatorio'),
+    color: z.string(),
+  });
+
+  type ClientFormValues = z.infer<typeof clientFormSchema>;
+
+  const clientForm = useForm<ClientFormValues>({
+    resolver: zodResolver(clientFormSchema),
+    defaultValues: {
+      name: '',
+      color: colorOptions[0],
+    },
+  });
+
+  const handleAddClient = (data: ClientFormValues) => {
+    addClient(data);
     setIsAddingClient(false);
-    toast.success(`${newClient.name} creado`);
+    clientForm.reset();
+    toast.success(`${data.name} creado`);
   };
 
   const handleUpdateClient = () => {
@@ -574,13 +612,21 @@ export default function ClientsAndProjectsPage() {
   const openNewProject = () => {
     setIsAddingProject(true);
     setEditingProject(null);
-    setFormData({ name: '', clientId: '', budgetHours: '0', minimumHours: '0', monthlyFee: '0', status: 'active', okrs: [] });
+    projectForm.reset({
+      name: '',
+      clientId: '',
+      budgetHours: '0',
+      minimumHours: '0',
+      monthlyFee: '0',
+      status: 'active',
+      okrs: [],
+    });
   };
 
   const openEditProject = (project: Project) => {
     setIsAddingProject(false);
     setEditingProject(project);
-    setFormData({
+    projectForm.reset({
       name: project.name,
       clientId: project.clientId,
       budgetHours: project.budgetHours?.toString() || '0',
@@ -591,36 +637,37 @@ export default function ClientsAndProjectsPage() {
     });
   };
 
-  const handleSaveProject = async () => {
+  const onSaveProject = async (data: ProjectFormValues) => {
     try {
       if (isAddingProject) {
         await addProject({
-          name: formData.name,
-          clientId: formData.clientId,
-          budgetHours: parseFloat(formData.budgetHours) || 0,
-          minimumHours: parseFloat(formData.minimumHours) || 0,
-          monthlyFee: parseFloat(formData.monthlyFee) || 0,
-          status: formData.status,
-          okrs: formData.okrs
+          name: data.name,
+          clientId: data.clientId,
+          budgetHours: data.budgetHours,
+          minimumHours: data.minimumHours,
+          monthlyFee: data.monthlyFee,
+          status: data.status,
+          okrs: data.okrs || []
         });
         toast.success('Proyecto creado');
       } else if (editingProject) {
         await updateProject({
           ...editingProject,
-          name: formData.name,
-          clientId: formData.clientId,
-          budgetHours: parseFloat(formData.budgetHours) || 0,
-          minimumHours: parseFloat(formData.minimumHours) || 0,
-          monthlyFee: parseFloat(formData.monthlyFee) || 0,
-          status: formData.status,
-          okrs: formData.okrs
+          name: data.name,
+          clientId: data.clientId,
+          budgetHours: data.budgetHours,
+          minimumHours: data.minimumHours,
+          monthlyFee: data.monthlyFee,
+          status: data.status,
+          okrs: data.okrs || []
         });
         toast.success('Proyecto actualizado');
       }
       setEditingProject(null);
-    } catch (error) {
-      console.error(error);
-      toast.error("Error al guardar");
+    } catch (error: any) {
+      console.error('Error guardando proyecto:', error);
+      const errorMessage = error?.message || error?.error?.message || 'Error al guardar el proyecto';
+      toast.error(errorMessage);
     }
   };
 
@@ -631,9 +678,10 @@ export default function ClientsAndProjectsPage() {
         await deleteProject(editingProject.id);
         setEditingProject(null);
         toast.success('Proyecto eliminado');
-      } catch (e) {
-        console.error(e);
-        toast.error("No se pudo eliminar");
+      } catch (e: any) {
+        console.error('Error eliminando proyecto:', e);
+        const errorMessage = e?.message || e?.error?.message || 'No se pudo eliminar el proyecto';
+        toast.error(errorMessage);
       }
     }
   };
@@ -685,16 +733,19 @@ export default function ClientsAndProjectsPage() {
 
   const addOkrToForm = () => {
     if (!newOkrTitle.trim()) return;
-    setFormData({ ...formData, okrs: [...formData.okrs, { id: crypto.randomUUID(), title: newOkrTitle, progress: 0 }] });
+    const currentOkrs = projectForm.getValues('okrs') || [];
+    projectForm.setValue('okrs', [...currentOkrs, { id: crypto.randomUUID(), title: newOkrTitle, progress: 0 }]);
     setNewOkrTitle('');
   };
 
   const updateOkrProgress = (id: string, val: number) => {
-    setFormData({ ...formData, okrs: formData.okrs.map(o => o.id === id ? { ...o, progress: val } : o) });
+    const currentOkrs = projectForm.getValues('okrs') || [];
+    projectForm.setValue('okrs', currentOkrs.map(o => o.id === id ? { ...o, progress: val } : o));
   };
 
   const removeOkr = (id: string) => {
-    setFormData({ ...formData, okrs: formData.okrs.filter(o => o.id !== id) });
+    const currentOkrs = projectForm.getValues('okrs') || [];
+    projectForm.setValue('okrs', currentOkrs.filter(o => o.id !== id));
   };
 
   const getSelectedEmployeeName = () => 
@@ -775,165 +826,198 @@ export default function ClientsAndProjectsPage() {
                     : 'Modifica los datos del proyecto'}
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Nombre del proyecto</Label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Ej: Rediseño web"
+              <Form {...projectForm}>
+                <form onSubmit={projectForm.handleSubmit(onSaveProject)} className="space-y-4 py-4">
+                  <FormField
+                    control={projectForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nombre del proyecto</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ej: Rediseño web" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label>Cliente</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        className="w-full justify-between"
-                      >
-                        {formData.clientId 
-                          ? clients.find(c => c.id === formData.clientId)?.name || "Seleccionar cliente"
-                          : "Seleccionar cliente"}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Buscar cliente..." />
-                        <CommandList>
-                          <CommandEmpty>No se encontró el cliente.</CommandEmpty>
-                          <CommandGroup>
-                            {clients.map(client => (
-                              <CommandItem
-                                key={client.id}
-                                value={client.name}
-                                onSelect={() => setFormData({ ...formData, clientId: client.id })}
+                  <FormField
+                    control={projectForm.control}
+                    name="clientId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cliente</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className="w-full justify-between"
                               >
-                                {client.name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
+                                {field.value 
+                                  ? clients.find(c => c.id === field.value)?.name || "Seleccionar cliente"
+                                  : "Seleccionar cliente"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Buscar cliente..." />
+                              <CommandList>
+                                <CommandEmpty>No se encontró el cliente.</CommandEmpty>
+                                <CommandGroup>
+                                  {clients.map(client => (
+                                    <CommandItem
+                                      key={client.id}
+                                      value={client.name}
+                                      onSelect={() => field.onChange(client.id)}
+                                    >
+                                      {client.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField
+                      control={projectForm.control}
+                      name="budgetHours"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Horas asignadas</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="0" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={projectForm.control}
+                      name="minimumHours"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Horas mínimas</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="0" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={projectForm.control}
+                      name="monthlyFee"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tarifa mensual (€)</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="0" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <FormField
+                    control={projectForm.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estado</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="active">Activo</SelectItem>
+                            <SelectItem value="completed">Completado</SelectItem>
+                            <SelectItem value="archived">Archivado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {/* OKRs */}
                   <div className="space-y-2">
-                    <Label>Horas asignadas</Label>
-                    <Input
-                      type="number"
-                      value={formData.budgetHours}
-                      onChange={(e) => setFormData({ ...formData, budgetHours: e.target.value })}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Horas mínimas</Label>
-                    <Input
-                      type="number"
-                      value={formData.minimumHours}
-                      onChange={(e) => setFormData({ ...formData, minimumHours: e.target.value })}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Tarifa mensual (€)</Label>
-                    <Input
-                      type="number"
-                      value={formData.monthlyFee}
-                      onChange={(e) => setFormData({ ...formData, monthlyFee: e.target.value })}
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Estado</Label>
-                  <Select 
-                    value={formData.status} 
-                    onValueChange={(value: 'active' | 'archived' | 'completed') => 
-                      setFormData({ ...formData, status: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Activo</SelectItem>
-                      <SelectItem value="completed">Completado</SelectItem>
-                      <SelectItem value="archived">Archivado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {/* OKRs */}
-                <div className="space-y-2">
-                  <Label>Objetivos (OKRs)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={newOkrTitle}
-                      onChange={(e) => setNewOkrTitle(e.target.value)}
-                      placeholder="Añadir objetivo..."
-                      onKeyDown={(e) => e.key === 'Enter' && addOkrToForm()}
-                    />
-                    <Button type="button" onClick={addOkrToForm} variant="outline">
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  {formData.okrs.length > 0 && (
-                    <div className="space-y-2 mt-2">
-                      {formData.okrs.map(okr => (
-                        <div key={okr.id} className="flex items-center gap-2 p-2 bg-slate-50 rounded">
-                          <span className="flex-1 text-sm">{okr.title}</span>
-                          <Input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={okr.progress}
-                            onChange={(e) => updateOkrProgress(okr.id, parseInt(e.target.value) || 0)}
-                            className="w-20"
-                          />
-                          <span className="text-xs text-muted-foreground">%</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => removeOkr(okr.id)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
+                    <Label>Objetivos (OKRs)</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        value={newOkrTitle}
+                        onChange={(e) => setNewOkrTitle(e.target.value)}
+                        placeholder="Añadir objetivo..."
+                        onKeyDown={(e) => e.key === 'Enter' && addOkrToForm()}
+                      />
+                      <Button type="button" onClick={addOkrToForm} variant="outline">
+                        <Plus className="h-4 w-4" />
+                      </Button>
                     </div>
-                  )}
-                </div>
-              </div>
-              <DialogFooter>
-                {editingProject && (
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => {
-                      if (confirm(`¿Estás seguro de eliminar "${editingProject.name}"? Se borrarán sus asignaciones.`)) {
-                        handleDeleteProject();
-                      }
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Eliminar
-                  </Button>
-                )}
-                <Button variant="outline" onClick={() => {
-                  setIsAddingProject(false);
-                  setEditingProject(null);
-                }}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleSaveProject} className="bg-gradient-to-r from-indigo-500 to-purple-600">
-                  {isAddingProject ? 'Crear' : 'Guardar'}
-                </Button>
-              </DialogFooter>
+                    {(projectForm.watch('okrs') || []).length > 0 && (
+                      <div className="space-y-2 mt-2">
+                        {(projectForm.watch('okrs') || []).map(okr => (
+                          <div key={okr.id} className="flex items-center gap-2 p-2 bg-slate-50 rounded">
+                            <span className="flex-1 text-sm">{okr.title}</span>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={okr.progress}
+                              onChange={(e) => updateOkrProgress(okr.id, parseInt(e.target.value) || 0)}
+                              className="w-20"
+                            />
+                            <span className="text-xs text-muted-foreground">%</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => removeOkr(okr.id)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    {editingProject && (
+                      <Button 
+                        type="button"
+                        variant="destructive" 
+                        onClick={() => {
+                          if (confirm(`¿Estás seguro de eliminar "${editingProject.name}"? Se borrarán sus asignaciones.`)) {
+                            handleDeleteProject();
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Eliminar
+                      </Button>
+                    )}
+                    <Button type="button" variant="outline" onClick={() => {
+                      setIsAddingProject(false);
+                      setEditingProject(null);
+                    }}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit" className="bg-gradient-to-r from-indigo-500 to-purple-600">
+                      {isAddingProject ? 'Crear' : 'Guardar'}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
             </DialogContent>
           </Dialog>
 
@@ -949,40 +1033,53 @@ export default function ClientsAndProjectsPage() {
               <DialogHeader>
                 <DialogTitle>Nuevo cliente</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Nombre</Label>
-                  <Input
-                    value={newClient.name}
-                    onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
-                    placeholder="Nombre del cliente"
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddClient()}
+              <Form {...clientForm}>
+                <form onSubmit={clientForm.handleSubmit(handleAddClient)} className="space-y-4 py-4">
+                  <FormField
+                    control={clientForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nombre</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nombre del cliente" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label>Color</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {colorOptions.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        onClick={() => setNewClient({ ...newClient, color })}
-                        className={cn(
-                          "h-9 w-9 rounded-lg transition-all hover:scale-110",
-                          newClient.color === color && "ring-2 ring-offset-2 ring-indigo-500"
-                        )}
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddingClient(false)}>Cancelar</Button>
-                <Button onClick={handleAddClient} className="bg-gradient-to-r from-indigo-500 to-purple-600">
-                  Crear cliente
-                </Button>
-              </DialogFooter>
+                  <FormField
+                    control={clientForm.control}
+                    name="color"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Color</FormLabel>
+                        <div className="flex flex-wrap gap-2">
+                          {colorOptions.map((color) => (
+                            <button
+                              key={color}
+                              type="button"
+                              onClick={() => field.onChange(color)}
+                              className={cn(
+                                "h-9 w-9 rounded-lg transition-all hover:scale-110",
+                                field.value === color && "ring-2 ring-offset-2 ring-indigo-500"
+                              )}
+                              style={{ backgroundColor: color }}
+                            />
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setIsAddingClient(false)}>Cancelar</Button>
+                    <Button type="submit" className="bg-gradient-to-r from-indigo-500 to-purple-600">
+                      Crear cliente
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
             </DialogContent>
           </Dialog>
         </div>

@@ -1,15 +1,20 @@
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch'; // ✅ Importar Switch
+import { Switch } from '@/components/ui/switch';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useApp } from '@/contexts/AppContext';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Trash2, CalendarIcon, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface AbsencesSheetProps {
   open: boolean;
@@ -17,40 +22,72 @@ interface AbsencesSheetProps {
   employeeId: string;
 }
 
+const absenceFormSchema = z.object({
+  startDate: z.string().min(1, 'La fecha de inicio es obligatoria'),
+  endDate: z.string().optional(),
+  type: z.enum(['vacation', 'sick_leave', 'personal', 'other']),
+  description: z.string().optional(),
+  isFullDay: z.boolean(),
+  hours: z.number().min(0.5).max(24).optional(),
+}).refine((data) => {
+  if (!data.isFullDay && (!data.hours || data.hours <= 0)) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Las horas son obligatorias cuando no es día completo',
+  path: ['hours'],
+});
+
+type AbsenceFormValues = z.infer<typeof absenceFormSchema>;
+
 export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetProps) {
   const { employees, absences, addAbsence, deleteAbsence } = useApp();
   const employee = employees.find(e => e.id === employeeId);
   
   const employeeAbsences = absences.filter(a => a.employeeId === employeeId);
 
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [type, setType] = useState('vacation');
-  const [description, setDescription] = useState('');
-  
-  // ✅ Nuevos estados para gestión parcial
-  const [isFullDay, setIsFullDay] = useState(true);
-  const [hours, setHours] = useState('4');
+  const form = useForm<AbsenceFormValues>({
+    resolver: zodResolver(absenceFormSchema),
+    defaultValues: {
+      startDate: '',
+      endDate: '',
+      type: 'vacation',
+      description: '',
+      isFullDay: true,
+      hours: 4,
+    },
+  });
+
+  const isFullDay = form.watch('isFullDay');
 
   if (!employee) return null;
 
-  const handleAdd = () => {
-    if (!startDate) return;
+  const onSubmit = async (data: AbsenceFormValues) => {
+    try {
+      await addAbsence({
+        employeeId,
+        startDate: data.startDate,
+        endDate: data.endDate || data.startDate,
+        type: data.type,
+        description: data.description || undefined,
+        hours: data.isFullDay ? 0 : (data.hours || 0)
+      });
 
-    addAbsence({
-      employeeId,
-      startDate,
-      endDate: endDate || startDate,
-      type: type as any,
-      description,
-      // Si es día completo guardamos 0 (o null), si no, las horas especificadas
-      hours: isFullDay ? 0 : Number(hours)
-    });
-
-    setStartDate('');
-    setEndDate('');
-    setDescription('');
-    setIsFullDay(true);
+      toast.success('Ausencia registrada correctamente');
+      form.reset({
+        startDate: '',
+        endDate: '',
+        type: 'vacation',
+        description: '',
+        isFullDay: true,
+        hours: 4,
+      });
+    } catch (error: any) {
+      console.error('Error añadiendo ausencia:', error);
+      const errorMessage = error?.message || error?.error?.message || 'Error al registrar la ausencia';
+      toast.error(errorMessage);
+    }
   };
 
   return (
@@ -62,55 +99,120 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
         </SheetHeader>
 
         <div className="space-y-6 py-6">
-          <div className="grid gap-4 p-4 border rounded-lg bg-slate-50 dark:bg-slate-900">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Desde</Label>
-                <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 p-4 border rounded-lg bg-slate-50 dark:bg-slate-900">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Desde</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="endDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hasta (opcional)</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-              <div className="space-y-2">
-                <Label>Hasta (opcional)</Label>
-                <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-              </div>
-            </div>
 
-            <div className="space-y-2">
-                <Label>Tipo</Label>
-                <Select value={type} onValueChange={setType}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
                         <SelectItem value="vacation">Vacaciones</SelectItem>
                         <SelectItem value="sick_leave">Baja Médica</SelectItem>
                         <SelectItem value="personal">Asuntos Propios</SelectItem>
                         <SelectItem value="other">Otro</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-
-            {/* ✅ SECCIÓN DÍA PARCIAL */}
-            <div className="flex flex-col gap-3 pt-2">
-                <div className="flex items-center justify-between">
-                    <Label htmlFor="full-day-mode" className="cursor-pointer">¿Día completo?</Label>
-                    <Switch id="full-day-mode" checked={isFullDay} onCheckedChange={setIsFullDay} />
-                </div>
-
-                {!isFullDay && (
-                    <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
-                        <Label>Horas de ausencia (por día)</Label>
-                        <Input type="number" value={hours} onChange={e => setHours(e.target.value)} min={0.5} max={8} step={0.5} />
-                    </div>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
                 )}
-            </div>
+              />
 
-            <div className="space-y-2">
-                <Label>Motivo (opcional)</Label>
-                <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="Ej: Cita médica..." />
-            </div>
+              {/* SECCIÓN DÍA PARCIAL */}
+              <FormField
+                control={form.control}
+                name="isFullDay"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col gap-3 pt-2">
+                    <div className="flex items-center justify-between">
+                      <FormLabel className="cursor-pointer">¿Día completo?</FormLabel>
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <Button onClick={handleAdd} className="w-full bg-indigo-600 hover:bg-indigo-700">
+              {!isFullDay && (
+                <FormField
+                  control={form.control}
+                  name="hours"
+                  render={({ field }) => (
+                    <FormItem className="animate-in fade-in slide-in-from-top-1">
+                      <FormLabel>Horas de ausencia (por día)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min={0.5} 
+                          max={24} 
+                          step={0.5} 
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Motivo (opcional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ej: Cita médica..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700">
                 <Plus className="mr-2 h-4 w-4" /> Añadir ausencia
-            </Button>
-          </div>
+              </Button>
+            </form>
+          </Form>
 
           <div className="space-y-3">
             <h4 className="text-sm font-medium text-muted-foreground">Historial</h4>

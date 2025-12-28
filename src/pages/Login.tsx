@@ -1,20 +1,36 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { useNavigate, useLocation } from "react-router-dom";
 
+const loginFormSchema = z.object({
+  email: z.string().email('Email inválido'),
+  password: z.string().min(1, 'La contraseña es obligatoria'),
+});
+
+type LoginFormValues = z.infer<typeof loginFormSchema>;
+
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   // Obtener la ruta de origen desde el state de navegación
   const from = (location.state as any)?.from?.pathname || "/";
+
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginFormSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
   // Si ya estamos logueados, redirigir a la ruta original o al dashboard
   useEffect(() => {
@@ -26,18 +42,14 @@ export default function Login() {
     });
   }, [navigate, from]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    
+  const onSubmit = async (data: LoginFormValues) => {
     const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+      email: data.email,
+      password: data.password,
     });
 
     if (error) {
       toast.error("Error de acceso: " + error.message);
-      setLoading(false);
     } else {
       toast.success("¡Bienvenido!");
       // ✅ Navegar después de un pequeño delay para que los listeners se actualicen
@@ -63,31 +75,51 @@ export default function Login() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Input
-                type="email"
-                placeholder="usuario@agencia.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="bg-slate-50 border-slate-200 focus:border-indigo-500"
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="usuario@agencia.com"
+                        className="bg-slate-50 border-slate-200 focus:border-indigo-500"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="space-y-2">
-              <Input
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="bg-slate-50 border-slate-200 focus:border-indigo-500"
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        className="bg-slate-50 border-slate-200 focus:border-indigo-500"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium" disabled={loading}>
-              {loading ? "Entrando..." : "Acceder"}
-            </Button>
-          </form>
+              <Button 
+                type="submit" 
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium" 
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? "Entrando..." : "Acceder"}
+              </Button>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>
