@@ -4,7 +4,7 @@ import { Employee, Client, Project, Allocation, LoadStatus, Absence, TeamEvent, 
 import { getWorkingDaysInRange, getMonthlyCapacity, getWeeksForMonth, getStorageKey } from '@/utils/dateUtils';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange, getTeamEventDetailsInRange } from '@/utils/teamEventUtils';
-import { addDays } from 'date-fns';
+import { addDays, format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -152,18 +152,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Ref para acceder a employees sin trigger re-renders
   const employeesRef = useRef<Employee[]>([]);
 
-  const fetchData = useCallback(async (skipLoading = false) => {
+  const fetchData = useCallback(async (skipLoading = false, dateRange?: { start: Date; end: Date }) => {
     if (!skipLoading) {
       setIsLoading(true);
     }
     try {
+      // Calcular rango de fechas: 3 meses atrás y 6 meses adelante desde hoy (o rango proporcionado)
+      const today = new Date();
+      const defaultStart = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+      const defaultEnd = new Date(today.getFullYear(), today.getMonth() + 6, 0);
+      const startDate = dateRange?.start || defaultStart;
+      const endDate = dateRange?.end || defaultEnd;
+
+      // Formatear fechas para Supabase (YYYY-MM-DD)
+      const startStr = format(startDate, 'yyyy-MM-dd');
+      const endStr = format(endDate, 'yyyy-MM-dd');
+
+      // Tablas pequeñas: cargar todo
+      // Tablas grandes con fechas: filtrar por rango
       const [empRes, cliRes, projRes, allocRes, absRes, evRes, goalsRes] = await Promise.all([
         supabase.from('employees').select('*'),
         supabase.from('clients').select('*'),
         supabase.from('projects').select('*'),
-        supabase.from('allocations').select('*'),
-        supabase.from('absences').select('*'),
-        supabase.from('team_events').select('*'),
+        // Allocations: filtrar por week_start_date
+        supabase.from('allocations')
+          .select('*')
+          .gte('week_start_date', startStr)
+          .lte('week_start_date', endStr),
+        // Absences: filtrar por rango de fechas (start_date <= endDate AND end_date >= startDate)
+        supabase.from('absences')
+          .select('*')
+          .lte('start_date', endStr)
+          .gte('end_date', startStr),
+        // Team events: filtrar por date
+        supabase.from('team_events')
+          .select('*')
+          .gte('date', startStr)
+          .lte('date', endStr),
         supabase.from('professional_goals').select('*'),
       ]);
 
