@@ -88,13 +88,13 @@ export default function EmployeeDashboard() {
 
   const { showTour, resetTour } = useWelcomeTour();
   
-  // Detectar si hay tareas pendientes para Weekly (semanas pasadas o actual)
+  // Detectar si hay tareas pendientes para Weekly (semanas pasadas, actual O transferidas)
   const hasPendingWeeklyTasks = useMemo(() => {
     if (!myEmployeeProfile) return false;
     const today = new Date();
     
     // Buscar tareas en semanas pasadas o actual que no estén completadas
-    return allocations.some(a => {
+    const hasOpenTasks = allocations.some(a => {
       if (a.employeeId !== myEmployeeProfile.id) return false;
       if (a.status === 'completed') return false;
       
@@ -107,6 +107,25 @@ export default function EmployeeDashboard() {
         return false;
       }
     });
+    
+    // También buscar tareas transferidas (aunque estén en semanas futuras)
+    const hasTransferredTasks = allocations.some(a => {
+      if (a.employeeId !== myEmployeeProfile.id) return false;
+      if (a.status === 'completed') return false;
+      
+      // Tareas transferidas tienen "(transferida de" en el nombre
+      const isTransferred = a.taskName?.includes('(transferida de');
+      if (!isTransferred) return false;
+      
+      try {
+        const taskWeekDate = parseISO(a.weekStartDate);
+        return isSameMonth(taskWeekDate, currentMonth);
+      } catch {
+        return false;
+      }
+    });
+    
+    return hasOpenTasks || hasTransferredTasks;
   }, [allocations, myEmployeeProfile, currentMonth]);
 
   const weeks = useMemo(() => getWeeksForMonth(currentMonth), [currentMonth]);

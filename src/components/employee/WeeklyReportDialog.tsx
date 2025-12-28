@@ -196,8 +196,16 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
         if (action === 'move') {
           // Mover horas restantes a una semana futura seleccionada
           const targetWeek = moveToMyWeek[task.id];
+          const comment = taskComments[task.id];
+          
           if (!targetWeek) {
             toast.error('Selecciona una semana destino');
+            continue;
+          }
+          
+          // NOTA OBLIGATORIA cuando se mueve a semana futura
+          if (!comment || !comment.trim()) {
+            toast.error('Debes añadir una nota explicando por qué mueves esta tarea a otra semana');
             continue;
           }
           
@@ -235,14 +243,24 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                 status: 'planned'
               });
             }
+            
+            // Registrar feedback con la nota obligatoria
+            await addWeeklyFeedback({
+              employeeId,
+              weekStartDate: taskWeekStr,
+              projectId: task.projectId,
+              allocationId: task.id,
+              reason: 'other',
+              comments: `Tarea movida a semana futura. Motivo: ${comment}`
+            });
           }
         } else if (action === 'moveToEmployee') {
-          // Mover horas restantes a otro empleado
+          // Mover horas restantes a otro compañero
           const targetEmployeeId = moveToEmployee[task.id];
           const targetWeek = moveToWeek[task.id];
           
           if (!targetEmployeeId || !targetWeek) {
-            toast.error('Selecciona empleado y semana destino');
+            toast.error('Selecciona compañero y semana destino');
             continue;
           }
           
@@ -261,7 +279,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
               projectId: task.projectId,
               weekStartDate: targetWeek,
               hoursAssigned: remainingHours,
-              taskName: `${task.taskName || 'Tarea'} (transferida de ${employees.find(e => e.id === employeeId)?.name || 'empleado'})`,
+              taskName: `${task.taskName || 'Tarea'} (transferida de ${employees.find(e => e.id === employeeId)?.name || 'compañero'})`,
               status: 'planned'
             });
             
@@ -452,7 +470,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                 {(transferFromEmployee.first_name || transferFromEmployee.name)[0]}
                               </AvatarFallback>
                             </Avatar>
-                            <span className="text-xs text-purple-700">Transferida de {transferFromEmployee.first_name || transferFromEmployee.name}</span>
+                            <span className="text-xs text-purple-700">{transferFromEmployee.first_name || transferFromEmployee.name}</span>
                           </div>
                         )}
                       </div>
@@ -492,7 +510,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                           const defaultWeek = getStorageKey(futureWeeks[0].weekStart, viewDate);
                           setMoveToMyWeek(prev => ({ ...prev, [task.id]: defaultWeek }));
                         }
-                        // Inicializar semana por defecto para mover a otro empleado
+                        // Inicializar semana por defecto para mover a otro compañero
                         if (value === 'moveToEmployee' && !moveToWeek[task.id] && futureWeeks.length > 0) {
                           const defaultWeek = getStorageKey(futureWeeks[0].weekStart, viewDate);
                           setMoveToWeek(prev => ({ ...prev, [task.id]: defaultWeek }));
@@ -541,7 +559,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                   <span className="font-medium">Mover {missingHours}h a una semana futura</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                  La tarea actual se recortará a lo hecho y se creará una nueva asignación en la semana que elijas.
+                                  La tarea actual se recortará a lo hecho y se creará una nueva asignación en la semana que elijas. <strong className="text-amber-600">Nota obligatoria.</strong>
                                 </p>
                               </Label>
                             </div>
@@ -551,10 +569,10 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                               <Label htmlFor={`${task.id}-moveToEmployee`} className="flex-1 cursor-pointer">
                                 <div className="flex items-center gap-2">
                                   <Users className="h-4 w-4 text-purple-600" />
-                                  <span className="font-medium">Mover {missingHours}h a otro empleado</span>
+                                  <span className="font-medium">Mover {missingHours}h a otro compañero</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                  Transfiere las horas restantes a otro compañero. La tarea actual se completará con lo que has hecho.
+                                  Transfiere las horas restantes a otro compañero. La tarea actual se completará con lo que has hecho. <strong className="text-amber-600">Nota obligatoria.</strong>
                                 </p>
                               </Label>
                             </div>
@@ -605,30 +623,30 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                             </Select>
                           ) : (
                             <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
-                              ⚠️ No hay semanas futuras en este mes. Usa "Mover a otro empleado" para transferir las horas.
+                              ⚠️ No hay semanas futuras en este mes. Usa "Mover a otro compañero" para transferir las horas.
                             </p>
                           )}
                         </div>
                       </div>
                     )}
                     
-                    {/* Selector de empleado y semana cuando se selecciona "Mover a otro empleado" */}
+                    {/* Selector de compañero y semana cuando se selecciona "Mover a otro compañero" */}
                     {taskActions[task.id] === 'moveToEmployee' && !isDistributionTask && (
                       <div className="mt-3 pl-6 space-y-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
                         <Label className="text-xs font-medium mb-2 block text-purple-900">
-                          Transferir a otro empleado
+                          Transferir a otro compañero
                         </Label>
                         <div className="space-y-2">
                           <div>
                             <Label htmlFor={`${task.id}-employee-select`} className="text-xs mb-1 block">
-                              Empleado
+                              Compañero
                             </Label>
                             <Select
                               value={moveToEmployee[task.id] || ''}
                               onValueChange={(value) => setMoveToEmployee(prev => ({ ...prev, [task.id]: value }))}
                             >
                               <SelectTrigger id={`${task.id}-employee-select`} className="h-8 text-xs">
-                                <SelectValue placeholder="Seleccionar empleado" />
+                                <SelectValue placeholder="Seleccionar compañero" />
                               </SelectTrigger>
                               <SelectContent>
                                 {employees
@@ -669,10 +687,16 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                       </div>
                     )}
                     
-                    {(taskActions[task.id] === 'justify' || taskActions[task.id] === 'keep') && (
+                    {/* Comentario obligatorio para move y moveToEmployee, opcional para justify y keep */}
+                    {((taskActions[task.id] === 'move' || taskActions[task.id] === 'moveToEmployee') || 
+                      (taskActions[task.id] === 'justify' || taskActions[task.id] === 'keep')) && (
                       <div className="mt-3 pl-6">
                         <Label htmlFor={`${task.id}-comment`} className="text-xs font-medium mb-2 block">
-                          Comentario (opcional)
+                          {(taskActions[task.id] === 'move' || taskActions[task.id] === 'moveToEmployee') ? (
+                            <span>Nota <strong className="text-red-600">*</strong> (obligatoria)</span>
+                          ) : (
+                            'Comentario (opcional)'
+                          )}
                         </Label>
                         <Textarea
                           id={`${task.id}-comment`}
@@ -1134,21 +1158,29 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                 }
               } else if (action === 'move') {
                 const targetWeek = moveToMyWeek[task.id];
+                const comment = taskComments[task.id];
                 
                 if (!targetWeek) {
                   canSubmit = false;
                   validationErrors.push(`"${task.taskName}": selecciona semana destino`);
                 } else if (futureWeeks.length === 0) {
                   canSubmit = false;
-                  validationErrors.push(`"${task.taskName}": no hay semanas futuras en este mes. Usa "Mover a otro empleado"`);
+                  validationErrors.push(`"${task.taskName}": no hay semanas futuras en este mes. Usa "Mover a otro compañero"`);
+                } else if (!comment || !comment.trim()) {
+                  canSubmit = false;
+                  validationErrors.push(`"${task.taskName}": añade una nota explicando por qué mueves esta tarea`);
                 }
               } else if (action === 'moveToEmployee') {
                 const targetEmployeeId = moveToEmployee[task.id];
                 const targetWeek = moveToWeek[task.id];
+                const comment = taskComments[task.id];
                 
                 if (!targetEmployeeId || !targetWeek) {
                   canSubmit = false;
-                  validationErrors.push(`"${task.taskName}": selecciona empleado y semana destino`);
+                  validationErrors.push(`"${task.taskName}": selecciona compañero y semana destino`);
+                } else if (!comment || !comment.trim()) {
+                  canSubmit = false;
+                  validationErrors.push(`"${task.taskName}": añade una nota explicando por qué transfieres esta tarea`);
                 }
               }
             }

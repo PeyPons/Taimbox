@@ -131,7 +131,7 @@ export default function WeeklyForecastPage() {
     let filtered = weeklyFeedback
       .filter(fb => fb.weekStartDate === currentWeekStr);
     
-    // Filtro por empleado
+    // Filtro por compañero
     if (filterFeedbackEmployee !== 'all') {
       filtered = filtered.filter(fb => fb.employeeId === filterFeedbackEmployee);
     }
@@ -173,7 +173,7 @@ export default function WeeklyForecastPage() {
     }
     
     try {
-      // Crear asignación genérica que el empleado pueda distribuir
+      // Crear asignación genérica que el compañero pueda distribuir
       await addAllocation({
         employeeId: redistributeEmployee,
         projectId: selectedProject,
@@ -195,7 +195,7 @@ export default function WeeklyForecastPage() {
     }
   };
   
-  // Carga de trabajo de empleados para semanas restantes del mes (considerando ausencias y eventos)
+  // Carga de trabajo de compañeros para semanas restantes del mes (considerando ausencias y eventos)
   const employeeWorkload = useMemo(() => {
     if (!selectedProject) return [];
     
@@ -434,10 +434,10 @@ export default function WeeklyForecastPage() {
             <div className="flex items-center gap-2">
               <Select value={filterFeedbackEmployee} onValueChange={setFilterFeedbackEmployee}>
                 <SelectTrigger className="w-[180px] h-8 text-xs">
-                  <SelectValue placeholder="Todos los empleados" />
+                  <SelectValue placeholder="Todos los compañeros" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos los empleados</SelectItem>
+                  <SelectItem value="all">Todos los compañeros</SelectItem>
                   {employees
                     .filter(e => e.isActive)
                     .map(emp => (
@@ -546,7 +546,7 @@ export default function WeeklyForecastPage() {
           <SheetHeader>
             <SheetTitle>Redistribuir Horas</SheetTitle>
             <SheetDescription>
-              Añade horas a un empleado en una semana específica para este proyecto
+              Añade horas a un compañero en una semana específica para este proyecto
             </SheetDescription>
           </SheetHeader>
           
@@ -576,10 +576,10 @@ export default function WeeklyForecastPage() {
                 </div>
                 
                 <div>
-                  <Label htmlFor="employee">Empleado</Label>
+                  <Label htmlFor="employee">Compañero</Label>
                   <Select value={redistributeEmployee} onValueChange={setRedistributeEmployee}>
                     <SelectTrigger id="employee">
-                      <SelectValue placeholder="Seleccionar empleado" />
+                      <SelectValue placeholder="Seleccionar compañero" />
                     </SelectTrigger>
                     <SelectContent>
                       {employees
@@ -623,7 +623,7 @@ export default function WeeklyForecastPage() {
                 </Button>
               </div>
               
-              {/* Carga de trabajo de empleados */}
+              {/* Carga de trabajo de compañeros */}
               <div className="mt-8">
                 <Label className="text-sm font-semibold mb-3 block">Carga de trabajo (semanas restantes)</Label>
                 <div className="space-y-3">
