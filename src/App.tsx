@@ -18,21 +18,6 @@ import { PermissionProtectedRoute } from "./components/auth/PermissionProtectedR
 // Página principal (carga inmediata para mejor UX)
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 
-// Páginas con lazy loading (carga diferida para mejor rendimiento)
-// Usando lazyWithRetry para manejar errores de carga de módulos
-const DashboardAI = lazyWithRetry(() => import("./pages/DashboardAI"));
-const ClientReportsPage = lazyWithRetry(() => import("@/pages/ClientReportsPage"));
-const Index = lazyWithRetry(() => import("./pages/Index"));
-const TeamPage = lazyWithRetry(() => import("./pages/TeamPage"));
-const ClientsAndProjectsPage = lazyWithRetry(() => import("./pages/ClientsAndProjectsPage"));
-const ReportsPage = lazyWithRetry(() => import("./pages/ReportsPage"));
-const SettingsPage = lazyWithRetry(() => import("./pages/SettingsPage"));
-const MetaAdsPage = lazyWithRetry(() => import("./pages/MetaAdsPage"));
-const AdsPage = lazyWithRetry(() => import("@/pages/AdsPage"));
-const AdsReportGenerator = lazyWithRetry(() => import("./pages/AdsReportGenerator"));
-const DeadlinesPage = lazyWithRetry(() => import("./pages/DeadlinesPage"));
-const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
-
 // Loading fallback para páginas lazy
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -54,6 +39,7 @@ const LazyErrorFallback = ({ error, retry }: { error: Error; retry: () => void }
 );
 
 // Wrapper para lazy loading con manejo de errores
+// DEBE estar ANTES de su uso para evitar "Cannot access before initialization"
 const lazyWithRetry = (importFn: () => Promise<any>) => {
   return lazy(() =>
     importFn().catch((error) => {
@@ -68,6 +54,21 @@ const lazyWithRetry = (importFn: () => Promise<any>) => {
     })
   );
 };
+
+// Páginas con lazy loading (carga diferida para mejor rendimiento)
+// Usando lazyWithRetry para manejar errores de carga de módulos
+const DashboardAI = lazyWithRetry(() => import("./pages/DashboardAI"));
+const ClientReportsPage = lazyWithRetry(() => import("@/pages/ClientReportsPage"));
+const Index = lazyWithRetry(() => import("./pages/Index"));
+const TeamPage = lazyWithRetry(() => import("./pages/TeamPage"));
+const ClientsAndProjectsPage = lazyWithRetry(() => import("./pages/ClientsAndProjectsPage"));
+const ReportsPage = lazyWithRetry(() => import("./pages/ReportsPage"));
+const SettingsPage = lazyWithRetry(() => import("./pages/SettingsPage"));
+const MetaAdsPage = lazyWithRetry(() => import("./pages/MetaAdsPage"));
+const AdsPage = lazyWithRetry(() => import("@/pages/AdsPage"));
+const AdsReportGenerator = lazyWithRetry(() => import("./pages/AdsReportGenerator"));
+const DeadlinesPage = lazyWithRetry(() => import("./pages/DeadlinesPage"));
+const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
