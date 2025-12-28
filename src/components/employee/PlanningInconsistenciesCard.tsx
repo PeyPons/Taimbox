@@ -211,6 +211,48 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
       }
     });
 
+    // NUEVO: Detectar proyectos con horas pero sin deadline
+    // Iterar sobre todos los proyectos que tienen allocations para este empleado
+    Object.entries(allocationsByProject).forEach(([projectId, projectAllocs]) => {
+      // Verificar si este proyecto NO está en ningún deadline
+      const hasDeadline = deadlines.some(d => d.projectId === projectId);
+      
+      if (!hasDeadline && (projectAllocs.planned > 0 || projectAllocs.computed > 0)) {
+        // Este proyecto tiene horas pero no está en el deadline
+        const project = projects.find(p => p.id === projectId);
+        const totalPlanned = projectAllocs.planned + projectAllocs.computed;
+        
+        // Obtener allocations del proyecto de todos los empleados
+        const allProjectAllocations = allocations.filter(a => 
+          a.projectId === projectId &&
+          isSameMonth(parseISO(a.weekStartDate), viewDate)
+        );
+        
+        // Calcular totales del proyecto (todos los empleados)
+        const totalProjectComputed = allProjectAllocations
+          .filter(a => a.status === 'completed')
+          .reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
+        const totalProjectPlanned = allProjectAllocations
+          .filter(a => a.status !== 'completed')
+          .reduce((sum, a) => sum + (a.hoursAssigned || 0), 0);
+        
+        // No hay deadline, así que la diferencia es el total de horas
+        results.push({
+          projectId,
+          projectName: project?.name || 'Proyecto desconocido',
+          deadlineHours: 0, // No hay deadline
+          plannedHours: round2(projectAllocs.planned),
+          computedHours: round2(projectAllocs.computed),
+          difference: round2(totalPlanned), // Diferencia positiva porque hay horas sin deadline
+          budgetHours: project?.budgetHours || 0,
+          minimumHours: project?.minimumHours || 0,
+          totalProjectComputed: round2(totalProjectComputed),
+          totalProjectPlanned: round2(totalProjectPlanned),
+          teammates: [] // No hay deadline para comparar con otros empleados
+        });
+      }
+    });
+
     return results.sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference));
   }, [deadlines, allocations, projects, employees, employeeId, viewDate, isLoading]);
 
@@ -326,40 +368,74 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                       )}
                       {/* Explicación de la incoherencia */}
                       <div className="mt-1.5 text-[11px] text-slate-600 bg-white/50 rounded px-2 py-1 border border-slate-200">
-                        {inc.budgetHours > 0 && (
-                          <div>
-                            El proyecto tiene <strong>{inc.budgetHours}h asignadas</strong>. 
-                            {' '}Total del proyecto: <strong>{round2(inc.totalProjectComputed + inc.totalProjectPlanned)}h</strong> 
+                        {inc.deadlineHours === 0 ? (
+                          <div className="text-amber-700 font-semibold">
+                            ⚠️ Este proyecto <strong>no está en el deadline</strong> pero tiene horas asignadas.
+                            {' '}Total: <strong>{round2(inc.totalProjectComputed + inc.totalProjectPlanned)}h</strong> 
                             {' '}({inc.totalProjectComputed.toFixed(1)}h computadas + {inc.totalProjectPlanned.toFixed(1)}h planificadas).
                           </div>
-                        )}
-                        {inc.budgetHours === 0 && inc.minimumHours > 0 && (
-                          <div>
-                            El proyecto tiene <strong>{inc.minimumHours}h mínimas</strong>. 
-                            {' '}Total del proyecto: <strong>{round2(inc.totalProjectComputed + inc.totalProjectPlanned)}h</strong> 
-                            {' '}({inc.totalProjectComputed.toFixed(1)}h computadas + {inc.totalProjectPlanned.toFixed(1)}h planificadas).
-                          </div>
+                        ) : (
+                          <>
+                            {inc.budgetHours > 0 && (
+                              <div>
+                                El proyecto tiene <strong>{inc.budgetHours}h asignadas</strong>. 
+                                {' '}Total del proyecto: <strong>{round2(inc.totalProjectComputed + inc.totalProjectPlanned)}h</strong> 
+                                {' '}({inc.totalProjectComputed.toFixed(1)}h computadas + {inc.totalProjectPlanned.toFixed(1)}h planificadas).
+                              </div>
+                            )}
+                            {inc.budgetHours === 0 && inc.minimumHours > 0 && (
+                              <div>
+                                El proyecto tiene <strong>{inc.minimumHours}h mínimas</strong>. 
+                                {' '}Total del proyecto: <strong>{round2(inc.totalProjectComputed + inc.totalProjectPlanned)}h</strong> 
+                                {' '}({inc.totalProjectComputed.toFixed(1)}h computadas + {inc.totalProjectPlanned.toFixed(1)}h planificadas).
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                       <div className="flex items-center gap-3 mt-1.5 text-xs">
-                        <div>
-                          <span className="text-slate-500">Deadline:</span>{' '}
-                          <span className="font-medium">{inc.deadlineHours}h</span>
-                        </div>
-                        <span className="text-slate-300">→</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-blue-600">
-                            Plan: <span className="font-medium">{inc.plannedHours}h</span>
-                          </span>
-                          <span className="text-emerald-600">
-                            Comp: <span className="font-medium">{inc.computedHours}h</span>
-                          </span>
-                        </div>
-                        <span className="text-slate-300">→</span>
-                        <div className={cn("flex items-center gap-1 font-bold", isPositive ? "text-amber-700" : "text-blue-700")}>
-                          {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                          {isPositive ? '+' : ''}{inc.difference}h
-                        </div>
+                        {inc.deadlineHours === 0 ? (
+                          <>
+                            <div className="text-slate-500 italic">
+                              Sin deadline
+                            </div>
+                            <span className="text-slate-300">→</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-blue-600">
+                                Plan: <span className="font-medium">{inc.plannedHours}h</span>
+                              </span>
+                              <span className="text-emerald-600">
+                                Comp: <span className="font-medium">{inc.computedHours}h</span>
+                              </span>
+                            </div>
+                            <span className="text-slate-300">→</span>
+                            <div className="flex items-center gap-1 font-bold text-amber-700">
+                              <TrendingUp className="h-3 w-3" />
+                              +{inc.difference}h
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div>
+                              <span className="text-slate-500">Deadline:</span>{' '}
+                              <span className="font-medium">{inc.deadlineHours}h</span>
+                            </div>
+                            <span className="text-slate-300">→</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-blue-600">
+                                Plan: <span className="font-medium">{inc.plannedHours}h</span>
+                              </span>
+                              <span className="text-emerald-600">
+                                Comp: <span className="font-medium">{inc.computedHours}h</span>
+                              </span>
+                            </div>
+                            <span className="text-slate-300">→</span>
+                            <div className={cn("flex items-center gap-1 font-bold", isPositive ? "text-amber-700" : "text-blue-700")}>
+                              {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                              {isPositive ? '+' : ''}{inc.difference}h
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                     {hasMore && (

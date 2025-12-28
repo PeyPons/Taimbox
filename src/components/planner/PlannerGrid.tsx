@@ -61,6 +61,12 @@ export function PlannerGrid() {
     if (!isGlobalLoading) {
       const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
       
+      // Si ya se cargó este mes, no hacer nada
+      if (loadedMonthsRef.current.has(monthKey)) {
+        setIsLoadingMonth(false);
+        return;
+      }
+      
       // Verificar si necesitamos cargar datos para este mes
       const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
@@ -76,19 +82,19 @@ export function PlannerGrid() {
       });
       
       // Si no hay datos para este mes, cargarlos (igual que loadDeadlines en DeadlinesPage)
-      if (!hasDataForMonth && !loadedMonthsRef.current.has(monthKey)) {
+      if (!hasDataForMonth) {
         setIsLoadingMonth(true);
         loadDataForMonth(currentMonth).finally(() => {
           loadedMonthsRef.current.add(monthKey);
           setIsLoadingMonth(false);
         });
       } else {
-        // Hay datos o ya se cargó, desactivar loading
+        // Hay datos, marcar como cargado
         loadedMonthsRef.current.add(monthKey);
         setIsLoadingMonth(false);
       }
     }
-  }, [currentMonth, isGlobalLoading, loadDataForMonth]);
+  }, [currentMonth, isGlobalLoading, loadDataForMonth, allocations]);
 
   const weeks = getWeeksForMonth(currentMonth);
   const year = currentMonth.getFullYear();
