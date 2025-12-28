@@ -23,10 +23,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 function getDateRange() {
   const now = new Date();
-  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const year = prevMonth.getFullYear();
-  const month = String(prevMonth.getMonth() + 1).padStart(2, '0');
-  const day = String(prevMonth.getDate()).padStart(2, '0');
+  // Usar el mes ACTUAL, no el anterior
+  const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const year = currentMonth.getFullYear();
+  const month = String(currentMonth.getMonth() + 1).padStart(2, '0');
+  const day = String(currentMonth.getDate()).padStart(2, '0');
   const firstDay = `${year}-${month}-${day}`;
   const today = new Date().toISOString().split('T')[0];
   return { firstDay, today };
@@ -106,6 +107,10 @@ async function getAccountData(customerId, accessToken, dateRange) {
             const key = `${campaignId}_${dailyDate}`; // Clave única: ID + DÍA
 
             if (!aggregator.has(key)) {
+                // Acceder al presupuesto diario (la API v22 devuelve en camelCase)
+                const budgetMicros = row.campaignBudget?.amountMicros || row.campaign_budget?.amount_micros || '0';
+                const dailyBudget = parseInt(budgetMicros) / 1000000;
+                
                 aggregator.set(key, {
                     client_id: customerId,
                     campaign_id: campaignId,
@@ -113,7 +118,7 @@ async function getAccountData(customerId, accessToken, dateRange) {
                     status: row.campaign.status,
                     date: dailyDate,
                     cost: 0,
-                    daily_budget: row.campaignBudget ? (parseInt(row.campaignBudget.amountMicros || '0') / 1000000) : 0,
+                    daily_budget: dailyBudget,
                     conversions_value: 0,
                     conversions: 0,
                     clicks: 0,
@@ -133,7 +138,8 @@ async function getAccountData(customerId, accessToken, dateRange) {
       });
     }
   } else {
-      console.warn(`⚠️ Aviso cuenta ${customerId}: ${response.statusText}`);
+      const errorText = await response.text();
+      console.warn(`⚠️ Aviso cuenta ${customerId}: ${response.status} ${response.statusText} - ${errorText.substring(0, 200)}`);
   }
   
   // Devolvemos los valores del Map como array limpio
@@ -153,7 +159,7 @@ async function processSyncJob(jobId) {
     await supabase.from('ads_sync_logs').update({ status: 'running' }).eq('id', jobId);
     
     const range = getDateRange();
-    await log(`🚀 Sincronizando Sync Google v22. Desde: ${range.firstDay}`);
+    await log(`🚀 Sincronizando Google Ads v22 - Mes actual: ${range.firstDay} hasta ${range.today}`);
     
     const token = await getAccessToken();
     const clients = await getClientAccounts(token);
