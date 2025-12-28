@@ -370,9 +370,21 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
   const isLastStep = currentStep === tourSteps.length - 1;
   const isFirstStep = currentStep === 0;
 
+  // Handler para capturar clics en el overlay sin cerrar el Sheet
+  const handleOverlayClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    // No cerramos el tour al hacer clic en el overlay, solo capturamos el evento
+    // El usuario debe usar los botones para navegar o saltar
+  }, []);
+
   // Renderizamos directamente sin portal
   return (
-    <div className="fixed inset-0" style={{ zIndex: 999999, pointerEvents: 'none' }}>
+    <div 
+      className="fixed inset-0" 
+      style={{ zIndex: 999999, pointerEvents: 'none' }}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
       {/* Overlay oscuro - 4 partes para permitir interacción con elemento destacado */}
       {highlightPos ? (
         <>
@@ -380,7 +392,8 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
           <div 
             className="absolute left-0 right-0 top-0 bg-black/60"
             style={{ height: highlightPos.top, pointerEvents: 'auto' }}
-            onClick={handleSkip}
+            onClick={handleOverlayClick}
+            onMouseDown={(e) => e.stopPropagation()}
           />
           {/* Izquierda */}
           <div 
@@ -391,7 +404,8 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
               height: highlightPos.height,
               pointerEvents: 'auto'
             }}
-            onClick={handleSkip}
+            onClick={handleOverlayClick}
+            onMouseDown={(e) => e.stopPropagation()}
           />
           {/* Derecha */}
           <div 
@@ -402,13 +416,15 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
               height: highlightPos.height,
               pointerEvents: 'auto'
             }}
-            onClick={handleSkip}
+            onClick={handleOverlayClick}
+            onMouseDown={(e) => e.stopPropagation()}
           />
           {/* Abajo */}
           <div 
             className="absolute left-0 right-0 bottom-0 bg-black/60"
             style={{ top: highlightPos.top + highlightPos.height, pointerEvents: 'auto' }}
-            onClick={handleSkip}
+            onClick={handleOverlayClick}
+            onMouseDown={(e) => e.stopPropagation()}
           />
           {/* Borde brillante */}
           <div 
@@ -427,7 +443,8 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
         <div 
           className="absolute inset-0 bg-black/60"
           style={{ pointerEvents: 'auto' }}
-          onClick={handleSkip}
+          onClick={handleOverlayClick}
+          onMouseDown={(e) => e.stopPropagation()}
         />
       )}
 
@@ -445,6 +462,7 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
           ...(step.position !== 'center' && tooltipPos ? { top: tooltipPos.top, left: tooltipPos.left } : {})
         }}
         onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header con gradiente */}
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 text-white">
