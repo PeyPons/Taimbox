@@ -373,19 +373,20 @@ export default function AdsPage() {
   const reportData = useMemo(() => {
     if (!rawData.length) return [];
     
-    // Filtrar por mes actual: desde el día 1 hasta hoy
+    // Filtrar por mes actual completo: desde el día 1 hasta el último día del mes
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
     const currentDay = now.getDate();
+    const daysInMonth = new Date(currentYear, currentMonth, 0).getDate(); // Último día del mes
     const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
-    const todayStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
+    const monthEnd = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`; // Último día del mes
     
     // #region agent log
     // Obtener información de cuentas únicas antes del filtro
     const uniqueAccountsBeforeFilter = Array.from(new Set(rawData.map(r => r.client_id + '|' + (r.client_name || 'Sin nombre'))));
     console.log('[AdsPage] Filtrado de datos:', {
       monthStart,
-      todayStr,
+      monthEnd,
       currentDate: now.toISOString().split('T')[0],
       totalRows: rawData.length,
       uniqueAccounts: uniqueAccountsBeforeFilter.length,
@@ -423,8 +424,8 @@ export default function AdsPage() {
     let rowsInMonth = 0;
     const filteredRows: any[] = [];
     rawData.forEach(row => {
-      // Filtrar por mes actual: fecha entre mesStart y todayStr (inclusive)
-      if (row.date && row.date >= monthStart && row.date <= todayStr) {
+      // Filtrar por mes actual completo: fecha entre monthStart y monthEnd (inclusive)
+      if (row.date && row.date >= monthStart && row.date <= monthEnd) {
         rowsInMonth++;
         totalSpentThisMonth += row.cost || 0;
         filteredRows.push(row);
@@ -494,7 +495,7 @@ export default function AdsPage() {
     
     console.log('[AdsPage] Resumen del mes:', {
       monthStart,
-      todayStr,
+      monthEnd,
       currentDate: now.toISOString().split('T')[0],
       rowsInMonth,
       totalSpentThisMonth: Math.round(totalSpentThisMonth * 100) / 100,
@@ -556,7 +557,7 @@ export default function AdsPage() {
     }
 
     return filtered.sort((a, b) => b.spent - a.spent);
-  }, [rawData, clientSettings, searchTerm, showHidden, segmentationRules, now, currentDay, daysInMonth, daysRemaining]);
+  }, [rawData, clientSettings, searchTerm, showHidden, segmentationRules, now]);
 
   // Estadísticas globales
   const globalStats = useMemo(() => {
