@@ -310,16 +310,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Función para cargar datos de un mes específico (merge con datos existentes)
-  const loadDataForMonth = useCallback(async (month: Date) => {
+  const loadDataForMonth = useCallback(async (month: Date): Promise<boolean> => {
     const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
     const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+    let dataFound = false;
     
-    // Cargar solo allocations, absences y team_events para este mes (merge)
+    // Cargar solo allocations, absences, team_events y weekly_feedback para este mes (merge)
     try {
       const startStr = format(monthStart, 'yyyy-MM-dd');
       const endStr = format(monthEnd, 'yyyy-MM-dd');
       
-      const [allocRes, absRes, evRes] = await Promise.all([
+      const [allocRes, absRes, evRes, feedRes] = await Promise.all([
         supabase.from('allocations')
           .select('*')
           .gte('week_start_date', startStr)
@@ -332,6 +333,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           .select('*')
           .gte('date', startStr)
           .lte('date', endStr),
+        supabase.from('weekly_feedback')
+          .select('*')
+          .gte('week_start_date', startStr)
+          .lte('week_start_date', endStr),
       ]);
 
       if (allocRes.data) {
@@ -382,9 +387,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           return [...prev, ...newEvents];
         });
       }
+
+      // NUEVO: Cargar weekly_feedback para el mes
+      if (feedRes.data && feedRes.data.length > 0) {
+        dataFound = true;
+        const mappedFeedback = feedRes.data.map((fb: any) => ({
+          ...fb,
+          employeeId: fb.employee_id,
+          weekStartDate: fb.week_start_date,
+          projectId: fb.project_id,
+          allocationId: fb.allocation_id,
+          createdAt: fb.created_at
+        }));
+        
+        setWeeklyFeedback(prev => {
+          const existingIds = new Set(prev.map(f => f.id));
+          const newItems = mappedFeedback.filter(f => !existingIds.has(f.id));
+          return [...prev, ...newItems];
+        });
+      }
     } catch (error) {
       console.error("Error cargando datos del mes:", error);
     }
+    
+    return dataFound;
   }, []);
 
   // Cargar datos cuando la autenticación esté lista
@@ -911,7 +937,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(() => ({
     currentUser,
-    isAdmin: currentUser?.role === 'admin' || currentUser?.role === 'manager',
+    isAdmin: currentUser?.role === 'Responsable' || currentUser?.role === 'Coordinador',
     employees, clients, projects, allocations, absences, teamEvents, weeklyFeedback, isLoading,
     addEmployee, updateEmployee, deleteEmployee, toggleEmployeeActive,
     addClient, updateClient, deleteClient,
