@@ -60,7 +60,7 @@ type SortOption = 'budget_desc' | 'budget_asc' | 'my_hours_desc' | 'my_hours_asc
 export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, viewDateContext }: AllocationSheetProps) {
   const { 
     employees, projects, allocations, getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getProjectById,
-    addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading
+    addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading, loadDataForMonth
   } = useApp();
 
   const [viewDate, setViewDate] = useState(() => viewDateContext || new Date(weekStart));
@@ -94,19 +94,28 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     }
   }, [open, isGlobalLoading]);
 
-  // También activar loading cuando cambia el mes visible
+  // Cargar datos del mes cuando cambia el mes visible
   useEffect(() => {
-    if (open) {
-      setIsLoadingTasks(true);
-      // Esperar a que los datos estén listos antes de desactivar
-      if (!isGlobalLoading) {
-        const timer = setTimeout(() => {
+    if (open && !isGlobalLoading) {
+      // Verificar si necesitamos cargar datos para este mes
+      const monthStart = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
+      const monthEnd = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0);
+      
+      // Verificar si hay allocations para este mes
+      const hasDataForMonth = allocations.some(a => {
+        const allocDate = new Date(a.weekStartDate);
+        return allocDate >= monthStart && allocDate <= monthEnd;
+      });
+      
+      // Si no hay datos para este mes, cargarlos
+      if (!hasDataForMonth) {
+        setIsLoadingTasks(true);
+        loadDataForMonth(viewDate).finally(() => {
           setIsLoadingTasks(false);
-        }, 150);
-        return () => clearTimeout(timer);
+        });
       }
     }
-  }, [viewDate, open, isGlobalLoading]);
+  }, [viewDate, open, isGlobalLoading, allocations, loadDataForMonth]);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAllocation, setEditingAllocation] = useState<Allocation | null>(null);

@@ -4,7 +4,7 @@ import { Employee, Client, Project, Allocation, LoadStatus, Absence, TeamEvent, 
 import { getWorkingDaysInRange, getMonthlyCapacity, getWeeksForMonth, getStorageKey } from '@/utils/dateUtils';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange, getTeamEventDetailsInRange } from '@/utils/teamEventUtils';
-import { addDays, format } from 'date-fns';
+import { addDays, format, startOfMonth, endOfMonth } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -129,6 +129,7 @@ interface AppContextType {
   updateProfessionalGoal: (goal: ProfessionalGoal) => void;
   deleteProfessionalGoal: (id: string) => void;
   getEmployeeGoals: (employeeId: string) => ProfessionalGoal[];
+  loadDataForMonth: (month: Date) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -157,11 +158,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
     }
     try {
-      // Calcular rango de fechas: 12 meses atrás y 12 meses adelante desde hoy (o rango proporcionado)
-      // Rango ampliado para cubrir más casos de uso, especialmente cuando se navega a meses pasados
+      // Calcular rango de fechas: 3 meses atrás y 6 meses adelante desde hoy (o rango proporcionado)
       const today = new Date();
-      const defaultStart = new Date(today.getFullYear(), today.getMonth() - 12, 1);
-      const defaultEnd = new Date(today.getFullYear(), today.getMonth() + 12, 0);
+      const defaultStart = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+      const defaultEnd = new Date(today.getFullYear(), today.getMonth() + 6, 0);
       const startDate = dateRange?.start || defaultStart;
       const endDate = dateRange?.end || defaultEnd;
 
@@ -229,7 +229,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         })));
       }
       if (allocRes.data) {
-        setAllocations(allocRes.data.map((a: SupabaseAllocation) => ({
+        const mappedAllocations = allocRes.data.map((a: SupabaseAllocation) => ({
           ...a,
           employeeId: a.employee_id,
           projectId: a.project_id,
@@ -239,7 +239,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           hoursComputed: a.hours_computed ? round2(a.hours_computed) : undefined,
           taskName: a.task_name,
           dependencyId: a.dependency_id
-        })));
+        }));
+        
+        // Si skipLoading es true, significa que estamos cargando datos adicionales (merge)
+        // Si no, reemplazamos todos los datos
+        if (skipLoading) {
+          setAllocations(prev => {
+            // Merge: agregar nuevas allocations que no existan ya
+            const existingIds = new Set(prev.map(a => a.id));
+            const newAllocations = mappedAllocations.filter(a => !existingIds.has(a.id));
+            return [...prev, ...newAllocations];
+          });
+        } else {
+          setAllocations(mappedAllocations);
+        }
       }
       if (absRes.data) {
         setAbsences(absRes.data.map((ab: SupabaseAbsence) => ({
@@ -276,6 +289,84 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!skipLoading) {
         setIsLoading(false);
       }
+    }
+  }, []);
+
+  // Función para cargar datos de un mes específico (merge con datos existentes)
+  const loadDataForMonth = useCallback(async (month: Date) => {
+    const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
+    const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+    
+    // Cargar solo allocations, absences y team_events para este mes (merge)
+    try {
+      const startStr = format(monthStart, 'yyyy-MM-dd');
+      const endStr = format(monthEnd, 'yyyy-MM-dd');
+      
+      const [allocRes, absRes, evRes] = await Promise.all([
+        supabase.from('allocations')
+          .select('*')
+          .gte('week_start_date', startStr)
+          .lte('week_start_date', endStr),
+        supabase.from('absences')
+          .select('*')
+          .lte('start_date', endStr)
+          .gte('end_date', startStr),
+        supabase.from('team_events')
+          .select('*')
+          .gte('date', startStr)
+          .lte('date', endStr),
+      ]);
+
+      if (allocRes.data) {
+        const mappedAllocations = allocRes.data.map((a: SupabaseAllocation) => ({
+          ...a,
+          employeeId: a.employee_id,
+          projectId: a.project_id,
+          weekStartDate: a.week_start_date,
+          hoursAssigned: round2(a.hours_assigned),
+          hoursActual: a.hours_actual ? round2(a.hours_actual) : undefined,
+          hoursComputed: a.hours_computed ? round2(a.hours_computed) : undefined,
+          taskName: a.task_name,
+          dependencyId: a.dependency_id
+        }));
+        
+        setAllocations(prev => {
+          const existingIds = new Set(prev.map(a => a.id));
+          const newAllocations = mappedAllocations.filter(a => !existingIds.has(a.id));
+          return [...prev, ...newAllocations];
+        });
+      }
+
+      if (absRes.data) {
+        const mappedAbsences = absRes.data.map((a: SupabaseAbsence) => ({
+          ...a,
+          employeeId: a.employee_id,
+          startDate: a.start_date,
+          endDate: a.end_date,
+          hours: a.hours
+        }));
+        
+        setAbsences(prev => {
+          const existingIds = new Set(prev.map(a => a.id));
+          const newAbsences = mappedAbsences.filter(a => !existingIds.has(a.id));
+          return [...prev, ...newAbsences];
+        });
+      }
+
+      if (evRes.data) {
+        const mappedEvents = evRes.data.map((e: SupabaseTeamEvent) => ({
+          ...e,
+          affectedEmployeeIds: e.affected_employee_ids
+        }));
+        
+        setTeamEvents(prev => {
+          const existingIds = new Set(prev.map(e => e.id));
+          const newEvents = mappedEvents.filter(e => !existingIds.has(e.id));
+          return [...prev, ...newEvents];
+        });
+      }
+    } catch (error) {
+      console.error("Error cargando datos del mes:", error);
     }
   }, []);
 
@@ -793,7 +884,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addTeamEvent, updateTeamEvent, deleteTeamEvent,
     getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getEmployeeMonthlyLoad,
     getProjectHoursForMonth, getClientTotalHoursForMonth, getProjectById, getClientById,
-    professionalGoals, addProfessionalGoal, updateProfessionalGoal, deleteProfessionalGoal, getEmployeeGoals
+    professionalGoals, addProfessionalGoal, updateProfessionalGoal, deleteProfessionalGoal, getEmployeeGoals,
+    loadDataForMonth
   }), [currentUser, employees, clients, projects, allocations, absences, teamEvents, isLoading,
     addEmployee, updateEmployee, deleteEmployee, toggleEmployeeActive,
     addClient, updateClient, deleteClient,
@@ -803,7 +895,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addTeamEvent, updateTeamEvent, deleteTeamEvent,
     getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getEmployeeMonthlyLoad,
     getProjectHoursForMonth, getClientTotalHoursForMonth, getProjectById, getClientById,
-    professionalGoals, addProfessionalGoal, updateProfessionalGoal, deleteProfessionalGoal, getEmployeeGoals]);
+    professionalGoals, addProfessionalGoal, updateProfessionalGoal, deleteProfessionalGoal, getEmployeeGoals,
+    loadDataForMonth]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
