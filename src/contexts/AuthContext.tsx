@@ -59,15 +59,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
-          // Prevenir eventos duplicados (mismo evento, mismo usuario, dentro de 1 segundo)
-          // Reducido de 3s a 1s para ser más estricto y evitar loops
+          // Prevenir eventos duplicados (mismo evento, mismo usuario, dentro de 3 segundos)
+          // Aumentado a 3s para evitar loops causados por múltiples actualizaciones de token
           if (
             lastEventRef.current &&
             lastEventRef.current.event === event &&
             lastEventRef.current.userId === userId &&
-            now - lastEventRef.current.timestamp < 1000
+            now - lastEventRef.current.timestamp < 3000
           ) {
-            console.log('[AuthContext] Evento duplicado ignorado:', event, userId);
+            // Solo loguear si es un evento diferente o si pasó más tiempo
+            return;
+          }
+          
+          // También ignorar múltiples SIGNED_IN consecutivos del mismo usuario
+          if (
+            event === 'SIGNED_IN' &&
+            lastEventRef.current &&
+            lastEventRef.current.event === 'SIGNED_IN' &&
+            lastEventRef.current.userId === userId &&
+            now - lastEventRef.current.timestamp < 5000
+          ) {
             return;
           }
 

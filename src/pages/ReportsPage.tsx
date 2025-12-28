@@ -40,6 +40,7 @@ import { format, subMonths, addMonths, startOfMonth, endOfMonth, parseISO, isSam
 import { es } from 'date-fns/locale';
 import { supabase } from '@/lib/supabase';
 import { Deadline, GlobalAssignment } from '@/types';
+import { GlobalPlanningInconsistencies } from '@/components/employee/GlobalPlanningInconsistencies';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -2000,6 +2001,10 @@ export default function ReportsPage() {
                     </div>
                 )}
             </div>
+        </TabsContent>
+
+        <TabsContent value="coherence" className="space-y-4">
+          <GlobalPlanningInconsistencies viewDate={currentMonth} />
         </TabsContent>
       </Tabs>
     </div>
