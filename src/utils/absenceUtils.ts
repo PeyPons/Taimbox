@@ -55,11 +55,26 @@ export const getAbsenceHoursInRange = (
                     }
                     
                     // CORRECCIÓN DE SOLAPAMIENTO:
-                    // Si hay múltiples ausencias en el mismo día, tomamos la reducción MÁXIMA
-                    // (no sumamos, porque no puedes estar de vacaciones Y en el médico al mismo tiempo)
+                    // Lógica híbrida:
+                    // - Si hay una ausencia de día completo (reduction = scheduledHours), esa prevalece
+                    // - Si hay múltiples ausencias parciales, se suman (hasta el máximo del día)
                     const dayKey = format(day, 'yyyy-MM-dd');
                     const existingReduction = dayReductions.get(dayKey) || 0;
-                    dayReductions.set(dayKey, Math.max(existingReduction, reduction));
+                    
+                    // Si la reducción existente ya es día completo, no sumar más
+                    if (existingReduction >= scheduledHours) {
+                        // Ya hay día completo, no hacer nada
+                        return;
+                    }
+                    
+                    // Si la nueva reducción es día completo, reemplazar todo
+                    if (reduction >= scheduledHours) {
+                        dayReductions.set(dayKey, scheduledHours);
+                    } else {
+                        // Ambas son parciales: sumar (hasta el máximo del día)
+                        const newTotal = Math.min(existingReduction + reduction, scheduledHours);
+                        dayReductions.set(dayKey, newTotal);
+                    }
                 }
             }
         });
