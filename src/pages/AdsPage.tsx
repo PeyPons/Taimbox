@@ -381,11 +381,16 @@ export default function AdsPage() {
     const todayStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
     
     // #region agent log
+    // Obtener información de cuentas únicas antes del filtro
+    const uniqueAccountsBeforeFilter = Array.from(new Set(rawData.map(r => r.client_id + '|' + (r.client_name || 'Sin nombre'))));
     console.log('[AdsPage] Filtrado de datos:', {
       monthStart,
       todayStr,
+      currentDate: now.toISOString().split('T')[0],
       totalRows: rawData.length,
-      sampleDates: rawData.slice(0, 5).map(r => r.date)
+      uniqueAccounts: uniqueAccountsBeforeFilter.length,
+      accountList: uniqueAccountsBeforeFilter.slice(0, 10),
+      sampleDatesBeforeFilter: rawData.slice(0, 5).map(r => ({ date: r.date, client: r.client_name, cost: r.cost }))
     });
     // #endregion
 
@@ -416,11 +421,13 @@ export default function AdsPage() {
 
     let totalSpentThisMonth = 0;
     let rowsInMonth = 0;
+    const filteredRows: any[] = [];
     rawData.forEach(row => {
       // Filtrar por mes actual: fecha entre mesStart y todayStr (inclusive)
       if (row.date && row.date >= monthStart && row.date <= todayStr) {
         rowsInMonth++;
         totalSpentThisMonth += row.cost || 0;
+        filteredRows.push(row);
         let finalId = row.client_id;
         let finalName = row.client_name;
 
