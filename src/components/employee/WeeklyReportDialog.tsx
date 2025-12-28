@@ -610,6 +610,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                             // Calcular si esta semana específica excede capacidad (sumando todas las tareas de esta semana)
                             const weekDistributedHours = (distributionTasks[task.id] || []).filter(r => r.weekDate === distRow.weekDate).reduce((sum, r) => sum + (parseFloat(r.hours) || 0), 0);
                             const newWeekTotal = currentWeekHours + weekDistributedHours;
+                            const exceedsCapacity = newWeekTotal > weekCapacity;
                             
                             return (
                               <div key={distRow.id} className={cn(
