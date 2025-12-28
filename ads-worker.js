@@ -30,7 +30,11 @@ function getDateRange() {
   const day = String(currentMonth.getDate()).padStart(2, '0');
   const firstDay = `${year}-${month}-${day}`;
   const today = new Date().toISOString().split('T')[0];
-  return { firstDay, today };
+  const range = { firstDay, today };
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:33',message:'Date range calculated',data:{firstDay:range.firstDay,today:range.today},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H4'})}).catch(()=>{});
+  // #endregion
+  return range;
 }
 
 async function getAccessToken() {
@@ -98,10 +102,23 @@ async function getAccountData(customerId, accessToken, dateRange) {
 
   if (response.ok) {
     const data = await response.json();
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:100',message:'API response received',data:{customerId,isArray:Array.isArray(data),batchesCount:Array.isArray(data)?data.length:0,firstBatchStructure:data&&Array.isArray(data)&&data[0]?Object.keys(data[0]):null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H7'})}).catch(()=>{});
+    // #endregion
     if (data && Array.isArray(data)) {
+      let totalRawCostMicros = 0;
+      let sampleRow = null;
       data.forEach(batch => { 
         if (batch.results) { 
           batch.results.forEach(row => { 
+            // #region agent log
+            if (!sampleRow) {
+              sampleRow = {campaignId:row.campaign?.id,date:row.segments?.date,metricsKeys:row.metrics?Object.keys(row.metrics):null,costMicrosRaw:row.metrics?.costMicros,costMicrosRawAlt:row.metrics?.cost_micros};
+              fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:105',message:'Sample row from API',data:sampleRow,timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+            }
+            const rawCostMicros = row.metrics?.costMicros || row.metrics?.cost_micros || 0;
+            totalRawCostMicros += parseInt(rawCostMicros) || 0;
+            // #endregion
             const campaignId = String(row.campaign.id);
             const dailyDate = row.segments.date; // Usar fecha completa (YYYY-MM-DD)
             const key = `${campaignId}_${dailyDate}`; // Clave única: ID + DÍA
@@ -128,7 +145,16 @@ async function getAccountData(customerId, accessToken, dateRange) {
 
             // SUMAR MÉTRICAS (Agregación por día)
             const entry = aggregator.get(key);
-            entry.cost += parseInt(row.metrics.costMicros || '0') / 1000000;
+            const costMicrosRaw = row.metrics?.costMicros || row.metrics?.cost_micros || '0';
+            const costMicrosParsed = parseInt(costMicrosRaw);
+            const costBefore = entry.cost;
+            const costToAdd = costMicrosParsed / 1000000;
+            entry.cost += costToAdd;
+            // #region agent log
+            if (Math.random() < 0.1) { // Log 10% de las filas para no saturar
+              fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:131',message:'Cost conversion',data:{campaignId,date:dailyDate,costMicrosRaw,costMicrosParsed,costBefore,costToAdd,costAfter:entry.cost,hasCostMicros:!!row.metrics?.costMicros,hasCostMicrosAlt:!!row.metrics?.cost_micros},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{});
+            }
+            // #endregion
             entry.conversions_value += parseFloat(row.metrics.conversionsValue || 0);
             entry.conversions += parseFloat(row.metrics.conversions || 0);
             entry.clicks += parseInt(row.metrics.clicks || 0);
@@ -136,6 +162,10 @@ async function getAccountData(customerId, accessToken, dateRange) {
           }); 
         } 
       });
+      // #region agent log
+      const totalCostDollars = Array.from(aggregator.values()).reduce((sum, e) => sum + e.cost, 0);
+      fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:140',message:'Aggregation totals',data:{customerId,totalRawCostMicros,totalRawCostDollars:totalRawCostMicros/1000000,totalCostDollars,entriesCount:aggregator.size},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
+      // #endregion
     }
   } else {
       const errorText = await response.text();
@@ -172,6 +202,10 @@ async function processSyncJob(jobId) {
       
       try {
           const campaignData = await getAccountData(client.id, token, range);
+          // #region agent log
+          const totalCostBeforeDB = campaignData.reduce((sum, d) => sum + (d.cost || 0), 0);
+          fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:174',message:'Data before DB insert',data:{clientId:client.id,clientName:client.name,rowsCount:campaignData.length,totalCost:totalCostBeforeDB,sampleRow:campaignData[0]},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
+          // #endregion
           
           if (campaignData.length > 0) {
              const rowsToInsert = campaignData.map(d => ({ ...d, client_name: client.name }));
@@ -181,8 +215,17 @@ async function processSyncJob(jobId) {
                 .from('google_ads_campaigns')
                 .upsert(rowsToInsert, { onConflict: 'campaign_id, date' });
              
-             if (error) console.error(`❌ Error DB ${client.name}: ${error.message}`);
-             else totalRows += campaignData.length;
+             if (error) {
+               console.error(`❌ Error DB ${client.name}: ${error.message}`);
+               // #region agent log
+               fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:180',message:'DB error',data:{clientId:client.id,error:error.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
+               // #endregion
+             } else {
+               totalRows += campaignData.length;
+               // #region agent log
+               fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:185',message:'Data saved to DB',data:{clientId:client.id,rowsInserted:campaignData.length,totalCost:totalCostBeforeDB},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
+               // #endregion
+             }
           }
       } catch (err) {
           console.error(`Skip ${client.name}:`, err.message);
