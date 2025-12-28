@@ -21,6 +21,9 @@ import { getWeeksForMonth, getStorageKey } from '@/utils/dateUtils';
 import { format, addMonths, subMonths, isSameMonth, parseISO, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PlannerTour } from './PlannerTour';
+import { WeekNavigation } from './WeekNavigation';
+import { ProjectImpactSummary } from './ProjectImpactSummary';
+import { useAllocationSheet } from '@/hooks/useAllocationSheet';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -107,21 +110,18 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   // Filtro: solo proyectos donde tengo tareas esta semana
   const [showOnlyMyProjects, setShowOnlyMyProjects] = useState(true);
 
-  const employee = employees.find(e => e.id === employeeId);
-  const weeks = useMemo(() => getWeeksForMonth(viewDate), [viewDate]);
-
-  // Calcular índice de la semana actual
-  const currentWeekIndex = useMemo(() => {
-    const today = new Date();
-    const idx = weeks.findIndex(w => {
-      const weekEnd = addDays(w.weekStart, 6);
-      return today >= w.weekStart && today <= weekEnd;
-    });
-    return idx >= 0 ? idx : 0;
-  }, [weeks]);
+  // Usar hook personalizado para lógica de negocio
+  const {
+    employee,
+    weeks,
+    currentWeekIndex: hookCurrentWeekIndex,
+    activeProjects,
+    monthlyProjectSummary,
+    getProjectBudgetStatus,
+  } = useAllocationSheet(employeeId, viewDate);
 
   // Índice de semana activo (seleccionado por usuario o actual)
-  const activeWeekIndex = selectedWeekIndex !== null ? selectedWeekIndex : currentWeekIndex;
+  const activeWeekIndex = selectedWeekIndex !== null ? selectedWeekIndex : hookCurrentWeekIndex;
 
   // Semanas a mostrar según el modo
   const visibleWeeks = useMemo(() => {
@@ -141,121 +141,6 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
       setSelectedWeekIndex(activeWeekIndex + 1);
     }
   };
-
-  const monthName = format(viewDate, 'MMMM', { locale: es });
-  const monthLabel = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} - ${format(viewDate, 'yyyy')}`;
-
-  const activeProjects = useMemo(() =>
-    projects.filter(p => p.status === 'active').sort((a, b) => a.name.localeCompare(b.name)),
-  [projects]);
-
-  // Resumen mensual de proyectos del empleado
-  const monthlyProjectSummary = useMemo(() => {
-    // Obtener todas las asignaciones del empleado en el mes
-    const monthAllocations = allocations.filter(a =>
-      a.employeeId === employeeId &&
-      isSameMonth(parseISO(a.weekStartDate), viewDate)
-    );
-
-    // Agrupar por proyecto
-    const projectMap: Record<string, {
-      projectId: string;
-      name: string;
-      estimated: number;
-      completed: number;
-      computed: number;
-      totalTasks: number;
-      completedTasks: number;
-    }> = {};
-
-    monthAllocations.forEach(a => {
-      if (!projectMap[a.projectId]) {
-        const project = getProjectById(a.projectId);
-        projectMap[a.projectId] = {
-          projectId: a.projectId,
-          name: project?.name || 'Desconocido',
-          estimated: 0,
-          completed: 0,
-          computed: 0,
-          totalTasks: 0,
-          completedTasks: 0
-        };
-      }
-      projectMap[a.projectId].estimated += a.hoursAssigned || 0;
-      projectMap[a.projectId].totalTasks += 1;
-      if (a.status === 'completed') {
-        projectMap[a.projectId].completed += a.hoursActual || 0;
-        projectMap[a.projectId].computed += a.hoursComputed || 0;
-        projectMap[a.projectId].completedTasks += 1;
-      }
-    });
-
-    return Object.values(projectMap)
-      .map(p => ({
-        ...p,
-        estimated: round2(p.estimated),
-        completed: round2(p.completed),
-        computed: round2(p.computed),
-        progress: p.estimated > 0 ? Math.round((p.computed / p.estimated) * 100) : 0
-      }))
-      .sort((a, b) => b.estimated - a.estimated);
-  }, [allocations, employeeId, viewDate, getProjectById]);
-
-  // Calcular estado del presupuesto con desglose Plan + Comp
-  const getProjectBudgetStatus = useMemo(() => {
-    return (projectId: string): ProjectBudgetStatus => {
-      const project = projects.find(p => p.id === projectId);
-      if (!project) {
-        return { totalComputed: 0, totalPlanned: 0, budgetMax: 0, budgetMin: 0, percentage: 0, status: 'healthy', breakdown: [] };
-      }
-
-      const monthAllocations = allocations.filter(a => 
-        a.projectId === projectId && 
-        isSameMonth(parseISO(a.weekStartDate), viewDate)
-      );
-
-      const breakdownMap: Record<string, { computed: number; planned: number }> = {};
-      let totalComputed = 0;
-      let totalPlanned = 0;
-
-      monthAllocations.forEach(a => {
-        const computed = a.status === 'completed' ? (a.hoursComputed || 0) : 0;
-        const planned = a.status !== 'completed' ? (a.hoursAssigned || 0) : 0;
-        totalComputed += computed;
-        totalPlanned += planned;
-        
-        if (!breakdownMap[a.employeeId]) {
-          breakdownMap[a.employeeId] = { computed: 0, planned: 0 };
-        }
-        breakdownMap[a.employeeId].computed += computed;
-        breakdownMap[a.employeeId].planned += planned;
-      });
-
-      const breakdown = Object.entries(breakdownMap).map(([empId, data]) => {
-        const emp = employees.find(e => e.id === empId);
-        return { employeeId: empId, employeeName: emp?.name || 'Desconocido', ...data };
-      }).sort((a, b) => (b.computed + b.planned) - (a.computed + a.planned));
-
-      const budgetMax = project.budgetHours || 0;
-      const budgetMin = project.minimumHours || 0;
-      const percentage = budgetMax > 0 ? (totalComputed / budgetMax) * 100 : 0;
-      const isExact100 = budgetMax > 0 && Math.abs(totalComputed - budgetMax) < 0.1; // 100% exacto (con tolerancia de 0.1h)
-      const isAtMinimum = budgetMin > 0 && totalComputed >= budgetMin && (budgetMax === 0 || totalComputed <= budgetMax);
-
-      let status: 'healthy' | 'warning' | 'overload' | 'under' = 'healthy';
-      if (totalComputed > budgetMax) {
-        status = 'overload';
-      } else if (isExact100 || isAtMinimum) {
-        status = 'healthy'; // Verde cuando está al 100% exacto o al mínimo
-      } else if (percentage >= 80) {
-        status = 'warning';
-      } else if (budgetMin > 0 && totalComputed < budgetMin && totalPlanned === 0) {
-        status = 'under';
-      }
-
-      return { totalComputed, totalPlanned, budgetMax, budgetMin, percentage, status, breakdown };
-    };
-  }, [projects, allocations, employees, viewDate]);
 
   const getAvailableDependencies = (projectId: string, currentTaskId?: string) => {
       if (!projectId) return [];
@@ -1854,167 +1739,4 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   }
 }
 
-// Componente para mostrar el resumen de impacto en proyectos y capacidad
-function ProjectImpactSummary({ 
-  newTasks, 
-  projects, 
-  allocations, 
-  viewDate,
-  getProjectBudgetStatus,
-  getEmployeeLoadForWeek,
-  employeeId,
-  weeks
-}: { 
-  newTasks: NewTaskRow[]; 
-  projects: Project[]; 
-  allocations: Allocation[];
-  viewDate: Date;
-  getProjectBudgetStatus: (projectId: string) => ProjectBudgetStatus;
-  getEmployeeLoadForWeek: (employeeId: string, weekStart: string, effectiveStart?: Date, effectiveEnd?: Date) => { hours: number; capacity: number; percentage: number };
-  employeeId: string;
-  weeks: { weekStart: Date; effectiveStart?: Date; effectiveEnd?: Date }[];
-}) {
-  // Agrupar horas por proyecto
-  const projectImpact = useMemo(() => {
-    const impact: Record<string, { name: string; adding: number; current: ProjectBudgetStatus }> = {};
-    
-    newTasks.forEach(task => {
-      if (task.projectId && task.hours) {
-        const hours = parseFloat(task.hours) || 0;
-        if (hours > 0) {
-          if (!impact[task.projectId]) {
-            const project = projects.find(p => p.id === task.projectId);
-            impact[task.projectId] = {
-              name: project?.name || 'Desconocido',
-              adding: 0,
-              current: getProjectBudgetStatus(task.projectId)
-            };
-          }
-          impact[task.projectId].adding += hours;
-        }
-      }
-    });
-    
-    return Object.entries(impact).map(([id, data]) => ({
-      id,
-      ...data,
-      newTotal: data.current.totalComputed + data.current.totalPlanned + data.adding,
-      exceeds: data.current.budgetMax > 0 && (data.current.totalComputed + data.current.totalPlanned + data.adding) > data.current.budgetMax,
-      excessAmount: data.current.budgetMax > 0 
-        ? round2((data.current.totalComputed + data.current.totalPlanned + data.adding) - data.current.budgetMax)
-        : 0
-    }));
-  }, [newTasks, projects, getProjectBudgetStatus]);
-
-  // Agrupar horas por semana para verificar capacidad
-  const weekImpact = useMemo(() => {
-    const impact: Record<string, { weekIndex: number; adding: number; weekData: { weekStart: Date; effectiveStart?: Date; effectiveEnd?: Date } }> = {};
-    
-    newTasks.forEach(task => {
-      if (task.weekDate && task.hours) {
-        const hours = parseFloat(task.hours) || 0;
-        if (hours > 0) {
-          if (!impact[task.weekDate]) {
-            const weekIndex = weeks.findIndex(w => {
-              const storageKey = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-W${String(weeks.indexOf(w) + 1).padStart(2, '0')}`;
-              return storageKey === task.weekDate || w.weekStart.toISOString().split('T')[0] === task.weekDate;
-            });
-            const weekData = weeks[weekIndex] || weeks[0];
-            impact[task.weekDate] = {
-              weekIndex: weekIndex >= 0 ? weekIndex : 0,
-              adding: 0,
-              weekData
-            };
-          }
-          impact[task.weekDate].adding += hours;
-        }
-      }
-    });
-    
-    return Object.entries(impact).map(([weekDate, data]) => {
-      const currentLoad = getEmployeeLoadForWeek(
-        employeeId, 
-        weekDate, 
-        data.weekData.effectiveStart, 
-        data.weekData.effectiveEnd
-      );
-      const newTotal = round2(currentLoad.hours + data.adding);
-      const exceeds = newTotal > currentLoad.capacity;
-      
-      return {
-        weekDate,
-        weekIndex: data.weekIndex,
-        adding: data.adding,
-        currentHours: currentLoad.hours,
-        capacity: currentLoad.capacity,
-        newTotal,
-        exceeds,
-        excessAmount: exceeds ? round2(newTotal - currentLoad.capacity) : 0
-      };
-    }).sort((a, b) => a.weekIndex - b.weekIndex);
-  }, [newTasks, weeks, viewDate, getEmployeeLoadForWeek, employeeId]);
-
-  const hasProjectExcesses = projectImpact.some(p => p.exceeds);
-  const hasWeekExcesses = weekImpact.some(w => w.exceeds);
-  const hasAnyExcess = hasProjectExcesses || hasWeekExcesses;
-
-  if (projectImpact.length === 0 && weekImpact.length === 0) return null;
-
-  return (
-    <div className={cn(
-      "flex items-center gap-3 text-xs px-3 py-2 rounded-lg w-full flex-wrap",
-      hasAnyExcess ? "bg-amber-50 border border-amber-200" : "bg-emerald-50 border border-emerald-200"
-    )}>
-      {/* Impacto en proyectos */}
-      {projectImpact.map((p, idx) => (
-        <div key={p.id} className="flex items-center gap-1.5">
-          {idx > 0 && <span className="text-slate-300">│</span>}
-          {p.exceeds ? (
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-          ) : (
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-          )}
-          <span className={cn("font-medium truncate max-w-[120px]", p.exceeds ? "text-amber-700" : "text-emerald-700")}>
-            {formatProjectName(p.name)}
-          </span>
-          <span className={cn("tabular-nums", p.exceeds ? "text-amber-600" : "text-emerald-600")}>
-            +{p.adding}h
-          </span>
-          {p.exceeds && p.current.budgetMax > 0 && (
-            <span className="text-amber-600 font-semibold text-[10px]">
-              ({p.newTotal}/{p.current.budgetMax}h)
-            </span>
-          )}
-        </div>
-      ))}
-      
-      {/* Separador si hay ambos */}
-      {projectImpact.length > 0 && weekImpact.length > 0 && (
-        <span className="text-slate-300">║</span>
-      )}
-      
-      {/* Impacto en capacidad por semana */}
-      {weekImpact.map((w, idx) => (
-        <div key={w.weekDate} className="flex items-center gap-1.5">
-          {idx > 0 && <span className="text-slate-300">│</span>}
-          {w.exceeds ? (
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-          ) : (
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-          )}
-          <span className={cn("font-medium", w.exceeds ? "text-amber-700" : "text-emerald-700")}>
-            S{w.weekIndex + 1}
-          </span>
-          <span className={cn("tabular-nums text-[10px]", w.exceeds ? "text-amber-600" : "text-emerald-600")}>
-            {w.newTotal}h/{w.capacity}h
-          </span>
-          {w.exceeds && (
-            <span className="text-amber-600 font-semibold text-[10px]">
-              (+{w.excessAmount}h)
-            </span>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
+// Componente ProjectImpactSummary movido a archivo separado: ProjectImpactSummary.tsx
