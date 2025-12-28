@@ -370,42 +370,64 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
   const isLastStep = currentStep === tourSteps.length - 1;
   const isFirstStep = currentStep === 0;
 
-  // Renderizamos directamente sin portal para que funcione dentro del Sheet
-  // El Sheet tiene z-50, así que usamos z-[9999] que es mayor
+  // Renderizamos directamente sin portal
   return (
-    <div className="fixed inset-0" style={{ zIndex: 999999 }}>
-      {/* Overlay oscuro con recorte para el elemento destacado */}
-      <div 
-        className="absolute inset-0 bg-black/60 transition-opacity duration-300"
-        style={{
-          clipPath: highlightPos 
-            ? `polygon(
-                0% 0%, 
-                0% 100%, 
-                ${highlightPos.left}px 100%, 
-                ${highlightPos.left}px ${highlightPos.top}px, 
-                ${highlightPos.left + highlightPos.width}px ${highlightPos.top}px, 
-                ${highlightPos.left + highlightPos.width}px ${highlightPos.top + highlightPos.height}px, 
-                ${highlightPos.left}px ${highlightPos.top + highlightPos.height}px, 
-                ${highlightPos.left}px 100%, 
-                100% 100%, 
-                100% 0%
-              )`
-            : undefined
-        }}
-        onClick={handleSkip}
-      />
-
-      {/* Borde brillante alrededor del elemento destacado */}
-      {highlightPos && (
+    <div className="fixed inset-0" style={{ zIndex: 999999, pointerEvents: 'none' }}>
+      {/* Overlay oscuro - 4 partes para permitir interacción con elemento destacado */}
+      {highlightPos ? (
+        <>
+          {/* Arriba */}
+          <div 
+            className="absolute left-0 right-0 top-0 bg-black/60"
+            style={{ height: highlightPos.top, pointerEvents: 'auto' }}
+            onClick={handleSkip}
+          />
+          {/* Izquierda */}
+          <div 
+            className="absolute left-0 bg-black/60"
+            style={{ 
+              top: highlightPos.top, 
+              width: highlightPos.left, 
+              height: highlightPos.height,
+              pointerEvents: 'auto'
+            }}
+            onClick={handleSkip}
+          />
+          {/* Derecha */}
+          <div 
+            className="absolute right-0 bg-black/60"
+            style={{ 
+              top: highlightPos.top, 
+              left: highlightPos.left + highlightPos.width, 
+              height: highlightPos.height,
+              pointerEvents: 'auto'
+            }}
+            onClick={handleSkip}
+          />
+          {/* Abajo */}
+          <div 
+            className="absolute left-0 right-0 bottom-0 bg-black/60"
+            style={{ top: highlightPos.top + highlightPos.height, pointerEvents: 'auto' }}
+            onClick={handleSkip}
+          />
+          {/* Borde brillante */}
+          <div 
+            className="absolute rounded-lg ring-4 ring-indigo-400 ring-opacity-80 transition-all duration-300"
+            style={{
+              top: highlightPos.top,
+              left: highlightPos.left,
+              width: highlightPos.width,
+              height: highlightPos.height,
+              pointerEvents: 'none'
+            }}
+          />
+        </>
+      ) : (
+        /* Sin elemento destacado - overlay completo */
         <div 
-          className="absolute pointer-events-none rounded-lg ring-4 ring-indigo-400 ring-opacity-80 transition-all duration-300"
-          style={{
-            top: highlightPos.top,
-            left: highlightPos.left,
-            width: highlightPos.width,
-            height: highlightPos.height
-          }}
+          className="absolute inset-0 bg-black/60"
+          style={{ pointerEvents: 'auto' }}
+          onClick={handleSkip}
         />
       )}
 
@@ -418,6 +440,8 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
         )}
         style={{
           width: 360,
+          zIndex: 1000000,
+          pointerEvents: 'auto',
           ...(step.position !== 'center' && tooltipPos ? { top: tooltipPos.top, left: tooltipPos.left } : {})
         }}
         onClick={(e) => e.stopPropagation()}
