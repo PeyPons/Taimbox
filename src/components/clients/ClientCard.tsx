@@ -1,0 +1,220 @@
+import { useState, memo } from 'react';
+import { Client } from '@/types';
+import { useApp } from '@/contexts/AppContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { AlertTriangle, TrendingUp, Pencil, Trash2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
+
+interface ClientCardProps {
+  client: Client;
+}
+
+const colorOptions = [
+  '#0d9488', '#dc2626', '#7c3aed', '#ea580c', '#0284c7', '#16a34a',
+  '#db2777', '#9333ea', '#f59e0b', '#06b6d4', '#84cc16', '#6366f1'
+];
+
+export const ClientCard = memo(function ClientCard({ client }: ClientCardProps) {
+  const { getClientTotalHoursForMonth, projects, getProjectHoursForMonth, updateClient, deleteClient } = useApp();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedClient, setEditedClient] = useState(client);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  const currentMonth = new Date();
+  const { used, budget, percentage } = getClientTotalHoursForMonth(client.id, currentMonth);
+  
+  const clientProjects = projects.filter(p => p.clientId === client.id && p.status === 'active');
+  
+  const isOverBudget = percentage > 100;
+  const isNearLimit = percentage > 85 && percentage <= 100;
+
+  const handleSave = () => {
+    if (!editedClient.name.trim()) {
+      toast({ title: "Error", description: "El nombre es obligatorio", variant: "destructive" });
+      return;
+    }
+    updateClient(editedClient);
+    setIsEditing(false);
+    toast({ title: "Cliente actualizado", description: `${editedClient.name} ha sido actualizado` });
+  };
+
+  const handleDelete = () => {
+    deleteClient(client.id);
+    setIsDeleting(false);
+    toast({ title: "Cliente eliminado", description: `${client.name} y sus proyectos han sido eliminados` });
+  };
+
+  return (
+    <Card className="overflow-hidden transition-all hover:shadow-lg animate-fade-in">
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div 
+              className="h-10 w-10 rounded-lg flex items-center justify-center text-white font-bold text-lg"
+              style={{ backgroundColor: client.color }}
+            >
+              {client.name.charAt(0)}
+            </div>
+            <div>
+              <CardTitle className="text-lg">{client.name}</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {clientProjects.length} proyecto{clientProjects.length !== 1 ? 's' : ''} activo{clientProjects.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            {isOverBudget && (
+              <Badge variant="destructive" className="gap-1">
+                <AlertTriangle className="h-3 w-3" />
+                Excedido
+              </Badge>
+            )}
+            {isNearLimit && (
+              <Badge variant="secondary" className="gap-1 bg-warning/10 text-warning border-warning/30">
+                <TrendingUp className="h-3 w-3" />
+                Ajustado
+              </Badge>
+            )}
+            
+            {/* Edit Dialog */}
+            <Dialog open={isEditing} onOpenChange={setIsEditing}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent aria-describedby="edit-client-card-description">
+                <DialogHeader>
+                  <DialogTitle>Editar cliente</DialogTitle>
+                  <DialogDescription id="edit-client-card-description">
+                    Modifica la información del cliente.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>Nombre</Label>
+                    <Input
+                      value={editedClient.name}
+                      onChange={(e) => setEditedClient({ ...editedClient, name: e.target.value })}
+                      placeholder="Nombre del cliente"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Color</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {colorOptions.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => setEditedClient({ ...editedClient, color })}
+                          className={cn(
+                            "h-8 w-8 rounded-lg transition-all",
+                            editedClient.color === color && "ring-2 ring-offset-2 ring-primary"
+                          )}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsEditing(false)}>Cancelar</Button>
+                  <Button onClick={handleSave}>Guardar</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Delete Dialog */}
+            <Dialog open={isDeleting} onOpenChange={setIsDeleting}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent aria-describedby="delete-client-card-description">
+                <DialogHeader>
+                  <DialogTitle>¿Eliminar cliente?</DialogTitle>
+                  <DialogDescription id="delete-client-card-description">
+                    Esta acción eliminará al cliente y todos sus proyectos asociados. Esta acción no se puede deshacer.
+                  </DialogDescription>
+                </DialogHeader>
+                <p className="text-muted-foreground">
+                  Esta acción eliminará a <strong>{client.name}</strong> y todos sus proyectos asociados.
+                </p>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsDeleting(false)}>Cancelar</Button>
+                  <Button variant="destructive" onClick={handleDelete}>Eliminar</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Budget Progress */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Total horas</span>
+            <span className={cn(
+              "font-bold",
+              isOverBudget && "text-destructive",
+              isNearLimit && "text-warning",
+              !isOverBudget && !isNearLimit && "text-foreground"
+            )}>
+              {used}h / {budget}h
+            </span>
+          </div>
+          <Progress 
+            value={Math.min(percentage, 100)} 
+            className={cn(
+              "h-2",
+              isOverBudget && "[&>div]:bg-destructive",
+              isNearLimit && "[&>div]:bg-warning"
+            )}
+          />
+          <p className="text-xs text-muted-foreground text-right">
+            {percentage.toFixed(0)}% utilizado
+          </p>
+        </div>
+
+        {/* Projects List with Hours */}
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase">Proyectos</p>
+          {clientProjects.map((project) => {
+            const projectHours = getProjectHoursForMonth(project.id, currentMonth);
+            const projectPercentage = projectHours.budget > 0 ? (projectHours.used / projectHours.budget) * 100 : 0;
+            
+            return (
+              <div 
+                key={project.id}
+                className="flex items-center justify-between gap-2 text-sm py-1.5 px-2 rounded-md bg-muted/30"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <div 
+                    className="h-2 w-2 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: client.color }}
+                  />
+                  <span className="truncate">{project.name}</span>
+                </div>
+                <span className={cn(
+                  "text-xs font-medium flex-shrink-0",
+                  projectPercentage > 100 && "text-destructive",
+                  projectPercentage > 85 && projectPercentage <= 100 && "text-warning"
+                )}>
+                  {projectHours.used}h / {projectHours.budget}h
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+});

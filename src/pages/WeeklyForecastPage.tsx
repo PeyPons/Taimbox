@@ -1,0 +1,1609 @@
+import { useState, useMemo, useEffect } from 'react';
+import { useApp } from '@/contexts/AppContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Switch } from '@/components/ui/switch';
+import { format, startOfMonth, endOfMonth, isSameMonth, parseISO, addDays, startOfWeek, subMonths, addMonths } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { AlertCircle, TrendingUp, TrendingDown, CheckCircle2, Users, Plus, ArrowRight, ChevronLeft, ChevronRight, CalendarDays, Check, ChevronDown, ArrowUpDown, Search } from 'lucide-react';
+import { cn, formatProjectName } from '@/lib/utils';
+import { toast } from 'sonner';
+import { getStorageKey, getWeeksForMonth, getMonthlyCapacity } from '@/utils/dateUtils';
+import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
+import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
+
+const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
+
+export default function WeeklyForecastPage() {
+  const { 
+    projects, allocations, employees, clients, weeklyFeedback, 
+    addAllocation, updateAllocation, currentUser, absences, teamEvents, getEmployeeLoadForWeek
+  } = useApp();
+  
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const saved = localStorage.getItem('forecast_date');
+    return saved ? new Date(saved) : new Date();
+  });
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [redistributeSelectedTasks, setRedistributeSelectedTasks] = useState<Set<string>>(new Set());
+  const [redistributeToEmployee, setRedistributeToEmployee] = useState('');
+  const [redistributeWeek, setRedistributeWeek] = useState('');
+  const [filterFeedbackEmployee, setFilterFeedbackEmployee] = useState<string>('all');
+  const [filterFeedbackProject, setFilterFeedbackProject] = useState<string>('all');
+  const [filterTransferStatus, setFilterTransferStatus] = useState<'all' | 'pending' | 'kept' | 'distributed'>('all');
+  const [filterProjectStatus, setFilterProjectStatus] = useState<string>('all'); // all, red, yellow, green
+  const [filterClient, setFilterClient] = useState<string>('all');
+  const [filterProjectType, setFilterProjectType] = useState<string>('all'); // all, SEO, PPC
+  const [sortBy, setSortBy] = useState<'name' | 'status' | 'difference' | 'contracted'>('status');
+  const [onlySEO, setOnlySEO] = useState(false);
+  const [onlyPPC, setOnlyPPC] = useState(false);
+  
+  useEffect(() => {
+    localStorage.setItem('forecast_date', currentMonth.toISOString());
+  }, [currentMonth]);
+  
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const weeks = getWeeksForMonth(currentMonth);
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  
+  const handlePrevMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
+  const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
+  const handleToday = () => setCurrentMonth(new Date());
+  
+      // Sección A: Semáforo de Proyectos (Month-End Forecast) con filtros
+  const projectForecast = useMemo(() => {
+    if (!projects || !Array.isArray(projects)) return [];
+    let filteredProjects = projects.filter(p => p.status === 'active' && !p.isHidden);
+    
+    // Filtro por cliente
+    if (filterClient !== 'all') {
+      filteredProjects = filteredProjects.filter(p => p.clientId === filterClient);
+    }
+    
+    // Filtro por tipo de proyecto (SEO/PPC) - ahora con switches
+    if (onlySEO) {
+      filteredProjects = filteredProjects.filter(p => p.projectType !== 'PPC');
+    }
+    if (onlyPPC) {
+      filteredProjects = filteredProjects.filter(p => p.projectType === 'PPC');
+    }
+    
+    const today = new Date();
+    
+    const forecastData = filteredProjects.map(project => {
+      // Total Contratado (Budget/Fee mensual)
+      const contracted = project.budgetHours || 0;
+      
+      // Realizado: Suma de hours_actual de allocations pasadas + hours_assigned de allocations futuras en este mes
+      const monthAllocations = (allocations || []).filter(a => {
+        try {
+          return a.projectId === project.id &&
+            isSameMonth(parseISO(a.weekStartDate), currentMonth);
+        } catch {
+          return false;
+        }
+      });
+      
+      // Separar por completadas y planificadas
+      const completed = monthAllocations.filter(a => a.status === 'completed');
+      const planned = monthAllocations.filter(a => a.status !== 'completed');
+      
+      // Para tareas completadas: usar hoursActual si existe, sino hoursAssigned
+      const completedHours = round2(
+        completed.reduce((sum, a) => sum + ((a.hoursActual || 0) > 0 ? (a.hoursActual || 0) : a.hoursAssigned), 0)
+      );
+      
+      // Para tareas planificadas: usar hoursAssigned (son futuras)
+      const plannedHours = round2(
+        planned.reduce((sum, a) => sum + a.hoursAssigned, 0)
+      );
+      
+      const realized = round2(completedHours + plannedHours);
+      const difference = round2(contracted - realized);
+      
+      let status: 'red' | 'yellow' | 'green';
+      // Si no hay horas planificadas pero hay presupuesto, es "yellow" (pendiente)
+      if (contracted > 0 && realized === 0 && plannedHours === 0) {
+        status = 'yellow'; // Faltan horas por asignar
+      } else if (difference < -5) {
+        status = 'red'; // Nos pasamos por más de 5 horas
+      } else if (difference > 5) {
+        status = 'yellow'; // Faltan más de 5 horas
+      } else {
+        status = 'green'; // On track (±5 horas de margen)
+      }
+      
+      return {
+        projectId: project.id,
+        projectName: project.name,
+        clientName: clients.find(c => c.id === project.clientId)?.name || 'Sin cliente',
+        clientColor: clients.find(c => c.id === project.clientId)?.color || '#6b7280',
+        contracted,
+        realized,
+        completedHours,
+        plannedHours,
+        difference,
+        status
+      };
+    }).filter(proj => {
+      // Filtro por estado del semáforo
+      if (filterProjectStatus === 'all') return true;
+      return proj.status === filterProjectStatus;
+    }).sort((a, b) => {
+      // Aplicar ordenamiento según sortBy
+      if (sortBy === 'name') {
+        return a.projectName.localeCompare(b.projectName);
+      } else if (sortBy === 'status') {
+        // Ordenar: rojos primero, luego amarillos, luego verdes
+        const statusOrder = { red: 0, yellow: 1, green: 2 };
+        return statusOrder[a.status] - statusOrder[b.status] || Math.abs(b.difference) - Math.abs(a.difference);
+      } else if (sortBy === 'difference') {
+        return Math.abs(b.difference) - Math.abs(a.difference);
+      } else if (sortBy === 'contracted') {
+        return b.contracted - a.contracted;
+      }
+      return 0;
+    });
+    
+    return Array.isArray(forecastData) ? forecastData : [];
+  }, [projects, allocations, clients, currentMonth, filterClient, filterProjectStatus, onlySEO, onlyPPC]);
+  
+  // Sección B: Transferencias de Horas (rediseñado) - muestra quién le pasó a quién
+  const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const currentWeekStr = format(currentWeekStart, 'yyyy-MM-dd');
+  
+  // Obtener todas las transferencias de esta semana
+  const transfers = useMemo(() => {
+    if (!weeklyFeedback || !Array.isArray(weeklyFeedback) || !allocations || !Array.isArray(allocations)) return [];
+    // Buscar feedback que indique transferencias
+    const transferFeedbacks = (weeklyFeedback || []).filter(fb => {
+      if (fb.weekStartDate !== currentWeekStr) return false;
+      const comment = fb.comments || '';
+      return comment.includes('transferida a') || comment.includes('Tarea transferida a');
+    });
+    
+    // Buscar tareas transferidas usando el campo de BD (más robusto que solo formato de texto)
+    const transferredTasks = (allocations || []).filter(a => {
+      // Usar el campo de BD si está disponible, sino fallback al formato de texto
+      const isTransferred = a.transferredFromAllocationId !== undefined && a.transferredFromAllocationId !== null;
+      if (!isTransferred && !a.taskName?.includes('(transferida de')) return false;
+      try {
+        return isSameMonth(parseISO(a.weekStartDate), currentMonth);
+      } catch {
+        return false;
+      }
+    });
+    
+    // Combinar información de feedback y tareas
+    const transferMap = new Map<string, {
+      fromEmployeeId: string;
+      fromEmployeeName: string;
+      fromEmployeeAvatar?: string;
+      toEmployeeId: string;
+      toEmployeeName: string;
+      toEmployeeAvatar?: string;
+      projectId: string;
+      projectName: string;
+      hours: number;
+      taskName: string;
+      status: 'pending' | 'kept' | 'distributed';
+      feedbackId?: string;
+      allocationId?: string;
+      createdAt: string;
+      comments?: string;
+      distributedTasks?: Array<{ name: string; hours: number }>;
+      notes?: string;
+    }>();
+    
+    // Procesar feedback de transferencias
+    transferFeedbacks.forEach(fb => {
+      const fromEmployee = employees.find(e => e.id === fb.employeeId);
+      const match = fb.comments?.match(/transferida a (.+?) \(/);
+      const toEmployeeName = match ? match[1] : null;
+      const toEmployee = toEmployeeName ? employees.find(e => e.name === toEmployeeName) : null;
+      const hoursMatch = fb.comments?.match(/\((\d+(?:\.\d+)?)h restantes\)/);
+      const hours = hoursMatch ? parseFloat(hoursMatch[1]) : 0;
+      
+      if (fromEmployee && toEmployee && fb.allocationId) {
+        const key = `${fb.allocationId}-${toEmployee.id}`;
+        const transferredTask = transferredTasks.find(t => t.id === fb.allocationId || t.taskName?.includes(`(transferida de ${fromEmployee.name})`));
+        
+        // Verificar si el empleado destino ya procesó la tarea
+        // IMPORTANTE: Cuando se distribuye una tarea transferida, el feedback de distribución
+        // tiene el allocationId de la tarea TRANSFERIDA, no la original
+        let status: 'pending' | 'kept' | 'distributed' = 'pending';
+        
+        // Buscar feedback de procesamiento de dos formas:
+        // 1. Feedback con allocationId de la tarea original (fb.allocationId) - para "mantener"
+        // 2. Feedback con allocationId de la tarea transferida (transferredTask.id) - para "distribuir"
+        const taskFeedbackOriginal = weeklyFeedback.find(f => f.allocationId === fb.allocationId);
+        const taskFeedbackTransferred = transferredTask ? weeklyFeedback.find(f => f.allocationId === transferredTask.id) : null;
+        const taskFeedback = taskFeedbackTransferred || taskFeedbackOriginal;
+        
+        if (taskFeedback) {
+          if (taskFeedback.comments?.includes('Tarea mantenida tal cual')) {
+            status = 'kept';
+          } else if (taskFeedback.comments?.includes('Distribuidas en')) {
+            status = 'distributed';
+          }
+        }
+        
+        // Obtener nombre de tarea: prioridad 1) tarea actual, 2) comentario del feedback, 3) por defecto
+        let taskName = 'Tarea transferida';
+        if (transferredTask) {
+          // Usar el nombre actual de la tarea (puede haber cambiado)
+          taskName = transferredTask.taskName?.replace(/\(transferida de .+\)/, '').trim() || 'Tarea transferida';
+        } else if (taskFeedback?.comments) {
+          // Si la tarea fue eliminada, extraer el nombre del comentario del feedback
+          const nameMatch = taskFeedback.comments.match(/Nombre original: (.+?)(?:\s*\||$)/);
+          if (nameMatch) {
+            taskName = nameMatch[1].trim();
+          } else {
+            // Fallback: buscar en el comentario de transferencia
+            const transferNameMatch = fb.comments?.match(/Nombre: (.+?)(?:\s*\||$)/);
+            if (transferNameMatch) {
+              taskName = transferNameMatch[1].trim();
+            }
+          }
+        } else if (fb.comments) {
+          // Último fallback: buscar en comentario de transferencia
+          const transferNameMatch = fb.comments.match(/Nombre: (.+?)(?:\s*\||$)/);
+          if (transferNameMatch) {
+            taskName = transferNameMatch[1].trim();
+          }
+        }
+        
+        // Extraer notas del feedback si las hay
+        let notes: string | undefined;
+        if (taskFeedback?.comments) {
+          // Buscar notas después de "|" o en comentarios de distribución
+          const notesMatch = taskFeedback.comments.match(/\| Motivo: (.+)$/);
+          if (notesMatch) {
+            notes = notesMatch[1].trim();
+          }
+        }
+        
+        transferMap.set(key, {
+          fromEmployeeId: fromEmployee.id,
+          fromEmployeeName: fromEmployee.name,
+          fromEmployeeAvatar: fromEmployee.avatarUrl,
+          toEmployeeId: toEmployee.id,
+          toEmployeeName: toEmployee.name,
+          toEmployeeAvatar: toEmployee.avatarUrl,
+          projectId: fb.projectId || '',
+          projectName: projects.find(p => p.id === fb.projectId)?.name || 'Sin proyecto',
+          hours: hours || (transferredTask?.hoursAssigned || 0),
+          taskName,
+          status,
+          feedbackId: fb.id,
+          allocationId: fb.allocationId, // Usar el ID original, no el de la tarea transferida
+          createdAt: taskFeedback?.createdAt || fb.createdAt, // Usar fecha del feedback de procesamiento si existe
+          comments: fb.comments,
+          notes
+        });
+      }
+    });
+    
+    // Añadir tareas transferidas que no tienen feedback explícito
+    transferredTasks.forEach(task => {
+      const match = task.taskName?.match(/\(transferida de (.+)\)/);
+      const fromEmployeeName = match ? match[1] : null;
+      const fromEmployee = fromEmployeeName ? employees.find(e => e.name === fromEmployeeName) : null;
+      
+      if (fromEmployee && task.employeeId) {
+        const toEmployee = employees.find(e => e.id === task.employeeId);
+        if (toEmployee) {
+          const key = `${task.id}-${toEmployee.id}`;
+          if (!transferMap.has(key)) {
+            const taskFeedback = weeklyFeedback.find(f => f.allocationId === task.id);
+            let status: 'pending' | 'kept' | 'distributed' = 'pending';
+            if (taskFeedback) {
+              if (taskFeedback.comments?.includes('Tarea mantenida tal cual')) {
+                status = 'kept';
+              } else if (taskFeedback.comments?.includes('Distribuidas en')) {
+                status = 'distributed';
+              }
+            }
+            
+            // Obtener nombre de tarea: prioridad 1) tarea actual, 2) comentario del feedback
+            let taskName = task.taskName?.replace(/\(transferida de .+\)/, '').trim() || 'Tarea transferida';
+            if (taskFeedback?.comments && status === 'distributed') {
+              // Si fue distribuida, buscar nombre original en el comentario
+              const nameMatch = taskFeedback.comments.match(/Nombre original: (.+?)(?:\s*\||$)/);
+              if (nameMatch) {
+                taskName = nameMatch[1].trim();
+              }
+            }
+            
+            transferMap.set(key, {
+              fromEmployeeId: fromEmployee.id,
+              fromEmployeeName: fromEmployee.name,
+              fromEmployeeAvatar: fromEmployee.avatarUrl,
+              toEmployeeId: toEmployee.id,
+              toEmployeeName: toEmployee.name,
+              toEmployeeAvatar: toEmployee.avatarUrl,
+              projectId: task.projectId,
+              projectName: projects.find(p => p.id === task.projectId)?.name || 'Sin proyecto',
+              hours: task.hoursAssigned,
+              taskName,
+              status,
+              allocationId: task.id,
+              createdAt: task.weekStartDate
+            });
+          }
+        }
+      }
+    });
+    
+    // Buscar tareas distribuidas desde transferencias usando el campo de BD
+    // Estas tareas tienen distributionSourceAllocationId que apunta a la tarea transferida original
+    const distributedFromTransfers = (allocations || []).filter(a => {
+      // Usar el campo de BD si está disponible, sino fallback al formato de texto
+      const isDistributed = a.distributionSourceAllocationId !== undefined && a.distributionSourceAllocationId !== null;
+      if (!isDistributed && !a.taskName?.includes('(transferida de')) return false;
+      try {
+        if (!isSameMonth(parseISO(a.weekStartDate), currentMonth)) return false;
+      } catch {
+        return false;
+      }
+      // Si tiene el campo de BD, es suficiente. Si no, verificar feedback como fallback
+      if (isDistributed) return true;
+      // Fallback: verificar si tiene feedback de distribución desde transferencia
+      const hasDistributionFeedback = weeklyFeedback.some(fb => 
+        fb.allocationId === a.id && 
+        fb.comments?.includes('Tarea distribuida desde transferencia')
+      );
+      return hasDistributionFeedback;
+    });
+    
+    // Agrupar tareas distribuidas por transferencia original
+    const distributedGroups = new Map<string, {
+      fromEmployeeId: string;
+      fromEmployeeName: string;
+      fromEmployeeAvatar?: string;
+      toEmployeeId: string;
+      toEmployeeName: string;
+      toEmployeeAvatar?: string;
+      projectId: string;
+      projectName: string;
+      originalTaskName: string;
+      distributedTasks: Array<{ id: string; name: string; hours: number; weekDate: string }>;
+      totalHours: number;
+      createdAt: string;
+    }>();
+    
+    distributedFromTransfers.forEach(distTask => {
+      // Usar campos de BD para rastrear la cadena completa
+      let fromEmployee: typeof employees[0] | undefined;
+      let originalTaskName: string;
+      let newTaskName: string = distTask.taskName || 'Tarea';
+      
+      // Si tiene distributionSourceAllocationId, buscar la tarea transferida original
+      if (distTask.distributionSourceAllocationId) {
+        const transferredTask = allocations.find(a => a.id === distTask.distributionSourceAllocationId);
+        if (transferredTask) {
+          // La tarea transferida tiene transferredFromAllocationId que apunta a la tarea original
+          if (transferredTask.transferredFromAllocationId) {
+            const originalTask = allocations.find(a => a.id === transferredTask.transferredFromAllocationId);
+            if (originalTask) {
+              fromEmployee = employees.find(e => e.id === originalTask.employeeId);
+              originalTaskName = originalTask.taskName || 'Tarea';
+            } else {
+              // Si no encontramos la tarea original, usar el nombre de la tarea transferida
+              const transferMatch = transferredTask.taskName?.match(/\(transferida de (.+?)\)/);
+              const fromEmployeeName = transferMatch ? transferMatch[1] : null;
+              fromEmployee = fromEmployeeName ? employees.find(e => e.name === fromEmployeeName) : undefined;
+              originalTaskName = transferredTask.taskName?.replace(/\(transferida de .+\)/, '').trim() || 'Tarea';
+            }
+          } else {
+            // Si la tarea transferida no tiene transferredFromAllocationId, parsear del nombre
+            const transferMatch = transferredTask.taskName?.match(/\(transferida de (.+?)\)/);
+            const fromEmployeeName = transferMatch ? transferMatch[1] : null;
+            fromEmployee = fromEmployeeName ? employees.find(e => e.name === fromEmployeeName) : undefined;
+            originalTaskName = transferredTask.taskName?.replace(/\(transferida de .+\)/, '').trim() || 'Tarea';
+          }
+        }
+      }
+      
+      // Fallback: si no encontramos usando campos de BD, parsear del nombre
+      if (!fromEmployee) {
+        const fullMatch = distTask.taskName?.match(/^(.+?)\s*\(transferida de (.+?), original: (.+?)\)$/);
+        if (fullMatch) {
+          const [, newName, fromEmployeeName, origName] = fullMatch;
+          fromEmployee = employees.find(e => e.name === fromEmployeeName);
+          originalTaskName = origName.trim();
+          newTaskName = newName.trim();
+        } else {
+          const simpleMatch = distTask.taskName?.match(/^(.+?)\s*\(transferida de (.+?)\)$/);
+          if (simpleMatch) {
+            const [, newName, fromEmployeeName] = simpleMatch;
+            fromEmployee = employees.find(e => e.name === fromEmployeeName);
+            originalTaskName = newName.trim();
+            newTaskName = newName.trim();
+          } else {
+            // Último fallback: buscar en feedback
+            const taskFeedback = weeklyFeedback.find(f => f.allocationId === distTask.id);
+            const originalNameMatch = taskFeedback?.comments?.match(/tarea original: (.+?)(?:\s*\||$)/i);
+            originalTaskName = originalNameMatch ? originalNameMatch[1].trim() : (distTask.taskName || 'Tarea');
+            return; // No podemos determinar el empleado origen sin el nombre
+          }
+        }
+      }
+      
+      if (!fromEmployee) return;
+      
+      const toEmployee = employees.find(e => e.id === distTask.employeeId);
+      if (!toEmployee) return;
+      
+      const groupKey = `${fromEmployee.id}-${toEmployee.id}-${distTask.projectId}-${originalTaskName}`;
+      
+      if (!distributedGroups.has(groupKey)) {
+        distributedGroups.set(groupKey, {
+          fromEmployeeId: fromEmployee.id,
+          fromEmployeeName: fromEmployee.name,
+          fromEmployeeAvatar: fromEmployee.avatarUrl,
+          toEmployeeId: toEmployee.id,
+          toEmployeeName: toEmployee.name,
+          toEmployeeAvatar: toEmployee.avatarUrl,
+          projectId: distTask.projectId,
+          projectName: projects.find(p => p.id === distTask.projectId)?.name || 'Sin proyecto',
+          originalTaskName,
+          distributedTasks: [],
+          totalHours: 0,
+          createdAt: distTask.weekStartDate
+        });
+      }
+      
+      const group = distributedGroups.get(groupKey)!;
+      group.distributedTasks.push({
+        id: distTask.id,
+        name: newTaskName.trim(),
+        hours: distTask.hoursAssigned,
+        weekDate: distTask.weekStartDate
+      });
+      group.totalHours += distTask.hoursAssigned;
+    });
+    
+    // Convertir grupos de distribuciones en entradas de transferencia
+    distributedGroups.forEach((group, key) => {
+      // Verificar si ya existe una entrada de transferencia para esta combinación
+      const existingKey = Array.from(transferMap.keys()).find(k => {
+        const entry = transferMap.get(k);
+        return entry?.fromEmployeeId === group.fromEmployeeId &&
+               entry?.toEmployeeId === group.toEmployeeId &&
+               entry?.projectId === group.projectId &&
+               entry?.taskName === group.originalTaskName;
+      });
+      
+      if (existingKey) {
+        // Actualizar la entrada existente
+        const existing = transferMap.get(existingKey)!;
+        existing.hours = group.totalHours; // Actualizar horas totales
+        existing.status = 'distributed'; // Marcar como distribuida
+        transferMap.set(existingKey, existing);
+      } else {
+        // Buscar feedback de distribución para obtener fecha y notas
+        const distributionFeedback = weeklyFeedback.find(fb => 
+          fb.comments?.includes('Distribuidas en') && 
+          fb.projectId === group.projectId &&
+          fb.employeeId === group.toEmployeeId
+        );
+        
+        // Extraer notas del feedback si las hay
+        let notes: string | undefined;
+        if (distributionFeedback?.comments) {
+          const notesMatch = distributionFeedback.comments.match(/\| Motivo: (.+)$/);
+          if (notesMatch) {
+            notes = notesMatch[1].trim();
+          }
+        }
+        
+        // Crear nueva entrada para esta distribución
+        transferMap.set(`distributed-${key}`, {
+          fromEmployeeId: group.fromEmployeeId,
+          fromEmployeeName: group.fromEmployeeName,
+          fromEmployeeAvatar: group.fromEmployeeAvatar,
+          toEmployeeId: group.toEmployeeId,
+          toEmployeeName: group.toEmployeeName,
+          toEmployeeAvatar: group.toEmployeeAvatar,
+          projectId: group.projectId,
+          projectName: group.projectName,
+          hours: group.totalHours,
+          taskName: group.originalTaskName,
+          status: 'distributed',
+          allocationId: group.distributedTasks[0]?.id,
+          createdAt: distributionFeedback?.createdAt || group.createdAt, // Usar fecha del feedback
+          comments: distributionFeedback?.comments,
+          distributedTasks: group.distributedTasks.map(t => ({ name: t.name, hours: t.hours })),
+          notes
+        });
+      }
+    });
+    
+    let filtered = Array.from(transferMap.values());
+    
+    // Filtro por compañero (origen o destino)
+    if (filterFeedbackEmployee !== 'all') {
+      filtered = filtered.filter(t => 
+        t.fromEmployeeId === filterFeedbackEmployee || t.toEmployeeId === filterFeedbackEmployee
+      );
+    }
+    
+    // Filtro por proyecto
+    if (filterFeedbackProject !== 'all') {
+      filtered = filtered.filter(t => t.projectId === filterFeedbackProject);
+    }
+    
+    // Filtro por estado de transferencia
+    if (filterTransferStatus !== 'all') {
+      filtered = filtered.filter(t => t.status === filterTransferStatus);
+    }
+    
+    const result = filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return Array.isArray(result) ? result : [];
+  }, [weeklyFeedback, allocations, employees, projects, currentWeekStr, currentMonth, filterFeedbackEmployee, filterFeedbackProject, filterTransferStatus]);
+  
+  // Semanas futuras para el selector de redistribución
+  const futureWeeks = useMemo(() => {
+    const today = new Date();
+    return weeks.filter(week => {
+      try {
+        const weekDate = parseISO(getStorageKey(week.weekStart, currentMonth));
+        // Incluir semana actual si aún no ha terminado (viernes)
+        const weekEnd = addDays(weekDate, 4); // Viernes
+        return weekEnd >= today;
+      } catch {
+        return false;
+      }
+    });
+  }, [weeks, currentMonth]);
+  
+  // NUEVO: Tareas retrasadas de TODOS los compañeros para el proyecto seleccionado
+  // Agrupadas por empleado con avatar y nombre
+  const delayedTasksByEmployee = useMemo(() => {
+    if (!selectedProject) return [];
+    
+    const today = new Date();
+    const delayedTasks = allocations.filter(a => {
+      if (a.projectId !== selectedProject) return false;
+      if (a.status === 'completed') return false;
+      
+      try {
+        const taskWeekDate = parseISO(a.weekStartDate);
+        if (!isSameMonth(taskWeekDate, currentMonth)) return false;
+        
+        const taskWeekEnd = addDays(taskWeekDate, 4);
+        // Solo tareas de semanas pasadas o actual
+        return taskWeekEnd <= today;
+      } catch {
+        return false;
+      }
+    });
+    
+    // Agrupar por empleado
+    const grouped: Record<string, typeof allocations> = {};
+    delayedTasks.forEach(task => {
+      if (!grouped[task.employeeId]) {
+        grouped[task.employeeId] = [];
+      }
+      grouped[task.employeeId].push(task);
+    });
+    
+    // Convertir a array con información del empleado
+    return Object.entries(grouped).map(([employeeId, tasks]) => {
+      const employee = employees.find(e => e.id === employeeId);
+      return {
+        employeeId,
+        employeeName: employee?.name || 'Desconocido',
+        employeeAvatar: employee?.avatarUrl,
+        tasks: tasks || []
+      };
+    }).filter(g => g.employeeName !== 'Desconocido' && g.tasks && g.tasks.length > 0);
+  }, [selectedProject, allocations, currentMonth, employees]);
+  
+  // Sección C: Redistribución Rápida (mejorada - sin horas globales)
+  const handleRedistribute = async () => {
+    if (!selectedProject || !redistributeToEmployee || !redistributeWeek) {
+      toast.error('Completa todos los campos');
+      return;
+    }
+    
+    if (redistributeSelectedTasks.size === 0) {
+      toast.error('Selecciona al menos una tarea para redistribuir');
+      return;
+    }
+    
+    // Obtener todas las tareas seleccionadas (pueden ser de diferentes empleados)
+    const allDelayedTasks = (delayedTasksByEmployee || []).flatMap(g => g.tasks || []);
+    const tasksToTransfer = allDelayedTasks.filter(task => redistributeSelectedTasks.has(task.id));
+    
+    if (tasksToTransfer.length === 0) {
+      toast.error('No hay tareas seleccionadas');
+      return;
+    }
+    
+    let totalHours = 0;
+    const tasksByEmployee: Record<string, typeof allocations> = {};
+    
+    tasksToTransfer.forEach(task => {
+      const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
+      if (remainingHours > 0) {
+        totalHours += remainingHours;
+        if (!tasksByEmployee[task.employeeId]) {
+          tasksByEmployee[task.employeeId] = [];
+        }
+        tasksByEmployee[task.employeeId].push(task);
+      }
+    });
+    
+    if (totalHours <= 0) {
+      toast.error('Las tareas seleccionadas no tienen horas restantes');
+      return;
+    }
+    
+    try {
+      // Transferir tareas específicas (pueden ser de diferentes empleados)
+      for (const [fromEmployeeId, employeeTasks] of Object.entries(tasksByEmployee)) {
+        const fromEmployee = employees.find(e => e.id === fromEmployeeId);
+        const fromEmployeeName = fromEmployee?.name || 'compañero';
+        
+        for (const task of employeeTasks) {
+          const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
+          if (remainingHours > 0) {
+            // Completar tarea original
+            await updateAllocation({
+              ...task,
+              hoursAssigned: task.hoursActual || 0,
+              status: 'completed'
+            });
+            
+            // Crear tarea para el compañero destino
+            await addAllocation({
+              employeeId: redistributeToEmployee,
+              projectId: selectedProject,
+              weekStartDate: redistributeWeek,
+              hoursAssigned: remainingHours,
+              taskName: `${task.taskName || 'Tarea'} (transferida de ${fromEmployeeName})`,
+              status: 'planned'
+            });
+          }
+        }
+      }
+      
+      toast.success(`${totalHours.toFixed(1)}h redistribuidas correctamente`);
+      setRedistributeSelectedTasks(new Set());
+      setRedistributeToEmployee('');
+      setRedistributeWeek('');
+      setSelectedProject(null);
+    } catch (error) {
+      console.error('Error redistribuyendo:', error);
+      toast.error('Error al redistribuir horas');
+    }
+  };
+  
+  // Carga de trabajo de compañeros para semanas restantes del mes (considerando ausencias y eventos)
+  const employeeWorkloads = useMemo(() => {
+    if (!selectedProject) return [];
+    
+    const today = new Date();
+    const remainingWeeks = weeks.filter(w => {
+      try {
+        const weekDate = parseISO(getStorageKey(w.weekStart, currentMonth));
+        return weekDate >= today;
+      } catch {
+        return false;
+      }
+    });
+    
+    return employees
+      .filter(e => e.isActive)
+      .map(emp => {
+        const employeeAbsences = (absences || []).filter(a => a.employeeId === emp.id);
+        
+        const weekLoads = remainingWeeks.map(week => {
+          const storageKey = getStorageKey(week.weekStart, currentMonth);
+          const weekAllocations = (allocations || []).filter(a =>
+            a.employeeId === emp.id &&
+            a.weekStartDate === storageKey
+          );
+          
+          // Horas asignadas (usando la misma lógica que el resto de la app)
+          const assignedHours = round2(
+            weekAllocations.reduce((sum, a) => 
+              sum + (a.status === 'completed' && (a.hoursActual || 0) > 0 
+                ? Number(a.hoursActual) 
+                : Number(a.hoursAssigned)), 0
+            )
+          );
+          
+          // Capacidad de la semana (considerando ausencias y eventos)
+          const weekStartDate = week.effectiveStart || week.weekStart;
+          const weekEndDate = week.effectiveEnd || addDays(week.weekStart, 6);
+          
+          // Capacidad base del horario
+          const baseCapacity = emp.defaultWeeklyCapacity;
+          
+          // Restar ausencias
+          const absenceHours = getAbsenceHoursInRange(
+            weekStartDate,
+            weekEndDate,
+            employeeAbsences,
+            emp.workSchedule
+          );
+          
+          // Restar eventos del equipo
+          const eventHours = getTeamEventHoursInRange(
+            weekStartDate,
+            weekEndDate,
+            emp.id,
+            teamEvents || [],
+            emp.workSchedule,
+            employeeAbsences
+          );
+          
+          const availableCapacity = Math.max(0, round2(baseCapacity - absenceHours - eventHours));
+          
+          return {
+            weekStart: storageKey,
+            weekLabel: `Sem ${weeks.findIndex(w => getStorageKey(w.weekStart, currentMonth) === storageKey) + 1}`,
+            hours: assignedHours,
+            capacity: availableCapacity,
+            percentage: availableCapacity > 0 ? round2((assignedHours / availableCapacity) * 100) : (assignedHours > 0 ? 999 : 0)
+          };
+        });
+        
+        return {
+          employeeId: emp.id,
+          employeeName: emp.name,
+          weekLoads
+        };
+      });
+  }, [selectedProject, weeks, employees, allocations, currentMonth, absences, teamEvents]);
+  
+  return (
+    <div className="max-w-7xl mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900">Previsión Mensual</h1>
+        <p className="text-slate-500 mt-1">Seguimiento de horas contratadas y redistribución de carga</p>
+      </div>
+      
+      {/* Control de mes */}
+      <div className="flex items-center gap-4 bg-white p-2 rounded-lg border shadow-sm w-fit">
+        <h2 className="text-lg font-bold capitalize text-slate-900 flex items-center gap-2 ml-2">
+          {format(currentMonth, 'MMMM yyyy', { locale: es })}
+        </h2>
+        <div className="h-6 w-px bg-slate-200 mx-2" />
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handlePrevMonth}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={handleToday} className="h-7 text-xs px-2">
+            <CalendarDays className="h-3.5 w-3.5 mr-1.5" />Mes actual
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleNextMonth}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      
+      {/* TABS */}
+      <Tabs defaultValue="traffic" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="traffic" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Semáforo de Proyectos
+          </TabsTrigger>
+          <TabsTrigger value="blockers" className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4" />
+            Feed de Bloqueos
+          </TabsTrigger>
+          <TabsTrigger value="redistribute" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Redistribución
+          </TabsTrigger>
+        </TabsList>
+        
+        {/* TAB 1: Semáforo de Proyectos */}
+        <TabsContent value="traffic" className="space-y-4">
+          {/* Filtros estilo Deadlines/Planner */}
+          <div className="flex flex-wrap items-center gap-3 bg-white rounded-xl border shadow-sm p-3">
+            <div className="flex-1 min-w-[200px]">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" className="w-full h-8 text-xs justify-between bg-white">
+                    <span className="truncate">
+                      {filterClient === 'all' ? 'Todos los clientes' : clients.find(c => c.id === filterClient)?.name || 'Cliente'}
+                    </span>
+                    <ChevronDown className="ml-2 h-3 w-3 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[250px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar cliente..." />
+                    <CommandList>
+                      <CommandEmpty>No hay clientes</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem onSelect={() => setFilterClient('all')}>
+                          <Check className={cn("mr-2 h-4 w-4", filterClient === 'all' ? "opacity-100" : "opacity-0")} />
+                          Todos los clientes
+                        </CommandItem>
+                        {clients.map(cli => (
+                          <CommandItem key={cli.id} value={cli.name} onSelect={() => setFilterClient(cli.id)}>
+                            <Check className={cn("mr-2 h-4 w-4", filterClient === cli.id ? "opacity-100" : "opacity-0")} />
+                            {cli.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="flex items-center gap-4 text-sm">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <span className="text-slate-600 whitespace-nowrap">Solo SEO</span>
+                <Switch
+                  id="only-seo"
+                  checked={onlySEO}
+                  onCheckedChange={(checked) => {
+                    setOnlySEO(checked);
+                    if (checked) setOnlyPPC(false);
+                  }}
+                  className="scale-90"
+                />
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <span className="text-slate-600 whitespace-nowrap">Solo PPC</span>
+                <Switch
+                  id="only-ppc"
+                  checked={onlyPPC}
+                  onCheckedChange={(checked) => {
+                    setOnlyPPC(checked);
+                    if (checked) setOnlySEO(false);
+                  }}
+                  className="scale-90"
+                />
+              </label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={filterProjectStatus === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterProjectStatus('all')}
+                className="h-8 text-xs"
+              >
+                Todos
+              </Button>
+              <Button
+                variant={filterProjectStatus === 'red' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterProjectStatus('red')}
+                className={cn("h-8 text-xs", filterProjectStatus === 'red' && "bg-red-600 hover:bg-red-700")}
+              >
+                ⚠️ En riesgo
+              </Button>
+              <Button
+                variant={filterProjectStatus === 'yellow' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterProjectStatus('yellow')}
+                className={cn("h-8 text-xs", filterProjectStatus === 'yellow' && "bg-amber-600 hover:bg-amber-700")}
+              >
+                ⏳ Pendiente
+              </Button>
+              <Button
+                variant={filterProjectStatus === 'green' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterProjectStatus('green')}
+                className={cn("h-8 text-xs", filterProjectStatus === 'green' && "bg-emerald-600 hover:bg-emerald-700")}
+              >
+                ✅ On Track
+              </Button>
+            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
+                  <ArrowUpDown className="h-3 w-3" />
+                  Ordenar
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[200px] p-0">
+                <Command>
+                  <CommandList>
+                    <CommandGroup>
+                      <CommandItem onSelect={() => setSortBy('status')}>
+                        <Check className={cn("mr-2 h-4 w-4", sortBy === 'status' ? "opacity-100" : "opacity-0")} />
+                        Por estado
+                      </CommandItem>
+                      <CommandItem onSelect={() => setSortBy('name')}>
+                        <Check className={cn("mr-2 h-4 w-4", sortBy === 'name' ? "opacity-100" : "opacity-0")} />
+                        Por nombre
+                      </CommandItem>
+                      <CommandItem onSelect={() => setSortBy('difference')}>
+                        <Check className={cn("mr-2 h-4 w-4", sortBy === 'difference' ? "opacity-100" : "opacity-0")} />
+                        Por diferencia
+                      </CommandItem>
+                      <CommandItem onSelect={() => setSortBy('contracted')}>
+                        <Check className={cn("mr-2 h-4 w-4", sortBy === 'contracted' ? "opacity-100" : "opacity-0")} />
+                        Por horas contratadas
+                      </CommandItem>
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+          
+          <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Semáforo de Proyectos (Month-End Forecast)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {(!projectForecast || projectForecast.length === 0) ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No hay proyectos activos este mes
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {projectForecast.map(proj => (
+                <Card
+                  key={proj.projectId}
+                  className={cn(
+                    "cursor-pointer transition-all hover:shadow-md",
+                    proj.status === 'red' && "ring-2 ring-red-200 bg-red-50/50",
+                    proj.status === 'yellow' && "ring-2 ring-amber-200 bg-amber-50/50",
+                    proj.status === 'green' && "ring-2 ring-emerald-200 bg-emerald-50/50"
+                  )}
+                  onClick={() => setSelectedProject(proj.projectId)}
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-sm font-bold truncate">
+                          {formatProjectName(proj.projectName)}
+                        </CardTitle>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: proj.clientColor }} />
+                          <span className="text-xs text-muted-foreground truncate">{proj.clientName}</span>
+                        </div>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "shrink-0",
+                          proj.status === 'red' && "bg-red-100 text-red-700 border-red-300",
+                          proj.status === 'yellow' && "bg-amber-100 text-amber-700 border-amber-300",
+                          proj.status === 'green' && "bg-emerald-100 text-emerald-700 border-emerald-300"
+                        )}
+                      >
+                        {proj.status === 'red' && <TrendingDown className="h-3 w-3 mr-1" />}
+                        {proj.status === 'yellow' && <AlertCircle className="h-3 w-3 mr-1" />}
+                        {proj.status === 'green' && <CheckCircle2 className="h-3 w-3 mr-1" />}
+                        {proj.status === 'red' && `+${Math.abs(proj.difference)}h`}
+                        {proj.status === 'yellow' && `-${proj.difference}h`}
+                        {proj.status === 'green' && 'On Track'}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-muted-foreground">Contratado:</span>
+                        <span className="font-bold ml-1">{proj.contracted}h</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Realizado:</span>
+                        <span className="font-bold ml-1">{proj.realized}h</span>
+                      </div>
+                    </div>
+                    {proj.status === 'red' && (
+                      <p className="text-xs text-red-600 mt-2 font-medium">
+                        Nos pasamos por {Math.abs(proj.difference)} horas
+                      </p>
+                    )}
+                    {proj.status === 'yellow' && (
+                      <p className="text-xs text-amber-600 mt-2 font-medium">
+                        Faltan {proj.difference} horas por asignar
+                      </p>
+                    )}
+                    {proj.status === 'green' && (
+                      <p className="text-xs text-emerald-600 mt-2 font-medium">
+                        En línea con el contrato
+                        {proj.contracted === 0 && proj.realized === 0 && (
+                          <span className="text-muted-foreground ml-1">(Sin horas planificadas aún)</span>
+                        )}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+        </TabsContent>
+        
+        {/* TAB 2: Transferencias de Horas */}
+        <TabsContent value="blockers" className="space-y-4">
+          {/* Filtros */}
+          <div className="flex flex-wrap items-center gap-3 bg-white rounded-xl border shadow-sm p-3">
+            {/* Chips de filtro rápido por estado */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-slate-500 font-medium">Estado:</span>
+              <Button
+                variant={filterTransferStatus === 'all' ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 text-xs px-2"
+                onClick={() => setFilterTransferStatus('all')}
+              >
+                Todas
+              </Button>
+              <Button
+                variant={filterTransferStatus === 'pending' ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 text-xs px-2"
+                onClick={() => setFilterTransferStatus('pending')}
+              >
+                Pendientes
+              </Button>
+              <Button
+                variant={filterTransferStatus === 'kept' ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 text-xs px-2"
+                onClick={() => setFilterTransferStatus('kept')}
+              >
+                Mantenidas
+              </Button>
+              <Button
+                variant={filterTransferStatus === 'distributed' ? 'default' : 'outline'}
+                size="sm"
+                className="h-7 text-xs px-2"
+                onClick={() => setFilterTransferStatus('distributed')}
+              >
+                Redistribuidas
+              </Button>
+            </div>
+            <div className="w-full border-t my-2"></div>
+            <div className="flex-1 min-w-[200px]">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" className="w-full h-8 text-xs justify-between bg-white">
+                    <span className="truncate">
+                      {filterFeedbackEmployee === 'all' ? 'Todos los compañeros' : employees.find(e => e.id === filterFeedbackEmployee)?.name || 'Compañero'}
+                    </span>
+                    <ChevronDown className="ml-2 h-3 w-3 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[250px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar compañero..." />
+                    <CommandList>
+                      <CommandEmpty>No hay compañeros</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem onSelect={() => setFilterFeedbackEmployee('all')}>
+                          <Check className={cn("mr-2 h-4 w-4", filterFeedbackEmployee === 'all' ? "opacity-100" : "opacity-0")} />
+                          Todos los compañeros
+                        </CommandItem>
+                        {employees
+                          .filter(e => e.isActive)
+                          .map(emp => (
+                            <CommandItem key={emp.id} value={emp.name} onSelect={() => setFilterFeedbackEmployee(emp.id)}>
+                              <Check className={cn("mr-2 h-4 w-4", filterFeedbackEmployee === emp.id ? "opacity-100" : "opacity-0")} />
+                              {emp.name}
+                            </CommandItem>
+                          ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" className="w-full h-8 text-xs justify-between bg-white">
+                    <span className="truncate">
+                      {filterFeedbackProject === 'all' 
+                        ? 'Todos los proyectos' 
+                        : formatProjectName(projects.find(p => p.id === filterFeedbackProject)?.name || '')}
+                    </span>
+                    <ChevronDown className="ml-2 h-3 w-3 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar proyecto..." />
+                    <CommandList>
+                      <CommandEmpty>No hay proyectos</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem value="all" onSelect={() => setFilterFeedbackProject('all')}>
+                          <Check className={cn("mr-2 h-4 w-4", filterFeedbackProject === 'all' ? "opacity-100" : "opacity-0")} />
+                          Todos los proyectos
+                        </CommandItem>
+                        {projects
+                          .filter(p => p.status === 'active' && !p.isHidden)
+                          .map(proj => {
+                            const client = clients.find(c => c.id === proj.clientId);
+                            return (
+                              <CommandItem 
+                                key={proj.id} 
+                                value={`${client?.name || ''} ${proj.name}`}
+                                onSelect={() => setFilterFeedbackProject(proj.id)}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", filterFeedbackProject === proj.id ? "opacity-100" : "opacity-0")} />
+                                <span className="truncate">{client?.name} - {formatProjectName(proj.name)}</span>
+                              </CommandItem>
+                            );
+                          })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ArrowRight className="h-5 w-5" />
+                Transferencias de Horas
+                {transfers && transfers.length > 0 && (
+                  <Badge variant="outline" className="ml-2 bg-slate-100 text-slate-700 border-slate-300">
+                    {transfers.length}
+                  </Badge>
+                )}
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Semana del <strong>{format(currentWeekStart, "d 'de' MMMM", { locale: es })}</strong>
+              </p>
+            </CardHeader>
+            <CardContent>
+              {(!transfers || transfers.length === 0) ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No hay transferencias de horas esta semana
+                </div>
+              ) : (
+                (() => {
+                  // Agrupar transferencias por proyecto
+                  const groupedByProject = transfers.reduce((acc, transfer) => {
+                    const projectId = transfer.projectId || 'sin-proyecto';
+                    if (!acc[projectId]) {
+                      acc[projectId] = [];
+                    }
+                    acc[projectId].push(transfer);
+                    return acc;
+                  }, {} as Record<string, typeof transfers>);
+                  
+                  return (
+                    <div className="space-y-4">
+                      {Object.entries(groupedByProject).map(([projectId, projectTransfers]) => {
+                        const project = projects.find(p => p.id === projectId);
+                        const client = clients.find(c => c.id === project?.clientId);
+                        
+                        return (
+                          <div key={projectId} className="space-y-2">
+                            {/* Header del proyecto */}
+                            <div className="flex items-center gap-2 pb-1 border-b border-slate-200">
+                              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: client?.color || '#94a3b8' }} />
+                              <span className="text-sm font-semibold text-slate-700">
+                                {project ? formatProjectName(project.name) : 'Sin proyecto'}
+                              </span>
+                              <Badge variant="outline" className="ml-auto bg-slate-100 text-slate-600 border-slate-300 text-[10px]">
+                                {projectTransfers.length} {projectTransfers.length === 1 ? 'transferencia' : 'transferencias'}
+                              </Badge>
+                            </div>
+                            
+                            {/* Transferencias del proyecto */}
+                            <div className="space-y-2 pl-4">
+                              {projectTransfers.map((transfer, idx) => (
+                                <div 
+                                  key={transfer.allocationId || transfer.feedbackId || idx} 
+                                  className={cn(
+                                    "p-3 rounded-lg border transition-all",
+                                    transfer.status === 'pending' && "bg-amber-50/30 border-amber-100",
+                                    transfer.status === 'kept' && "bg-blue-50/30 border-blue-100",
+                                    transfer.status === 'distributed' && "bg-purple-50/30 border-purple-100"
+                                  )}
+                                >
+                                  <div className="flex items-start gap-3">
+                                    {/* Avatar origen con nombre */}
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <Avatar className="h-9 w-9 border-2 border-slate-200">
+                                        <AvatarImage src={transfer.fromEmployeeAvatar} alt={transfer.fromEmployeeName} />
+                                        <AvatarFallback className="bg-indigo-500 text-white text-xs font-bold">
+                                          {transfer.fromEmployeeName.substring(0, 2).toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <span className="font-semibold text-sm text-slate-900 whitespace-nowrap">{transfer.fromEmployeeName}</span>
+                                    </div>
+                                    
+                                    {/* Flecha y horas */}
+                                    <div className="flex flex-col items-center justify-center gap-0.5 shrink-0 pt-1">
+                                      <ArrowRight className="h-4 w-4 text-indigo-600" />
+                                      <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 font-bold text-[10px] px-1.5 py-0">
+                                        {transfer.hours}h
+                                      </Badge>
+                                    </div>
+                                    
+                                    {/* Avatar destino con nombre */}
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <Avatar className="h-9 w-9 border-2 border-slate-200">
+                                        <AvatarImage src={transfer.toEmployeeAvatar} alt={transfer.toEmployeeName} />
+                                        <AvatarFallback className="bg-purple-500 text-white text-xs font-bold">
+                                          {transfer.toEmployeeName.substring(0, 2).toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <span className="font-semibold text-sm text-slate-900 whitespace-nowrap">{transfer.toEmployeeName}</span>
+                                    </div>
+                                    
+                                    {/* Información del proyecto */}
+                                    <div className="flex-1 min-w-0">
+                                      {project && (
+                                        <div className="flex items-center gap-1.5 mb-0.5">
+                                          <span className="text-slate-400">•</span>
+                                          <span className="text-sm font-medium text-slate-700">{formatProjectName(transfer.projectName)}</span>
+                                        </div>
+                                      )}
+                                      {/* Tarea original */}
+                                      <div className="mb-1">
+                                        <p className="text-xs text-slate-500 mb-0.5">Tarea original:</p>
+                                        <p className="text-sm font-medium text-slate-900">{transfer.taskName}</p>
+                                      </div>
+                                      
+                                      {/* Si está distribuida, mostrar tareas distribuidas */}
+                                      {transfer.status === 'distributed' && transfer.distributedTasks && transfer.distributedTasks.length > 0 && (
+                                        <div className="mb-1 p-1.5 bg-purple-50/50 rounded border border-purple-200">
+                                          <p className="text-xs text-slate-600 mb-1 font-medium">Tareas distribuidas:</p>
+                                          <div className="space-y-0.5">
+                                            {transfer.distributedTasks.map((task, taskIdx) => (
+                                              <div key={taskIdx} className="flex items-center gap-2 text-xs">
+                                                <span className="text-slate-700">{task.name}</span>
+                                                <Badge variant="outline" className="bg-white text-purple-700 border-purple-300 text-[10px] px-1.5 py-0 shrink-0">
+                                                  {task.hours}h
+                                                </Badge>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Notas si existen */}
+                                      {transfer.notes && (
+                                        <div className="mb-1 p-1.5 bg-slate-50 rounded border border-slate-200">
+                                          <p className="text-xs text-slate-500 mb-0.5">Notas:</p>
+                                          <p className="text-xs text-slate-700 leading-relaxed">{transfer.notes}</p>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Estado */}
+                                      <div className="flex items-center gap-2 flex-wrap mt-1">
+                                        {transfer.status === 'pending' && (
+                                          <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-300 text-[10px]">
+                                            <AlertCircle className="h-2.5 w-2.5 mr-1" />
+                                            Pendiente de aceptación
+                                          </Badge>
+                                        )}
+                                        {transfer.status === 'kept' && (
+                                          <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300 text-[10px]">
+                                            <CheckCircle2 className="h-2.5 w-2.5 mr-1" />
+                                            Mantenida tal cual
+                                          </Badge>
+                                        )}
+                                        {transfer.status === 'distributed' && (
+                                          <Badge variant="outline" className="bg-purple-100 text-purple-700 border-purple-300 text-[10px]">
+                                            <Users className="h-2.5 w-2.5 mr-1" />
+                                            Redistribuida
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* TAB 3: Redistribución - Formulario directo */}
+        <TabsContent value="redistribute" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Redistribución de Horas
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Selecciona un proyecto y redistribuye horas entre compañeros
+              </p>
+            </CardHeader>
+            <CardContent>
+              {/* Selector de proyecto */}
+              <div className="mb-6">
+                <Label className="text-sm font-medium mb-2 block">Proyecto</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" role="combobox" className="w-full h-10 justify-between">
+                      <span className="truncate">
+                        {selectedProject 
+                          ? formatProjectName(projects.find(p => p.id === selectedProject)?.name || '')
+                          : 'Seleccionar proyecto...'}
+                      </span>
+                      <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar proyecto..." />
+                      <CommandList>
+                        <CommandEmpty>No hay proyectos</CommandEmpty>
+                        <CommandGroup>
+                          {projectForecast.map(proj => {
+                            const client = clients.find(c => c.id === projects.find(p => p.id === proj.projectId)?.clientId);
+                            return (
+                              <CommandItem 
+                                key={proj.projectId} 
+                                value={`${client?.name || ''} ${proj.projectName}`}
+                                onSelect={() => setSelectedProject(proj.projectId)}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", selectedProject === proj.projectId ? "opacity-100" : "opacity-0")} />
+                                <div className="flex items-center gap-2">
+                                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: proj.clientColor }} />
+                                  <span className="truncate">{client?.name} - {formatProjectName(proj.projectName)}</span>
+                                </div>
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              {/* Formulario de redistribución (solo si hay proyecto seleccionado) */}
+              {selectedProject && (
+                <div className="space-y-6 pt-4 border-t">
+                  {/* Mostrar el contenido del Sheet aquí directamente */}
+                  {delayedTasksByEmployee.length > 0 ? (
+                    <div className="space-y-4">
+                      <Label className="text-sm font-medium">Tareas retrasadas</Label>
+                      <div className="space-y-3 max-h-[400px] overflow-y-auto border rounded-lg p-3">
+                        {delayedTasksByEmployee.map(group => (
+                          <div key={group.employeeId} className="space-y-2">
+                            {/* Header del empleado */}
+                            <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage src={group.employeeAvatar} alt={group.employeeName} />
+                                <AvatarFallback className="bg-indigo-500 text-white text-[10px]">
+                                  {group.employeeName.substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="font-semibold text-sm text-slate-900">{group.employeeName}</span>
+                              <Badge variant="outline" className="ml-auto text-xs bg-slate-50">
+                                {group.tasks?.length || 0} tarea(s)
+                              </Badge>
+                            </div>
+                            
+                            {/* Tareas del empleado */}
+                            <div className="space-y-2 pl-8">
+                              {(group.tasks || []).map(task => {
+                                const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
+                                const isSelected = redistributeSelectedTasks.has(task.id);
+                                
+                                return (
+                                  <div
+                                    key={task.id}
+                                    className={cn(
+                                      "flex items-center gap-3 p-2 rounded border cursor-pointer transition-colors",
+                                      isSelected ? "bg-indigo-50 border-indigo-300" : "bg-white border-slate-200 hover:bg-slate-50"
+                                    )}
+                                    onClick={() => {
+                                      setRedistributeSelectedTasks(prev => {
+                                        const newSet = new Set(prev);
+                                        if (newSet.has(task.id)) {
+                                          newSet.delete(task.id);
+                                        } else {
+                                          newSet.add(task.id);
+                                        }
+                                        return newSet;
+                                      });
+                                    }}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={() => {}}
+                                      className="h-4 w-4"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium truncate">{task.taskName || 'Sin nombre'}</p>
+                                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                                        <span>Asignadas: {task.hoursAssigned}h</span>
+                                        <span>Realizadas: {task.hoursActual || 0}h</span>
+                                        {remainingHours > 0 && (
+                                          <span className="text-amber-600 font-medium">Restantes: {remainingHours}h</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {remainingHours > 0 && (
+                                      <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                                        {remainingHours}h
+                                      </Badge>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Compañero destino */}
+                      {redistributeSelectedTasks.size > 0 && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Compañero destino</Label>
+                          <Select value={redistributeToEmployee} onValueChange={setRedistributeToEmployee}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar compañero destino" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {employees
+                                .filter(e => e.isActive)
+                                .map(emp => (
+                                  <SelectItem key={emp.id} value={emp.id}>
+                                    {emp.name}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                      
+                      {/* Semana destino */}
+                      {redistributeToEmployee && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Semana destino</Label>
+                          <Select value={redistributeWeek} onValueChange={setRedistributeWeek}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar semana" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(futureWeeks || []).map((week, idx) => {
+                                const storageKey = getStorageKey(week.weekStart, currentMonth);
+                                return (
+                                  <SelectItem key={storageKey} value={storageKey}>
+                                    Sem {idx + 1} ({format(week.weekStart, 'd MMM', { locale: es })})
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                      
+                      {/* Resumen y carga */}
+                      {redistributeToEmployee && redistributeWeek && (() => {
+                        const allDelayedTasks = (delayedTasksByEmployee || []).flatMap(g => g.tasks || []);
+                        const selectedTasks = allDelayedTasks.filter(t => redistributeSelectedTasks.has(t.id));
+                        let totalTransfer = 0;
+                        selectedTasks.forEach(task => {
+                          const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
+                          if (remainingHours > 0) {
+                            totalTransfer += remainingHours;
+                          }
+                        });
+                        
+                        // Calcular carga usando getEmployeeLoadForWeek
+                        const weekData = (futureWeeks || []).find(w => {
+                          const storageKey = getStorageKey(w.weekStart, currentMonth);
+                          return storageKey === redistributeWeek;
+                        });
+                        
+                        if (weekData) {
+                          const weekLoad = getEmployeeLoadForWeek(
+                            redistributeToEmployee,
+                            redistributeWeek,
+                            weekData.effectiveStart,
+                            weekData.effectiveEnd
+                          );
+                          
+                          const newTotal = weekLoad.hours + totalTransfer;
+                          const exceeds = newTotal > weekLoad.capacity;
+                          
+                          return (
+                            <div className="space-y-3 p-3 bg-slate-50 rounded-lg">
+                              <Label className="text-sm font-medium">Carga del compañero destino</Label>
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between p-2 bg-white rounded text-xs">
+                                  <span>Semana {format(weekData.weekStart, 'd MMM', { locale: es })}</span>
+                                  <span className={cn(
+                                    "font-semibold",
+                                    weekLoad.percentage > 110 ? "text-red-600" : weekLoad.percentage > 100 ? "text-amber-600" : "text-emerald-600"
+                                  )}>
+                                    {weekLoad.hours}h / {weekLoad.capacity}h ({weekLoad.percentage}%)
+                                  </span>
+                                </div>
+                                {totalTransfer > 0 && (
+                                  <div className={cn(
+                                    "p-3 rounded border",
+                                    exceeds ? "bg-red-50 border-red-200" : "bg-emerald-50 border-emerald-200"
+                                  )}>
+                                    <div className="flex items-center justify-between text-sm">
+                                      <span className="font-medium">Total a transferir:</span>
+                                      <span className="font-bold">{totalTransfer.toFixed(1)}h</span>
+                                    </div>
+                                    <div className="mt-2 text-xs">
+                                      <div className="flex items-center justify-between">
+                                        <span>Carga actual:</span>
+                                        <span>{weekLoad.hours}h / {weekLoad.capacity}h</span>
+                                      </div>
+                                      <div className={cn(
+                                        "flex items-center justify-between mt-1 font-medium",
+                                        exceeds ? "text-red-600" : "text-emerald-600"
+                                      )}>
+                                        <span>Nueva carga:</span>
+                                        <span>
+                                          {newTotal.toFixed(1)}h / {weekLoad.capacity}h
+                                          {exceeds && ` (+${(newTotal - weekLoad.capacity).toFixed(1)}h exceso)`}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                      
+                      {/* Botón de redistribuir */}
+                      <Button 
+                        onClick={handleRedistribute} 
+                        className="w-full bg-indigo-600 hover:bg-indigo-700"
+                        disabled={redistributeSelectedTasks.size === 0 || !redistributeToEmployee || !redistributeWeek}
+                      >
+                        Redistribuir Horas
+                      </Button>
+                    </div>
+                  ) : selectedProject ? (
+                    <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                      <p className="text-sm text-amber-700">
+                        No hay tareas retrasadas en este proyecto.
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
