@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { 
@@ -165,6 +165,7 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
   const [isReady, setIsReady] = useState(false);
   const [hasBeenCompleted, setHasBeenCompleted] = useState(false);
   const lastCheckedUserIdRef = React.useRef<string | null>(null);
+  const cardRef = useRef<HTMLDivElement | null>(null);
 
   // Verificar si debe mostrarse
   useEffect(() => {
@@ -385,6 +386,45 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
     );
   }, [highlightPos]);
 
+  // Captura global para evitar que el Sheet se cierre por clic fuera
+  useEffect(() => {
+    if (!isVisible) return;
+
+    const step = tourSteps[currentStep];
+
+    const handler = (e: MouseEvent | PointerEvent) => {
+      // Permitir interacción dentro del tooltip
+      if (cardRef.current && e.target instanceof Node && cardRef.current.contains(e.target)) {
+        return;
+      }
+
+      // Permitir interacción dentro del área destacada si el paso es interactivo
+      if (step.interactive && highlightPos) {
+        const { clientX, clientY } = e as PointerEvent;
+        if (
+          clientX >= highlightPos.left &&
+          clientX <= highlightPos.left + highlightPos.width &&
+          clientY >= highlightPos.top &&
+          clientY <= highlightPos.top + highlightPos.height
+        ) {
+          return;
+        }
+      }
+
+      e.stopPropagation();
+      e.preventDefault();
+    };
+
+    const options = { capture: true };
+    window.addEventListener('pointerdown', handler, options);
+    window.addEventListener('click', handler, options);
+
+    return () => {
+      window.removeEventListener('pointerdown', handler, options);
+      window.removeEventListener('click', handler, options);
+    };
+  }, [isVisible, currentStep, highlightPos]);
+
   if (!isVisible) return null;
 
   const step = tourSteps[currentStep];
@@ -478,6 +518,7 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
           !isReady && "opacity-0",
           step.position === 'center' && "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
         )}
+      ref={cardRef}
         style={{
           width: 360,
           zIndex: 1000000,
