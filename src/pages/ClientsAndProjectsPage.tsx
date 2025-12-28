@@ -1958,7 +1958,6 @@ export default function ClientsAndProjectsPage() {
                   : `¿Estás seguro de ocultar "${hidingProject.name}"? El proyecto seguirá existiendo pero no se mostrará en la lista.`}
               </DialogDescription>
             </DialogHeader>
-            <div className="py-4">
             <DialogFooter>
               <Button variant="outline" onClick={() => setHidingProject(null)}>Cancelar</Button>
               <Button onClick={handleHideProject} className="bg-gradient-to-r from-indigo-500 to-purple-600">
