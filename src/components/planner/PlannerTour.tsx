@@ -82,12 +82,10 @@ const tourSteps: TourStep[] = [
     id: 'inline-edit',
     target: '[data-tour="planner-task-name"]',
     title: 'Edición rápida',
-    description: 'Haz doble clic en el nombre de cualquier tarea para editarlo directamente. Pulsa Enter para guardar o Escape para cancelar.',
+    description: 'Haz doble clic en el nombre de cualquier tarea para editarlo directamente. Pulsa Enter para guardar o Escape para cancelar. ¡Pruébalo cuando termines el tour!',
     icon: <MousePointerClick className="w-6 h-6 text-white" />,
     position: 'bottom',
-    highlight: true,
-    interactive: true,
-    interactionHint: '💡 Prueba: haz doble clic en el nombre de una tarea'
+    highlight: true
   },
   {
     id: 'checkbox-complete',

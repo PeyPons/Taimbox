@@ -1045,7 +1045,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                             <div className="bg-white rounded-lg border shadow-sm overflow-hidden opacity-60" data-tour="planner-projects">
                                                 <div className="bg-indigo-500 text-white px-4 py-2.5 flex items-center justify-between">
                                                     <span className="font-bold text-sm">SEO Mensual [Cliente Ejemplo]</span>
-                                                    <span className="text-xs opacity-80">(2 tareas)</span>
+                                                    <span className="text-xs opacity-80">(3 tareas)</span>
                                                 </div>
                                                 <table className="w-full text-sm">
                                                     <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
@@ -1063,8 +1063,30 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                             </td>
                                                             <td className="py-2 px-3" data-tour="planner-task-name">
                                                                 <span className="font-medium">Análisis de keywords</span>
+                                                                <div className="mt-1" data-tour="planner-dependency">
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-[10px]">
+                                                                        <Users className="h-3 w-3" />
+                                                                        💡 María te espera
+                                                                    </span>
+                                                                </div>
                                                             </td>
                                                             <td className="py-2 px-3 text-center font-mono">4h</td>
+                                                            <td className="py-2 px-3 text-center text-slate-300">-</td>
+                                                        </tr>
+                                                        <tr className="hover:bg-slate-50">
+                                                            <td className="py-2 px-3">
+                                                                <Checkbox checked={false} />
+                                                            </td>
+                                                            <td className="py-2 px-3">
+                                                                <span className="font-medium">Optimización on-page</span>
+                                                                <div className="mt-1">
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px]">
+                                                                        <Clock className="h-3 w-3" />
+                                                                        Esperas a: Juan
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="py-2 px-3 text-center font-mono">2h</td>
                                                             <td className="py-2 px-3 text-center text-slate-300">-</td>
                                                         </tr>
                                                         <tr className="hover:bg-slate-50 bg-emerald-50/50">
