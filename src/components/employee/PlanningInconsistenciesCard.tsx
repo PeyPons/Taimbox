@@ -3,6 +3,7 @@ import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   AlertTriangle, CheckCircle2, Users, TrendingUp, TrendingDown,
   Info, ChevronDown, ChevronUp
@@ -102,9 +103,14 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
       plannedHours: number;
       computedHours: number;
       difference: number;
+      budgetHours: number;
+      minimumHours: number;
+      totalProjectComputed: number;
+      totalProjectPlanned: number;
       teammates: Array<{
         employeeId: string;
         employeeName: string;
+        avatarUrl?: string;
         plannedHours: number;
         computedHours: number;
         difference: number;
@@ -123,20 +129,29 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
       if (Math.abs(difference) > 0.5) {
         const project = projects.find(p => p.id === deadline.projectId);
         
-        // Buscar compañeros que también tienen horas en este proyecto para detectar intercambios
-        const teammates: Array<{
-          employeeId: string;
-          employeeName: string;
-          plannedHours: number;
-          computedHours: number;
-          difference: number;
-        }> = [];
-
         // Obtener allocations del proyecto de todos los empleados
         const allProjectAllocations = allocations.filter(a => 
           a.projectId === deadline.projectId &&
           isSameMonth(parseISO(a.weekStartDate), viewDate)
         );
+        
+        // Calcular totales del proyecto (todos los empleados)
+        const totalProjectComputed = allProjectAllocations
+          .filter(a => a.status === 'completed')
+          .reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
+        const totalProjectPlanned = allProjectAllocations
+          .filter(a => a.status !== 'completed')
+          .reduce((sum, a) => sum + (a.hoursAssigned || 0), 0);
+        
+        // Buscar compañeros que también tienen horas en este proyecto para detectar intercambios
+        const teammates: Array<{
+          employeeId: string;
+          employeeName: string;
+          avatarUrl?: string;
+          plannedHours: number;
+          computedHours: number;
+          difference: number;
+        }> = [];
 
         // Agrupar por empleado
         const allocationsByEmployee: Record<string, {
@@ -168,6 +183,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
               teammates.push({
                 employeeId: empId,
                 employeeName: emp?.name || 'Desconocido',
+                avatarUrl: emp?.avatarUrl,
                 plannedHours: round2(empAllocs.planned),
                 computedHours: round2(empAllocs.computed),
                 difference: empDiff
@@ -183,6 +199,10 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
           plannedHours: round2(projectAllocs.planned),
           computedHours: round2(projectAllocs.computed),
           difference,
+          budgetHours: project?.budgetHours || 0,
+          minimumHours: project?.minimumHours || 0,
+          totalProjectComputed: round2(totalProjectComputed),
+          totalProjectPlanned: round2(totalProjectPlanned),
           teammates
         });
       }
@@ -282,13 +302,42 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                       <div className="font-semibold text-sm text-slate-800 truncate">
                         {formatProjectName(inc.projectName)}
                       </div>
+                      {/* Información del proyecto */}
+                      {(inc.budgetHours > 0 || inc.minimumHours > 0) && (
+                        <div className="mt-1 text-[10px] text-slate-500">
+                          {inc.budgetHours > 0 && (
+                            <span>Presupuestadas: <strong>{inc.budgetHours}h</strong></span>
+                          )}
+                          {inc.budgetHours > 0 && inc.minimumHours > 0 && <span> • </span>}
+                          {inc.minimumHours > 0 && (
+                            <span>Mínimo: <strong>{inc.minimumHours}h</strong></span>
+                          )}
+                        </div>
+                      )}
+                      {/* Explicación de la incoherencia */}
+                      <div className="mt-1.5 text-[11px] text-slate-600 bg-white/50 rounded px-2 py-1 border border-slate-200">
+                        {inc.budgetHours > 0 && (
+                          <div>
+                            El proyecto tiene <strong>{inc.budgetHours}h presupuestadas</strong>. 
+                            {' '}Total del proyecto: <strong>{round2(inc.totalProjectComputed + inc.totalProjectPlanned)}h</strong> 
+                            {' '}({inc.totalProjectComputed.toFixed(1)}h computadas + {inc.totalProjectPlanned.toFixed(1)}h planificadas).
+                          </div>
+                        )}
+                        {inc.budgetHours === 0 && inc.minimumHours > 0 && (
+                          <div>
+                            El proyecto tiene <strong>{inc.minimumHours}h mínimas</strong>. 
+                            {' '}Total del proyecto: <strong>{round2(inc.totalProjectComputed + inc.totalProjectPlanned)}h</strong> 
+                            {' '}({inc.totalProjectComputed.toFixed(1)}h computadas + {inc.totalProjectPlanned.toFixed(1)}h planificadas).
+                          </div>
+                        )}
+                      </div>
                       <div className="flex items-center gap-3 mt-1.5 text-xs">
                         <div>
                           <span className="text-slate-500">Deadline:</span>{' '}
                           <span className="font-medium">{inc.deadlineHours}h</span>
                         </div>
                         <div>
-                          <span className="text-slate-500">Planificado:</span>{' '}
+                          <span className="text-slate-500">Tus horas:</span>{' '}
                           <span className="font-medium">{round2(inc.plannedHours + inc.computedHours)}h</span>
                         </div>
                         <div className={cn("flex items-center gap-1 font-bold", isPositive ? "text-amber-700" : "text-blue-700")}>
@@ -319,16 +368,24 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                           return (
                             <div
                               key={tm.employeeId}
-                              className="text-xs bg-white rounded p-2 border border-slate-200"
+                              className="text-xs bg-white rounded p-2 border border-slate-200 flex items-center gap-2"
                             >
-                              <div className="font-medium text-slate-700">{tm.employeeName}</div>
-                              <div className="flex items-center gap-3 mt-1 text-[10px]">
-                                <span className="text-slate-500">
-                                  Planificado: <span className="font-medium">{round2(tm.plannedHours + tm.computedHours)}h</span>
-                                </span>
-                                <span className={cn("font-bold", tmIsPositive ? "text-amber-600" : "text-blue-600")}>
-                                  {tmIsPositive ? '+' : ''}{tm.difference}h
-                                </span>
+                              <Avatar className="h-6 w-6 border border-slate-200">
+                                <AvatarImage src={tm.avatarUrl} />
+                                <AvatarFallback className="text-[10px] bg-slate-100">
+                                  {tm.employeeName.substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-slate-700 truncate">{tm.employeeName}</div>
+                                <div className="flex items-center gap-3 mt-1 text-[10px]">
+                                  <span className="text-slate-500">
+                                    Planificado: <span className="font-medium">{round2(tm.plannedHours + tm.computedHours)}h</span>
+                                  </span>
+                                  <span className={cn("font-bold", tmIsPositive ? "text-amber-600" : "text-blue-600")}>
+                                    {tmIsPositive ? '+' : ''}{tm.difference}h
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           );

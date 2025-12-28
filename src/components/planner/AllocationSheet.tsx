@@ -237,10 +237,14 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
       const budgetMax = project.budgetHours || 0;
       const budgetMin = project.minimumHours || 0;
       const percentage = budgetMax > 0 ? (totalComputed / budgetMax) * 100 : 0;
+      const isExact100 = budgetMax > 0 && Math.abs(totalComputed - budgetMax) < 0.1; // 100% exacto (con tolerancia de 0.1h)
+      const isAtMinimum = budgetMin > 0 && totalComputed >= budgetMin && (budgetMax === 0 || totalComputed <= budgetMax);
 
       let status: 'healthy' | 'warning' | 'overload' | 'under' = 'healthy';
       if (totalComputed > budgetMax) {
         status = 'overload';
+      } else if (isExact100 || isAtMinimum) {
+        status = 'healthy'; // Verde cuando está al 100% exacto o al mínimo
       } else if (percentage >= 80) {
         status = 'warning';
       } else if (budgetMin > 0 && totalComputed < budgetMin && totalPlanned === 0) {
@@ -1204,6 +1208,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                       const myPlanned = myData?.planned || 0;
 
                       const exceededBy = totalComputed > budgetMax ? totalComputed - budgetMax : 0;
+                      const isExact100 = budgetMax > 0 && Math.abs(totalComputed - budgetMax) < 0.1; // 100% exacto (con tolerancia de 0.1h)
+                      const isAtMinimum = budgetMin > 0 && totalComputed >= budgetMin && (budgetMax === 0 || totalComputed <= budgetMax);
 
                       const statusConfig = {
                         healthy: { color: 'bg-emerald-500', textColor: 'text-emerald-700', label: 'Saludable' },
@@ -1255,10 +1261,19 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                 {/* Barra de progreso */}
                                 <div className="mt-3">
                                   <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                                    <div className={cn("h-full", config.color)} style={{ width: `${Math.min(percentage, 100)}%` }} />
+                                    <div 
+                                      className={cn(
+                                        "h-full",
+                                        isExact100 || isAtMinimum ? "bg-emerald-500" : config.color
+                                      )} 
+                                      style={{ width: `${Math.min(percentage, 100)}%` }} 
+                                    />
                                   </div>
                                   <div className="flex justify-between items-center mt-1">
-                                    <span className={cn("text-[10px] font-medium", config.textColor)}>
+                                    <span className={cn(
+                                      "text-[10px] font-medium",
+                                      isExact100 || isAtMinimum ? "text-emerald-700" : config.textColor
+                                    )}>
                                       {Math.round(percentage)}% usado
                                     </span>
                                     {exceededBy > 0 && (
