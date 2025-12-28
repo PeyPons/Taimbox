@@ -637,6 +637,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 // Usar siempre la fecha real de la semana (lunes) para buscar tareas
                 // No usar getStorageKey porque normaliza según el mes visible y puede cambiar
                 const weekStartDate = format(week.weekStart, 'yyyy-MM-dd');
+                const weekStr = weekStartDate; // Alias para usar como key en JSX
                 let weekAllocations = getEmployeeAllocationsForWeek(employeeId, weekStartDate);
                 
                 if (searchTerm) {
