@@ -452,7 +452,6 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                         <span className="text-xs text-muted-foreground">{seoTasks.length} tarea(s)</span>
                       </div>
                       {seoTasks.map(task => {
-                {openTasks.map(task => {
               const project = projects.find(p => p.id === task.projectId);
               const client = clients.find(c => c.id === project?.clientId);
               const missingHours = task.hoursAssigned - (task.hoursActual || 0);
@@ -1283,14 +1282,33 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
             })()}
             
             {/* Tareas Transferidas */}
-            {transferredTasks.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 pb-2 border-b">
-                  <Inbox className="h-4 w-4 text-purple-600" />
-                  <h3 className="font-semibold text-sm text-slate-900">Tareas que te han pasado</h3>
-                  <Badge variant="outline" className="ml-auto text-xs bg-purple-50 text-purple-700 border-purple-200">{transferredTasks.length}</Badge>
-                </div>
-                {transferredTasks.map(task => {
+            {transferredTasks.length > 0 && (() => {
+              // Separar por tipo de proyecto
+              const seoTransferred = transferredTasks.filter(t => {
+                const proj = projects.find(p => p.id === t.projectId);
+                return proj && proj.projectType !== 'PPC';
+              });
+              const ppcTransferred = transferredTasks.filter(t => {
+                const proj = projects.find(p => p.id === t.projectId);
+                return proj && proj.projectType === 'PPC';
+              });
+              
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 pb-2 border-b">
+                    <Inbox className="h-4 w-4 text-purple-600" />
+                    <h3 className="font-semibold text-sm text-slate-900">Tareas que te han pasado</h3>
+                    <Badge variant="outline" className="ml-auto text-xs bg-purple-50 text-purple-700 border-purple-200">{transferredTasks.length}</Badge>
+                  </div>
+                  
+                  {/* SEO Transferidas */}
+                  {seoTransferred.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">SEO</Badge>
+                        <span className="text-xs text-muted-foreground">{seoTransferred.length} tarea(s)</span>
+                      </div>
+                      {seoTransferred.map(task => {
                   const project = projects.find(p => p.id === task.projectId);
                   const client = clients.find(c => c.id === project?.clientId);
                   const isDistributionTask = task.taskName?.includes('[Distribuir]');
@@ -1528,9 +1546,261 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                       </div>
                     </Card>
                   );
-                })}
-              </div>
-            )}
+                      })}
+                    </div>
+                  )}
+                  
+                  {/* PPC Transferidas */}
+                  {ppcTransferred.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">PPC</Badge>
+                        <span className="text-xs text-muted-foreground">{ppcTransferred.length} tarea(s)</span>
+                      </div>
+                      {ppcTransferred.map(task => {
+                        const project = projects.find(p => p.id === task.projectId);
+                        const client = clients.find(c => c.id === project?.clientId);
+                        const isDistributionTask = task.taskName?.includes('[Distribuir]');
+                        const isTransferredTask = task.taskName?.includes('(transferida de');
+                        
+                        // Extraer nombre del empleado que transfirió
+                        const transferFromMatch = task.taskName?.match(/\(transferida de (.+)\)/);
+                        const transferFromName = transferFromMatch ? transferFromMatch[1] : null;
+                        const transferFromEmployee = transferFromName ? employees.find(e => e.name === transferFromName) : null;
+                        
+                        // Inicializar distribución si es necesario
+                        if ((isDistributionTask || isTransferredTask) && taskActions[task.id] === 'distribute' && (!distributionTasks[task.id] || distributionTasks[task.id].length === 0)) {
+                          initializeDistribution(task.id, task.hoursAssigned);
+                        }
+                        
+                        return (
+                          <Card key={task.id} className="p-4 border-l-4 border-purple-400 bg-purple-50/30">
+                            <div className="space-y-4">
+                              {/* Header con proyecto y horas */}
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: client?.color || '#6b7280' }} />
+                                    <span className="font-semibold text-sm text-slate-900 truncate">{project?.name || 'Sin proyecto'}</span>
+                                  </div>
+                                  <p className="text-sm text-slate-700 mt-1">{task.taskName?.replace(/\(transferida de .+\)/, '').trim() || 'Sin nombre'}</p>
+                                  
+                                  {/* Avatar y nombre del que transfirió */}
+                                  {transferFromEmployee && (
+                                    <div className="flex items-center gap-1.5 mt-2 bg-purple-100 rounded-full px-2 py-1 w-fit">
+                                      <Avatar className="h-4 w-4">
+                                        <AvatarImage src={transferFromEmployee.avatarUrl} alt={transferFromEmployee.name} />
+                                        <AvatarFallback className="bg-purple-500 text-white text-[8px]">
+                                          {(transferFromEmployee.first_name || transferFromEmployee.name)[0]}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <span className="text-xs text-purple-700 font-medium">{transferFromEmployee.first_name || transferFromEmployee.name}</span>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* Burbuja de horas */}
+                                <div className="flex items-center gap-1.5 bg-purple-100 rounded-full px-3 py-1.5 shrink-0">
+                                  <span className="text-xs font-medium text-purple-700">Horas</span>
+                                  <span className="text-sm font-mono font-bold text-purple-600">{task.hoursAssigned}h</span>
+                                </div>
+                              </div>
+                              
+                              {/* RadioGroup y acciones (mismo código que antes) */}
+                              <RadioGroup
+                                value={taskActions[task.id] || ''}
+                                onValueChange={(value) => {
+                                  setTaskActions(prev => ({ ...prev, [task.id]: value as 'move' | 'moveToEmployee' | 'justify' | 'distribute' | 'keep' }));
+                                  if (value === 'distribute' && (isDistributionTask || isTransferredTask)) {
+                                    initializeDistribution(task.id, task.hoursAssigned);
+                                  }
+                                  if (value === 'move' && !moveToMyWeek[task.id] && futureWeeks.length > 0) {
+                                    const defaultWeek = getStorageKey(futureWeeks[0].weekStart, viewDate);
+                                    setMoveToMyWeek(prev => ({ ...prev, [task.id]: defaultWeek }));
+                                  }
+                                  if (value === 'moveToEmployee' && !moveToWeek[task.id] && futureWeeks.length > 0) {
+                                    const defaultWeek = getStorageKey(futureWeeks[0].weekStart, viewDate);
+                                    setMoveToWeek(prev => ({ ...prev, [task.id]: defaultWeek }));
+                                  }
+                                }}
+                              >
+                                <div className="space-y-2">
+                                  <div className="flex items-start space-x-2">
+                                    <RadioGroupItem value="keep" id={`${task.id}-keep`} />
+                                    <Label htmlFor={`${task.id}-keep`} className="flex-1 cursor-pointer">
+                                      <div className="flex items-center gap-2">
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                        <span className="font-medium">Mantener la misma tarea</span>
+                                      </div>
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        Mantén la tarea tal cual está. No necesitas distribuirla ni hacer cambios.
+                                      </p>
+                                    </Label>
+                                  </div>
+                                  <div className="flex items-start space-x-2">
+                                    <RadioGroupItem value="distribute" id={`${task.id}-distribute`} />
+                                    <Label htmlFor={`${task.id}-distribute`} className="flex-1 cursor-pointer">
+                                      <div className="flex items-center gap-2">
+                                        <ArrowRight className="h-4 w-4 text-indigo-600" />
+                                        <span className="font-medium">Distribuir en múltiples tareas</span>
+                                      </div>
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        Distribuye las {task.hoursAssigned}h transferidas entre las semanas que mejor te vengan.
+                                      </p>
+                                    </Label>
+                                  </div>
+                                </div>
+                              </RadioGroup>
+                              
+                              {/* Resto del código de distribución, comentarios, etc. */}
+                              {(taskActions[task.id] === 'justify' || taskActions[task.id] === 'keep') && (
+                                <div className="mt-3 pl-6">
+                                  <Label htmlFor={`${task.id}-comment`} className="text-xs font-medium mb-2 block">
+                                    Comentario (opcional)
+                                  </Label>
+                                  <Textarea
+                                    id={`${task.id}-comment`}
+                                    placeholder={taskActions[task.id] === 'keep' ? "Añade un comentario si lo deseas..." : "Explica la razón de la desviación..."}
+                                    value={taskComments[task.id] || ''}
+                                    onChange={(e) => setTaskComments(prev => ({ ...prev, [task.id]: e.target.value }))}
+                                    className="min-h-[80px] text-sm"
+                                  />
+                                </div>
+                              )}
+                              
+                              {taskActions[task.id] === 'distribute' && (isDistributionTask || isTransferredTask) && (
+                                <div className="mt-3 pl-6 space-y-3">
+                                  <Label className="text-xs font-medium mb-2 block">
+                                    Distribuir {task.hoursAssigned}h transferidas en tareas (máximo {task.hoursAssigned}h)
+                                  </Label>
+                                  <p className="text-xs text-purple-600 bg-purple-50 p-2 rounded border border-purple-200">
+                                    💡 Puedes distribuir estas horas entre múltiples tareas y semanas. El sistema te avisará si excedes tu capacidad o el presupuesto del proyecto.
+                                  </p>
+                                  <div className="space-y-2">
+                                    {(distributionTasks[task.id] || []).map((distRow, idx) => {
+                                      const rowHours = parseFloat(distRow.hours) || 0;
+                                      const weekLoad = distRow.weekDate ? getEmployeeLoadForWeek(employeeId, distRow.weekDate) : null;
+                                      const currentWeekHours = weekLoad?.hours || 0;
+                                      const weekCapacity = weekLoad?.capacity || 0;
+                                      
+                                      const projectMonthAllocations = allocations.filter(a => 
+                                        a.projectId === task.projectId && 
+                                        isSameMonth(parseISO(a.weekStartDate), viewDate) &&
+                                        a.id !== task.id
+                                      );
+                                      const projectMonthHours = projectMonthAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
+                                      
+                                      const allDistributedHours = (distributionTasks[task.id] || []).reduce((sum, r) => sum + (parseFloat(r.hours) || 0), 0);
+                                      const projectBudget = projects.find(p => p.id === task.projectId)?.budgetHours || 0;
+                                      const newProjectMonthTotal = projectMonthHours + allDistributedHours;
+                                      const exceedsProjectBudget = projectBudget > 0 && newProjectMonthTotal > projectBudget;
+                                      
+                                      const weekDistributedHours = (distributionTasks[task.id] || []).filter(r => r.weekDate === distRow.weekDate).reduce((sum, r) => sum + (parseFloat(r.hours) || 0), 0);
+                                      const newWeekTotal = currentWeekHours + weekDistributedHours;
+                                      const exceedsCapacity = newWeekTotal > weekCapacity;
+                                      
+                                      return (
+                                        <div key={distRow.id} className={cn(
+                                          "flex gap-2 items-start p-2 border rounded-lg",
+                                          exceedsCapacity || exceedsProjectBudget ? "bg-red-50 border-red-200" : "bg-slate-50"
+                                        )}>
+                                          <div className="flex-1">
+                                            <Input
+                                              placeholder="Nombre de la tarea"
+                                              value={distRow.taskName}
+                                              onChange={(e) => updateDistributionRow(task.id, distRow.id, 'taskName', e.target.value)}
+                                              className={cn("h-8 text-xs mb-2", exceedsCapacity || exceedsProjectBudget && "border-red-300")}
+                                            />
+                                            <div className="flex gap-2">
+                                              <div className="flex-1">
+                                                <Input
+                                                  type="number"
+                                                  min="0.5"
+                                                  step="0.5"
+                                                  placeholder="Horas"
+                                                  value={distRow.hours}
+                                                  onChange={(e) => updateDistributionRow(task.id, distRow.id, 'hours', e.target.value)}
+                                                  className={cn("h-8 text-xs w-full", exceedsCapacity || exceedsProjectBudget && "border-red-300")}
+                                                />
+                                                {exceedsCapacity && (
+                                                  <p className="text-xs text-red-600 mt-1 font-medium">
+                                                    ⚠️ Excede capacidad: {newWeekTotal.toFixed(1)}h / {weekCapacity.toFixed(1)}h (+{(newWeekTotal - weekCapacity).toFixed(1)}h)
+                                                  </p>
+                                                )}
+                                                {exceedsProjectBudget && (
+                                                  <p className="text-xs text-red-600 mt-1 font-medium">
+                                                    ⚠️ Excede presupuesto proyecto: {newProjectMonthTotal.toFixed(1)}h / {projectBudget.toFixed(1)}h (+{(newProjectMonthTotal - projectBudget).toFixed(1)}h)
+                                                  </p>
+                                                )}
+                                              </div>
+                                              <Select
+                                                value={distRow.weekDate}
+                                                onValueChange={(v) => updateDistributionRow(task.id, distRow.id, 'weekDate', v)}
+                                              >
+                                                <SelectTrigger className={cn("h-8 text-xs flex-1", exceedsCapacity && "border-red-300")}>
+                                                  <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                  {futureWeeks.map((week) => {
+                                                    const storageKey = getStorageKey(week.weekStart, viewDate);
+                                                    const weekNumber = getWeekNumber(week.weekStart);
+                                                    return (
+                                                      <SelectItem key={storageKey} value={storageKey}>
+                                                        Sem {weekNumber} ({format(week.weekStart, 'd MMM', { locale: es })})
+                                                      </SelectItem>
+                                                    );
+                                                  })}
+                                                </SelectContent>
+                                              </Select>
+                                              {(distributionTasks[task.id] || []).length > 1 && (
+                                                <Button
+                                                  variant="ghost"
+                                                  size="icon"
+                                                  className="h-8 w-8 text-red-500"
+                                                  onClick={() => removeDistributionRow(task.id, distRow.id)}
+                                                >
+                                                  <X className="h-4 w-4" />
+                                                </Button>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  {(() => {
+                                    const totalDistributed = (distributionTasks[task.id] || []).reduce((sum, r) => sum + (parseFloat(r.hours) || 0), 0);
+                                    const remaining = task.hoursAssigned - totalDistributed;
+                                    return (
+                                      <div className="flex items-center justify-between text-xs">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => addDistributionRow(task.id)}
+                                          className="h-7"
+                                        >
+                                          <Plus className="h-3 w-3 mr-1" /> Añadir otra tarea
+                                        </Button>
+                                        <span className={cn(
+                                          "font-medium",
+                                          Math.abs(remaining) < 0.1 ? "text-emerald-600" : "text-amber-600"
+                                        )}>
+                                          {remaining > 0.1 ? `Faltan: ${remaining.toFixed(1)}h` : remaining < -0.1 ? `Sobran: ${Math.abs(remaining).toFixed(1)}h` : '✓ Distribución completa'}
+                                        </span>
+                                      </div>
+                                    );
+                                  })()}
+                                </div>
+                              )}
+                            </div>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
         
