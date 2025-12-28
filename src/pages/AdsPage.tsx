@@ -470,7 +470,7 @@ export default function AdsPage() {
                 </span>
                 <Badge variant="outline" className="text-xs">
                   <Calendar className="w-3 h-3 mr-1" />
-                  Día {currentDay} de {daysInMonth}
+                  Del 1 al {daysInMonth}
                 </Badge>
               </div>
             </div>
