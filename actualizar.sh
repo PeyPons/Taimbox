@@ -35,9 +35,6 @@ if ! git pull origin main --no-rebase 2>&1 | grep -q "divergent branches"; then
     :
 else
     echo "[$(date +'%H:%M:%S')] ⚠️  Ramas divergentes detectadas. Forzando actualización desde origin/main..."
-    # Guardar cambios locales si existen (opcional, descomentar si quieres preservar cambios locales)
-    # git stash
-    
     # Resetear a origin/main para que coincida exactamente con GitHub
     git fetch origin main
     git reset --hard origin/main
@@ -56,14 +53,28 @@ fi
 echo "[$(date +'%H:%M:%S')] 🔨 Compilando aplicación..."
 npm run build
 
-# Reiniciar el servidor (usando pm2 si está disponible, sino usar el método que tengas configurado)
+# Reiniciar el servidor web
+echo "[$(date +'%H:%M:%S')] 🔄 Reiniciando servidor web..."
+
+# Intentar diferentes métodos de reinicio según lo que esté disponible
 if command -v pm2 &> /dev/null; then
-    echo "[$(date +'%H:%M:%S')] 🔄 Reiniciando servidor con PM2..."
-    pm2 restart timeboxing || pm2 restart all || echo "⚠️  No se pudo reiniciar con PM2, verifica el nombre del proceso"
+    # Usar PM2 si está disponible
+    echo "[$(date +'%H:%M:%S')] Reiniciando con PM2..."
+    pm2 restart timeboxing 2>/dev/null || pm2 restart all 2>/dev/null || {
+        echo "[$(date +'%H:%M:%S')] ⚠️  No se encontró proceso en PM2, iniciando..."
+        pm2 start npm --name timeboxing -- run preview 2>/dev/null || echo "[$(date +'%H:%M:%S')] ⚠️  Error con PM2"
+    }
+elif systemctl is-active --quiet timeboxing.service 2>/dev/null; then
+    # Usar systemd si el servicio está activo
+    echo "[$(date +'%H:%M:%S')] Reiniciando con systemd..."
+    sudo systemctl restart timeboxing.service
+elif [ -f ~/Timeboxing/restart.sh ]; then
+    # Usar script de reinicio personalizado si existe
+    echo "[$(date +'%H:%M:%S')] Ejecutando script de reinicio personalizado..."
+    bash ~/Timeboxing/restart.sh
 else
-    echo "[$(date +'%H:%M:%S')] ⚠️  PM2 no está instalado. Reinicia el servidor manualmente."
-    echo "[$(date +'%H:%M:%S')] 💡 Para instalar PM2: npm install -g pm2"
-    echo "[$(date +'%H:%M:%S')] 💡 Para iniciar: pm2 start npm --name timeboxing -- run preview"
+    echo "[$(date +'%H:%M:%S')] ⚠️  No se encontró método de reinicio automático."
+    echo "[$(date +'%H:%M:%S')] 💡 Reinicia manualmente el servidor web."
 fi
 
 echo "[$(date +'%H:%M:%S')] ✅ Actualización y despliegue completados"
