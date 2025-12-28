@@ -625,7 +625,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
               showAllWeeks ? "contents" : "flex-1 flex justify-center"
             )}>
             {visibleWeeks.map((week, idx) => {
-                const index = showAllWeeks ? idx : currentWeekIndex;
+                const index = showAllWeeks ? idx : activeWeekIndex;
                 const weekStr = week.weekStart.toISOString().split('T')[0];
                 const storageKey = getStorageKey(week.weekStart, viewDate);
                 let weekAllocations = getEmployeeAllocationsForWeek(employeeId, storageKey);
