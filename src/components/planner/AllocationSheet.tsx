@@ -239,6 +239,22 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
   if (!employee) return null;
 
+  // Mostrar loading igual que DeadlinesPage (retorno temprano)
+  if (isLoadingTasks) {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent className="w-full sm:max-w-4xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>{employee.name} - Planificación</SheetTitle>
+          </SheetHeader>
+          <div className="min-h-[400px] flex items-center justify-center">
+            <div className="text-slate-400">Cargando tareas...</div>
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
   const handlePrevMonth = () => setViewDate(prev => subMonths(prev, 1));
   const handleNextMonth = () => setViewDate(prev => addMonths(prev, 1));
 
