@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useApp } from '@/contexts/AppContext';
 import { Allocation, Project } from '@/types';
 import { Plus, Pencil, CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, Check, TrendingUp, TrendingDown, Trash2, Link as LinkIcon, AlertOctagon, CheckCircle2, AlertTriangle, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc } from 'lucide-react';
@@ -367,7 +368,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
           hoursActual: isCompleting ? allocation.hoursAssigned : 0,
           hoursComputed: isCompleting ? allocation.hoursAssigned : 0
       });
-      setTimeout(() => { setRecentlyToggled(prev => { const newSet = new Set(prev); newSet.delete(allocation.id); return newSet; }); }, 30000);
+      setTimeout(() => { setRecentlyToggled(prev => { const newSet = new Set(prev); newSet.delete(allocation.id); return newSet; }); }, 120000); // 2 minutos para dar tiempo a poner horas reales y computadas
   };
 
   const updateInlineHours = (allocation: Allocation, field: 'hoursActual' | 'hoursComputed', value: string) => {
@@ -855,19 +856,25 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                         <th className="py-2 px-3 text-center font-medium w-24">Real</th>
                                                         <th className="py-2 px-3 text-center font-medium w-24">Comp</th>
                                                         <th className="py-2 px-3 text-center font-medium w-20">Balance</th>
+                                                        <th className="py-2 px-3 text-center font-medium w-12"></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100">
                                                     {sortedTasks.map(alloc => {
                                                         const isCompleted = alloc.status === 'completed';
                                                         const taskBalance = isCompleted ? round2((alloc.hoursComputed || 0) - (alloc.hoursActual || 0)) : 0;
+                                                        const depTask = alloc.dependencyId ? allocations.find(a => a.id === alloc.dependencyId) : null;
+                                                        const depOwner = depTask ? employees.find(e => e.id === depTask.employeeId) : null;
+                                                        const isDepReady = depTask?.status === 'completed';
+                                                        const blockingTasks = allocations.filter(a => a.dependencyId === alloc.id && a.status !== 'completed');
 
                                                         return (
                                                             <tr
                                                                 key={alloc.id}
                                                                 className={cn(
                                                                     "hover:bg-slate-50 transition-colors",
-                                                                    isCompleted && "bg-slate-50/50"
+                                                                    isCompleted && "bg-slate-50/50",
+                                                                    !isCompleted && depTask && !isDepReady && "bg-amber-50/50"
                                                                 )}
                                                             >
                                                                 <td className="py-2 px-3">
@@ -878,8 +885,34 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                                     />
                                                                 </td>
                                                                 <td className="py-2 px-3">
-                                                                    <div className={cn("font-medium", isCompleted && "line-through text-slate-400")}>
-                                                                        {alloc.taskName || 'Tarea'}
+                                                                    <div className="space-y-1">
+                                                                        <div className={cn("font-medium", isCompleted && "line-through text-slate-400")}>
+                                                                            {alloc.taskName || 'Tarea'}
+                                                                        </div>
+                                                                        {depTask && !isCompleted && (
+                                                                            <div className={cn(
+                                                                                "flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded w-fit border",
+                                                                                isDepReady
+                                                                                    ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                                                                                    : "text-amber-700 bg-amber-50 border-amber-200"
+                                                                            )}>
+                                                                                {isDepReady ? <CheckCircle2 className="w-2.5 h-2.5" /> : <LinkIcon className="w-2.5 h-2.5" />}
+                                                                                <span className="truncate max-w-[120px]">{isDepReady ? 'Listo:' : 'Dep:'} {depTask.taskName} <strong>({depOwner?.name})</strong></span>
+                                                                            </div>
+                                                                        )}
+                                                                        {blockingTasks.length > 0 && !isCompleted && (
+                                                                            <div className="flex flex-col gap-0.5">
+                                                                                {blockingTasks.map(bt => {
+                                                                                    const blockedUser = employees.find(e => e.id === bt.employeeId);
+                                                                                    return (
+                                                                                        <div key={bt.id} className="flex items-center gap-1 text-[9px] text-red-700 bg-red-50 px-1.5 py-0.5 rounded w-fit border border-red-200">
+                                                                                            <AlertOctagon className="w-2.5 h-2.5" />
+                                                                                            <span>Bloquea a: <strong>{blockedUser?.name}</strong></span>
+                                                                                        </div>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 </td>
                                                                 <td className="py-2 px-3 text-center font-mono">
@@ -926,6 +959,16 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                                     ) : (
                                                                         <span className="text-slate-300">-</span>
                                                                     )}
+                                                                </td>
+                                                                <td className="py-2 px-3">
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-7 w-7 p-0"
+                                                                        onClick={() => startEditFull(alloc)}
+                                                                    >
+                                                                        <Pencil className="h-3.5 w-3.5" />
+                                                                    </Button>
                                                                 </td>
                                                             </tr>
                                                         );
@@ -1249,17 +1292,26 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                 <div className="space-y-1.5 max-h-32 overflow-y-auto">
                                   {breakdown.map(({ employeeId: empId, employeeName, computed, planned }) => {
                                     const isMe = empId === employeeId;
+                                    const emp = employees.find(e => e.id === empId);
                                     return (
                                       <div key={empId} className={cn(
-                                        "text-xs px-2 py-1.5 rounded",
+                                        "text-xs px-2 py-1.5 rounded flex items-center gap-2",
                                         isMe ? "bg-indigo-50 border border-indigo-100" : "bg-slate-50"
                                       )}>
-                                        <div className={cn("font-medium", isMe ? "text-indigo-700" : "text-slate-600")}>
-                                          {employeeName} {isMe && "(tú)"}
-                                        </div>
-                                        <div className="flex gap-3 text-[10px] mt-0.5">
-                                          <span className="text-blue-600">Plan: {planned.toFixed(1)}h</span>
-                                          <span className="text-emerald-600">Comp: {computed.toFixed(1)}h</span>
+                                        <Avatar className="h-6 w-6 border border-slate-200">
+                                          <AvatarImage src={emp?.avatarUrl} />
+                                          <AvatarFallback className="text-[10px] bg-slate-100">
+                                            {employeeName.substring(0, 2).toUpperCase()}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-1 min-w-0">
+                                          <div className={cn("font-medium truncate", isMe ? "text-indigo-700" : "text-slate-600")}>
+                                            {employeeName} {isMe && "(tú)"}
+                                          </div>
+                                          <div className="flex gap-3 text-[10px] mt-0.5">
+                                            <span className="text-blue-600">Plan: {planned.toFixed(1)}h</span>
+                                            <span className="text-emerald-600">Comp: {computed.toFixed(1)}h</span>
+                                          </div>
                                         </div>
                                       </div>
                                     );
@@ -1268,22 +1320,6 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                               </div>
                             )}
 
-                            {/* Tus horas */}
-                            <div className="border-t pt-3">
-                              <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
-                                <div className="text-[10px] font-semibold text-indigo-600 uppercase mb-2">Tus horas</div>
-                                <div className="flex gap-4">
-                                  <div>
-                                    <div className="text-lg font-bold text-blue-600">{myPlanned.toFixed(1)}h</div>
-                                    <div className="text-[10px] text-slate-500">Planificado</div>
-                                  </div>
-                                  <div>
-                                    <div className="text-lg font-bold text-emerald-600">{myComputed.toFixed(1)}h</div>
-                                    <div className="text-[10px] text-slate-500">Computado</div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
                           </div>
                         </div>
                       );
