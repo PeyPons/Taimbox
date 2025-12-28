@@ -300,8 +300,12 @@ export default function ReportsPage() {
   }, [employees, monthAllocations, year, month]);
 
   // Proyectos en riesgo (superando presupuesto o con problemas)
-  // Determinar en qué semana del mes estamos (1-4)
-  const currentWeekOfMonth = Math.ceil(getDate(new Date()) / 7);
+  // Determinar en qué semana del mes seleccionado estamos (1-4)
+  // Si el mes seleccionado es el actual, usar el día actual; si es pasado, usar el último día del mes
+  const today = new Date();
+  const isCurrentMonth = isSameMonth(today, currentMonth);
+  const referenceDate = isCurrentMonth ? today : endOfMonth(currentMonth);
+  const currentWeekOfMonth = Math.ceil(getDate(referenceDate) / 7);
   const isEndOfMonth = currentWeekOfMonth >= 3;
 
   const projectsAtRisk = useMemo(() => {
@@ -486,9 +490,10 @@ export default function ReportsPage() {
           const project = (projects || []).find(p => p.id === task.projectId);
 
           // Calcular semanas desde que se planificó la tarea bloqueante
+          // Usar el final del mes seleccionado como referencia para meses pasados
           const blockerWeekDate = parseISO(blockerTask.weekStartDate);
-          const now = new Date();
-          const weeksSince = Math.max(0, differenceInWeeks(now, blockerWeekDate));
+          const referenceDate = isSameMonth(new Date(), currentMonth) ? new Date() : endOfMonth(currentMonth);
+          const weeksSince = Math.max(0, differenceInWeeks(referenceDate, blockerWeekDate));
 
           blocked.push({
             blockedTask: task,
