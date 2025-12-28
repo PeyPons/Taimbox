@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Badge } from '@/components/ui/badge';
 import { format, startOfMonth, endOfMonth, isSameMonth, parseISO, addDays, startOfWeek, subMonths, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { AlertCircle, TrendingUp, TrendingDown, CheckCircle2, Users, Plus, ArrowRight, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { AlertCircle, TrendingUp, TrendingDown, CheckCircle2, Users, Plus, ArrowRight, ChevronLeft, ChevronRight, CalendarDays, Check } from 'lucide-react';
 import { cn, formatProjectName } from '@/lib/utils';
 import { toast } from 'sonner';
 import { getStorageKey, getWeeksForMonth, getMonthlyCapacity } from '@/utils/dateUtils';
@@ -420,10 +420,15 @@ export default function WeeklyForecastPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Feed de Bloqueos (Semana en curso)
-            </CardTitle>
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" />
+                Feed de Bloqueos
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                Semana del <strong>{format(currentWeekStart, "d 'de' MMMM", { locale: es })}</strong>
+              </p>
+            </div>
             <div className="flex items-center gap-2">
               <Select value={filterFeedbackEmployee} onValueChange={setFilterFeedbackEmployee}>
                 <SelectTrigger className="w-[180px] h-8 text-xs">
@@ -440,21 +445,49 @@ export default function WeeklyForecastPage() {
                     ))}
                 </SelectContent>
               </Select>
-              <Select value={filterFeedbackProject} onValueChange={setFilterFeedbackProject}>
-                <SelectTrigger className="w-[180px] h-8 text-xs">
-                  <SelectValue placeholder="Todos los proyectos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los proyectos</SelectItem>
-                  {projects
-                    .filter(p => p.status === 'active' && !p.isHidden)
-                    .map(proj => (
-                      <SelectItem key={proj.id} value={proj.id}>
-                        {formatProjectName(proj.name)}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" className="w-[180px] h-8 text-xs justify-between">
+                    <span className="truncate">
+                      {filterFeedbackProject === 'all' 
+                        ? 'Todos los proyectos' 
+                        : formatProjectName(projects.find(p => p.id === filterFeedbackProject)?.name || '')}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar proyecto..." />
+                    <CommandList>
+                      <CommandEmpty>No hay proyectos</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem 
+                          value="all" 
+                          onSelect={() => setFilterFeedbackProject('all')}
+                        >
+                          <Check className={cn("mr-2 h-4 w-4", filterFeedbackProject === 'all' ? "opacity-100" : "opacity-0")} />
+                          Todos los proyectos
+                        </CommandItem>
+                        {projects
+                          .filter(p => p.status === 'active' && !p.isHidden)
+                          .map(proj => {
+                            const client = clients.find(c => c.id === proj.clientId);
+                            return (
+                              <CommandItem 
+                                key={proj.id} 
+                                value={`${client?.name || ''} ${proj.name}`}
+                                onSelect={() => setFilterFeedbackProject(proj.id)}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", filterFeedbackProject === proj.id ? "opacity-100" : "opacity-0")} />
+                                <span className="truncate">{client?.name} - {formatProjectName(proj.name)}</span>
+                              </CommandItem>
+                            );
+                          })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </CardHeader>

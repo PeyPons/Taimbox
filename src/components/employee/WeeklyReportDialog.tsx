@@ -9,10 +9,14 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, parseISO, startOfWeek, isSameMonth, addDays, isBefore } from 'date-fns';
-import { CheckCircle2, ArrowRight, AlertCircle, Plus, X } from 'lucide-react';
+import { es } from 'date-fns/locale';
+import { CheckCircle2, ArrowRight, AlertCircle, Plus, X, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { getStorageKey, getWeeksForMonth } from '@/utils/dateUtils';
 import { cn, formatProjectName } from '@/lib/utils';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Check } from 'lucide-react';
 
 interface WeeklyReportDialogProps {
   open: boolean;
@@ -22,11 +26,13 @@ interface WeeklyReportDialogProps {
 }
 
 export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }: WeeklyReportDialogProps) {
-  const { allocations, projects, clients, updateAllocation, addAllocation, deleteAllocation, addWeeklyFeedback } = useApp();
+  const { allocations, projects, clients, employees, updateAllocation, addAllocation, deleteAllocation, addWeeklyFeedback } = useApp();
   
-  const [taskActions, setTaskActions] = useState<Record<string, 'move' | 'complete' | 'justify' | 'distribute' | null>>({});
+  const [taskActions, setTaskActions] = useState<Record<string, 'move' | 'moveToEmployee' | 'justify' | 'distribute' | null>>({});
   const [taskComments, setTaskComments] = useState<Record<string, string>>({});
   const [distributionTasks, setDistributionTasks] = useState<Record<string, Array<{ id: string; taskName: string; hours: string; weekDate: string }>>>({});
+  const [moveToEmployee, setMoveToEmployee] = useState<Record<string, string>>({}); // taskId -> employeeId
+  const [moveToWeek, setMoveToWeek] = useState<Record<string, string>>({}); // taskId -> weekStartDate
   
   // Detectar semana actual o última semana pasada del mes
   const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
@@ -196,14 +202,45 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
               });
             }
           }
-        } else if (action === 'complete') {
-          const actualHours = task.hoursActual || task.hoursAssigned;
-          await updateAllocation({
-            ...task,
-            status: 'completed',
-            hoursActual: actualHours,
-            hoursAssigned: actualHours
-          });
+        } else if (action === 'moveToEmployee') {
+          // Mover horas restantes a otro empleado
+          const targetEmployeeId = moveToEmployee[task.id];
+          const targetWeek = moveToWeek[task.id];
+          
+          if (!targetEmployeeId || !targetWeek) {
+            toast.error('Selecciona empleado y semana destino');
+            continue;
+          }
+          
+          const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
+          if (remainingHours > 0) {
+            // 1. Completar tarea actual con las horas realmente trabajadas
+            await updateAllocation({
+              ...task,
+              hoursAssigned: task.hoursActual || 0,
+              status: 'completed'
+            });
+            
+            // 2. Crear tarea para el otro empleado
+            await addAllocation({
+              employeeId: targetEmployeeId,
+              projectId: task.projectId,
+              weekStartDate: targetWeek,
+              hoursAssigned: remainingHours,
+              taskName: `${task.taskName || 'Tarea'} (transferida de ${employees.find(e => e.id === employeeId)?.name || 'empleado'})`,
+              status: 'planned'
+            });
+            
+            // 3. Registrar feedback para trazabilidad
+            await addWeeklyFeedback({
+              employeeId,
+              weekStartDate: taskWeekStr,
+              projectId: task.projectId,
+              allocationId: task.id,
+              reason: 'other',
+              comments: `Tarea transferida a ${employees.find(e => e.id === targetEmployeeId)?.name || 'otro empleado'} (${remainingHours}h restantes)`
+            });
+          }
         } else if (action === 'justify') {
           const comment = taskComments[task.id];
           if (comment?.trim()) {
@@ -253,6 +290,9 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
       onOpenChange(false);
       setTaskActions({});
       setTaskComments({});
+      setMoveToEmployee({});
+      setMoveToWeek({});
+      setDistributionTasks({});
     } catch (error) {
       console.error('Error enviando reporte semanal:', error);
       toast.error('Error al enviar el reporte semanal');
@@ -268,7 +308,16 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
             Reporte Semanal
           </DialogTitle>
           <DialogDescription>
-            Revisa las tareas desviadas y elige cómo gestionarlas.
+            {targetWeek ? (
+              <div className="space-y-1">
+                <p>Revisa las tareas desviadas de la semana <strong>{format(parseISO(targetWeek), "d 'de' MMMM", { locale: es })}</strong> y elige cómo gestionarlas.</p>
+                <p className="text-xs text-muted-foreground">
+                  Incluye todas las semanas pasadas y la actual que necesitan atención.
+                </p>
+              </div>
+            ) : (
+              'Revisa las tareas desviadas y elige cómo gestionarlas.'
+            )}
           </DialogDescription>
         </DialogHeader>
         
@@ -318,9 +367,14 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                     <RadioGroup
                       value={taskActions[task.id] || ''}
                       onValueChange={(value) => {
-                        setTaskActions(prev => ({ ...prev, [task.id]: value as 'move' | 'complete' | 'justify' | 'distribute' }));
+                        setTaskActions(prev => ({ ...prev, [task.id]: value as 'move' | 'moveToEmployee' | 'justify' | 'distribute' }));
                         if (value === 'distribute' && isDistributionTask) {
                           initializeDistribution(task.id, task.hoursAssigned);
+                        }
+                        // Inicializar semana por defecto para mover a otro empleado
+                        if (value === 'moveToEmployee' && !moveToWeek[task.id]) {
+                          const defaultWeek = futureWeeks[0] ? getStorageKey(futureWeeks[0].weekStart, viewDate) : format(new Date(), 'yyyy-MM-dd');
+                          setMoveToWeek(prev => ({ ...prev, [task.id]: defaultWeek }));
                         }
                       }}
                     >
@@ -340,30 +394,30 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                             </Label>
                           </div>
                         ) : (
-                          // Para tareas normales, mostrar las 3 opciones estándar
+                          // Para tareas normales, mostrar opciones sin "Terminado eficiente"
                           <>
                             <div className="flex items-start space-x-2">
                               <RadioGroupItem value="move" id={`${task.id}-move`} />
                               <Label htmlFor={`${task.id}-move`} className="flex-1 cursor-pointer">
                                 <div className="flex items-center gap-2">
                                   <ArrowRight className="h-4 w-4 text-indigo-600" />
-                                  <span className="font-medium">Mover {missingHours}h a la semana siguiente</span>
+                                  <span className="font-medium">Mover {missingHours}h a mi semana siguiente</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                  La tarea actual se recortará a lo hecho y se creará una nueva asignación para la semana siguiente.
+                                  La tarea actual se recortará a lo hecho y se creará una nueva asignación para tu semana siguiente.
                                 </p>
                               </Label>
                             </div>
                             
                             <div className="flex items-start space-x-2">
-                              <RadioGroupItem value="complete" id={`${task.id}-complete`} />
-                              <Label htmlFor={`${task.id}-complete`} className="flex-1 cursor-pointer">
+                              <RadioGroupItem value="moveToEmployee" id={`${task.id}-moveToEmployee`} />
+                              <Label htmlFor={`${task.id}-moveToEmployee`} className="flex-1 cursor-pointer">
                                 <div className="flex items-center gap-2">
-                                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                                  <span className="font-medium">Terminado eficiente</span>
+                                  <Users className="h-4 w-4 text-purple-600" />
+                                  <span className="font-medium">Mover {missingHours}h a otro empleado</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                  Las horas asignadas se ajustarán a las horas reales. Las horas liberadas volverán al presupuesto disponible del proyecto.
+                                  Transfiere las horas restantes a otro compañero. La tarea actual se completará con lo que has hecho.
                                 </p>
                               </Label>
                             </div>
@@ -384,6 +438,62 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                         )}
                       </div>
                     </RadioGroup>
+                    
+                    {/* Selector de empleado y semana cuando se selecciona "Mover a otro empleado" */}
+                    {taskActions[task.id] === 'moveToEmployee' && !isDistributionTask && (
+                      <div className="mt-3 pl-6 space-y-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                        <Label className="text-xs font-medium mb-2 block text-purple-900">
+                          Transferir a otro empleado
+                        </Label>
+                        <div className="space-y-2">
+                          <div>
+                            <Label htmlFor={`${task.id}-employee-select`} className="text-xs mb-1 block">
+                              Empleado
+                            </Label>
+                            <Select
+                              value={moveToEmployee[task.id] || ''}
+                              onValueChange={(value) => setMoveToEmployee(prev => ({ ...prev, [task.id]: value }))}
+                            >
+                              <SelectTrigger id={`${task.id}-employee-select`} className="h-8 text-xs">
+                                <SelectValue placeholder="Seleccionar empleado" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {employees
+                                  .filter(e => e.id !== employeeId && e.isActive)
+                                  .map(emp => (
+                                    <SelectItem key={emp.id} value={emp.id}>
+                                      {emp.name}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label htmlFor={`${task.id}-week-select`} className="text-xs mb-1 block">
+                              Semana destino
+                            </Label>
+                            <Select
+                              value={moveToWeek[task.id] || ''}
+                              onValueChange={(value) => setMoveToWeek(prev => ({ ...prev, [task.id]: value }))}
+                            >
+                              <SelectTrigger id={`${task.id}-week-select`} className="h-8 text-xs">
+                                <SelectValue placeholder="Seleccionar semana" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {futureWeeks.map((week, i) => {
+                                  const storageKey = getStorageKey(week.weekStart, viewDate);
+                                  return (
+                                    <SelectItem key={storageKey} value={storageKey}>
+                                      Sem {i + 1} ({format(week.weekStart, 'd MMM', { locale: es })})
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     
                     {taskActions[task.id] === 'justify' && (
                       <div className="mt-3 pl-6">
