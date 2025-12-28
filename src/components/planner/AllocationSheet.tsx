@@ -126,6 +126,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   // Semanas a mostrar según el modo
   const visibleWeeks = useMemo(() => {
     if (showAllWeeks) return weeks;
+    if (weeks.length === 0 || activeWeekIndex < 0 || activeWeekIndex >= weeks.length) return [];
     return [weeks[activeWeekIndex]];
   }, [weeks, showAllWeeks, activeWeekIndex]);
 
@@ -197,7 +198,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
   const addTaskRow = () => {
     const lastTask = newTasks.length > 0 ? newTasks[newTasks.length - 1] : null;
-    const defaultKey = getStorageKey(weeks[0].weekStart, viewDate);
+    const defaultKey = weeks.length > 0 ? getStorageKey(weeks[0].weekStart, viewDate) : getStorageKey(new Date(), viewDate);
     setNewTasks(prev => [...prev, {
       id: crypto.randomUUID(),
       projectId: lastTask ? lastTask.projectId : '', 
