@@ -23,7 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function Sidebar() {
   const location = useLocation();
-  const { currentUser, isAdmin } = useApp(); // Obtenemos el usuario real
+  const { currentUser } = useApp(); // Obtenemos el usuario real
   const { canAccess } = usePermissions(); // Verificamos permisos
 
   const handleLogout = async () => {
@@ -72,7 +72,7 @@ export function Sidebar() {
               </NavLink>
             )}
 
-            {isAdmin && canAccess('/planner') && (
+            {canAccess('/weekly-forecast') && (
               <NavLink to="/weekly-forecast" icon={TrendingUp} active={location.pathname === '/weekly-forecast'}>
                 Forecast
               </NavLink>

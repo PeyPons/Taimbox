@@ -12,6 +12,7 @@ export interface UserPermissions {
   can_access_meta_ads?: boolean;
   can_access_ads_reports?: boolean;
   can_access_deadlines?: boolean;
+  can_access_weekly_forecast?: boolean;
 }
 
 /**
@@ -28,6 +29,7 @@ export const ROUTE_PERMISSIONS: Record<string, keyof UserPermissions> = {
   '/meta-ads': 'can_access_meta_ads',
   '/ads-reports': 'can_access_ads_reports',
   '/deadlines': 'can_access_deadlines',
+  '/weekly-forecast': 'can_access_weekly_forecast',
 };
 
 /**
@@ -44,6 +46,7 @@ export const DEFAULT_PERMISSIONS: UserPermissions = {
   can_access_meta_ads: true,
   can_access_ads_reports: true,
   can_access_deadlines: true,
+  can_access_weekly_forecast: true,
 };
 
 /**
@@ -60,5 +63,6 @@ export const PERMISSION_LABELS: Record<keyof UserPermissions, string> = {
   can_access_meta_ads: 'Meta Ads',
   can_access_ads_reports: 'Informes automatizados',
   can_access_deadlines: 'Deadlines',
+  can_access_weekly_forecast: 'Forecast',
 };
 
