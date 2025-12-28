@@ -364,19 +364,20 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isVisible, handleNext, handlePrev, handleSkip]);
 
-  if (!isVisible) return null;
-
-  const step = tourSteps[currentStep];
-  const isLastStep = currentStep === tourSteps.length - 1;
-  const isFirstStep = currentStep === 0;
-
   // Handler para capturar clics en el overlay sin cerrar el Sheet
+  // IMPORTANTE: Debe estar ANTES del return condicional para cumplir reglas de hooks
   const handleOverlayClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     // No cerramos el tour al hacer clic en el overlay, solo capturamos el evento
     // El usuario debe usar los botones para navegar o saltar
   }, []);
+
+  if (!isVisible) return null;
+
+  const step = tourSteps[currentStep];
+  const isLastStep = currentStep === tourSteps.length - 1;
+  const isFirstStep = currentStep === 0;
 
   // Renderizamos directamente sin portal
   return (

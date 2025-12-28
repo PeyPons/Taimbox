@@ -214,6 +214,13 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
     return results.sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference));
   }, [deadlines, allocations, projects, employees, employeeId, viewDate, isLoading]);
 
+  // Expandir todos los proyectos por defecto cuando cambian las inconsistencias
+  useEffect(() => {
+    if (inconsistencies.length > 0) {
+      setExpandedProjects(new Set(inconsistencies.map(inc => inc.projectId)));
+    }
+  }, [inconsistencies]);
+
   const toggleProject = (projectId: string) => {
     setExpandedProjects(prev => {
       const newSet = new Set(prev);
