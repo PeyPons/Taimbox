@@ -311,7 +311,12 @@ Responde SOLO JSON válido:
     }
   };
 
-  // Mostrar loading del mes igual que DeadlinesPage (retorno temprano)
+  // IMPORTANTE: Todos los hooks deben ejecutarse antes de cualquier return temprano
+  const gridTemplate = `250px repeat(${weeks.length}, minmax(0, 1fr)) 100px`;
+  const sortedProjects = useMemo(() => [...(projects || [])].sort((a,b) => a.name.localeCompare(b.name)), [projects]);
+  const sortedEmployees = useMemo(() => [...(employees || [])].filter(e=>e.isActive).sort((a,b) => a.name.localeCompare(b.name)), [employees]);
+
+  // Mostrar loading del mes igual que DeadlinesPage (retorno temprano DESPUÉS de todos los hooks)
   if (isLoadingMonth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -319,10 +324,6 @@ Responde SOLO JSON válido:
       </div>
     );
   }
-
-  const gridTemplate = `250px repeat(${weeks.length}, minmax(0, 1fr)) 100px`;
-  const sortedProjects = useMemo(() => [...(projects || [])].sort((a,b) => a.name.localeCompare(b.name)), [projects]);
-  const sortedEmployees = useMemo(() => [...(employees || [])].filter(e=>e.isActive).sort((a,b) => a.name.localeCompare(b.name)), [employees]);
 
   // Helper para obtener el badge del proveedor
   const getProviderBadge = () => {
