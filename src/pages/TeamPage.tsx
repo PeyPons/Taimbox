@@ -4,7 +4,7 @@ import { EmployeeCard } from '@/components/team/EmployeeCard';
 import { TeamEventManager } from '@/components/team/TeamEventManager';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Search, CalendarOff, UserPlus } from 'lucide-react';
 import { EmployeeDialog } from '@/components/team/EmployeeDialog'; // Importamos el diálogo completo
 import { Employee } from '@/types';
@@ -51,6 +51,12 @@ export default function TeamPage() {
                     </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Gestión de eventos del equipo</DialogTitle>
+                        <DialogDescription>
+                            Gestiona festivos, eventos y otras actividades que afectan a todo el equipo.
+                        </DialogDescription>
+                    </DialogHeader>
                     <TeamEventManager />
                 </DialogContent>
             </Dialog>

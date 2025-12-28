@@ -1032,6 +1032,9 @@ export default function ClientsAndProjectsPage() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Nuevo cliente</DialogTitle>
+                <DialogDescription>
+                  Crea un nuevo cliente para organizar tus proyectos.
+                </DialogDescription>
               </DialogHeader>
               <Form {...clientForm}>
                 <form onSubmit={clientForm.handleSubmit(handleAddClient)} className="space-y-4 py-4">
@@ -1891,6 +1894,9 @@ export default function ClientsAndProjectsPage() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Editar cliente</DialogTitle>
+              <DialogDescription>
+                Modifica la información del cliente.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
@@ -1946,12 +1952,13 @@ export default function ClientsAndProjectsPage() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{hidingProject.isHidden ? 'Mostrar proyecto' : 'Ocultar proyecto'}</DialogTitle>
+              <DialogDescription>
+                {hidingProject.isHidden 
+                  ? `¿Quieres hacer visible "${hidingProject.name}"? El proyecto volverá a aparecer en la lista.`
+                  : `¿Estás seguro de ocultar "${hidingProject.name}"? El proyecto seguirá existiendo pero no se mostrará en la lista.`}
+              </DialogDescription>
             </DialogHeader>
-            <p className="text-sm text-muted-foreground">
-              {hidingProject.isHidden 
-                ? `¿Quieres hacer visible "${hidingProject.name}"? El proyecto volverá a aparecer en la lista.`
-                : `¿Estás seguro de ocultar "${hidingProject.name}"? El proyecto seguirá existiendo pero no se mostrará en la lista.`}
-            </p>
+            <div className="py-4">
             <DialogFooter>
               <Button variant="outline" onClick={() => setHidingProject(null)}>Cancelar</Button>
               <Button onClick={handleHideProject} className="bg-gradient-to-r from-indigo-500 to-purple-600">
