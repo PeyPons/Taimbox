@@ -491,36 +491,36 @@ export function PlannerTour({ onComplete, forceShow = false }: PlannerTourProps)
 
         {/* Footer con navegación */}
         {!step.customContent && (
-          <div className="px-4 pb-4 pt-0 bg-white">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                {tourSteps.map((_, idx) => (
-                  <div 
-                    key={idx}
-                    className={cn(
-                      "w-2 h-2 rounded-full transition-all",
-                      idx === currentStep 
-                        ? "bg-indigo-600 w-4" 
-                        : idx < currentStep 
-                          ? "bg-indigo-300" 
-                          : "bg-slate-200"
-                    )}
-                  />
-                ))}
-              </div>
+          <div className="px-4 pb-4 pt-2 bg-white border-t">
+            <div className="flex items-center justify-between gap-4">
+              {/* Indicador de paso */}
+              <span className="text-xs text-slate-400 whitespace-nowrap">
+                {currentStep + 1} / {tourSteps.length}
+              </span>
+              
+              {/* Botones de navegación */}
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={handleSkip} className="text-slate-400 hover:text-slate-600">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleSkip} 
+                  className="text-slate-400 hover:text-slate-600 h-8 px-2"
+                >
                   Saltar
                 </Button>
                 {!isFirstStep && (
-                  <Button variant="ghost" size="sm" onClick={handlePrev}>
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Anterior
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handlePrev}
+                    className="h-8 px-3"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
                   </Button>
                 )}
                 <Button 
                   size="sm"
-                  className="bg-indigo-600 hover:bg-indigo-700"
+                  className="bg-indigo-600 hover:bg-indigo-700 h-8 px-4"
                   onClick={isLastStep ? handleComplete : handleNext}
                 >
                   {isLastStep ? '¡Listo!' : 'Siguiente'}

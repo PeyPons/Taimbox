@@ -144,11 +144,6 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
     return { availableHelpers: available, busyButWillingHelpers: busyButWilling };
   }, [frequentCollaborators]);
 
-  // Si no hay colaboradores ni ayuda disponible, no mostrar nada
-  if (frequentCollaborators.length === 0 && availableHelpers.length === 0) {
-    return null;
-  }
-
   // Función helper para mostrar disponibilidad de forma amigable
   const getAvailabilityText = (occupancy: number) => {
     if (occupancy < 50) return "Muy disponible";
