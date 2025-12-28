@@ -46,14 +46,24 @@ fi
 
 echo "[$(date +'%H:%M:%S')] ✅ Actualización completada"
 
-# Opcional: Reinstalar dependencias si package.json cambió
+# Reinstalar dependencias si package.json cambió
 if git diff --name-only HEAD@{1} HEAD 2>/dev/null | grep -q package.json; then
     echo "[$(date +'%H:%M:%S')] 📦 package.json cambió, reinstalando dependencias..."
     npm install
 fi
 
-# Opcional: Rebuild si es necesario
-# echo "[$(date +'%H:%M:%S')] 🔨 Reconstruyendo aplicación..."
-# npm run build
+# Compilar la aplicación
+echo "[$(date +'%H:%M:%S')] 🔨 Compilando aplicación..."
+npm run build
 
-echo "[$(date +'%H:%M:%S')] ✅ Actualización completada"
+# Reiniciar el servidor (usando pm2 si está disponible, sino usar el método que tengas configurado)
+if command -v pm2 &> /dev/null; then
+    echo "[$(date +'%H:%M:%S')] 🔄 Reiniciando servidor con PM2..."
+    pm2 restart timeboxing || pm2 restart all || echo "⚠️  No se pudo reiniciar con PM2, verifica el nombre del proceso"
+else
+    echo "[$(date +'%H:%M:%S')] ⚠️  PM2 no está instalado. Reinicia el servidor manualmente."
+    echo "[$(date +'%H:%M:%S')] 💡 Para instalar PM2: npm install -g pm2"
+    echo "[$(date +'%H:%M:%S')] 💡 Para iniciar: pm2 start npm --name timeboxing -- run preview"
+fi
+
+echo "[$(date +'%H:%M:%S')] ✅ Actualización y despliegue completados"
