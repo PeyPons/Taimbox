@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -85,10 +85,12 @@ const getReliabilityLabel = (data: ReliabilityData): string => {
 };
 
 export default function ReportsPage() {
-  const { employees, clients, projects, allocations, absences, teamEvents } = useApp();
+  const { employees, clients, projects, allocations, absences, teamEvents, loadDataForMonth, isLoading: isGlobalLoading } = useApp();
   
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('all');
+  const [isLoadingMonth, setIsLoadingMonth] = useState(false);
+  const loadedMonthsRef = useRef<Set<string>>(new Set());
   
   const handlePrevMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
   const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
@@ -1073,6 +1075,46 @@ export default function ReportsPage() {
     loadData();
   }, [currentMonth]); // Recargar cuando cambie el mes actual
 
+  // Cargar datos del mes cuando cambia el mes visible (igual que EmployeeDashboard y PlannerGrid)
+  useEffect(() => {
+    if (!isGlobalLoading) {
+      const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
+      
+      // Si ya se cargó este mes, no hacer nada
+      if (loadedMonthsRef.current.has(monthKey)) {
+        setIsLoadingMonth(false);
+        return;
+      }
+      
+      // Verificar si necesitamos cargar datos para este mes
+      const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+      const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+      
+      // Verificar si hay allocations para este mes
+      const hasDataForMonth = allocations.some(a => {
+        try {
+          const allocDate = new Date(a.weekStartDate);
+          return allocDate >= monthStart && allocDate <= monthEnd;
+        } catch {
+          return false;
+        }
+      });
+      
+      // Si no hay datos para este mes, cargarlos
+      if (!hasDataForMonth) {
+        setIsLoadingMonth(true);
+        loadDataForMonth(currentMonth).finally(() => {
+          loadedMonthsRef.current.add(monthKey);
+          setIsLoadingMonth(false);
+        });
+      } else {
+        // Hay datos, marcar como cargado
+        loadedMonthsRef.current.add(monthKey);
+        setIsLoadingMonth(false);
+      }
+    }
+  }, [currentMonth, isGlobalLoading, loadDataForMonth, allocations]);
+
   const stats = [
     {
       title: 'Capacidad',
@@ -1107,6 +1149,15 @@ export default function ReportsPage() {
       bgColor: 'bg-emerald-50',
     },
   ];
+
+  // Mostrar loading del mes igual que EmployeeDashboard y PlannerGrid (retorno temprano DESPUÉS de todos los hooks)
+  if (isLoadingMonth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-slate-400">Cargando datos del mes...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full space-y-6 p-6 md:p-8 max-w-7xl mx-auto w-full">
