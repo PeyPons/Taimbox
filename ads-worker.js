@@ -23,10 +23,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 function getDateRange() {
   const now = new Date();
-  const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const year = currentMonth.getFullYear();
-  const month = String(currentMonth.getMonth() + 1).padStart(2, '0');
-  const day = String(currentMonth.getDate()).padStart(2, '0');
+  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const year = prevMonth.getFullYear();
+  const month = String(prevMonth.getMonth() + 1).padStart(2, '0');
+  const day = String(prevMonth.getDate()).padStart(2, '0');
   const firstDay = `${year}-${month}-${day}`;
   const today = new Date().toISOString().split('T')[0];
   return { firstDay, today };
@@ -68,7 +68,7 @@ async function getClientAccounts(accessToken) {
   return clients;
 }
 
-// Agregación por MES (suma total del mes)
+// Agregación por DÍA para gráficos diarios en informes
 async function getAccountData(customerId, accessToken, dateRange) {
   const query = `
     SELECT 
@@ -93,8 +93,7 @@ async function getAccountData(customerId, accessToken, dateRange) {
     body: JSON.stringify({ query }),
   });
 
-  // Agregar por campaña (mes completo, no por día)
-  const aggregator = new Map(); // Clave: campaign_id
+  const aggregator = new Map(); // Usamos un Map para agregar por campaña+día
 
   if (response.ok) {
     const data = await response.json();
@@ -103,15 +102,16 @@ async function getAccountData(customerId, accessToken, dateRange) {
         if (batch.results) { 
           batch.results.forEach(row => { 
             const campaignId = String(row.campaign.id);
-            
-            // Si no existe la campaña, crear entrada con el primer día del mes
-            if (!aggregator.has(campaignId)) {
-                aggregator.set(campaignId, {
+            const dailyDate = row.segments.date; // Usar fecha completa (YYYY-MM-DD)
+            const key = `${campaignId}_${dailyDate}`; // Clave única: ID + DÍA
+
+            if (!aggregator.has(key)) {
+                aggregator.set(key, {
                     client_id: customerId,
                     campaign_id: campaignId,
                     campaign_name: row.campaign.name,
                     status: row.campaign.status,
-                    date: dateRange.firstDay, // Primer día del mes (YYYY-MM-01)
+                    date: dailyDate,
                     cost: 0,
                     daily_budget: row.campaignBudget ? (parseInt(row.campaignBudget.amountMicros || '0') / 1000000) : 0,
                     conversions_value: 0,
@@ -121,8 +121,8 @@ async function getAccountData(customerId, accessToken, dateRange) {
                 });
             }
 
-            // SUMAR MÉTRICAS (Agregación mensual - suma todos los días)
-            const entry = aggregator.get(campaignId);
+            // SUMAR MÉTRICAS (Agregación por día)
+            const entry = aggregator.get(key);
             entry.cost += parseInt(row.metrics.costMicros || '0') / 1000000;
             entry.conversions_value += parseFloat(row.metrics.conversionsValue || 0);
             entry.conversions += parseFloat(row.metrics.conversions || 0);
@@ -170,7 +170,7 @@ async function processSyncJob(jobId) {
           if (campaignData.length > 0) {
              const rowsToInsert = campaignData.map(d => ({ ...d, client_name: client.name }));
              
-             // Upsert masivo (agregado por mes, clave única: campaign_id + primer día del mes)
+             // Upsert masivo (ahora seguro porque no hay duplicados)
              const { error } = await supabase
                 .from('google_ads_campaigns')
                 .upsert(rowsToInsert, { onConflict: 'campaign_id, date' });
@@ -193,28 +193,15 @@ async function processSyncJob(jobId) {
   }
 }
 
-// Manejo de errores no capturados para evitar cuelgues
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
-});
+supabase.channel('google-worker-listener')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ads_sync_logs' }, (payload) => {
+        if(payload.new.status === 'pending') processSyncJob(payload.new.id);
+    })
+    .subscribe();
 
-process.on('uncaughtException', (error) => {
-  console.error('❌ Uncaught Exception:', error);
-  // No salir del proceso, solo loguear para que Docker lo reinicie si es necesario
-});
-
-// Polling cada 5 segundos
 setInterval(async () => {
-  try {
-    const { data, error } = await supabase.from('ads_sync_logs').select('id').eq('status', 'pending').limit(1);
-    if (error) {
-      console.error('❌ Error en polling:', error.message);
-      return;
-    }
-    if (data?.length) processSyncJob(data[0].id);
-  } catch (error) {
-    console.error('❌ Error en polling:', error.message);
-  }
+  const { data } = await supabase.from('ads_sync_logs').select('id').eq('status', 'pending').limit(1);
+  if (data?.length) processSyncJob(data[0].id);
 }, 5000);
 
-console.log(`📡 Google Worker v22 (Monthly Aggregation) Listo.`);
+console.log(`📡 Google Worker v22 (Aggregated) Listo.`);
