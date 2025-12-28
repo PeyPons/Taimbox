@@ -60,16 +60,37 @@ type SortOption = 'budget_desc' | 'budget_asc' | 'my_hours_desc' | 'my_hours_asc
 export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, viewDateContext }: AllocationSheetProps) {
   const { 
     employees, projects, allocations, getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getProjectById,
-    addAllocation, updateAllocation, deleteAllocation 
+    addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading
   } = useApp();
 
   const [viewDate, setViewDate] = useState(() => viewDateContext || new Date(weekStart));
   const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(new Set());
   const [isTourActive, setIsTourActive] = useState(false);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(true);
 
   useEffect(() => {
-    if (open) setViewDate(viewDateContext || new Date(weekStart));
+    if (open) {
+      setViewDate(viewDateContext || new Date(weekStart));
+      // Activar loading cuando se abre o cambia el mes
+      setIsLoadingTasks(true);
+      // Simular un pequeño delay para mostrar el loading (similar a deadlines)
+      const timer = setTimeout(() => {
+        setIsLoadingTasks(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
   }, [open, weekStart, viewDateContext]);
+
+  // También activar loading cuando cambia el mes visible
+  useEffect(() => {
+    if (open) {
+      setIsLoadingTasks(true);
+      const timer = setTimeout(() => {
+        setIsLoadingTasks(false);
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [viewDate, open]);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAllocation, setEditingAllocation] = useState<Allocation | null>(null);
@@ -924,7 +945,19 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                     );
                                 })}
 
-                                {sortedGroups.length === 0 && (
+                                {/* Estado de carga */}
+                                {(isGlobalLoading || isLoadingTasks) && (
+                                    <div className="space-y-4" data-tour="planner-loading-state">
+                                        <div className="text-center py-6 text-slate-400">
+                                            <Calendar className="w-10 h-10 mx-auto mb-2 opacity-50 animate-pulse" />
+                                            <p className="font-medium mb-1">Cargando tareas...</p>
+                                            <p className="text-xs">Por favor espera</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Estado vacío - solo mostrar si no está cargando */}
+                                {!isGlobalLoading && !isLoadingTasks && sortedGroups.length === 0 && (
                                     <div className="space-y-4" data-tour="planner-empty-state">
                                         {/* Mensaje principal */}
                                         <div className="text-center py-6 text-slate-400">
@@ -1011,6 +1044,18 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 }
 
                 // VISTA COMPACTA para vista mensual (múltiples semanas)
+                // Mostrar loading si está cargando
+                if (isGlobalLoading || isLoadingTasks) {
+                    return (
+                        <div key={weekStr} className="flex flex-col gap-3 p-4 rounded-xl border bg-card min-h-[300px]">
+                            <div className="text-center py-6 text-slate-400">
+                                <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50 animate-pulse" />
+                                <p className="text-sm font-medium mb-1">Cargando tareas...</p>
+                            </div>
+                        </div>
+                    );
+                }
+
                 return (
                     <div key={weekStr} className="flex flex-col gap-3 p-4 rounded-xl border bg-card min-h-[300px]">
                         {/* HEADER SEMANA MEJORADO */}
