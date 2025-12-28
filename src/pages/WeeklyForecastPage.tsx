@@ -733,50 +733,164 @@ export default function WeeklyForecastPage() {
         </TabsContent>
       </Tabs>
       
-      {/* Sheet lateral para Redistribución (se abre desde cualquier tab) */}
-      <Sheet open={selectedProject !== null} onOpenChange={(open) => !open && setSelectedProject(null)}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+      {/* Sheet lateral para Redistribución (se abre desde cualquier tab) - NUEVO FLUJO */}
+      <Sheet open={selectedProject !== null} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedProject(null);
+          setRedistributeFromEmployee('');
+          setRedistributeSelectedTasks(new Set());
+          setRedistributeUseGlobal(false);
+          setRedistributeGlobalHours('');
+          setRedistributeToEmployee('');
+          setRedistributeWeek('');
+        }
+      }}>
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Redistribuir Horas</SheetTitle>
             <SheetDescription>
-              Añade horas a un compañero en una semana específica para este proyecto
+              Transfiere horas de un compañero a otro. Selecciona el proyecto, el compañero de origen, sus tareas abiertas y el destino.
             </SheetDescription>
           </SheetHeader>
           
           {selectedProject && (
             <div className="space-y-6 mt-6">
-              {/* Proyecto seleccionado */}
-              <div className="p-3 bg-slate-50 rounded-lg">
-                <Label className="text-xs text-muted-foreground mb-1 block">Proyecto</Label>
+              {/* Paso 1: Proyecto seleccionado */}
+              <div className="p-3 bg-slate-50 rounded-lg border-l-4 border-indigo-500">
+                <Label className="text-xs text-muted-foreground mb-1 block">1. Proyecto</Label>
                 <p className="font-semibold">
                   {formatProjectName(projects.find(p => p.id === selectedProject)?.name || '')}
                 </p>
               </div>
               
-              {/* Formulario de redistribución */}
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="hours">Horas</Label>
-                  <Input
-                    id="hours"
-                    type="number"
-                    min="0.5"
-                    step="0.5"
-                    value={redistributeHours}
-                    onChange={(e) => setRedistributeHours(e.target.value)}
-                    placeholder="Ej: 8"
-                  />
+              {/* Paso 2: Compañero de origen */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">2. Compañero de origen (quien tiene las tareas abiertas)</Label>
+                <Select value={redistributeFromEmployee} onValueChange={setRedistributeFromEmployee}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar compañero de origen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees
+                      .filter(e => e.isActive)
+                      .map(emp => (
+                        <SelectItem key={emp.id} value={emp.id}>
+                          {emp.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Paso 3: Tareas abiertas del compañero de origen */}
+              {redistributeFromEmployee && sourceEmployeeOpenTasks.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">3. Tareas abiertas del compañero</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={redistributeUseGlobal}
+                        onChange={(e) => {
+                          setRedistributeUseGlobal(e.target.checked);
+                          if (e.target.checked) {
+                            setRedistributeSelectedTasks(new Set());
+                          }
+                        }}
+                        className="h-4 w-4"
+                      />
+                      <Label className="text-xs text-muted-foreground cursor-pointer">
+                        Usar horas globales en lugar de tareas específicas
+                      </Label>
+                    </div>
+                  </div>
+                  
+                  {redistributeUseGlobal ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="global-hours">Horas a redistribuir</Label>
+                      <Input
+                        id="global-hours"
+                        type="number"
+                        min="0.5"
+                        step="0.5"
+                        value={redistributeGlobalHours}
+                        onChange={(e) => setRedistributeGlobalHours(e.target.value)}
+                        placeholder="Ej: 8"
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto border rounded-lg p-3">
+                      {sourceEmployeeOpenTasks.map(task => {
+                        const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
+                        const isSelected = redistributeSelectedTasks.has(task.id);
+                        
+                        return (
+                          <div
+                            key={task.id}
+                            className={cn(
+                              "flex items-center gap-3 p-2 rounded border cursor-pointer transition-colors",
+                              isSelected ? "bg-indigo-50 border-indigo-300" : "bg-white border-slate-200 hover:bg-slate-50"
+                            )}
+                            onClick={() => {
+                              setRedistributeSelectedTasks(prev => {
+                                const newSet = new Set(prev);
+                                if (newSet.has(task.id)) {
+                                  newSet.delete(task.id);
+                                } else {
+                                  newSet.add(task.id);
+                                }
+                                return newSet;
+                              });
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {}}
+                              className="h-4 w-4"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{task.taskName || 'Sin nombre'}</p>
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                                <span>Asignadas: {task.hoursAssigned}h</span>
+                                <span>Realizadas: {task.hoursActual || 0}h</span>
+                                {remainingHours > 0 && (
+                                  <span className="text-amber-600 font-medium">Restantes: {remainingHours}h</span>
+                                )}
+                              </div>
+                            </div>
+                            {remainingHours > 0 && (
+                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                                {remainingHours}h
+                              </Badge>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-                
-                <div>
-                  <Label htmlFor="employee">Compañero</Label>
-                  <Select value={redistributeEmployee} onValueChange={setRedistributeEmployee}>
-                    <SelectTrigger id="employee">
-                      <SelectValue placeholder="Seleccionar compañero" />
+              )}
+              
+              {redistributeFromEmployee && sourceEmployeeOpenTasks.length === 0 && (
+                <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                  <p className="text-sm text-amber-700">
+                    Este compañero no tiene tareas abiertas de semanas pasadas en este proyecto.
+                  </p>
+                </div>
+              )}
+              
+              {/* Paso 4: Compañero destino */}
+              {redistributeFromEmployee && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">4. Compañero destino</Label>
+                  <Select value={redistributeToEmployee} onValueChange={setRedistributeToEmployee}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar compañero destino" />
                     </SelectTrigger>
                     <SelectContent>
                       {employees
-                        .filter(e => e.isActive)
+                        .filter(e => e.isActive && e.id !== redistributeFromEmployee)
                         .map(emp => (
                           <SelectItem key={emp.id} value={emp.id}>
                             {emp.name}
@@ -785,87 +899,117 @@ export default function WeeklyForecastPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                
-                <div>
-                  <Label htmlFor="week">Semana</Label>
+              )}
+              
+              {/* Paso 5: Semana destino */}
+              {redistributeToEmployee && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">5. Semana destino</Label>
                   <Select value={redistributeWeek} onValueChange={setRedistributeWeek}>
-                    <SelectTrigger id="week">
+                    <SelectTrigger>
                       <SelectValue placeholder="Seleccionar semana" />
                     </SelectTrigger>
                     <SelectContent>
                       {futureWeeks.map((week, idx) => {
                         const storageKey = getStorageKey(week.weekStart, currentMonth);
-                        const weekIndex = weeks.findIndex(w => getStorageKey(w.weekStart, currentMonth) === storageKey);
                         return (
                           <SelectItem key={storageKey} value={storageKey}>
-                            Semana {weekIndex + 1} ({format(week.weekStart, 'd MMM', { locale: es })})
+                            Sem {idx + 1} ({format(week.weekStart, 'd MMM', { locale: es })})
                           </SelectItem>
                         );
                       })}
                     </SelectContent>
                   </Select>
                 </div>
-                
-                <Button
-                  onClick={handleRedistribute}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700"
-                  disabled={!redistributeFromEmployee || !redistributeToEmployee || !redistributeWeek || 
-                    (!redistributeUseGlobal && redistributeSelectedTasks.size === 0) ||
-                    (redistributeUseGlobal && (!redistributeGlobalHours || parseFloat(redistributeGlobalHours) <= 0))}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Añadir Horas
-                </Button>
-              </div>
+              )}
               
-              {/* Carga de trabajo de compañeros */}
-              <div className="mt-8">
-                <Label className="text-sm font-semibold mb-3 block">Carga de trabajo (semanas restantes)</Label>
-                <div className="space-y-3">
-                  {employeeWorkload.map(emp => (
-                    <div key={emp.employeeId} className="border rounded-lg p-3">
-                      <p className="font-semibold text-sm mb-2">{emp.employeeName}</p>
-                      <div className="space-y-2">
-                        {emp.weekLoads.map(week => {
-                          const isOverload = week.percentage > 100;
-                          const isWarning = week.percentage > 85 && week.percentage <= 100;
-                          
-                          return (
-                            <div key={week.weekStart} className="flex items-center justify-between text-xs p-2 rounded bg-slate-50">
-                              <span className="text-muted-foreground font-medium">{week.weekLabel}:</span>
-                              <div className="flex items-center gap-2">
-                                <span className={cn(
-                                  "font-medium",
-                                  isOverload && "text-red-600",
-                                  isWarning && "text-amber-600",
-                                  !isOverload && !isWarning && "text-slate-700"
-                                )}>
-                                  {week.hours}h
+              {/* Resumen y carga del compañero destino */}
+              {redistributeToEmployee && redistributeWeek && (
+                <div className="space-y-3 p-3 bg-slate-50 rounded-lg">
+                  <Label className="text-sm font-medium">Carga del compañero destino</Label>
+                  {employeeWorkloads
+                    .find(w => w.employeeId === redistributeToEmployee)
+                    ?.weekLoads
+                    .filter(wl => wl.weekStart === redistributeWeek)
+                    .map(wl => (
+                      <div key={wl.weekStart} className="flex items-center justify-between p-2 bg-white rounded text-xs">
+                        <span>{wl.weekLabel}</span>
+                        <span className={cn(
+                          "font-semibold",
+                          wl.percentage > 110 ? "text-red-600" : wl.percentage > 100 ? "text-amber-600" : "text-emerald-600"
+                        )}>
+                          {wl.hours}h / {wl.capacity}h ({wl.percentage}%)
+                        </span>
+                      </div>
+                    ))}
+                  
+                  {/* Resumen de horas a transferir */}
+                  {(() => {
+                    let totalTransfer = 0;
+                    if (redistributeUseGlobal) {
+                      totalTransfer = parseFloat(redistributeGlobalHours) || 0;
+                    } else {
+                      sourceEmployeeOpenTasks.forEach(task => {
+                        if (redistributeSelectedTasks.has(task.id)) {
+                          totalTransfer += task.hoursAssigned - (task.hoursActual || 0);
+                        }
+                      });
+                    }
+                    
+                    if (totalTransfer > 0) {
+                      const targetWeekLoad = employeeWorkloads
+                        .find(w => w.employeeId === redistributeToEmployee)
+                        ?.weekLoads
+                        .find(wl => wl.weekStart === redistributeWeek);
+                      
+                      const newTotal = (targetWeekLoad?.hours || 0) + totalTransfer;
+                      const newCapacity = targetWeekLoad?.capacity || 0;
+                      const exceeds = newTotal > newCapacity;
+                      
+                      return (
+                        <div className={cn(
+                          "mt-3 p-3 rounded border",
+                          exceeds ? "bg-red-50 border-red-200" : "bg-emerald-50 border-emerald-200"
+                        )}>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-medium">Total a transferir:</span>
+                            <span className="font-bold">{totalTransfer.toFixed(1)}h</span>
+                          </div>
+                          {targetWeekLoad && (
+                            <div className="mt-2 text-xs">
+                              <div className="flex items-center justify-between">
+                                <span>Carga actual:</span>
+                                <span>{targetWeekLoad.hours}h / {targetWeekLoad.capacity}h</span>
+                              </div>
+                              <div className={cn(
+                                "flex items-center justify-between mt-1 font-medium",
+                                exceeds ? "text-red-600" : "text-emerald-600"
+                              )}>
+                                <span>Nueva carga:</span>
+                                <span>
+                                  {newTotal.toFixed(1)}h / {newCapacity}h
+                                  {exceeds && ` (+${(newTotal - newCapacity).toFixed(1)}h exceso)`}
                                 </span>
-                                <span className="text-muted-foreground">/</span>
-                                <span className="text-muted-foreground">{week.capacity}h</span>
-                                {week.percentage > 0 && (
-                                  <Badge 
-                                    variant="outline" 
-                                    className={cn(
-                                      "text-[10px]",
-                                      isOverload && "bg-red-50 text-red-700 border-red-200",
-                                      isWarning && "bg-amber-50 text-amber-700 border-amber-200",
-                                      !isOverload && !isWarning && "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                    )}
-                                  >
-                                    {week.percentage}%
-                                  </Badge>
-                                )}
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
+                          )}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
-              </div>
+              )}
+              
+              <Button 
+                onClick={handleRedistribute} 
+                className="w-full bg-indigo-600 hover:bg-indigo-700"
+                disabled={!redistributeFromEmployee || !redistributeToEmployee || !redistributeWeek || 
+                  (!redistributeUseGlobal && redistributeSelectedTasks.size === 0) ||
+                  (redistributeUseGlobal && (!redistributeGlobalHours || parseFloat(redistributeGlobalHours) <= 0))}
+              >
+                Redistribuir Horas
+              </Button>
             </div>
           )}
         </SheetContent>
