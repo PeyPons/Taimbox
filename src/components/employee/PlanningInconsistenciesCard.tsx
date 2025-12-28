@@ -309,7 +309,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                       {(inc.budgetHours > 0 || inc.minimumHours > 0) && (
                         <div className="mt-1 text-[10px] text-slate-500">
                           {inc.budgetHours > 0 && (
-                            <span>Presupuestadas: <strong>{inc.budgetHours}h</strong></span>
+                            <span>Asignadas: <strong>{inc.budgetHours}h</strong></span>
                           )}
                           {inc.budgetHours > 0 && inc.minimumHours > 0 && <span> • </span>}
                           {inc.minimumHours > 0 && (
@@ -321,7 +321,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                       <div className="mt-1.5 text-[11px] text-slate-600 bg-white/50 rounded px-2 py-1 border border-slate-200">
                         {inc.budgetHours > 0 && (
                           <div>
-                            El proyecto tiene <strong>{inc.budgetHours}h presupuestadas</strong>. 
+                            El proyecto tiene <strong>{inc.budgetHours}h asignadas</strong>. 
                             {' '}Total del proyecto: <strong>{round2(inc.totalProjectComputed + inc.totalProjectPlanned)}h</strong> 
                             {' '}({inc.totalProjectComputed.toFixed(1)}h computadas + {inc.totalProjectPlanned.toFixed(1)}h planificadas).
                           </div>

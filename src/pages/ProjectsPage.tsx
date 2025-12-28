@@ -442,7 +442,7 @@ export default function ProjectsPage() {
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-[200px] text-center">
-                <p className="text-xs">Proyectos con horas presupuestadas pero sin ninguna tarea planificada este mes</p>
+                <p className="text-xs">Proyectos con horas asignadas pero sin ninguna tarea planificada este mes</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -539,7 +539,7 @@ export default function ProjectsPage() {
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-[200px] text-center">
-                <p className="text-xs">Proyectos donde se han planificado más horas de las presupuestadas</p>
+                <p className="text-xs">Proyectos donde se han planificado más horas de las asignadas</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -680,7 +680,7 @@ export default function ProjectsPage() {
                                   </Badge>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p className="text-xs">Se han planificado {round2(data.totalAssigned)}h de {data.budget}h presupuestadas</p>
+                                  <p className="text-xs">Se han planificado {round2(data.totalAssigned)}h de {data.budget}h asignadas</p>
                                 </TooltipContent>
                               </Tooltip>
                             )}
@@ -730,7 +730,7 @@ export default function ProjectsPage() {
                               </div>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p className="text-xs">Horas planificadas / Horas presupuestadas del proyecto</p>
+                              <p className="text-xs">Horas planificadas / Horas asignadas del proyecto</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -816,7 +816,7 @@ export default function ProjectsPage() {
                               )}
                             </span>
                             <span className="text-slate-500">
-                              Presupuestadas: <span className="font-semibold text-slate-700">{data.budget}h</span>
+                              Asignadas: <span className="font-semibold text-slate-700">{data.budget}h</span>
                             </span>
                           </div>
                           
@@ -1001,7 +1001,7 @@ export default function ProjectsPage() {
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>Horas presupuestadas</Label>
+                <Label>Horas asignadas</Label>
                 <Input type="number" value={formData.budgetHours} onChange={e => setFormData({...formData, budgetHours: e.target.value})} />
               </div>
               <div className="space-y-2">

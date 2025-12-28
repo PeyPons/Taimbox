@@ -531,7 +531,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
               <div className="text-xs space-y-1 border-t pt-2">
                 <div className="text-[10px] font-semibold text-slate-500 uppercase mb-1">Total cliente</div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Presupuestadas:</span>
+                  <span className="text-slate-500">Asignadas:</span>
                   <span className="font-medium">{budgetMin > 0 ? `${budgetMin}-` : ''}{budgetMax}h</span>
                 </div>
                 <div className="flex justify-between">
@@ -1262,7 +1262,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                 <div className="text-[10px] font-semibold text-slate-500 uppercase">Total cliente</div>
                                 <div className="space-y-1.5 text-xs">
                                   <div className="flex justify-between">
-                                    <span className="text-slate-500">Presupuestadas:</span>
+                                    <span className="text-slate-500">Asignadas:</span>
                                     <span className="font-medium">{budgetMin > 0 ? `${budgetMin}-` : ''}{budgetMax}h</span>
                                   </div>
                                   <div className="flex justify-between">

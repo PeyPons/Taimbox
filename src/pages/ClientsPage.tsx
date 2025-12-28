@@ -350,7 +350,7 @@ export default function ClientsPage() {
           icon={Clock}
           label="Horas este mes"
           value={`${globalStats.totalHours.toFixed(0)}h`}
-          subValue={`de ${globalStats.totalBudget}h presupuestadas`}
+          subValue={`de ${globalStats.totalBudget}h asignadas`}
           trend={globalStats.trend as any}
           color="emerald"
         />
