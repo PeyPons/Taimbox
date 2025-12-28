@@ -604,7 +604,7 @@ export default function ReportsPage() {
 
   // Predicción de disponibilidad futura con Modelo de Mezcla Ponderada
   const futureAvailability = useMemo(() => {
-    const thisMonth = startOfMonth(new Date());
+    const thisMonth = startOfMonth(currentMonth); // Usar currentMonth en lugar de new Date()
     const nextMonth = addMonths(thisMonth, 1);
     const nextMonthStart = startOfMonth(nextMonth);
     const nextMonthEnd = endOfMonth(nextMonth);
@@ -938,10 +938,10 @@ export default function ReportsPage() {
     }).sort((a, b) => b.nextMonth.estimatedAvailable - a.nextMonth.estimatedAvailable);
   }, [employees, allocations, monthAllocations, reliabilityByEmployee, year, month, absences, teamEvents, nextMonthDeadlines, nextMonthGlobalAssignments, currentMonthDeadlines, currentMonthGlobalAssignments, historicalDeadlines, historicalGlobalAssignments]);
   
-  // Cargar deadlines y global assignments del mes actual, siguiente y meses históricos
+  // Cargar deadlines y global assignments del mes seleccionado, siguiente y meses históricos
   useEffect(() => {
     const loadData = async () => {
-      const thisMonth = startOfMonth(new Date());
+      const thisMonth = startOfMonth(currentMonth); // Usar currentMonth en lugar de new Date()
       const thisMonthStr = format(thisMonth, 'yyyy-MM');
       const nextMonth = addMonths(thisMonth, 1);
       const nextMonthStr = format(nextMonth, 'yyyy-MM');
