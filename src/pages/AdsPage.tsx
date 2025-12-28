@@ -1,4 +1,8 @@
 import { useState, useEffect, useMemo, useRef, memo } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -139,9 +143,22 @@ export default function AdsPage() {
   const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
 
   // Formulario nueva regla
-  const [newRuleAccount, setNewRuleAccount] = useState('');
-  const [newRuleKeyword, setNewRuleKeyword] = useState('');
-  const [newRuleName, setNewRuleName] = useState('');
+  const ruleFormSchema = z.object({
+    account: z.string().min(1, 'Debes seleccionar una cuenta'),
+    keyword: z.string().min(1, 'La palabra clave es obligatoria'),
+    name: z.string().min(1, 'El nombre es obligatorio'),
+  });
+
+  type RuleFormValues = z.infer<typeof ruleFormSchema>;
+
+  const ruleForm = useForm<RuleFormValues>({
+    resolver: zodResolver(ruleFormSchema),
+    defaultValues: {
+      account: '',
+      keyword: '',
+      name: '',
+    },
+  });
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -229,27 +246,40 @@ export default function AdsPage() {
   }, [syncLogs, isSyncing]);
 
   // Gestión de reglas
-  const handleAddRule = async () => {
-    if (!newRuleAccount || !newRuleKeyword || !newRuleName) {
-      toast.error("Rellena todos los campos");
-      return;
-    }
-    
+  const ruleFormSchema = z.object({
+    account: z.string().min(1, 'Debes seleccionar una cuenta'),
+    keyword: z.string().min(1, 'La palabra clave es obligatoria'),
+    name: z.string().min(1, 'El nombre es obligatorio'),
+  });
+
+  type RuleFormValues = z.infer<typeof ruleFormSchema>;
+
+  const ruleForm = useForm<RuleFormValues>({
+    resolver: zodResolver(ruleFormSchema),
+    defaultValues: {
+      account: '',
+      keyword: '',
+      name: '',
+    },
+  });
+
+  const onAddRule = async (data: RuleFormValues) => {
     const newRule = {
       platform: 'google',
-      account_id: newRuleAccount,
-      keyword: newRuleKeyword,
-      virtual_name: newRuleName
+      account_id: data.account,
+      keyword: data.keyword,
+      virtual_name: data.name
     };
 
-    const { data, error } = await supabase.from('segmentation_rules').insert(newRule).select();
+    const { data: result, error } = await supabase.from('segmentation_rules').insert(newRule).select();
 
     if (error) {
-      toast.error("Error guardando regla: " + error.message);
+      console.error('Error guardando regla:', error);
+      const errorMessage = error.message || 'Error al guardar la regla';
+      toast.error(errorMessage);
     } else {
-      setSegmentationRules(prev => [...prev, ...(data || [])]);
-      setNewRuleKeyword('');
-      setNewRuleName('');
+      setSegmentationRules(prev => [...prev, ...(result || [])]);
+      ruleForm.reset();
       toast.success("Regla guardada");
     }
   };
@@ -931,44 +961,63 @@ export default function AdsPage() {
           </DialogHeader>
           <div className="space-y-6 py-4">
             {/* Formulario nueva regla */}
-            <div className="grid grid-cols-12 gap-3 items-end bg-slate-50 p-4 rounded-lg border">
-              <div className="col-span-12 sm:col-span-4 space-y-1">
-                <Label className="text-xs font-medium">Cuenta origen</Label>
-                <Select value={newRuleAccount} onValueChange={setNewRuleAccount}>
-                  <SelectTrigger className="bg-white">
-                    <SelectValue placeholder="Selecciona..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {uniqueAccountsForSelector.map(acc => (
-                      <SelectItem key={acc.id} value={acc.id}>{acc.name || acc.id}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="col-span-6 sm:col-span-3 space-y-1">
-                <Label className="text-xs font-medium">Si contiene...</Label>
-                <Input 
-                  placeholder="Ej: Loro" 
-                  className="bg-white" 
-                  value={newRuleKeyword} 
-                  onChange={e => setNewRuleKeyword(e.target.value)} 
+            <Form {...ruleForm}>
+              <form onSubmit={ruleForm.handleSubmit(onAddRule)} className="grid grid-cols-12 gap-3 items-end bg-slate-50 p-4 rounded-lg border">
+                <FormField
+                  control={ruleForm.control}
+                  name="account"
+                  render={({ field }) => (
+                    <FormItem className="col-span-12 sm:col-span-4">
+                      <FormLabel className="text-xs font-medium">Cuenta origen</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="bg-white">
+                            <SelectValue placeholder="Selecciona..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {uniqueAccountsForSelector.map(acc => (
+                            <SelectItem key={acc.id} value={acc.id}>{acc.name || acc.id}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div className="col-span-6 sm:col-span-3 space-y-1">
-                <Label className="text-xs font-medium">Crear cuenta...</Label>
-                <Input 
-                  placeholder="Ej: Loro Parque" 
-                  className="bg-white" 
-                  value={newRuleName} 
-                  onChange={e => setNewRuleName(e.target.value)} 
+                <FormField
+                  control={ruleForm.control}
+                  name="keyword"
+                  render={({ field }) => (
+                    <FormItem className="col-span-6 sm:col-span-3">
+                      <FormLabel className="text-xs font-medium">Si contiene...</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ej: Loro" className="bg-white" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div className="col-span-12 sm:col-span-2">
-                <Button onClick={handleAddRule} className="w-full">
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
+                <FormField
+                  control={ruleForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem className="col-span-6 sm:col-span-3">
+                      <FormLabel className="text-xs font-medium">Crear cuenta...</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ej: Loro Parque" className="bg-white" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="col-span-12 sm:col-span-2">
+                  <Button type="submit" className="w-full">
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </form>
+            </Form>
 
             {/* Lista de reglas activas */}
             <div className="space-y-2">

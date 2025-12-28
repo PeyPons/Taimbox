@@ -1,4 +1,8 @@
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -70,6 +74,22 @@ const calculateProgress = (krs: KeyResult[]): number => {
   return Math.round(totalPercentage / krs.length);
 };
 
+const goalFormSchema = z.object({
+  title: z.string().min(1, 'El título es obligatorio'),
+  dueDate: z.string().optional(),
+  trainingUrl: z.string().url('URL inválida').optional().or(z.literal('')),
+  keyResults: z.array(z.object({
+    id: z.string(),
+    title: z.string(),
+    type: z.enum(['boolean', 'numeric']),
+    completed: z.boolean(),
+    current: z.number(),
+    target: z.number().optional(),
+  })).default([]),
+});
+
+type GoalFormValues = z.infer<typeof goalFormSchema>;
+
 export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: ProfessionalGoalsSheetProps) {
   const { employees, professionalGoals, addProfessionalGoal, updateProfessionalGoal, deleteProfessionalGoal } = useApp();
   const employee = employees.find(e => e.id === employeeId);
@@ -77,24 +97,31 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
 
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  
-  const [title, setTitle] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [trainingUrl, setTrainingUrl] = useState('');
-  const [keyResults, setKeyResults] = useState<KeyResult[]>([]);
   
   const [newKrTitle, setNewKrTitle] = useState('');
   const [newKrType, setNewKrType] = useState<'boolean' | 'numeric'>('boolean');
   const [newKrTarget, setNewKrTarget] = useState('10');
 
+  const form = useForm<GoalFormValues>({
+    resolver: zodResolver(goalFormSchema),
+    defaultValues: {
+      title: '',
+      dueDate: '',
+      trainingUrl: '',
+      keyResults: [],
+    },
+  });
+
+  const keyResults = form.watch('keyResults');
   const currentProgress = calculateProgress(keyResults);
 
   const resetForm = () => {
-    setTitle('');
-    setDueDate('');
-    setTrainingUrl('');
-    setKeyResults([]);
+    form.reset({
+      title: '',
+      dueDate: '',
+      trainingUrl: '',
+      keyResults: [],
+    });
     setEditingId(null);
     setIsAdding(false);
     setNewKrTitle('');
@@ -103,33 +130,29 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
   };
 
   const handleEdit = (goal: ProfessionalGoal) => {
-    setTitle(goal.title);
-    setDueDate(goal.dueDate ? goal.dueDate.toString() : '');
-    setTrainingUrl(goal.trainingUrl || '');
-    setKeyResults(parseKeyResults(goal.keyResults));
+    form.reset({
+      title: goal.title,
+      dueDate: goal.dueDate ? goal.dueDate.toString() : '',
+      trainingUrl: goal.trainingUrl || '',
+      keyResults: parseKeyResults(goal.keyResults),
+    });
     setEditingId(goal.id);
     setIsAdding(true);
   };
 
-  const handleSave = async () => {
-    if (!title.trim()) {
-      toast.error("El título es obligatorio");
-      return;
-    }
-
-    setIsSaving(true);
-
+  const onSubmit = async (data: GoalFormValues) => {
     try {
       // CRÍTICO: Serializar keyResults como JSON string para Supabase JSONB
-      const keyResultsJson = JSON.stringify(keyResults);
+      const keyResultsJson = JSON.stringify(data.keyResults);
+      const calculatedProgress = calculateProgress(data.keyResults);
 
       const goalData = {
-        title: title.trim(),
+        title: data.title.trim(),
         keyResults: keyResultsJson,
-        trainingUrl: trainingUrl.trim() || undefined,
+        trainingUrl: data.trainingUrl?.trim() || undefined,
         startDate: new Date().toISOString().split('T')[0],
-        dueDate: dueDate || undefined,
-        progress: currentProgress
+        dueDate: data.dueDate || undefined,
+        progress: calculatedProgress
       };
 
       if (editingId) {
@@ -141,11 +164,10 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
       }
       
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error guardando objetivo:', error);
-      toast.error("Error al guardar el objetivo");
-    } finally {
-      setIsSaving(false);
+      const errorMessage = error?.message || error?.error?.message || 'Error al guardar el objetivo';
+      toast.error(errorMessage);
     }
   };
 
@@ -159,21 +181,25 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
       current: 0,
       target: newKrType === 'numeric' ? Number(newKrTarget) : undefined
     };
-    setKeyResults([...keyResults, newKr]);
+    const currentKrs = form.getValues('keyResults') || [];
+    form.setValue('keyResults', [...currentKrs, newKr]);
     setNewKrTitle('');
     setNewKrTarget('10');
   };
 
   const toggleKrBoolean = (id: string) => {
-    setKeyResults(prev => prev.map(kr => kr.id === id ? { ...kr, completed: !kr.completed } : kr));
+    const currentKrs = form.getValues('keyResults') || [];
+    form.setValue('keyResults', currentKrs.map(kr => kr.id === id ? { ...kr, completed: !kr.completed } : kr));
   };
 
   const updateKrNumeric = (id: string, value: string) => {
-    setKeyResults(prev => prev.map(kr => kr.id === id ? { ...kr, current: Number(value) || 0 } : kr));
+    const currentKrs = form.getValues('keyResults') || [];
+    form.setValue('keyResults', currentKrs.map(kr => kr.id === id ? { ...kr, current: Number(value) || 0 } : kr));
   };
 
   const removeKeyResult = (id: string) => {
-    setKeyResults(prev => prev.filter(kr => kr.id !== id));
+    const currentKrs = form.getValues('keyResults') || [];
+    form.setValue('keyResults', currentKrs.filter(kr => kr.id !== id));
   };
 
   const toggleGoalKr = async (goal: ProfessionalGoal, krId: string) => {
@@ -211,23 +237,51 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
         </SheetHeader>
 
         {isAdding ? (
-          <div className="space-y-6 py-6">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Objetivo principal</Label>
-                <Input placeholder="Ej: Mejorar skills de liderazgo" value={title} onChange={e => setTitle(e.target.value)} />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Fecha límite</Label>
-                  <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-6">
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Objetivo principal</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ej: Mejorar skills de liderazgo" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="dueDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fecha límite</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="trainingUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Enlace formación (opcional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-                <div className="space-y-2">
-                  <Label>Enlace formación (opcional)</Label>
-                  <Input placeholder="https://..." value={trainingUrl} onChange={e => setTrainingUrl(e.target.value)} />
-                </div>
-              </div>
 
               <div className="border rounded-lg p-4 bg-slate-50 space-y-4">
                 <div className="flex items-center justify-between">
