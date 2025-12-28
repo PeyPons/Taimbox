@@ -21,14 +21,45 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // --- UTILIDADES ---
 
+// #region agent log helper
+async function agentLog(payload) {
+  try {
+    await fetch('http://127.0.0.1:7242/ingest/31958c62-9484-4cbf-9c52-d0c2ed695f60', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: 'debug-session',
+        runId: 'ads-worker',
+        timestamp: Date.now(),
+        ...payload
+      })
+    });
+  } catch (_) { /* noop */ }
+}
+// #endregion
+
 function getDateRange() {
+  const formatter = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Atlantic/Canary',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  const format = (date) => formatter.format(date); // YYYY-MM-DD en zona horaria Canarias
+
   const now = new Date();
-  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const year = prevMonth.getFullYear();
-  const month = String(prevMonth.getMonth() + 1).padStart(2, '0');
-  const day = String(prevMonth.getDate()).padStart(2, '0');
-  const firstDay = `${year}-${month}-${day}`;
-  const today = new Date().toISOString().split('T')[0];
+  const firstDayDate = new Date(now.getFullYear(), now.getMonth(), 1);
+  const firstDay = format(firstDayDate);
+  const today = format(now);
+
+  // #region agent log
+  agentLog({
+    location: 'ads-worker.js:getDateRange',
+    message: 'Computed Canary date range',
+    data: { firstDay, today }
+  });
+  // #endregion
+
   return { firstDay, today };
 }
 
@@ -87,6 +118,14 @@ async function getAccountData(customerId, accessToken, dateRange) {
       segments.date BETWEEN '${dateRange.firstDay}' AND '${dateRange.today}'
       AND metrics.cost_micros > 0`; 
    
+  // #region agent log
+  agentLog({
+    location: 'ads-worker.js:getAccountData',
+    message: 'Fetching account data',
+    data: { customerId, dateRange }
+  });
+  // #endregion
+
   const response = await fetch(`https://googleads.googleapis.com/${API_VERSION}/customers/${customerId}/googleAds:searchStream`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${accessToken}`, 'developer-token': DEVELOPER_TOKEN, 'Content-Type': 'application/json', 'login-customer-id': MCC_ID },
@@ -132,8 +171,22 @@ async function getAccountData(customerId, accessToken, dateRange) {
         } 
       });
     }
+    // #region agent log
+    agentLog({
+      location: 'ads-worker.js:getAccountData',
+      message: 'Aggregated account data',
+      data: { customerId, rows: aggregator.size }
+    });
+    // #endregion
   } else {
       console.warn(`⚠️ Aviso cuenta ${customerId}: ${response.statusText}`);
+      // #region agent log
+      agentLog({
+        location: 'ads-worker.js:getAccountData',
+        message: 'Account fetch failed',
+        data: { customerId, status: response.status, statusText: response.statusText }
+      });
+      // #endregion
   }
   
   // Devolvemos los valores del Map como array limpio
