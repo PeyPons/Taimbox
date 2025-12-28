@@ -1190,6 +1190,7 @@ export default function ReportsPage() {
           <TabsTrigger value="overview">Visión General</TabsTrigger>
           <TabsTrigger value="team">Desglose Equipo</TabsTrigger>
           <TabsTrigger value="projects">Proyectos</TabsTrigger>
+          <TabsTrigger value="coherence">Coherencia</TabsTrigger>
         </TabsList>
 
         {/* DASHBOARD EJECUTIVO */}
