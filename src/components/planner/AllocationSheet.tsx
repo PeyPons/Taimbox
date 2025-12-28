@@ -80,18 +80,11 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     if (open && !isGlobalLoading) {
       const monthKey = `${viewDate.getFullYear()}-${viewDate.getMonth()}`;
       
-      // Si ya se cargó este mes, no hacer nada
-      if (loadedMonthsRef.current.has(monthKey)) {
-        setIsLoadingTasks(false);
-        return;
-      }
-      
-      // Verificar si necesitamos cargar datos para este mes
+      // 1. Verificar si REALMENTE tenemos datos para este mes en el contexto
       const monthStart = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
       const monthEnd = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0);
       
-      // Verificar si hay allocations para este mes
-      const hasDataForMonth = allocations.some(a => {
+      const hasDataInContext = allocations.some(a => {
         try {
           const allocDate = new Date(a.weekStartDate);
           return allocDate >= monthStart && allocDate <= monthEnd;
@@ -100,20 +93,36 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
         }
       });
       
-      // Si no hay datos para este mes, cargarlos (igual que loadDeadlines en DeadlinesPage)
-      if (!hasDataForMonth) {
+      // 2. Si ya lo "cargamos" según el ref, PERO no hay datos (porque se limpió el contexto),
+      // forzamos a que se vuelva a cargar eliminándolo del ref.
+      if (loadedMonthsRef.current.has(monthKey) && !hasDataInContext) {
+        loadedMonthsRef.current.delete(monthKey);
+      }
+
+      // 3. Ahora sí, comprobamos el ref para evitar loops infinitos si la API devuelve array vacío
+      if (loadedMonthsRef.current.has(monthKey)) {
+        setIsLoadingTasks(false);
+        return;
+      }
+      
+      // 4. Si no hay datos y no hemos intentado cargar este mes, procedemos
+      if (!hasDataInContext) {
         setIsLoadingTasks(true);
-        loadDataForMonth(viewDate).finally(() => {
-          loadedMonthsRef.current.add(monthKey);
-          setIsLoadingTasks(false);
-        });
+        loadDataForMonth(viewDate)
+          .then(() => {
+            // Solo marcamos como cargado si terminó con éxito
+            loadedMonthsRef.current.add(monthKey);
+          })
+          .finally(() => {
+            setIsLoadingTasks(false);
+          });
       } else {
-        // Hay datos, marcar como cargado
-        loadedMonthsRef.current.add(monthKey);
+        // Hay datos y no necesitamos cargar
+        loadedMonthsRef.current.add(monthKey); // Marcamos para futuro
         setIsLoadingTasks(false);
       }
     }
-  }, [viewDate, open, isGlobalLoading, loadDataForMonth]);
+  }, [viewDate, open, isGlobalLoading, loadDataForMonth, allocations]); // Añadir allocations a dependencias
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAllocation, setEditingAllocation] = useState<Allocation | null>(null);
