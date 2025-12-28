@@ -479,6 +479,35 @@ export default function AdsPage() {
       }
     });
 
+    // #region agent log
+    // Agrupar por cuenta para ver el gasto por cliente
+    const spendingByAccount = new Map<string, { name: string; spent: number; rows: number }>();
+    filteredRows.forEach(row => {
+      const key = row.client_id + '|' + (row.client_name || 'Sin nombre');
+      if (!spendingByAccount.has(key)) {
+        spendingByAccount.set(key, { name: row.client_name || row.client_id, spent: 0, rows: 0 });
+      }
+      const acc = spendingByAccount.get(key)!;
+      acc.spent += row.cost || 0;
+      acc.rows++;
+    });
+    
+    console.log('[AdsPage] Resumen del mes:', {
+      monthStart,
+      todayStr,
+      currentDate: now.toISOString().split('T')[0],
+      rowsInMonth,
+      totalSpentThisMonth: Math.round(totalSpentThisMonth * 100) / 100,
+      clientsProcessed: stats.size,
+      spendingByAccount: Array.from(spendingByAccount.entries()).map(([id, data]) => ({
+        account: data.name,
+        spent: Math.round(data.spent * 100) / 100,
+        rows: data.rows
+      })),
+      sampleDatesAfterFilter: filteredRows.slice(0, 10).map(r => ({ date: r.date, client: r.client_name, cost: r.cost }))
+    });
+    // #endregion
+
     const report: ClientPacing[] = [];
     
     stats.forEach((value, key) => {
