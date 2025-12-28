@@ -379,7 +379,13 @@ export default function EmployeeDashboard() {
     if (!isGlobalLoading && !isLoadingProfile) {
       const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
       
-      // 1. Verificar si REALMENTE tenemos datos para este mes en el contexto
+      // Si ya se cargó este mes según el ref, no hacer nada (evita loops)
+      if (loadedMonthsRef.current.has(monthKey)) {
+        setIsLoadingMonth(false);
+        return;
+      }
+      
+      // Verificar si REALMENTE tenemos datos para este mes en el contexto
       const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
       
@@ -392,36 +398,25 @@ export default function EmployeeDashboard() {
         }
       });
       
-      // 2. Si ya lo "cargamos" según el ref, PERO no hay datos (porque se limpió el contexto),
-      // forzamos a que se vuelva a cargar eliminándolo del ref.
-      if (loadedMonthsRef.current.has(monthKey) && !hasDataInContext) {
-        loadedMonthsRef.current.delete(monthKey);
-      }
-
-      // 3. Ahora sí, comprobamos el ref para evitar loops infinitos si la API devuelve array vacío
-      if (loadedMonthsRef.current.has(monthKey)) {
+      // Si hay datos, marcar como cargado y salir
+      if (hasDataInContext) {
+        loadedMonthsRef.current.add(monthKey);
         setIsLoadingMonth(false);
         return;
       }
       
-      // 4. Si no hay datos y no hemos intentado cargar este mes, procedemos
-      if (!hasDataInContext) {
-        setIsLoadingMonth(true);
-        loadDataForMonth(currentMonth)
-          .then(() => {
-            // Solo marcamos como cargado si terminó con éxito
-            loadedMonthsRef.current.add(monthKey);
-          })
-          .finally(() => {
-            setIsLoadingMonth(false);
-          });
-      } else {
-        // Hay datos y no necesitamos cargar
-        loadedMonthsRef.current.add(monthKey); // Marcamos para futuro
-        setIsLoadingMonth(false);
-      }
+      // Si no hay datos, cargarlos
+      setIsLoadingMonth(true);
+      loadDataForMonth(currentMonth)
+        .then(() => {
+          // Solo marcamos como cargado si terminó con éxito
+          loadedMonthsRef.current.add(monthKey);
+        })
+        .finally(() => {
+          setIsLoadingMonth(false);
+        });
     }
-  }, [currentMonth, isGlobalLoading, isLoadingProfile, loadDataForMonth, allocations]); // Añadir allocations a dependencias
+  }, [currentMonth, isGlobalLoading, isLoadingProfile, loadDataForMonth]); // REMOVIDO allocations para evitar loops
 
   // Mostrar loader mientras carga global o el perfil
   if (isGlobalLoading || isLoadingProfile) {

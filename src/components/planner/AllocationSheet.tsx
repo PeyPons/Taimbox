@@ -80,7 +80,13 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     if (open && !isGlobalLoading) {
       const monthKey = `${viewDate.getFullYear()}-${viewDate.getMonth()}`;
       
-      // 1. Verificar si REALMENTE tenemos datos para este mes en el contexto
+      // Si ya se cargó este mes según el ref, no hacer nada (evita loops)
+      if (loadedMonthsRef.current.has(monthKey)) {
+        setIsLoadingTasks(false);
+        return;
+      }
+      
+      // Verificar si REALMENTE tenemos datos para este mes en el contexto
       const monthStart = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
       const monthEnd = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0);
       
@@ -93,36 +99,25 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
         }
       });
       
-      // 2. Si ya lo "cargamos" según el ref, PERO no hay datos (porque se limpió el contexto),
-      // forzamos a que se vuelva a cargar eliminándolo del ref.
-      if (loadedMonthsRef.current.has(monthKey) && !hasDataInContext) {
-        loadedMonthsRef.current.delete(monthKey);
-      }
-
-      // 3. Ahora sí, comprobamos el ref para evitar loops infinitos si la API devuelve array vacío
-      if (loadedMonthsRef.current.has(monthKey)) {
+      // Si hay datos, marcar como cargado y salir
+      if (hasDataInContext) {
+        loadedMonthsRef.current.add(monthKey);
         setIsLoadingTasks(false);
         return;
       }
       
-      // 4. Si no hay datos y no hemos intentado cargar este mes, procedemos
-      if (!hasDataInContext) {
-        setIsLoadingTasks(true);
-        loadDataForMonth(viewDate)
-          .then(() => {
-            // Solo marcamos como cargado si terminó con éxito
-            loadedMonthsRef.current.add(monthKey);
-          })
-          .finally(() => {
-            setIsLoadingTasks(false);
-          });
-      } else {
-        // Hay datos y no necesitamos cargar
-        loadedMonthsRef.current.add(monthKey); // Marcamos para futuro
-        setIsLoadingTasks(false);
-      }
+      // Si no hay datos, cargarlos
+      setIsLoadingTasks(true);
+      loadDataForMonth(viewDate)
+        .then(() => {
+          // Solo marcamos como cargado si terminó con éxito
+          loadedMonthsRef.current.add(monthKey);
+        })
+        .finally(() => {
+          setIsLoadingTasks(false);
+        });
     }
-  }, [viewDate, open, isGlobalLoading, loadDataForMonth, allocations]); // Añadir allocations a dependencias
+  }, [viewDate, open, isGlobalLoading, loadDataForMonth]); // REMOVIDO allocations para evitar loops
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAllocation, setEditingAllocation] = useState<Allocation | null>(null);
