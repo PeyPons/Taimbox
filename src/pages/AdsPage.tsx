@@ -373,27 +373,10 @@ export default function AdsPage() {
   const reportData = useMemo(() => {
     if (!rawData.length) return [];
     
-    // Filtrar por mes actual completo: desde el día 1 hasta el último día del mes
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
-    const currentDay = now.getDate();
-    const daysInMonth = new Date(currentYear, currentMonth, 0).getDate(); // Último día del mes
     const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
-    const monthEnd = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`; // Último día del mes
-    
-    // #region agent log
-    // Obtener información de cuentas únicas antes del filtro
-    const uniqueAccountsBeforeFilter = Array.from(new Set(rawData.map(r => r.client_id + '|' + (r.client_name || 'Sin nombre'))));
-    console.log('[AdsPage] Filtrado de datos:', {
-      monthStart,
-      monthEnd,
-      currentDate: now.toISOString().split('T')[0],
-      totalRows: rawData.length,
-      uniqueAccounts: uniqueAccountsBeforeFilter.length,
-      accountList: uniqueAccountsBeforeFilter.slice(0, 10),
-      sampleDatesBeforeFilter: rawData.slice(0, 5).map(r => ({ date: r.date, client: r.client_name, cost: r.cost }))
-    });
-    // #endregion
+    const monthEnd = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
 
     const stats = new Map<string, { 
       name: string, spent: number, budget: number, total_conversions_val: number,
@@ -424,11 +407,8 @@ export default function AdsPage() {
     let rowsInMonth = 0;
     const filteredRows: any[] = [];
     rawData.forEach(row => {
-      // Filtrar por mes actual completo: fecha entre monthStart y monthEnd (inclusive)
-      if (row.date && row.date >= monthStart && row.date <= monthEnd) {
-        rowsInMonth++;
-        totalSpentThisMonth += row.cost || 0;
-        filteredRows.push(row);
+      // Filtrar por todos los días del mes actual (del 1 al último día del mes)
+      if (row.date >= monthStart && row.date <= monthEnd) {
         let finalId = row.client_id;
         let finalName = row.client_name;
 

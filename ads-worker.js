@@ -48,18 +48,12 @@ function getDateRange() {
   const format = (date) => formatter.format(date); // YYYY-MM-DD en zona horaria Canarias
 
   const now = new Date();
-  const firstDayDate = new Date(now.getFullYear(), now.getMonth(), 1);
-  const firstDay = format(firstDayDate);
-  const today = format(now);
-
-  // #region agent log
-  agentLog({
-    location: 'ads-worker.js:getDateRange',
-    message: 'Computed Canary date range',
-    data: { firstDay, today }
-  });
-  // #endregion
-
+  const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const year = currentMonth.getFullYear();
+  const month = String(currentMonth.getMonth() + 1).padStart(2, '0');
+  const day = String(currentMonth.getDate()).padStart(2, '0');
+  const firstDay = `${year}-${month}-${day}`;
+  const today = new Date().toISOString().split('T')[0];
   return { firstDay, today };
 }
 
@@ -270,15 +264,55 @@ async function processSyncJob(jobId) {
   }
 }
 
-supabase.channel('google-worker-listener')
+// Manejo de errores no capturados para evitar cuelgues
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  // No salir del proceso, solo loguear para que Docker lo reinicie si es necesario
+});
+
+// Suscripción a cambios en tiempo real
+let channel;
+try {
+  channel = supabase.channel('google-worker-listener')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ads_sync_logs' }, (payload) => {
         if(payload.new.status === 'pending') processSyncJob(payload.new.id);
     })
-    .subscribe();
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('✅ Suscripción a cambios activa');
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error('❌ Error en suscripción, reintentando...');
+        // Reintentar suscripción después de 5 segundos
+        setTimeout(() => {
+          if (channel) channel.unsubscribe();
+          channel = supabase.channel('google-worker-listener')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ads_sync_logs' }, (payload) => {
+                if(payload.new.status === 'pending') processSyncJob(payload.new.id);
+            })
+            .subscribe();
+        }, 5000);
+      }
+    });
+} catch (error) {
+  console.error('❌ Error al crear suscripción:', error);
+}
 
+// Polling de respaldo cada 5 segundos
 setInterval(async () => {
-  const { data } = await supabase.from('ads_sync_logs').select('id').eq('status', 'pending').limit(1);
-  if (data?.length) processSyncJob(data[0].id);
+  try {
+    const { data, error } = await supabase.from('ads_sync_logs').select('id').eq('status', 'pending').limit(1);
+    if (error) {
+      console.error('❌ Error en polling:', error.message);
+      return;
+    }
+    if (data?.length) processSyncJob(data[0].id);
+  } catch (error) {
+    console.error('❌ Error en polling:', error.message);
+  }
 }, 5000);
 
 console.log(`📡 Google Worker v22 (Aggregated) Listo.`);
