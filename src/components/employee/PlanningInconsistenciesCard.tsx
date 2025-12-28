@@ -339,10 +339,16 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                           <span className="text-slate-500">Deadline:</span>{' '}
                           <span className="font-medium">{inc.deadlineHours}h</span>
                         </div>
-                        <div>
-                          <span className="text-slate-500">Tus horas:</span>{' '}
-                          <span className="font-medium">{round2(inc.plannedHours + inc.computedHours)}h</span>
+                        <span className="text-slate-300">→</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-blue-600">
+                            Plan: <span className="font-medium">{inc.plannedHours}h</span>
+                          </span>
+                          <span className="text-emerald-600">
+                            Comp: <span className="font-medium">{inc.computedHours}h</span>
+                          </span>
                         </div>
+                        <span className="text-slate-300">→</span>
                         <div className={cn("flex items-center gap-1 font-bold", isPositive ? "text-amber-700" : "text-blue-700")}>
                           {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                           {isPositive ? '+' : ''}{inc.difference}h
@@ -381,18 +387,23 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                               </Avatar>
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium text-slate-700 truncate">{tm.employeeName}</div>
-                                <div className="flex items-center gap-2 mt-1 text-[10px] flex-wrap">
-                                  <span className="text-slate-500">
-                                    Deadline: <span className="font-medium">{tm.deadlineHours}h</span>
-                                  </span>
-                                  <span className="text-slate-400">→</span>
-                                  <span className="text-slate-500">
-                                    Real: <span className="font-medium">{round2(tm.plannedHours + tm.computedHours)}h</span>
-                                  </span>
-                                  <span className="text-slate-400">→</span>
-                                  <span className={cn("font-bold", tmIsPositive ? "text-amber-600" : "text-blue-600")}>
-                                    {tmIsPositive ? '+' : ''}{tm.difference}h
-                                  </span>
+                                <div className="flex flex-col gap-0.5 mt-1 text-[10px]">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-slate-500">
+                                      Deadline: <span className="font-medium">{tm.deadlineHours}h</span>
+                                    </span>
+                                    <span className="text-slate-400">→</span>
+                                    <span className="text-blue-600">
+                                      Plan: <span className="font-medium">{tm.plannedHours}h</span>
+                                    </span>
+                                    <span className="text-emerald-600">
+                                      Comp: <span className="font-medium">{tm.computedHours}h</span>
+                                    </span>
+                                    <span className="text-slate-400">→</span>
+                                    <span className={cn("font-bold", tmIsPositive ? "text-amber-600" : "text-blue-600")}>
+                                      {tmIsPositive ? '+' : ''}{tm.difference}h
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                             </div>

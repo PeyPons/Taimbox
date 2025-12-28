@@ -1001,7 +1001,7 @@ export default function ProjectsPage() {
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>Horas asignadas</Label>
+                <Label>Horas presupuestadas</Label>
                 <Input type="number" value={formData.budgetHours} onChange={e => setFormData({...formData, budgetHours: e.target.value})} />
               </div>
               <div className="space-y-2">

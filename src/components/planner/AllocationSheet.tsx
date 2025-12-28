@@ -521,7 +521,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
             <div className="bg-indigo-50 rounded p-2 border border-indigo-100">
               <div className="text-[10px] font-semibold text-indigo-600 uppercase mb-1">Tus horas</div>
               <div className="flex gap-3 text-xs">
-                <span className="text-slate-600">Est: <strong>{myHoursInProject.estimated}h</strong></span>
+                <span className="text-blue-600">Plan: <strong>{myHoursInProject.estimated}h</strong></span>
                 <span className="text-emerald-600">Comp: <strong>{myHoursInProject.computed}h</strong></span>
               </div>
             </div>

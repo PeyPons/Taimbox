@@ -161,9 +161,9 @@ export default function ClientsAndProjectsPage() {
       const minimum = project.minimumHours || 0;
       
       // Lógica de horas objetivo según el usuario:
-      // - Si tiene budgetHours (horas contratadas): DEBE planificar TODAS
+      // - Si tiene budgetHours (horas presupuestadas): DEBE planificar TODAS
       // - Si solo tiene minimumHours: DEBE planificar al menos esas
-      // - Si tiene ambas: DEBE planificar todas las budgetHours (las contratadas son obligatorias)
+      // - Si tiene ambas: DEBE planificar todas las budgetHours (las presupuestadas son obligatorias)
       const targetHours = budget > 0 ? budget : minimum;
       
       // Cálculos de estado
@@ -242,7 +242,7 @@ export default function ClientsAndProjectsPage() {
       // Presupuesto total del cliente
       const totalBudget = clientProjectsForStats.reduce((sum, p) => sum + (p.budgetHours || 0), 0);
 
-      // Por computar = contratadas - computadas (horas que faltan por facturar)
+      // Por computar = presupuestadas - computadas (horas que faltan por facturar)
       const pendingToCompute = totalBudget - computedHours;
 
       // Contar proyectos con problemas de planificación
@@ -293,8 +293,8 @@ export default function ClientsAndProjectsPage() {
           computed: computedHours,  // Horas computadas
           real: realHours,  // Horas reales
           gain: gain,  // Ganancia (computadas - reales)
-          budget: totalBudget,  // Horas contratadas
-          pendingToCompute: pendingToCompute,  // Por computar (contratadas - computadas)
+          budget: totalBudget,  // Horas presupuestadas
+          pendingToCompute: pendingToCompute,  // Por computar (presupuestadas - computadas)
           projectsNeedingPlanning: projectsNeedingPlanning,  // Proyectos sin planificar completa
           percentage,
           projects: clientProjects
@@ -347,7 +347,7 @@ export default function ClientsAndProjectsPage() {
           computed: kitComputedHours,  // Horas computadas
           real: kitRealHours,  // Horas reales
           gain: kitGain,  // Ganancia
-          budget: totalBudget,  // Horas contratadas
+          budget: totalBudget,  // Horas presupuestadas
           pendingToCompute: kitPendingToCompute,  // Por computar
           projectsNeedingPlanning: kitProjectsNeedingPlanning,  // Proyectos sin planificar
           percentage: kitPercentage,
@@ -459,7 +459,7 @@ export default function ClientsAndProjectsPage() {
           if (aHasIssue && !bHasIssue) return -1;
           if (!aHasIssue && bHasIssue) return 1;
 
-          // 2. Por horas contratadas (mayor a menor)
+          // 2. Por horas presupuestadas (mayor a menor)
           const aBudget = a.project.budgetHours || 0;
           const bBudget = b.project.budgetHours || 0;
           if (bBudget !== aBudget) return bBudget - aBudget;
@@ -822,7 +822,7 @@ export default function ClientsAndProjectsPage() {
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label>Horas contratadas</Label>
+                    <Label>Horas presupuestadas</Label>
                     <Input
                       type="number"
                       value={formData.budgetHours}
@@ -1157,10 +1157,10 @@ export default function ClientsAndProjectsPage() {
               </TooltipTrigger>
               <TooltipContent>
                 <p className="text-xs">
-                  Proyectos que no han planificado todas sus horas contratadas o mínimas
+                  Proyectos que no han planificado todas sus horas presupuestadas o mínimas
                 </p>
                 <p className="text-[10px] text-slate-400 mt-1">
-                  Si tiene horas contratadas, debe planificar todas. Si solo tiene mínimas, debe planificar al menos esas.
+                  Si tiene horas presupuestadas, debe planificar todas. Si solo tiene mínimas, debe planificar al menos esas.
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -1264,9 +1264,9 @@ export default function ClientsAndProjectsPage() {
                   <div className="flex items-center gap-5 flex-shrink-0">
                     {/* Resumen de horas - Simplificado: 4 métricas principales */}
                     <div className="flex items-center gap-5">
-                      {/* Horas contratadas */}
+                      {/* Horas presupuestadas */}
                       <div className="text-right min-w-[70px]">
-                        <span className="text-[10px] text-slate-400 uppercase block">Contratadas</span>
+                        <span className="text-[10px] text-slate-400 uppercase block">Presupuest.</span>
                         <span className="font-bold text-slate-800">{stats.budget.toFixed(0)}h</span>
                       </div>
 
@@ -1434,7 +1434,7 @@ export default function ClientsAndProjectsPage() {
                                               <TooltipContent>
                                                 <p className="text-xs">
                                                   {analysis.project.budgetHours > 0 
-                                                    ? `Faltan ${round2(analysis.project.budgetHours - analysis.totalAssigned)}h por planificar (${analysis.project.budgetHours}h contratadas)`
+                                                    ? `Faltan ${round2(analysis.project.budgetHours - analysis.totalAssigned)}h por planificar (${analysis.project.budgetHours}h presupuestadas)`
                                                     : `Faltan ${round2((analysis.project.minimumHours || 0) - analysis.totalAssigned)}h por planificar (${analysis.project.minimumHours || 0}h mínimas)`
                                                   }
                                                 </p>
@@ -1461,7 +1461,7 @@ export default function ClientsAndProjectsPage() {
                                                 </Badge>
                                               </TooltipTrigger>
                                               <TooltipContent>
-                                                <p className="text-xs">Se han estimado {round2(analysis.totalAssigned)}h de {analysis.budget}h contratadas</p>
+                                                <p className="text-xs">Se han estimado {round2(analysis.totalAssigned)}h de {analysis.budget}h presupuestadas</p>
                                               </TooltipContent>
                                             </Tooltip>
                                           )}
@@ -1576,7 +1576,7 @@ export default function ClientsAndProjectsPage() {
                                                 <span className="text-amber-600 ml-2">
                                                   (Faltan {round2(targetHours - analysis.totalAssigned)}h
                                                   {analysis.project.budgetHours > 0 
-                                                    ? ` de ${analysis.project.budgetHours}h contratadas`
+                                                    ? ` de ${analysis.project.budgetHours}h presupuestadas`
                                                     : ` de ${analysis.project.minimumHours || 0}h mínimas`
                                                   })
                                                 </span>
@@ -1594,7 +1594,7 @@ export default function ClientsAndProjectsPage() {
                                         </span>
                                         <span className="text-slate-500">
                                           {analysis.project.budgetHours > 0 ? (
-                                            <>Contratadas: <span className="font-semibold text-slate-700">{analysis.project.budgetHours}h</span></>
+                                            <>Presupuestadas: <span className="font-semibold text-slate-700">{analysis.project.budgetHours}h</span></>
                                           ) : (
                                             <>Mínimas: <span className="font-semibold text-slate-700">{analysis.project.minimumHours || 0}h</span></>
                                           )}
