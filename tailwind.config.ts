@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Host Grotesk', 'sans-serif'],
+        sans: ['Lato', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
