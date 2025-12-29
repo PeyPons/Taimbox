@@ -69,7 +69,8 @@ export function EmployeeRow({
             employee.id, 
             weekStartDate, 
             week.effectiveStart, 
-            week.effectiveEnd
+            week.effectiveEnd,
+            viewDate
         );
 
         return (

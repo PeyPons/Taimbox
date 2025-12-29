@@ -99,7 +99,8 @@ export function ProjectImpactSummary({
         employeeId, 
         weekDate, 
         data.weekData.effectiveStart, 
-        data.weekData.effectiveEnd
+        data.weekData.effectiveEnd,
+        viewDate
       );
       const newTotal = round2(currentLoad.hours + data.adding);
       const exceeds = newTotal > currentLoad.capacity;

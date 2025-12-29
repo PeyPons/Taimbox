@@ -121,7 +121,7 @@ interface AppContextType {
   updateTeamEvent: (event: TeamEvent) => void;
   deleteTeamEvent: (id: string) => void;
   getEmployeeAllocationsForWeek: (employeeId: string, weekStart: string) => Allocation[];
-  getEmployeeLoadForWeek: (employeeId: string, weekStart: string, effectiveStart?: Date, effectiveEnd?: Date) => { hours: number; capacity: number; baseCapacity: number; status: LoadStatus; percentage: number; breakdown: { reason: string; hours: number; type: 'absence' | 'event' }[] };
+  getEmployeeLoadForWeek: (employeeId: string, weekStart: string, effectiveStart?: Date, effectiveEnd?: Date, viewMonth?: Date) => { hours: number; capacity: number; baseCapacity: number; status: LoadStatus; percentage: number; breakdown: { reason: string; hours: number; type: 'absence' | 'event' }[] };
   getEmployeeMonthlyLoad: (employeeId: string, year: number, month: number) => { hours: number; capacity: number; status: LoadStatus; percentage: number };
   getProjectHoursForMonth: (projectId: string, month: Date) => { used: number; budget: number; available: number; percentage: number };
   getClientTotalHoursForMonth: (clientId: string, month: Date) => { used: number; budget: number; percentage: number };
@@ -842,11 +842,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return result;
   }, [allocations]);
 
-  const getEmployeeLoadForWeek = useCallback((employeeId: string, weekStart: string, effectiveStart?: Date, effectiveEnd?: Date) => {
+  const getEmployeeLoadForWeek = useCallback((employeeId: string, weekStart: string, effectiveStart?: Date, effectiveEnd?: Date, viewMonth?: Date) => {
     const employee = employees.find(e => e.id === employeeId);
     if (!employee) return { hours: 0, capacity: 0, baseCapacity: 0, status: 'empty' as LoadStatus, percentage: 0, breakdown: [] };
 
-    const employeeAllocations = allocations.filter(a => a.employeeId === employeeId && a.weekStartDate === weekStart);
+    // Filtrar allocations por employeeId y weekStartDate
+    let employeeAllocations = allocations.filter(a => a.employeeId === employeeId && a.weekStartDate === weekStart);
+    
+    // Si se proporciona viewMonth, filtrar también por mes efectivo (para evitar sumar horas de meses anteriores)
+    if (viewMonth) {
+      employeeAllocations = employeeAllocations.filter(a => isAllocationInEffectiveMonth(a.weekStartDate, viewMonth));
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AppContext.tsx:852',message:'getEmployeeLoadForWeek: filtering by effective month',data:{employeeId,weekStart,viewMonth:format(viewMonth,'yyyy-MM'),beforeFilter:allocations.filter(a=>a.employeeId===employeeId&&a.weekStartDate===weekStart).length,afterFilter:employeeAllocations.length},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+    }
+    
     const totalHours = round2(employeeAllocations.reduce((sum, a) => sum + (a.status === 'completed' && (a.hoursActual || 0) > 0 ? Number(a.hoursActual) : Number(a.hoursAssigned)), 0));
     
     const weekStartDate = new Date(weekStart);

@@ -835,7 +835,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                     });
                 }
                 
-                const load = getEmployeeLoadForWeek(employeeId, weekStartDate, week.effectiveStart, week.effectiveEnd);
+                const load = getEmployeeLoadForWeek(employeeId, weekStartDate, week.effectiveStart, week.effectiveEnd, viewDate);
                 
                 // Calcular Est, Real, Comp para el header
                 const weekEst = round2(weekAllocations.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0));
