@@ -661,9 +661,18 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
           <SheetHeader className="pb-6 border-b mb-6 space-y-4">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    <div className="h-14 w-14 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-2xl shadow-sm border border-indigo-200">
-                        {employee.name.substring(0, 2).toUpperCase()}
-                    </div>
+                    {employee.avatarUrl ? (
+                        <Avatar className="h-14 w-14 border-2 border-indigo-200 shadow-sm">
+                            <AvatarImage src={employee.avatarUrl} alt={employee.name} />
+                            <AvatarFallback className="bg-indigo-100 text-indigo-700 font-bold text-2xl">
+                                {employee.name.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                        </Avatar>
+                    ) : (
+                        <div className="h-14 w-14 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-2xl shadow-sm border border-indigo-200">
+                            {employee.name.substring(0, 2).toUpperCase()}
+                        </div>
+                    )}
                     <div>
                         <SheetTitle className="text-3xl font-bold tracking-tight text-foreground">{employee.name}</SheetTitle>
                         <SheetDescription className="text-base flex items-center gap-2 mt-1">
@@ -784,6 +793,16 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 // Filtrar por mes efectivo: solo mostrar allocations que tienen días en el mes visible
                 weekAllocations = weekAllocations.filter(a => isAllocationInEffectiveMonth(a.weekStartDate, viewDate));
                 
+                // Eliminar duplicados por ID (por si acaso hay duplicados en la base de datos)
+                const seenIds = new Set<string>();
+                weekAllocations = weekAllocations.filter(a => {
+                    if (seenIds.has(a.id)) {
+                        return false;
+                    }
+                    seenIds.add(a.id);
+                    return true;
+                });
+                
                 if (searchTerm) {
                     weekAllocations = weekAllocations.filter(a => {
                         const proj = getProjectById(a.projectId);
@@ -801,10 +820,28 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 const weekComp = round2(completedTasks.reduce((sum, a) => sum + (a.hoursComputed || 0), 0));
                 const weekBalance = round2(weekComp - weekReal);
 
-                // Fechas de la semana (solo días efectivos del mes: usar effectiveStart y effectiveEnd)
+                // Fechas de la semana (solo días laborables efectivos del mes: lun-vie, excluyendo fines de semana)
                 const effectiveStart = week.effectiveStart || week.weekStart;
                 const effectiveEnd = week.effectiveEnd || addDays(week.weekStart, 4);
-                const weekDateLabel = `${format(effectiveStart, 'd', { locale: es })}-${format(effectiveEnd, 'd MMM', { locale: es })}`;
+                
+                // Calcular solo días laborables (lun-vie) en el rango efectivo
+                const workingDays = [];
+                let currentDay = new Date(effectiveStart);
+                while (currentDay <= effectiveEnd) {
+                    const dayOfWeek = currentDay.getDay();
+                    // 1 = lunes, 5 = viernes (0 = domingo, 6 = sábado)
+                    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                        workingDays.push(new Date(currentDay));
+                    }
+                    currentDay = addDays(currentDay, 1);
+                }
+                
+                // Formatear solo el primer y último día laborable
+                const firstWorkingDay = workingDays[0];
+                const lastWorkingDay = workingDays[workingDays.length - 1];
+                const weekDateLabel = firstWorkingDay && lastWorkingDay 
+                    ? `${format(firstWorkingDay, 'd', { locale: es })}-${format(lastWorkingDay, 'd MMM', { locale: es })}`
+                    : `${format(effectiveStart, 'd', { locale: es })}-${format(effectiveEnd, 'd MMM', { locale: es })}`;
 
                 // Agrupar y ordenar
                 const grouped = weekAllocations.reduce((acc, a) => ({...acc, [a.projectId]: [...(acc[a.projectId]||[]), a]}), {} as Record<string, Allocation[]>);
