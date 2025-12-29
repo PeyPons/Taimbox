@@ -1511,8 +1511,13 @@ export default function DeadlinesPage() {
     const totalPercentage = employeeLoads.reduce((sum, e) => sum + e.percentage, 0);
     const averageLoad = Math.round(totalPercentage / employeeLoads.length);
     
-    // Umbral de desviación: considerar significativa si está más de 10 puntos de la media
-    const deviationThreshold = 10;
+    // Calcular desviación estándar para ajustar el umbral dinámicamente
+    const variance = employeeLoads.reduce((sum, e) => sum + Math.pow(e.percentage - averageLoad, 2), 0) / employeeLoads.length;
+    const standardDeviation = Math.sqrt(variance);
+    
+    // Umbral de desviación: usar 1.5 veces la desviación estándar, con mínimo de 3 puntos
+    // Esto se adapta mejor cuando todos están en un rango estrecho (ej: 80-90%)
+    const deviationThreshold = Math.max(3, Math.round(standardDeviation * 1.5));
     
     // Identificar empleados por encima y por debajo de la media
     const aboveAverage = employeeLoads.filter(e => e.percentage > averageLoad + deviationThreshold);
