@@ -31,3 +31,4 @@ En español, en títulos y encabezados:
   - ❌ "Semáforo de Proyectos"
   - ❌ "Transferencias de Horas"
 
+

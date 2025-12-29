@@ -1483,7 +1483,7 @@ export default function DeadlinesPage() {
 
   // Calcular tips inteligentes de redistribución
   const getRedistributionTips = () => {
-    const tips: { from: string; to: string; reason: string; projects: string[] }[] = [];
+    const tips: { from: string; to: string; reason: string; projects: string[]; impact: number }[] = [];
     const employeeLoads: { id: string; name: string; percentage: number; projects: string[] }[] = [];
     
     // Calcular carga y proyectos de cada empleado SEO (excluir PPC)
@@ -1504,26 +1504,50 @@ export default function DeadlinesPage() {
       employeeLoads.push({ id: emp.id, name: emp.first_name || emp.name, percentage, projects: empProjects });
     });
     
-    // Encontrar empleados sobrecargados (>85%) y con capacidad (<70%)
-    const overloaded = employeeLoads.filter(e => e.percentage > 85);
-    const available = employeeLoads.filter(e => e.percentage < 70);
+    // Si hay menos de 2 empleados, no hay sugerencias posibles
+    if (employeeLoads.length < 2) return [];
     
-    overloaded.forEach(over => {
-      available.forEach(avail => {
+    // Calcular carga promedio del equipo (media)
+    const totalPercentage = employeeLoads.reduce((sum, e) => sum + e.percentage, 0);
+    const averageLoad = Math.round(totalPercentage / employeeLoads.length);
+    
+    // Umbral de desviación: considerar significativa si está más de 10 puntos de la media
+    const deviationThreshold = 10;
+    
+    // Identificar empleados por encima y por debajo de la media
+    const aboveAverage = employeeLoads.filter(e => e.percentage > averageLoad + deviationThreshold);
+    const belowAverage = employeeLoads.filter(e => e.percentage < averageLoad - deviationThreshold);
+    
+    // Si todos están equilibrados (dentro del umbral), no hay sugerencias
+    if (aboveAverage.length === 0 || belowAverage.length === 0) return [];
+    
+    // Generar sugerencias priorizando las que más equilibren el equipo
+    aboveAverage.forEach(over => {
+      belowAverage.forEach(avail => {
         // Solo sugerir si comparten proyectos
         const sharedProjects = over.projects.filter(p => avail.projects.includes(p));
         if (sharedProjects.length > 0) {
+          // Calcular impacto: cuánto se acerca cada uno a la media después de la transferencia
+          // Mayor diferencia = mayor impacto potencial
+          const currentGap = (over.percentage - averageLoad) + (averageLoad - avail.percentage);
+          const impact = currentGap; // Cuanto mayor el gap, mayor el impacto de equilibrar
+          
           tips.push({
             from: over.name,
             to: avail.name,
-            reason: `${over.name} está al ${over.percentage}%, ${avail.name} al ${avail.percentage}%`,
-            projects: sharedProjects.map(pid => projects.find(p => p.id === pid)?.name || '').filter(Boolean)
+            reason: `${over.name} está al ${over.percentage}% (media: ${averageLoad}%), ${avail.name} al ${avail.percentage}%`,
+            projects: sharedProjects.map(pid => projects.find(p => p.id === pid)?.name || '').filter(Boolean),
+            impact
           });
         }
       });
     });
     
-    return tips.slice(0, 3); // Máximo 3 tips
+    // Ordenar por impacto (mayor impacto primero) y devolver las top 3
+    return tips
+      .sort((a, b) => b.impact - a.impact)
+      .slice(0, 3)
+      .map(({ impact, ...tip }) => tip); // Remover impact del resultado final
   };
 
   const redistributionTips = getRedistributionTips();
