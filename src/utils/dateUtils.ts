@@ -94,6 +94,9 @@ export const isAllocationInEffectiveMonth = (weekStartDate: string | Date, viewM
     
     // Si el weekStartDate está en el mes efectivo, incluir
     if (isSameMonth(allocWeekStart, viewMonth)) {
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dateUtils.ts:96',message:'isAllocationInEffectiveMonth: same month',data:{weekStartDate:typeof weekStartDate==='string'?weekStartDate:format(weekStartDate,'yyyy-MM-dd'),viewMonth:format(viewMonth,'yyyy-MM'),result:true},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       return true;
     }
     
@@ -108,11 +111,20 @@ export const isAllocationInEffectiveMonth = (weekStartDate: string | Date, viewM
     if (effectiveStart <= effectiveEnd) {
       const daysInInterval = eachDayOfInterval({ start: effectiveStart, end: effectiveEnd });
       const hasWorkingDays = daysInInterval.some(day => !isWeekend(day));
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dateUtils.ts:110',message:'isAllocationInEffectiveMonth: crosses months',data:{weekStartDate:typeof weekStartDate==='string'?weekStartDate:format(weekStartDate,'yyyy-MM-dd'),viewMonth:format(viewMonth,'yyyy-MM'),effectiveStart:format(effectiveStart,'yyyy-MM-dd'),effectiveEnd:format(effectiveEnd,'yyyy-MM-dd'),hasWorkingDays,result:hasWorkingDays},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       return hasWorkingDays;
     }
     
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dateUtils.ts:115',message:'isAllocationInEffectiveMonth: no overlap',data:{weekStartDate:typeof weekStartDate==='string'?weekStartDate:format(weekStartDate,'yyyy-MM-dd'),viewMonth:format(viewMonth,'yyyy-MM'),result:false},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     return false;
-  } catch {
+  } catch (error) {
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'dateUtils.ts:119',message:'isAllocationInEffectiveMonth: error',data:{weekStartDate:typeof weekStartDate==='string'?weekStartDate:'Date',viewMonth:format(viewMonth,'yyyy-MM'),error:String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     return false;
   }
 };

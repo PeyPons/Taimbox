@@ -835,7 +835,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // --- QUERIES ---
   const getEmployeeAllocationsForWeek = useCallback((employeeId: string, weekStart: string) => {
-    return allocations.filter(a => a.employeeId === employeeId && a.weekStartDate === weekStart);
+    const result = allocations.filter(a => a.employeeId === employeeId && a.weekStartDate === weekStart);
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AppContext.tsx:837',message:'getEmployeeAllocationsForWeek called',data:{employeeId,weekStart,totalAllocations:allocations.length,matchedCount:result.length,matchedIds:result.map(a=>a.id)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
+    return result;
   }, [allocations]);
 
   const getEmployeeLoadForWeek = useCallback((employeeId: string, weekStart: string, effectiveStart?: Date, effectiveEnd?: Date) => {

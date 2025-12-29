@@ -790,18 +790,42 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 // Buscar allocations por el weekStartDate real, pero filtrar por mes efectivo
                 let weekAllocations = getEmployeeAllocationsForWeek(employeeId, weekStartDate);
                 
+                // #region agent log
+                fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AllocationSheet.tsx:791',message:'getEmployeeAllocationsForWeek result',data:{employeeId,weekStartDate,count:weekAllocations.length,allocations:weekAllocations.map(a=>({id:a.id,taskName:a.taskName,weekStartDate:a.weekStartDate}))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+                // #endregion
+                
                 // Filtrar por mes efectivo: solo mostrar allocations que tienen días en el mes visible
-                weekAllocations = weekAllocations.filter(a => isAllocationInEffectiveMonth(a.weekStartDate, viewDate));
+                const beforeFilterCount = weekAllocations.length;
+                weekAllocations = weekAllocations.filter(a => {
+                    const result = isAllocationInEffectiveMonth(a.weekStartDate, viewDate);
+                    // #region agent log
+                    fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AllocationSheet.tsx:794',message:'isAllocationInEffectiveMonth check',data:{allocationId:a.id,taskName:a.taskName,weekStartDate:a.weekStartDate,viewMonth:format(viewDate,'yyyy-MM'),result},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                    // #endregion
+                    return result;
+                });
+                
+                // #region agent log
+                fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AllocationSheet.tsx:800',message:'After isAllocationInEffectiveMonth filter',data:{beforeFilterCount,afterFilterCount:weekAllocations.length,filtered:weekAllocations.map(a=>({id:a.id,taskName:a.taskName,weekStartDate:a.weekStartDate}))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
                 
                 // Eliminar duplicados por ID (por si acaso hay duplicados en la base de datos)
                 const seenIds = new Set<string>();
+                const duplicatesFound: string[] = [];
                 weekAllocations = weekAllocations.filter(a => {
                     if (seenIds.has(a.id)) {
+                        duplicatesFound.push(a.id);
+                        // #region agent log
+                        fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AllocationSheet.tsx:810',message:'Duplicate ID found',data:{duplicateId:a.id,taskName:a.taskName,weekStartDate:a.weekStartDate},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                        // #endregion
                         return false;
                     }
                     seenIds.add(a.id);
                     return true;
                 });
+                
+                // #region agent log
+                fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AllocationSheet.tsx:820',message:'After duplicate filter',data:{duplicatesFound:duplicatesFound.length,duplicateIds:duplicatesFound,finalCount:weekAllocations.length,finalAllocations:weekAllocations.map(a=>({id:a.id,taskName:a.taskName,weekStartDate:a.weekStartDate}))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
                 
                 if (searchTerm) {
                     weekAllocations = weekAllocations.filter(a => {
@@ -1011,12 +1035,20 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                                                     />
                                                                                 ) : (
                                                                                     // Limpiar nombre de tarea removiendo información de transferencia
-                                                                                    (() => {
-                                                                                      let cleanName = alloc.taskName || 'Tarea';
-                                                                                      // Remover "(transferida de X, original: Y)" o "(transferida de X)"
-                                                                                      cleanName = cleanName.replace(/\s*\(transferida de .+?(?:, original: .+?)?\)/g, '').trim();
-                                                                                      return cleanName || 'Tarea';
-                                                                                    })()
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <span>
+                                                                                            {(() => {
+                                                                                              let cleanName = alloc.taskName || 'Tarea';
+                                                                                              // Remover "(transferida de X, original: Y)" o "(transferida de X)"
+                                                                                              cleanName = cleanName.replace(/\s*\(transferida de .+?(?:, original: .+?)?\)/g, '').trim();
+                                                                                              return cleanName || 'Tarea';
+                                                                                            })()}
+                                                                                        </span>
+                                                                                        {/* DEBUG: Mostrar fecha de la tarea */}
+                                                                                        <span className="text-[10px] text-slate-400 font-mono bg-slate-100 px-1.5 py-0.5 rounded" title={`weekStartDate: ${alloc.weekStartDate}`}>
+                                                                                            {format(parseISO(alloc.weekStartDate), 'd MMM', { locale: es })}
+                                                                                        </span>
+                                                                                    </div>
                                                                                 )}
                                                                             </div>
                                                                             {/* Badge Weekly si la tarea fue ajustada vía Weekly (horas=0 o transferida) */}
