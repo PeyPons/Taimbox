@@ -943,7 +943,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     let usedHours = 0;
     weeks.forEach(week => {
       const storageKey = getStorageKey(week.weekStart, month);
-      const tasks = allocations.filter(a => a.projectId === projectId && a.weekStartDate === storageKey);
+      const tasks = allocations.filter(a => 
+        a.projectId === projectId && 
+        a.weekStartDate === storageKey &&
+        isAllocationInEffectiveMonth(a.weekStartDate, month)
+      );
       usedHours += tasks.reduce((sum, a) => sum + (a.status === 'completed' && (a.hoursActual || 0) > 0 ? Number(a.hoursActual) : Number(a.hoursAssigned)), 0);
     });
     usedHours = round2(usedHours);

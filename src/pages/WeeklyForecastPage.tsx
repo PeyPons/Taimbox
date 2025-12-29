@@ -712,7 +712,8 @@ export default function WeeklyForecastPage() {
           const storageKey = getStorageKey(week.weekStart, currentMonth);
           const weekAllocations = (allocations || []).filter(a =>
             a.employeeId === emp.id &&
-            a.weekStartDate === storageKey
+            a.weekStartDate === storageKey &&
+            isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)
           );
           
           // Horas asignadas (usando la misma lógica que el resto de la app)

@@ -293,7 +293,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
             // Validar capacidad del compañero destino
             const targetEmployee = employees.find(e => e.id === targetEmployeeId);
             if (targetEmployee) {
-              const targetWeekLoad = getEmployeeLoadForWeek(targetEmployeeId, targetWeek);
+              const targetWeekLoad = getEmployeeLoadForWeek(targetEmployeeId, targetWeek, undefined, undefined, viewDate);
               const targetCurrentHours = targetWeekLoad?.hours || 0;
               const targetCapacity = targetWeekLoad?.capacity || 0;
               const newTargetTotal = targetCurrentHours + remainingHours;
@@ -394,7 +394,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
           
           // Validar capacidad por semana
           for (const distTask of validTasks) {
-            const weekLoad = getEmployeeLoadForWeek(employeeId, distTask.weekDate);
+            const weekLoad = getEmployeeLoadForWeek(employeeId, distTask.weekDate, undefined, undefined, viewDate);
             const currentWeekHours = weekLoad?.hours || 0;
             const weekCapacity = weekLoad?.capacity || 0;
             
@@ -739,7 +739,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                     const weekNumber = getWeekNumber(week.weekStart);
                                     
                                     // Calcular disponibilidad propia para esta semana
-                                    const weekLoad = getEmployeeLoadForWeek(employeeId, storageKey);
+                                    const weekLoad = getEmployeeLoadForWeek(employeeId, storageKey, undefined, undefined, viewDate);
                                     const currentHours = weekLoad?.hours || 0;
                                     const capacity = weekLoad?.capacity || 0;
                                     const available = capacity - currentHours;
@@ -769,7 +769,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                               {/* Mostrar información de disponibilidad propia */}
                               {moveToMyWeek[task.id] && (() => {
                                 const selectedWeek = moveToMyWeek[task.id];
-                                const weekLoad = getEmployeeLoadForWeek(employeeId, selectedWeek);
+                                const weekLoad = getEmployeeLoadForWeek(employeeId, selectedWeek, undefined, undefined, viewDate);
                                 const currentHours = weekLoad?.hours || 0;
                                 const capacity = weekLoad?.capacity || 0;
                                 const available = capacity - currentHours;
@@ -834,7 +834,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                     const selectedWeek = moveToWeek[task.id];
                                     let availabilityInfo = null;
                                     if (selectedWeek) {
-                                      const weekLoad = getEmployeeLoadForWeek(emp.id, selectedWeek);
+                                      const weekLoad = getEmployeeLoadForWeek(emp.id, selectedWeek, undefined, undefined, viewDate);
                                       const currentHours = weekLoad?.hours || 0;
                                       const capacity = weekLoad?.capacity || 0;
                                       const available = capacity - currentHours;
@@ -899,7 +899,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                             {moveToEmployee[task.id] && moveToWeek[task.id] && (() => {
                               const selectedEmployeeId = moveToEmployee[task.id];
                               const selectedWeek = moveToWeek[task.id];
-                              const weekLoad = getEmployeeLoadForWeek(selectedEmployeeId, selectedWeek);
+                              const weekLoad = getEmployeeLoadForWeek(selectedEmployeeId, selectedWeek, undefined, undefined, viewDate);
                               const currentHours = weekLoad?.hours || 0;
                               const capacity = weekLoad?.capacity || 0;
                               const available = capacity - currentHours;
@@ -990,7 +990,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                         <div className="space-y-2">
                           {(distributionTasks[task.id] || []).map((distRow, idx) => {
                             const rowHours = parseFloat(distRow.hours) || 0;
-                            const weekLoad = distRow.weekDate ? getEmployeeLoadForWeek(employeeId, distRow.weekDate) : null;
+                            const weekLoad = distRow.weekDate ? getEmployeeLoadForWeek(employeeId, distRow.weekDate, undefined, undefined, viewDate) : null;
                             const currentWeekHours = weekLoad?.hours || 0;
                             const weekCapacity = weekLoad?.capacity || 0;
                             
@@ -1426,7 +1426,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                   <div className="space-y-2">
                                     {(distributionTasks[task.id] || []).map((distRow, idx) => {
                                       const rowHours = parseFloat(distRow.hours) || 0;
-                                      const weekLoad = distRow.weekDate ? getEmployeeLoadForWeek(employeeId, distRow.weekDate) : null;
+                                      const weekLoad = distRow.weekDate ? getEmployeeLoadForWeek(employeeId, distRow.weekDate, undefined, undefined, viewDate) : null;
                                       const currentWeekHours = weekLoad?.hours || 0;
                                       const weekCapacity = weekLoad?.capacity || 0;
                                       
@@ -1698,7 +1698,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                             <div className="space-y-2">
                               {(distributionTasks[task.id] || []).map((distRow, idx) => {
                                 const rowHours = parseFloat(distRow.hours) || 0;
-                                const weekLoad = distRow.weekDate ? getEmployeeLoadForWeek(employeeId, distRow.weekDate) : null;
+                                const weekLoad = distRow.weekDate ? getEmployeeLoadForWeek(employeeId, distRow.weekDate, undefined, undefined, viewDate) : null;
                                 const currentWeekHours = weekLoad?.hours || 0;
                                 const weekCapacity = weekLoad?.capacity || 0;
                                 
@@ -1947,7 +1947,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                   <div className="space-y-2">
                                     {(distributionTasks[task.id] || []).map((distRow, idx) => {
                                       const rowHours = parseFloat(distRow.hours) || 0;
-                                      const weekLoad = distRow.weekDate ? getEmployeeLoadForWeek(employeeId, distRow.weekDate) : null;
+                                      const weekLoad = distRow.weekDate ? getEmployeeLoadForWeek(employeeId, distRow.weekDate, undefined, undefined, viewDate) : null;
                                       const currentWeekHours = weekLoad?.hours || 0;
                                       const weekCapacity = weekLoad?.capacity || 0;
                                       
@@ -2118,7 +2118,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                 
                 // Validar capacidad por semana
                 for (const distTask of validTasks) {
-                  const weekLoad = getEmployeeLoadForWeek(employeeId, distTask.weekDate);
+                  const weekLoad = getEmployeeLoadForWeek(employeeId, distTask.weekDate, undefined, undefined, viewDate);
                   const currentWeekHours = weekLoad?.hours || 0;
                   const weekCapacity = weekLoad?.capacity || 0;
                   
@@ -2148,7 +2148,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                   // Validar capacidad propia
                   const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
                   if (remainingHours > 0) {
-                    const weekLoad = getEmployeeLoadForWeek(employeeId, targetWeek);
+                    const weekLoad = getEmployeeLoadForWeek(employeeId, targetWeek, undefined, undefined, viewDate);
                     const currentWeekHours = weekLoad?.hours || 0;
                     const weekCapacity = weekLoad?.capacity || 0;
                     const newWeekTotal = currentWeekHours + remainingHours;
@@ -2174,7 +2174,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                   // Validar capacidad del compañero destino
                   const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
                   if (remainingHours > 0) {
-                    const targetWeekLoad = getEmployeeLoadForWeek(targetEmployeeId, targetWeek);
+                    const targetWeekLoad = getEmployeeLoadForWeek(targetEmployeeId, targetWeek, undefined, undefined, viewDate);
                     const targetCurrentHours = targetWeekLoad?.hours || 0;
                     const targetCapacity = targetWeekLoad?.capacity || 0;
                     const newTargetTotal = targetCurrentHours + remainingHours;
