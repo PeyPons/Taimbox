@@ -18,7 +18,7 @@ import { Allocation, Project } from '@/types';
 import { Plus, Pencil, CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, Check, TrendingUp, TrendingDown, Trash2, Link as LinkIcon, AlertOctagon, CheckCircle2, AlertTriangle, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc } from 'lucide-react';
 import { cn, formatProjectName } from '@/lib/utils';
 import { getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
-import { format, addMonths, subMonths, isSameMonth, parseISO, addDays, isBefore, startOfWeek } from 'date-fns';
+import { format, addMonths, subMonths, isSameMonth, parseISO, addDays, isBefore, startOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { PlannerTour } from './PlannerTour';
@@ -779,8 +779,6 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 const weekStr = weekStartDate; // Alias para usar como key en JSX
                 
                 // Buscar allocations por el weekStartDate real, pero filtrar por mes efectivo
-                const monthStart = startOfMonth(viewDate);
-                const monthEnd = endOfMonth(viewDate);
                 let weekAllocations = getEmployeeAllocationsForWeek(employeeId, weekStartDate);
                 
                 // Filtrar por mes efectivo: solo mostrar allocations que tienen días en el mes visible
