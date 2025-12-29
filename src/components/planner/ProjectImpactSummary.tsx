@@ -22,7 +22,7 @@ interface ProjectImpactSummaryProps {
   allocations: Allocation[];
   viewDate: Date;
   getProjectBudgetStatus: (projectId: string) => ProjectBudgetStatus;
-  getEmployeeLoadForWeek: (employeeId: string, weekStart: string, effectiveStart?: Date, effectiveEnd?: Date) => { hours: number; capacity: number; percentage: number };
+  getEmployeeLoadForWeek: (employeeId: string, weekStart: string, effectiveStart?: Date, effectiveEnd?: Date, viewMonth?: Date) => { hours: number; capacity: number; percentage: number };
   employeeId: string;
   weeks: { weekStart: Date; effectiveStart?: Date; effectiveEnd?: Date }[];
 }
