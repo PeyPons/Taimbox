@@ -121,7 +121,7 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: 'Charlie Display', sans-serif;
   }
 }
 
