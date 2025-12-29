@@ -14,7 +14,7 @@ import { EmployeeRow } from '@/components/planner/EmployeeRow';
 import { AllocationSheet } from '@/components/planner/AllocationSheet';
 import { AbsencesSheet } from '@/components/team/AbsencesSheet';
 import { ProfessionalGoalsSheet } from '@/components/team/ProfessionalGoalsSheet';
-import { getWeeksForMonth, getMonthName, getStorageKey } from '@/utils/dateUtils';
+import { getWeeksForMonth, getMonthName, getStorageKey, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -195,7 +195,7 @@ export default function EmployeeDashboard() {
     const map = new Map<string, typeof allocations>();
     allocations.forEach(a => {
       try {
-        if (isSameMonth(parseISO(a.weekStartDate), currentMonth)) {
+        if (isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)) {
           if (!map.has(a.projectId)) {
             map.set(a.projectId, []);
           }
@@ -337,7 +337,7 @@ export default function EmployeeDashboard() {
 
     const monthAllocations = allocations.filter(a =>
       a.employeeId === myEmployeeProfile.id &&
-      isSameMonth(parseISO(a.weekStartDate), currentMonth) &&
+      isAllocationInEffectiveMonth(a.weekStartDate, currentMonth) &&
       a.status !== 'completed'
     );
 
@@ -648,7 +648,9 @@ export default function EmployeeDashboard() {
               {weeks.map((week, index) => (
                 <div key={week.weekStart.toISOString()} className="text-center px-1 py-2 border-r flex flex-col justify-center">
                   <span className="text-xs font-bold uppercase text-slate-500">S{index + 1}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">{format(max([week.weekStart, monthStart]), 'd', { locale: es })}-{format(min([addDays(week.weekStart, 4), monthEnd]), 'd MMM', { locale: es })}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    {format(week.effectiveStart || week.weekStart, 'd', { locale: es })}-{format(week.effectiveEnd || addDays(week.weekStart, 4), 'd MMM', { locale: es })}
+                  </span>
                 </div>
               ))}
               <div className="px-2 py-3 font-bold text-xs text-center flex items-center justify-center">TOTAL MES</div>

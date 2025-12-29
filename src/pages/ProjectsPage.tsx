@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format, addMonths, subMonths, isSameMonth, parseISO, getDaysInMonth, getDate } from 'date-fns';
+import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
 import { 
   FolderKanban, ChevronLeft, ChevronRight, Briefcase, Pencil, Search, 
@@ -75,7 +76,7 @@ export default function ProjectsPage() {
         const client = clients.find(c => c.id === project.clientId);
         let monthTasks = allocations.filter(a => 
           a.projectId === project.id && 
-          isSameMonth(parseISO(a.weekStartDate), currentMonth)
+          isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)
         );
 
         const totalAssigned = monthTasks.reduce((sum, t) => sum + t.hoursAssigned, 0);

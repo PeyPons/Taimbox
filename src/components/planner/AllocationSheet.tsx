@@ -17,7 +17,7 @@ import { useApp } from '@/contexts/AppContext';
 import { Allocation, Project } from '@/types';
 import { Plus, Pencil, CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, Check, TrendingUp, TrendingDown, Trash2, Link as LinkIcon, AlertOctagon, CheckCircle2, AlertTriangle, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc } from 'lucide-react';
 import { cn, formatProjectName } from '@/lib/utils';
-import { getWeeksForMonth, getStorageKey } from '@/utils/dateUtils';
+import { getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { format, addMonths, subMonths, isSameMonth, parseISO, addDays, isBefore, startOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -774,11 +774,17 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
             )}>
             {visibleWeeks.map((week, idx) => {
                 const index = showAllWeeks ? idx : activeWeekIndex;
-                // Usar siempre la fecha real de la semana (lunes) para buscar tareas
-                // No usar getStorageKey porque normaliza según el mes visible y puede cambiar
+                // Usar el weekStartDate real para buscar allocations (las allocations se guardan con el lunes completo)
                 const weekStartDate = format(week.weekStart, 'yyyy-MM-dd');
                 const weekStr = weekStartDate; // Alias para usar como key en JSX
+                
+                // Buscar allocations por el weekStartDate real, pero filtrar por mes efectivo
+                const monthStart = startOfMonth(viewDate);
+                const monthEnd = endOfMonth(viewDate);
                 let weekAllocations = getEmployeeAllocationsForWeek(employeeId, weekStartDate);
+                
+                // Filtrar por mes efectivo: solo mostrar allocations que tienen días en el mes visible
+                weekAllocations = weekAllocations.filter(a => isAllocationInEffectiveMonth(a.weekStartDate, viewDate));
                 
                 if (searchTerm) {
                     weekAllocations = weekAllocations.filter(a => {
@@ -797,9 +803,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 const weekComp = round2(completedTasks.reduce((sum, a) => sum + (a.hoursComputed || 0), 0));
                 const weekBalance = round2(weekComp - weekReal);
 
-                // Fechas de la semana (solo días laborables: Lun-Vie)
-                const weekEndDate = addDays(week.weekStart, 4); // Viernes en lugar de domingo
-                const weekDateLabel = `${format(week.weekStart, 'd', { locale: es })}-${format(weekEndDate, 'd MMM', { locale: es })}`;
+                // Fechas de la semana (solo días efectivos del mes: usar effectiveStart y effectiveEnd)
+                const effectiveStart = week.effectiveStart || week.weekStart;
+                const effectiveEnd = week.effectiveEnd || addDays(week.weekStart, 4);
+                const weekDateLabel = `${format(effectiveStart, 'd', { locale: es })}-${format(effectiveEnd, 'd MMM', { locale: es })}`;
 
                 // Agrupar y ordenar
                 const grouped = weekAllocations.reduce((acc, a) => ({...acc, [a.projectId]: [...(acc[a.projectId]||[]), a]}), {} as Record<string, Allocation[]>);
@@ -1649,10 +1656,13 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                         if (weeks.length === 0 || activeWeekIndex < 0 || activeWeekIndex >= weeks.length) {
                           return <p className="text-sm text-slate-500">No hay semanas disponibles</p>;
                         }
-                        // Usar siempre la fecha real de la semana (lunes) para buscar tareas
+                        // Usar el weekStartDate real para buscar allocations
                         const weekStartDate = format(weeks[activeWeekIndex].weekStart, 'yyyy-MM-dd');
                         const weekAllocs = getEmployeeAllocationsForWeek(employeeId, weekStartDate);
-                        const projectIds = [...new Set(weekAllocs.map(a => a.projectId))];
+                        
+                        // Filtrar por mes efectivo: solo mostrar allocations que tienen días en el mes visible
+                        const filteredWeekAllocs = weekAllocs.filter(a => isAllocationInEffectiveMonth(a.weekStartDate, viewDate));
+                        const projectIds = [...new Set(filteredWeekAllocs.map(a => a.projectId))];
 
                         return (
                           <div className="space-y-2">
@@ -1662,7 +1672,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                             <div className="space-y-1.5 max-h-[40vh] overflow-y-auto">
                               {projectIds.map(projId => {
                                 const project = getProjectById(projId);
-                                const projAllocs = weekAllocs.filter(a => a.projectId === projId);
+                                const projAllocs = filteredWeekAllocs.filter(a => a.projectId === projId);
                                 const est = round2(projAllocs.reduce((s, a) => s + (a.hoursAssigned || 0), 0));
                                 const completed = projAllocs.filter(a => a.status === 'completed').length;
                                 const total = projAllocs.length;

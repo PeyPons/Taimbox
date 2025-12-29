@@ -1,4 +1,4 @@
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameMonth, addDays, format, eachDayOfInterval, isWeekend } from 'date-fns';
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameMonth, addDays, format, eachDayOfInterval, isWeekend, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { WorkSchedule } from '@/types';
 
@@ -82,4 +82,25 @@ export const getMonthlyCapacity = (year: number, month: number, schedule: WorkSc
     const start = new Date(year, month, 1);
     const end = new Date(year, month + 1, 0);
     return getWorkingDaysInRange(start, end, schedule).totalHours;
+};
+
+// ✅ Función helper para verificar si una allocation está en el mes efectivo
+// Considera semanas que cruzan meses: solo incluye si tiene días en el mes efectivo
+export const isAllocationInEffectiveMonth = (weekStartDate: string | Date, viewMonth: Date): boolean => {
+  try {
+    const allocWeekStart = typeof weekStartDate === 'string' ? parseISO(weekStartDate) : weekStartDate;
+    const monthStart = startOfMonth(viewMonth);
+    const monthEnd = endOfMonth(viewMonth);
+    
+    // Si el weekStartDate está en el mes efectivo, incluir
+    if (isSameMonth(allocWeekStart, viewMonth)) {
+      return true;
+    }
+    
+    // Si la semana cruza meses, verificar si tiene días en el mes efectivo
+    const allocWeekEnd = addDays(allocWeekStart, 6);
+    return allocWeekStart <= monthEnd && allocWeekEnd >= monthStart;
+  } catch {
+    return false;
+  }
 };

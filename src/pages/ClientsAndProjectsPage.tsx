@@ -28,6 +28,7 @@ import {
 import { cn, isKitDigitalProject, formatProjectName } from '@/lib/utils';
 import { toast } from 'sonner';
 import { format, subMonths, addMonths, isSameMonth, parseISO, getDaysInMonth, getDate } from 'date-fns';
+import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
@@ -173,7 +174,7 @@ export default function ClientsAndProjectsPage() {
       const client = clients.find(c => c.id === project.clientId);
       let monthTasks = allocations.filter(a => 
         a.projectId === project.id && 
-        isSameMonth(parseISO(a.weekStartDate), currentMonth)
+        isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)
       );
 
       const totalAssigned = monthTasks.reduce((sum, t) => sum + t.hoursAssigned, 0);
@@ -286,7 +287,7 @@ export default function ClientsAndProjectsPage() {
       const prevPlannedHours = prevMonthProjects.reduce((sum, project) => {
         const monthTasks = allocations.filter(a => 
           a.projectId === project.id && 
-          isSameMonth(parseISO(a.weekStartDate), prevMonth)
+          isAllocationInEffectiveMonth(a.weekStartDate, prevMonth)
         );
         return sum + monthTasks.reduce((s, t) => s + t.hoursAssigned, 0);
       }, 0);
@@ -305,7 +306,7 @@ export default function ClientsAndProjectsPage() {
 
       // Empleados asignados este mes (con objetos completos para avatares)
       const monthAllocations = allocations.filter(a =>
-        isSameMonth(parseISO(a.weekStartDate), currentMonth) &&
+        isAllocationInEffectiveMonth(a.weekStartDate, currentMonth) &&
         clientProjects.some(p => p.project.id === a.projectId)
       );
       const assignedEmployeeIds = [...new Set(monthAllocations.map(a => a.employeeId))];
@@ -348,7 +349,7 @@ export default function ClientsAndProjectsPage() {
       const percentage = totalBudget > 0 ? (totalUsed / totalBudget) * 100 : 0;
 
       const monthAllocations = allocations.filter(a =>
-        isSameMonth(parseISO(a.weekStartDate), currentMonth) &&
+        isAllocationInEffectiveMonth(a.weekStartDate, currentMonth) &&
         visibleKitDigitalProjects.some(p => p.id === a.projectId)
       );
       const assignedEmployeeIds = [...new Set(monthAllocations.map(a => a.employeeId))];

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Employee, Client, Project, Allocation, LoadStatus, Absence, TeamEvent, ProfessionalGoal, WeeklyFeedback } from '@/types';
-import { getWorkingDaysInRange, getMonthlyCapacity, getWeeksForMonth, getStorageKey } from '@/utils/dateUtils';
+import { getWorkingDaysInRange, getMonthlyCapacity, getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange, getTeamEventDetailsInRange } from '@/utils/teamEventUtils';
 import { addDays, format, startOfMonth, endOfMonth } from 'date-fns';
@@ -319,6 +319,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
     let dataFound = false;
     
+    // Calcular el rango de semanas que pueden tener días en este mes (incluyendo semanas que cruzan)
+    const weeks = getWeeksForMonth(month);
+    const weekStartDates = weeks.map(w => format(w.weekStart, 'yyyy-MM-dd'));
+    const minWeekStart = weekStartDates.length > 0 ? weekStartDates[0] : format(monthStart, 'yyyy-MM-dd');
+    const maxWeekStart = weekStartDates.length > 0 ? weekStartDates[weekStartDates.length - 1] : format(monthEnd, 'yyyy-MM-dd');
+    
     // Cargar solo allocations, absences, team_events y weekly_feedback para este mes (merge)
     try {
       const startStr = format(monthStart, 'yyyy-MM-dd');
@@ -327,8 +333,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const [allocRes, absRes, evRes, feedRes] = await Promise.all([
         supabase.from('allocations')
           .select('*')
-          .gte('week_start_date', startStr)
-          .lte('week_start_date', endStr),
+          .gte('week_start_date', minWeekStart)
+          .lte('week_start_date', maxWeekStart),
         supabase.from('absences')
           .select('*')
           .lte('start_date', endStr)
@@ -339,8 +345,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           .lte('date', endStr),
         supabase.from('weekly_feedback')
           .select('*')
-          .gte('week_start_date', startStr)
-          .lte('week_start_date', endStr),
+          .gte('week_start_date', minWeekStart)
+          .lte('week_start_date', maxWeekStart),
       ]);
 
       if (allocRes.data) {
@@ -360,7 +366,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         
         setAllocations(prev => {
           const existingIds = new Set(prev.map(a => a.id));
-          const newAllocations = mappedAllocations.filter(a => !existingIds.has(a.id));
+          // Filtrar por mes efectivo antes de añadir
+          const newAllocations = mappedAllocations.filter(a => 
+            !existingIds.has(a.id) && 
+            isAllocationInEffectiveMonth(a.weekStartDate, month)
+          );
           return [...prev, ...newAllocations];
         });
       }
@@ -893,8 +903,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const weeks = getWeeksForMonth(monthStart);
     let totalHours = 0;
     weeks.forEach(week => {
-      const storageKey = getStorageKey(week.weekStart, monthStart);
-      const tasks = allocations.filter(a => a.employeeId === employeeId && a.weekStartDate === storageKey);
+      // Buscar allocations por weekStartDate real, pero filtrar por mes efectivo
+      const weekStartDate = format(week.weekStart, 'yyyy-MM-dd');
+      const tasks = allocations.filter(a => 
+        a.employeeId === employeeId && 
+        a.weekStartDate === weekStartDate &&
+        isAllocationInEffectiveMonth(a.weekStartDate, monthStart)
+      );
       totalHours += tasks.reduce((sum, a) => sum + (a.status === 'completed' && (a.hoursActual || 0) > 0 ? Number(a.hoursActual) : Number(a.hoursAssigned)), 0);
     });
     totalHours = round2(totalHours);

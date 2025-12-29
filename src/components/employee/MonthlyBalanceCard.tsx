@@ -3,6 +3,7 @@ import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { isSameMonth, parseISO } from 'date-fns';
+import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { Rocket, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -20,7 +21,7 @@ export const MonthlyBalanceCard = memo(function MonthlyBalanceCard({ employeeId,
   const monthlyStats = useMemo(() => {
     const monthlyAllocations = allocations.filter(a => 
       a.employeeId === employeeId && 
-      isSameMonth(parseISO(a.weekStartDate), viewDate)
+      isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
     );
     
     const completed = monthlyAllocations.filter(a => a.status === 'completed');

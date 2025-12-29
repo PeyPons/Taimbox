@@ -13,6 +13,7 @@ import { cn, formatProjectName } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { Deadline } from '@/types';
 import { format, isSameMonth, parseISO, startOfMonth, endOfMonth } from 'date-fns';
+import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
 
 interface GlobalPlanningInconsistenciesProps {
@@ -95,7 +96,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
 
     // Obtener allocations del mes para todos los empleados
     const monthAllocations = allocations.filter(a => 
-      isSameMonth(parseISO(a.weekStartDate), viewDate)
+      isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
     );
 
     // Agrupar allocations por proyecto y empleado

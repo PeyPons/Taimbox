@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, isSameMonth, parseISO } from 'date-fns';
+import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
 import { 
   Sparkles, TrendingUp, TrendingDown, Users, Target, 
@@ -32,7 +33,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
   // Allocations del mes para este empleado
   const monthlyAllocations = allocations.filter(a => 
     a.employeeId === employeeId && 
-    isSameMonth(parseISO(a.weekStartDate), viewDate)
+    isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
   );
 
   // Métricas globales del mes
@@ -121,7 +122,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
     Object.keys(groups).forEach(projId => {
       const allProjectAllocations = allocations.filter(a => 
         a.projectId === projId && 
-        isSameMonth(parseISO(a.weekStartDate), viewDate)
+        isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
       );
       
       // Total computado del proyecto

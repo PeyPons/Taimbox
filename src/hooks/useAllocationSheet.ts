@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Allocation, Project } from '@/types';
-import { getWeeksForMonth, getStorageKey } from '@/utils/dateUtils';
+import { getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { format, isSameMonth, parseISO, addDays, startOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -63,7 +63,7 @@ export function useAllocationSheet(employeeId: string, viewDate: Date) {
   const monthlyProjectSummary = useMemo(() => {
     const monthAllocations = allocations.filter(a =>
       a.employeeId === employeeId &&
-      isSameMonth(parseISO(a.weekStartDate), viewDate)
+      isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
     );
 
     const projectMap: Record<string, {
@@ -127,7 +127,7 @@ export function useAllocationSheet(employeeId: string, viewDate: Date) {
 
       const monthAllocations = allocations.filter(a => 
         a.projectId === projectId && 
-        isSameMonth(parseISO(a.weekStartDate), viewDate)
+        isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
       );
 
       const breakdownMap: Record<string, { computed: number; planned: number }> = {};

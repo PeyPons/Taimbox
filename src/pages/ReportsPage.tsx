@@ -33,7 +33,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getMonthlyCapacity, getWeeksForMonth } from '@/utils/dateUtils';
+import { getMonthlyCapacity, getWeeksForMonth, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
 import { format, subMonths, addMonths, startOfMonth, endOfMonth, parseISO, isSameMonth, differenceInWeeks, startOfWeek, addWeeks, getWeek, getDate, isSameDay } from 'date-fns';
@@ -108,12 +108,10 @@ export default function ReportsPage() {
 
   const monthAllocations = useMemo(() => {
     return (allocations || []).filter(a => {
-      const weekStart = parseISO(a.weekStartDate);
-      const inMonth = weekStart >= monthStart && weekStart <= monthEnd;
       const matchesEmp = selectedEmployeeId === 'all' || a.employeeId === selectedEmployeeId;
-      return inMonth && matchesEmp;
+      return isAllocationInEffectiveMonth(a.weekStartDate, currentMonth) && matchesEmp;
     });
-  }, [allocations, monthStart, monthEnd, selectedEmployeeId]);
+  }, [allocations, currentMonth, selectedEmployeeId]);
 
   const totalCapacity = useMemo(() => activeEmployees.reduce((sum, e) => {
     return sum + getMonthlyCapacity(year, month, e.workSchedule);
@@ -530,14 +528,16 @@ export default function ReportsPage() {
         // Convertir weekStart a formato ISO string para comparar con weekStartDate
         const weekStr = format(week.weekStart, 'yyyy-MM-dd');
         
-        // Buscar allocations que coincidan con esta semana
+        // Buscar allocations que coincidan con esta semana y estén en el mes efectivo
         // weekStartDate en allocations es el lunes de la semana, igual que week.weekStart
         const weekAllocations = (allocations || []).filter(a => {
           try {
             const allocationWeekDate = parseISO(a.weekStartDate);
             // Comparar si el inicio de semana de la allocation coincide con esta semana
+            // Y filtrar por mes efectivo
             return a.employeeId === emp.id && 
-                   isSameDay(allocationWeekDate, week.weekStart);
+                   isSameDay(allocationWeekDate, week.weekStart) &&
+                   isAllocationInEffectiveMonth(a.weekStartDate, currentMonth);
           } catch { 
             return false; 
           }

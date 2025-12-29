@@ -15,6 +15,7 @@ import { AIService } from "@/services/aiService";
 import { ErrorService } from "@/services/errorService";
 import { logger } from "@/utils/logger";
 import { format, startOfWeek, isBefore, parseISO, isSameMonth, differenceInDays, getDaysInMonth, addDays } from 'date-fns';
+import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -163,7 +164,7 @@ export default function DashboardAI() {
     const safeAbsences = absences || [];
     
     // Filtros temporales
-    const monthAllocations = safeAllocations.filter(a => isSameMonth(parseISO(a.weekStartDate), now));
+    const monthAllocations = safeAllocations.filter(a => isAllocationInEffectiveMonth(a.weekStartDate, now));
     
     // 1. DETECCIÓN DE TAREAS ZOMBIE
     const zombieTasks = safeAllocations.filter(a => {

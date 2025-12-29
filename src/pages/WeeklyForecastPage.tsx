@@ -18,7 +18,7 @@ import { es } from 'date-fns/locale';
 import { AlertCircle, TrendingUp, TrendingDown, CheckCircle2, Users, Plus, ArrowRight, ChevronLeft, ChevronRight, CalendarDays, Check, ChevronDown, ArrowUpDown, Search } from 'lucide-react';
 import { cn, formatProjectName } from '@/lib/utils';
 import { toast } from 'sonner';
-import { getStorageKey, getWeeksForMonth, getMonthlyCapacity } from '@/utils/dateUtils';
+import { getStorageKey, getWeeksForMonth, getMonthlyCapacity, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
 
@@ -88,12 +88,8 @@ export default function WeeklyForecastPage() {
       
       // Realizado: Suma de hours_actual de allocations pasadas + hours_assigned de allocations futuras en este mes
       const monthAllocations = (allocations || []).filter(a => {
-        try {
-          return a.projectId === project.id &&
-            isSameMonth(parseISO(a.weekStartDate), currentMonth);
-        } catch {
-          return false;
-        }
+        return a.projectId === project.id &&
+            isAllocationInEffectiveMonth(a.weekStartDate, currentMonth);
       });
       
       // Separar por completadas y planificadas
@@ -180,7 +176,7 @@ export default function WeeklyForecastPage() {
       const isTransferred = a.transferredFromAllocationId !== undefined && a.transferredFromAllocationId !== null;
       if (!isTransferred && !a.taskName?.includes('(transferida de')) return false;
       try {
-        return isSameMonth(parseISO(a.weekStartDate), currentMonth);
+        return isAllocationInEffectiveMonth(a.weekStartDate, currentMonth);
       } catch {
         return false;
       }
@@ -354,7 +350,7 @@ export default function WeeklyForecastPage() {
       const isDistributed = a.distributionSourceAllocationId !== undefined && a.distributionSourceAllocationId !== null;
       if (!isDistributed && !a.taskName?.includes('(transferida de')) return false;
       try {
-        if (!isSameMonth(parseISO(a.weekStartDate), currentMonth)) return false;
+        if (!isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)) return false;
       } catch {
         return false;
       }
@@ -582,7 +578,7 @@ export default function WeeklyForecastPage() {
       
       try {
         const taskWeekDate = parseISO(a.weekStartDate);
-        if (!isSameMonth(taskWeekDate, currentMonth)) return false;
+        if (!isAllocationInEffectiveMonth(taskWeekDate.toISOString().split('T')[0], currentMonth)) return false;
         
         const taskWeekEnd = addDays(taskWeekDate, 4);
         // Solo tareas de semanas pasadas o actual

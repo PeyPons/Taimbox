@@ -12,6 +12,7 @@ import { cn, formatProjectName } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { Deadline } from '@/types';
 import { format, isSameMonth, parseISO, startOfMonth, endOfMonth } from 'date-fns';
+import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
 
 interface PlanningInconsistenciesCardProps {
@@ -75,7 +76,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
     // Obtener allocations del mes para este empleado
     const monthAllocations = allocations.filter(a => 
       a.employeeId === employeeId &&
-      isSameMonth(parseISO(a.weekStartDate), viewDate)
+      isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
     );
 
     // Agrupar allocations por proyecto
@@ -133,7 +134,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         // Obtener allocations del proyecto de todos los empleados
         const allProjectAllocations = allocations.filter(a => 
           a.projectId === deadline.projectId &&
-          isSameMonth(parseISO(a.weekStartDate), viewDate)
+          isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
         );
         
         // Calcular totales del proyecto (todos los empleados)
@@ -225,7 +226,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         // Obtener allocations del proyecto de todos los empleados
         const allProjectAllocations = allocations.filter(a => 
           a.projectId === projectId &&
-          isSameMonth(parseISO(a.weekStartDate), viewDate)
+          isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
         );
         
         // Calcular totales del proyecto (todos los empleados)

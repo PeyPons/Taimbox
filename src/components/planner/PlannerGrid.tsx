@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { EmployeeRow } from './EmployeeRow';
 import { AllocationSheet } from './AllocationSheet';
-import { getWeeksForMonth, getMonthName, isCurrentWeek } from '@/utils/dateUtils';
+import { getWeeksForMonth, getMonthName, isCurrentWeek, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, CalendarDays, Sparkles, User, Loader2, ChevronsUpDown, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -110,14 +110,12 @@ export function PlannerGrid() {
   const employeesByProject = useMemo(() => {
     const index = new Map<string, Set<string>>();
     (allocations || []).forEach(a => {
-      try {
-        if (isSameMonth(parseISO(a.weekStartDate), currentMonth)) {
-          if (!index.has(a.projectId)) {
-            index.set(a.projectId, new Set());
-          }
-          index.get(a.projectId)!.add(a.employeeId);
+      if (isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)) {
+        if (!index.has(a.projectId)) {
+          index.set(a.projectId, new Set());
         }
-      } catch { /* ignore invalid dates */ }
+        index.get(a.projectId)!.add(a.employeeId);
+      }
     });
     return index;
   }, [allocations, currentMonth]);
@@ -160,14 +158,8 @@ export function PlannerGrid() {
         const safeAllocations = allocations || [];
         const safeProjects = projects || [];
 
-        // Recopilar datos completos del mes
-        const monthAllocations = safeAllocations.filter(a => {
-            try {
-                return isSameMonth(parseISO(a.weekStartDate), currentMonth);
-            } catch {
-                return false;
-            }
-        });
+        // Recopilar datos completos del mes (incluyendo semanas que cruzan meses)
+        const monthAllocations = safeAllocations.filter(a => isAllocationInEffectiveMonth(a.weekStartDate, currentMonth));
         
         const completedTasks = monthAllocations.filter(a => a.status === 'completed');
         const pendingTasks = monthAllocations.filter(a => a.status !== 'completed');

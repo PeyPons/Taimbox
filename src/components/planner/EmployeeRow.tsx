@@ -2,7 +2,7 @@ import { Employee, Project, Allocation, TeamEvent, Absence } from '@/types';
 import { WeekCell } from './WeekCell';
 import { useApp } from '@/contexts/AppContext';
 import { format, startOfWeek } from 'date-fns';
-import { isCurrentWeek } from '@/utils/dateUtils';
+import { isCurrentWeek, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 
 interface EmployeeRowProps {
   employee: Employee;
@@ -54,13 +54,14 @@ export function EmployeeRow({
       {/* Celdas de semanas */}
       {weeks.map((week) => {
         // Usar siempre la fecha real de la semana (lunes) para buscar tareas
-        // No usar getStorageKey porque normaliza según el mes visible y puede cambiar
         const weekStartDate = format(week.weekStart, 'yyyy-MM-dd');
         
         // 1. Filtrar tareas para pasar a la celda (Visualización detallada)
+        // Filtrar por mes efectivo: solo mostrar allocations que tienen días en el mes visible
         const weekAllocations = allocations.filter(a => 
             a.employeeId === employee.id && 
-            a.weekStartDate === weekStartDate
+            a.weekStartDate === weekStartDate &&
+            isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
         );
 
         // 2. Calcular carga total (Footer y Semáforo)

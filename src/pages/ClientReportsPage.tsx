@@ -3,6 +3,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useReactToPrint } from 'react-to-print';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { FileDown, CalendarDays, Printer } from 'lucide-react';
@@ -48,8 +49,7 @@ export default function ClientReportsPage() {
         const client = clients.find(c => c.id === project.clientId);
         
         const projectAllocations = allocations.filter(a => {
-            const date = parseISO(a.weekStartDate);
-            return a.projectId === project.id && date >= monthStart && date <= monthEnd;
+            return a.projectId === project.id && isAllocationInEffectiveMonth(a.weekStartDate, monthStart);
         });
 
         // Calculamos COMPUTADO (Solo tareas completadas)

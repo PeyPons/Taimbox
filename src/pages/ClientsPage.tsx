@@ -18,6 +18,7 @@ import {
 import { cn, isKitDigitalProject } from '@/lib/utils';
 import { toast } from 'sonner';
 import { format, subMonths, addMonths, isSameMonth, parseISO } from 'date-fns';
+import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
 
 const colorOptions = [
@@ -175,7 +176,7 @@ export default function ClientsPage() {
 
       // Empleados asignados este mes
       const monthAllocations = allocations.filter(a =>
-        isSameMonth(parseISO(a.weekStartDate), currentMonth) &&
+        isAllocationInEffectiveMonth(a.weekStartDate, currentMonth) &&
         clientProjects.some(p => p.id === a.projectId)
       );
       const assignedEmployeeIds = [...new Set(monthAllocations.map(a => a.employeeId))];
@@ -209,7 +210,7 @@ export default function ClientsPage() {
       const percentage = totalBudget > 0 ? (totalUsed / totalBudget) * 100 : 0;
 
       const monthAllocations = allocations.filter(a =>
-        isSameMonth(parseISO(a.weekStartDate), currentMonth) &&
+        isAllocationInEffectiveMonth(a.weekStartDate, currentMonth) &&
         kitDigitalProjectIds.has(a.projectId)
       );
       const assignedEmployeeIds = [...new Set(monthAllocations.map(a => a.employeeId))];

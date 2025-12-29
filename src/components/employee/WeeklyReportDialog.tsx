@@ -14,7 +14,7 @@ import { es } from 'date-fns/locale';
 import { CheckCircle2, ArrowRight, AlertCircle, Plus, X, Users, Clock, Inbox } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { getStorageKey, getWeeksForMonth } from '@/utils/dateUtils';
+import { getStorageKey, getWeeksForMonth, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { cn, formatProjectName } from '@/lib/utils';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
@@ -104,7 +104,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
       
       try {
         const taskWeekDate = parseISO(a.weekStartDate);
-        if (!isSameMonth(taskWeekDate, viewDate)) return;
+        if (!isAllocationInEffectiveMonth(a.weekStartDate, viewDate)) return;
         
         // Usar campo de BD si está disponible, sino fallback al formato de texto
         const isTransferredTask = a.transferredFromAllocationId !== undefined && a.transferredFromAllocationId !== null
@@ -380,7 +380,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
           // Validar capacidad y horas contratadas antes de crear tareas
           const projectMonthAllocations = allocations.filter(a => 
             a.projectId === task.projectId && 
-            isSameMonth(parseISO(a.weekStartDate), viewDate) &&
+            isAllocationInEffectiveMonth(a.weekStartDate, viewDate) &&
             a.id !== task.id
           );
           const projectMonthHours = projectMonthAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
@@ -997,7 +997,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                             // Calcular horas del proyecto en el mes (sumando todas las tareas distribuidas de esta fila y otras)
                             const projectMonthAllocations = allocations.filter(a => 
                               a.projectId === task.projectId && 
-                              isSameMonth(parseISO(a.weekStartDate), viewDate) &&
+                              isAllocationInEffectiveMonth(a.weekStartDate, viewDate) &&
                               a.id !== task.id
                             );
                             const projectMonthHours = projectMonthAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
@@ -1432,7 +1432,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                       
                                       const projectMonthAllocations = allocations.filter(a => 
                                         a.projectId === task.projectId && 
-                                        isSameMonth(parseISO(a.weekStartDate), viewDate) &&
+                                        isAllocationInEffectiveMonth(a.weekStartDate, viewDate) &&
                                         a.id !== task.id
                                       );
                                       const projectMonthHours = projectMonthAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
@@ -1704,7 +1704,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                 
                                 const projectMonthAllocations = allocations.filter(a => 
                                   a.projectId === task.projectId && 
-                                  isSameMonth(parseISO(a.weekStartDate), viewDate) &&
+                                  isAllocationInEffectiveMonth(a.weekStartDate, viewDate) &&
                                   a.id !== task.id
                                 );
                                 const projectMonthHours = projectMonthAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
@@ -1953,7 +1953,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                       
                                       const projectMonthAllocations = allocations.filter(a => 
                                         a.projectId === task.projectId && 
-                                        isSameMonth(parseISO(a.weekStartDate), viewDate) &&
+                                        isAllocationInEffectiveMonth(a.weekStartDate, viewDate) &&
                                         a.id !== task.id
                                       );
                                       const projectMonthHours = projectMonthAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
@@ -2104,7 +2104,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                 // Validar capacidad y horas contratadas
                 const projectMonthAllocations = allocations.filter(a => 
                   a.projectId === task.projectId && 
-                  isSameMonth(parseISO(a.weekStartDate), viewDate) &&
+                  isAllocationInEffectiveMonth(a.weekStartDate, viewDate) &&
                   a.id !== task.id
                 );
                 const projectMonthHours = projectMonthAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, ArrowRight, Sparkles, Link as LinkIcon, CheckCircle2, Clock, Flag, Zap, Rocket, HeartHandshake } from 'lucide-react';
 import { isSameMonth, parseISO } from 'date-fns';
+import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { formatProjectName } from '@/lib/utils';
 
 interface WidgetProps {
@@ -20,7 +21,7 @@ export const PriorityInsights = memo(function PriorityInsights({ employeeId, vie
   const myTasks = allocations.filter(a => 
     a.employeeId === employeeId && 
     a.status !== 'completed' &&
-    isSameMonth(parseISO(a.weekStartDate), targetMonth)
+    isAllocationInEffectiveMonth(a.weekStartDate, targetMonth)
   );
 
   // Si no hay tareas pendientes, mostrar mensaje positivo
@@ -153,7 +154,7 @@ export const ProjectTeamPulse = memo(function ProjectTeamPulse({ employeeId, vie
   const myAllocations = allocations.filter(a => 
     a.employeeId === employeeId && 
     a.status !== 'completed' && 
-    isSameMonth(parseISO(a.weekStartDate), targetMonth)
+    isAllocationInEffectiveMonth(a.weekStartDate, targetMonth)
   );
 
   const incomingDependencies = myAllocations

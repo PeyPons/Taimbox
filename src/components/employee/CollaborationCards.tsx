@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { isSameMonth, parseISO } from 'date-fns';
+import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { Sparkles, HeartHandshake, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -29,7 +30,7 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
   const monthlyAllocationsAll = useMemo(() => {
     return allocations.filter(a => {
       try {
-        return isSameMonth(parseISO(a.weekStartDate), viewDate);
+        return isAllocationInEffectiveMonth(a.weekStartDate, viewDate);
       } catch {
         return false;
       }
