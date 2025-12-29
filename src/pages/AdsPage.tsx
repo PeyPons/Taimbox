@@ -378,20 +378,9 @@ export default function AdsPage() {
       }
       
       const entry = stats.get(groupKey)!;
-      const costBefore = entry.spent;
       const rowCost = Number(row.cost) || 0;
       entry.spent += rowCost;
       totalProcessedCost += rowCost;
-      // #region agent log
-      if (groupKey.includes('Bull') || groupKey.includes('HD Hotels') || Math.random() < 0.02) {
-        fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:392',message:'Grouping details',data:{originalClientId:row.client_id,originalClientName:row.client_name,finalId,finalName,groupKey,groupName:settings.group_name,rowCost,costBefore,costAfter:entry.spent,campaignId:row.campaign_id,campaignName:row.campaign_name,date:row.date},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H6'})}).catch(()=>{});
-      }
-      // #endregion
-      // #region agent log
-      if (Math.random() < 0.05) { // Log 5% de las filas
-        fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:376',message:'Cost accumulation',data:{rowDate:row.date,rowCost,rowCostType:typeof row.cost,costBefore,costAfter:entry.spent,groupKey,monthStart,monthEnd},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H6'})}).catch(()=>{});
-      }
-      // #endregion
       entry.total_conversions_val += (row.conversions_value || 0);
       
       if (row.status === 'ENABLED' && row.daily_budget > 0) entry.autoDailyBudgetSum += row.daily_budget;
