@@ -1091,7 +1091,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                                                       Weekly
                                                                                     </Badge>
                                                                                   </TooltipTrigger>
-                                                                                  <TooltipContent className="max-w-xs z-[100]">
+                                                                                  <TooltipContent className="max-w-xs z-[9999]" side="top">
                                                                                     <div className="space-y-1 text-xs">
                                                                                       {transferInfo ? (
                                                                                         <div className="whitespace-pre-line">{transferInfo}</div>

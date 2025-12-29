@@ -19,7 +19,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Plus, Pencil, Trash2, Save, Search, Eye, EyeOff, ChevronDown, ChevronRight, ChevronLeft,
-  Calendar, Users, AlertTriangle, CheckCircle2, XCircle, Copy, Filter, Sparkles, Edit
+  Calendar, Users, AlertTriangle, CheckCircle2, XCircle, Copy, Filter, Sparkles, Edit, HelpCircle
 } from 'lucide-react';
 import { DeadlinesTour, useDeadlinesTour } from '@/components/deadlines/DeadlinesTour';
 import { toast } from 'sonner';
@@ -1511,13 +1511,20 @@ export default function DeadlinesPage() {
     const totalPercentage = employeeLoads.reduce((sum, e) => sum + e.percentage, 0);
     const averageLoad = Math.round(totalPercentage / employeeLoads.length);
     
-    // Calcular desviación estándar para ajustar el umbral dinámicamente
+    // Calcular rango del equipo (diferencia entre máximo y mínimo)
+    const maxLoad = Math.max(...employeeLoads.map(e => e.percentage));
+    const minLoad = Math.min(...employeeLoads.map(e => e.percentage));
+    const range = maxLoad - minLoad;
+    
+    // Calcular desviación estándar para rangos amplios
     const variance = employeeLoads.reduce((sum, e) => sum + Math.pow(e.percentage - averageLoad, 2), 0) / employeeLoads.length;
     const standardDeviation = Math.sqrt(variance);
     
-    // Umbral de desviación: usar 1.5 veces la desviación estándar, con mínimo de 3 puntos
-    // Esto se adapta mejor cuando todos están en un rango estrecho (ej: 80-90%)
-    const deviationThreshold = Math.max(3, Math.round(standardDeviation * 1.5));
+    // Umbral híbrido: si el rango es estrecho (≤15 puntos), usar umbral fijo bajo
+    // Si el rango es amplio, usar desviación estándar dinámica
+    const deviationThreshold = range <= 15 
+      ? 3  // Umbral fijo bajo para rangos estrechos (ej: 80-90%)
+      : Math.max(3, Math.round(standardDeviation * 1.5));  // Dinámico para rangos amplios
     
     // Identificar empleados por encima y por debajo de la media
     const aboveAverage = employeeLoads.filter(e => e.percentage > averageLoad + deviationThreshold);
@@ -2054,6 +2061,25 @@ export default function DeadlinesPage() {
               <h3 className="text-xs font-semibold text-orange-800 uppercase tracking-wide mb-2 flex items-center gap-1">
                 <Sparkles className="h-3 w-3" />
                 Sugerencias
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-3 w-3 text-orange-600 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-xs z-[100]">
+                      <div className="text-xs space-y-2">
+                        <p className="font-semibold">Cálculo de sugerencias:</p>
+                        <ul className="list-disc list-inside space-y-1 text-slate-600">
+                          <li>Se calcula la carga promedio del equipo</li>
+                          <li>Se identifican empleados por encima y por debajo de la media</li>
+                          <li>Umbral: 3 puntos si el rango es estrecho (≤15 puntos), o 1.5× desviación estándar si es amplio</li>
+                          <li>Solo se sugieren transferencias entre empleados que comparten proyectos</li>
+                          <li>Se priorizan las sugerencias que más equilibran el equipo</li>
+                        </ul>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </h3>
               <div className="space-y-2">
                 {redistributionTips.map((tip, i) => (
