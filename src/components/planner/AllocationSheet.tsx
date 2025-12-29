@@ -1935,13 +1935,26 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
                   {depTask && !isCompleted && (
                     <div className={cn(
-                      "flex items-center gap-1 mt-1.5 text-[9px] px-1.5 py-0.5 rounded w-fit border",
+                      "flex items-center gap-1 mt-1.5 text-[9px] px-1.5 py-0.5 rounded border",
                       isDepReady
                         ? "text-emerald-700 bg-emerald-50 border-emerald-200"
-                        : "text-amber-700 bg-amber-50 border-amber-200"
+                        : "text-amber-700 bg-amber-50 border-amber-200",
+                      !showAllWeeks ? "max-w-[250px]" : "max-w-[120px]"
                     )}>
-                      {isDepReady ? <CheckCircle2 className="w-2.5 h-2.5" /> : <LinkIcon className="w-2.5 h-2.5" />}
-                      <span className="truncate max-w-[120px]">{isDepReady ? 'Listo:' : 'Dep:'} {depTask.taskName} <strong>({depOwner?.name})</strong></span>
+                      {isDepReady ? <CheckCircle2 className="w-2.5 h-2.5 shrink-0" /> : <LinkIcon className="w-2.5 h-2.5 shrink-0" />}
+                      <span className="text-slate-600">{isDepReady ? 'Listo:' : 'Dep:'}</span>
+                      <span className={cn("font-medium", isDepReady ? "text-slate-700" : "text-slate-600")}>{depTask.taskName}</span>
+                      {depOwner && (
+                        <>
+                          <Avatar className="h-3 w-3 border border-slate-300 shrink-0">
+                            <AvatarImage src={depOwner.avatarUrl} alt={depOwner.name} />
+                            <AvatarFallback className="bg-indigo-500 text-white text-[6px] font-bold">
+                              {depOwner.name.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-semibold text-slate-800">{depOwner.name}</span>
+                        </>
+                      )}
                     </div>
                   )}
 

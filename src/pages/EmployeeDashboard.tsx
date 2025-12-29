@@ -687,6 +687,11 @@ export default function EmployeeDashboard() {
         </div>
       </div>
 
+      {/* 5.5. BALANCE MOTIVACIONAL DEL MES */}
+      <div data-tour="monthly-balance">
+        <MonthlyBalanceCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+      </div>
+
       {/* 6. PRECISIÓN DE PLANIFICACIÓN */}
       <div data-tour="reliability-index">
         <ReliabilityIndexCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
@@ -700,11 +705,6 @@ export default function EmployeeDashboard() {
       {/* 7. PROYECTOS DEL MES */}
       <div data-tour="projects-summary">
         <MyWeekView employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
-      </div>
-
-      {/* 8. BALANCE MOTIVACIONAL DEL MES */}
-      <div data-tour="monthly-balance">
-        <MonthlyBalanceCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
       </div>
 
       {/* MODALES */}

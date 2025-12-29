@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, ArrowRight, Sparkles, Link as LinkIcon, CheckCircle2, Clock, Flag, Zap, Rocket, HeartHandshake } from 'lucide-react';
 import { isSameMonth, parseISO } from 'date-fns';
 import { formatProjectName } from '@/lib/utils';
@@ -208,7 +209,7 @@ export const ProjectTeamPulse = memo(function ProjectTeamPulse({ employeeId, vie
                                 </Badge>
                                 {item.isReady ? (
                                     <span className="flex items-center gap-1 text-[10px] text-emerald-700 font-bold">
-                                        <CheckCircle2 className="w-3 h-3"/> ¡Listo para ti!
+                                        <CheckCircle2 className="w-3 h-3"/> Ya terminó, puedes empezar
                                     </span>
                                 ) : (
                                     <span className="flex items-center gap-1 text-[10px] text-slate-500">
@@ -223,12 +224,20 @@ export const ProjectTeamPulse = memo(function ProjectTeamPulse({ employeeId, vie
                                 <div className={`flex items-center gap-2 text-[11px] px-2 py-1.5 rounded ${item.isReady ? 'bg-emerald-100/50' : 'bg-slate-100/50'}`}>
                                     <ArrowRight className="w-3 h-3 text-slate-400" />
                                     <span className="text-slate-600">
-                                        {item.isReady ? 'Gracias a' : 'Esperando a'}:
+                                        {item.isReady ? 'Ya terminó' : 'Esperando a'}:
                                     </span>
+                                    {item.depOwner && (
+                                        <Avatar className="h-4 w-4 border border-slate-300 shrink-0">
+                                            <AvatarImage src={item.depOwner.avatarUrl} alt={item.depOwner.name} />
+                                            <AvatarFallback className="bg-indigo-500 text-white text-[8px] font-bold">
+                                                {item.depOwner.name.substring(0, 2).toUpperCase()}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    )}
                                     <span className={`font-bold ${item.isReady ? 'text-emerald-700' : 'text-slate-700'}`}>
                                         {item.depOwner?.name?.split(' ')[0]}
                                     </span>
-                                    <span className="text-slate-400 text-[10px]">
+                                    <span className="text-slate-600 text-[10px] font-medium">
                                         ({item.depTask?.taskName})
                                     </span>
                                 </div>
