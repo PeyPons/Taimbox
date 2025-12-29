@@ -85,7 +85,7 @@ export const getMonthlyCapacity = (year: number, month: number, schedule: WorkSc
 };
 
 // ✅ Función helper para verificar si una allocation está en el mes efectivo
-// Considera semanas que cruzan meses: solo incluye si tiene días en el mes efectivo
+// Considera semanas que cruzan meses: solo incluye si tiene días laborables en el mes efectivo
 export const isAllocationInEffectiveMonth = (weekStartDate: string | Date, viewMonth: Date): boolean => {
   try {
     const allocWeekStart = typeof weekStartDate === 'string' ? parseISO(weekStartDate) : weekStartDate;
@@ -97,9 +97,21 @@ export const isAllocationInEffectiveMonth = (weekStartDate: string | Date, viewM
       return true;
     }
     
-    // Si la semana cruza meses, verificar si tiene días en el mes efectivo
+    // Si la semana cruza meses, verificar si tiene días laborables en el mes efectivo
     const allocWeekEnd = addDays(allocWeekStart, 6);
-    return allocWeekStart <= monthEnd && allocWeekEnd >= monthStart;
+    
+    // Calcular el rango efectivo de la semana en el mes
+    const effectiveStart = allocWeekStart < monthStart ? monthStart : allocWeekStart;
+    const effectiveEnd = allocWeekEnd > monthEnd ? monthEnd : allocWeekEnd;
+    
+    // Solo incluir si hay días laborables en el rango efectivo del mes
+    if (effectiveStart <= effectiveEnd) {
+      const daysInInterval = eachDayOfInterval({ start: effectiveStart, end: effectiveEnd });
+      const hasWorkingDays = daysInInterval.some(day => !isWeekend(day));
+      return hasWorkingDays;
+    }
+    
+    return false;
   } catch {
     return false;
   }
