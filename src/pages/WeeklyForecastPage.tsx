@@ -1221,42 +1221,42 @@ export default function WeeklyForecastPage() {
                                     transfer.status === 'distributed' && "bg-purple-50/30 border-purple-100"
                                   )}
                                 >
-                                  <div className="flex items-start gap-3">
+                                  <div className="flex items-center gap-4">
                                     {/* Sección izquierda: Transferencia (Avatar → Horas → Avatar) */}
-                                    <div className="flex items-center gap-1.5 shrink-0 pr-2 border-r border-slate-200">
-                                      {/* Avatar origen */}
-                                      <Avatar className="h-8 w-8 border-2 border-slate-200 shrink-0">
-                                        <AvatarImage src={transfer.fromEmployeeAvatar} alt={transfer.fromEmployeeName} />
-                                        <AvatarFallback className="bg-indigo-500 text-white text-[10px] font-bold">
-                                          {transfer.fromEmployeeName.substring(0, 2).toUpperCase()}
-                                        </AvatarFallback>
-                                      </Avatar>
+                                    <div className="flex items-center gap-2 shrink-0 pr-3 border-r border-slate-200">
+                                      {/* Avatar origen con nombre */}
+                                      <div className="flex items-center gap-1.5 shrink-0">
+                                        <Avatar className="h-9 w-9 border-2 border-slate-200 shrink-0">
+                                          <AvatarImage src={transfer.fromEmployeeAvatar} alt={transfer.fromEmployeeName} />
+                                          <AvatarFallback className="bg-indigo-500 text-white text-xs font-bold">
+                                            {transfer.fromEmployeeName.substring(0, 2).toUpperCase()}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <span className="font-semibold text-sm text-slate-900 whitespace-nowrap min-w-0 max-w-[120px] truncate">
+                                          {transfer.fromEmployeeName}
+                                        </span>
+                                      </div>
                                       
-                                      {/* Nombre origen */}
-                                      <span className="font-semibold text-sm text-slate-900 whitespace-nowrap min-w-0 max-w-[110px] truncate">
-                                        {transfer.fromEmployeeName}
-                                      </span>
-                                      
-                                      {/* Flecha y horas */}
-                                      <div className="flex items-center gap-1 shrink-0">
-                                        <ArrowRight className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
-                                        <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 font-bold text-[10px] px-1.5 py-0.5 shrink-0">
+                                      {/* Flecha y horas (vertical) */}
+                                      <div className="flex flex-col items-center justify-center gap-0.5 shrink-0">
+                                        <ArrowRight className="h-4 w-4 text-indigo-600 shrink-0" />
+                                        <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 font-bold text-[10px] px-1.5 py-0 shrink-0">
                                           {transfer.hours}h
                                         </Badge>
                                       </div>
                                       
-                                      {/* Avatar destino */}
-                                      <Avatar className="h-8 w-8 border-2 border-slate-200 shrink-0">
-                                        <AvatarImage src={transfer.toEmployeeAvatar} alt={transfer.toEmployeeName} />
-                                        <AvatarFallback className="bg-purple-500 text-white text-[10px] font-bold">
-                                          {transfer.toEmployeeName.substring(0, 2).toUpperCase()}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      
-                                      {/* Nombre destino */}
-                                      <span className="font-semibold text-sm text-slate-900 whitespace-nowrap min-w-0 max-w-[110px] truncate">
-                                        {transfer.toEmployeeName}
-                                      </span>
+                                      {/* Avatar destino con nombre */}
+                                      <div className="flex items-center gap-1.5 shrink-0">
+                                        <Avatar className="h-9 w-9 border-2 border-slate-200 shrink-0">
+                                          <AvatarImage src={transfer.toEmployeeAvatar} alt={transfer.toEmployeeName} />
+                                          <AvatarFallback className="bg-purple-500 text-white text-xs font-bold">
+                                            {transfer.toEmployeeName.substring(0, 2).toUpperCase()}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <span className="font-semibold text-sm text-slate-900 whitespace-nowrap min-w-0 max-w-[120px] truncate">
+                                          {transfer.toEmployeeName}
+                                        </span>
+                                      </div>
                                     </div>
                                     
                                     {/* Sección derecha: Información de la tarea */}
@@ -1283,7 +1283,7 @@ export default function WeeklyForecastPage() {
                                           <p className="text-xs text-slate-600 mb-1 font-medium">Tareas distribuidas:</p>
                                           <div className="space-y-0.5">
                                             {transfer.distributedTasks.map((task, taskIdx) => (
-                                              <div key={taskIdx} className="flex items-center gap-2 text-xs">
+                                              <div key={taskIdx} className="flex items-center justify-between gap-2 text-xs">
                                                 <span className="text-slate-700">{task.name}</span>
                                                 <Badge variant="outline" className="bg-white text-purple-700 border-purple-300 text-[10px] px-1.5 py-0 shrink-0">
                                                   {task.hours}h
