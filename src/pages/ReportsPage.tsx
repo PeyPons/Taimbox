@@ -302,7 +302,7 @@ export default function ReportsPage() {
     });
   }, [employees, monthAllocations, year, month]);
 
-  // Proyectos en riesgo (superando presupuesto o con problemas)
+  // Proyectos en riesgo (superando horas contratadas o con problemas)
   // Determinar en qué semana del mes seleccionado estamos (1-4)
   // Si el mes seleccionado es el actual, usar el día actual; si es pasado, usar el último día del mes
   const today = new Date();
@@ -323,12 +323,12 @@ export default function ReportsPage() {
                                        projectNameLower.includes('linkbuilding') ||
                                        projectNameLower.includes('link building');
 
-      // Alerta 1: Superó presupuesto por más de 2h (100% es OK)
+      // Alerta 1: Superó horas contratadas por más de 2h (100% es OK)
       if (hoursOverBudget > 2) {
         risks.push({
           ...p,
           riskLevel: hoursOverBudget > 5 ? 'critical' : 'high',
-          riskReason: `Supera presupuesto en ${hoursOverBudget.toFixed(1)}h (${p.percentage.toFixed(0)}%)`
+          riskReason: `Supera horas contratadas en ${hoursOverBudget.toFixed(1)}h (${p.percentage.toFixed(0)}%)`
         });
       }
       // Alerta 2: Final de mes (semana 3-4) y menos del 35% computado
@@ -610,7 +610,7 @@ export default function ReportsPage() {
   const [historicalGlobalAssignments, setHistoricalGlobalAssignments] = useState<Record<string, GlobalAssignment[]>>({});
 
 
-  // Predicción de disponibilidad futura con Modelo de Mezcla Ponderada
+  // Predicción de disponibilidad futura con Modelo de mezcla ponderada
   const futureAvailability = useMemo(() => {
     const thisMonth = startOfMonth(currentMonth); // Usar currentMonth en lugar de new Date()
     const nextMonth = addMonths(thisMonth, 1);
@@ -1304,14 +1304,14 @@ export default function ReportsPage() {
                   <AlertTriangle className="h-5 w-5 text-red-500" />
                   Proyectos en riesgo
                 </CardTitle>
-                <CardDescription>Proyectos que superan o se acercan al presupuesto</CardDescription>
+                <CardDescription>Proyectos que superan o se acercan a las horas contratadas</CardDescription>
               </CardHeader>
               <CardContent>
                 {projectsAtRisk.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <FolderOpen className="h-12 w-12 mx-auto mb-2 text-emerald-300" />
                     <p className="text-sm">Sin riesgos</p>
-                    <p className="text-xs">Todos los proyectos dentro de presupuesto</p>
+                    <p className="text-xs">Todos los proyectos dentro de horas contratadas</p>
                   </div>
                 ) : (
                   <div className="space-y-3 max-h-[320px] overflow-y-auto">
@@ -1454,7 +1454,7 @@ export default function ReportsPage() {
             </Card>
           )}
 
-          {/* Mapa de Calor de Carga */}
+          {/* Mapa de calor de carga */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1561,7 +1561,7 @@ export default function ReportsPage() {
             </CardContent>
           </Card>
 
-          {/* Predicción de Disponibilidad Futura */}
+          {/* Predicción de disponibilidad futura */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1576,7 +1576,7 @@ export default function ReportsPage() {
                       <AlertCircle className="h-4 w-4 text-slate-400 cursor-help" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
-                      <p className="font-medium mb-1">Modelo de Mezcla Ponderada</p>
+                      <p className="font-medium mb-1">Modelo de mezcla ponderada</p>
                       <p className="text-xs">
                         Esta estimación considera tus últimos 3 meses, tu rentabilidad actual y tus vacaciones programadas.
                       </p>
@@ -1899,7 +1899,7 @@ export default function ReportsPage() {
                                     <div className="min-w-0">
                                         <div className="font-medium text-sm truncate flex items-center gap-2">
                                             {emp.name}
-                                            {/* NUEVO: Badge de Fiabilidad Histórica */}
+                                            {/* NUEVO: Badge de fiabilidad histórica */}
                                             <Tooltip>
                                                 <TooltipTrigger>
                                                     <Badge 
@@ -2044,7 +2044,7 @@ export default function ReportsPage() {
                                     </div>
                                 </div>
                                 <div className="text-[10px] text-muted-foreground text-right">
-                                    Presupuesto: {p.budget}h
+                                    Horas contratadas: {p.budget}h
                                 </div>
                             </CardContent>
                         </Card>

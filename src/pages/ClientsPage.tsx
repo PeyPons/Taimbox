@@ -416,14 +416,14 @@ export default function ClientsPage() {
           icon={AlertTriangle}
           label="En riesgo"
           value={globalStats.atRisk}
-          subValue=">85% del presupuesto"
+          subValue=">85% de horas contratadas"
           color={globalStats.atRisk > 0 ? 'amber' : 'slate'}
         />
         <StatCard 
           icon={TrendingUp}
           label="Excedidos"
           value={globalStats.overBudget}
-          subValue=">100% del presupuesto"
+          subValue=">100% de horas contratadas"
           color={globalStats.overBudget > 0 ? 'red' : 'slate'}
         />
       </div>
@@ -788,7 +788,7 @@ export default function ClientsPage() {
                     )}>
                       {data.stats.percentage.toFixed(0)}%
                     </p>
-                    <p className="text-xs text-muted-foreground">Presupuesto usado</p>
+                    <p className="text-xs text-muted-foreground">Horas contratadas usadas</p>
                   </div>
                 </div>
 

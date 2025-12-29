@@ -49,7 +49,7 @@ Sistema integral de gestión de recursos y planificación para agencias digitale
 - **Planificación mensual precisa** con control estricto de horas por mes
 - **Cierre semanal** para detectar desviaciones y redistribuir trabajo
 - **Gestión de deadlines** con asignaciones por proyecto y empleado
-- **Control de presupuestos** por proyecto con alertas visuales
+- **Control de horas contratadas** por proyecto con alertas visuales
 - **Gestión de equipos** con horarios personalizados, ausencias y eventos
 - **Reportes analíticos** con métricas de rendimiento y fiabilidad
 - **Integración con IA** para análisis inteligente y recomendaciones
@@ -83,7 +83,7 @@ Sistema integral de gestión de recursos y planificación para agencias digitale
   - Transferir a otro compañero (con validación de capacidad)
   - Distribuir en múltiples tareas
   - Mantener la misma tarea
-- **Validaciones estrictas**: Horas exactas, capacidad, presupuesto
+- **Validaciones estrictas**: Horas exactas, capacidad, horas contratadas
 - **Notas obligatorias** para justificar transferencias
 
 ### 📋 Planificador Mensual
@@ -96,7 +96,7 @@ Sistema integral de gestión de recursos y planificación para agencias digitale
 - Vista semanal y mensual
 - Tour interactivo del planificador
 
-### 🎯 Sistema de Deadlines
+### 🎯 Sistema de deadlines
 - Asignación de horas por proyecto y empleado
 - Asignaciones globales (afectan a todos o a empleados específicos)
 - Filtros avanzados (SEO/PPC, empleado, cliente)
@@ -143,15 +143,15 @@ Sistema integral de gestión de recursos y planificación para agencias digitale
 - Configuración de cuentas
 
 ### 🔮 Weekly Forecast (Previsión Semanal)
-- **Semáforo de Proyectos**: Estado mensual vs horas contratadas
-- **Transferencias de Horas**: Historial completo de transferencias entre compañeros
+- **Semáforo de proyectos**: Estado mensual vs horas contratadas
+- **Transferencias de horas**: Historial completo de transferencias entre compañeros
 - **Redistribución Rápida**: Herramienta para managers para redistribuir horas
 - Filtros avanzados (proyecto, tipo, estado)
 - Agrupación por proyecto
 
 ---
 
-## 📖 Manual de Usuario Completo
+## 📖 Manual de usuario completo
 
 ### 1. Dashboard Personal (Mi Espacio)
 
@@ -159,7 +159,7 @@ Sistema integral de gestión de recursos y planificación para agencias digitale
 
 #### Funcionalidades Principales
 
-##### Vista Mensual de Carga
+##### Vista mensual de carga
 - Calendario visual con tareas organizadas por semana
 - Cada semana muestra: horas planificadas, horas reales, horas computadas
 - Indicadores de estado: verde (OK), amarillo (ajuste), rojo (sobrecarga)
@@ -175,7 +175,7 @@ Sistema integral de gestión de recursos y planificación para agencias digitale
   - Semana de destino
   - Descripción opcional
 - Validaciones automáticas:
-  - Presupuesto del proyecto
+  - Horas contratadas del proyecto
   - Capacidad del empleado
   - Alertas visuales si se excede
 
@@ -193,7 +193,7 @@ Sistema integral de gestión de recursos y planificación para agencias digitale
   - Tareas administrativas
   - Deadlines internos
 - Se registra automáticamente como completado
-- No cuenta para presupuestos de clientes
+- No cuenta para horas contratadas de clientes
 
 ##### Objetivos (OKRs)
 - Visualización de objetivos profesionales
@@ -213,7 +213,7 @@ Sistema integral de gestión de recursos y planificación para agencias digitale
 - Formato: `"Nombre tarea",user_id,project,external_id,horas`
 - Requiere `crmUserId` configurado en el perfil
 
-##### Tour de Bienvenida
+##### Tour de bienvenida
 - Tutorial interactivo que guía por todas las funciones
 - Se muestra automáticamente la primera vez
 - Puede reiniciarse desde ajustes
@@ -278,7 +278,7 @@ Revisar y gestionar tareas que quedaron abiertas de la semana anterior y tareas 
 - **Validaciones**:
   - Suma exacta de horas (tolerancia 0.01h)
   - Capacidad del empleado en cada semana
-  - Presupuesto del proyecto
+  - Horas contratadas del proyecto
 - **Notas**: Obligatorias
 - **Resultado**:
   - Se crean nuevas tareas con `distributionSourceAllocationId` apuntando a la original
@@ -297,7 +297,7 @@ El botón **"Enviar Reporte"** está deshabilitado hasta que:
 
 1. ✅ Todas las horas distribuidas sumen exactamente las horas de la tarea original
 2. ✅ No se exceda la capacidad del empleado en ninguna semana
-3. ✅ No se exceda el presupuesto del proyecto
+3. ✅ No se excedan las horas contratadas del proyecto
 4. ✅ Si se transfiere a compañero: no exceda su capacidad
 5. ✅ Si se transfiere o distribuye: notas obligatorias presentes
 
@@ -307,7 +307,7 @@ El botón **"Enviar Reporte"** está deshabilitado hasta que:
 - Contenido scrollable, footer fijo
 - Panel de disponibilidad dinámico al seleccionar semana/empleado
 - Indicadores de color:
-  - 🔴 Rojo: Excede capacidad/presupuesto
+  - 🔴 Rojo: Excede capacidad/horas contratadas
   - 🟡 Amarillo: Cerca del límite
   - ⚪ Gris: OK
 
@@ -348,7 +348,7 @@ El sistema usa **"Cajas Mensuales"** para garantizar reportes exactos:
 - Botón para expandir/colapsar proyectos
 - Filtro: "Solo mis proyectos" o "Todos"
 
-#### Herramientas de Productividad
+#### Herramientas de productividad
 
 ##### Carga Masiva
 - Botón `+` en cada semana
@@ -374,7 +374,7 @@ El sistema usa **"Cajas Mensuales"** para garantizar reportes exactos:
 - Badge visual: "Listo" (verde) o "Dep: [tarea]" (amarillo)
 - Muestra el propietario de la tarea dependiente
 
-#### Control de Horas
+#### Control de horas
 
 Cada tarea tiene tres tipos de horas:
 
@@ -412,7 +412,7 @@ Las tareas gestionadas vía Weekly muestran un badge azul "Weekly" con tooltip q
 
 ---
 
-### 4. Sistema de Deadlines
+### 4. Sistema de deadlines
 
 **Ruta**: `/deadlines` (requiere permiso `can_access_deadlines`)
 
@@ -445,7 +445,7 @@ Gestionar asignaciones de horas por proyecto y empleado de forma mensual, indepe
 - Auto-guardado con indicador visual
 - Sistema de bloqueos para evitar edición concurrente
 
-##### Sistema de Bloqueos
+##### Sistema de bloqueos
 - Tabla `project_editing_locks` rastrea quién está editando
 - Realtime updates vía Supabase
 - Expiración automática de bloqueos
@@ -457,7 +457,7 @@ Gestionar asignaciones de horas por proyecto y empleado de forma mensual, indepe
 - Suscripción a cambios en `project_editing_locks`
 - Actualización automática sin recargar
 
-##### Coherencia de Planificación
+##### Coherencia de planificación
 - Compara horas en deadlines vs horas en planificador
 - Muestra inconsistencias
 - Sugiere intercambios de tareas entre compañeros
@@ -474,17 +474,17 @@ Gestionar asignaciones de horas por proyecto y empleado de forma mensual, indepe
 
 #### Funcionalidades
 
-##### Vista de Proyectos
+##### Vista de proyectos
 - Lista de todos los proyectos activos
 - Filtros por estado:
   - Sin actividad
   - Falta planificar
   - Retrasados
-  - Sobre presupuesto
+  - Sobre horas contratadas
   - En riesgo
 - Vista de progreso con barras visuales
 
-##### OKRs por Proyecto
+##### OKRs por proyecto
 - Objetivos específicos del proyecto
 - Seguimiento de progreso
 - Key Results configurables
@@ -572,8 +572,8 @@ Gestionar asignaciones de horas por proyecto y empleado de forma mensual, indepe
   - Horas planificadas
   - Horas reales trabajadas
   - Horas computadas (facturables)
-- **Tasa de Ocupación**: % de capacidad utilizada
-- **Tasa de Rentabilidad**: Ratio Computado vs Real
+- **Tasa de ocupación**: % de capacidad utilizada
+- **Tasa de rentabilidad**: Ratio Computado vs Real
   - `< 100%`: Trabajamos más de lo que facturamos
   - `> 100%`: Facturamos más de lo trabajado
 
@@ -588,13 +588,13 @@ Gestionar asignaciones de horas por proyecto y empleado de forma mensual, indepe
   - Badge con código de colores y tooltip detallado
   - Requiere mínimo 5 tareas completadas para ser significativo
 
-##### Desglose por Proyectos
+##### Desglose por proyectos
 - Tarjetas con estado visual (verde/amarillo/rojo)
-- Progreso sobre presupuesto
+- Progreso sobre horas contratadas
 - Balance de horas (ganancia/pérdida)
 - Filtros por cliente, empleado, estado
 
-##### Coherencia de Planificación
+##### Coherencia de planificación
 - Compara horas en deadlines vs horas en planificador
 - Detecta inconsistencias
 - Sugiere intercambios de tareas
@@ -686,7 +686,7 @@ Herramienta para managers/responsables para:
 
 #### Secciones
 
-##### 1. Semáforo de Proyectos
+##### 1. Semáforo de proyectos
 - **Cálculo**:
   - Total Contratado: `budgetHours` del proyecto
   - Realizado: `hours_actual` (pasadas) + `hours_assigned` (futuras) del mes
@@ -702,7 +702,7 @@ Herramienta para managers/responsables para:
   - Ordenación: nombre, estado, diferencia, contratado
 - **Explicación**: "En línea con el contrato" aparece cuando hay 0 horas planificadas pero horas contratadas > 0
 
-##### 2. Transferencias de Horas
+##### 2. Transferencias de horas
 - **Agrupación**: Por proyecto (con header visual)
 - **Información mostrada**:
   - Layout: `[Avatar + Nombre] → [Flecha + Horas] → [Avatar + Nombre]`
@@ -727,7 +727,7 @@ Herramienta para managers/responsables para:
   5. Seleccionar semana destino
 - **Validaciones**:
   - Capacidad del destino
-  - Presupuesto del proyecto
+  - Horas contratadas del proyecto
 - **Resultado**: Crea nuevas tareas para el destino
 
 ---
@@ -853,7 +853,7 @@ Workers (Node.js):
 └── meta-worker.js                      # Sincronización Meta Ads
 ```
 
-### Base de Datos Completa
+### Base de datos completa
 
 El sistema usa **Supabase (PostgreSQL)** con las siguientes tablas:
 
@@ -1166,7 +1166,7 @@ projects (1) ──< (1) deadlines
 projects (1) ──< (N) project_editing_locks
 ```
 
-### Sistema de Permisos
+### Sistema de permisos
 
 #### Arquitectura
 
@@ -1192,7 +1192,7 @@ interface UserPermissions {
 }
 ```
 
-#### Mapeo de Rutas
+#### Mapeo de rutas
 
 ```typescript
 const ROUTE_PERMISSIONS: Record<string, keyof UserPermissions> = {
@@ -1370,7 +1370,7 @@ supabase functions deploy create-user
 supabase functions deploy update-user
 ```
 
-#### 4. Variables de Entorno
+#### 4. Variables de entorno
 
 Crear archivo `.env` en la raíz:
 
@@ -1431,7 +1431,7 @@ Los archivos se generan en `dist/`
 3. Configurar servidor web (nginx, Apache) para servir archivos estáticos
 4. Configurar variables de entorno en el servidor
 
-### Workers de Sincronización
+### Workers de sincronización
 
 #### Google Ads Worker
 
@@ -1618,7 +1618,7 @@ status =
 
 ## 🛠️ Guías de Desarrollo
 
-### Estructura de Componentes
+### Estructura de componentes
 
 #### Componentes de Página
 - Ubicados en `src/pages/`
@@ -1652,7 +1652,7 @@ const schema = z.object({
 });
 ```
 
-#### Manejo de Errores
+#### Manejo de errores
 ```typescript
 try {
   await addAllocation(data);

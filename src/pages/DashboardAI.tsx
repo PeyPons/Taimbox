@@ -211,7 +211,7 @@ export default function DashboardAI() {
       if (status !== "Normal") {
         return {
           proyecto: p.name,
-          presupuesto: p.budgetHours,
+          horasContratadas: p.budgetHours,
           ejecutado: hoursExecuted.toFixed(1),
           estado: status
         };
@@ -365,7 +365,7 @@ CONTEXTO DE DATOS (JSON):
 ${dataContext}
 
 INSTRUCCIONES CLAVE:
-1. **FIABILIDAD**: Mira el "ÍNDICE DE FIABILIDAD". Si alguien tiene tendencia a "Subestimar" (tardar más), avisa que sus planes son poco creíbles. Si "Sobreestima", está inflando presupuestos.
+1. **FIABILIDAD**: Mira el "ÍNDICE DE FIABILIDAD". Si alguien tiene tendencia a "Subestimar" (tardar más), avisa que sus planes son poco creíbles. Si "Sobreestima", está inflando horas contratadas.
 2. **TAREAS ZOMBIE**: Critica las tareas viejas no cerradas.
 3. **PACING**: Avisa si un proyecto va muy lento o consume recursos demasiado rápido.
 4. **VACACIONES**: Alerta roja si asignan tareas a gente ausente.
@@ -434,7 +434,7 @@ PREGUNTA DEL USUARIO: "${input}"
                 Minguito AI
               </span>
               <p className="text-xs text-muted-foreground font-normal mt-0.5">
-                Analista de Gestión • {analysisData.month}
+                Analista de gestión • {analysisData.month}
               </p>
             </div>
             <div className="ml-auto flex items-center gap-2">

@@ -55,7 +55,7 @@ const tourSteps: TourStep[] = [
     id: 'project-list',
     target: '[data-tour="planner-projects"]',
     title: 'Tus proyectos',
-    description: 'Cada proyecto muestra un resumen: horas asignadas, computadas, planificadas y el estado del presupuesto. Los colores te indican si vas bien (verde), ajustado (amarillo) o pasado (rojo).',
+    description: 'Cada proyecto muestra un resumen: horas asignadas, computadas, planificadas y el estado de las horas contratadas. Los colores te indican si vas bien (verde), ajustado (amarillo) o pasado (rojo).',
     icon: <Palette className="w-6 h-6 text-white" />,
     position: 'right',
     highlight: true
@@ -100,7 +100,7 @@ const tourSteps: TourStep[] = [
     id: 'hours-input',
     target: '[data-tour="planner-hours"]',
     title: 'Registrar horas',
-    description: 'Introduce las horas planificadas y computadas (reales). El sistema calcula automáticamente los totales y te avisa si te pasas del presupuesto.',
+    description: 'Introduce las horas planificadas y computadas (reales). El sistema calcula automáticamente los totales y te avisa si te pasas de las horas contratadas.',
     icon: <Clock className="w-6 h-6 text-white" />,
     position: 'left',
     highlight: true
@@ -118,7 +118,7 @@ const tourSteps: TourStep[] = [
     id: 'sort-options',
     target: '[data-tour="planner-sort"]',
     title: 'Ordenar proyectos',
-    description: 'Ordena los proyectos por presupuesto usado, tus horas o nombre. Encuentra rápidamente lo más urgente o lo que más tiempo te lleva.',
+    description: 'Ordena los proyectos por horas contratadas usadas, tus horas o nombre. Encuentra rápidamente lo más urgente o lo que más tiempo te lleva.',
     icon: <ArrowUpDown className="w-6 h-6 text-white" />,
     position: 'bottom',
     highlight: true
@@ -514,7 +514,7 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                  <span>Los colores te indican el estado del presupuesto</span>
+                  <span>Los colores te indican el estado de las horas contratadas</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />

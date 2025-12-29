@@ -111,7 +111,7 @@ export function ProjectsSheet({ open, onOpenChange, employeeId }: ProjectsSheetP
                                 </div>
                             </div>
 
-                            {/* Grid de Datos */}
+                            {/* Grid de datos */}
                             <div className="grid grid-cols-3 divide-x divide-slate-100 bg-slate-50/50">
                                 <div className="p-2 text-center">
                                     <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Est.</div>

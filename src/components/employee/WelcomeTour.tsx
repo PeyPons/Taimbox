@@ -36,7 +36,7 @@ const tourSteps: TourStep[] = [
     id: 'add-tasks',
     target: '[data-tour="add-tasks"]',
     title: 'Añadir tareas',
-    description: 'Aquí puedes planificar tu trabajo. Añade múltiples tareas a la vez, selecciona el proyecto, las horas y la semana. Verás alertas si te pasas del presupuesto.',
+    description: 'Aquí puedes planificar tu trabajo. Añade múltiples tareas a la vez, selecciona el proyecto, las horas y la semana. Verás alertas si te pasas de las horas contratadas.',
     icon: <ListPlus className="w-6 h-6 text-indigo-500" />,
     position: 'bottom',
     highlight: true
@@ -144,7 +144,7 @@ const tourSteps: TourStep[] = [
     id: 'projects-summary',
     target: '[data-tour="projects-summary"]',
     title: 'Resumen de proyectos',
-    description: 'Todos tus proyectos del mes con las horas asignadas, completadas y el estado del presupuesto. Haz clic en cualquier semana para ver y editar tus tareas.',
+    description: 'Todos tus proyectos del mes con las horas asignadas, completadas y el estado de las horas contratadas. Haz clic en cualquier semana para ver y editar tus tareas.',
     icon: <Target className="w-6 h-6 text-purple-500" />,
     position: 'top',
     highlight: true

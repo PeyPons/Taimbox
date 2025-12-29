@@ -479,7 +479,7 @@ export default function AdsReportGenerator() {
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-8">
-            {/* Modal de Sincronización */}
+            {/* Modal de sincronización */}
             <SyncModal 
                 isOpen={syncModalOpen}
                 onClose={() => setSyncModalOpen(false)}
@@ -543,7 +543,7 @@ export default function AdsReportGenerator() {
                         {/* CABECERA */}
                         <div className="flex justify-between items-center border-b pb-6 border-slate-100">
                             <div>
-                                <h1 className="text-3xl font-bold text-slate-900">Informe de Rendimiento</h1>
+                                <h1 className="text-3xl font-bold text-slate-900">Informe de rendimiento</h1>
                                 <p className="text-slate-500 mt-1">Google Ads • {format(new Date(), 'MMMM yyyy', { locale: es })}</p>
                             </div>
                             <div className="text-right">

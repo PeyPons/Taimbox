@@ -10,7 +10,7 @@ import { AppProvider } from "@/contexts/AppContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 
-// Componentes de Auth
+// Componentes de auth
 import Login from "./pages/Login";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { PermissionProtectedRoute } from "./components/auth/PermissionProtectedRoute";

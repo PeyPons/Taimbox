@@ -62,7 +62,7 @@ export default function WeeklyForecastPage() {
   const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
   const handleToday = () => setCurrentMonth(new Date());
   
-      // Sección A: Semáforo de Proyectos (Month-End Forecast) con filtros
+      // Sección A: Semáforo de proyectos (Month-End Forecast) con filtros
   const projectForecast = useMemo(() => {
     if (!projects || !Array.isArray(projects)) return [];
     let filteredProjects = projects.filter(p => p.status === 'active' && !p.isHidden);
@@ -114,7 +114,7 @@ export default function WeeklyForecastPage() {
       const difference = round2(contracted - realized);
       
       let status: 'red' | 'yellow' | 'green';
-      // Si no hay horas planificadas pero hay presupuesto, es "yellow" (pendiente)
+      // Si no hay horas planificadas pero hay horas contratadas, es "yellow" (pendiente)
       if (contracted > 0 && realized === 0 && plannedHours === 0) {
         status = 'yellow'; // Faltan horas por asignar
       } else if (difference < -5) {
@@ -160,7 +160,7 @@ export default function WeeklyForecastPage() {
     return Array.isArray(forecastData) ? forecastData : [];
   }, [projects, allocations, clients, currentMonth, filterClient, filterProjectStatus, onlySEO, onlyPPC]);
   
-  // Sección B: Transferencias de Horas (rediseñado) - muestra quién le pasó a quién
+  // Sección B: Transferencias de horas (rediseñado) - muestra quién le pasó a quién
   const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
   const currentWeekStr = format(currentWeekStart, 'yyyy-MM-dd');
   
@@ -804,11 +804,11 @@ export default function WeeklyForecastPage() {
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="traffic" className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
-            Semáforo de Proyectos
+            Semáforo de proyectos
           </TabsTrigger>
           <TabsTrigger value="blockers" className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4" />
-            Feed de Bloqueos
+            Feed de bloqueos
           </TabsTrigger>
           <TabsTrigger value="redistribute" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
@@ -816,7 +816,7 @@ export default function WeeklyForecastPage() {
           </TabsTrigger>
         </TabsList>
         
-        {/* TAB 1: Semáforo de Proyectos */}
+        {/* TAB 1: Semáforo de proyectos */}
         <TabsContent value="traffic" className="space-y-4">
           {/* Filtros estilo Deadlines/Planner */}
           <div className="flex flex-wrap items-center gap-3 bg-white rounded-xl border shadow-sm p-3">
@@ -950,7 +950,7 @@ export default function WeeklyForecastPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Semáforo de Proyectos (Month-End Forecast)
+            Semáforo de proyectos (Month-End Forecast)
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -1038,7 +1038,7 @@ export default function WeeklyForecastPage() {
       </Card>
         </TabsContent>
         
-        {/* TAB 2: Transferencias de Horas */}
+        {/* TAB 2: Transferencias de horas */}
         <TabsContent value="blockers" className="space-y-4">
           {/* Filtros */}
           <div className="flex flex-wrap items-center gap-3 bg-white rounded-xl border shadow-sm p-3">
@@ -1162,7 +1162,7 @@ export default function WeeklyForecastPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ArrowRight className="h-5 w-5" />
-                Transferencias de Horas
+                Transferencias de horas
                 {transfers && transfers.length > 0 && (
                   <Badge variant="outline" className="ml-2 bg-slate-100 text-slate-700 border-slate-300">
                     {transfers.length}
@@ -1222,53 +1222,64 @@ export default function WeeklyForecastPage() {
                                   )}
                                 >
                                   <div className="flex items-start gap-3">
-                                    {/* Avatar origen con nombre */}
-                                    <div className="flex items-center gap-2 shrink-0">
-                                      <Avatar className="h-9 w-9 border-2 border-slate-200">
+                                    {/* Sección izquierda: Transferencia (Avatar → Horas → Avatar) */}
+                                    <div className="flex items-center gap-1.5 shrink-0 pr-2 border-r border-slate-200">
+                                      {/* Avatar origen */}
+                                      <Avatar className="h-8 w-8 border-2 border-slate-200 shrink-0">
                                         <AvatarImage src={transfer.fromEmployeeAvatar} alt={transfer.fromEmployeeName} />
-                                        <AvatarFallback className="bg-indigo-500 text-white text-xs font-bold">
+                                        <AvatarFallback className="bg-indigo-500 text-white text-[10px] font-bold">
                                           {transfer.fromEmployeeName.substring(0, 2).toUpperCase()}
                                         </AvatarFallback>
                                       </Avatar>
-                                      <span className="font-semibold text-sm text-slate-900 whitespace-nowrap">{transfer.fromEmployeeName}</span>
-                                    </div>
-                                    
-                                    {/* Flecha y horas */}
-                                    <div className="flex flex-col items-center justify-center gap-0.5 shrink-0 pt-1">
-                                      <ArrowRight className="h-4 w-4 text-indigo-600" />
-                                      <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 font-bold text-[10px] px-1.5 py-0">
-                                        {transfer.hours}h
-                                      </Badge>
-                                    </div>
-                                    
-                                    {/* Avatar destino con nombre */}
-                                    <div className="flex items-center gap-2 shrink-0">
-                                      <Avatar className="h-9 w-9 border-2 border-slate-200">
+                                      
+                                      {/* Nombre origen */}
+                                      <span className="font-semibold text-sm text-slate-900 whitespace-nowrap min-w-0 max-w-[110px] truncate">
+                                        {transfer.fromEmployeeName}
+                                      </span>
+                                      
+                                      {/* Flecha y horas */}
+                                      <div className="flex items-center gap-1 shrink-0">
+                                        <ArrowRight className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                                        <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 font-bold text-[10px] px-1.5 py-0.5 shrink-0">
+                                          {transfer.hours}h
+                                        </Badge>
+                                      </div>
+                                      
+                                      {/* Avatar destino */}
+                                      <Avatar className="h-8 w-8 border-2 border-slate-200 shrink-0">
                                         <AvatarImage src={transfer.toEmployeeAvatar} alt={transfer.toEmployeeName} />
-                                        <AvatarFallback className="bg-purple-500 text-white text-xs font-bold">
+                                        <AvatarFallback className="bg-purple-500 text-white text-[10px] font-bold">
                                           {transfer.toEmployeeName.substring(0, 2).toUpperCase()}
                                         </AvatarFallback>
                                       </Avatar>
-                                      <span className="font-semibold text-sm text-slate-900 whitespace-nowrap">{transfer.toEmployeeName}</span>
+                                      
+                                      {/* Nombre destino */}
+                                      <span className="font-semibold text-sm text-slate-900 whitespace-nowrap min-w-0 max-w-[110px] truncate">
+                                        {transfer.toEmployeeName}
+                                      </span>
                                     </div>
                                     
-                                    {/* Información del proyecto */}
+                                    {/* Sección derecha: Información de la tarea */}
                                     <div className="flex-1 min-w-0">
-                                      {project && (
-                                        <div className="flex items-center gap-1.5 mb-0.5">
-                                          <span className="text-slate-400">•</span>
-                                          <span className="text-sm font-medium text-slate-700">{formatProjectName(transfer.projectName)}</span>
-                                        </div>
-                                      )}
+                                      {/* Proyecto y tarea en línea compacta */}
+                                      <div className="flex items-center gap-1.5 mb-1">
+                                        {project && (
+                                          <>
+                                            <span className="text-slate-400 text-xs">•</span>
+                                            <span className="text-xs font-medium text-slate-600">{formatProjectName(transfer.projectName)}</span>
+                                          </>
+                                        )}
+                                      </div>
+                                      
                                       {/* Tarea original */}
-                                      <div className="mb-1">
+                                      <div className="mb-1.5">
                                         <p className="text-xs text-slate-500 mb-0.5">Tarea original:</p>
-                                        <p className="text-sm font-medium text-slate-900">{transfer.taskName}</p>
+                                        <p className="text-sm font-medium text-slate-900 leading-tight">{transfer.taskName}</p>
                                       </div>
                                       
                                       {/* Si está distribuida, mostrar tareas distribuidas */}
                                       {transfer.status === 'distributed' && transfer.distributedTasks && transfer.distributedTasks.length > 0 && (
-                                        <div className="mb-1 p-1.5 bg-purple-50/50 rounded border border-purple-200">
+                                        <div className="mb-1.5 p-1.5 bg-purple-50/50 rounded border border-purple-200">
                                           <p className="text-xs text-slate-600 mb-1 font-medium">Tareas distribuidas:</p>
                                           <div className="space-y-0.5">
                                             {transfer.distributedTasks.map((task, taskIdx) => (
@@ -1285,14 +1296,14 @@ export default function WeeklyForecastPage() {
                                       
                                       {/* Notas si existen */}
                                       {transfer.notes && (
-                                        <div className="mb-1 p-1.5 bg-slate-50 rounded border border-slate-200">
+                                        <div className="mb-1.5 p-1.5 bg-slate-50 rounded border border-slate-200">
                                           <p className="text-xs text-slate-500 mb-0.5">Notas:</p>
                                           <p className="text-xs text-slate-700 leading-relaxed">{transfer.notes}</p>
                                         </div>
                                       )}
                                       
                                       {/* Estado */}
-                                      <div className="flex items-center gap-2 flex-wrap mt-1">
+                                      <div className="flex items-center gap-2 flex-wrap">
                                         {transfer.status === 'pending' && (
                                           <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-300 text-[10px]">
                                             <AlertCircle className="h-2.5 w-2.5 mr-1" />

@@ -266,7 +266,7 @@ export default function ClientsAndProjectsPage() {
       // Ganancia = computadas - reales
       const gain = computedHours - realHours;
 
-      // Presupuesto total del cliente
+      // Horas contratadas totales del cliente
       const totalBudget = clientProjectsForStats.reduce((sum, p) => sum + (p.budgetHours || 0), 0);
 
       // Por computar = asignadas - computadas (horas que faltan por facturar)
@@ -1108,14 +1108,14 @@ export default function ClientsAndProjectsPage() {
           icon={AlertTriangle}
           label="En riesgo"
           value={globalStats.atRisk}
-          subValue=">85% del presupuesto"
+          subValue=">85% de horas contratadas"
           color={globalStats.atRisk > 0 ? 'amber' : 'slate'}
         />
         <StatCard 
           icon={TrendingUp}
           label="Excedidos"
           value={globalStats.overBudget}
-          subValue=">100% del presupuesto"
+          subValue=">100% de horas contratadas"
           color={globalStats.overBudget > 0 ? 'red' : 'slate'}
         />
       </div>
@@ -1366,7 +1366,7 @@ export default function ClientsAndProjectsPage() {
                     <div className="flex items-center gap-5">
                       {/* Horas asignadas */}
                       <div className="text-right min-w-[70px]">
-                        <span className="text-[10px] text-slate-400 uppercase block">Presupuest.</span>
+                        <span className="text-[10px] text-slate-400 uppercase block">Contratadas</span>
                         <span className="font-bold text-slate-800">{stats.budget.toFixed(0)}h</span>
                       </div>
 

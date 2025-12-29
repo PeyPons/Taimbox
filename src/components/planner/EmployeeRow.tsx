@@ -51,7 +51,7 @@ export function EmployeeRow({
         </div>
       </div>
 
-      {/* Celdas de Semanas */}
+      {/* Celdas de semanas */}
       {weeks.map((week) => {
         // Usar siempre la fecha real de la semana (lunes) para buscar tareas
         // No usar getStorageKey porque normaliza según el mes visible y puede cambiar

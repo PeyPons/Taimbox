@@ -377,7 +377,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
             continue;
           }
           
-          // Validar capacidad y presupuesto antes de crear tareas
+          // Validar capacidad y horas contratadas antes de crear tareas
           const projectMonthAllocations = allocations.filter(a => 
             a.projectId === task.projectId && 
             isSameMonth(parseISO(a.weekStartDate), viewDate) &&
@@ -388,7 +388,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
           const newProjectMonthTotal = projectMonthHours + totalDistributed;
           
           if (projectBudget > 0 && newProjectMonthTotal > projectBudget) {
-            toast.error(`No se puede guardar: Proyecto excede presupuesto (${newProjectMonthTotal.toFixed(1)}h / ${projectBudget.toFixed(1)}h)`);
+            toast.error(`No se puede guardar: Proyecto excede horas contratadas (${newProjectMonthTotal.toFixed(1)}h / ${projectBudget.toFixed(1)}h)`);
             continue;
           }
           
@@ -984,7 +984,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                         </Label>
                         {isTransferredTask && (
                           <p className="text-xs text-purple-600 bg-purple-50 p-2 rounded border border-purple-200">
-                            💡 Puedes distribuir estas horas entre múltiples tareas y semanas. El sistema te avisará si excedes tu capacidad o el presupuesto del proyecto.
+                            💡 Puedes distribuir estas horas entre múltiples tareas y semanas. El sistema te avisará si excedes tu capacidad o las horas contratadas del proyecto.
                           </p>
                         )}
                         <div className="space-y-2">
@@ -1043,7 +1043,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                       )}
                                       {exceedsProjectBudget && (
                                         <p className="text-xs text-red-600 mt-1 font-medium">
-                                          ⚠️ Excede presupuesto proyecto: {newProjectMonthTotal.toFixed(1)}h / {projectBudget.toFixed(1)}h (+{(newProjectMonthTotal - projectBudget).toFixed(1)}h)
+                                          ⚠️ Excede horas contratadas del proyecto: {newProjectMonthTotal.toFixed(1)}h / {projectBudget.toFixed(1)}h (+{(newProjectMonthTotal - projectBudget).toFixed(1)}h)
                                         </p>
                                       )}
                                     </div>
@@ -1420,7 +1420,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                   </Label>
                                   {isTransferredTask && (
                                     <p className="text-xs text-purple-600 bg-purple-50 p-2 rounded border border-purple-200">
-                                      💡 Puedes distribuir estas horas entre múltiples tareas y semanas. El sistema te avisará si excedes tu capacidad o el presupuesto del proyecto.
+                                      💡 Puedes distribuir estas horas entre múltiples tareas y semanas. El sistema te avisará si excedes tu capacidad o las horas contratadas del proyecto.
                                     </p>
                                   )}
                                   <div className="space-y-2">
@@ -1476,7 +1476,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                                 )}
                                                 {exceedsProjectBudget && (
                                                   <p className="text-xs text-red-600 mt-1 font-medium">
-                                                    ⚠️ Excede presupuesto proyecto: {newProjectMonthTotal.toFixed(1)}h / {projectBudget.toFixed(1)}h (+{(newProjectMonthTotal - projectBudget).toFixed(1)}h)
+                                                    ⚠️ Excede horas contratadas del proyecto: {newProjectMonthTotal.toFixed(1)}h / {projectBudget.toFixed(1)}h (+{(newProjectMonthTotal - projectBudget).toFixed(1)}h)
                                                   </p>
                                                 )}
                                               </div>
@@ -1693,7 +1693,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                               Distribuir {task.hoursAssigned}h transferidas en tareas (máximo {task.hoursAssigned}h)
                             </Label>
                             <p className="text-xs text-purple-600 bg-purple-50 p-2 rounded border border-purple-200">
-                              💡 Puedes distribuir estas horas entre múltiples tareas y semanas. El sistema te avisará si excedes tu capacidad o el presupuesto del proyecto.
+                              💡 Puedes distribuir estas horas entre múltiples tareas y semanas. El sistema te avisará si excedes tu capacidad o las horas contratadas del proyecto.
                             </p>
                             <div className="space-y-2">
                               {(distributionTasks[task.id] || []).map((distRow, idx) => {
@@ -1748,7 +1748,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                           )}
                                           {exceedsProjectBudget && (
                                             <p className="text-xs text-red-600 mt-1 font-medium">
-                                              ⚠️ Excede presupuesto proyecto: {newProjectMonthTotal.toFixed(1)}h / {projectBudget.toFixed(1)}h (+{(newProjectMonthTotal - projectBudget).toFixed(1)}h)
+                                              ⚠️ Excede horas contratadas del proyecto: {newProjectMonthTotal.toFixed(1)}h / {projectBudget.toFixed(1)}h (+{(newProjectMonthTotal - projectBudget).toFixed(1)}h)
                                             </p>
                                           )}
                                         </div>
@@ -1942,7 +1942,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                     Distribuir {task.hoursAssigned}h transferidas en tareas (máximo {task.hoursAssigned}h)
                                   </Label>
                                   <p className="text-xs text-purple-600 bg-purple-50 p-2 rounded border border-purple-200">
-                                    💡 Puedes distribuir estas horas entre múltiples tareas y semanas. El sistema te avisará si excedes tu capacidad o el presupuesto del proyecto.
+                                    💡 Puedes distribuir estas horas entre múltiples tareas y semanas. El sistema te avisará si excedes tu capacidad o las horas contratadas del proyecto.
                                   </p>
                                   <div className="space-y-2">
                                     {(distributionTasks[task.id] || []).map((distRow, idx) => {
@@ -1997,7 +1997,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                                 )}
                                                 {exceedsProjectBudget && (
                                                   <p className="text-xs text-red-600 mt-1 font-medium">
-                                                    ⚠️ Excede presupuesto proyecto: {newProjectMonthTotal.toFixed(1)}h / {projectBudget.toFixed(1)}h (+{(newProjectMonthTotal - projectBudget).toFixed(1)}h)
+                                                    ⚠️ Excede horas contratadas del proyecto: {newProjectMonthTotal.toFixed(1)}h / {projectBudget.toFixed(1)}h (+{(newProjectMonthTotal - projectBudget).toFixed(1)}h)
                                                   </p>
                                                 )}
                                               </div>
@@ -2101,7 +2101,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                   validationErrors.push(`"${task.taskName}": suma ${totalDistributed.toFixed(2)}h debe ser ${task.hoursAssigned.toFixed(2)}h`);
                 }
                 
-                // Validar capacidad y presupuesto
+                // Validar capacidad y horas contratadas
                 const projectMonthAllocations = allocations.filter(a => 
                   a.projectId === task.projectId && 
                   isSameMonth(parseISO(a.weekStartDate), viewDate) &&
@@ -2113,7 +2113,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                 
                 if (projectBudget > 0 && newProjectMonthTotal > projectBudget) {
                   canSubmit = false;
-                  validationErrors.push(`"${task.taskName}": excede presupuesto (${newProjectMonthTotal.toFixed(1)}h / ${projectBudget.toFixed(1)}h)`);
+                  validationErrors.push(`"${task.taskName}": excede horas contratadas (${newProjectMonthTotal.toFixed(1)}h / ${projectBudget.toFixed(1)}h)`);
                 }
                 
                 // Validar capacidad por semana

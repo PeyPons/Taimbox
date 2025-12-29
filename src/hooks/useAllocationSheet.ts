@@ -109,7 +109,7 @@ export function useAllocationSheet(employeeId: string, viewDate: Date) {
       .sort((a, b) => b.estimated - a.estimated);
   }, [allocations, employeeId, viewDate, getProjectById]);
 
-  // Calcular estado de presupuesto de un proyecto (por mes, no por semana)
+  // Calcular estado de horas contratadas de un proyecto (por mes, no por semana)
   const getProjectBudgetStatus = useMemo(() => {
     return (projectId: string): ProjectBudgetStatus => {
       const project = projects.find(p => p.id === projectId);

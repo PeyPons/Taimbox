@@ -620,7 +620,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
             {status === 'overload' && (
               <div className="bg-red-50 text-red-700 text-[10px] p-2 rounded border border-red-200 mt-2">
-                ⚠️ Se ha excedido el presupuesto máximo. Revisar horas computadas.
+                ⚠️ Se han excedido las horas contratadas máximas. Revisar horas computadas.
               </div>
             )}
             {status === 'warning' && (
@@ -630,7 +630,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
             )}
             {projection > budgetMax && status !== 'overload' && (
               <div className="bg-orange-50 text-orange-700 text-[10px] p-2 rounded border border-orange-200 mt-2">
-                📊 La proyección ({projection.toFixed(1)}h) supera el presupuesto.
+                📊 La proyección ({projection.toFixed(1)}h) supera las horas contratadas.
               </div>
             )}
           </div>
@@ -708,10 +708,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
                         <DropdownMenuItem onClick={() => setSortOption('budget_desc')} className={cn(sortOption === 'budget_desc' && "bg-accent")}>
-                          <SortDesc className="mr-2 h-4 w-4" /> Presupuesto (mayor)
+                          <SortDesc className="mr-2 h-4 w-4" /> Horas contratadas (mayor)
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setSortOption('budget_asc')} className={cn(sortOption === 'budget_asc' && "bg-accent")}>
-                          <SortAsc className="mr-2 h-4 w-4" /> Presupuesto (menor)
+                          <SortAsc className="mr-2 h-4 w-4" /> Horas contratadas (menor)
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setSortOption('my_hours_desc')} className={cn(sortOption === 'my_hours_desc' && "bg-accent")}>
                           <SortDesc className="mr-2 h-4 w-4" /> Mis horas (mayor)
@@ -1580,7 +1580,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                 {status === 'overload' && (
                                   <div className="bg-red-50 text-red-700 text-[11px] p-2 rounded border border-red-200 flex items-center gap-2">
                                     <AlertOctagon className="w-4 h-4 flex-shrink-0" />
-                                    <span>Se ha excedido el presupuesto máximo</span>
+                                    <span>Se han excedido las horas contratadas máximas</span>
                                   </div>
                                 )}
                                 {status === 'warning' && (
@@ -1764,7 +1764,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 
                 <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-2 -mr-2">
                     {newTasks.map((task) => {
-                        // Calcular si esta tarea excede el presupuesto
+                        // Calcular si esta tarea excede las horas contratadas
                         const taskProject = task.projectId ? projects.find(p => p.id === task.projectId) : null;
                         const taskHours = parseFloat(task.hours) || 0;
                         
