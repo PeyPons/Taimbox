@@ -245,24 +245,40 @@ async function processSyncJob(jobId) {
           // #endregion
           
           if (campaignData.length > 0) {
-             const rowsToInsert = campaignData.map(d => ({ ...d, client_name: client.name }));
-             
-             // Upsert masivo - ahora solo hay una entrada por campaña (total mensual)
-             // Usamos campaign_id + date como clave única (date es el primer día del mes)
-             const { error } = await supabase
+             // BORRAR datos existentes del mes actual para este cliente antes de insertar
+             console.log(`🧹 [${client.name}] Eliminando datos existentes del mes ${range.firstDay} a ${range.today}...`);
+             const { error: deleteError, count: deletedCount } = await supabase
                 .from('google_ads_campaigns')
-                .upsert(rowsToInsert, { onConflict: 'campaign_id, date' });
+                .delete()
+                .eq('client_id', client.id)
+                .gte('date', range.firstDay)
+                .lte('date', range.today);
+             
+             if (deleteError) {
+               console.error(`⚠️ Error al borrar datos antiguos de ${client.name}: ${deleteError.message}`);
+               // #region agent log
+               fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:188',message:'Delete error',data:{clientId:client.id,clientName:client.name,error:deleteError.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
+               // #endregion
+             } else {
+               console.log(`✅ [${client.name}] Eliminadas ${deletedCount || 0} filas antiguas`);
+             }
+             
+             // Insertar nuevos datos (ahora es un INSERT simple, no UPSERT)
+             const rowsToInsert = campaignData.map(d => ({ ...d, client_name: client.name }));
+             const { error, count } = await supabase
+                .from('google_ads_campaigns')
+                .insert(rowsToInsert);
              
              if (error) {
                console.error(`❌ Error DB ${client.name}: ${error.message}`);
                // #region agent log
-               fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:190',message:'DB error',data:{clientId:client.id,clientName:client.name,error:error.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
+               fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:200',message:'DB error',data:{clientId:client.id,clientName:client.name,error:error.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
                // #endregion
              } else {
                totalRows += campaignData.length;
-               console.log(`✅ [${client.name}] Guardadas ${campaignData.length} campañas en BD (Total mensual: ${totalCostBeforeDB.toFixed(2)}€)`);
+               console.log(`✅ [${client.name}] Insertadas ${campaignData.length} campañas en BD (Total mensual: ${totalCostBeforeDB.toFixed(2)}€)`);
                // #region agent log - Confirmación de guardado
-               fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:195',message:'Data saved to DB',data:{clientId:client.id,clientName:client.name,rowsInserted:campaignData.length,totalCost:totalCostBeforeDB,dateRange:range},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
+               fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:205',message:'Data saved to DB',data:{clientId:client.id,clientName:client.name,rowsInserted:campaignData.length,deletedCount,totalCost:totalCostBeforeDB,dateRange:range},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
                // #endregion
              }
           }
