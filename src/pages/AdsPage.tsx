@@ -194,7 +194,25 @@ export default function AdsPage() {
         minDate: Math.min(...rawAdsData.map((r: any) => new Date(r.date).getTime())),
         maxDate: Math.max(...rawAdsData.map((r: any) => new Date(r.date).getTime()))
       } : null;
-      fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:190',message:'Data loaded from DB',data:{rowsCount:rawAdsData.length,totalCost:totalCostFromDB,dateRange,sampleRow:rawAdsData[0]},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H6'})}).catch(()=>{});
+      // Check for duplicates (same campaign_id + date)
+      const duplicateKeys = new Map<string, number>();
+      rawAdsData.forEach((r: any) => {
+        const key = `${r.campaign_id}_${r.date}`;
+        duplicateKeys.set(key, (duplicateKeys.get(key) || 0) + 1);
+      });
+      const duplicates = Array.from(duplicateKeys.entries()).filter(([_, count]) => count > 1);
+      // Group by client_id to see account distribution
+      const byClientId = new Map<string, {count: number, totalCost: number, names: Set<string>}>();
+      rawAdsData.forEach((r: any) => {
+        const existing = byClientId.get(r.client_id) || {count: 0, totalCost: 0, names: new Set()};
+        existing.count++;
+        existing.totalCost += Number(r.cost) || 0;
+        existing.names.add(r.client_name);
+        byClientId.set(r.client_id, existing);
+      });
+      const bullHotelsClients = Array.from(byClientId.entries()).filter(([id, data]) => Array.from(data.names).some(n => n.includes('Bull')));
+      const hdHotelsClients = Array.from(byClientId.entries()).filter(([id, data]) => Array.from(data.names).some(n => n.includes('HD')));
+      fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:190',message:'Data loaded from DB',data:{rowsCount:rawAdsData.length,totalCost:totalCostFromDB,dateRange,duplicatesCount:duplicates.length,duplicatesSample:duplicates.slice(0,5),uniqueClients:byClientId.size,bullHotelsClients:bullHotelsClients.map(([id,data])=>({clientId:id,count:data.count,totalCost:data.totalCost,names:Array.from(data.names)})),hdHotelsClients:hdHotelsClients.map(([id,data])=>({clientId:id,count:data.count,totalCost:data.totalCost,names:Array.from(data.names)}))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3,H6'})}).catch(()=>{});
       // #endregion
       setRawData(rawAdsData);
       setClientSettings(settingsMap);
@@ -392,6 +410,11 @@ export default function AdsPage() {
       entry.spent += rowCost;
       totalProcessedCost += rowCost;
       // #region agent log
+      if (groupKey.includes('Bull') || groupKey.includes('HD Hotels') || Math.random() < 0.02) {
+        fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:392',message:'Grouping details',data:{originalClientId:row.client_id,originalClientName:row.client_name,finalId,finalName,groupKey,groupName:settings.group_name,rowCost,costBefore,costAfter:entry.spent,campaignId:row.campaign_id,campaignName:row.campaign_name,date:row.date},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H6'})}).catch(()=>{});
+      }
+      // #endregion
+      // #region agent log
       if (Math.random() < 0.05) { // Log 5% de las filas
         fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:376',message:'Cost accumulation',data:{rowDate:row.date,rowCost,rowCostType:typeof row.cost,costBefore,costAfter:entry.spent,groupKey,monthStart,monthEnd},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H6'})}).catch(()=>{});
       }
@@ -416,7 +439,10 @@ export default function AdsPage() {
     });
     // #region agent log
     const finalTotalSpent = Array.from(stats.values()).reduce((sum, s) => sum + s.spent, 0);
-    fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:395',message:'Frontend aggregation totals',data:{monthStart,monthEnd,filteredOutCount,totalProcessedCost,finalTotalSpent,statsCount:stats.size},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H4,H6'})}).catch(()=>{});
+    const allGroups = Array.from(stats.entries()).map(([key, value]) => ({groupKey: key, name: value.name, spent: value.spent, realIds: value.realIds, realIdsNames: value.realIdsNames}));
+    const bullHotelsEntry = allGroups.find(g => g.groupKey.includes('Bull') || g.name.includes('Bull'));
+    const hdHotelsEntry = allGroups.find(g => g.groupKey.includes('HD') || g.name.includes('HD'));
+    fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:395',message:'Frontend aggregation totals',data:{monthStart,monthEnd,filteredOutCount,totalProcessedCost,finalTotalSpent,statsCount:stats.size,allGroups:allGroups.slice(0,10),bullHotels:bullHotelsEntry,hdHotels:hdHotelsEntry},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H4,H6'})}).catch(()=>{});
     // #endregion
 
     const report: ClientPacing[] = [];
