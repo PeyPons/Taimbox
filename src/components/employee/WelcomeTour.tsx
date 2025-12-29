@@ -528,8 +528,10 @@ export function WelcomeTour({ onComplete, forceShow = false }: WelcomeTourProps)
           <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-4 text-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/20 rounded-lg">
-                  {step.icon}
+                <div className="p-2.5 bg-white/30 backdrop-blur-sm rounded-xl border border-white/20 shadow-lg">
+                  {React.cloneElement(step.icon as React.ReactElement, { 
+                    className: "w-6 h-6 text-white" 
+                  })}
                 </div>
                 <div>
                   <h3 className="font-bold text-lg">{step.title}</h3>
