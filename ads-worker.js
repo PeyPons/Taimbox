@@ -178,9 +178,10 @@ async function getAccountData(customerId, accessToken, dateRange) {
         if (!entriesByDate.has(entry.date)) entriesByDate.set(entry.date, 0);
         entriesByDate.set(entry.date, entriesByDate.get(entry.date) + entry.cost);
       });
-      const dateRange = aggregator.size > 0 ? {
-        min: Math.min(...Array.from(aggregator.values()).map(e => e.date)),
-        max: Math.max(...Array.from(aggregator.values()).map(e => e.date))
+      const dates = Array.from(aggregator.values()).map(e => e.date).filter(d => d);
+      const dateRange = dates.length > 0 ? {
+        min: dates.reduce((a, b) => a < b ? a : b),
+        max: dates.reduce((a, b) => a > b ? a : b)
       } : null;
       
       console.log(`✅ [${customerId}] Procesadas ${rowCount} filas → ${aggregator.size} entradas únicas`);

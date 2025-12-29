@@ -369,12 +369,18 @@ export default function AdsPage() {
 
     let totalProcessedCost = 0;
     let filteredOutCount = 0;
+    const bullHotelsCostByClient = new Map<string, number>();
     rawData.forEach(row => {
       // Filtrar por todos los días del mes actual (del 1 al último día del mes)
       const isInRange = row.date >= monthStart && row.date <= monthEnd;
       if (!isInRange) {
         filteredOutCount++;
         return;
+      }
+      // Track Bull Hotels costs by client
+      if (row.client_name?.includes('Bull') || row.client_id === '9737854497' || row.client_id === '1860552307' || row.client_id === '5552307007' || row.client_id === '9990759400' || row.client_id === '9452901695' || row.client_id === '4352608586' || row.client_id === '5839700662') {
+        const current = bullHotelsCostByClient.get(row.client_id) || 0;
+        bullHotelsCostByClient.set(row.client_id, current + (Number(row.cost) || 0));
       }
       let finalId = row.client_id;
       let finalName = row.client_name;
@@ -442,7 +448,7 @@ export default function AdsPage() {
     const allGroups = Array.from(stats.entries()).map(([key, value]) => ({groupKey: key, name: value.name, spent: value.spent, realIds: value.realIds, realIdsNames: value.realIdsNames}));
     const bullHotelsEntry = allGroups.find(g => g.groupKey.includes('Bull') || g.name.includes('Bull'));
     const hdHotelsEntry = allGroups.find(g => g.groupKey.includes('HD') || g.name.includes('HD'));
-    fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:395',message:'Frontend aggregation totals',data:{monthStart,monthEnd,filteredOutCount,totalProcessedCost,finalTotalSpent,statsCount:stats.size,allGroups:allGroups.slice(0,10),bullHotels:bullHotelsEntry,hdHotels:hdHotelsEntry},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H4,H6'})}).catch(()=>{});
+    fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'AdsPage.tsx:395',message:'Frontend aggregation totals',data:{monthStart,monthEnd,filteredOutCount,totalProcessedCost,finalTotalSpent,statsCount:stats.size,allGroups:allGroups.slice(0,10),bullHotels:bullHotelsEntry,hdHotels:hdHotelsEntry,bullHotelsCostByClient:Object.fromEntries(bullHotelsCostByClient),bullHotelsTotalFromRaw:Array.from(bullHotelsCostByClient.values()).reduce((a,b)=>a+b,0)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H4,H6'})}).catch(()=>{});
     // #endregion
 
     const report: ClientPacing[] = [];
