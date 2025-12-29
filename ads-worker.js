@@ -30,11 +30,7 @@ function getDateRange() {
   const day = String(currentMonth.getDate()).padStart(2, '0');
   const firstDay = `${year}-${month}-${day}`;
   const today = new Date().toISOString().split('T')[0];
-  const range = { firstDay, today };
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:33',message:'Date range calculated',data:{firstDay:range.firstDay,today:range.today},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H4'})}).catch(()=>{});
-  // #endregion
-  return range;
+  return { firstDay, today };
 }
 
 async function getAccessToken() {
@@ -105,21 +101,14 @@ async function getAccountData(customerId, accessToken, dateRange) {
 
   if (response.ok) {
     const data = await response.json();
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:100',message:'API response received',data:{customerId,isArray:Array.isArray(data),batchesCount:Array.isArray(data)?data.length:0,firstBatchStructure:data&&Array.isArray(data)&&data[0]?Object.keys(data[0]):null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H7'})}).catch(()=>{});
-    // #endregion
     if (data && Array.isArray(data)) {
       let totalRawCostMicros = 0;
       let rowCount = 0;
       console.log(`📊 [${customerId}] Procesando ${data.length} batches de la API (Total mensual)`);
-      // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:108',message:'Starting to process API data',data:{customerId,batchesCount:data.length,firstBatchResultsCount:data[0]?.results?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H7'})}).catch(()=>{});
-      // #endregion
       data.forEach(batch => { 
         if (batch.results) { 
           batch.results.forEach(row => { 
             rowCount++;
-            // #region agent log - Log detallado de cada fila
             const rawCostMicros = row.metrics?.costMicros || row.metrics?.cost_micros || 0;
             const rawCostMicrosParsed = parseInt(rawCostMicros) || 0;
             const costDollars = rawCostMicrosParsed / 1000000;
@@ -132,9 +121,6 @@ async function getAccountData(customerId, accessToken, dateRange) {
               console.log(`  📋 Campaña ${rowCount}: ${campaignName} | Coste: ${costDollars.toFixed(2)}€ | Micros: ${rawCostMicrosParsed}`);
             }
             
-            // Log TODAS las filas con información completa
-            fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:120',message:'API row detail',data:{customerId,rowNumber:rowCount,campaignId,campaignName,campaignStatus,date:monthDate,costMicrosRaw:rawCostMicros,costMicrosParsed:rawCostMicrosParsed,costDollars,metricsKeys:row.metrics?Object.keys(row.metrics):null,fullMetrics:row.metrics,campaignKeys:row.campaign?Object.keys(row.campaign):null,fullCampaign:row.campaign},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1,H2,H7'})}).catch(()=>{});
-            // #endregion
             totalRawCostMicros += rawCostMicrosParsed;
             
             // Clave única: solo campaignId (sin fecha, porque es total mensual)
@@ -162,11 +148,7 @@ async function getAccountData(customerId, accessToken, dateRange) {
 
             // SUMAR MÉTRICAS (Agregación por campaña - total mensual)
             const entry = aggregator.get(key);
-            const costBefore = entry.cost;
             entry.cost += costDollars;
-            // #region agent log - Log de agregación
-            fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:150',message:'Aggregation step',data:{customerId,key,campaignId,date:monthDate,costDollars,costBefore,costAfter:entry.cost,aggregatorSize:aggregator.size},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
-            // #endregion
             entry.conversions_value += parseFloat(row.metrics?.conversionsValue || row.metrics?.conversions_value || 0);
             entry.conversions += parseFloat(row.metrics?.conversions || 0);
             entry.clicks += parseInt(row.metrics?.clicks || 0);
@@ -174,13 +156,7 @@ async function getAccountData(customerId, accessToken, dateRange) {
           }); 
         } 
       });
-      // #region agent log - Totales finales por cuenta
       const totalCostDollars = Array.from(aggregator.values()).reduce((sum, e) => sum + e.cost, 0);
-      const entriesByDate = new Map();
-      aggregator.forEach((entry, key) => {
-        if (!entriesByDate.has(entry.date)) entriesByDate.set(entry.date, 0);
-        entriesByDate.set(entry.date, entriesByDate.get(entry.date) + entry.cost);
-      });
       const dates = Array.from(aggregator.values()).map(e => e.date).filter(d => d);
       const dateRange = dates.length > 0 ? {
         min: dates.reduce((a, b) => a < b ? a : b),
@@ -190,9 +166,6 @@ async function getAccountData(customerId, accessToken, dateRange) {
       console.log(`✅ [${customerId}] Procesadas ${rowCount} campañas → ${aggregator.size} entradas únicas (Total mensual)`);
       console.log(`💰 [${customerId}] Total coste mensual: ${totalCostDollars.toFixed(2)}€ (${(totalRawCostMicros/1000000).toFixed(2)}€ en micros)`);
       console.log(`📅 [${customerId}] Mes: ${dateRange?.min || monthDate} a ${dateRange?.max || dateRange.today}`);
-      
-      fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:160',message:'Aggregation totals',data:{customerId,rowCount,totalRawCostMicros,totalRawCostDollars:totalRawCostMicros/1000000,totalCostDollars,entriesCount:aggregator.size,dateRange,sampleEntries:Array.from(aggregator.values()).slice(0,5)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
-      // #endregion
     }
   } else {
       const errorText = await response.text();
@@ -229,20 +202,11 @@ async function processSyncJob(jobId) {
       
       try {
           const campaignData = await getAccountData(client.id, token, range);
-          // #region agent log - Datos antes de guardar en BD
           const totalCostBeforeDB = campaignData.reduce((sum, d) => sum + (d.cost || 0), 0);
-          const costByDate = new Map();
-          campaignData.forEach(d => {
-            if (!costByDate.has(d.date)) costByDate.set(d.date, 0);
-            costByDate.set(d.date, costByDate.get(d.date) + (d.cost || 0));
-          });
           
           console.log(`\n📦 [${client.name}] Preparando ${campaignData.length} campañas para BD (Total mensual)`);
           console.log(`💰 [${client.name}] Total coste mensual a guardar: ${totalCostBeforeDB.toFixed(2)}€`);
           console.log(`📅 [${client.name}] Mes: ${range.firstDay} a ${range.today}`);
-          
-          fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:174',message:'Data before DB insert',data:{clientId:client.id,clientName:client.name,rowsCount:campaignData.length,totalCost:totalCostBeforeDB,dateRange:range,costByDate:Object.fromEntries(costByDate),sampleRows:campaignData.slice(0,10),allCampaigns:campaignData.map(d=>({campaignId:d.campaign_id,campaignName:d.campaign_name,date:d.date,cost:d.cost}))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
-          // #endregion
           
           if (campaignData.length > 0) {
              // BORRAR datos existentes del mes actual para este cliente antes de insertar
@@ -256,30 +220,21 @@ async function processSyncJob(jobId) {
              
              if (deleteError) {
                console.error(`⚠️ Error al borrar datos antiguos de ${client.name}: ${deleteError.message}`);
-               // #region agent log
-               fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:188',message:'Delete error',data:{clientId:client.id,clientName:client.name,error:deleteError.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
-               // #endregion
              } else {
                console.log(`✅ [${client.name}] Eliminadas ${deletedCount || 0} filas antiguas`);
              }
              
              // Insertar nuevos datos (ahora es un INSERT simple, no UPSERT)
              const rowsToInsert = campaignData.map(d => ({ ...d, client_name: client.name }));
-             const { error, count } = await supabase
+             const { error } = await supabase
                 .from('google_ads_campaigns')
                 .insert(rowsToInsert);
              
              if (error) {
                console.error(`❌ Error DB ${client.name}: ${error.message}`);
-               // #region agent log
-               fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:200',message:'DB error',data:{clientId:client.id,clientName:client.name,error:error.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
-               // #endregion
              } else {
                totalRows += campaignData.length;
                console.log(`✅ [${client.name}] Insertadas ${campaignData.length} campañas en BD (Total mensual: ${totalCostBeforeDB.toFixed(2)}€)`);
-               // #region agent log - Confirmación de guardado
-               fetch('http://127.0.0.1:7243/ingest/3b5a9c54-3879-4370-8f86-7870919c2bd3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ads-worker.js:205',message:'Data saved to DB',data:{clientId:client.id,clientName:client.name,rowsInserted:campaignData.length,deletedCount,totalCost:totalCostBeforeDB,dateRange:range},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H3'})}).catch(()=>{});
-               // #endregion
              }
           }
       } catch (err) {
