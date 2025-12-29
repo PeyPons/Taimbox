@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['"Charlie Display"', 'sans-serif'],
+        sans: ['"Host Grotesk"', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
