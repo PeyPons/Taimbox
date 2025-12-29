@@ -1283,7 +1283,7 @@ export default function WeeklyForecastPage() {
                                           <p className="text-xs text-slate-600 mb-1 font-medium">Tareas distribuidas:</p>
                                           <div className="space-y-0.5">
                                             {transfer.distributedTasks.map((task, taskIdx) => (
-                                              <div key={taskIdx} className="flex items-center justify-between gap-2 text-xs">
+                                              <div key={taskIdx} className="flex items-center gap-1.5 text-xs">
                                                 <span className="text-slate-700">{task.name}</span>
                                                 <Badge variant="outline" className="bg-white text-purple-700 border-purple-300 text-[10px] px-1.5 py-0 shrink-0">
                                                   {task.hours}h
