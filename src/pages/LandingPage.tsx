@@ -909,25 +909,31 @@ export default function LandingPage() {
             </div>
             
             <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-indigo-200/50 shadow-2xl overflow-hidden relative">
-              {/* Aviso mobile - Solo visible en dispositivos móviles */}
+              {/* Overlay oscuro en mobile que bloquea la demo */}
               {isMobile && (
-                <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-b-2 border-amber-200 p-4 sm:p-5">
-                  <div className="flex items-start gap-3">
-                    <div className="rounded-full bg-amber-100 p-2 shrink-0">
-                      <Monitor className="h-5 w-5 text-amber-600" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <AlertCircle className="h-4 w-4 text-amber-600" />
-                        <h3 className="font-semibold text-amber-900 text-sm">Optimizado para escritorio</h3>
+                <>
+                  <div className="absolute inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-6 rounded-xl">
+                    <div className="text-center max-w-md">
+                      <div className="mb-6 flex justify-center">
+                        <div className="rounded-full bg-indigo-500/20 p-6 backdrop-blur-sm border border-indigo-500/30">
+                          <Monitor className="h-12 w-12 text-indigo-300" />
+                        </div>
                       </div>
-                      <p className="text-xs sm:text-sm text-amber-800 leading-relaxed">
+                      <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+                        Demo optimizada para escritorio
+                      </h3>
+                      <p className="text-base text-gray-300 mb-6 leading-relaxed">
                         Esta demo está diseñada para pantallas de escritorio. En dispositivos móviles puede verse de manera incorrecta. 
-                        Para una mejor experiencia, accede desde un ordenador o tablet en modo horizontal.
+                        Por favor, accede desde un ordenador o tablet en modo horizontal para explorar la demo completa.
                       </p>
+                      <div className="bg-white/5 backdrop-blur-md rounded-xl border border-white/10 p-4 mb-6">
+                        <p className="text-gray-400 text-sm">
+                          La herramienta completa está optimizada para escritorio y ofrece la mejor experiencia en pantallas grandes.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </>
               )}
               
               <DemoProvider>
