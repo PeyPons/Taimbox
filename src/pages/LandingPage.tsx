@@ -38,8 +38,12 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Helmet } from 'react-helmet-async';
 import { cn } from '@/lib/utils';
 import { CalendarPreview } from '@/components/landing/CalendarPreview';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Monitor, AlertCircle } from 'lucide-react';
 
 export default function LandingPage() {
+  const isMobile = useIsMobile();
+  
   return (
     <>
       <Helmet>
@@ -905,6 +909,27 @@ export default function LandingPage() {
             </div>
             
             <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-indigo-200/50 shadow-2xl overflow-hidden relative">
+              {/* Aviso mobile - Solo visible en dispositivos móviles */}
+              {isMobile && (
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-b-2 border-amber-200 p-4 sm:p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-full bg-amber-100 p-2 shrink-0">
+                      <Monitor className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <AlertCircle className="h-4 w-4 text-amber-600" />
+                        <h3 className="font-semibold text-amber-900 text-sm">Optimizado para escritorio</h3>
+                      </div>
+                      <p className="text-xs sm:text-sm text-amber-800 leading-relaxed">
+                        Esta demo está diseñada para pantallas de escritorio. En dispositivos móviles puede verse de manera incorrecta. 
+                        Para una mejor experiencia, accede desde un ordenador o tablet en modo horizontal.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <DemoProvider>
                 <Tabs defaultValue="dashboard" className="w-full">
                   <TabsList className="w-full justify-start h-auto p-1 bg-indigo-50/50 border-b border-indigo-200/50 rounded-none rounded-t-xl">
