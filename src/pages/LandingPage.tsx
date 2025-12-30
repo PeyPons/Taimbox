@@ -21,12 +21,20 @@ import {
   Activity,
   Bell,
   Shield,
-  GitBranch
+  GitBranch,
+  Lock,
+  Database,
+  Download,
+  HelpCircle,
+  Plug,
+  Code,
+  FileDown
 } from 'lucide-react';
 import { DemoDashboard } from '@/components/demo/DemoDashboard';
 import { DemoDeadlinesPage } from '@/components/demo/DemoDeadlinesPage';
 import { DemoProvider } from '@/contexts/DemoContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Helmet } from 'react-helmet-async';
 import { cn } from '@/lib/utils';
 import { CalendarPreview } from '@/components/landing/CalendarPreview';
@@ -380,6 +388,95 @@ export default function LandingPage() {
           </div>
         </div>
 
+        {/* Sección de Integraciones */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
+          <div className="text-center mb-8 sm:mb-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/20 backdrop-blur-sm rounded-full text-indigo-200 text-sm font-medium mb-3 sm:mb-4 border border-indigo-400/30">
+              <Plug className="h-4 w-4" />
+              <span>Integraciones y exportación</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 sm:mb-5 px-4">
+              <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
+                Conecta con tu flujo de trabajo
+              </span>
+            </h2>
+            <p className="text-base sm:text-lg text-white/90 max-w-2xl mx-auto px-4">
+              Exporta datos, integra con tus herramientas y mantén todo sincronizado
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+            <Card className="border-2 border-indigo-500/30 bg-indigo-500/10 backdrop-blur-xl">
+              <CardContent className="p-5 sm:p-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center mb-4">
+                  <Download className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-3">Exportación de datos</h3>
+                <ul className="text-white/90 text-sm space-y-1.5">
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-indigo-300 mt-0.5">•</span>
+                    <span>Exporta reportes en múltiples formatos</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-indigo-300 mt-0.5">•</span>
+                    <span>Datos históricos completos</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-indigo-300 mt-0.5">•</span>
+                    <span>Integra con hojas de cálculo</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-purple-500/30 bg-purple-500/10 backdrop-blur-xl">
+              <CardContent className="p-5 sm:p-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mb-4">
+                  <Code className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-3">API disponible</h3>
+                <ul className="text-white/90 text-sm space-y-1.5">
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-purple-300 mt-0.5">•</span>
+                    <span>API REST para integraciones personalizadas</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-purple-300 mt-0.5">•</span>
+                    <span>Acceso programático a tus datos</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-purple-300 mt-0.5">•</span>
+                    <span>Documentación completa incluida</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-blue-500/30 bg-blue-500/10 backdrop-blur-xl">
+              <CardContent className="p-5 sm:p-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mb-4">
+                  <Calendar className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-3">Sincronización</h3>
+                <ul className="text-white/90 text-sm space-y-1.5">
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-blue-300 mt-0.5">•</span>
+                    <span>Sincroniza con calendarios externos</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-blue-300 mt-0.5">•</span>
+                    <span>Actualizaciones en tiempo real</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-blue-300 mt-0.5">•</span>
+                    <span>Preparado para futuras integraciones</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
         {/* Sección de Problemas y Soluciones */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
           <div className="text-center mb-12 sm:mb-16">
@@ -593,6 +690,110 @@ export default function LandingPage() {
           </div>
         </div>
 
+        {/* Sección de Seguridad y Privacidad */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
+          <div className="text-center mb-8 sm:mb-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/20 backdrop-blur-sm rounded-full text-emerald-200 text-sm font-medium mb-3 sm:mb-4 border border-emerald-400/30">
+              <Shield className="h-4 w-4" />
+              <span>Seguridad y privacidad</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 sm:mb-5 px-4">
+              <span className="bg-gradient-to-r from-emerald-200 via-teal-200 to-emerald-200 bg-clip-text text-transparent">
+                Tus datos están protegidos
+              </span>
+            </h2>
+            <p className="text-base sm:text-lg text-white/90 max-w-2xl mx-auto px-4">
+              Cumplimos con los más altos estándares de seguridad y privacidad
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 mb-8">
+            <Card className="border-2 border-emerald-500/30 bg-emerald-500/10 backdrop-blur-xl">
+              <CardContent className="p-5 sm:p-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-4">
+                  <Lock className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-3">Encriptación de datos</h3>
+                <ul className="text-white/90 text-sm space-y-1.5">
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Datos encriptados en tránsito y en reposo</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Protocolos de seguridad avanzados</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Certificaciones de seguridad</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-emerald-500/30 bg-emerald-500/10 backdrop-blur-xl">
+              <CardContent className="p-5 sm:p-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-4">
+                  <Shield className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-3">Cumplimiento GDPR</h3>
+                <ul className="text-white/90 text-sm space-y-1.5">
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Totalmente compatible con GDPR</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Control total sobre tus datos</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Derecho al olvido garantizado</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-emerald-500/30 bg-emerald-500/10 backdrop-blur-xl">
+              <CardContent className="p-5 sm:p-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-4">
+                  <Database className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-3">Control de acceso</h3>
+                <ul className="text-white/90 text-sm space-y-1.5">
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Permisos granulares por usuario</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Autenticación segura</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Respaldo automático de datos</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="text-center">
+            <Button
+              size="lg"
+              variant="outline"
+              className="bg-emerald-500/10 border-2 border-emerald-400/30 text-white hover:bg-emerald-500/20 hover:border-emerald-400/50 px-8 py-6 text-lg font-semibold backdrop-blur-md"
+              onClick={() => {
+                const demoSection = document.getElementById('demo');
+                demoSection?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              Más información sobre seguridad
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
         {/* Demo Section */}
         <div id="demo" className="bg-white/5 backdrop-blur-sm border-t border-indigo-500/20 py-12 sm:py-16 md:py-20 relative">
           {/* Botón flotante para deadlines */}
@@ -799,6 +1000,127 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Sección FAQ */}
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
+          <div className="text-center mb-8 sm:mb-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/20 backdrop-blur-sm rounded-full text-indigo-200 text-sm font-medium mb-3 sm:mb-4 border border-indigo-400/30">
+              <HelpCircle className="h-4 w-4" />
+              <span>Preguntas frecuentes</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 sm:mb-5 px-4">
+              <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
+                Resolvemos tus dudas
+              </span>
+            </h2>
+            <p className="text-base sm:text-lg text-white/90 max-w-2xl mx-auto px-4">
+              Todo lo que necesitas saber sobre nuestra plataforma
+            </p>
+          </div>
+
+          <Card className="border-2 border-white/10 bg-white/5 backdrop-blur-xl">
+            <CardContent className="p-4 sm:p-6">
+              <Accordion type="single" collapsible className="w-full space-y-2">
+                <AccordionItem value="item-1" className="border-b border-white/10">
+                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
+                    <div className="flex items-center gap-3">
+                      <HelpCircle className="h-5 w-5 text-indigo-300 shrink-0" />
+                      <span className="font-semibold">¿Cómo funciona la plataforma?</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
+                    Nuestra plataforma te permite visualizar y gestionar la carga de trabajo de tu equipo en tiempo real. 
+                    Puedes planificar tareas, establecer deadlines, gestionar dependencias y recibir alertas automáticas 
+                    cuando detectamos sobrecargas o problemas. Todo desde una interfaz visual e intuitiva que no requiere 
+                    instalación adicional.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="item-2" className="border-b border-white/10">
+                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
+                    <div className="flex items-center gap-3">
+                      <HelpCircle className="h-5 w-5 text-indigo-300 shrink-0" />
+                      <span className="font-semibold">¿Necesito instalar algo?</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
+                    No, nuestra plataforma es completamente web-based. Solo necesitas un navegador moderno y acceso a internet. 
+                    Funciona en cualquier dispositivo: ordenador, tablet o móvil. No requiere instalación de software ni 
+                    configuraciones complicadas.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="item-3" className="border-b border-white/10">
+                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
+                    <div className="flex items-center gap-3">
+                      <HelpCircle className="h-5 w-5 text-indigo-300 shrink-0" />
+                      <span className="font-semibold">¿Es seguro mis datos?</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
+                    Absolutamente. Utilizamos encriptación de extremo a extremo para proteger tus datos tanto en tránsito 
+                    como en reposo. Cumplimos con GDPR y todos los estándares de seguridad internacionales. Tienes control 
+                    total sobre tus datos y puedes exportarlos o eliminarlos en cualquier momento.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="item-4" className="border-b border-white/10">
+                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
+                    <div className="flex items-center gap-3">
+                      <HelpCircle className="h-5 w-5 text-indigo-300 shrink-0" />
+                      <span className="font-semibold">¿Puedo integrarlo con otras herramientas?</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
+                    Sí, ofrecemos una API REST completa que te permite integrar la plataforma con tus herramientas existentes. 
+                    También puedes exportar datos en múltiples formatos para trabajar con hojas de cálculo u otros sistemas. 
+                    Estamos trabajando en integraciones nativas con herramientas populares.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="item-5" className="border-b border-white/10">
+                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
+                    <div className="flex items-center gap-3">
+                      <HelpCircle className="h-5 w-5 text-indigo-300 shrink-0" />
+                      <span className="font-semibold">¿Cuánto tiempo toma implementarlo?</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
+                    La plataforma está lista para usar desde el primer día. Puedes empezar a añadir tu equipo y proyectos 
+                    inmediatamente. La curva de aprendizaje es mínima gracias a nuestra interfaz intuitiva. La mayoría de 
+                    los equipos están completamente operativos en menos de una semana.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="item-6" className="border-b-0">
+                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
+                    <div className="flex items-center gap-3">
+                      <HelpCircle className="h-5 w-5 text-indigo-300 shrink-0" />
+                      <span className="font-semibold">¿Hay soporte técnico?</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
+                    Sí, ofrecemos soporte técnico completo. Puedes contactarnos por email y nuestro equipo te ayudará con 
+                    cualquier duda o problema. También tenemos documentación completa, tutoriales y una comunidad activa 
+                    donde puedes encontrar respuestas y compartir experiencias.
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </CardContent>
+          </Card>
+
+          <div className="text-center mt-8">
+            <Link to="/login">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-6 text-lg font-semibold shadow-2xl"
+              >
+                Empezar ahora
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
           </div>
         </div>
 
