@@ -512,6 +512,111 @@ export default function LandingPage() {
           </div>
         </div>
 
+        {/* Casos de Uso y Beneficios */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-28">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-6 px-4">
+              <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
+                Para equipos que valoran su tiempo
+              </span>
+            </h2>
+            <p className="text-lg sm:text-xl text-indigo-200/80 max-w-3xl mx-auto px-4 leading-relaxed">
+              Ya sea que gestiones un equipo SEO, desarrolladores, diseñadores o cualquier equipo que necesite 
+              coordinar trabajo, nuestra plataforma se adapta a tus necesidades.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            <Card className="border-2 border-indigo-500/30 bg-indigo-500/10 backdrop-blur-xl">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center mb-4">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">Para Líderes de Equipo</h3>
+                <p className="text-indigo-200/80 text-sm leading-relaxed mb-4">
+                  Toma decisiones informadas sobre la distribución de trabajo. Identifica quién necesita ayuda 
+                  y quién puede asumir más responsabilidades. Reduce las reuniones de coordinación en un 70%.
+                </p>
+                <ul className="space-y-2 text-xs text-indigo-200/70">
+                  <li>• Visibilidad completa del equipo</li>
+                  <li>• Alertas de sobrecarga automáticas</li>
+                  <li>• Sugerencias de redistribución</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-purple-500/30 bg-purple-500/10 backdrop-blur-xl">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mb-4">
+                  <Target className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">Para Project Managers</h3>
+                <p className="text-indigo-200/80 text-sm leading-relaxed mb-4">
+                  Gestiona múltiples proyectos simultáneamente sin perder el control. Visualiza dependencias, 
+                  identifica cuellos de botella y asegúrate de que los deadlines se cumplan.
+                </p>
+                <ul className="space-y-2 text-xs text-indigo-200/70">
+                  <li>• Gestión de múltiples proyectos</li>
+                  <li>• Control de presupuestos y horas</li>
+                  <li>• Seguimiento de deadlines</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-emerald-500/30 bg-emerald-500/10 backdrop-blur-xl">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-4">
+                  <BarChart3 className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">Para Empleados</h3>
+                <p className="text-indigo-200/80 text-sm leading-relaxed mb-4">
+                  Ve tu carga de trabajo de forma clara, entiende tus prioridades y gestiona tus tareas de manera eficiente. 
+                  Sabes exactamente qué hacer y cuándo hacerlo.
+                </p>
+                <ul className="space-y-2 text-xs text-indigo-200/70">
+                  <li>• Vista clara de tus tareas</li>
+                  <li>• Priorización automática</li>
+                  <li>• Seguimiento de tu progreso</li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-indigo-500/20 rounded-2xl border border-indigo-400/30 p-8 backdrop-blur-xl">
+            <div className="text-center">
+              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+                Resultados que hablan por sí solos
+              </h3>
+              <div className="grid md:grid-cols-3 gap-6 mt-8">
+                <div>
+                  <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-300 mb-2">
+                    70%
+                  </div>
+                  <p className="text-indigo-200/80 text-sm">
+                    Reducción en reuniones de coordinación
+                  </p>
+                </div>
+                <div>
+                  <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-pink-300 mb-2">
+                    85%
+                  </div>
+                  <p className="text-indigo-200/80 text-sm">
+                    Mejora en precisión de estimaciones
+                  </p>
+                </div>
+                <div>
+                  <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-300 to-amber-300 mb-2">
+                    60%
+                  </div>
+                  <p className="text-indigo-200/80 text-sm">
+                    Menos sobrecargas detectadas a tiempo
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* CTA Section mejorado */}
         <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 py-16 sm:py-20 md:py-24 relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.15),transparent_70%)] -z-10" />
