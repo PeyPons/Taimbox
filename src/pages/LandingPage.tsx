@@ -29,6 +29,7 @@ import { DemoProvider } from '@/contexts/DemoContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Helmet } from 'react-helmet-async';
 import { cn } from '@/lib/utils';
+import { CalendarPreview } from '@/components/landing/CalendarPreview';
 
 export default function LandingPage() {
   return (
@@ -113,88 +114,23 @@ export default function LandingPage() {
                 </Button>
               </div>
 
-              {/* Preview visual mejorado - Dashboard en miniatura */}
-              <div className="relative mt-12 sm:mt-16">
+              {/* Preview visual - Calendario completo */}
+              <div className="relative mt-12 sm:mt-16 max-w-5xl mx-auto">
                 <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/50 to-transparent -z-10" />
-                <div className="relative bg-gradient-to-br from-white/10 via-white/5 to-white/10 backdrop-blur-2xl rounded-3xl border border-white/20 p-6 sm:p-8 md:p-10 shadow-2xl transform hover:scale-[1.01] transition-all duration-500 hover:shadow-indigo-500/20">
-                  <div className="mb-6 text-center">
-                    <h3 className="text-base sm:text-lg font-bold text-white mb-1">
-                      Vista previa interactiva
-                    </h3>
-                    <p className="text-xs sm:text-sm text-indigo-200/70">
-                      Así se ve tu dashboard en acción
-                    </p>
-                  </div>
-                  
-                  {/* Mini dashboard */}
-                  <div className="space-y-3">
-                    {/* Header simulado */}
-                    <div className="flex items-center justify-between p-2 bg-white/10 rounded-lg border border-white/10">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400" />
-                        <div className="text-xs font-semibold text-white">María González</div>
-                      </div>
-                      <Badge className="bg-emerald-500/20 text-emerald-200 border-emerald-400/30 text-[10px]">
-                        85% carga
-                      </Badge>
-                    </div>
-                    
-                    {/* Semana simulada */}
-                    <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-                      {['L', 'M', 'X', 'J', 'V'].map((day, i) => {
-                        const hours = [8, 6, 7, 8, 5][i];
-                        const percentage = [100, 75, 87, 100, 62][i];
-                        const status = percentage > 90 ? 'overload' : percentage > 70 ? 'warning' : 'healthy';
-                        
-                        return (
-                          <div key={day} className="flex flex-col items-center gap-1.5">
-                            <div className="text-[9px] sm:text-[10px] font-bold text-indigo-300/80 uppercase">
-                              {day}
-                            </div>
-                            <div className={cn(
-                              "w-full aspect-square rounded-lg border-2 flex flex-col items-center justify-center backdrop-blur-sm relative overflow-hidden group transition-all",
-                              status === 'overload' ? "bg-red-500/20 border-red-400/40" :
-                              status === 'warning' ? "bg-amber-500/20 border-amber-400/40" :
-                              "bg-emerald-500/20 border-emerald-400/40"
-                            )}>
-                              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                              <div className="text-[9px] sm:text-[10px] font-bold text-white relative z-10">
-                                {hours}h
-                              </div>
-                              <div className="absolute bottom-0.5 left-0.5 right-0.5 h-0.5 bg-white/20 rounded-full overflow-hidden">
-                                <div 
-                                  className={cn(
-                                    "h-full rounded-full transition-all",
-                                    status === 'overload' ? "bg-red-400" :
-                                    status === 'warning' ? "bg-amber-400" :
-                                    "bg-emerald-400"
-                                  )}
-                                  style={{ width: `${percentage}%` }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    
-                    {/* Info adicional */}
-                    <div className="flex items-center justify-center gap-4 pt-2 border-t border-white/10">
-                      <div className="text-center">
-                        <div className="text-xs font-bold text-white">4</div>
-                        <div className="text-[10px] text-indigo-200/70">Proyectos</div>
-                      </div>
-                      <div className="h-4 w-px bg-white/20" />
-                      <div className="text-center">
-                        <div className="text-xs font-bold text-white">12</div>
-                        <div className="text-[10px] text-indigo-200/70">Tareas</div>
-                      </div>
-                      <div className="h-4 w-px bg-white/20" />
-                      <div className="text-center">
-                        <div className="text-xs font-bold text-emerald-300">2</div>
-                        <div className="text-[10px] text-indigo-200/70">Dependencias</div>
-                      </div>
-                    </div>
+                <div className="relative transform hover:scale-[1.01] transition-all duration-500">
+                  <CalendarPreview />
+                  <div className="mt-4 text-center">
+                    <Button
+                      variant="outline"
+                      className="bg-white/10 backdrop-blur-md border-white/30 text-white hover:bg-white/20 hover:border-white/50"
+                      onClick={() => {
+                        const demoSection = document.getElementById('demo');
+                        demoSection?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                    >
+                      Ver demo completo
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -202,7 +138,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Features Section - Rediseñado */}
+        {/* Features Section - Rediseñado con copywriting expandido */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-28">
           <div className="text-center mb-12 sm:mb-16 md:mb-20">
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4 sm:mb-6 px-4">
@@ -210,8 +146,14 @@ export default function LandingPage() {
                 Todo en un vistazo
               </span>
             </h2>
-            <p className="text-lg sm:text-xl md:text-2xl text-indigo-200/80 max-w-3xl mx-auto px-4 font-light">
+            <p className="text-lg sm:text-xl md:text-2xl text-indigo-200/80 max-w-3xl mx-auto px-4 font-light mb-6">
               Sin complicaciones. Sin perder tiempo. Solo resultados.
+            </p>
+            <p className="text-base sm:text-lg text-indigo-200/70 max-w-4xl mx-auto px-4 leading-relaxed">
+              Olvídate de las hojas de cálculo interminables y las reuniones para coordinar quién hace qué. 
+              Nuestra plataforma te muestra en tiempo real la carga de trabajo de cada miembro del equipo, 
+              identifica sobrecargas antes de que ocurran y te ayuda a tomar decisiones informadas sobre 
+              la distribución de recursos. Todo en una interfaz visual e intuitiva que tu equipo adoptará desde el primer día.
             </p>
           </div>
           
@@ -227,7 +169,9 @@ export default function LandingPage() {
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Calendario Visual</h3>
                   <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
-                    Carga de trabajo del equipo en tiempo real
+                    Visualiza la carga de trabajo de todo tu equipo en un calendario semanal y mensual. 
+                    Identifica sobrecargas, subcargas y oportunidades de redistribución al instante. 
+                    Cada semana muestra horas estimadas, reales y computadas con códigos de color intuitivos.
                   </p>
                 </CardContent>
               </Card>
@@ -243,7 +187,9 @@ export default function LandingPage() {
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Dependencias</h3>
                   <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
-                    Gestiona bloqueos entre tareas
+                    Define qué tareas dependen de otras y visualiza el flujo de trabajo completo. 
+                    Recibe alertas cuando una tarea bloquea a otras, prioriza automáticamente las tareas críticas 
+                    y asegúrate de que tu equipo siempre sepa qué hacer primero.
                   </p>
                 </CardContent>
               </Card>
@@ -259,7 +205,9 @@ export default function LandingPage() {
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Deadlines</h3>
                   <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
-                    Objetivos mensuales y coherencia
+                    Establece objetivos mensuales de horas por proyecto y empleado. Compara lo planificado 
+                    con lo realmente ejecutado y detecta desviaciones antes de que se conviertan en problemas. 
+                    Mantén la coherencia entre lo que prometes y lo que entregas.
                   </p>
                 </CardContent>
               </Card>
@@ -275,7 +223,8 @@ export default function LandingPage() {
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Métricas</h3>
                   <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
-                    Precisión, balance y fiabilidad
+                    Mide la precisión de tu planificación, el balance motivacional del equipo y el índice de fiabilidad. 
+                    Descubre patrones, mejora tus estimaciones y toma decisiones basadas en datos reales, no en intuiciones.
                   </p>
                 </CardContent>
               </Card>
@@ -347,6 +296,177 @@ export default function LandingPage() {
           </div>
         </div>
 
+        {/* Sección de Problemas y Soluciones */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-28">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-6 px-4">
+              <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
+                ¿Cansado de gestionar el tiempo a ciegas?
+              </span>
+            </h2>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-8 mb-12">
+            <Card className="border-2 border-red-500/30 bg-red-500/10 backdrop-blur-xl">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <AlertTriangle className="h-8 w-8 text-red-400" />
+                  <h3 className="text-xl font-bold text-white">Los Problemas</h3>
+                </div>
+                <ul className="space-y-3 text-indigo-200/90">
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400 mt-1">✗</span>
+                    <span>No sabes quién está sobrecargado hasta que es demasiado tarde</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400 mt-1">✗</span>
+                    <span>Las estimaciones nunca coinciden con la realidad</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400 mt-1">✗</span>
+                    <span>Las dependencias entre tareas causan bloqueos inesperados</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400 mt-1">✗</span>
+                    <span>Reuniones interminables para coordinar quién hace qué</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400 mt-1">✗</span>
+                    <span>No tienes visibilidad de la carga real del equipo</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-emerald-500/30 bg-emerald-500/10 backdrop-blur-xl">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <CheckCircle2 className="h-8 w-8 text-emerald-400" />
+                  <h3 className="text-xl font-bold text-white">Nuestra Solución</h3>
+                </div>
+                <ul className="space-y-3 text-indigo-200/90">
+                  <li className="flex items-start gap-2">
+                    <span className="text-emerald-400 mt-1">✓</span>
+                    <span>Visualización en tiempo real de la carga de cada miembro</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-emerald-400 mt-1">✓</span>
+                    <span>Comparación automática entre estimado, real y computado</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-emerald-400 mt-1">✓</span>
+                    <span>Gestión visual de dependencias con alertas inteligentes</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-emerald-400 mt-1">✓</span>
+                    <span>Dashboard centralizado que elimina la necesidad de reuniones</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-emerald-400 mt-1">✓</span>
+                    <span>Métricas que te ayudan a mejorar tu planificación</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="text-center">
+            <Button
+              size="lg"
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-6 text-lg font-semibold shadow-2xl"
+              onClick={() => {
+                const demoSection = document.getElementById('demo');
+                demoSection?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              Ver cómo funciona
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Sección específica de Deadlines */}
+        <div className="relative z-10 bg-gradient-to-br from-amber-950/30 via-orange-950/30 to-amber-950/30 border-y border-amber-500/20 py-16 sm:py-20 md:py-28">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/20 backdrop-blur-sm rounded-full text-amber-200 text-sm font-medium mb-4 border border-amber-400/30">
+                <Target className="h-4 w-4" />
+                <span>Gestión de Deadlines</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-6 px-4">
+                <span className="bg-gradient-to-r from-amber-200 via-orange-200 to-amber-200 bg-clip-text text-transparent">
+                  Cumple tus compromisos, siempre
+                </span>
+              </h2>
+              <p className="text-lg sm:text-xl text-indigo-200/80 max-w-3xl mx-auto px-4 leading-relaxed">
+                Los deadlines no son solo números en una hoja de cálculo. Son compromisos con tus clientes 
+                y tu equipo. Nuestra plataforma te ayuda a establecer objetivos realistas, monitorear el progreso 
+                en tiempo real y detectar desviaciones antes de que se conviertan en problemas.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6 mb-12">
+              <Card className="border-2 border-amber-500/30 bg-amber-500/10 backdrop-blur-xl">
+                <CardContent className="p-6">
+                  <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mb-4">
+                    <Target className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-3">Objetivos Mensuales</h3>
+                  <p className="text-indigo-200/80 text-sm leading-relaxed">
+                    Establece objetivos de horas por proyecto y empleado para cada mes. 
+                    Visualiza la distribución de carga y asegúrate de que todos tengan objetivos alcanzables.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-amber-500/30 bg-amber-500/10 backdrop-blur-xl">
+                <CardContent className="p-6">
+                  <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mb-4">
+                    <Activity className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-3">Coherencia de Planificación</h3>
+                  <p className="text-indigo-200/80 text-sm leading-relaxed">
+                    Compara lo que planificaste con lo que realmente se ejecutó. Identifica patrones, 
+                    mejora tus estimaciones y mantén la coherencia entre lo prometido y lo entregado.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-amber-500/30 bg-amber-500/10 backdrop-blur-xl">
+                <CardContent className="p-6">
+                  <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mb-4">
+                    <TrendingUp className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-3">Sugerencias Inteligentes</h3>
+                  <p className="text-indigo-200/80 text-sm leading-relaxed">
+                    Recibe sugerencias automáticas de redistribución de horas cuando detectamos desequilibrios. 
+                    Optimiza la carga del equipo y maximiza la productividad sin sobrecargar a nadie.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="text-center">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-8 py-6 text-lg font-semibold shadow-2xl"
+                onClick={() => {
+                  const demoSection = document.getElementById('demo');
+                  demoSection?.scrollIntoView({ behavior: 'smooth' });
+                  // Cambiar a tab de deadlines después de un pequeño delay
+                  setTimeout(() => {
+                    const deadlinesTab = document.querySelector('[value="deadlines"]') as HTMLElement;
+                    deadlinesTab?.click();
+                  }, 500);
+                }}
+              >
+                Ver demo de Deadlines
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
         {/* Demo Section */}
         <div id="demo" className="bg-white/5 backdrop-blur-sm border-t border-indigo-500/20 py-12 sm:py-16 md:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -356,11 +476,16 @@ export default function LandingPage() {
                 <span>Demo Interactivo</span>
               </div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4 px-4">
-                Explora la plataforma
+                Explora la plataforma en acción
               </h2>
-              <p className="text-base sm:text-lg md:text-xl text-indigo-200 max-w-2xl mx-auto px-4">
-                Descubre cómo funciona nuestra plataforma con datos de ejemplo. 
-                Explora diferentes escenarios: equipos equilibrados, sobrecargas y optimizaciones.
+              <p className="text-base sm:text-lg md:text-xl text-indigo-200 max-w-3xl mx-auto px-4 mb-4">
+                Descubre cómo funciona nuestra plataforma con datos de ejemplo realistas. 
+                Explora diferentes escenarios: equipos equilibrados, sobrecargas, optimizaciones y más.
+              </p>
+              <p className="text-sm sm:text-base text-indigo-200/70 max-w-2xl mx-auto px-4">
+                Navega por el dashboard del empleado, gestiona deadlines mensuales, visualiza dependencias 
+                entre tareas y descubre cómo nuestras métricas te ayudan a tomar mejores decisiones. 
+                Todo con datos simulados que reflejan situaciones reales que enfrentas día a día.
               </p>
             </div>
             
