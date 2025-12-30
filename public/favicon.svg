@@ -1,13 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="url(#favicon-gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
   <defs>
-    <linearGradient id="favicon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stopColor="#6366f1" />
+      <stop offset="50%" stopColor="#8b5cf6" />
       <stop offset="100%" stopColor="#a855f7" />
     </linearGradient>
+    <linearGradient id="accent-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#fbbf24" />
+      <stop offset="100%" stopColor="#f59e0b" />
+    </linearGradient>
+    <linearGradient id="highlight-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#ec4899" />
+      <stop offset="100%" stopColor="#f472b6" />
+    </linearGradient>
   </defs>
-  <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path>
-  <path d="M20 3v4"></path>
-  <path d="M22 5h-4"></path>
-  <path d="M4 17v2"></path>
-  <path d="M5 18H3"></path>
+  
+  <!-- Fondo con gradiente -->
+  <rect width="32" height="32" rx="6" fill="url(#bg-gradient)" />
+  
+  <!-- Calendario base -->
+  <rect x="6" y="8" width="20" height="18" rx="2" fill="white" fillOpacity="0.2" />
+  <line x1="6" y1="14" x2="26" y2="14" stroke="white" strokeWidth="1.5" strokeOpacity="0.3" />
+  
+  <!-- Días del calendario (puntos representando días) -->
+  <circle cx="10" cy="11" r="1.5" fill="white" fillOpacity="0.6" />
+  <circle cx="16" cy="11" r="1.5" fill="white" fillOpacity="0.6" />
+  <circle cx="22" cy="11" r="1.5" fill="white" fillOpacity="0.6" />
+  
+  <!-- Barras de carga/progreso (representando gestión de tiempo) -->
+  <rect x="8" y="17" width="12" height="2" rx="1" fill="url(#accent-gradient)" />
+  <rect x="8" y="20" width="8" height="2" rx="1" fill="url(#accent-gradient)" fillOpacity="0.7" />
+  <rect x="8" y="23" width="14" height="2" rx="1" fill="url(#accent-gradient)" fillOpacity="0.5" />
+  
+  <!-- Estrella/sparkle principal (representando calidad/precisión) -->
+  <path d="M24 6 L25.5 9.5 L29 11 L25.5 12.5 L24 16 L22.5 12.5 L19 11 L22.5 9.5 Z" 
+        fill="url(#highlight-gradient)" />
+  
+  <!-- Pequeñas estrellas decorativas -->
+  <circle cx="4" cy="6" r="1" fill="#fbbf24" />
+  <circle cx="28" cy="20" r="0.8" fill="#ec4899" />
+  <circle cx="3" cy="24" r="0.8" fill="#60a5fa" />
+  
+  <!-- Icono de equipo/usuarios pequeños -->
+  <circle cx="20" cy="20" r="2" fill="white" fillOpacity="0.8" />
+  <circle cx="23" cy="20" r="2" fill="white" fillOpacity="0.6" />
+  
+  <!-- Líneas de conexión (dependencias) -->
+  <line x1="20" y1="20" x2="23" y2="20" stroke="white" strokeWidth="0.8" strokeOpacity="0.4" />
 </svg>
