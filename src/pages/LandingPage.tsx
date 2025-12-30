@@ -36,7 +36,7 @@ export default function LandingPage() {
     <>
       <Helmet>
         <title>Timeboxing - Gestión de Recursos y Planificación</title>
-        <meta name="description" content="Plataforma de gestión de recursos y planificación para equipos SEO. Visualiza, planifica y optimiza el trabajo de tu equipo." />
+        <meta name="description" content="Plataforma de gestión de recursos y planificación para agencias digitales. Visualiza, planifica y optimiza el trabajo de tu equipo." />
       </Helmet>
       
       <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 relative overflow-hidden">
@@ -72,14 +72,15 @@ export default function LandingPage() {
               {/* Título principal con efecto mejorado */}
               <div className="relative mb-6 sm:mb-8">
                 <div className="absolute -inset-8 bg-gradient-to-r from-indigo-600/30 via-purple-600/30 to-pink-600/30 blur-3xl opacity-60 -z-10 animate-pulse" />
-                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black text-white mb-2 sm:mb-4 leading-[1.1] tracking-tight relative">
-                  <span className="block drop-shadow-2xl">El tiempo de tu</span>
-                  <span className="block bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent animate-gradient bg-[length:200%_auto] drop-shadow-lg">
-                    equipo visualizado
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black mb-2 sm:mb-4 leading-[1.1] tracking-tight relative">
+                  <span className="block text-white drop-shadow-2xl">El tiempo de tu</span>
+                  <span className="block relative">
+                    <span className="absolute inset-0 bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 blur-xl opacity-50 animate-pulse" />
+                    <span className="relative bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent animate-gradient bg-[length:200%_auto] drop-shadow-lg">
+                      equipo visualizado
+                    </span>
                   </span>
                 </h1>
-                {/* Efecto de brillo animado */}
-                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 animate-shimmer" />
               </div>
               
               {/* Descripción más impactante */}
@@ -240,7 +241,9 @@ export default function LandingPage() {
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Equipo</h3>
                   <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
-                    Horarios, ausencias y objetivos
+                    Gestiona horarios personalizados por empleado, registra ausencias y vacaciones que se reflejan automáticamente 
+                    en la capacidad, y establece objetivos profesionales individuales. Todo centralizado para una gestión eficiente 
+                    de recursos humanos.
                   </p>
                 </CardContent>
               </Card>
@@ -256,7 +259,9 @@ export default function LandingPage() {
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Proyectos</h3>
                   <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
-                    Control de horas y presupuestos
+                    Controla las horas contratadas por proyecto y compara con lo planificado y ejecutado. Visualiza el estado 
+                    de salud de cada proyecto con alertas cuando te acercas o excedes el presupuesto. Gestiona objetivos y métricas 
+                    en tiempo real para cada cliente.
                   </p>
                 </CardContent>
               </Card>
@@ -272,7 +277,9 @@ export default function LandingPage() {
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Weekly Reports</h3>
                   <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
-                    Bloqueos y redistribuciones
+                    Sistema de cierre semanal que identifica tareas pendientes y bloqueos. Los empleados revisan su trabajo 
+                    semanal y pueden transferir, redistribuir o mantener tareas. Los managers ven un feed completo de 
+                    transferencias y pueden redistribuir horas rápidamente.
                   </p>
                 </CardContent>
               </Card>
@@ -288,7 +295,9 @@ export default function LandingPage() {
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Alertas</h3>
                   <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
-                    Notificaciones inteligentes
+                    Sistema de notificaciones inteligentes que te avisa de sobrecargas, dependencias bloqueantes, proyectos 
+                    en riesgo y desviaciones de deadlines. Recibe alertas contextuales que te ayudan a tomar decisiones 
+                    proactivas antes de que los problemas se agraven.
                   </p>
                 </CardContent>
               </Card>
@@ -468,12 +477,31 @@ export default function LandingPage() {
         </div>
 
         {/* Demo Section */}
-        <div id="demo" className="bg-white/5 backdrop-blur-sm border-t border-indigo-500/20 py-12 sm:py-16 md:py-20">
+        <div id="demo" className="bg-white/5 backdrop-blur-sm border-t border-indigo-500/20 py-12 sm:py-16 md:py-20 relative">
+          {/* Botón flotante para deadlines */}
+          <div className="fixed bottom-6 right-6 z-50 hidden lg:block">
+            <Button
+              size="lg"
+              className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-2xl rounded-full px-6 py-6 h-auto animate-bounce"
+              onClick={() => {
+                const demoSection = document.getElementById('demo');
+                demoSection?.scrollIntoView({ behavior: 'smooth' });
+                setTimeout(() => {
+                  const deadlinesTab = document.querySelector('[value="deadlines"]') as HTMLElement;
+                  deadlinesTab?.click();
+                }, 500);
+              }}
+            >
+              <Target className="h-5 w-5 mr-2" />
+              Ver Deadlines
+            </Button>
+          </div>
+
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-8 sm:mb-10 md:mb-12">
               <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-indigo-500/20 backdrop-blur-sm rounded-full text-indigo-200 text-xs sm:text-sm font-medium mb-3 sm:mb-4 border border-indigo-400/30">
                 <Award className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span>Demo Interactivo</span>
+                <span>Demo interactivo</span>
               </div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4 px-4">
                 Explora la plataforma en acción
@@ -489,15 +517,16 @@ export default function LandingPage() {
               </p>
             </div>
             
-            <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-indigo-200/50 shadow-2xl overflow-hidden">
+            <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-indigo-200/50 shadow-2xl overflow-hidden relative">
               <DemoProvider>
                 <Tabs defaultValue="dashboard" className="w-full">
                   <TabsList className="w-full justify-start h-auto p-1 bg-indigo-50/50 border-b border-indigo-200/50 rounded-none rounded-t-xl">
                     <TabsTrigger value="dashboard" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm">
                       Dashboard
                     </TabsTrigger>
-                    <TabsTrigger value="deadlines" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm">
+                    <TabsTrigger value="deadlines" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm relative">
                       Deadlines
+                      <Badge className="ml-2 bg-amber-500 text-white text-[10px] px-1.5 py-0">Nuevo</Badge>
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent value="dashboard" className="m-0 p-3 sm:p-4 md:p-6">
@@ -512,6 +541,130 @@ export default function LandingPage() {
           </div>
         </div>
 
+        {/* Sección para Managers y Administrativos */}
+        <div className="relative z-10 bg-gradient-to-br from-indigo-950/50 via-purple-950/50 to-indigo-950/50 border-y border-indigo-500/20 py-16 sm:py-20 md:py-28">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12 sm:mb-16">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/20 backdrop-blur-sm rounded-full text-indigo-200 text-sm font-medium mb-4 border border-indigo-400/30">
+                <Users className="h-4 w-4" />
+                <span>Para managers y responsables</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-6 px-4">
+                <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
+                  Control total sobre tu equipo y proyectos
+                </span>
+              </h2>
+              <p className="text-lg sm:text-xl text-indigo-200/80 max-w-3xl mx-auto px-4 leading-relaxed">
+                Como manager o responsable, necesitas visibilidad completa, herramientas de control y métricas que te ayuden 
+                a tomar decisiones estratégicas. Nuestra plataforma está diseñada para darte el poder y la información que necesitas.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8 mb-12">
+              <Card className="border-2 border-indigo-500/30 bg-indigo-500/10 backdrop-blur-xl">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center">
+                      <BarChart3 className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white">Visibilidad completa</h3>
+                  </div>
+                  <ul className="space-y-3 text-indigo-200/90 text-sm">
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-400 mt-1">•</span>
+                      <span>Vista panorámica de toda la carga del equipo en tiempo real</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-400 mt-1">•</span>
+                      <span>Acceso al planificador mensual con todas las asignaciones</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-400 mt-1">•</span>
+                      <span>Reportes detallados de ocupación, rentabilidad y fiabilidad</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-400 mt-1">•</span>
+                      <span>Métricas de coherencia entre deadlines y planificación</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-400 mt-1">•</span>
+                      <span>Dashboard de weekly forecast con semáforo de proyectos</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-purple-500/30 bg-purple-500/10 backdrop-blur-xl">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                      <Zap className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white">Herramientas de control</h3>
+                  </div>
+                  <ul className="space-y-3 text-indigo-200/90 text-sm">
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-400 mt-1">•</span>
+                      <span>Redistribución rápida de horas entre empleados</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-400 mt-1">•</span>
+                      <span>Gestión de deadlines mensuales por proyecto y empleado</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-400 mt-1">•</span>
+                      <span>Control de permisos granulares por usuario</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-400 mt-1">•</span>
+                      <span>Revisión y aprobación de transferencias semanales</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-400 mt-1">•</span>
+                      <span>Configuración de horarios, ausencias y eventos de equipo</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-indigo-500/20 rounded-2xl border border-indigo-400/30 p-8 backdrop-blur-xl">
+              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-6 text-center">
+                Ventajas específicas para tu rol
+              </h3>
+              <div className="grid md:grid-cols-3 gap-6">
+                <div>
+                  <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-300 mb-2">
+                    Toma decisiones informadas
+                  </div>
+                  <p className="text-indigo-200/80 text-sm leading-relaxed">
+                    Con métricas en tiempo real, índices de fiabilidad y análisis de coherencia, 
+                    siempre sabes exactamente qué está pasando en tu equipo.
+                  </p>
+                </div>
+                <div>
+                  <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-pink-300 mb-2">
+                    Optimiza recursos
+                  </div>
+                  <p className="text-indigo-200/80 text-sm leading-relaxed">
+                    Identifica sobrecargas y subcargas al instante. Las sugerencias automáticas 
+                    te ayudan a redistribuir horas de forma equilibrada.
+                  </p>
+                </div>
+                <div>
+                  <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-300 to-amber-300 mb-2">
+                    Reduce reuniones
+                  </div>
+                  <p className="text-indigo-200/80 text-sm leading-relaxed">
+                    El dashboard centralizado y el sistema de weekly eliminan la necesidad de 
+                    reuniones constantes de coordinación. Todo está visible y accesible.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Casos de Uso y Beneficios */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-28">
           <div className="text-center mb-12 sm:mb-16">
@@ -521,7 +674,7 @@ export default function LandingPage() {
               </span>
             </h2>
             <p className="text-lg sm:text-xl text-indigo-200/80 max-w-3xl mx-auto px-4 leading-relaxed">
-              Ya sea que gestiones un equipo SEO, desarrolladores, diseñadores o cualquier equipo que necesite 
+              Ya sea que gestiones un equipo de marketing digital, desarrolladores, diseñadores o cualquier equipo que necesite 
               coordinar trabajo, nuestra plataforma se adapta a tus necesidades.
             </p>
           </div>
@@ -630,7 +783,7 @@ export default function LandingPage() {
             </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4 sm:mb-6 leading-tight">
               ¿Listo para{' '}
-              <span className="bg-gradient-to-r from-yellow-200 via-white to-yellow-200 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
                 transformar
               </span>
               {' '}tu equipo?

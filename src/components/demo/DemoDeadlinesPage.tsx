@@ -13,7 +13,7 @@ import {
   ChevronDown, ChevronRight, ChevronLeft, Search, Eye, EyeOff, Copy, Sparkles, HelpCircle
 } from 'lucide-react';
 import { Deadline } from '@/types';
-import { format, addMonths, subMonths } from 'date-fns';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { demoDeadlines, demoEmployees } from '@/data/demoData';
@@ -21,9 +21,10 @@ import { getMonthlyCapacity as getMonthlyCapacityUtil } from '@/utils/dateUtils'
 
 export function DemoDeadlinesPage() {
   const { projects, clients, employees } = useDemo();
-  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
+  // Mes estático: siempre muestra el mes actual pero las tareas no cambian
+  const staticMonth = useMemo(() => format(new Date(), 'yyyy-MM'), []);
+  const [selectedMonth] = useState(staticMonth);
   const [searchTerm, setSearchTerm] = useState('');
-  const [onlySEO, setOnlySEO] = useState(true);
   const [showHidden, setShowHidden] = useState(false);
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
@@ -34,16 +35,13 @@ export function DemoDeadlinesPage() {
     return new Date(year, month - 1, 1);
   }, [selectedMonth]);
 
+  // Navegación deshabilitada para mantener el mes estático
   const handlePrevMonth = () => {
-    const [year, month] = selectedMonth.split('-').map(Number);
-    const prevDate = subMonths(new Date(year, month - 1, 1), 1);
-    setSelectedMonth(format(prevDate, 'yyyy-MM'));
+    // No hacer nada - mes estático
   };
 
   const handleNextMonth = () => {
-    const [year, month] = selectedMonth.split('-').map(Number);
-    const nextDate = addMonths(new Date(year, month - 1, 1), 1);
-    setSelectedMonth(format(nextDate, 'yyyy-MM'));
+    // No hacer nada - mes estático
   };
 
   // Filtrar deadlines del mes actual
@@ -205,25 +203,12 @@ export function DemoDeadlinesPage() {
           <div className="flex items-center gap-2 w-full sm:w-auto">
             {/* Selector de mes con flechas */}
             <div className="flex items-center gap-1 bg-white rounded-lg p-1 border border-indigo-200/50 shadow-sm flex-1 sm:flex-initial">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-7 w-7 sm:h-8 sm:w-8"
-                onClick={handlePrevMonth}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
               <span className="text-xs sm:text-sm font-medium px-2 min-w-[120px] sm:min-w-[140px] text-center capitalize">
                 {format(currentMonthDate, 'MMMM yyyy', { locale: es })}
               </span>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-7 w-7 sm:h-8 sm:w-8"
-                onClick={handleNextMonth}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+              <Badge variant="outline" className="text-[10px] bg-indigo-50 border-indigo-200 text-indigo-700">
+                Demo
+              </Badge>
             </div>
           </div>
         </div>
@@ -242,14 +227,6 @@ export function DemoDeadlinesPage() {
             </div>
           </div>
           <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <span className="text-slate-600 whitespace-nowrap">Solo SEO</span>
-              <Switch
-                checked={onlySEO}
-                onCheckedChange={setOnlySEO}
-                className="scale-90"
-              />
-            </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <span className="text-slate-600 whitespace-nowrap">Ocultos</span>
               <Switch
