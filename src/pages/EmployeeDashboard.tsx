@@ -29,7 +29,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, CheckCircle2, Plus, X, Check, ListPlus, AlertTriangle, CheckCircle2, HelpCircle, RotateCcw, FileDown, CheckSquare, AlertCircle } from 'lucide-react';
-import { startOfMonth, endOfMonth, max, min, format, startOfWeek, isSameMonth, parseISO, addDays } from 'date-fns';
+import { startOfMonth, endOfMonth, max, min, format, startOfWeek, isSameMonth, parseISO, addDays, isWeekend } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Employee } from '@/types';
 import { toast } from 'sonner';
@@ -645,14 +645,38 @@ export default function EmployeeDashboard() {
           <div style={{ minWidth: '1000px' }}>
             <div className="grid bg-slate-50 border-b" style={{ gridTemplateColumns: gridTemplate }}>
               <div className="px-4 py-3 font-bold text-sm text-slate-700 flex items-center border-r">Mi calendario</div>
-              {weeks.map((week, index) => (
-                <div key={week.weekStart.toISOString()} className="text-center px-1 py-2 border-r flex flex-col justify-center">
-                  <span className="text-xs font-bold uppercase text-slate-500">S{index + 1}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">
-                    {format(week.effectiveStart || week.weekStart, 'd', { locale: es })}-{format(week.effectiveEnd || addDays(week.weekStart, 4), 'd MMM', { locale: es })}
-                  </span>
-                </div>
-              ))}
+              {weeks.map((week, index) => {
+                // Calcular solo días laborables (lun-vie) en el rango efectivo (igual que en AllocationSheet)
+                const effectiveStart = week.effectiveStart || week.weekStart;
+                const effectiveEnd = week.effectiveEnd || addDays(week.weekStart, 6);
+                
+                const workingDays = [];
+                let currentDay = new Date(effectiveStart);
+                while (currentDay <= effectiveEnd) {
+                  const dayOfWeek = currentDay.getDay();
+                  // 1 = lunes, 5 = viernes (0 = domingo, 6 = sábado)
+                  if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                    workingDays.push(new Date(currentDay));
+                  }
+                  currentDay = addDays(currentDay, 1);
+                }
+                
+                // Formatear solo el primer y último día laborable
+                const firstWorkingDay = workingDays[0];
+                const lastWorkingDay = workingDays[workingDays.length - 1];
+                const weekDateLabel = firstWorkingDay && lastWorkingDay 
+                  ? `${format(firstWorkingDay, 'd', { locale: es })}-${format(lastWorkingDay, 'd MMM', { locale: es })}`
+                  : `${format(effectiveStart, 'd', { locale: es })}-${format(effectiveEnd, 'd MMM', { locale: es })}`;
+                
+                return (
+                  <div key={week.weekStart.toISOString()} className="text-center px-1 py-2 border-r flex flex-col justify-center">
+                    <span className="text-xs font-bold uppercase text-slate-500">S{index + 1}</span>
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      {weekDateLabel}
+                    </span>
+                  </div>
+                );
+              })}
               <div className="px-2 py-3 font-bold text-xs text-center flex items-center justify-center">TOTAL MES</div>
             </div>
 
