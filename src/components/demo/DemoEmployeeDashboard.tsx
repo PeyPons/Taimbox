@@ -83,10 +83,10 @@ export function DemoEmployeeDashboard() {
       {/* 3. CALENDARIO - Responsive */}
       <Card className="overflow-hidden border-indigo-200/50 shadow-xl bg-white/90 backdrop-blur-sm relative">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 -z-10" />
-        <div className="overflow-x-auto custom-scrollbar -mx-3 sm:mx-0">
-          <div className="min-w-[800px] sm:min-w-[1000px]">
-            <div className="grid bg-slate-50 border-b" style={{ gridTemplateColumns: gridTemplate }}>
-              <div className="px-4 py-3 font-bold text-sm text-slate-700 flex items-center border-r">Mi calendario</div>
+        <div className="overflow-x-auto custom-scrollbar -mx-3 sm:-mx-4 md:mx-0 px-3 sm:px-4 md:px-0">
+          <div className="min-w-[700px] sm:min-w-[900px] md:min-w-[1000px]">
+            <div className="grid bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-200/50" style={{ gridTemplateColumns: gridTemplate }}>
+              <div className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-xs sm:text-sm text-slate-700 flex items-center border-r border-indigo-200/50">Mi calendario</div>
               {weeks.map((week, index) => {
                 const effectiveStart = week.effectiveStart || week.weekStart;
                 const effectiveEnd = week.effectiveEnd || addDays(week.weekStart, 6);
@@ -108,15 +108,15 @@ export function DemoEmployeeDashboard() {
                   : `${format(effectiveStart, 'd', { locale: es })}-${format(effectiveEnd, 'd MMM', { locale: es })}`;
                 
                 return (
-                  <div key={week.weekStart.toISOString()} className="text-center px-1 py-2 border-r flex flex-col justify-center">
-                    <span className="text-xs font-bold uppercase text-slate-500">S{index + 1}</span>
-                    <span className="text-[10px] text-slate-400 font-medium">
+                  <div key={week.weekStart.toISOString()} className="text-center px-1 sm:px-2 py-1.5 sm:py-2 border-r border-indigo-200/50 flex flex-col justify-center">
+                    <span className="text-[10px] sm:text-xs font-bold uppercase text-indigo-600">S{index + 1}</span>
+                    <span className="text-[9px] sm:text-[10px] text-slate-500 font-medium">
                       {weekDateLabel}
                     </span>
                   </div>
                 );
               })}
-              <div className="px-2 py-3 font-bold text-xs text-center flex items-center justify-center">TOTAL MES</div>
+              <div className="px-1 sm:px-2 py-2 sm:py-3 font-bold text-[10px] sm:text-xs text-center flex items-center justify-center bg-indigo-50/50">TOTAL MES</div>
             </div>
 
             <div className="grid bg-white" style={{ gridTemplateColumns: gridTemplate }}>

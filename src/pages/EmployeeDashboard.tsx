@@ -651,8 +651,8 @@ export default function EmployeeDashboard() {
       {/* 3. CALENDARIO */}
       <Card className="overflow-hidden border-indigo-200/50 shadow-xl bg-white/90 backdrop-blur-sm relative" data-tour="calendar">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 -z-10" />
-        <div className="overflow-x-auto custom-scrollbar">
-          <div style={{ minWidth: '1000px' }} className="sm:min-w-0">
+        <div className="overflow-x-auto custom-scrollbar -mx-3 sm:-mx-4 md:mx-0 px-3 sm:px-4 md:px-0">
+          <div className="min-w-[700px] sm:min-w-[900px] md:min-w-[1000px]">
             <div className="grid bg-slate-50 border-b" style={{ gridTemplateColumns: gridTemplate }}>
               <div className="px-4 py-3 font-bold text-sm text-slate-700 flex items-center border-r">Mi calendario</div>
               {weeks.map((week, index) => {
