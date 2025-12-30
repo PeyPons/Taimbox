@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MetricsCard } from '@/components/shared/MetricsCard';
 import { format, isSameMonth, parseISO } from 'date-fns';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
@@ -378,19 +379,13 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                     </div>
 
                     {/* Métricas - flex-1 para empujar balance abajo */}
-                    <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t flex-1">
-                      <div className="space-y-0.5">
-                        <p className="text-lg font-bold text-slate-700">{group.myEstimated}h</p>
-                        <p className="text-[10px] text-slate-400 uppercase">Estimado</p>
-                      </div>
-                      <div className="space-y-0.5">
-                        <p className="text-lg font-bold text-blue-600">{group.myReal}h</p>
-                        <p className="text-[10px] text-blue-400 uppercase">Real</p>
-                      </div>
-                      <div className="space-y-0.5">
-                        <p className="text-lg font-bold text-emerald-600">{group.myComputed}h</p>
-                        <p className="text-[10px] text-emerald-400 uppercase">Computado</p>
-                      </div>
+                    <div className="pt-2 border-t flex-1">
+                      <MetricsCard 
+                        estimated={group.myEstimated}
+                        real={group.myReal}
+                        computed={group.myComputed}
+                        size="md"
+                      />
                     </div>
 
                     {/* Balance - siempre al final */}

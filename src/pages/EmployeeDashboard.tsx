@@ -9,7 +9,9 @@ import { CollaborationCards } from '@/components/employee/CollaborationCards';
 import { MonthlyBalanceCard } from '@/components/employee/MonthlyBalanceCard';
 import { WelcomeTour, useWelcomeTour } from '@/components/employee/WelcomeTour';
 import { EmployeeSettings } from '@/components/employee/EmployeeSettings';
+import { LoadIndicator } from '@/components/shared/LoadIndicator';
 import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmployeeRow } from '@/components/planner/EmployeeRow'; 
 import { AllocationSheet } from '@/components/planner/AllocationSheet';
 import { AbsencesSheet } from '@/components/team/AbsencesSheet';
@@ -683,54 +685,67 @@ export default function EmployeeDashboard() {
             <div className="grid bg-white" style={{ gridTemplateColumns: gridTemplate }}>
               <EmployeeRow employee={myEmployeeProfile} weeks={weeks} projects={projects} allocations={allocations} absences={absences} teamEvents={teamEvents} viewDate={currentMonth} onOpenSheet={(empId, date) => setSelectedCell({ employeeId: empId, weekStart: date })} />
               <div className="flex items-center justify-center border-l p-2 bg-slate-50/30">
-                <div className={cn("flex flex-col items-center justify-center w-20 h-14 rounded-lg border", monthlyLoad.percentage > 100 ? "bg-red-50 border-red-200 text-red-700" : "bg-emerald-50 border-emerald-200 text-emerald-700")}>
-                  <span className="text-base font-bold leading-none">{monthlyLoad.hours}h</span>
-                  <span className="text-[10px] opacity-70">/ {monthlyLoad.capacity}h</span>
-                </div>
+                <LoadIndicator 
+                  hours={monthlyLoad.hours} 
+                  capacity={monthlyLoad.capacity} 
+                  percentage={monthlyLoad.percentage}
+                  size="md"
+                />
               </div>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* 4. COLABORADORES Y AYUDA */}
+
+      {/* 4. VISTA DE PROYECTOS Y MÉTRICAS - CON PESTAÑAS */}
+      <Card className="border-slate-200 shadow-sm bg-white" data-tour="projects-summary">
+        <Tabs defaultValue="projects" className="w-full">
+          <TabsList className="w-full justify-start h-auto p-1 bg-slate-50">
+            <TabsTrigger value="projects" className="data-[state=active]:bg-white">
+              Proyectos del mes
+            </TabsTrigger>
+            <TabsTrigger value="metrics" className="data-[state=active]:bg-white">
+              Métricas y análisis
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="projects" className="mt-4">
+            <MyWeekView employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+          </TabsContent>
+          
+          <TabsContent value="metrics" className="mt-4 space-y-6">
+            {/* ALERTAS Y DEPENDENCIAS */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div data-tour="priority-widget">
+                <PriorityInsights employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+              </div>
+              <div data-tour="dependencies-widget">
+                <ProjectTeamPulse employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+              </div>
+            </div>
+
+            {/* BALANCE MOTIVACIONAL */}
+            <div data-tour="monthly-balance">
+              <MonthlyBalanceCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+            </div>
+
+            {/* PRECISIÓN Y COHERENCIA */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div data-tour="reliability-index">
+                <ReliabilityIndexCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+              </div>
+              <div data-tour="planning-inconsistencies">
+                <PlanningInconsistenciesCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </Card>
+
+      {/* 5. COLABORADORES Y AYUDA */}
       <div data-tour="collaboration-cards">
         <CollaborationCards employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
-      </div>
-
-      {/* 5. ALERTAS (izq) + DEPENDENCIAS (der) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div data-tour="priority-widget" className="flex">
-          <div className="w-full">
-            <PriorityInsights employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
-          </div>
-        </div>
-        
-        <div data-tour="dependencies-widget" className="flex">
-          <div className="w-full">
-            <ProjectTeamPulse employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
-          </div>
-        </div>
-      </div>
-
-      {/* 5.5. BALANCE MOTIVACIONAL DEL MES */}
-      <div data-tour="monthly-balance">
-        <MonthlyBalanceCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
-      </div>
-
-      {/* 6. PRECISIÓN DE PLANIFICACIÓN */}
-      <div data-tour="reliability-index">
-        <ReliabilityIndexCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
-      </div>
-
-      {/* 6.5. COHERENCIA DE PLANIFICACIÓN */}
-      <div data-tour="planning-inconsistencies">
-        <PlanningInconsistenciesCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
-      </div>
-
-      {/* 7. PROYECTOS DEL MES */}
-      <div data-tour="projects-summary">
-        <MyWeekView employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
       </div>
 
       {/* MODALES */}
