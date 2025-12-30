@@ -11,6 +11,7 @@ import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { demoEmployees, demoClients, demoProjects, demoAllocations } from '@/data/demoData';
 import { DemoProvider, useDemo } from '@/contexts/DemoContext';
+import { DemoEmployeeDashboard } from './DemoEmployeeDashboard';
 import { cn } from '@/lib/utils';
 import { AlertCircle, Info, Users, Calendar, BarChart3, Target, TrendingUp, TrendingDown, CheckCircle2, Clock } from 'lucide-react';
 
@@ -408,10 +409,11 @@ function DemoDashboardContent() {
   );
 }
 
+// Este componente ya no se usa, se reemplazó por DemoEmployeeDashboard
 export function DemoDashboard() {
   return (
     <DemoProvider>
-      <DemoDashboardContent />
+      <DemoEmployeeDashboard />
     </DemoProvider>
   );
 }

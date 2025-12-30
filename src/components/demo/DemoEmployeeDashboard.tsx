@@ -1,0 +1,206 @@
+import { useState, useMemo, useCallback, useRef } from 'react';
+import { MyWeekView } from '@/components/employee/MyWeekView';
+import { PriorityInsights, ProjectTeamPulse } from '@/components/employee/DashboardWidgets'; 
+import { ReliabilityIndexCard } from '@/components/employee/ReliabilityIndexCard';
+import { PlanningInconsistenciesCard } from '@/components/employee/PlanningInconsistenciesCard';
+import { CollaborationCards } from '@/components/employee/CollaborationCards';
+import { MonthlyBalanceCard } from '@/components/employee/MonthlyBalanceCard';
+import { LoadIndicator } from '@/components/shared/LoadIndicator';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { EmployeeRow } from '@/components/planner/EmployeeRow';
+import { getWeeksForMonth, getMonthName } from '@/utils/dateUtils';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { format, addDays, isWeekend } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { useDemo } from '@/contexts/DemoContext';
+import { AlertCircle, Info } from 'lucide-react';
+
+export function DemoEmployeeDashboard() {
+  const { 
+    employees, allocations, absences, teamEvents, projects, clients,
+    getEmployeeMonthlyLoad, getEmployeeLoadForWeek,
+    currentUser
+  } = useDemo();
+  
+  const demoEmployee = currentUser || employees[0];
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedCell, setSelectedCell] = useState<{ employeeId: string; weekStart: Date } | null>(null);
+  
+  const weeks = useMemo(() => getWeeksForMonth(currentMonth), [currentMonth]);
+  const gridTemplate = `250px repeat(${weeks.length}, minmax(0, 1fr)) 100px`;
+  const monthlyLoad = getEmployeeMonthlyLoad(demoEmployee.id, currentMonth.getFullYear(), currentMonth.getMonth());
+
+  const handlePrevMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  const handleNextMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  const handleToday = () => setCurrentMonth(new Date());
+
+  return (
+    <div className="max-w-7xl mx-auto p-6 space-y-6 pb-20">
+      {/* Banner informativo */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+        <Info className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
+        <div className="flex-1">
+          <p className="text-sm font-medium text-blue-900 mb-1">
+            Demo Interactivo - Datos de Ejemplo
+          </p>
+          <p className="text-xs text-blue-700">
+            Esta es una demostración con datos simulados. Explora las diferentes secciones para ver cómo funciona la plataforma. 
+            No se pueden realizar modificaciones en este modo demo.
+          </p>
+        </div>
+      </div>
+
+      {/* 1. CABECERA + ACCIONES */}
+      <div className="flex flex-col gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">
+            Hola, {demoEmployee.first_name || demoEmployee.name.split(' ')[0]} 👋
+          </h1>
+          <p className="text-slate-500">Panel de control operativo (Demo)</p>
+        </div>
+      </div>
+
+      {/* 2. CONTROL MES */}
+      <div className="flex items-center gap-4 bg-white p-2 rounded-lg border shadow-sm min-w-[400px]">
+        <h2 className="text-lg font-bold capitalize text-slate-900 flex items-center gap-2 ml-2 min-w-[180px]">
+          {getMonthName(currentMonth)} <Badge variant="outline" className="text-xs font-normal">{currentMonth.getFullYear()}</Badge>
+        </h2>
+        <div className="h-6 w-px bg-slate-200 mx-2" />
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handlePrevMonth}><ChevronLeft className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="sm" onClick={handleToday} className="h-7 text-xs px-2"><CalendarDays className="h-3.5 w-3.5 mr-1.5" />Mes actual</Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleNextMonth}><ChevronRight className="h-4 w-4" /></Button>
+        </div>
+      </div>
+
+      {/* 3. CALENDARIO */}
+      <Card className="overflow-hidden border-slate-200 shadow-sm bg-white">
+        <div className="overflow-x-auto custom-scrollbar">
+          <div style={{ minWidth: '1000px' }}>
+            <div className="grid bg-slate-50 border-b" style={{ gridTemplateColumns: gridTemplate }}>
+              <div className="px-4 py-3 font-bold text-sm text-slate-700 flex items-center border-r">Mi calendario</div>
+              {weeks.map((week, index) => {
+                const effectiveStart = week.effectiveStart || week.weekStart;
+                const effectiveEnd = week.effectiveEnd || addDays(week.weekStart, 6);
+                
+                const workingDays = [];
+                let currentDay = new Date(effectiveStart);
+                while (currentDay <= effectiveEnd) {
+                  const dayOfWeek = currentDay.getDay();
+                  if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                    workingDays.push(new Date(currentDay));
+                  }
+                  currentDay = addDays(currentDay, 1);
+                }
+                
+                const firstWorkingDay = workingDays[0];
+                const lastWorkingDay = workingDays[workingDays.length - 1];
+                const weekDateLabel = firstWorkingDay && lastWorkingDay 
+                  ? `${format(firstWorkingDay, 'd', { locale: es })}-${format(lastWorkingDay, 'd MMM', { locale: es })}`
+                  : `${format(effectiveStart, 'd', { locale: es })}-${format(effectiveEnd, 'd MMM', { locale: es })}`;
+                
+                return (
+                  <div key={week.weekStart.toISOString()} className="text-center px-1 py-2 border-r flex flex-col justify-center">
+                    <span className="text-xs font-bold uppercase text-slate-500">S{index + 1}</span>
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      {weekDateLabel}
+                    </span>
+                  </div>
+                );
+              })}
+              <div className="px-2 py-3 font-bold text-xs text-center flex items-center justify-center">TOTAL MES</div>
+            </div>
+
+            <div className="grid bg-white" style={{ gridTemplateColumns: gridTemplate }}>
+              <EmployeeRow 
+                employee={demoEmployee} 
+                weeks={weeks} 
+                projects={projects} 
+                allocations={allocations} 
+                absences={absences} 
+                teamEvents={teamEvents} 
+                viewDate={currentMonth} 
+                onOpenSheet={() => {}} 
+              />
+              <div className="flex items-center justify-center border-l p-2 bg-slate-50/30">
+                <LoadIndicator 
+                  hours={monthlyLoad.hours} 
+                  capacity={monthlyLoad.capacity} 
+                  percentage={monthlyLoad.percentage}
+                  size="md"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* 4. VISTA ORGANIZADA POR PESTAÑAS - PRIORIDAD DE MAYOR A MENOR */}
+      <Card className="border-slate-200 shadow-sm bg-white">
+        <Tabs defaultValue="dependencies" className="w-full">
+          <TabsList className="w-full justify-start h-auto p-1 bg-slate-50 flex-wrap">
+            <TabsTrigger value="dependencies" className="data-[state=active]:bg-white">
+              Dependencias
+            </TabsTrigger>
+            <TabsTrigger value="coherence" className="data-[state=active]:bg-white">
+              Coherencia
+            </TabsTrigger>
+            <TabsTrigger value="teammates" className="data-[state=active]:bg-white">
+              Compañeros
+            </TabsTrigger>
+            <TabsTrigger value="projects" className="data-[state=active]:bg-white">
+              Proyectos
+            </TabsTrigger>
+            <TabsTrigger value="metrics" className="data-[state=active]:bg-white">
+              Métricas
+            </TabsTrigger>
+          </TabsList>
+          
+          {/* 1. DEPENDENCIAS - MÁS IMPORTANTE */}
+          <TabsContent value="dependencies" className="mt-4 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <PriorityInsights employeeId={demoEmployee.id} viewDate={currentMonth} />
+              </div>
+              <div>
+                <ProjectTeamPulse employeeId={demoEmployee.id} viewDate={currentMonth} />
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* 2. COHERENCIA DE PLANIFICACIÓN */}
+          <TabsContent value="coherence" className="mt-4">
+            <div>
+              <PlanningInconsistenciesCard employeeId={demoEmployee.id} viewDate={currentMonth} />
+            </div>
+          </TabsContent>
+
+          {/* 3. COMPAÑEROS */}
+          <TabsContent value="teammates" className="mt-4">
+            <div>
+              <CollaborationCards employeeId={demoEmployee.id} viewDate={currentMonth} />
+            </div>
+          </TabsContent>
+
+          {/* 4. PROYECTOS DEL MES */}
+          <TabsContent value="projects" className="mt-4">
+            <MyWeekView employeeId={demoEmployee.id} viewDate={currentMonth} />
+          </TabsContent>
+
+          {/* 5. MÉTRICAS Y ANÁLISIS */}
+          <TabsContent value="metrics" className="mt-4 space-y-6">
+            <div>
+              <MonthlyBalanceCard employeeId={demoEmployee.id} viewDate={currentMonth} />
+            </div>
+            <div>
+              <ReliabilityIndexCard employeeId={demoEmployee.id} viewDate={currentMonth} />
+            </div>
+          </TabsContent>
+        </Tabs>
+      </Card>
+    </div>
+  );
+}

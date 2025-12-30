@@ -3,6 +3,7 @@ import { Employee, Client, Project, Allocation, LoadStatus } from '@/types';
 import { demoEmployees, demoClients, demoProjects, demoAllocations } from '@/data/demoData';
 import { getMonthlyCapacity } from '@/utils/dateUtils';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { AppContext } from './AppContext';
 
 interface DemoContextType {
   employees: Employee[];
@@ -35,7 +36,7 @@ interface DemoContextType {
   currentUser: Employee | null;
 }
 
-const DemoContext = createContext<DemoContextType | undefined>(undefined);
+export const DemoContext = createContext<DemoContextType | undefined>(undefined);
 
 export function DemoProvider({ children }: { children: React.ReactNode }) {
   const currentUser = demoEmployees[0]; // María como usuario demo
@@ -126,11 +127,46 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     getEmployeeLoadForWeek,
     getEmployeeAllocationsForWeek,
     currentUser,
+    // Métodos dummy para compatibilidad con AppContext
+    isLoading: false,
+    isAdmin: false,
+    addEmployee: () => Promise.resolve(null),
+    updateEmployee: () => Promise.resolve(null),
+    deleteEmployee: () => Promise.resolve(null),
+    toggleEmployeeActive: () => Promise.resolve(null),
+    addClient: () => Promise.resolve(null),
+    updateClient: () => Promise.resolve(null),
+    deleteClient: () => Promise.resolve(null),
+    addProject: () => Promise.resolve(null),
+    updateProject: () => Promise.resolve(null),
+    deleteProject: () => Promise.resolve(null),
+    addAllocation: () => Promise.resolve(null),
+    updateAllocation: () => Promise.resolve(null),
+    deleteAllocation: () => Promise.resolve(null),
+    addAbsence: () => Promise.resolve(null),
+    deleteAbsence: () => Promise.resolve(null),
+    addTeamEvent: () => Promise.resolve(null),
+    updateTeamEvent: () => Promise.resolve(null),
+    deleteTeamEvent: () => Promise.resolve(null),
+    getProjectHoursForMonth: () => 0,
+    getClientTotalHoursForMonth: () => 0,
+    getProjectById: (id: string) => demoProjects.find(p => p.id === id),
+    getClientById: (id: string) => demoClients.find(c => c.id === id),
+    professionalGoals: [],
+    addProfessionalGoal: () => Promise.resolve(null),
+    updateProfessionalGoal: () => Promise.resolve(null),
+    deleteProfessionalGoal: () => Promise.resolve(null),
+    getEmployeeGoals: () => [],
+    loadDataForMonth: () => Promise.resolve(),
+    addWeeklyFeedback: () => Promise.resolve(null),
   }), []);
 
+  // Inyectar DemoContext como AppContext temporalmente para que los componentes funcionen
   return (
     <DemoContext.Provider value={value}>
-      {children}
+      <AppContext.Provider value={value as any}>
+        {children}
+      </AppContext.Provider>
     </DemoContext.Provider>
   );
 }
