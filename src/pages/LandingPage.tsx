@@ -141,26 +141,36 @@ export default function LandingPage() {
         </div>
 
         {/* Features Section - Rediseñado con copywriting expandido */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-28">
-          <div className="text-center mb-12 sm:mb-16 md:mb-20">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4 sm:mb-6 px-4">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-3 sm:mb-4 px-4">
               <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
                 Todo en un vistazo
               </span>
             </h2>
-            <p className="text-lg sm:text-xl md:text-2xl text-indigo-200/80 max-w-3xl mx-auto px-4 font-light mb-6">
+            <p className="text-base sm:text-lg md:text-xl text-white/90 max-w-2xl mx-auto px-4 font-medium mb-3">
               Sin complicaciones. Sin perder tiempo. Solo resultados.
             </p>
-            <p className="text-base sm:text-lg text-indigo-200/70 max-w-4xl mx-auto px-4 leading-relaxed">
-              Olvídate de las hojas de cálculo interminables y las reuniones para coordinar quién hace qué. 
-              Nuestra plataforma te muestra en tiempo real la carga de trabajo de cada miembro del equipo, 
-              identifica sobrecargas antes de que ocurran y te ayuda a tomar decisiones informadas sobre 
-              la distribución de recursos. Todo en una interfaz visual e intuitiva que tu equipo adoptará desde el primer día.
-            </p>
+            <div className="max-w-3xl mx-auto px-4">
+              <ul className="text-sm sm:text-base text-white/80 space-y-2 text-left inline-block">
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-300 mt-1">✓</span>
+                  <span>Visualización en tiempo real de la carga del equipo</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-300 mt-1">✓</span>
+                  <span>Identificación automática de sobrecargas</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-300 mt-1">✓</span>
+                  <span>Interfaz visual e intuitiva desde el primer día</span>
+                </li>
+              </ul>
+            </div>
           </div>
           
           {/* Grid con todas las funcionalidades sin repetir */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
             {/* Feature 1: Planificación Visual */}
             <div className="group relative">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition duration-300" />
@@ -170,11 +180,20 @@ export default function LandingPage() {
                     <Calendar className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Calendario Visual</h3>
-                  <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
-                    Visualiza la carga de trabajo de todo tu equipo en un calendario semanal y mensual. 
-                    Identifica sobrecargas, subcargas y oportunidades de redistribución al instante. 
-                    Cada semana muestra horas estimadas, reales y computadas con códigos de color intuitivos.
-                  </p>
+                  <ul className="text-xs sm:text-sm text-white/90 space-y-1.5 text-left">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-indigo-300 mt-0.5">•</span>
+                      <span>Vista semanal y mensual del equipo</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-indigo-300 mt-0.5">•</span>
+                      <span>Identifica sobrecargas al instante</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-indigo-300 mt-0.5">•</span>
+                      <span>Horas estimadas, reales y computadas</span>
+                    </li>
+                  </ul>
                 </CardContent>
               </Card>
             </div>
@@ -206,11 +225,20 @@ export default function LandingPage() {
                     <Target className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Deadlines</h3>
-                  <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
-                    Establece objetivos mensuales de horas por proyecto y empleado. Compara lo planificado 
-                    con lo realmente ejecutado y detecta desviaciones antes de que se conviertan en problemas. 
-                    Mantén la coherencia entre lo que prometes y lo que entregas.
-                  </p>
+                  <ul className="text-xs sm:text-sm text-white/90 space-y-1.5 text-left">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-300 mt-0.5">•</span>
+                      <span>Objetivos mensuales por proyecto</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-300 mt-0.5">•</span>
+                      <span>Compara planificado vs ejecutado</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-300 mt-0.5">•</span>
+                      <span>Detecta desviaciones a tiempo</span>
+                    </li>
+                  </ul>
                 </CardContent>
               </Card>
             </div>
@@ -224,10 +252,20 @@ export default function LandingPage() {
                     <BarChart3 className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Métricas</h3>
-                  <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
-                    Mide la precisión de tu planificación, el balance motivacional del equipo y el índice de fiabilidad. 
-                    Descubre patrones, mejora tus estimaciones y toma decisiones basadas en datos reales, no en intuiciones.
-                  </p>
+                  <ul className="text-xs sm:text-sm text-white/90 space-y-1.5 text-left">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-emerald-300 mt-0.5">•</span>
+                      <span>Precisión de planificación</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-emerald-300 mt-0.5">•</span>
+                      <span>Índice de fiabilidad histórica</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-emerald-300 mt-0.5">•</span>
+                      <span>Decisiones basadas en datos</span>
+                    </li>
+                  </ul>
                 </CardContent>
               </Card>
             </div>
@@ -241,11 +279,20 @@ export default function LandingPage() {
                     <Users className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Equipo</h3>
-                  <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
-                    Gestiona horarios personalizados por empleado, registra ausencias y vacaciones que se reflejan automáticamente 
-                    en la capacidad, y establece objetivos profesionales individuales. Todo centralizado para una gestión eficiente 
-                    de recursos humanos.
-                  </p>
+                  <ul className="text-xs sm:text-sm text-white/90 space-y-1.5 text-left">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-blue-300 mt-0.5">•</span>
+                      <span>Horarios personalizados</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-blue-300 mt-0.5">•</span>
+                      <span>Gestión de ausencias y vacaciones</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-blue-300 mt-0.5">•</span>
+                      <span>Objetivos profesionales individuales</span>
+                    </li>
+                  </ul>
                 </CardContent>
               </Card>
             </div>
@@ -259,11 +306,20 @@ export default function LandingPage() {
                     <Target className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Proyectos</h3>
-                  <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
-                    Controla las horas contratadas por proyecto y compara con lo planificado y ejecutado. Visualiza el estado 
-                    de salud de cada proyecto con alertas cuando te acercas o excedes el presupuesto. Gestiona objetivos y métricas 
-                    en tiempo real para cada cliente.
-                  </p>
+                  <ul className="text-xs sm:text-sm text-white/90 space-y-1.5 text-left">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-rose-300 mt-0.5">•</span>
+                      <span>Control de horas y presupuestos</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-rose-300 mt-0.5">•</span>
+                      <span>Alertas de estado de salud</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-rose-300 mt-0.5">•</span>
+                      <span>Métricas en tiempo real</span>
+                    </li>
+                  </ul>
                 </CardContent>
               </Card>
             </div>
@@ -277,11 +333,20 @@ export default function LandingPage() {
                     <FileText className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Weekly Reports</h3>
-                  <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
-                    Sistema de cierre semanal que identifica tareas pendientes y bloqueos. Los empleados revisan su trabajo 
-                    semanal y pueden transferir, redistribuir o mantener tareas. Los managers ven un feed completo de 
-                    transferencias y pueden redistribuir horas rápidamente.
-                  </p>
+                  <ul className="text-xs sm:text-sm text-white/90 space-y-1.5 text-left">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-violet-300 mt-0.5">•</span>
+                      <span>Cierre semanal automático</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-violet-300 mt-0.5">•</span>
+                      <span>Transferencias y redistribuciones</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-violet-300 mt-0.5">•</span>
+                      <span>Feed completo para managers</span>
+                    </li>
+                  </ul>
                 </CardContent>
               </Card>
             </div>
@@ -295,11 +360,20 @@ export default function LandingPage() {
                     <Bell className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Alertas</h3>
-                  <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
-                    Sistema de notificaciones inteligentes que te avisa de sobrecargas, dependencias bloqueantes, proyectos 
-                    en riesgo y desviaciones de deadlines. Recibe alertas contextuales que te ayudan a tomar decisiones 
-                    proactivas antes de que los problemas se agraven.
-                  </p>
+                  <ul className="text-xs sm:text-sm text-white/90 space-y-1.5 text-left">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-yellow-300 mt-0.5">•</span>
+                      <span>Notificaciones inteligentes</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-yellow-300 mt-0.5">•</span>
+                      <span>Sobrecargas y bloqueos</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-yellow-300 mt-0.5">•</span>
+                      <span>Decisiones proactivas</span>
+                    </li>
+                  </ul>
                 </CardContent>
               </Card>
             </div>
@@ -307,7 +381,7 @@ export default function LandingPage() {
         </div>
 
         {/* Sección de Problemas y Soluciones */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-28">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-6 px-4">
               <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
@@ -323,26 +397,26 @@ export default function LandingPage() {
                   <AlertTriangle className="h-8 w-8 text-red-400" />
                   <h3 className="text-xl font-bold text-white">Los Problemas</h3>
                 </div>
-                <ul className="space-y-3 text-indigo-200/90">
+                <ul className="space-y-2.5 text-white/90 text-sm">
                   <li className="flex items-start gap-2">
-                    <span className="text-red-400 mt-1">✗</span>
-                    <span>No sabes quién está sobrecargado hasta que es demasiado tarde</span>
+                    <span className="text-red-400 mt-1 shrink-0">✗</span>
+                    <span>Sobrecargas detectadas demasiado tarde</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-red-400 mt-1">✗</span>
-                    <span>Las estimaciones nunca coinciden con la realidad</span>
+                    <span className="text-red-400 mt-1 shrink-0">✗</span>
+                    <span>Estimaciones que no coinciden con la realidad</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-red-400 mt-1">✗</span>
-                    <span>Las dependencias entre tareas causan bloqueos inesperados</span>
+                    <span className="text-red-400 mt-1 shrink-0">✗</span>
+                    <span>Bloqueos inesperados por dependencias</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-red-400 mt-1">✗</span>
-                    <span>Reuniones interminables para coordinar quién hace qué</span>
+                    <span className="text-red-400 mt-1 shrink-0">✗</span>
+                    <span>Reuniones interminables de coordinación</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-red-400 mt-1">✗</span>
-                    <span>No tienes visibilidad de la carga real del equipo</span>
+                    <span className="text-red-400 mt-1 shrink-0">✗</span>
+                    <span>Sin visibilidad de la carga del equipo</span>
                   </li>
                 </ul>
               </CardContent>
@@ -354,26 +428,26 @@ export default function LandingPage() {
                   <CheckCircle2 className="h-8 w-8 text-emerald-400" />
                   <h3 className="text-xl font-bold text-white">Nuestra Solución</h3>
                 </div>
-                <ul className="space-y-3 text-indigo-200/90">
+                <ul className="space-y-2.5 text-white/90 text-sm">
                   <li className="flex items-start gap-2">
-                    <span className="text-emerald-400 mt-1">✓</span>
-                    <span>Visualización en tiempo real de la carga de cada miembro</span>
+                    <span className="text-emerald-400 mt-1 shrink-0">✓</span>
+                    <span>Visualización en tiempo real del equipo</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-emerald-400 mt-1">✓</span>
-                    <span>Comparación automática entre estimado, real y computado</span>
+                    <span className="text-emerald-400 mt-1 shrink-0">✓</span>
+                    <span>Comparación automática estimado vs real</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-emerald-400 mt-1">✓</span>
-                    <span>Gestión visual de dependencias con alertas inteligentes</span>
+                    <span className="text-emerald-400 mt-1 shrink-0">✓</span>
+                    <span>Alertas inteligentes de dependencias</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-emerald-400 mt-1">✓</span>
-                    <span>Dashboard centralizado que elimina la necesidad de reuniones</span>
+                    <span className="text-emerald-400 mt-1 shrink-0">✓</span>
+                    <span>Dashboard que elimina reuniones</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-emerald-400 mt-1">✓</span>
-                    <span>Métricas que te ayudan a mejorar tu planificación</span>
+                    <span className="text-emerald-400 mt-1 shrink-0">✓</span>
+                    <span>Métricas para mejorar planificación</span>
                   </li>
                 </ul>
               </CardContent>
@@ -397,23 +471,34 @@ export default function LandingPage() {
 
 
         {/* Sección específica de Deadlines */}
-        <div className="relative z-10 bg-gradient-to-br from-amber-950/30 via-orange-950/30 to-amber-950/30 border-y border-amber-500/20 py-16 sm:py-20 md:py-28">
+        <div className="relative z-10 bg-gradient-to-br from-amber-950/30 via-orange-950/30 to-amber-950/30 border-y border-amber-500/20 py-8 sm:py-12 md:py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/20 backdrop-blur-sm rounded-full text-amber-200 text-sm font-medium mb-4 border border-amber-400/30">
+            <div className="text-center mb-8 sm:mb-10">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/20 backdrop-blur-sm rounded-full text-amber-200 text-sm font-medium mb-3 sm:mb-4 border border-amber-400/30">
                 <Target className="h-4 w-4" />
-                <span>Gestión de Deadlines</span>
+                <span>Gestión de deadlines</span>
               </div>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-6 px-4">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 sm:mb-5 px-4">
                 <span className="bg-gradient-to-r from-amber-200 via-orange-200 to-amber-200 bg-clip-text text-transparent">
                   Cumple tus compromisos, siempre
                 </span>
               </h2>
-              <p className="text-lg sm:text-xl text-indigo-200/80 max-w-3xl mx-auto px-4 leading-relaxed">
-                Los deadlines no son solo números en una hoja de cálculo. Son compromisos con tus clientes 
-                y tu equipo. Nuestra plataforma te ayuda a establecer objetivos realistas, monitorear el progreso 
-                en tiempo real y detectar desviaciones antes de que se conviertan en problemas.
-              </p>
+              <div className="max-w-2xl mx-auto px-4">
+                <ul className="text-sm sm:text-base text-white/90 space-y-2 text-left inline-block">
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-300 mt-1">•</span>
+                    <span>Objetivos realistas por proyecto y empleado</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-300 mt-1">•</span>
+                    <span>Monitoreo en tiempo real del progreso</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-amber-300 mt-1">•</span>
+                    <span>Detección temprana de desviaciones</span>
+                  </li>
+                </ul>
+              </div>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6 mb-12">
@@ -422,11 +507,21 @@ export default function LandingPage() {
                   <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mb-4">
                     <Target className="h-6 w-6 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-3">Objetivos Mensuales</h3>
-                  <p className="text-indigo-200/80 text-sm leading-relaxed">
-                    Establece objetivos de horas por proyecto y empleado para cada mes. 
-                    Visualiza la distribución de carga y asegúrate de que todos tengan objetivos alcanzables.
-                  </p>
+                  <h3 className="text-xl font-bold text-white mb-3">Objetivos mensuales</h3>
+                  <ul className="text-white/90 text-sm space-y-1.5">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-300 mt-0.5">•</span>
+                      <span>Horas por proyecto y empleado</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-300 mt-0.5">•</span>
+                      <span>Visualización de distribución</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-300 mt-0.5">•</span>
+                      <span>Objetivos alcanzables</span>
+                    </li>
+                  </ul>
                 </CardContent>
               </Card>
 
@@ -435,11 +530,21 @@ export default function LandingPage() {
                   <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mb-4">
                     <Activity className="h-6 w-6 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-3">Coherencia de Planificación</h3>
-                  <p className="text-indigo-200/80 text-sm leading-relaxed">
-                    Compara lo que planificaste con lo que realmente se ejecutó. Identifica patrones, 
-                    mejora tus estimaciones y mantén la coherencia entre lo prometido y lo entregado.
-                  </p>
+                  <h3 className="text-xl font-bold text-white mb-3">Coherencia de planificación</h3>
+                  <ul className="text-white/90 text-sm space-y-1.5">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-300 mt-0.5">•</span>
+                      <span>Compara planificado vs ejecutado</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-300 mt-0.5">•</span>
+                      <span>Identifica patrones y mejora estimaciones</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-300 mt-0.5">•</span>
+                      <span>Mantén coherencia prometido-entregado</span>
+                    </li>
+                  </ul>
                 </CardContent>
               </Card>
 
@@ -448,11 +553,21 @@ export default function LandingPage() {
                   <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mb-4">
                     <TrendingUp className="h-6 w-6 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-3">Sugerencias Inteligentes</h3>
-                  <p className="text-indigo-200/80 text-sm leading-relaxed">
-                    Recibe sugerencias automáticas de redistribución de horas cuando detectamos desequilibrios. 
-                    Optimiza la carga del equipo y maximiza la productividad sin sobrecargar a nadie.
-                  </p>
+                  <h3 className="text-xl font-bold text-white mb-3">Sugerencias inteligentes</h3>
+                  <ul className="text-white/90 text-sm space-y-1.5">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-300 mt-0.5">•</span>
+                      <span>Redistribución automática de horas</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-300 mt-0.5">•</span>
+                      <span>Optimiza carga del equipo</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-300 mt-0.5">•</span>
+                      <span>Maximiza productividad equilibrada</span>
+                    </li>
+                  </ul>
                 </CardContent>
               </Card>
             </div>
@@ -544,17 +659,29 @@ export default function LandingPage() {
         </div>
 
         {/* Casos de uso y beneficios */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-28">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-6 px-4">
               <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
                 Para equipos que valoran su tiempo
               </span>
             </h2>
-            <p className="text-lg sm:text-xl text-indigo-200/80 max-w-3xl mx-auto px-4 leading-relaxed">
-              Ya sea que gestiones un equipo de marketing digital, desarrolladores, diseñadores o cualquier equipo que necesite 
-              coordinar trabajo, nuestra plataforma se adapta a tus necesidades.
-            </p>
+            <div className="max-w-2xl mx-auto px-4">
+              <ul className="text-sm sm:text-base text-white/90 space-y-2 text-left inline-block">
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-300 mt-1">•</span>
+                  <span>Equipos de marketing digital</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-300 mt-1">•</span>
+                  <span>Desarrolladores y diseñadores</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-300 mt-1">•</span>
+                  <span>Cualquier equipo que coordine trabajo</span>
+                </li>
+              </ul>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
@@ -563,16 +690,25 @@ export default function LandingPage() {
                 <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center mb-4">
                   <Users className="h-6 w-6 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">Para Líderes de Equipo</h3>
-                <p className="text-indigo-200/80 text-sm leading-relaxed mb-4">
-                  Toma decisiones informadas sobre la distribución de trabajo. Identifica quién necesita ayuda 
-                  y quién puede asumir más responsabilidades. Reduce las reuniones de coordinación en un 70%.
-                </p>
-                <ul className="space-y-2 text-xs text-indigo-200/70">
-                  <li>• Visibilidad completa del equipo</li>
-                  <li>• Alertas de sobrecarga automáticas</li>
-                  <li>• Sugerencias de redistribución</li>
-                </ul>
+                  <h3 className="text-xl font-bold text-white mb-3">Para líderes de equipo</h3>
+                  <ul className="text-white/90 text-sm space-y-2">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-indigo-300 mt-0.5">•</span>
+                      <span>Decisiones informadas sobre distribución</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-indigo-300 mt-0.5">•</span>
+                      <span>Identifica quién necesita ayuda</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-indigo-300 mt-0.5">•</span>
+                      <span>Reduce reuniones en un 70%</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-indigo-300 mt-0.5">•</span>
+                      <span>Alertas automáticas de sobrecarga</span>
+                    </li>
+                  </ul>
               </CardContent>
             </Card>
 
@@ -581,16 +717,25 @@ export default function LandingPage() {
                 <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mb-4">
                   <Target className="h-6 w-6 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">Para Project Managers</h3>
-                <p className="text-indigo-200/80 text-sm leading-relaxed mb-4">
-                  Gestiona múltiples proyectos simultáneamente sin perder el control. Visualiza dependencias, 
-                  identifica cuellos de botella y asegúrate de que los deadlines se cumplan.
-                </p>
-                <ul className="space-y-2 text-xs text-indigo-200/70">
-                  <li>• Gestión de múltiples proyectos</li>
-                  <li>• Control de presupuestos y horas</li>
-                  <li>• Seguimiento de deadlines</li>
-                </ul>
+                  <h3 className="text-xl font-bold text-white mb-3">Para project managers</h3>
+                  <ul className="text-white/90 text-sm space-y-2">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-purple-300 mt-0.5">•</span>
+                      <span>Gestión de múltiples proyectos</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-purple-300 mt-0.5">•</span>
+                      <span>Visualiza dependencias y cuellos de botella</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-purple-300 mt-0.5">•</span>
+                      <span>Control de presupuestos y horas</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-purple-300 mt-0.5">•</span>
+                      <span>Seguimiento de deadlines</span>
+                    </li>
+                  </ul>
               </CardContent>
             </Card>
 
@@ -599,16 +744,25 @@ export default function LandingPage() {
                 <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-4">
                   <BarChart3 className="h-6 w-6 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">Para Empleados</h3>
-                <p className="text-indigo-200/80 text-sm leading-relaxed mb-4">
-                  Ve tu carga de trabajo de forma clara, entiende tus prioridades y gestiona tus tareas de manera eficiente. 
-                  Sabes exactamente qué hacer y cuándo hacerlo.
-                </p>
-                <ul className="space-y-2 text-xs text-indigo-200/70">
-                  <li>• Vista clara de tus tareas</li>
-                  <li>• Priorización automática</li>
-                  <li>• Seguimiento de tu progreso</li>
-                </ul>
+                  <h3 className="text-xl font-bold text-white mb-3">Para empleados</h3>
+                  <ul className="text-white/90 text-sm space-y-2">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-emerald-300 mt-0.5">•</span>
+                      <span>Vista clara de tu carga de trabajo</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-emerald-300 mt-0.5">•</span>
+                      <span>Priorización automática de tareas</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-emerald-300 mt-0.5">•</span>
+                      <span>Seguimiento de tu progreso</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-emerald-300 mt-0.5">•</span>
+                      <span>Sabes qué hacer y cuándo</span>
+                    </li>
+                  </ul>
               </CardContent>
             </Card>
           </div>

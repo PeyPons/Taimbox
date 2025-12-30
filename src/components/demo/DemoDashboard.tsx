@@ -186,7 +186,7 @@ function DemoDashboardContent() {
 
                 <div className="grid bg-white" style={{ gridTemplateColumns: gridTemplate }}>
                   {/* Columna Empleado */}
-                  <div className="sticky left-0 z-10 bg-background/95 backdrop-blur border-r p-3 flex items-center">
+                  <div className="hidden sm:block sticky left-0 z-10 bg-background/95 backdrop-blur border-r p-3 flex items-center">
                     <div className="flex items-center gap-3 w-full">
                       <Avatar className="h-10 w-10 border border-indigo-200">
                         <AvatarFallback className="bg-indigo-100 text-indigo-700 font-bold text-sm">
