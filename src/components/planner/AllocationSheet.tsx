@@ -92,25 +92,45 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
   useEffect(() => {
     if (open) {
-      // Si se abre el modal, usar la semana actual si no se especifica otra
-      const today = new Date();
-      const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
-      
-      // Prioridad: viewDateContext > semana actual > weekStart proporcionado
-      // IMPORTANTE: Si no hay viewDateContext, siempre usar el mes actual para que currentWeekIndex funcione
+      // Prioridad: weekStart proporcionado > viewDateContext > semana actual
       let targetDate: Date;
-      if (viewDateContext) {
+      let targetWeekIndex: number | null = null;
+      
+      // Si se proporciona weekStart, usarlo para encontrar la semana específica
+      if (weekStart) {
+        try {
+          const weekStartDate = parseISO(weekStart);
+          // Usar el mes de la semana clicada para el viewDate
+          targetDate = new Date(weekStartDate.getFullYear(), weekStartDate.getMonth(), 1);
+          
+          // Calcular el índice de la semana dentro del mes
+          // Esto se hará después de que weeks esté disponible, pero preparamos la fecha
+        } catch {
+          // Si hay error parseando, usar viewDateContext o mes actual
+          targetDate = viewDateContext || new Date();
+        }
+      } else if (viewDateContext) {
         targetDate = viewDateContext;
       } else {
-        // Si no hay viewDateContext, SIEMPRE usar el mes actual para asegurar que currentWeekIndex funcione
-        // Esto garantiza que la vista semanal muestre la semana actual por defecto
-        targetDate = currentWeekStart;
+        const today = new Date();
+        const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
+        targetDate = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 1);
       }
       
-      // IMPORTANTE: Primero resetear selectedWeekIndex, luego actualizar viewDate
-      // Esto asegura que cuando el hook se recalcule, selectedWeekIndex ya sea null
-      setSelectedWeekIndex(null);
       setViewDate(targetDate);
+      
+      // Si tenemos weekStart, encontrar su índice después de que weeks esté disponible
+      if (weekStart) {
+        try {
+          const weekStartDate = parseISO(weekStart);
+          // Usaremos un efecto separado para encontrar el índice una vez que weeks esté disponible
+          setSelectedWeekIndex(null); // Temporal, se actualizará después
+        } catch {
+          setSelectedWeekIndex(null);
+        }
+      } else {
+        setSelectedWeekIndex(null);
+      }
     }
   }, [open, weekStart, viewDateContext]);
 
@@ -207,6 +227,25 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     monthlyProjectSummary,
     getProjectBudgetStatus,
   } = useAllocationSheet(employeeId, viewDate);
+
+  // Encontrar el índice de la semana clicada cuando weeks esté disponible
+  useEffect(() => {
+    if (open && weekStart && weeks.length > 0 && selectedWeekIndex === null) {
+      try {
+        const weekStartDate = parseISO(weekStart);
+        const weekIndex = weeks.findIndex(w => {
+          const wStart = new Date(w.weekStart);
+          return wStart.getTime() === weekStartDate.getTime();
+        });
+        if (weekIndex >= 0) {
+          setSelectedWeekIndex(weekIndex);
+        }
+      } catch {
+        // Si hay error, usar semana actual
+        setSelectedWeekIndex(null);
+      }
+    }
+  }, [open, weekStart, weeks, selectedWeekIndex]);
 
   // Índice de semana activo (seleccionado por usuario o actual)
   // Usar useMemo para asegurar que el cálculo se haga después de que todo esté inicializado

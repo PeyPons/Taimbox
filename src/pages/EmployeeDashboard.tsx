@@ -698,24 +698,29 @@ export default function EmployeeDashboard() {
       </Card>
 
 
-      {/* 4. VISTA DE PROYECTOS Y MÉTRICAS - CON PESTAÑAS */}
+      {/* 4. VISTA ORGANIZADA POR PESTAÑAS - PRIORIDAD DE MAYOR A MENOR */}
       <Card className="border-slate-200 shadow-sm bg-white" data-tour="projects-summary">
-        <Tabs defaultValue="projects" className="w-full">
-          <TabsList className="w-full justify-start h-auto p-1 bg-slate-50">
+        <Tabs defaultValue="dependencies" className="w-full">
+          <TabsList className="w-full justify-start h-auto p-1 bg-slate-50 flex-wrap">
+            <TabsTrigger value="dependencies" className="data-[state=active]:bg-white">
+              Dependencias
+            </TabsTrigger>
+            <TabsTrigger value="coherence" className="data-[state=active]:bg-white">
+              Coherencia
+            </TabsTrigger>
+            <TabsTrigger value="teammates" className="data-[state=active]:bg-white">
+              Compañeros
+            </TabsTrigger>
             <TabsTrigger value="projects" className="data-[state=active]:bg-white">
-              Proyectos del mes
+              Proyectos
             </TabsTrigger>
             <TabsTrigger value="metrics" className="data-[state=active]:bg-white">
-              Métricas y análisis
+              Métricas
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="projects" className="mt-4">
-            <MyWeekView employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
-          </TabsContent>
-          
-          <TabsContent value="metrics" className="mt-4 space-y-6">
-            {/* ALERTAS Y DEPENDENCIAS */}
+          {/* 1. DEPENDENCIAS - MÁS IMPORTANTE */}
+          <TabsContent value="dependencies" className="mt-4 space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div data-tour="priority-widget">
                 <PriorityInsights employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
@@ -724,29 +729,41 @@ export default function EmployeeDashboard() {
                 <ProjectTeamPulse employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
               </div>
             </div>
+          </TabsContent>
 
+          {/* 2. COHERENCIA DE PLANIFICACIÓN */}
+          <TabsContent value="coherence" className="mt-4">
+            <div data-tour="planning-inconsistencies">
+              <PlanningInconsistenciesCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+            </div>
+          </TabsContent>
+
+          {/* 3. COMPAÑEROS */}
+          <TabsContent value="teammates" className="mt-4">
+            <div data-tour="collaboration-cards">
+              <CollaborationCards employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+            </div>
+          </TabsContent>
+
+          {/* 4. PROYECTOS DEL MES */}
+          <TabsContent value="projects" className="mt-4">
+            <MyWeekView employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+          </TabsContent>
+
+          {/* 5. MÉTRICAS Y ANÁLISIS */}
+          <TabsContent value="metrics" className="mt-4 space-y-6">
             {/* BALANCE MOTIVACIONAL */}
             <div data-tour="monthly-balance">
               <MonthlyBalanceCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
             </div>
 
-            {/* PRECISIÓN Y COHERENCIA */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div data-tour="reliability-index">
-                <ReliabilityIndexCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
-              </div>
-              <div data-tour="planning-inconsistencies">
-                <PlanningInconsistenciesCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
-              </div>
+            {/* PRECISIÓN DE PLANIFICACIÓN */}
+            <div data-tour="reliability-index">
+              <ReliabilityIndexCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
             </div>
           </TabsContent>
         </Tabs>
       </Card>
-
-      {/* 5. COLABORADORES Y AYUDA */}
-      <div data-tour="collaboration-cards">
-        <CollaborationCards employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
-      </div>
 
       {/* MODALES */}
       {selectedCell && (

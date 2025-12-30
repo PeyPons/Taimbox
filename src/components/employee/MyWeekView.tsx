@@ -76,15 +76,22 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
       myCompletedTasks: number;
       projectTotalComputed: number;
       projectBudget: number;
-      // Compañeros con detalle
+      // Totales del proyecto (cliente)
+      projectTotalAssigned: number; // Horas asignadas totales
+      projectTotalPlanned: number; // Horas planificadas totales (no completadas)
+      projectTotalComputedAll: number; // Horas computadas totales
+      projectPercentageUsed: number; // % usado del presupuesto
+      // Compañeros con detalle (Plan y Comp)
       teammates: { 
         id: string; 
         name: string; 
         avatarUrl?: string;
-        hoursComputed: number;
+        hoursPlanned: number; // Horas planificadas
+        hoursComputed: number; // Horas computadas
         impactPercentage: number;
       }[];
       myImpactPercentage: number;
+      hoursMissing: number; // Horas faltantes por asignar (si aplica)
     }> = {};
 
     // Procesar mis allocations
@@ -104,8 +111,13 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
           myCompletedTasks: 0,
           projectTotalComputed: 0,
           projectBudget: proj?.budgetHours || 0,
+          projectTotalAssigned: 0,
+          projectTotalPlanned: 0,
+          projectTotalComputedAll: 0,
+          projectPercentageUsed: 0,
           teammates: [],
-          myImpactPercentage: 0
+          myImpactPercentage: 0,
+          hoursMissing: 0
         };
       }
 
@@ -126,35 +138,60 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
         isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
       );
       
-      // Total computado del proyecto
-      const projectTotal = allProjectAllocations
+      // Totales del proyecto (cliente)
+      const projectTotalAssigned = round2(allProjectAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0));
+      const projectTotalPlanned = round2(allProjectAllocations
+        .filter(a => a.status !== 'completed')
+        .reduce((sum, a) => sum + a.hoursAssigned, 0));
+      const projectTotalComputedAll = round2(allProjectAllocations
         .filter(a => a.status === 'completed')
-        .reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
+        .reduce((sum, a) => sum + (a.hoursComputed || 0), 0));
       
-      groups[projId].projectTotalComputed = round2(projectTotal);
+      groups[projId].projectTotalAssigned = projectTotalAssigned;
+      groups[projId].projectTotalPlanned = projectTotalPlanned;
+      groups[projId].projectTotalComputedAll = projectTotalComputedAll;
+      
+      // % usado del presupuesto
+      const budget = groups[projId].projectBudget;
+      groups[projId].projectPercentageUsed = budget > 0 ? round2((projectTotalComputedAll / budget) * 100) : 0;
+      
+      // Horas faltantes por asignar (si el presupuesto es mayor que lo asignado)
+      groups[projId].hoursMissing = budget > 0 && projectTotalAssigned < budget 
+        ? round2(budget - projectTotalAssigned) 
+        : 0;
+      
+      // Total computado del proyecto (para mi impacto)
+      const projectTotal = projectTotalComputedAll;
+      groups[projId].projectTotalComputed = projectTotal;
       
       // Mi impacto
       if (projectTotal > 0) {
         groups[projId].myImpactPercentage = round2((groups[projId].myComputed / projectTotal) * 100);
       }
       
-      // Compañeros con sus horas y porcentaje
-      const teammateHours: Record<string, number> = {};
+      // Compañeros con sus horas Plan y Comp
+      const teammateData: Record<string, { planned: number; computed: number }> = {};
       allProjectAllocations
-        .filter(a => a.employeeId !== employeeId && a.status === 'completed')
+        .filter(a => a.employeeId !== employeeId)
         .forEach(a => {
-          if (!teammateHours[a.employeeId]) teammateHours[a.employeeId] = 0;
-          teammateHours[a.employeeId] += a.hoursComputed || 0;
+          if (!teammateData[a.employeeId]) {
+            teammateData[a.employeeId] = { planned: 0, computed: 0 };
+          }
+          teammateData[a.employeeId].planned += a.hoursAssigned;
+          if (a.status === 'completed') {
+            teammateData[a.employeeId].computed += a.hoursComputed || 0;
+          }
         });
       
-      groups[projId].teammates = Object.entries(teammateHours).map(([empId, hours]) => {
+      groups[projId].teammates = Object.entries(teammateData).map(([empId, data]) => {
         const emp = employees.find(e => e.id === empId);
         return {
           id: empId,
           name: emp?.name || 'Desconocido',
           avatarUrl: emp?.avatarUrl,
-          hoursComputed: round2(hours),
-          impactPercentage: projectTotal > 0 ? round2((hours / projectTotal) * 100) : 0
+          hoursPlanned: round2(data.planned),
+          hoursComputed: round2(data.computed),
+          impactPercentage: projectTotal > 0 ? round2((data.computed / projectTotal) * 100) : 0
         };
       }).sort((a, b) => b.hoursComputed - a.hoursComputed);
     });
@@ -369,22 +406,90 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                   </CardHeader>
 
                   <CardContent className="px-4 pb-4 pt-2 space-y-3 flex-1 flex flex-col">
-                    {/* Barra de progreso */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">Tareas completadas</span>
-                        <span className="font-medium">{group.myCompletedTasks}/{group.myTasks}</span>
+                    {/* Total cliente */}
+                    {group.projectBudget > 0 && (
+                      <div className="space-y-1.5 pb-2 border-b">
+                        <div className="text-[10px] font-semibold text-slate-500 uppercase">Total cliente</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span className="text-slate-400">Asignadas:</span>
+                            <span className="font-bold text-slate-700 ml-1">{group.projectTotalAssigned}h</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400">Plan:</span>
+                            <span className="font-bold text-blue-600 ml-1">{group.projectTotalPlanned}h</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400">Comp:</span>
+                            <span className="font-bold text-emerald-600 ml-1">{group.projectTotalComputedAll}h</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400">Usado:</span>
+                            <span className={cn("font-bold ml-1", group.projectPercentageUsed > 100 ? "text-red-600" : group.projectPercentageUsed > 80 ? "text-amber-600" : "text-emerald-600")}>
+                              {group.projectPercentageUsed}%
+                            </span>
+                          </div>
+                        </div>
+                        {group.hoursMissing > 0 && (
+                          <div className="text-[10px] text-amber-600 font-medium mt-1">
+                            ⚠️ Faltan {group.hoursMissing}h por asignar
+                          </div>
+                        )}
                       </div>
-                      <Progress value={completionRate} className="h-1.5" />
-                    </div>
+                    )}
 
-                    {/* Métricas - flex-1 para empujar balance abajo */}
+                    {/* Equipo */}
+                    {(group.teammates.length > 0 || group.myEstimated > 0) && (
+                      <div className="space-y-1.5">
+                        <div className="text-[10px] font-semibold text-slate-500 uppercase">
+                          Equipo ({group.teammates.length + 1})
+                        </div>
+                        <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                          {/* Tú */}
+                          <div className="flex items-center justify-between text-xs px-2 py-1 bg-slate-50 rounded">
+                            <div className="flex items-center gap-1.5">
+                              <Avatar className="h-5 w-5 border border-slate-300">
+                                <AvatarFallback className="text-[9px] bg-indigo-100 text-indigo-700">
+                                  Tú
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium text-slate-700">Tú</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px]">
+                              <span className="text-blue-600">Plan: {group.myEstimated}h</span>
+                              <span className="text-emerald-600">Comp: {group.myComputed}h</span>
+                            </div>
+                          </div>
+                          {/* Compañeros */}
+                          {group.teammates.map(tm => (
+                            <div key={tm.id} className="flex items-center justify-between text-xs px-2 py-1">
+                              <div className="flex items-center gap-1.5">
+                                <Avatar className="h-5 w-5 border border-slate-300">
+                                  <AvatarImage src={tm.avatarUrl} />
+                                  <AvatarFallback className="text-[9px] bg-slate-100">
+                                    {tm.name.substring(0, 2).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="font-medium text-slate-700 truncate max-w-[80px]">{tm.name.split(' ')[0]}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-[10px]">
+                                <span className="text-blue-600">Plan: {tm.hoursPlanned}h</span>
+                                <span className="text-emerald-600">Comp: {tm.hoursComputed}h</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Mis métricas */}
                     <div className="pt-2 border-t flex-1">
+                      <div className="text-[10px] font-semibold text-slate-500 uppercase mb-2">Mis métricas</div>
                       <MetricsCard 
                         estimated={group.myEstimated}
                         real={group.myReal}
                         computed={group.myComputed}
-                        size="md"
+                        size="sm"
                       />
                     </div>
 
