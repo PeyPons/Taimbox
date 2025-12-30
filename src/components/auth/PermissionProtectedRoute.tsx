@@ -68,7 +68,7 @@ export function PermissionProtectedRoute({ children, requiredPermission }: Permi
       hasLoggedWarningRef.current = true;
       console.warn('[PermissionProtectedRoute] Sesión activa pero sin empleado vinculado. Redirigiendo a /');
     }
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   // Verificar permisos
@@ -76,7 +76,7 @@ export function PermissionProtectedRoute({ children, requiredPermission }: Permi
   const hasPermission = canAccess(permissionToCheck);
 
   if (!hasPermission) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

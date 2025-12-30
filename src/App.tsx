@@ -17,6 +17,7 @@ import { PermissionProtectedRoute } from "./components/auth/PermissionProtectedR
 
 // Página principal (carga inmediata para mejor UX)
 import EmployeeDashboard from "./pages/EmployeeDashboard";
+import LandingPage from "./pages/LandingPage";
 
 // Loading fallback para páginas lazy
 const PageLoader = () => (
@@ -83,14 +84,17 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <Routes>
+                {/* Ruta pública Landing */}
+                <Route path="/" element={<LandingPage />} />
+                
                 {/* Ruta pública Login */}
                 <Route path="/login" element={<Login />} />
 
                 {/* Rutas Protegidas */}
                 <Route element={<ProtectedRoute />}>
                   <Route element={<AppLayout />}>
-                    {/* Dashboard Personal como página de inicio - Siempre accesible */}
-                    <Route path="/" element={<EmployeeDashboard />} />
+                    {/* Dashboard Personal */}
+                    <Route path="/dashboard" element={<EmployeeDashboard />} />
 
                     {/* Resto de rutas protegidas por permisos - con Suspense para lazy loading */}
                     <Route path="/planner" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/planner"><Index /></PermissionProtectedRoute></Suspense>} />

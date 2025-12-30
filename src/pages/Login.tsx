@@ -22,7 +22,7 @@ export default function Login() {
   const location = useLocation();
 
   // Obtener la ruta de origen desde el state de navegación
-  const from = (location.state as any)?.from?.pathname || "/";
+  const from = (location.state as any)?.from?.pathname || "/dashboard";
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),

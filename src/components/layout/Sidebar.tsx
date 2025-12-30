@@ -48,7 +48,7 @@ export function Sidebar() {
       <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
         
         {/* Enlace directo al Dashboard personal - Siempre visible */}
-        <NavLink to="/" icon={Home} active={location.pathname === '/'}>
+        <NavLink to="/dashboard" icon={Home} active={location.pathname === '/dashboard'}>
           Mi Espacio
         </NavLink>
 
