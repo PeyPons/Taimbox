@@ -22,6 +22,7 @@ function DemoDashboardContent() {
   
   const weeks = useMemo(() => getWeeksForMonth(currentMonth), [currentMonth]);
   const gridTemplate = `250px repeat(${weeks.length}, minmax(0, 1fr)) 100px`;
+  const gridTemplateMobile = `repeat(${weeks.length}, minmax(120px, 1fr)) 80px`;
   
   // Empleado demo (María)
   const demoEmployee = employees[0];
@@ -148,9 +149,12 @@ function DemoDashboardContent() {
           <Card className="overflow-hidden border-slate-200 shadow-sm bg-white">
             <div className="overflow-x-auto custom-scrollbar">
               <div style={{ minWidth: '1000px' }}>
-                <div className="grid bg-slate-50 border-b" style={{ gridTemplateColumns: gridTemplate }}>
-                  <div className="px-4 py-3 font-bold text-sm text-slate-700 flex items-center border-r">
+                <div className="grid bg-slate-50 border-b" style={{ gridTemplateColumns: `250px repeat(${weeks.length}, minmax(0, 1fr)) 100px` }}>
+                  <div className="hidden sm:block px-4 py-3 font-bold text-sm text-slate-700 flex items-center border-r">
                     Calendario
+                  </div>
+                  <div className="sm:hidden px-2 py-2 font-bold text-xs text-slate-700 flex items-center border-r">
+                    Cal.
                   </div>
                   {weeks.map((week, index) => {
                     const effectiveStart = week.effectiveStart || week.weekStart;
@@ -185,7 +189,7 @@ function DemoDashboardContent() {
                 </div>
 
                 <div className="grid bg-white" style={{ gridTemplateColumns: gridTemplate }}>
-                  {/* Columna Empleado */}
+                  {/* Columna Empleado - Desktop */}
                   <div className="hidden sm:block sticky left-0 z-10 bg-background/95 backdrop-blur border-r p-3 flex items-center">
                     <div className="flex items-center gap-3 w-full">
                       <Avatar className="h-10 w-10 border border-indigo-200">
