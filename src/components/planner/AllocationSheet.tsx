@@ -1020,10 +1020,6 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                                                               return cleanName || 'Tarea';
                                                                                             })()}
                                                                                         </span>
-                                                                                        {/* DEBUG: Mostrar fecha de la tarea */}
-                                                                                        <span className="text-[10px] text-slate-400 font-mono bg-slate-100 px-1.5 py-0.5 rounded" title={`weekStartDate: ${alloc.weekStartDate}`}>
-                                                                                            {format(parseISO(alloc.weekStartDate), 'd MMM', { locale: es })}
-                                                                                        </span>
                                                                                     </div>
                                                                                 )}
                                                                             </div>
