@@ -72,39 +72,39 @@ const monthPercentage = Math.round((totalMonth / totalCapacity) * 100);
 
 export function CalendarPreview() {
   return (
-    <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+    <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100 px-6 py-4">
-        <h3 className="text-xl font-bold text-slate-900">Mi calendario</h3>
+      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100 px-3 sm:px-6 py-3 sm:py-4">
+        <h3 className="text-base sm:text-xl font-bold text-slate-900">Mi calendario</h3>
       </div>
 
       {/* User Profile */}
-      <div className="px-6 py-4 border-b border-slate-200 bg-white">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-12 w-12 border-2 border-indigo-200">
-            <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-bold">
+      <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-slate-200 bg-white">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Avatar className="h-8 w-8 sm:h-12 sm:w-12 border-2 border-indigo-200">
+            <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-bold text-xs sm:text-sm">
               MA
             </AvatarFallback>
           </Avatar>
           <div>
-            <div className="font-bold text-slate-900">María González</div>
-            <div className="text-xs text-slate-500 uppercase tracking-wide">SEO Specialist</div>
+            <div className="font-bold text-slate-900 text-sm sm:text-base">María González</div>
+            <div className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wide">SEO Specialist</div>
           </div>
         </div>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="p-6 bg-slate-50">
-        <div className="grid grid-cols-6 gap-3">
+      {/* Calendar Grid - Scroll horizontal en mobile */}
+      <div className="p-3 sm:p-6 bg-slate-50">
+        <div className="grid grid-cols-6 gap-2 sm:gap-3 min-w-[600px] sm:min-w-0 overflow-x-auto sm:overflow-x-visible -mx-3 sm:mx-0 px-3 sm:px-0">
           {/* Week Headers */}
           {weeks.map((week) => (
             <div key={week.week} className="text-center">
-              <div className="text-xs font-bold text-slate-600 mb-1">{week.week}</div>
-              <div className="text-[10px] text-slate-500">{week.dates}</div>
+              <div className="text-[10px] sm:text-xs font-bold text-slate-600 mb-0.5 sm:mb-1">{week.week}</div>
+              <div className="text-[9px] sm:text-[10px] text-slate-500">{week.dates}</div>
             </div>
           ))}
           <div className="text-center">
-            <div className="text-xs font-bold text-slate-600 mb-1">TOTAL MES</div>
+            <div className="text-[10px] sm:text-xs font-bold text-slate-600 mb-0.5 sm:mb-1">TOTAL MES</div>
           </div>
 
           {/* Week Cards */}
@@ -116,7 +116,7 @@ export function CalendarPreview() {
               <div
                 key={week.week}
                 className={cn(
-                  "rounded-lg border-2 p-3 space-y-2 transition-all hover:shadow-md",
+                  "rounded-lg border-2 p-2 sm:p-3 space-y-1 sm:space-y-2 transition-all hover:shadow-md",
                   week.status === 'completed' && !isOver
                     ? "bg-emerald-50 border-emerald-200"
                     : week.status === 'pending'
@@ -128,7 +128,7 @@ export function CalendarPreview() {
                 <Progress 
                   value={Math.min(percentage, 100)} 
                   className={cn(
-                    "h-1.5",
+                    "h-1 sm:h-1.5",
                     isOver ? "[&>div]:bg-red-500" :
                     week.status === 'completed' ? "[&>div]:bg-emerald-500" :
                     week.status === 'pending' ? "[&>div]:bg-amber-500" :
@@ -138,18 +138,19 @@ export function CalendarPreview() {
 
                 {/* Estimated Hours */}
                 {week.estimated > 0 && (
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1 text-slate-600">
-                      <Clock className="h-3 w-3" />
-                      <span>Est.</span>
+                  <div className="flex items-center justify-between text-[10px] sm:text-xs">
+                    <div className="flex items-center gap-0.5 sm:gap-1 text-slate-600">
+                      <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                      <span className="hidden sm:inline">Est.</span>
+                      <span className="sm:hidden">E</span>
                     </div>
-                    <span className="font-mono font-semibold text-slate-900">{week.estimated}h</span>
+                    <span className="font-mono font-semibold text-slate-900 text-[10px] sm:text-xs">{week.estimated}h</span>
                   </div>
                 )}
 
-                {/* Real and Computed */}
+                {/* Real and Computed - Ocultar en mobile muy pequeño */}
                 {week.real !== undefined && week.computed !== undefined && (
-                  <div className="text-xs space-y-0.5">
+                  <div className="text-[9px] sm:text-xs space-y-0.5 hidden sm:block">
                     <div className="flex justify-between">
                       <span className="text-slate-600">Real</span>
                       <span className="font-mono font-semibold text-blue-700">{week.real}h</span>
@@ -163,41 +164,43 @@ export function CalendarPreview() {
 
                 {/* Gain/Loss Badge */}
                 {week.gain !== undefined && (
-                  <Badge className="w-full justify-center bg-emerald-500 text-white border-0 text-[10px] py-1">
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                    Ganancia +{week.gain}h
+                  <Badge className="w-full justify-center bg-emerald-500 text-white border-0 text-[9px] sm:text-[10px] py-0.5 sm:py-1 px-1">
+                    <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                    <span className="hidden sm:inline">Ganancia +{week.gain}h</span>
+                    <span className="sm:hidden">+{week.gain}h</span>
                   </Badge>
                 )}
                 {week.loss !== undefined && (
-                  <Badge className="w-full justify-center bg-red-500 text-white border-0 text-[10px] py-1">
-                    <TrendingDown className="h-3 w-3 mr-1" />
-                    Pérdida {week.loss}h
+                  <Badge className="w-full justify-center bg-red-500 text-white border-0 text-[9px] sm:text-[10px] py-0.5 sm:py-1 px-1">
+                    <TrendingDown className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                    <span className="hidden sm:inline">Pérdida {week.loss}h</span>
+                    <span className="sm:hidden">{week.loss}h</span>
                   </Badge>
                 )}
 
                 {/* Free Status */}
                 {week.status === 'free' && (
-                  <div className="text-center text-xs font-medium text-slate-500 py-2">
+                  <div className="text-center text-[10px] sm:text-xs font-medium text-slate-500 py-1 sm:py-2">
                     LIBRE
                   </div>
                 )}
 
                 {/* Pending Tasks */}
                 {week.pending && (
-                  <div className="text-[10px] text-amber-600 font-medium">
+                  <div className="text-[9px] sm:text-[10px] text-amber-600 font-medium">
                     +{week.pending} pendiente
                   </div>
                 )}
 
                 {/* Bottom Status */}
-                <div className="flex items-center justify-between pt-1 border-t border-slate-200">
+                <div className="flex items-center justify-between pt-0.5 sm:pt-1 border-t border-slate-200">
                   {week.status === 'completed' && !isOver ? (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                    <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-500" />
                   ) : (
-                    <AlertTriangle className="h-4 w-4 text-amber-500" />
+                    <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-amber-500" />
                   )}
                   <span className={cn(
-                    "text-[10px] font-mono font-bold",
+                    "text-[9px] sm:text-[10px] font-mono font-bold",
                     isOver ? "text-red-600" :
                     week.status === 'completed' ? "text-emerald-600" :
                     "text-amber-600"
@@ -210,10 +213,10 @@ export function CalendarPreview() {
           })}
 
           {/* Total Month Card */}
-          <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50 p-4 flex flex-col items-center justify-center space-y-2">
-            <div className="text-2xl font-bold text-emerald-700">{totalMonth}h</div>
-            <div className="text-xs text-slate-600">/ {totalCapacity}h</div>
-            <div className="text-sm font-bold text-emerald-600">{monthPercentage}%</div>
+          <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50 p-2 sm:p-4 flex flex-col items-center justify-center space-y-1 sm:space-y-2">
+            <div className="text-lg sm:text-2xl font-bold text-emerald-700">{totalMonth}h</div>
+            <div className="text-[10px] sm:text-xs text-slate-600">/ {totalCapacity}h</div>
+            <div className="text-xs sm:text-sm font-bold text-emerald-600">{monthPercentage}%</div>
           </div>
         </div>
       </div>

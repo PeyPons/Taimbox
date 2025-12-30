@@ -116,21 +116,22 @@ export default function LandingPage() {
               </div>
 
               {/* Preview visual - Calendario completo */}
-              <div className="relative mt-12 sm:mt-16 max-w-5xl mx-auto">
+              <div className="relative mt-8 sm:mt-12 md:mt-16 max-w-5xl mx-auto px-2 sm:px-0">
                 <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/50 to-transparent -z-10" />
                 <div className="relative transform hover:scale-[1.01] transition-all duration-500">
                   <CalendarPreview />
-                  <div className="mt-4 text-center">
+                  <div className="mt-3 sm:mt-4 text-center">
                     <Button
                       variant="outline"
-                      className="bg-white/10 backdrop-blur-md border-white/30 text-white hover:bg-white/20 hover:border-white/50"
+                      size="sm"
+                      className="bg-white/10 backdrop-blur-md border-white/30 text-white hover:bg-white/20 hover:border-white/50 text-xs sm:text-sm"
                       onClick={() => {
                         const demoSection = document.getElementById('demo');
                         demoSection?.scrollIntoView({ behavior: 'smooth' });
                       }}
                     >
                       Ver demo completo
-                      <ArrowRight className="ml-2 h-4 w-4" />
+                      <ArrowRight className="ml-2 h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
                 </div>
