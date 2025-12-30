@@ -23,6 +23,8 @@ import {
   GitBranch
 } from 'lucide-react';
 import { DemoDashboard } from '@/components/demo/DemoDashboard';
+import { DemoDeadlinesPage } from '@/components/demo/DemoDeadlinesPage';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Helmet } from 'react-helmet-async';
 
 export default function LandingPage() {
@@ -281,8 +283,23 @@ export default function LandingPage() {
               </p>
             </div>
             
-            <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border-2 border-indigo-200/50 shadow-2xl overflow-hidden">
-              <DemoDashboard />
+            <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-indigo-200/50 shadow-2xl overflow-hidden">
+              <Tabs defaultValue="dashboard" className="w-full">
+                <TabsList className="w-full justify-start h-auto p-1 bg-indigo-50/50 border-b border-indigo-200/50 rounded-none rounded-t-xl">
+                  <TabsTrigger value="dashboard" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm">
+                    Dashboard
+                  </TabsTrigger>
+                  <TabsTrigger value="deadlines" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm">
+                    Deadlines
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="dashboard" className="m-0 p-3 sm:p-4 md:p-6">
+                  <DemoDashboard />
+                </TabsContent>
+                <TabsContent value="deadlines" className="m-0 p-0">
+                  <DemoDeadlinesPage />
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
         </div>

@@ -530,15 +530,22 @@ export default function EmployeeDashboard() {
   const monthlyLoad = getEmployeeMonthlyLoad(myEmployeeProfile.id, currentMonth.getFullYear(), currentMonth.getMonth());
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6 pb-20 animate-in fade-in duration-500">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 pb-20 animate-in fade-in duration-500">
+      {/* Fondo con gradiente animado */}
+      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-indigo-50 via-white to-purple-50 opacity-50" />
+      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_20%_50%,rgba(99,102,241,0.1),transparent_50%)]" />
+      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_80%_80%,rgba(168,85,247,0.1),transparent_50%)]" />
       
       {/* 1. CABECERA + ACCIONES */}
       <div className="flex flex-col gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">
-            Hola, {myEmployeeProfile.first_name || myEmployeeProfile.name.split(' ')[0]} 👋
-          </h1>
-          <p className="text-slate-500">Panel de control operativo</p>
+        <div className="relative">
+          <div className="absolute -inset-1 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-1000 group-hover:duration-200" />
+          <div className="relative bg-white/80 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-indigo-100/50 shadow-lg">
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              Hola, {myEmployeeProfile.first_name || myEmployeeProfile.name.split(' ')[0]} 👋
+            </h1>
+            <p className="text-slate-500 text-sm sm:text-base mt-1">Panel de control operativo</p>
+          </div>
         </div>
         
         <div className="flex flex-wrap items-center gap-2">
@@ -629,22 +636,23 @@ export default function EmployeeDashboard() {
       </div>
 
       {/* 2. CONTROL MES */}
-      <div className="flex items-center gap-4 bg-white p-2 rounded-lg border shadow-sm min-w-[400px]">
-        <h2 className="text-lg font-bold capitalize text-slate-900 flex items-center gap-2 ml-2 min-w-[180px]">
-          {getMonthName(currentMonth)} <Badge variant="outline" className="text-xs font-normal">{currentMonth.getFullYear()}</Badge>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 bg-gradient-to-r from-indigo-50 to-purple-50 p-3 sm:p-4 rounded-xl border border-indigo-200/50 shadow-md backdrop-blur-sm">
+        <h2 className="text-base sm:text-lg font-bold capitalize bg-gradient-to-r from-indigo-700 to-purple-700 bg-clip-text text-transparent flex items-center gap-2 sm:min-w-[180px]">
+          {getMonthName(currentMonth)} <Badge variant="outline" className="text-xs font-normal bg-white/80">{currentMonth.getFullYear()}</Badge>
         </h2>
-        <div className="h-6 w-px bg-slate-200 mx-2" />
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handlePrevMonth}><ChevronLeft className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="sm" onClick={handleToday} className="h-7 text-xs px-2"><CalendarDays className="h-3.5 w-3.5 mr-1.5" />Mes actual</Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleNextMonth}><ChevronRight className="h-4 w-4" /></Button>
+        <div className="hidden sm:block h-6 w-px bg-indigo-200 mx-2" />
+        <div className="flex items-center gap-1 w-full sm:w-auto">
+          <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-7 sm:w-7 hover:bg-indigo-100" onClick={handlePrevMonth}><ChevronLeft className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="sm" onClick={handleToday} className="h-8 sm:h-7 text-xs px-3 sm:px-2 hover:bg-indigo-100 flex-1 sm:flex-initial"><CalendarDays className="h-3.5 w-3.5 mr-1.5" />Mes actual</Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-7 sm:w-7 hover:bg-indigo-100" onClick={handleNextMonth}><ChevronRight className="h-4 w-4" /></Button>
         </div>
       </div>
 
       {/* 3. CALENDARIO */}
-      <Card className="overflow-hidden border-slate-200 shadow-sm bg-white" data-tour="calendar">
+      <Card className="overflow-hidden border-indigo-200/50 shadow-xl bg-white/90 backdrop-blur-sm relative" data-tour="calendar">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 -z-10" />
         <div className="overflow-x-auto custom-scrollbar">
-          <div style={{ minWidth: '1000px' }}>
+          <div style={{ minWidth: '1000px' }} className="sm:min-w-0">
             <div className="grid bg-slate-50 border-b" style={{ gridTemplateColumns: gridTemplate }}>
               <div className="px-4 py-3 font-bold text-sm text-slate-700 flex items-center border-r">Mi calendario</div>
               {weeks.map((week, index) => {
@@ -699,22 +707,23 @@ export default function EmployeeDashboard() {
 
 
       {/* 4. VISTA ORGANIZADA POR PESTAÑAS - PRIORIDAD DE MAYOR A MENOR */}
-      <Card className="border-slate-200 shadow-sm bg-white" data-tour="projects-summary">
+      <Card className="border-indigo-200/50 shadow-xl bg-white/90 backdrop-blur-sm relative overflow-hidden" data-tour="projects-summary">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/30 to-purple-50/30 -z-10" />
         <Tabs defaultValue="dependencies" className="w-full">
-          <TabsList className="w-full justify-start h-auto p-1 bg-slate-50 flex-wrap">
-            <TabsTrigger value="dependencies" className="data-[state=active]:bg-white">
+          <TabsList className="w-full justify-start h-auto p-1 bg-gradient-to-r from-indigo-50 to-purple-50 flex-wrap border-b border-indigo-100/50">
+            <TabsTrigger value="dependencies" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all">
               Dependencias
             </TabsTrigger>
-            <TabsTrigger value="coherence" className="data-[state=active]:bg-white">
+            <TabsTrigger value="coherence" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all">
               Coherencia
             </TabsTrigger>
-            <TabsTrigger value="teammates" className="data-[state=active]:bg-white">
+            <TabsTrigger value="teammates" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all">
               Compañeros
             </TabsTrigger>
-            <TabsTrigger value="projects" className="data-[state=active]:bg-white">
+            <TabsTrigger value="projects" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all">
               Proyectos
             </TabsTrigger>
-            <TabsTrigger value="metrics" className="data-[state=active]:bg-white">
+            <TabsTrigger value="metrics" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all">
               Métricas
             </TabsTrigger>
           </TabsList>
