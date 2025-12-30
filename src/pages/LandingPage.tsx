@@ -94,20 +94,39 @@ export default function LandingPage() {
                 </Button>
               </div>
 
-              {/* Preview visual flotante */}
-              <div className="relative mt-16 sm:mt-20">
+              {/* Preview visual mejorado - Calendario semanal */}
+              <div className="relative mt-12 sm:mt-16">
                 <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/50 to-transparent -z-10" />
-                <div className="relative bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-4 sm:p-6 md:p-8 shadow-2xl transform hover:scale-[1.02] transition-transform duration-500">
-                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-4">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <div key={i} className="aspect-square bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-xl border border-indigo-400/30 flex items-center justify-center backdrop-blur-sm">
-                        <div className="text-xs sm:text-sm font-bold text-indigo-200">{i * 20}%</div>
+                <div className="relative bg-white/10 backdrop-blur-2xl rounded-3xl border border-white/20 p-6 sm:p-8 md:p-10 shadow-2xl transform hover:scale-[1.01] transition-transform duration-500">
+                  <div className="mb-4">
+                    <h3 className="text-sm sm:text-base font-semibold text-white/90 mb-2 text-center">
+                      Vista previa del calendario
+                    </h3>
+                    <p className="text-xs sm:text-sm text-indigo-200/70 text-center">
+                      Semana del equipo en tiempo real
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-5 gap-2 sm:gap-3">
+                    {['L', 'M', 'X', 'J', 'V'].map((day, i) => (
+                      <div key={day} className="flex flex-col items-center gap-2">
+                        <div className="text-[10px] sm:text-xs font-bold text-indigo-300/70 uppercase">
+                          {day}
+                        </div>
+                        <div className="w-full aspect-square bg-gradient-to-br from-indigo-500/30 via-purple-500/30 to-indigo-500/30 rounded-lg border border-indigo-400/40 flex flex-col items-center justify-center backdrop-blur-sm relative overflow-hidden group">
+                          <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <div className="text-[10px] sm:text-xs font-bold text-white relative z-10">
+                            {[8, 6, 7, 8, 5][i]}h
+                          </div>
+                          <div className="absolute bottom-1 left-1 right-1 h-1 bg-white/20 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full"
+                              style={{ width: `${[100, 75, 87, 100, 62][i]}%` }}
+                            />
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
-                  <p className="text-center text-xs sm:text-sm text-indigo-200/70 mt-4">
-                    Vista previa de la carga de trabajo del equipo
-                  </p>
                 </div>
               </div>
             </div>
@@ -127,19 +146,19 @@ export default function LandingPage() {
             </p>
           </div>
           
-          {/* Grid mejorado con menos redundancia */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+          {/* Grid con todas las funcionalidades sin repetir */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
             {/* Feature 1: Planificación Visual */}
             <div className="group relative">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition duration-300" />
               <Card className="relative h-full border-2 border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/20">
-                <CardContent className="p-6 sm:p-8 flex flex-col items-center text-center">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 shadow-lg shadow-indigo-500/30 group-hover:scale-110 transition-transform">
-                    <Calendar className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+                <CardContent className="p-5 sm:p-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg shadow-indigo-500/30 group-hover:scale-110 transition-transform">
+                    <Calendar className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
                   </div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-white mb-3">Calendario Visual</h3>
-                  <p className="text-sm sm:text-base text-indigo-200/80 leading-relaxed">
-                    Ve la carga de trabajo de todo tu equipo en tiempo real. Identifica sobrecargas al instante.
+                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Calendario Visual</h3>
+                  <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
+                    Carga de trabajo del equipo en tiempo real
                   </p>
                 </CardContent>
               </Card>
@@ -149,13 +168,13 @@ export default function LandingPage() {
             <div className="group relative">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition duration-300" />
               <Card className="relative h-full border-2 border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20">
-                <CardContent className="p-6 sm:p-8 flex flex-col items-center text-center">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform">
-                    <Link2 className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+                <CardContent className="p-5 sm:p-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform">
+                    <Link2 className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
                   </div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-white mb-3">Dependencias</h3>
-                  <p className="text-sm sm:text-base text-indigo-200/80 leading-relaxed">
-                    Gestiona qué tarea depende de cuál. Identifica bloqueos antes de que ocurran.
+                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Dependencias</h3>
+                  <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
+                    Gestiona bloqueos entre tareas
                   </p>
                 </CardContent>
               </Card>
@@ -165,13 +184,13 @@ export default function LandingPage() {
             <div className="group relative">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-600 to-orange-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition duration-300" />
               <Card className="relative h-full border-2 border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-amber-500/20">
-                <CardContent className="p-6 sm:p-8 flex flex-col items-center text-center">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
-                    <Target className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+                <CardContent className="p-5 sm:p-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
+                    <Target className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
                   </div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-white mb-3">Deadlines</h3>
-                  <p className="text-sm sm:text-base text-indigo-200/80 leading-relaxed">
-                    Establece objetivos mensuales. Detecta cuando la realidad se aleja del plan.
+                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Deadlines</h3>
+                  <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
+                    Objetivos mensuales y coherencia
                   </p>
                 </CardContent>
               </Card>
@@ -181,13 +200,77 @@ export default function LandingPage() {
             <div className="group relative">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition duration-300" />
               <Card className="relative h-full border-2 border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/20">
-                <CardContent className="p-6 sm:p-8 flex flex-col items-center text-center">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
-                    <BarChart3 className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+                <CardContent className="p-5 sm:p-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
+                    <BarChart3 className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
                   </div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-white mb-3">Métricas</h3>
-                  <p className="text-sm sm:text-base text-indigo-200/80 leading-relaxed">
-                    Precisión de planificación, balance motivacional, índice de fiabilidad. Todo medido.
+                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Métricas</h3>
+                  <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
+                    Precisión, balance y fiabilidad
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Feature 5: Gestión de Equipo */}
+            <div className="group relative">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition duration-300" />
+              <Card className="relative h-full border-2 border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20">
+                <CardContent className="p-5 sm:p-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform">
+                    <Users className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Equipo</h3>
+                  <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
+                    Horarios, ausencias y objetivos
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Feature 6: Proyectos */}
+            <div className="group relative">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-rose-600 to-pink-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition duration-300" />
+              <Card className="relative h-full border-2 border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-rose-500/20">
+                <CardContent className="p-5 sm:p-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-rose-500 to-pink-500 rounded-xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg shadow-rose-500/30 group-hover:scale-110 transition-transform">
+                    <Target className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Proyectos</h3>
+                  <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
+                    Control de horas y presupuestos
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Feature 7: Weekly Reports */}
+            <div className="group relative">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition duration-300" />
+              <Card className="relative h-full border-2 border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-violet-500/20">
+                <CardContent className="p-5 sm:p-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-violet-500 to-purple-500 rounded-xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg shadow-violet-500/30 group-hover:scale-110 transition-transform">
+                    <FileText className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Weekly Reports</h3>
+                  <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
+                    Bloqueos y redistribuciones
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Feature 8: Alertas */}
+            <div className="group relative">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-yellow-600 to-amber-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition duration-300" />
+              <Card className="relative h-full border-2 border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/20">
+                <CardContent className="p-5 sm:p-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-yellow-500 to-amber-500 rounded-xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg shadow-yellow-500/30 group-hover:scale-110 transition-transform">
+                    <Bell className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Alertas</h3>
+                  <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
+                    Notificaciones inteligentes
                   </p>
                 </CardContent>
               </Card>
