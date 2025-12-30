@@ -138,7 +138,7 @@ export default function LandingPage() {
                         demoSection?.scrollIntoView({ behavior: 'smooth' });
                       }}
                     >
-                      Ver demo completo
+                      Ver demo completa
                       <ArrowRight className="ml-2 h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
@@ -1162,7 +1162,7 @@ export default function LandingPage() {
                   demoSection?.scrollIntoView({ behavior: 'smooth' });
                 }}
               >
-                Ver demo completo
+                Ver demo completa
               </Button>
             </div>
           </div>
