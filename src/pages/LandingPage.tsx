@@ -394,6 +394,7 @@ export default function LandingPage() {
           </div>
         </div>
 
+
         {/* Sección específica de Deadlines */}
         <div className="relative z-10 bg-gradient-to-br from-amber-950/30 via-orange-950/30 to-amber-950/30 border-y border-amber-500/20 py-16 sm:py-20 md:py-28">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -665,7 +666,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Casos de Uso y Beneficios */}
+        {/* Casos de uso y beneficios */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 md:py-28">
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-6 px-4">
