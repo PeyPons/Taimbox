@@ -800,7 +800,7 @@ export default function EmployeeDashboard() {
                             <span className="truncate">{task.projectId ? formatProjectName(getProjectDisplayName(task.projectId)) : "Seleccionar..."}</span>
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[300px] p-0">
+                        <PopoverContent className="w-[400px] p-0">
                           <Command>
                             <CommandInput placeholder="Buscar proyecto..." />
                             <CommandList>
@@ -809,9 +809,17 @@ export default function EmployeeDashboard() {
                                 {activeProjects.map(p => {
                                   const client = clients.find(c => c.id === p.clientId);
                                   return (
-                                    <CommandItem key={p.id} value={`${client?.name} ${p.name}`} onSelect={() => { updateTaskRow(task.id, 'projectId', p.id); setOpenComboboxId(null); }}>
+                                    <CommandItem 
+                                      key={p.id} 
+                                      value={p.name} 
+                                      onSelect={() => { updateTaskRow(task.id, 'projectId', p.id); setOpenComboboxId(null); }}
+                                    >
                                       <Check className={cn("mr-2 h-4 w-4", task.projectId === p.id ? "opacity-100" : "opacity-0")} />
-                                      <span className="truncate">{client?.name} - {p.name}</span>
+                                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: client?.color || '#6b7280' }} />
+                                        <span className="truncate font-medium">{p.name}</span>
+                                        <span className="text-xs text-muted-foreground truncate">({client?.name})</span>
+                                      </div>
                                     </CommandItem>
                                   );
                                 })}
