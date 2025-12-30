@@ -717,15 +717,19 @@ export default function LandingPage() {
                 <ul className="text-white/90 text-sm space-y-1.5">
                   <li className="flex items-start gap-1.5">
                     <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Datos encriptados en tránsito y en reposo</span>
+                    <span>Encriptación TLS/SSL en todas las conexiones</span>
                   </li>
                   <li className="flex items-start gap-1.5">
                     <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Protocolos de seguridad avanzados</span>
+                    <span>Datos encriptados en reposo en la base de datos</span>
                   </li>
                   <li className="flex items-start gap-1.5">
                     <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Certificaciones de seguridad</span>
+                    <span>Algoritmos de encriptación de nivel empresarial</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Certificados SSL/TLS actualizados automáticamente</span>
                   </li>
                 </ul>
               </CardContent>
@@ -740,15 +744,19 @@ export default function LandingPage() {
                 <ul className="text-white/90 text-sm space-y-1.5">
                   <li className="flex items-start gap-1.5">
                     <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Totalmente compatible con GDPR</span>
+                    <span>Totalmente compatible con el Reglamento General de Protección de Datos</span>
                   </li>
                   <li className="flex items-start gap-1.5">
                     <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Control total sobre tus datos</span>
+                    <span>Control total sobre tus datos personales y empresariales</span>
                   </li>
                   <li className="flex items-start gap-1.5">
                     <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Derecho al olvido garantizado</span>
+                    <span>Derecho al olvido: eliminación completa de datos</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Portabilidad de datos: exportación en formatos estándar</span>
                   </li>
                 </ul>
               </CardContent>
@@ -763,15 +771,76 @@ export default function LandingPage() {
                 <ul className="text-white/90 text-sm space-y-1.5">
                   <li className="flex items-start gap-1.5">
                     <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Permisos granulares por usuario</span>
+                    <span>Autenticación segura con contraseñas encriptadas</span>
                   </li>
                   <li className="flex items-start gap-1.5">
                     <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Autenticación segura</span>
+                    <span>Permisos granulares por usuario y funcionalidad</span>
                   </li>
                   <li className="flex items-start gap-1.5">
                     <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Respaldo automático de datos</span>
+                    <span>Aislamiento de datos con Row Level Security (RLS)</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Respaldo automático diario de toda la información</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Información adicional de seguridad */}
+          <div className="grid md:grid-cols-2 gap-4 sm:gap-5 md:gap-6 mb-8">
+            <Card className="border-2 border-emerald-500/30 bg-emerald-500/10 backdrop-blur-xl">
+              <CardContent className="p-5 sm:p-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-4">
+                  <Shield className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-3">Infraestructura segura</h3>
+                <ul className="text-white/90 text-sm space-y-1.5">
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Alojamiento en servidores con certificaciones ISO 27001</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Monitoreo continuo de seguridad 24/7</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Actualizaciones de seguridad automáticas</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Protección contra ataques DDoS y vulnerabilidades</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-emerald-500/30 bg-emerald-500/10 backdrop-blur-xl">
+              <CardContent className="p-5 sm:p-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-4">
+                  <Lock className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-3">Privacidad de datos</h3>
+                <ul className="text-white/90 text-sm space-y-1.5">
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Tus datos no se comparten con terceros sin tu consentimiento</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Acceso restringido solo a personal autorizado</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Registro de auditoría de accesos y modificaciones</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Política de privacidad transparente y actualizada</span>
                   </li>
                 </ul>
               </CardContent>
@@ -1094,7 +1163,7 @@ export default function LandingPage() {
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="item-6" className="border-b-0">
+                <AccordionItem value="item-6" className="border-b border-white/10">
                   <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
                     <div className="flex items-center gap-3">
                       <HelpCircle className="h-5 w-5 text-indigo-300 shrink-0" />
@@ -1105,6 +1174,64 @@ export default function LandingPage() {
                     Sí, ofrecemos soporte técnico completo. Puedes contactarnos por correo electrónico y nuestro equipo te ayudará con 
                     cualquier duda o problema. Además, tenemos documentación completa, tutoriales y una comunidad activa 
                     donde puedes encontrar respuestas y compartir experiencias.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="item-7" className="border-b border-white/10">
+                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
+                    <div className="flex items-center gap-3">
+                      <Shield className="h-5 w-5 text-emerald-300 shrink-0" />
+                      <span className="font-semibold">¿Dónde se almacenan mis datos?</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
+                    Tus datos se almacenan en servidores seguros ubicados en centros de datos con certificaciones internacionales de seguridad. 
+                    Utilizamos infraestructura en la nube de nivel empresarial que garantiza alta disponibilidad, respaldo automático y 
+                    protección física de los servidores. Todos los datos están encriptados y protegidos por múltiples capas de seguridad.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="item-8" className="border-b border-white/10">
+                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
+                    <div className="flex items-center gap-3">
+                      <Shield className="h-5 w-5 text-emerald-300 shrink-0" />
+                      <span className="font-semibold">¿Quién puede acceder a mis datos?</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
+                    Solo tú y las personas de tu equipo a las que otorgues permisos específicos pueden acceder a los datos. 
+                    Utilizamos un sistema de permisos granulares que te permite controlar exactamente qué puede ver y hacer cada usuario. 
+                    Nuestro equipo técnico solo accede a los datos cuando es estrictamente necesario para proporcionar soporte, 
+                    y siempre con tu autorización previa. Todos los accesos quedan registrados en un log de auditoría.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="item-9" className="border-b border-white/10">
+                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
+                    <div className="flex items-center gap-3">
+                      <Lock className="h-5 w-5 text-emerald-300 shrink-0" />
+                      <span className="font-semibold">¿Qué medidas de seguridad tienen las contraseñas?</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
+                    Las contraseñas se almacenan utilizando algoritmos de hash seguros (bcrypt) que hacen imposible recuperar la contraseña original. 
+                    Nunca almacenamos contraseñas en texto plano. Además, todas las conexiones utilizan encriptación TLS/SSL para proteger 
+                    las credenciales durante el inicio de sesión. Te recomendamos usar contraseñas fuertes y únicas, y cambiarlas periódicamente.
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="item-10" className="border-b-0">
+                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
+                    <div className="flex items-center gap-3">
+                      <Database className="h-5 w-5 text-emerald-300 shrink-0" />
+                      <span className="font-semibold">¿Qué pasa si quiero eliminar todos mis datos?</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
+                    Puedes eliminar todos tus datos en cualquier momento desde la configuración de tu cuenta. El proceso de eliminación es 
+                    completo e irreversible: se eliminan todos los datos asociados a tu cuenta, incluyendo proyectos, asignaciones, 
+                    historial y cualquier otra información. También puedes exportar todos tus datos antes de eliminarlos si lo deseas. 
+                    Este proceso cumple con el derecho al olvido establecido en el GDPR.
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
