@@ -12,6 +12,7 @@ import {
   TrendingUp,
   Clock,
   Award,
+  Sparkles,
   Link2,
   AlertTriangle,
   FileText,
@@ -61,30 +62,7 @@ export default function LandingPage() {
               {/* Badge animado mejorado */}
               <div className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-indigo-500/40 via-purple-500/40 to-pink-500/40 backdrop-blur-md rounded-full text-white text-sm sm:text-base font-bold mb-8 sm:mb-12 border border-white/20 shadow-2xl shadow-indigo-500/30 animate-fade-in relative overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  width="20" 
-                  height="20" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="url(#sparkles-gradient)" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  className="h-4 w-4 sm:h-5 sm:w-5 animate-spin-slow relative z-10"
-                >
-                  <defs>
-                    <linearGradient id="sparkles-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#6366f1" />
-                      <stop offset="100%" stopColor="#a855f7" />
-                    </linearGradient>
-                  </defs>
-                  <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path>
-                  <path d="M20 3v4"></path>
-                  <path d="M22 5h-4"></path>
-                  <path d="M4 17v2"></path>
-                  <path d="M5 18H3"></path>
-                </svg>
+                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 animate-spin-slow relative z-10" />
                 <span className="whitespace-nowrap relative z-10">Tu equipo, tu tiempo, tu control</span>
               </div>
               
