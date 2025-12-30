@@ -136,7 +136,7 @@ interface AppContextType {
   addWeeklyFeedback: (feedback: Omit<WeeklyFeedback, 'id' | 'createdAt'>) => void;
 }
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
+export const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 

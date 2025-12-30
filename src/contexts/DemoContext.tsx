@@ -162,9 +162,12 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
   }), []);
 
   // Inyectar DemoContext como AppContext temporalmente para que los componentes funcionen
+  // Usar 'as any' para permitir que DemoContext funcione como AppContext
+  const appContextValue = value as any;
+  
   return (
     <DemoContext.Provider value={value}>
-      <AppContext.Provider value={value as any}>
+      <AppContext.Provider value={appContextValue}>
         {children}
       </AppContext.Provider>
     </DemoContext.Provider>
