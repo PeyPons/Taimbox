@@ -12,7 +12,15 @@ import {
   TrendingUp,
   Clock,
   Award,
-  Sparkles
+  Sparkles,
+  Link2,
+  AlertTriangle,
+  FileText,
+  Gauge,
+  Activity,
+  Bell,
+  Shield,
+  GitBranch
 } from 'lucide-react';
 import { DemoDashboard } from '@/components/demo/DemoDashboard';
 import { Helmet } from 'react-helmet-async';
@@ -154,6 +162,102 @@ export default function LandingPage() {
                 <h3 className="text-xl font-bold text-white mb-2">Análisis Predictivo</h3>
                 <p className="text-indigo-200">
                   Predice sobrecargas y optimiza la distribución de trabajo antes de que sea un problema.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-indigo-500/30 bg-indigo-900/30 backdrop-blur-sm hover:border-indigo-400/50 transition-all hover:shadow-xl hover:shadow-indigo-500/20">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-indigo-500/20 rounded-lg flex items-center justify-center mb-4 border border-indigo-400/30">
+                  <Link2 className="h-6 w-6 text-indigo-300" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Gestión de Dependencias</h3>
+                <p className="text-indigo-200">
+                  Visualiza y gestiona dependencias entre tareas. Identifica bloqueos y coordina el trabajo del equipo.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-purple-500/30 bg-purple-900/30 backdrop-blur-sm hover:border-purple-400/50 transition-all hover:shadow-xl hover:shadow-purple-500/20">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4 border border-purple-400/30">
+                  <AlertTriangle className="h-6 w-6 text-purple-300" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Deadlines y Coherencia</h3>
+                <p className="text-indigo-200">
+                  Establece deadlines por proyecto y detecta inconsistencias en la planificación del equipo.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-indigo-500/30 bg-indigo-900/30 backdrop-blur-sm hover:border-indigo-400/50 transition-all hover:shadow-xl hover:shadow-indigo-500/20">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-indigo-500/20 rounded-lg flex items-center justify-center mb-4 border border-indigo-400/30">
+                  <Gauge className="h-6 w-6 text-indigo-300" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Precisión de Planificación</h3>
+                <p className="text-indigo-200">
+                  Analiza la precisión entre horas planificadas y reales. Mejora tus estimaciones con datos históricos.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-purple-500/30 bg-purple-900/30 backdrop-blur-sm hover:border-purple-400/50 transition-all hover:shadow-xl hover:shadow-purple-500/20">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4 border border-purple-400/30">
+                  <FileText className="h-6 w-6 text-purple-300" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Weekly Reports</h3>
+                <p className="text-indigo-200">
+                  Sistema de reportes semanales para registrar bloqueos, redistribuciones y feedback del equipo.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-indigo-500/30 bg-indigo-900/30 backdrop-blur-sm hover:border-indigo-400/50 transition-all hover:shadow-xl hover:shadow-indigo-500/20">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-indigo-500/20 rounded-lg flex items-center justify-center mb-4 border border-indigo-400/30">
+                  <Activity className="h-6 w-6 text-indigo-300" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Análisis de Carga</h3>
+                <p className="text-indigo-200">
+                  Monitorea la carga de trabajo en tiempo real. Identifica sobrecargas y redistribuye tareas automáticamente.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-purple-500/30 bg-purple-900/30 backdrop-blur-sm hover:border-purple-400/50 transition-all hover:shadow-xl hover:shadow-purple-500/20">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4 border border-purple-400/30">
+                  <Bell className="h-6 w-6 text-purple-300" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Alertas Inteligentes</h3>
+                <p className="text-indigo-200">
+                  Recibe notificaciones sobre sobrecargas, dependencias bloqueadas y tareas pendientes.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-indigo-500/30 bg-indigo-900/30 backdrop-blur-sm hover:border-indigo-400/50 transition-all hover:shadow-xl hover:shadow-indigo-500/20">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-indigo-500/20 rounded-lg flex items-center justify-center mb-4 border border-indigo-400/30">
+                  <Shield className="h-6 w-6 text-indigo-300" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Control de Accesos</h3>
+                <p className="text-indigo-200">
+                  Sistema de permisos granular. Cada empleado ve solo lo que necesita para su trabajo.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-purple-500/30 bg-purple-900/30 backdrop-blur-sm hover:border-purple-400/50 transition-all hover:shadow-xl hover:shadow-purple-500/20">
+              <CardContent className="p-6">
+                <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4 border border-purple-400/30">
+                  <GitBranch className="h-6 w-6 text-purple-300" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Transferencias de Horas</h3>
+                <p className="text-indigo-200">
+                  Transfiere y redistribuye horas entre proyectos y empleados de forma flexible y controlada.
                 </p>
               </CardContent>
             </Card>

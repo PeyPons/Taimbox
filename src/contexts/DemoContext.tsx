@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo } from 'react';
-import { Employee, Client, Project, Allocation, LoadStatus } from '@/types';
-import { demoEmployees, demoClients, demoProjects, demoAllocations } from '@/data/demoData';
+import { Employee, Client, Project, Allocation, LoadStatus, Deadline } from '@/types';
+import { demoEmployees, demoClients, demoProjects, demoAllocations, demoDeadlines } from '@/data/demoData';
 import { getMonthlyCapacity } from '@/utils/dateUtils';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { AppContext } from './AppContext';
@@ -13,6 +13,7 @@ interface DemoContextType {
   absences: any[];
   teamEvents: any[];
   weeklyFeedback: any[];
+  deadlines: Deadline[];
   getEmployeeMonthlyLoad: (employeeId: string, year: number, month: number) => {
     hours: number;
     capacity: number;
@@ -123,6 +124,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     absences: [],
     teamEvents: [],
     weeklyFeedback: [],
+    deadlines: demoDeadlines,
     getEmployeeMonthlyLoad,
     getEmployeeLoadForWeek,
     getEmployeeAllocationsForWeek,

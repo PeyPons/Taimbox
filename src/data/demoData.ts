@@ -1,4 +1,4 @@
-import { Employee, Client, Project, Allocation } from '@/types';
+import { Employee, Client, Project, Allocation, Deadline } from '@/types';
 import { startOfWeek, format, addDays, startOfMonth, endOfMonth } from 'date-fns';
 
 // Generar semanas del mes actual
@@ -274,4 +274,113 @@ export const demoAllocations: Allocation[] = [
     status: 'planned', 
     taskName: 'Estrategia de outreach'
   },
+
+  // Más allocations para precisión de planificación (con horas reales/computadas)
+  { 
+    id: 'demo-a19', 
+    employeeId: 'demo-1', 
+    projectId: 'demo-p1', 
+    weekStartDate: weeks[2], 
+    hoursAssigned: 18, 
+    hoursActual: 19.5, // Más de lo planificado
+    hoursComputed: 18,
+    status: 'completed', 
+    taskName: 'Optimización técnica avanzada'
+  },
+  { 
+    id: 'demo-a20', 
+    employeeId: 'demo-1', 
+    projectId: 'demo-p2', 
+    weekStartDate: weeks[2], 
+    hoursAssigned: 14, 
+    hoursActual: 12, // Menos de lo planificado
+    hoursComputed: 12,
+    status: 'completed', 
+    taskName: 'Redacción de artículos'
+  },
+  { 
+    id: 'demo-a21', 
+    employeeId: 'demo-1', 
+    projectId: 'demo-p4', 
+    weekStartDate: weeks[2], 
+    hoursAssigned: 10, 
+    hoursActual: 10, // Exacto
+    hoursComputed: 10,
+    status: 'completed', 
+    taskName: 'Análisis de competencia'
+  },
+
+  // Dependencias: María depende de Carlos (demo-a22 depende de demo-a6)
+  { 
+    id: 'demo-a22', 
+    employeeId: 'demo-1', 
+    projectId: 'demo-p1', 
+    weekStartDate: weeks[0], 
+    hoursAssigned: 8, 
+    hoursActual: 8,
+    hoursComputed: 8,
+    status: 'completed', 
+    taskName: 'Revisión de contenidos',
+    dependencyId: 'demo-a6' // Depende de Carlos
+  },
+  // Carlos depende de María (demo-a23 depende de demo-a1)
+  { 
+    id: 'demo-a23', 
+    employeeId: 'demo-2', 
+    projectId: 'demo-p1', 
+    weekStartDate: weeks[1], 
+    hoursAssigned: 10, 
+    status: 'planned', 
+    taskName: 'Continuación de auditoría',
+    dependencyId: 'demo-a1' // Depende de María
+  },
+  // Ana depende de Luis
+  { 
+    id: 'demo-a24', 
+    employeeId: 'demo-3', 
+    projectId: 'demo-p3', 
+    weekStartDate: weeks[1], 
+    hoursAssigned: 12, 
+    status: 'planned', 
+    taskName: 'Análisis de enlaces',
+    dependencyId: 'demo-a14' // Depende de Luis
+  },
+];
+
+// Deadlines para coherencia de planificación
+const currentMonthStr = format(currentDate, 'yyyy-MM');
+export const demoDeadlines: Deadline[] = [
+  {
+    id: 'demo-d1',
+    projectId: 'demo-p1',
+    month: currentMonthStr,
+    notes: 'Deadline para SEO Técnico',
+    employeeHours: {
+      'demo-1': 50, // María: deadline 50h
+      'demo-2': 30, // Carlos: deadline 30h
+      'demo-3': 25, // Ana: deadline 25h
+    }
+  },
+  {
+    id: 'demo-d2',
+    projectId: 'demo-p2',
+    month: currentMonthStr,
+    notes: 'Deadline para Contenidos',
+    employeeHours: {
+      'demo-1': 40, // María: deadline 40h
+      'demo-2': 35, // Carlos: deadline 35h
+    }
+  },
+  {
+    id: 'demo-d3',
+    projectId: 'demo-p4',
+    month: currentMonthStr,
+    notes: 'Deadline para SEO Full',
+    employeeHours: {
+      'demo-1': 30, // María: deadline 30h
+      'demo-2': 20, // Carlos: deadline 20h
+      'demo-4': 25, // Luis: deadline 25h
+    }
+  },
+  // demo-p3 y demo-p5 NO tienen deadline (para mostrar coherencia sin deadline)
 ];

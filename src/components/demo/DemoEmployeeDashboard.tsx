@@ -9,6 +9,7 @@ import { LoadIndicator } from '@/components/shared/LoadIndicator';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmployeeRow } from '@/components/planner/EmployeeRow';
+import { AllocationSheet } from '@/components/planner/AllocationSheet';
 import { getWeeksForMonth, getMonthName } from '@/utils/dateUtils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -123,7 +124,7 @@ export function DemoEmployeeDashboard() {
                 absences={absences} 
                 teamEvents={teamEvents} 
                 viewDate={currentMonth} 
-                onOpenSheet={() => {}} 
+                onOpenSheet={(empId, date) => setSelectedCell({ employeeId: empId, weekStart: date })} 
               />
               <div className="flex items-center justify-center border-l p-2 bg-slate-50/30">
                 <LoadIndicator 
@@ -201,6 +202,17 @@ export function DemoEmployeeDashboard() {
           </TabsContent>
         </Tabs>
       </Card>
+
+      {/* MODAL AllocationSheet */}
+      {selectedCell && (
+        <AllocationSheet 
+          open={!!selectedCell} 
+          onOpenChange={(open) => !open && setSelectedCell(null)} 
+          employeeId={selectedCell.employeeId} 
+          weekStart={selectedCell.weekStart.toISOString()} 
+          viewDateContext={currentMonth} 
+        />
+      )}
     </div>
   );
 }
