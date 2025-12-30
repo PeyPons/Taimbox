@@ -128,7 +128,7 @@ export const demoAllocations: Allocation[] = [
     employeeId: 'demo-1', 
     projectId: 'demo-p1', 
     weekStartDate: weeks[1], 
-    hoursAssigned: 20, 
+    hoursAssigned: 15, // Reducido para que María tenga menos que el deadline (50h)
     status: 'planned', 
     taskName: 'Implementación mejoras'
   },
@@ -193,7 +193,7 @@ export const demoAllocations: Allocation[] = [
     taskName: 'Link building intensivo'
   },
 
-  // Ana - Subcarga (50-60%)
+  // Ana - Subcarga (50-60%) - Ana tiene MENOS que el deadline (25h -> 20h total)
   { 
     id: 'demo-a11', 
     employeeId: 'demo-3', 
@@ -219,7 +219,7 @@ export const demoAllocations: Allocation[] = [
     employeeId: 'demo-3', 
     projectId: 'demo-p1', 
     weekStartDate: weeks[1], 
-    hoursAssigned: 15, 
+    hoursAssigned: 8, // Reducido para que Ana tenga menos que el deadline (25h -> 20h total)
     status: 'planned', 
     taskName: 'Optimización técnica'
   },
@@ -316,25 +316,25 @@ export const demoAllocations: Allocation[] = [
     employeeId: 'demo-1', 
     projectId: 'demo-p1', 
     weekStartDate: weeks[0], 
-    hoursAssigned: 8, 
-    hoursActual: 8,
-    hoursComputed: 8,
+    hoursAssigned: 5, // Reducido para coherencia
+    hoursActual: 5,
+    hoursComputed: 5,
     status: 'completed', 
     taskName: 'Revisión de contenidos',
     dependencyId: 'demo-a6' // Depende de Carlos
   },
-  // Carlos depende de María (demo-a23 depende de demo-a1)
+  // Carlos depende de María (demo-a23 depende de demo-a1) - Carlos tiene MÁS que el deadline
   { 
     id: 'demo-a23', 
     employeeId: 'demo-2', 
     projectId: 'demo-p1', 
     weekStartDate: weeks[1], 
-    hoursAssigned: 10, 
+    hoursAssigned: 15, // Aumentado para que Carlos tenga más que el deadline (30h -> 35h total)
     status: 'planned', 
     taskName: 'Continuación de auditoría',
     dependencyId: 'demo-a1' // Depende de María
   },
-  // Ana depende de Luis
+  // Ana depende de Luis - Ana trabaja en demo-p3 SIN deadline (para mostrar coherencia sin deadline)
   { 
     id: 'demo-a24', 
     employeeId: 'demo-3', 

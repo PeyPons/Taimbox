@@ -27,14 +27,24 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
   viewDate 
 }: PlanningInconsistenciesCardProps) {
   const { allocations, projects, employees } = useApp();
+  const appContext = useApp() as any;
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
 
   const monthKey = format(viewDate, 'yyyy-MM');
 
-  // Cargar deadlines del mes
+  // Cargar deadlines del mes (o usar del contexto si está en modo demo)
   useEffect(() => {
+    // Si hay deadlines en el contexto (modo demo), usarlos directamente
+    if (appContext.deadlines && Array.isArray(appContext.deadlines)) {
+      const monthDeadlines = appContext.deadlines.filter((d: Deadline) => d.month === monthKey);
+      setDeadlines(monthDeadlines);
+      setIsLoading(false);
+      return;
+    }
+
+    // Si no, cargar desde Supabase (modo normal)
     const loadDeadlines = async () => {
       setIsLoading(true);
       try {
@@ -64,7 +74,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
     };
 
     loadDeadlines();
-  }, [monthKey]);
+  }, [monthKey, appContext.deadlines]);
 
   // Calcular incoherencias
   const inconsistencies = useMemo(() => {
