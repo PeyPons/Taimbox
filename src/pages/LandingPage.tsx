@@ -218,7 +218,7 @@ export default function LandingPage() {
                   <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
                     Define qué tareas dependen de otras y visualiza el flujo de trabajo completo. 
                     Recibe alertas cuando una tarea bloquea a otras, prioriza automáticamente las tareas críticas 
-                    y asegúrate de que tu equipo siempre sepa qué hacer primero.
+                    y asegúrate de que tu equipo siempre sepa qué hacer primero y en qué orden.
                   </p>
                 </CardContent>
               </Card>
@@ -400,8 +400,8 @@ export default function LandingPage() {
                 Conecta con tu flujo de trabajo
               </span>
             </h2>
-            <p className="text-base sm:text-lg text-white/90 max-w-2xl mx-auto px-4">
-              Exporta datos, integra con tus herramientas y mantén todo sincronizado
+              <p className="text-base sm:text-lg text-white/90 max-w-2xl mx-auto px-4">
+              Exporta datos, integra con tus herramientas y mantén todo sincronizado.
             </p>
           </div>
 
@@ -703,7 +703,7 @@ export default function LandingPage() {
               </span>
             </h2>
             <p className="text-base sm:text-lg text-white/90 max-w-2xl mx-auto px-4">
-              Cumplimos con los más altos estándares de seguridad y privacidad
+              Cumplimos con los más altos estándares de seguridad y privacidad.
             </p>
           </div>
 
@@ -829,7 +829,7 @@ export default function LandingPage() {
                 Explora diferentes escenarios: equipos equilibrados, sobrecargas, optimizaciones y más.
               </p>
               <p className="text-sm sm:text-base text-indigo-200/70 max-w-2xl mx-auto px-4">
-                Navega por el dashboard del empleado, gestiona deadlines mensuales, visualiza dependencias 
+                Navega por tu dashboard, gestiona deadlines mensuales, visualiza dependencias 
                 entre tareas y descubre cómo nuestras métricas te ayudan a tomar mejores decisiones. 
                 Todo con datos simulados que reflejan situaciones reales que enfrentas día a día.
               </p>
@@ -995,7 +995,7 @@ export default function LandingPage() {
                     60%
                   </div>
                   <p className="text-indigo-200/80 text-sm">
-                    Menos sobrecargas detectadas a tiempo
+                    Más sobrecargas detectadas a tiempo
                   </p>
                 </div>
               </div>
@@ -1016,7 +1016,7 @@ export default function LandingPage() {
               </span>
             </h2>
             <p className="text-base sm:text-lg text-white/90 max-w-2xl mx-auto px-4">
-              Todo lo que necesitas saber sobre nuestra plataforma
+              Todo lo que necesitas saber sobre nuestra plataforma.
             </p>
           </div>
 
@@ -1034,7 +1034,7 @@ export default function LandingPage() {
                     Nuestra plataforma te permite visualizar y gestionar la carga de trabajo de tu equipo en tiempo real. 
                     Puedes planificar tareas, establecer deadlines, gestionar dependencias y recibir alertas automáticas 
                     cuando detectamos sobrecargas o problemas. Todo desde una interfaz visual e intuitiva que no requiere 
-                    instalación adicional.
+                    instalación de software adicional.
                   </AccordionContent>
                 </AccordionItem>
 
@@ -1046,7 +1046,7 @@ export default function LandingPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    No, nuestra plataforma es completamente web-based. Solo necesitas un navegador moderno y acceso a internet. 
+                    No, nuestra plataforma es completamente web. Solo necesitas un navegador moderno y acceso a internet. 
                     Funciona en cualquier dispositivo: ordenador, tablet o móvil. No requiere instalación de software ni 
                     configuraciones complicadas.
                   </AccordionContent>
@@ -1056,12 +1056,12 @@ export default function LandingPage() {
                   <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
                     <div className="flex items-center gap-3">
                       <HelpCircle className="h-5 w-5 text-indigo-300 shrink-0" />
-                      <span className="font-semibold">¿Es seguro mis datos?</span>
+                      <span className="font-semibold">¿Son seguros mis datos?</span>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
                     Absolutamente. Utilizamos encriptación de extremo a extremo para proteger tus datos tanto en tránsito 
-                    como en reposo. Cumplimos con GDPR y todos los estándares de seguridad internacionales. Tienes control 
+                    como en reposo. Cumplimos con el GDPR y todos los estándares de seguridad internacionales. Tienes control 
                     total sobre tus datos y puedes exportarlos o eliminarlos en cualquier momento.
                   </AccordionContent>
                 </AccordionItem>
@@ -1076,7 +1076,7 @@ export default function LandingPage() {
                   <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
                     Sí, ofrecemos una API REST completa que te permite integrar la plataforma con tus herramientas existentes. 
                     También puedes exportar datos en múltiples formatos para trabajar con hojas de cálculo u otros sistemas. 
-                    Estamos trabajando en integraciones nativas con herramientas populares.
+                    Además, estamos trabajando en integraciones nativas con herramientas populares.
                   </AccordionContent>
                 </AccordionItem>
 
@@ -1102,8 +1102,8 @@ export default function LandingPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    Sí, ofrecemos soporte técnico completo. Puedes contactarnos por email y nuestro equipo te ayudará con 
-                    cualquier duda o problema. También tenemos documentación completa, tutoriales y una comunidad activa 
+                    Sí, ofrecemos soporte técnico completo. Puedes contactarnos por correo electrónico y nuestro equipo te ayudará con 
+                    cualquier duda o problema. Además, tenemos documentación completa, tutoriales y una comunidad activa 
                     donde puedes encontrar respuestas y compartir experiencias.
                   </AccordionContent>
                 </AccordionItem>
@@ -1142,8 +1142,8 @@ export default function LandingPage() {
               </span>
               {' '}tu equipo?
             </h2>
-            <p className="text-lg sm:text-xl md:text-2xl text-indigo-100 mb-8 sm:mb-10 font-light max-w-2xl mx-auto">
-              Accede ahora y descubre cómo gestionar el tiempo de forma inteligente.
+              <p className="text-lg sm:text-xl md:text-2xl text-indigo-100 mb-8 sm:mb-10 font-light max-w-2xl mx-auto">
+              Accede ahora y descubre cómo gestionar el tiempo de tu equipo de forma inteligente.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link to="/login" className="group relative">
