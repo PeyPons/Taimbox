@@ -4,9 +4,11 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 // TIPOS
 // ============================================================
 
+export type AIProvider = 'gemini' | 'openrouter' | 'coco';
+
 export interface AIResponse {
   text: string;
-  provider: 'gemini' | 'openrouter' | 'coco';
+  provider: AIProvider;
   modelName: string;
 }
 
@@ -36,8 +38,8 @@ const OPENROUTER_MODEL_CHAIN = [
   "meta-llama/llama-3.2-3b-instruct:free",
   "qwen/qwen-2.5-vl-7b-instruct:free",
   "microsoft/phi-3-medium-128k-instruct:free",
-  "cerebras/llama3.1-70b", 
-  "openai/gpt-5-mini"      
+  "cerebras/llama3.1-70b",
+  "openai/gpt-5-mini"
 ];
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -56,10 +58,10 @@ async function callGeminiAPI(prompt: string, apiKey: string): Promise<AIResponse
   const modelName = "gemini-2.0-flash";
   const model = genAI.getGenerativeModel({ model: modelName });
   const result = await model.generateContent(prompt);
-  return { 
-    text: result.response.text(), 
-    provider: 'gemini', 
-    modelName: modelName 
+  return {
+    text: result.response.text(),
+    provider: 'gemini',
+    modelName: modelName
   };
 }
 
@@ -105,10 +107,10 @@ async function callOpenRouterAPI(prompt: string, apiKey: string): Promise<AIResp
       const usedModel = responseData.model || "unknown-model";
 
       if (responseData?.choices?.[0]?.message?.content) {
-        return { 
-          text: responseData.choices[0].message.content, 
-          provider: 'openrouter', 
-          modelName: usedModel 
+        return {
+          text: responseData.choices[0].message.content,
+          provider: 'openrouter',
+          modelName: usedModel
         };
       }
 
@@ -128,16 +130,16 @@ async function callOpenRouterAPI(prompt: string, apiKey: string): Promise<AIResp
  */
 async function callCocoAPI(prompt: string): Promise<AIResponse> {
   const simplifiedPrompt = `Responde breve y claro en texto plano (sin markdown): ${prompt.substring(0, 1000)}`;
-  const payload = { 
-    message: simplifiedPrompt, 
-    noAuth: "true", 
-    action: "text/generateResume", 
-    app: "CHATBOT", 
-    rol: "user", 
-    method: "POST", 
-    language: "es" 
+  const payload = {
+    message: simplifiedPrompt,
+    noAuth: "true",
+    action: "text/generateResume",
+    app: "CHATBOT",
+    rol: "user",
+    method: "POST",
+    language: "es"
   };
-  
+
   const response = await fetch(COCO_API_URL, {
     method: 'POST',
     headers: { "Content-Type": "application/json" },
@@ -149,19 +151,19 @@ async function callCocoAPI(prompt: string): Promise<AIResponse> {
   }
 
   const responseData = await response.json();
-  
+
   if (responseData && responseData.data) {
     const cleanText = responseData.data
-      .replace(/```/g, '')                
-      .replace(/<[^>]*>/g, '')             
-      .replace(/^\s*[*-]\s*$/gm, '')     
-      .replace(/\*\*/g, '')                
-      .replace(/\*\s*\n/g, '\n')           
-      .replace(/^\*\s*/gm, '- ')           
-      .replace(/<br\s*\/?>/gi, '\n')       
-      .replace(/\n{3,}/g, '\n\n')          
+      .replace(/```/g, '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/^\s*[*-]\s*$/gm, '')
+      .replace(/\*\*/g, '')
+      .replace(/\*\s*\n/g, '\n')
+      .replace(/^\*\s*/gm, '- ')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/\n{3,}/g, '\n\n')
       .trim();
-    
+
     if (cleanText.length < 5) {
       throw new Error('Respuesta de Coco insuficiente');
     }

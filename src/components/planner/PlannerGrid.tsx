@@ -11,7 +11,7 @@ import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '@
 import { Badge } from '@/components/ui/badge';
 import { startOfMonth, endOfMonth, parseISO, isSameMonth, max, min, format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { AIService } from '@/services/aiService';
+import { AIService, AIProvider } from '@/services/aiService';
 import { ErrorService } from '@/services/errorService';
 import { logger } from '@/utils/logger';
 
@@ -430,7 +430,7 @@ Responde SOLO JSON válido:
             {weeks.map((week, index) => (
               <div key={week.weekStart.toISOString()} className={cn("text-center px-1 py-2 border-r flex flex-col justify-center", isCurrentWeek(week.weekStart) && "bg-indigo-50/50")}>
                 <span className={cn("text-xs font-bold uppercase", isCurrentWeek(week.weekStart) ? "text-indigo-600" : "text-slate-500")}>Semana {index + 1}</span>
-                <span className="text-[10px] text-slate-400 font-medium">{format(max([week.weekStart, monthStart]), 'd MMM', { locale: es })} - {format(min([addDays(week.weekStart, 4), monthEnd]), 'd MMM', { locale: es })}</span>
+                <span className="text-[10px] text-slate-400 font-medium">{format(week.weekStart, 'd MMM', { locale: es })} - {format(addDays(week.weekStart, 4), 'd MMM', { locale: es })}</span>
               </div>
             ))}
             <div className="px-2 py-3 font-bold text-xs text-center border-l bg-slate-50 flex items-center justify-center">TOTAL</div>
