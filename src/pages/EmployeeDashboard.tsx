@@ -762,7 +762,7 @@ export default function EmployeeDashboard() {
           </TabsList>
 
           {/* 1. DEPENDENCIAS - MÁS IMPORTANTE */}
-          <TabsContent value="dependencies" className="mt-4 space-y-6">
+          <TabsContent value="dependencies" className="mt-4 space-y-6 p-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div data-tour="priority-widget">
                 <PriorityInsights employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
@@ -774,26 +774,26 @@ export default function EmployeeDashboard() {
           </TabsContent>
 
           {/* 2. COHERENCIA DE PLANIFICACIÓN */}
-          <TabsContent value="coherence" className="mt-4">
+          <TabsContent value="coherence" className="mt-4 p-6">
             <div data-tour="planning-inconsistencies">
               <PlanningInconsistenciesCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
             </div>
           </TabsContent>
 
           {/* 3. COMPAÑEROS */}
-          <TabsContent value="teammates" className="mt-4">
+          <TabsContent value="teammates" className="mt-4 p-6">
             <div data-tour="collaboration-cards">
               <CollaborationCards employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
             </div>
           </TabsContent>
 
           {/* 4. PROYECTOS DEL MES */}
-          <TabsContent value="projects" className="mt-4">
+          <TabsContent value="projects" className="mt-4 p-6">
             <MyWeekView employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
           </TabsContent>
 
           {/* 5. MÉTRICAS Y ANÁLISIS */}
-          <TabsContent value="metrics" className="mt-4 space-y-6">
+          <TabsContent value="metrics" className="mt-4 space-y-6 p-6">
             {/* BALANCE MOTIVACIONAL */}
             <div data-tour="monthly-balance">
               <MonthlyBalanceCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />

@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 
 interface LoadIndicatorProps {
   hours: number;
@@ -25,25 +26,25 @@ export function LoadIndicator({
   const calculatedPercentage = percentage ?? (capacity > 0 ? (hours / capacity) * 100 : 0);
   const isOverload = calculatedPercentage > 100;
   const isNearLimit = calculatedPercentage >= 80 && calculatedPercentage <= 100;
-  
+
   const sizeClasses = {
-    sm: { 
-      hours: 'text-xs', 
-      capacity: 'text-[10px]', 
+    sm: {
+      hours: 'text-xs',
+      capacity: 'text-[10px]',
       percentage: 'text-[10px]',
       container: 'w-16 h-10',
       gap: 'gap-0.5'
     },
-    md: { 
-      hours: 'text-base', 
-      capacity: 'text-[10px]', 
+    md: {
+      hours: 'text-base',
+      capacity: 'text-[10px]',
       percentage: 'text-xs',
       container: 'w-20 h-14',
       gap: 'gap-1'
     },
-    lg: { 
-      hours: 'text-lg', 
-      capacity: 'text-xs', 
+    lg: {
+      hours: 'text-lg',
+      capacity: 'text-xs',
       percentage: 'text-sm',
       container: 'w-24 h-16',
       gap: 'gap-1.5'
@@ -54,19 +55,24 @@ export function LoadIndicator({
 
   const content = (
     <div className={cn(
-      "flex flex-col items-center justify-center rounded-lg border",
-      isOverload ? "bg-red-50 border-red-200 text-red-700" 
+      "flex flex-col items-center justify-center rounded-lg border px-1",
+      isOverload ? "bg-red-50 border-red-200 text-red-700"
         : isNearLimit ? "bg-amber-50 border-amber-200 text-amber-700"
-        : "bg-emerald-50 border-emerald-200 text-emerald-700",
+          : "bg-emerald-50 border-emerald-200 text-emerald-700",
       classes.container,
       className
     )}>
-      <span className={cn("font-bold leading-none", classes.hours)}>{hours}h</span>
-      <span className={cn("opacity-70", classes.capacity)}>/ {capacity}h</span>
+      <div className="flex items-baseline gap-0.5">
+        <span className={cn("font-bold leading-none", classes.hours)}>{hours}h</span>
+        <span className={cn("opacity-70 font-medium", classes.capacity)}>/ {capacity}h</span>
+      </div>
       {showPercentage && (
-        <span className={cn("opacity-60 mt-0.5", classes.percentage)}>
+        <Badge variant="outline" className={cn(
+          "mt-1 px-1.5 py-0 h-4 min-w-[32px] justify-center bg-white/50 border-0 shadow-sm",
+          classes.percentage
+        )}>
           {calculatedPercentage.toFixed(0)}%
-        </span>
+        </Badge>
       )}
     </div>
   );
