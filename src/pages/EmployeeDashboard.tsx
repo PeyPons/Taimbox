@@ -24,13 +24,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { supabase } from '@/lib/supabase';
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter
 } from "@/components/ui/dialog";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, CheckCircle2, Plus, X, Check, ListPlus, AlertTriangle, CheckCircle2, HelpCircle, RotateCcw, FileDown, CheckSquare, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, CheckCircle2, Plus, X, Check, ListPlus, AlertTriangle, HelpCircle, RotateCcw, FileDown, CheckSquare, AlertCircle } from 'lucide-react';
 import { startOfMonth, endOfMonth, max, min, format, startOfWeek, isSameMonth, parseISO, addDays, isWeekend } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Employee } from '@/types';
@@ -742,7 +743,7 @@ export default function EmployeeDashboard() {
       <Card className="border-indigo-200/50 shadow-xl bg-white/90 backdrop-blur-sm relative overflow-hidden" data-tour="projects-summary">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/30 to-purple-50/30 -z-10" />
         <Tabs defaultValue="dependencies" className="w-full">
-          <TabsList className="w-full justify-start h-auto p-1 bg-gradient-to-r from-indigo-50 to-purple-50 flex-wrap border-b border-indigo-100/50">
+          <TabsList className="w-full justify-start h-auto p-1 bg-gradient-to-r from-indigo-50 to-purple-50 flex-wrap border-b border-indigo-100/50 gap-2">
             <TabsTrigger value="dependencies" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all">
               Dependencias
             </TabsTrigger>
