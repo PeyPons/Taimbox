@@ -89,6 +89,7 @@ export default function EmployeeDashboard() {
   const [newTasks, setNewTasks] = useState<NewTaskRow[]>([]);
   const [openComboboxId, setOpenComboboxId] = useState<string | null>(null);
   const [showWeeklyDialog, setShowWeeklyDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState('dependencies');
 
   const { showTour, resetTour } = useWelcomeTour();
   const { canAccess, hasPermission } = usePermissions();
@@ -742,7 +743,7 @@ export default function EmployeeDashboard() {
       {/* 4. VISTA ORGANIZADA POR PESTAÑAS - PRIORIDAD DE MAYOR A MENOR */}
       <Card className="border-indigo-200/50 shadow-xl bg-white/90 backdrop-blur-sm relative overflow-hidden" data-tour="projects-summary">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/30 to-purple-50/30 -z-10" />
-        <Tabs defaultValue="dependencies" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full justify-start h-auto p-1 bg-gradient-to-r from-indigo-50 to-purple-50 flex-wrap border-b border-indigo-100/50 gap-2">
             <TabsTrigger value="dependencies" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all">
               Dependencias
@@ -945,7 +946,7 @@ export default function EmployeeDashboard() {
         </>
       )}
 
-      <WelcomeTour forceShow={showTour} />
+      <WelcomeTour forceShow={showTour} onTabChange={setActiveTab} />
     </div>
   );
 }

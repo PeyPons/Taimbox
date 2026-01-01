@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { 
-  X, ChevronLeft, ChevronRight, ListPlus, Clock, Calendar, 
-  TrendingUp, Users, LayoutDashboard, Target, Sparkles, 
+import {
+  X, ChevronLeft, ChevronRight, ListPlus, Clock, Calendar,
+  TrendingUp, Users, LayoutDashboard, Target, Sparkles,
   CheckCircle2, AlertOctagon, FileDown, Award, HeartHandshake,
   Scale, Search, CheckSquare
 } from 'lucide-react';
@@ -21,6 +21,7 @@ interface TourStep {
   position: 'top' | 'bottom' | 'left' | 'right' | 'center';
   highlight?: boolean;
   customContent?: boolean;
+  tab?: string; // Tab value to switch to
 }
 
 const tourSteps: TourStep[] = [
@@ -102,7 +103,8 @@ const tourSteps: TourStep[] = [
     description: 'Te avisamos de lo más importante: si estás bloqueando a alguien, tareas casi terminadas, o por dónde empezar. ¡Presta atención a los avisos rojos!',
     icon: <AlertOctagon className="w-6 h-6 text-red-500" />,
     position: 'right',
-    highlight: true
+    highlight: true,
+    tab: 'dependencies'
   },
   {
     id: 'dependencies-widget',
@@ -111,25 +113,8 @@ const tourSteps: TourStep[] = [
     description: 'Ve quién espera por ti y por quién estás esperando. Las dependencias en verde ya están listas para que empieces.',
     icon: <Users className="w-6 h-6 text-indigo-500" />,
     position: 'left',
-    highlight: true
-  },
-  {
-    id: 'collaboration-cards',
-    target: '[data-tour="collaboration-cards"]',
-    title: 'Tu equipo y apoyo',
-    description: 'Ve con quién colaboras más este mes y pide ayuda a compañeros cuando la necesites. Un click y el sistema notificará a quien pueda echarte una mano.',
-    icon: <HeartHandshake className="w-6 h-6 text-pink-500" />,
-    position: 'top',
-    highlight: true
-  },
-  {
-    id: 'reliability-index',
-    target: '[data-tour="reliability-index"]',
-    title: 'Índice de fiabilidad',
-    description: 'Mide qué tan precisas son tus estimaciones de tiempo. Un índice cercano al 100% significa que estimas muy bien. Aquí verás consejos para mejorar.',
-    icon: <Award className="w-6 h-6 text-emerald-500" />,
-    position: 'top',
-    highlight: true
+    highlight: true,
+    tab: 'dependencies'
   },
   {
     id: 'planning-inconsistencies',
@@ -138,7 +123,18 @@ const tourSteps: TourStep[] = [
     description: 'Detecta si tus horas planificadas coinciden con lo acordado en los deadlines. Si hay diferencias, te mostramos posibles intercambios de tareas con compañeros.',
     icon: <Search className="w-6 h-6 text-amber-500" />,
     position: 'top',
-    highlight: true
+    highlight: true,
+    tab: 'coherence'
+  },
+  {
+    id: 'collaboration-cards',
+    target: '[data-tour="collaboration-cards"]',
+    title: 'Tu equipo y apoyo',
+    description: 'Ve con quién colaboras más este mes y pide ayuda a compañeros cuando la necesites. Un click y el sistema notificará a quien pueda echarte una mano.',
+    icon: <HeartHandshake className="w-6 h-6 text-pink-500" />,
+    position: 'top',
+    highlight: true,
+    tab: 'teammates'
   },
   {
     id: 'projects-summary',
@@ -147,7 +143,8 @@ const tourSteps: TourStep[] = [
     description: 'Todos tus proyectos del mes con las horas asignadas, completadas y el estado de las horas contratadas. Haz clic en cualquier semana para ver y editar tus tareas.',
     icon: <Target className="w-6 h-6 text-purple-500" />,
     position: 'top',
-    highlight: true
+    highlight: true,
+    tab: 'projects'
   },
   {
     id: 'monthly-balance',
@@ -156,7 +153,18 @@ const tourSteps: TourStep[] = [
     description: 'Resumen motivacional de tu mes: horas trabajadas, distribución de proyectos y un mensaje de ánimo personalizado según tu rendimiento.',
     icon: <Scale className="w-6 h-6 text-indigo-500" />,
     position: 'top',
-    highlight: true
+    highlight: true,
+    tab: 'metrics'
+  },
+  {
+    id: 'reliability-index',
+    target: '[data-tour="reliability-index"]',
+    title: 'Índice de fiabilidad',
+    description: 'Mide qué tan precisas son tus estimaciones de tiempo. Un índice cercano al 100% significa que estimas muy bien. Aquí verás consejos para mejorar.',
+    icon: <Award className="w-6 h-6 text-emerald-500" />,
+    position: 'top',
+    highlight: true,
+    tab: 'metrics'
   },
   {
     id: 'finish',
@@ -179,9 +187,10 @@ interface HighlightPosition {
 interface WelcomeTourProps {
   onComplete?: () => void;
   forceShow?: boolean;
+  onTabChange?: (tab: string) => void;
 }
 
-export function WelcomeTour({ onComplete, forceShow = false }: WelcomeTourProps) {
+export function WelcomeTour({ onComplete, forceShow = false, onTabChange }: WelcomeTourProps) {
   const { currentUser, updateEmployee } = useApp();
   const [isVisible, setIsVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -259,7 +268,7 @@ export function WelcomeTour({ onComplete, forceShow = false }: WelcomeTourProps)
   // Calcular posiciones
   const calculatePositions = useCallback(() => {
     const step = tourSteps[currentStep];
-    
+
     if (step.position === 'center' || !step.highlight) {
       setHighlightPos(null);
       setTooltipPos(null);
@@ -276,7 +285,7 @@ export function WelcomeTour({ onComplete, forceShow = false }: WelcomeTourProps)
     }
 
     const rect = element.getBoundingClientRect();
-    
+
     // Posición del highlight (coordenadas de viewport para position: fixed)
     const padding = 6;
     setHighlightPos({
@@ -290,7 +299,7 @@ export function WelcomeTour({ onComplete, forceShow = false }: WelcomeTourProps)
     const tooltipWidth = 380;
     const tooltipHeight = 320;
     const gap = 16;
-    
+
     let top = 0;
     let left = 0;
 
@@ -320,6 +329,15 @@ export function WelcomeTour({ onComplete, forceShow = false }: WelcomeTourProps)
     setTooltipPos({ top, left });
     setIsReady(true);
   }, [currentStep]);
+
+  // Cambiar de tab si el paso lo requiere
+  useEffect(() => {
+    if (!isVisible) return;
+    const step = tourSteps[currentStep];
+    if (step.tab && onTabChange) {
+      onTabChange(step.tab);
+    }
+  }, [currentStep, isVisible, onTabChange]);
 
   // Actualizar posiciones cuando cambia el paso
   useEffect(() => {
@@ -353,16 +371,16 @@ export function WelcomeTour({ onComplete, forceShow = false }: WelcomeTourProps)
   // Recalcular en resize/scroll
   useEffect(() => {
     if (!isVisible || !isReady) return;
-    
+
     const handleUpdate = () => {
       if (tourSteps[currentStep].highlight) {
         calculatePositions();
       }
     };
-    
+
     window.addEventListener('resize', handleUpdate);
     window.addEventListener('scroll', handleUpdate, true);
-    
+
     return () => {
       window.removeEventListener('resize', handleUpdate);
       window.removeEventListener('scroll', handleUpdate, true);
@@ -386,16 +404,16 @@ export function WelcomeTour({ onComplete, forceShow = false }: WelcomeTourProps)
   const handleComplete = useCallback(async () => {
     // ✅ PRIMERO: Guardar en localStorage INMEDIATAMENTE (síncrono, sin delay, genérico)
     localStorage.setItem('timeboxing_welcome_tour_completed', 'true');
-    
+
     // ✅ SEGUNDO: Marcar como completado en estado local para evitar que se muestre de nuevo
     setHasBeenCompleted(true);
     setIsVisible(false);
-    
+
     // ✅ TERCERO: Actualizar el ref inmediatamente para evitar que se vuelva a verificar
     if (currentUser?.id) {
       lastCheckedUserIdRef.current = currentUser.id;
     }
-    
+
     // ✅ CUARTO: Guardar en la base de datos en segundo plano (asíncrono, persistente)
     if (currentUser) {
       try {
@@ -413,7 +431,7 @@ export function WelcomeTour({ onComplete, forceShow = false }: WelcomeTourProps)
         console.error('Error guardando estado del tour:', error);
       }
     }
-    
+
     onComplete?.();
   }, [onComplete, currentUser, updateEmployee]);
 
@@ -446,12 +464,12 @@ export function WelcomeTour({ onComplete, forceShow = false }: WelcomeTourProps)
   const tourContent = (
     <div style={{ position: 'fixed', inset: 0, zIndex: 99999, pointerEvents: 'none' }}>
       {/* Overlay SVG con spotlight */}
-      <svg 
-        style={{ 
-          position: 'fixed', 
-          top: 0, 
-          left: 0, 
-          width: '100vw', 
+      <svg
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
           height: '100vh',
           pointerEvents: 'auto'
         }}
@@ -460,7 +478,7 @@ export function WelcomeTour({ onComplete, forceShow = false }: WelcomeTourProps)
           <mask id="tour-spotlight-mask">
             <rect x="0" y="0" width="100%" height="100%" fill="white" />
             {highlightPos && isReady && (
-              <rect 
+              <rect
                 x={highlightPos.left - 2}
                 y={highlightPos.top - 2}
                 width={highlightPos.width + 4}
@@ -471,12 +489,12 @@ export function WelcomeTour({ onComplete, forceShow = false }: WelcomeTourProps)
             )}
           </mask>
         </defs>
-        <rect 
-          x="0" 
-          y="0" 
-          width="100%" 
-          height="100%" 
-          fill="rgba(0, 0, 0, 0.75)" 
+        <rect
+          x="0"
+          y="0"
+          width="100%"
+          height="100%"
+          fill="rgba(0, 0, 0, 0.75)"
           mask="url(#tour-spotlight-mask)"
         />
       </svg>
@@ -497,7 +515,7 @@ export function WelcomeTour({ onComplete, forceShow = false }: WelcomeTourProps)
             zIndex: 100000
           }}
         >
-          <div 
+          <div
             style={{
               position: 'absolute',
               inset: 0,
@@ -512,7 +530,7 @@ export function WelcomeTour({ onComplete, forceShow = false }: WelcomeTourProps)
 
       {/* Tooltip */}
       {isReady && (
-        <Card 
+        <Card
           className="shadow-2xl border-0 overflow-hidden"
           style={{
             position: 'fixed',
@@ -529,8 +547,8 @@ export function WelcomeTour({ onComplete, forceShow = false }: WelcomeTourProps)
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-white/30 backdrop-blur-sm rounded-xl border border-white/20 shadow-lg">
-                  {React.cloneElement(step.icon as React.ReactElement, { 
-                    className: "w-6 h-6 text-white" 
+                  {React.cloneElement(step.icon as React.ReactElement, {
+                    className: "w-6 h-6 text-white"
                   })}
                 </div>
                 <div>
@@ -538,9 +556,9 @@ export function WelcomeTour({ onComplete, forceShow = false }: WelcomeTourProps)
                   <p className="text-xs text-white/70">Paso {currentStep + 1} de {tourSteps.length}</p>
                 </div>
               </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="text-white/70 hover:text-white hover:bg-white/20 h-8 w-8"
                 onClick={handleSkip}
               >
@@ -586,8 +604,8 @@ export function WelcomeTour({ onComplete, forceShow = false }: WelcomeTourProps)
                   key={index}
                   className={cn(
                     "h-2 rounded-full transition-all duration-300",
-                    index === currentStep 
-                      ? "bg-indigo-500 w-6" 
+                    index === currentStep
+                      ? "bg-indigo-500 w-6"
                       : index < currentStep
                         ? "bg-indigo-300 w-2"
                         : "bg-slate-200 w-2"
@@ -665,11 +683,11 @@ export function useWelcomeTour() {
 
   const startTour = () => setShowTour(true);
   const endTour = () => setShowTour(false);
-  
+
   const resetTour = async () => {
     // ✅ SIEMPRE borrar localStorage primero (inmediato)
     localStorage.removeItem('timeboxing_welcome_tour_completed');
-    
+
     if (currentUser) {
       try {
         const updatedEmployee = {
