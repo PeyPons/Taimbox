@@ -19,15 +19,15 @@ export const MonthlyBalanceCard = memo(function MonthlyBalanceCard({ employeeId,
 
   // Allocations completadas del mes para este empleado
   const monthlyStats = useMemo(() => {
-    const monthlyAllocations = allocations.filter(a => 
-      a.employeeId === employeeId && 
+    const monthlyAllocations = allocations.filter(a =>
+      a.employeeId === employeeId &&
       isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
     );
-    
+
     const completed = monthlyAllocations.filter(a => a.status === 'completed');
     const totalReal = completed.reduce((sum, a) => sum + (a.hoursActual || 0), 0);
     const totalComputed = completed.reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
-    
+
     return {
       totalReal: round2(totalReal),
       totalComputed: round2(totalComputed),
@@ -62,21 +62,21 @@ export const MonthlyBalanceCard = memo(function MonthlyBalanceCard({ employeeId,
                 </p>
               </div>
             </div>
-            
-            <div className="flex items-center gap-6">
-              <div className="text-center">
-                <p className="text-xl font-bold text-blue-600">3h</p>
-                <p className="text-[10px] text-blue-500 font-medium">Dedicadas</p>
+
+            <div className="flex items-center gap-3 sm:gap-6 flex-wrap mt-2 sm:mt-0">
+              <div className="text-center min-w-[50px]">
+                <p className="text-lg sm:text-xl font-bold text-blue-600">3h</p>
+                <p className="text-[9px] sm:text-[10px] text-blue-500 font-medium">Dedicadas</p>
               </div>
-              <div className="text-slate-300 text-lg">→</div>
-              <div className="text-center">
-                <p className="text-xl font-bold text-emerald-600">9h</p>
-                <p className="text-[10px] text-emerald-500 font-medium">Computadas</p>
+              <div className="text-slate-300 text-base sm:text-lg">→</div>
+              <div className="text-center min-w-[50px]">
+                <p className="text-lg sm:text-xl font-bold text-emerald-600">9h</p>
+                <p className="text-[9px] sm:text-[10px] text-emerald-500 font-medium">Computadas</p>
               </div>
-              <div className="text-slate-300 text-lg">=</div>
-              <div className="text-center">
-                <p className="text-xl font-bold text-emerald-600">+6h</p>
-                <p className="text-[10px] font-medium text-emerald-500">Valor extra</p>
+              <div className="text-slate-300 text-base sm:text-lg">=</div>
+              <div className="text-center min-w-[50px]">
+                <p className="text-lg sm:text-xl font-bold text-emerald-600">+6h</p>
+                <p className="text-[9px] sm:text-[10px] font-medium text-emerald-500">Valor extra</p>
               </div>
             </div>
           </div>
@@ -91,8 +91,8 @@ export const MonthlyBalanceCard = memo(function MonthlyBalanceCard({ employeeId,
   return (
     <Card className={cn(
       "border-l-4 overflow-hidden",
-      isPositiveBalance 
-        ? "border-l-emerald-500 bg-gradient-to-r from-emerald-50/80 to-emerald-50/30" 
+      isPositiveBalance
+        ? "border-l-emerald-500 bg-gradient-to-r from-emerald-50/80 to-emerald-50/30"
         : "border-l-amber-500 bg-gradient-to-r from-amber-50/80 to-amber-50/30"
     )} data-tour="balance-card">
       <CardContent className="py-4 px-5">
@@ -109,40 +109,40 @@ export const MonthlyBalanceCard = memo(function MonthlyBalanceCard({ employeeId,
             )}
             <div>
               <p className="font-semibold text-slate-800 text-base">
-                {isPositiveBalance 
-                  ? "¡Qué buen ritmo llevas! 🎉" 
+                {isPositiveBalance
+                  ? "¡Qué buen ritmo llevas! 🎉"
                   : "Sincronizando tiempos..."}
               </p>
               <p className="text-sm text-muted-foreground">
-                {isPositiveBalance 
+                {isPositiveBalance
                   ? `Has aportado ${monthlyBalance}h de valor extra que el cliente agradecerá.`
                   : `Estamos ajustando las horas a tu ritmo real. ¡Todo bien!`}
               </p>
             </div>
           </div>
-          
-          <div className="flex items-center gap-6">
-            <div className="text-center">
-              <p className="text-xl font-bold text-blue-600">{monthlyStats.totalReal}h</p>
-              <p className="text-[10px] text-blue-500 font-medium">Dedicadas</p>
+
+          <div className="flex items-center gap-3 sm:gap-6 flex-wrap mt-2 sm:mt-0">
+            <div className="text-center min-w-[50px]">
+              <p className="text-lg sm:text-xl font-bold text-blue-600">{monthlyStats.totalReal}h</p>
+              <p className="text-[9px] sm:text-[10px] text-blue-500 font-medium">Dedicadas</p>
             </div>
-            <div className="text-slate-300 text-lg">→</div>
-            <div className="text-center">
-              <p className="text-xl font-bold text-emerald-600">{monthlyStats.totalComputed}h</p>
-              <p className="text-[10px] text-emerald-500 font-medium">Computadas</p>
+            <div className="text-slate-300 text-base sm:text-lg">→</div>
+            <div className="text-center min-w-[50px]">
+              <p className="text-lg sm:text-xl font-bold text-emerald-600">{monthlyStats.totalComputed}h</p>
+              <p className="text-[9px] sm:text-[10px] text-emerald-500 font-medium">Computadas</p>
             </div>
             {monthlyBalance !== 0 && (
               <>
-                <div className="text-slate-300 text-lg">=</div>
-                <div className="text-center">
+                <div className="text-slate-300 text-base sm:text-lg">=</div>
+                <div className="text-center min-w-[50px]">
                   <p className={cn(
-                    "text-xl font-bold",
+                    "text-lg sm:text-xl font-bold",
                     isPositiveBalance ? "text-emerald-600" : "text-amber-600"
                   )}>
                     {isPositiveBalance ? '+' : ''}{monthlyBalance}h
                   </p>
                   <p className={cn(
-                    "text-[10px] font-medium",
+                    "text-[9px] sm:text-[10px] font-medium",
                     isPositiveBalance ? "text-emerald-500" : "text-amber-500"
                   )}>
                     {isPositiveBalance ? 'Valor extra' : 'Ajuste'}

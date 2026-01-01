@@ -207,8 +207,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const [showAllWeeks, setShowAllWeeks] = useState(false);
 
   const isMobile = useIsMobile();
-  // En móvil forzamos vista de una semana
-  const effectiveShowAllWeeks = isMobile ? false : showAllWeeks;
+  const effectiveShowAllWeeks = showAllWeeks; // Permitir vista mensual en móvil si el usuario lo activa
 
   // Inicializar selectedWeekIndex como null para que use currentWeekIndex del hook por defecto
   const [selectedWeekIndex, setSelectedWeekIndex] = useState<number | null>(null);
@@ -793,15 +792,11 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        variant={showAllWeeks ? "default" : "outline"}
+                        variant="ghost"
                         size="sm"
+                        className={cn("gap-2", effectiveShowAllWeeks ? "text-indigo-600 bg-indigo-50" : "text-slate-500")}
                         onClick={() => setShowAllWeeks(!showAllWeeks)}
-                        className={cn(
-                          "h-9 px-3 gap-2",
-                          showAllWeeks && "bg-indigo-600 hover:bg-indigo-700"
-                        )}
-                        disabled={isMobile}
-                        title={isMobile ? "Vista bloqueada en móvil" : "Cambiar vista"}
+                        title="Cambiar vista"
                       >
                         {effectiveShowAllWeeks ? <Calendar className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
                         <span className="hidden sm:inline text-xs">{effectiveShowAllWeeks ? "Semana actual" : "Ver todo el mes"}</span>
@@ -905,54 +900,56 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                     return (
                       <div key={weekStr} className="flex-1 min-w-0">
                         {/* Header compacto de la semana */}
-                        <div className="flex items-center justify-between mb-4 pb-3 border-b">
-                          <div className="flex items-center gap-3">
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={goToPrevWeek} disabled={activeWeekIndex === 0}>
-                              <ChevronLeft className="h-4 w-4" />
-                            </Button>
-                            <div>
-                              <div className="font-bold text-lg text-foreground">Semana {activeWeekIndex + 1}</div>
-                              <div className="text-xs text-slate-500">{weekDateLabel}</div>
+                        <div className="flex flex-col gap-4 mb-4 pb-3 border-b">
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-2 xs:gap-3">
+                              <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={goToPrevWeek} disabled={activeWeekIndex === 0}>
+                                <ChevronLeft className="h-4 w-4" />
+                              </Button>
+                              <div>
+                                <div className="font-bold text-base xs:text-lg text-foreground truncate max-w-[120px] xs:max-w-none">Semana {activeWeekIndex + 1}</div>
+                                <div className="text-[10px] xs:text-xs text-slate-500">{weekDateLabel}</div>
+                              </div>
+                              <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={goToNextWeek} disabled={activeWeekIndex === weeks.length - 1}>
+                                <ChevronRight className="h-4 w-4" />
+                              </Button>
                             </div>
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={goToNextWeek} disabled={activeWeekIndex === weeks.length - 1}>
-                              <ChevronRight className="h-4 w-4" />
+
+                            <Button variant="outline" size="sm" className="gap-2 h-8" onClick={() => startAdd(week.weekStart)} data-tour="planner-add-task">
+                              <Plus className="h-4 w-4" /> <span className="hidden xs:inline">Añadir</span>
                             </Button>
                           </div>
 
-                          <div className="flex items-center gap-4">
-                            {/* Resumen de la semana */}
-                            <div className="flex items-center gap-3 text-sm">
-                              <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 rounded">
-                                <span className="text-slate-500">Plan:</span>
-                                <span className="font-bold">{weekEst}h</span>
-                                <span className="text-slate-400">/</span>
-                                <span className="text-slate-500">{load.capacity}h</span>
-                              </div>
-                              {completedTasks.length > 0 && (
-                                <>
-                                  <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 rounded">
-                                    <span className="text-blue-600">Real:</span>
-                                    <span className="font-bold text-blue-700">{weekReal}h</span>
-                                  </div>
-                                  <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 rounded">
-                                    <span className="text-emerald-600">Comp:</span>
-                                    <span className="font-bold text-emerald-700">{weekComp}h</span>
-                                  </div>
-                                  {weekBalance !== 0 && (
-                                    <div className={cn(
-                                      "flex items-center gap-1 px-2 py-1 rounded font-bold",
-                                      weekBalance >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-                                    )}>
-                                      {weekBalance >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                                      {weekBalance >= 0 ? '+' : ''}{weekBalance}h
-                                    </div>
-                                  )}
-                                </>
-                              )}
+                          {/* Resumen de la semana - Stacking en móvil */}
+                          <div className="flex flex-wrap items-center gap-2 text-xs">
+                            <div className="flex items-center gap-1 px-2 py-1 bg-slate-100 rounded shrink-0">
+                              <span className="text-slate-500">Plan:</span>
+                              <span className="font-bold">{weekEst}h</span>
+                              <span className="text-slate-400">/</span>
+                              <span className="text-slate-500 font-medium">{load.capacity}h</span>
                             </div>
-                            <Button variant="outline" size="sm" className="gap-2" onClick={() => startAdd(week.weekStart)} data-tour="planner-add-task">
-                              <Plus className="h-4 w-4" /> Añadir
-                            </Button>
+
+                            {completedTasks.length > 0 && (
+                              <div className="flex flex-wrap items-center gap-2">
+                                <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 rounded shrink-0">
+                                  <span className="text-blue-600">Real:</span>
+                                  <span className="font-bold text-blue-700">{weekReal}h</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 rounded shrink-0">
+                                  <span className="text-emerald-600">Comp:</span>
+                                  <span className="font-bold text-emerald-700">{weekComp}h</span>
+                                </div>
+                                {weekBalance !== 0 && (
+                                  <div className={cn(
+                                    "flex items-center gap-1 px-2 py-1 rounded font-bold shrink-0",
+                                    weekBalance >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                                  )}>
+                                    {weekBalance >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                                    {weekBalance >= 0 ? '+' : ''}{weekBalance}h
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -989,15 +986,15 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                   )}
                                   onClick={() => setSelectedProjectId(isSelected ? null : projId)}
                                 >
-                                  <div className="flex items-center gap-3">
-                                    {allCompleted && <CheckCircle2 className="w-4 h-4" />}
-                                    <span className="font-bold">{project?.name || 'Proyecto'}</span>
-                                    <span className="text-sm opacity-80">({projAllocations.length} tareas)</span>
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    {allCompleted && <CheckCircle2 className="w-4 h-4 shrink-0" />}
+                                    <span className="font-bold truncate">{formatProjectName(project?.name || 'Proyecto')}</span>
+                                    <span className="text-[10px] opacity-80 shrink-0">({projAllocations.length})</span>
                                   </div>
                                   <div className="flex items-center gap-4 text-sm">
                                     <span className="opacity-80">{projEst}h est</span>
                                     {projReal > 0 && <span>{projReal}h real</span>}
-                                    {projComp > 0 && <span className="font-bold">{projComp}h comp</span>}
+                                    {projComp > 0 && <span className="font-bold shrink-0">{projComp}h comp</span>}
                                   </div>
                                 </div>
 
@@ -1026,14 +1023,14 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                   className={cn("font-medium text-sm leading-tight break-words", isCompleted && "line-through text-slate-400")}
                                                   onClick={() => startEditFull(alloc)}
                                                 >
-                                                  {cleanName}
+                                                  {formatProjectName(cleanName)}
                                                 </span>
-                                                <div className="flex items-center gap-2 text-xs text-slate-500">
-                                                  <span>{alloc.hoursAssigned}h est</span>
+                                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                                                  <span className="shrink-0">{alloc.hoursAssigned}h est</span>
                                                   {isCompleted && (
                                                     <>
-                                                      <span>· {alloc.hoursActual}h real</span>
-                                                      <span className={cn("font-bold ml-1", taskBalance < 0 ? "text-red-600" : "text-emerald-600")}>
+                                                      <span className="shrink-0">· {alloc.hoursActual}h real</span>
+                                                      <span className={cn("font-bold shrink-0", taskBalance < 0 ? "text-red-600" : "text-emerald-600")}>
                                                         {taskBalance > 0 ? '+' : ''}{taskBalance}h
                                                       </span>
                                                     </>

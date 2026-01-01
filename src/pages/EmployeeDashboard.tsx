@@ -31,7 +31,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, CheckCircle2, Plus, X, Check, ListPlus, AlertTriangle, HelpCircle, RotateCcw, FileDown, CheckSquare, AlertCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, CheckCircle2, Plus, X, Check, ListPlus, AlertTriangle, HelpCircle, RotateCcw, FileDown, CheckSquare, AlertCircle, Trash2 } from 'lucide-react';
 import { startOfMonth, endOfMonth, max, min, format, startOfWeek, isSameMonth, parseISO, addDays, isWeekend } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Employee } from '@/types';
@@ -50,7 +50,7 @@ interface NewTaskRow {
   id: string;
   projectId: string;
   taskName: string;
-  hours: string;
+  hoursAssigned: string;
   weekDate: string;
   dependencyId?: string; // Nuevo campo para dependencia
 }
@@ -292,7 +292,7 @@ export default function EmployeeDashboard() {
   const openAddTasksDialog = () => {
     // Usar siempre la fecha real de la semana (lunes) para guardar tareas
     const defaultWeek = weeks[0]?.weekStart ? format(weeks[0].weekStart, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
-    setNewTasks([{ id: crypto.randomUUID(), projectId: '', taskName: '', hours: '', weekDate: defaultWeek, dependencyId: 'none' }]);
+    setNewTasks([{ id: crypto.randomUUID(), projectId: '', taskName: '', hoursAssigned: '', weekDate: defaultWeek, dependencyId: 'none' }]);
     setIsAddingTasks(true);
   };
 
@@ -300,7 +300,7 @@ export default function EmployeeDashboard() {
     const lastTask = newTasks[newTasks.length - 1];
     // Usar siempre la fecha real de la semana (lunes) para guardar tareas
     const defaultWeek = lastTask?.weekDate || (weeks[0]?.weekStart ? format(weeks[0].weekStart, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'));
-    setNewTasks(prev => [...prev, { id: crypto.randomUUID(), projectId: lastTask?.projectId || '', taskName: '', hours: '', weekDate: defaultWeek }]);
+    setNewTasks(prev => [...prev, { id: crypto.randomUUID(), projectId: lastTask?.projectId || '', taskName: '', hoursAssigned: '', weekDate: defaultWeek, dependencyId: 'none' }]);
   };
 
   const removeTaskRow = (id: string) => {
@@ -322,7 +322,7 @@ export default function EmployeeDashboard() {
       for (const task of validTasks) {
         await addAllocation({
           projectId: task.projectId, employeeId: myEmployeeProfile.id,
-          weekStartDate: task.weekDate, hoursAssigned: parseFloat(task.hours),
+          weekStartDate: task.weekDate, hoursAssigned: parseFloat(task.hoursAssigned),
           taskName: task.taskName, status: 'planned'
         });
       }
@@ -392,8 +392,8 @@ export default function EmployeeDashboard() {
     const projectImpact: Record<string, { name: string; adding: number; status: ProjectBudgetStatus }> = {};
 
     newTasks.forEach(task => {
-      if (task.projectId && task.hours) {
-        const hours = parseFloat(task.hours) || 0;
+      if (task.projectId && task.hoursAssigned) {
+        const hours = parseFloat(task.hoursAssigned) || 0;
         if (hours > 0) {
           if (!projectImpact[task.projectId]) {
             const project = projects.find(p => p.id === task.projectId);
@@ -413,8 +413,8 @@ export default function EmployeeDashboard() {
     const weekImpact: Record<string, { weekIndex: number; adding: number }> = {};
 
     newTasks.forEach(task => {
-      if (task.weekDate && task.hours) {
-        const hours = parseFloat(task.hours) || 0;
+      if (task.weekDate && task.hoursAssigned) {
+        const hours = parseFloat(task.hoursAssigned) || 0;
         if (hours > 0) {
           if (!weekImpact[task.weekDate]) {
             // Usar siempre la fecha real de la semana (lunes) para buscar
@@ -541,7 +541,7 @@ export default function EmployeeDashboard() {
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
-  const gridTemplate = `250px repeat(${weeks.length}, minmax(0, 1fr)) 100px`;
+  const gridTemplate = `${isMobile ? '120px' : '250px'} repeat(${weeks.length}, minmax(${isMobile ? '140px' : '0'}, 1fr)) 100px`;
   const monthlyLoad = getEmployeeMonthlyLoad(myEmployeeProfile.id, currentMonth.getFullYear(), currentMonth.getMonth());
 
 
@@ -693,7 +693,7 @@ export default function EmployeeDashboard() {
         <div className="overflow-x-auto custom-scrollbar w-full max-w-full">
           <div className="min-w-max px-0">
             <div className="grid bg-slate-50 border-b" style={{ gridTemplateColumns: gridTemplate }}>
-              <div className="px-4 py-3 font-bold text-sm text-slate-700 flex items-center border-r">Mi calendario</div>
+              <div className="px-4 py-3 font-bold text-sm text-slate-700 flex items-center border-r sticky left-0 z-20 bg-slate-50">Mi calendario</div>
               {weeks.map((week, index) => {
                 // Calcular solo días laborables (lun-vie) en el rango efectivo (igual que en AllocationSheet)
                 const effectiveStart = week.effectiveStart || week.weekStart;
@@ -750,19 +750,19 @@ export default function EmployeeDashboard() {
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/30 to-purple-50/30 -z-10" />
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-full">
           <TabsList className="w-full justify-start h-auto p-1 bg-gradient-to-r from-indigo-50 to-purple-50 flex-nowrap overflow-x-auto custom-scrollbar border-b border-indigo-100/50 gap-2 max-w-full">
-            <TabsTrigger value="dependencies" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all shrink-0">
+            <TabsTrigger value="dependencies" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all shrink-0 px-2 sm:px-4 text-xs sm:text-sm">
               Dependencias
             </TabsTrigger>
-            <TabsTrigger value="coherence" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all shrink-0">
+            <TabsTrigger value="coherence" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all shrink-0 px-2 sm:px-4 text-xs sm:text-sm">
               Coherencia
             </TabsTrigger>
-            <TabsTrigger value="teammates" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all shrink-0">
+            <TabsTrigger value="teammates" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all shrink-0 px-2 sm:px-4 text-xs sm:text-sm">
               Compañeros
             </TabsTrigger>
-            <TabsTrigger value="projects" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all shrink-0">
+            <TabsTrigger value="projects" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all shrink-0 px-2 sm:px-4 text-xs sm:text-sm">
               Proyectos
             </TabsTrigger>
-            <TabsTrigger value="metrics" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all shrink-0">
+            <TabsTrigger value="metrics" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all shrink-0 px-2 sm:px-4 text-xs sm:text-sm">
               Métricas
             </TabsTrigger>
           </TabsList>
@@ -828,7 +828,7 @@ export default function EmployeeDashboard() {
           </DialogHeader>
 
           <div className="py-4">
-            <div className="flex text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1 mb-2">
+            <div className="hidden sm:flex text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1 mb-2">
               <div className="flex-1 pl-1">Proyecto</div>
               <div className="flex-1 pl-1">Tarea</div>
               <div className="w-40 px-2">Dependencia</div>
@@ -843,7 +843,7 @@ export default function EmployeeDashboard() {
                 const weekExceeds = task.weekDate && getWeekExceedStatus(task.weekDate);
 
                 return (
-                  <div key={task.id} className="flex gap-2 items-start">
+                  <div key={task.id} className="flex flex-col sm:flex-row gap-2 items-start sm:items-center bg-slate-50/50 sm:bg-transparent p-2 sm:p-0 rounded-lg border sm:border-0 border-slate-200">
                     <div className="flex-1 min-w-0">
                       <Popover open={openComboboxId === task.id} onOpenChange={(isOpen) => setOpenComboboxId(isOpen ? task.id : null)}>
                         <PopoverTrigger asChild>
@@ -851,7 +851,7 @@ export default function EmployeeDashboard() {
                             <span className="truncate">{task.projectId ? formatProjectName(activeProjects.find(p => p.id === task.projectId)?.name || '') : "Seleccionar..."}</span>
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[400px] p-0">
+                        <PopoverContent className="w-[300px] sm:w-[400px] p-0">
                           <Command>
                             <CommandInput placeholder="Buscar proyecto..." />
                             <CommandList>
@@ -901,7 +901,7 @@ export default function EmployeeDashboard() {
                       <Input placeholder="Nombre de la tarea" className="h-9 text-xs" value={task.taskName} onChange={e => updateTaskRow(task.id, 'taskName', e.target.value)} />
                     </div>
 
-                    <div className="w-40">
+                    <div className="w-full sm:w-40">
                       <Select value={task.dependencyId || 'none'} onValueChange={(v) => updateTaskRow(task.id, 'dependencyId', v)} disabled={!task.projectId}>
                         <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Sin dep." /></SelectTrigger>
                         <SelectContent>
@@ -914,22 +914,26 @@ export default function EmployeeDashboard() {
                       </Select>
                     </div>
 
-                    <div className="w-24">
-                      <Input type="number" min="0.5" step="0.5" placeholder="Horas" className="h-9 text-xs text-center" value={task.hours} onChange={e => updateTaskRow(task.id, 'hours', e.target.value)} />
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <div className="w-full sm:w-24">
+                        <Input type="number" step="0.5" className="h-9 text-xs text-center" value={task.hoursAssigned || ''} onChange={e => updateTaskRow(task.id, 'hoursAssigned', e.target.value)} />
+                      </div>
+                      <div className="w-full sm:w-32">
+                        <Select value={task.weekDate || ''} onValueChange={(v) => updateTaskRow(task.id, 'weekDate', v)}>
+                          <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Semana..." /></SelectTrigger>
+                          <SelectContent>
+                            {weeks.map((w, idx) => (
+                              <SelectItem key={idx} value={format(w.weekStart, 'yyyy-MM-dd')}>
+                                S{idx + 1} ({format(w.weekStart, 'd/M')})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 shrink-0" onClick={() => removeTaskRow(task.id)} disabled={newTasks.length <= 1}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-
-                    <div className="w-32">
-                      <Select value={task.weekDate} onValueChange={(v) => updateTaskRow(task.id, 'weekDate', v)}>
-                        <SelectTrigger className={cn("h-9 text-xs", weekExceeds && "border-amber-400 bg-amber-50")}><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {weeks.map((w, i) => <SelectItem key={w.weekStart.toISOString()} value={format(w.weekStart, 'yyyy-MM-dd')}>Sem {i + 1}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <Button variant="ghost" size="icon" className="h-9 w-8 text-slate-400 hover:text-red-500" onClick={() => removeTaskRow(task.id)} disabled={newTasks.length === 1}>
-                      <X className="h-4 w-4" />
-                    </Button>
                   </div>
                 );
               })}
@@ -942,7 +946,7 @@ export default function EmployeeDashboard() {
                 id: crypto.randomUUID(),
                 projectId: lastTask ? lastTask.projectId : '',
                 taskName: '',
-                hours: '',
+                hoursAssigned: '',
                 weekDate: lastTask ? lastTask.weekDate : defaultKey,
                 dependencyId: 'none'
               }]);

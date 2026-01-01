@@ -22,7 +22,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Plus, Pencil, Trash2, Save, Search, Eye, EyeOff, ChevronDown, ChevronRight, ChevronLeft,
-  Calendar, Users, AlertTriangle, CheckCircle2, XCircle, Copy, Filter, Sparkles, Edit, HelpCircle
+  Calendar, Users, AlertTriangle, CheckCircle2, XCircle, Copy, Filter, Sparkles, Edit, HelpCircle, PanelRight
 } from 'lucide-react';
 import { DeadlinesTour, useDeadlinesTour } from '@/components/deadlines/DeadlinesTour';
 import { toast } from 'sonner';
@@ -33,10 +33,13 @@ import { format, addMonths, subMonths, getDaysInMonth, startOfMonth, endOfMonth 
 import { es } from 'date-fns/locale';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange, getTeamEventDetailsInRange } from '@/utils/teamEventUtils';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 export default function DeadlinesPage() {
   const { projects, clients, employees, absences, teamEvents, currentUser } = useApp();
   const { showTour } = useDeadlinesTour();
+  const isMobile = useIsMobile();
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [globalAssignments, setGlobalAssignments] = useState<GlobalAssignment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1573,15 +1576,15 @@ export default function DeadlinesPage() {
   const redistributionTips = getRedistributionTips();
 
   return (
-    <div className="flex gap-6 p-6 min-h-screen bg-slate-50">
+    <div className="flex flex-col md:flex-row gap-4 md:gap-6 p-4 md:p-6 min-h-screen bg-slate-50">
       <DeadlinesTour forceShow={showTour} />
       {/* Columna principal - Proyectos */}
       <div className="flex-1 min-w-0 space-y-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Deadline</h1>
-            <p className="text-sm text-slate-500">Asignación mensual de horas</p>
+            <h1 className="text-xl md:text-2xl font-bold text-slate-900">Deadline</h1>
+            <p className="text-xs md:text-sm text-slate-500">Asignación mensual de horas</p>
           </div>
           <div className="flex items-center gap-2">
             {/* Selector de mes con flechas */}
@@ -1589,18 +1592,18 @@ export default function DeadlinesPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7 md:h-8 md:w-8"
                 onClick={handlePrevMonth}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-sm font-medium px-2 min-w-[140px] text-center capitalize">
-                {format(currentMonthDate, 'MMMM yyyy', { locale: es })}
+              <span className="text-xs md:text-sm font-medium px-1 md:px-2 min-w-[90px] md:min-w-[140px] text-center capitalize">
+                {format(currentMonthDate, isMobile ? 'MMM yy' : 'MMMM yyyy', { locale: es })}
               </span>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7 md:h-8 md:w-8"
                 onClick={handleNextMonth}
               >
                 <ChevronRight className="h-4 w-4" />
@@ -1609,96 +1612,162 @@ export default function DeadlinesPage() {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" size="sm" onClick={copyFromPreviousMonth}>
+                  <Button variant="outline" size="sm" onClick={copyFromPreviousMonth} className="h-8 w-8 p-0">
                     <Copy className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Copiar del mes anterior</TooltipContent>
               </Tooltip>
             </TooltipProvider>
+            {/* Botón para ver equipo en móvil */}
+            {isMobile && (
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <PanelRight className="h-4 w-4" />
+                    <span className="text-xs">Equipo</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[85vw] max-w-xs p-4 overflow-y-auto">
+                  <SheetHeader className="mb-4">
+                    <SheetTitle className="text-base">Disponibilidad del equipo</SheetTitle>
+                  </SheetHeader>
+                  {/* Este contenido se duplica del sidebar desktop para móvil */}
+                  <div className="space-y-4">
+                    <div className="bg-slate-50 rounded-lg p-3">
+                      <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Disponibilidad</h3>
+                      <div className="space-y-2">
+                        {activeEmployees.map(emp => {
+                          const capacityData = getMonthlyCapacity(emp.id);
+                          const assigned = getEmployeeAssignedHours(emp.id);
+                          const available = capacityData.available;
+                          const percentage = available > 0 ? Math.round((assigned / available) * 100) : 0;
+                          const remaining = available - assigned;
+                          const status = percentage > 100 ? 'overload' : percentage > 85 ? 'warning' : 'healthy';
+                          return (
+                            <div key={emp.id} className="flex items-center gap-2">
+                              <Avatar className="h-6 w-6 flex-shrink-0">
+                                <AvatarImage src={emp.avatarUrl} alt={emp.name} />
+                                <AvatarFallback className="bg-indigo-500 text-white text-[9px]">
+                                  {(emp.first_name || emp.name)[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="truncate font-medium text-slate-700">{emp.first_name || emp.name}</span>
+                                  <span className={cn(
+                                    "font-mono font-bold",
+                                    status === 'overload' ? "text-red-600" : status === 'warning' ? "text-orange-600" : "text-emerald-600"
+                                  )}>{percentage}%</span>
+                                </div>
+                                <Progress value={Math.min(percentage, 100)} className="h-1.5" />
+                                <div className="text-[10px] text-slate-400 mt-0.5">Disponible: {remaining.toFixed(0)}h</div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            )}
           </div>
         </div>
 
         {/* Filtros */}
-        <div className="flex flex-wrap items-center gap-3 bg-white rounded-xl border shadow-sm p-3" data-tour="filters">
-          <div className="flex-1 min-w-[200px]">
+        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 bg-white rounded-xl border shadow-sm p-2 sm:p-3" data-tour="filters">
+          <div className="flex-1 min-w-0">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
-                placeholder="Buscar proyecto o cliente..."
+                placeholder="Buscar proyecto..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-9 border-slate-200"
+                className="pl-10 h-9 border-slate-200 text-sm"
               />
             </div>
           </div>
-          <div className="flex items-center gap-4 text-sm">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <span className="text-slate-600 whitespace-nowrap">Solo SEO</span>
+          <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
+            <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
+              <span className="text-slate-600 whitespace-nowrap">SEO</span>
               <Switch
                 id="only-seo"
                 checked={onlySEO}
                 onCheckedChange={(checked) => {
                   setOnlySEO(checked);
-                  if (checked) setOnlyPPC(false); // Mutuamente exclusivo
+                  if (checked) setOnlyPPC(false);
                 }}
-                className="scale-90"
+                className="scale-75 sm:scale-90"
               />
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <span className="text-slate-600 whitespace-nowrap">Solo PPC</span>
+            <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
+              <span className="text-slate-600 whitespace-nowrap">PPC</span>
               <Switch
                 id="only-ppc"
                 checked={onlyPPC}
                 onCheckedChange={(checked) => {
                   setOnlyPPC(checked);
-                  if (checked) setOnlySEO(false); // Mutuamente exclusivo
+                  if (checked) setOnlySEO(false);
                 }}
-                className="scale-90"
+                className="scale-75 sm:scale-90"
               />
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
               <span className="text-slate-600 whitespace-nowrap">Ocultos</span>
               <Switch
                 id="show-hidden"
                 checked={showHidden}
                 onCheckedChange={setShowHidden}
-                className="scale-90"
+                className="scale-75 sm:scale-90"
               />
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <span className="text-orange-600 font-medium whitespace-nowrap">Sin asignar</span>
+            <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
+              <span className="text-orange-600 font-medium whitespace-nowrap">Sin asig.</span>
               <Switch
                 id="show-unassigned"
                 checked={showUnassignedOnly}
                 onCheckedChange={setShowUnassignedOnly}
-                className="scale-90"
+                className="scale-75 sm:scale-90"
               />
             </label>
           </div>
-          <Select value={filterByEmployee} onValueChange={setFilterByEmployee}>
-            <SelectTrigger className="w-[140px] h-9 text-sm">
-              <SelectValue placeholder="Empleado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              {activeEmployees.map(emp => (
-                <SelectItem key={emp.id} value={emp.id}>
-                  {emp.first_name || emp.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'client' | 'assigned' | 'remaining')}>
-            <SelectTrigger className="w-[140px] h-9 text-sm">
-              <SelectValue placeholder="Ordenar" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="client">Por cliente</SelectItem>
-              <SelectItem value="assigned">Más asignado</SelectItem>
-              <SelectItem value="remaining">Más disponible</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select value={filterByEmployee} onValueChange={setFilterByEmployee}>
+              <SelectTrigger className="w-[100px] sm:w-[140px] h-8 sm:h-9 text-xs sm:text-sm">
+                <SelectValue placeholder="Empleado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {activeEmployees.map(emp => (
+                  <SelectItem key={emp.id} value={emp.id}>
+                    {emp.first_name || emp.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'client' | 'assigned' | 'remaining')}>
+              <SelectTrigger className="w-[100px] sm:w-[140px] h-8 sm:h-9 text-xs sm:text-sm">
+                <SelectValue placeholder="Ordenar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="client">Por cliente</SelectItem>
+                <SelectItem value="assigned">Más asignado</SelectItem>
+                <SelectItem value="remaining">Más disponible</SelectItem>
+              </SelectContent>
+            </Select>
+            {/* Botón para añadir asignación global (visible en móvil) */}
+            {isMobile && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-2 gap-1"
+                onClick={() => openGlobalDialog()}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Proyectos por cliente */}
@@ -1956,210 +2025,212 @@ export default function DeadlinesPage() {
         </div>
       </div>
 
-      {/* Panel lateral sticky - Disponibilidad del equipo */}
-      <div className="w-64 flex-shrink-0">
-        <div className="sticky top-6 space-y-4">
-          {/* Disponibilidad en tiempo real */}
-          <div className="bg-white rounded-xl border shadow-sm p-3" data-tour="availability-panel">
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-              Disponibilidad
-            </h3>
-            <div className="space-y-2">
-              {activeEmployees.map(emp => {
-                const capacityData = getMonthlyCapacity(emp.id);
-                const assigned = getEmployeeAssignedHours(emp.id);
-                const available = capacityData.available;
-                const percentage = available > 0 ? Math.round((assigned / available) * 100) : 0;
-                const remaining = available - assigned;
-                const status = percentage > 100 ? 'overload' : percentage > 85 ? 'warning' : 'healthy';
-                const hasReductions = capacityData.absenceHours > 0 || capacityData.eventHours > 0;
+      {/* Panel lateral sticky - Disponibilidad del equipo (solo desktop) */}
+      {!isMobile && (
+        <div className="w-64 flex-shrink-0">
+          <div className="sticky top-6 space-y-4">
+            {/* Disponibilidad en tiempo real */}
+            <div className="bg-white rounded-xl border shadow-sm p-3" data-tour="availability-panel">
+              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                Disponibilidad
+              </h3>
+              <div className="space-y-2">
+                {activeEmployees.map(emp => {
+                  const capacityData = getMonthlyCapacity(emp.id);
+                  const assigned = getEmployeeAssignedHours(emp.id);
+                  const available = capacityData.available;
+                  const percentage = available > 0 ? Math.round((assigned / available) * 100) : 0;
+                  const remaining = available - assigned;
+                  const status = percentage > 100 ? 'overload' : percentage > 85 ? 'warning' : 'healthy';
+                  const hasReductions = capacityData.absenceHours > 0 || capacityData.eventHours > 0;
 
-                return (
-                  <TooltipProvider key={emp.id}>
+                  return (
+                    <TooltipProvider key={emp.id}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2 cursor-help">
+                            <Avatar className="h-6 w-6 flex-shrink-0">
+                              <AvatarImage src={emp.avatarUrl} alt={emp.name} />
+                              <AvatarFallback className="bg-indigo-500 text-white text-[9px]">
+                                {(emp.first_name || emp.name)[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="truncate font-medium text-slate-700">
+                                  {emp.first_name || emp.name}
+                                  {hasReductions && <span className="text-orange-400 ml-1">*</span>}
+                                </span>
+                                <span className={cn(
+                                  "font-mono font-bold",
+                                  status === 'overload' ? "text-red-600" :
+                                    status === 'warning' ? "text-orange-600" :
+                                      "text-emerald-600"
+                                )}>
+                                  {percentage}%
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <Progress
+                                  value={Math.min(percentage, 100)}
+                                  className={cn(
+                                    "h-1 flex-1",
+                                    status === 'overload' && "[&>div]:bg-red-500",
+                                    status === 'warning' && "[&>div]:bg-orange-500",
+                                    status === 'healthy' && "[&>div]:bg-emerald-500"
+                                  )}
+                                />
+                                <span className={cn(
+                                  "text-[10px] font-mono w-10 text-right",
+                                  remaining < 0 ? "text-red-500" : "text-slate-400"
+                                )}>
+                                  {remaining.toFixed(0)}h
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="text-xs max-w-[280px] bg-white border border-slate-200 shadow-xl">
+                          <div className="space-y-2 text-slate-700">
+                            <div className="font-semibold text-slate-900 text-sm">{emp.first_name || emp.name}</div>
+                            <div className="text-slate-600">Base mensual: <span className="font-medium">{capacityData.total.toFixed(1)}h</span></div>
+
+                            {capacityData.absenceDetails.length > 0 && (
+                              <div className="space-y-1">
+                                <div className="text-red-600 font-semibold text-xs">Ausencias:</div>
+                                {capacityData.absenceDetails.map((a, i) => (
+                                  <div key={i} className="text-red-700 pl-3 text-xs">
+                                    • {a.type === 'vacation' ? 'Vacaciones' :
+                                      a.type === 'sick_leave' ? 'Baja médica' :
+                                        a.type === 'personal' ? 'Personal' : a.type}
+                                    : <span className="font-medium">-{a.hours.toFixed(1)}h</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {capacityData.eventDetails.length > 0 && (
+                              <div className="space-y-1">
+                                <div className="text-orange-600 font-semibold text-xs">Eventos:</div>
+                                {capacityData.eventDetails.map((e, i) => (
+                                  <div key={i} className="text-orange-700 pl-3 text-xs">
+                                    • {e.name}: <span className="font-medium">-{e.hours.toFixed(1)}h</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            <div className="border-t border-slate-200 pt-2 mt-2">
+                              <span className="text-slate-600">Disponible: </span>
+                              <span className="font-mono font-bold text-slate-900 text-sm">{available.toFixed(1)}h</span>
+                            </div>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Tips de redistribución */}
+            {redistributionTips.length > 0 && (
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-3" data-tour="suggestions">
+                <h3 className="text-xs font-semibold text-orange-800 uppercase tracking-wide mb-2 flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  Sugerencias
+                  <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className="flex items-center gap-2 cursor-help">
-                          <Avatar className="h-6 w-6 flex-shrink-0">
-                            <AvatarImage src={emp.avatarUrl} alt={emp.name} />
-                            <AvatarFallback className="bg-indigo-500 text-white text-[9px]">
-                              {(emp.first_name || emp.name)[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="truncate font-medium text-slate-700">
-                                {emp.first_name || emp.name}
-                                {hasReductions && <span className="text-orange-400 ml-1">*</span>}
-                              </span>
-                              <span className={cn(
-                                "font-mono font-bold",
-                                status === 'overload' ? "text-red-600" :
-                                  status === 'warning' ? "text-orange-600" :
-                                    "text-emerald-600"
-                              )}>
-                                {percentage}%
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1 mt-0.5">
-                              <Progress
-                                value={Math.min(percentage, 100)}
-                                className={cn(
-                                  "h-1 flex-1",
-                                  status === 'overload' && "[&>div]:bg-red-500",
-                                  status === 'warning' && "[&>div]:bg-orange-500",
-                                  status === 'healthy' && "[&>div]:bg-emerald-500"
-                                )}
-                              />
-                              <span className={cn(
-                                "text-[10px] font-mono w-10 text-right",
-                                remaining < 0 ? "text-red-500" : "text-slate-400"
-                              )}>
-                                {remaining.toFixed(0)}h
-                              </span>
-                            </div>
-                          </div>
-                        </div>
+                        <HelpCircle className="h-3 w-3 text-orange-600 cursor-help" />
                       </TooltipTrigger>
-                      <TooltipContent side="left" className="text-xs max-w-[280px] bg-white border border-slate-200 shadow-xl">
-                        <div className="space-y-2 text-slate-700">
-                          <div className="font-semibold text-slate-900 text-sm">{emp.first_name || emp.name}</div>
-                          <div className="text-slate-600">Base mensual: <span className="font-medium">{capacityData.total.toFixed(1)}h</span></div>
-
-                          {capacityData.absenceDetails.length > 0 && (
-                            <div className="space-y-1">
-                              <div className="text-red-600 font-semibold text-xs">Ausencias:</div>
-                              {capacityData.absenceDetails.map((a, i) => (
-                                <div key={i} className="text-red-700 pl-3 text-xs">
-                                  • {a.type === 'vacation' ? 'Vacaciones' :
-                                    a.type === 'sick_leave' ? 'Baja médica' :
-                                      a.type === 'personal' ? 'Personal' : a.type}
-                                  : <span className="font-medium">-{a.hours.toFixed(1)}h</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {capacityData.eventDetails.length > 0 && (
-                            <div className="space-y-1">
-                              <div className="text-orange-600 font-semibold text-xs">Eventos:</div>
-                              {capacityData.eventDetails.map((e, i) => (
-                                <div key={i} className="text-orange-700 pl-3 text-xs">
-                                  • {e.name}: <span className="font-medium">-{e.hours.toFixed(1)}h</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          <div className="border-t border-slate-200 pt-2 mt-2">
-                            <span className="text-slate-600">Disponible: </span>
-                            <span className="font-mono font-bold text-slate-900 text-sm">{available.toFixed(1)}h</span>
-                          </div>
+                      <TooltipContent side="right" className="max-w-xs z-[100]">
+                        <div className="text-xs space-y-2">
+                          <p className="font-semibold">Cálculo de sugerencias:</p>
+                          <ul className="list-disc list-inside space-y-1 text-slate-600">
+                            <li>Se calcula la carga promedio del equipo</li>
+                            <li>Se identifican empleados por encima y por debajo de la media</li>
+                            <li>Umbral: 3 puntos si el rango es estrecho (≤15 puntos), o 1.5× desviación estándar si es amplio</li>
+                            <li>Solo se sugieren transferencias entre empleados que comparten proyectos</li>
+                            <li>Se priorizan las sugerencias que más equilibran el equipo</li>
+                          </ul>
                         </div>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Tips de redistribución */}
-          {redistributionTips.length > 0 && (
-            <div className="bg-orange-50 border border-orange-200 rounded-xl p-3" data-tour="suggestions">
-              <h3 className="text-xs font-semibold text-orange-800 uppercase tracking-wide mb-2 flex items-center gap-1">
-                <Sparkles className="h-3 w-3" />
-                Sugerencias
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-3 w-3 text-orange-600 cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-xs z-[100]">
-                      <div className="text-xs space-y-2">
-                        <p className="font-semibold">Cálculo de sugerencias:</p>
-                        <ul className="list-disc list-inside space-y-1 text-slate-600">
-                          <li>Se calcula la carga promedio del equipo</li>
-                          <li>Se identifican empleados por encima y por debajo de la media</li>
-                          <li>Umbral: 3 puntos si el rango es estrecho (≤15 puntos), o 1.5× desviación estándar si es amplio</li>
-                          <li>Solo se sugieren transferencias entre empleados que comparten proyectos</li>
-                          <li>Se priorizan las sugerencias que más equilibran el equipo</li>
-                        </ul>
+                </h3>
+                <div className="space-y-2">
+                  {redistributionTips.map((tip, i) => (
+                    <div key={i} className="text-xs bg-white border border-orange-100 rounded p-2">
+                      <div className="font-medium text-slate-800 mb-0.5">
+                        {tip.from} → {tip.to}
                       </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </h3>
-              <div className="space-y-2">
-                {redistributionTips.map((tip, i) => (
-                  <div key={i} className="text-xs bg-white border border-orange-100 rounded p-2">
-                    <div className="font-medium text-slate-800 mb-0.5">
-                      {tip.from} → {tip.to}
-                    </div>
-                    <div className="text-slate-500 text-[10px]">
-                      {tip.reason}
-                    </div>
-                    {tip.projects.length > 0 && (
-                      <div className="text-[10px] text-orange-600 mt-1">
-                        En común: {tip.projects.slice(0, 2).join(', ')}
+                      <div className="text-slate-500 text-[10px]">
+                        {tip.reason}
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Tareas globales compactas */}
-          <div className="bg-white rounded-xl border shadow-sm p-3" data-tour="global-assignments">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                Otras asignaciones
-              </h3>
-              <Button onClick={() => openGlobalDialog()} size="sm" variant="ghost" className="h-6 w-6 p-0">
-                <Plus className="h-3 w-3" />
-              </Button>
-            </div>
-            {globalAssignments.length === 0 ? (
-              <div className="text-[10px] text-slate-400 italic">Sin asignaciones extra</div>
-            ) : (
-              <div className="space-y-1">
-                {globalAssignments.map(a => {
-                  const canDelete = !a.employeeId || a.employeeId === currentUser?.id;
-                  return (
-                    <div key={a.id} className="flex items-center justify-between text-xs group">
-                      <span className="truncate text-slate-600">{a.name}</span>
-                      <div className="flex items-center gap-1">
-                        <span className="font-mono text-indigo-600">+{a.hours}h</span>
-                        <button
-                          onClick={() => openGlobalDialog(a)}
-                          className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-slate-600"
-                        >
-                          <Pencil className="h-2.5 w-2.5" />
-                        </button>
-                        {canDelete && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteGlobal(a.id);
-                            }}
-                            className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600"
-                          >
-                            <Trash2 className="h-2.5 w-2.5" />
-                          </button>
-                        )}
-                      </div>
+                      {tip.projects.length > 0 && (
+                        <div className="text-[10px] text-orange-600 mt-1">
+                          En común: {tip.projects.slice(0, 2).join(', ')}
+                        </div>
+                      )}
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
             )}
+
+            {/* Tareas globales compactas */}
+            <div className="bg-white rounded-xl border shadow-sm p-3" data-tour="global-assignments">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  Otras asignaciones
+                </h3>
+                <Button onClick={() => openGlobalDialog()} size="sm" variant="ghost" className="h-6 w-6 p-0">
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
+              {globalAssignments.length === 0 ? (
+                <div className="text-[10px] text-slate-400 italic">Sin asignaciones extra</div>
+              ) : (
+                <div className="space-y-1">
+                  {globalAssignments.map(a => {
+                    const canDelete = !a.employeeId || a.employeeId === currentUser?.id;
+                    return (
+                      <div key={a.id} className="flex items-center justify-between text-xs group">
+                        <span className="truncate text-slate-600">{a.name}</span>
+                        <div className="flex items-center gap-1">
+                          <span className="font-mono text-indigo-600">+{a.hours}h</span>
+                          <button
+                            onClick={() => openGlobalDialog(a)}
+                            className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-slate-600"
+                          >
+                            <Pencil className="h-2.5 w-2.5" />
+                          </button>
+                          {canDelete && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteGlobal(a.id);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600"
+                            >
+                              <Trash2 className="h-2.5 w-2.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Dialog para asignaciones globales */}
       <Dialog open={isGlobalDialogOpen} onOpenChange={setIsGlobalDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="max-w-[95vw] sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
               {editingGlobal ? 'Editar asignación global' : 'Nueva asignación global'}

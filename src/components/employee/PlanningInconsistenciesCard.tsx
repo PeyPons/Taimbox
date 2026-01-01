@@ -404,14 +404,14 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                           </>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 mt-1.5 text-xs">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2 text-xs">
                         {inc.deadlineHours === 0 ? (
                           <>
-                            <div className="text-slate-500 italic">
+                            <div className="text-slate-500 italic shrink-0">
                               Sin deadline
                             </div>
-                            <span className="text-slate-300">→</span>
-                            <div className="flex items-center gap-2">
+                            <span className="text-slate-300 hidden xs:inline">→</span>
+                            <div className="flex items-center gap-2 shrink-0">
                               <span className="text-blue-600">
                                 Plan: <span className="font-medium">{inc.plannedHours}h</span>
                               </span>
@@ -419,20 +419,20 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                                 Comp: <span className="font-medium">{inc.computedHours}h</span>
                               </span>
                             </div>
-                            <span className="text-slate-300">→</span>
-                            <div className="flex items-center gap-1 font-bold text-amber-700">
+                            <span className="text-slate-300 hidden xs:inline">→</span>
+                            <div className="flex items-center gap-1 font-bold text-amber-700 shrink-0">
                               <TrendingUp className="h-3 w-3" />
                               +{inc.difference}h
                             </div>
                           </>
                         ) : (
                           <>
-                            <div>
+                            <div className="shrink-0">
                               <span className="text-slate-500">Deadline:</span>{' '}
                               <span className="font-medium">{inc.deadlineHours}h</span>
                             </div>
-                            <span className="text-slate-300">→</span>
-                            <div className="flex items-center gap-2">
+                            <span className="text-slate-300 hidden xs:inline">→</span>
+                            <div className="flex items-center gap-2 shrink-0">
                               <span className="text-blue-600">
                                 Plan: <span className="font-medium">{inc.plannedHours}h</span>
                               </span>
@@ -440,8 +440,8 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                                 Comp: <span className="font-medium">{inc.computedHours}h</span>
                               </span>
                             </div>
-                            <span className="text-slate-300">→</span>
-                            <div className={cn("flex items-center gap-1 font-bold", isPositive ? "text-amber-700" : "text-blue-700")}>
+                            <span className="text-slate-300 hidden xs:inline">→</span>
+                            <div className={cn("flex items-center gap-1 font-bold shrink-0", isPositive ? "text-amber-700" : "text-blue-700")}>
                               {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                               {isPositive ? '+' : ''}{inc.difference}h
                             </div>
@@ -482,19 +482,19 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium text-slate-700 truncate">{tm.employeeName}</div>
                                 <div className="flex flex-col gap-0.5 mt-1 text-[10px]">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-slate-500">
-                                      Deadline: <span className="font-medium">{tm.deadlineHours}h</span>
+                                  <div className="flex items-center gap-x-2 gap-y-1 flex-wrap">
+                                    <span className="text-slate-500 shrink-0">
+                                      Dead: <span className="font-medium text-slate-700">{tm.deadlineHours}h</span>
                                     </span>
-                                    <span className="text-slate-400">→</span>
-                                    <span className="text-blue-600">
-                                      Plan: <span className="font-medium">{tm.plannedHours}h</span>
+                                    <span className="text-slate-300 hidden xs:inline">→</span>
+                                    <span className="text-blue-600 shrink-0">
+                                      P: <span className="font-medium">{tm.plannedHours}h</span>
                                     </span>
-                                    <span className="text-emerald-600">
-                                      Comp: <span className="font-medium">{tm.computedHours}h</span>
+                                    <span className="text-emerald-600 shrink-0">
+                                      C: <span className="font-medium">{tm.computedHours}h</span>
                                     </span>
-                                    <span className="text-slate-400">→</span>
-                                    <span className={cn("font-bold", tmIsPositive ? "text-amber-600" : "text-blue-600")}>
+                                    <span className="text-slate-300 hidden xs:inline">→</span>
+                                    <span className={cn("font-bold shrink-0", tmIsPositive ? "text-amber-600" : "text-blue-600")}>
                                       {tmIsPositive ? '+' : ''}{tm.difference}h
                                     </span>
                                   </div>
