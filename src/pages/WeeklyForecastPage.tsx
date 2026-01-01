@@ -158,29 +158,32 @@ export default function WeeklyForecastPage() {
   }, [projects, allocations, clients, currentMonth, filterClient, filterProjectStatus, onlySEO, onlyPPC]);
 
   // Sección B: Transferencias de horas (rediseñado) - muestra quién le pasó a quién
-  const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-  const currentWeekStr = format(currentWeekStart, 'yyyy-MM-dd');
 
-  // Obtener todas las transferencias de esta semana
+  // Obtener todas las transferencias DEL MES ACTUAL (no solo semana actual)
   const transfers = useMemo(() => {
     if (!weeklyFeedback || !Array.isArray(weeklyFeedback) || !allocations || !Array.isArray(allocations)) return [];
-    // Buscar feedback que indique transferencias
+
+    // Función helper para determinar si una fecha (string o Date) está en el mes actual
+    const isInMonth = (dateStr: string | Date) => {
+      try {
+        return isAllocationInEffectiveMonth(dateStr, currentMonth);
+      } catch {
+        return false;
+      }
+    };
+
+    // Buscar feedback que indique transferencias EN ESTE MES
     const transferFeedbacks = (weeklyFeedback || []).filter(fb => {
-      if (fb.weekStartDate !== currentWeekStr) return false;
+      if (!isInMonth(fb.weekStartDate)) return false; // Filtro por mes estricto
       const comment = fb.comments || '';
       return comment.includes('transferida a') || comment.includes('Tarea transferida a');
     });
 
-    // Buscar tareas transferidas usando el campo de BD (más robusto que solo formato de texto)
+    // Buscar tareas transferidas usando el campo de BD
     const transferredTasks = (allocations || []).filter(a => {
-      // Usar el campo de BD si está disponible, sino fallback al formato de texto
       const isTransferred = a.transferredFromAllocationId !== undefined && a.transferredFromAllocationId !== null;
       if (!isTransferred && !a.taskName?.includes('(transferida de')) return false;
-      try {
-        return isAllocationInEffectiveMonth(a.weekStartDate, currentMonth);
-      } catch {
-        return false;
-      }
+      return isInMonth(a.weekStartDate);
     });
 
     // Combinar información de feedback y tareas
@@ -200,8 +203,10 @@ export default function WeeklyForecastPage() {
       allocationId?: string;
       createdAt: string;
       comments?: string;
-      distributedTasks?: Array<{ name: string; hours: number }>;
+      distributedTasks?: Array<{ name: string; hours: number; weekDate: string }>;
       notes?: string;
+      originalWeek?: string; // Nueva info: Semana origen
+      targetWeek?: string;   // Nueva info: Semana destino
     }>();
 
     // Procesar feedback de transferencias
@@ -218,13 +223,9 @@ export default function WeeklyForecastPage() {
         const transferredTask = transferredTasks.find(t => t.id === fb.allocationId || t.taskName?.includes(`(transferida de ${fromEmployee.name})`));
 
         // Verificar si el empleado destino ya procesó la tarea
-        // IMPORTANTE: Cuando se distribuye una tarea transferida, el feedback de distribución
-        // tiene el allocationId de la tarea TRANSFERIDA, no la original
         let status: 'pending' | 'kept' | 'distributed' = 'pending';
+        let targetWeek: string | undefined;
 
-        // Buscar feedback de procesamiento de dos formas:
-        // 1. Feedback con allocationId de la tarea original (fb.allocationId) - para "mantener"
-        // 2. Feedback con allocationId de la tarea transferida (transferredTask.id) - para "distribuir"
         const taskFeedbackOriginal = weeklyFeedback.find(f => f.allocationId === fb.allocationId);
         const taskFeedbackTransferred = transferredTask ? weeklyFeedback.find(f => f.allocationId === transferredTask.id) : null;
         const taskFeedback = taskFeedbackTransferred || taskFeedbackOriginal;
@@ -232,40 +233,36 @@ export default function WeeklyForecastPage() {
         if (taskFeedback) {
           if (taskFeedback.comments?.includes('Tarea mantenida tal cual')) {
             status = 'kept';
+            targetWeek = taskFeedback.weekStartDate; // La semana donde se mantuvo
           } else if (taskFeedback.comments?.includes('Distribuidas en')) {
             status = 'distributed';
+            targetWeek = taskFeedback.weekStartDate; // La semana donde se distribuyó
           }
         }
 
-        // Obtener nombre de tarea: prioridad 1) tarea actual, 2) comentario del feedback, 3) por defecto
+        // Obtener nombre de tarea
         let taskName = 'Tarea transferida';
         if (transferredTask) {
-          // Usar el nombre actual de la tarea (puede haber cambiado)
           taskName = transferredTask.taskName?.replace(/\(transferida de .+\)/, '').trim() || 'Tarea transferida';
         } else if (taskFeedback?.comments) {
-          // Si la tarea fue eliminada, extraer el nombre del comentario del feedback
           const nameMatch = taskFeedback.comments.match(/Nombre original: (.+?)(?:\s*\||$)/);
           if (nameMatch) {
             taskName = nameMatch[1].trim();
           } else {
-            // Fallback: buscar en el comentario de transferencia
             const transferNameMatch = fb.comments?.match(/Nombre: (.+?)(?:\s*\||$)/);
             if (transferNameMatch) {
               taskName = transferNameMatch[1].trim();
             }
           }
         } else if (fb.comments) {
-          // Último fallback: buscar en comentario de transferencia
           const transferNameMatch = fb.comments.match(/Nombre: (.+?)(?:\s*\||$)/);
           if (transferNameMatch) {
             taskName = transferNameMatch[1].trim();
           }
         }
 
-        // Extraer notas del feedback si las hay
         let notes: string | undefined;
         if (taskFeedback?.comments) {
-          // Buscar notas después de "|" o en comentarios de distribución
           const notesMatch = taskFeedback.comments.match(/\| Motivo: (.+)$/);
           if (notesMatch) {
             notes = notesMatch[1].trim();
@@ -285,15 +282,17 @@ export default function WeeklyForecastPage() {
           taskName,
           status,
           feedbackId: fb.id,
-          allocationId: fb.allocationId, // Usar el ID original, no el de la tarea transferida
-          createdAt: taskFeedback?.createdAt || fb.createdAt, // Usar fecha del feedback de procesamiento si existe
+          allocationId: fb.allocationId,
+          createdAt: taskFeedback?.createdAt || fb.createdAt,
           comments: fb.comments,
-          notes
+          notes,
+          originalWeek: fb.weekStartDate,
+          targetWeek
         });
       }
     });
 
-    // Añadir tareas transferidas que no tienen feedback explícito
+    // Añadir tareas transferidas sin feedback explícito
     transferredTasks.forEach(task => {
       const match = task.taskName?.match(/\(transferida de (.+)\)/);
       const fromEmployeeName = match ? match[1] : null;
@@ -306,18 +305,23 @@ export default function WeeklyForecastPage() {
           if (!transferMap.has(key)) {
             const taskFeedback = weeklyFeedback.find(f => f.allocationId === task.id);
             let status: 'pending' | 'kept' | 'distributed' = 'pending';
+            let targetWeek: string | undefined;
+
             if (taskFeedback) {
               if (taskFeedback.comments?.includes('Tarea mantenida tal cual')) {
                 status = 'kept';
+                targetWeek = taskFeedback.weekStartDate;
               } else if (taskFeedback.comments?.includes('Distribuidas en')) {
                 status = 'distributed';
+                targetWeek = taskFeedback.weekStartDate;
               }
+            } else if (task.status === 'completed') {
+              // Si la tarea transferida se completó, asumimos "kept" o que ya se trabajó
+              // status = 'kept'; // O lo dejamos pending si queremos confirmación explícita
             }
 
-            // Obtener nombre de tarea: prioridad 1) tarea actual, 2) comentario del feedback
             let taskName = task.taskName?.replace(/\(transferida de .+\)/, '').trim() || 'Tarea transferida';
             if (taskFeedback?.comments && status === 'distributed') {
-              // Si fue distribuida, buscar nombre original en el comentario
               const nameMatch = taskFeedback.comments.match(/Nombre original: (.+?)(?:\s*\||$)/);
               if (nameMatch) {
                 taskName = nameMatch[1].trim();
@@ -337,7 +341,9 @@ export default function WeeklyForecastPage() {
               taskName,
               status,
               allocationId: task.id,
-              createdAt: task.weekStartDate
+              createdAt: task.weekStartDate,
+              originalWeek: task.weekStartDate, // Asumimos que la tarea transferida conserva la fecha o es la fecha de llegada
+              targetWeek
             });
           }
         }
@@ -345,27 +351,12 @@ export default function WeeklyForecastPage() {
     });
 
     // Buscar tareas distribuidas desde transferencias usando el campo de BD
-    // Estas tareas tienen distributionSourceAllocationId que apunta a la tarea transferida original
     const distributedFromTransfers = (allocations || []).filter(a => {
-      // Usar el campo de BD si está disponible, sino fallback al formato de texto
       const isDistributed = a.distributionSourceAllocationId !== undefined && a.distributionSourceAllocationId !== null;
       if (!isDistributed && !a.taskName?.includes('(transferida de')) return false;
-      try {
-        if (!isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)) return false;
-      } catch {
-        return false;
-      }
-      // Si tiene el campo de BD, es suficiente. Si no, verificar feedback como fallback
-      if (isDistributed) return true;
-      // Fallback: verificar si tiene feedback de distribución desde transferencia
-      const hasDistributionFeedback = weeklyFeedback.some(fb =>
-        fb.allocationId === a.id &&
-        fb.comments?.includes('Tarea distribuida desde transferencia')
-      );
-      return hasDistributionFeedback;
+      return isInMonth(a.weekStartDate);
     });
 
-    // Agrupar tareas distribuidas por transferencia original
     const distributedGroups = new Map<string, {
       fromEmployeeId: string;
       fromEmployeeName: string;
@@ -379,33 +370,34 @@ export default function WeeklyForecastPage() {
       distributedTasks: Array<{ id: string; name: string; hours: number; weekDate: string }>;
       totalHours: number;
       createdAt: string;
+      originalWeek?: string;
+      targetWeek?: string;
     }>();
 
     distributedFromTransfers.forEach(distTask => {
-      // Usar campos de BD para rastrear la cadena completa
       let fromEmployee: typeof employees[0] | undefined;
       let originalTaskName: string;
       let newTaskName: string = distTask.taskName || 'Tarea';
+      let originalWeek: string | undefined;
 
-      // Si tiene distributionSourceAllocationId, buscar la tarea transferida original
+      // ... (Lógica de búsqueda de tarea original igual que antes) ...
       if (distTask.distributionSourceAllocationId) {
         const transferredTask = allocations.find(a => a.id === distTask.distributionSourceAllocationId);
         if (transferredTask) {
-          // La tarea transferida tiene transferredFromAllocationId que apunta a la tarea original
+          originalWeek = transferredTask.weekStartDate; // Fecha de la tarea intermedia
           if (transferredTask.transferredFromAllocationId) {
             const originalTask = allocations.find(a => a.id === transferredTask.transferredFromAllocationId);
             if (originalTask) {
               fromEmployee = employees.find(e => e.id === originalTask.employeeId);
               originalTaskName = originalTask.taskName || 'Tarea';
+              originalWeek = originalTask.weekStartDate; // Preferir la fecha original de verdad
             } else {
-              // Si no encontramos la tarea original, usar el nombre de la tarea transferida
               const transferMatch = transferredTask.taskName?.match(/\(transferida de (.+?)\)/);
               const fromEmployeeName = transferMatch ? transferMatch[1] : null;
               fromEmployee = fromEmployeeName ? employees.find(e => e.name === fromEmployeeName) : undefined;
               originalTaskName = transferredTask.taskName?.replace(/\(transferida de .+\)/, '').trim() || 'Tarea';
             }
           } else {
-            // Si la tarea transferida no tiene transferredFromAllocationId, parsear del nombre
             const transferMatch = transferredTask.taskName?.match(/\(transferida de (.+?)\)/);
             const fromEmployeeName = transferMatch ? transferMatch[1] : null;
             fromEmployee = fromEmployeeName ? employees.find(e => e.name === fromEmployeeName) : undefined;
@@ -414,7 +406,6 @@ export default function WeeklyForecastPage() {
         }
       }
 
-      // Fallback: si no encontramos usando campos de BD, parsear del nombre
       if (!fromEmployee) {
         const fullMatch = distTask.taskName?.match(/^(.+?)\s*\(transferida de (.+?), original: (.+?)\)$/);
         if (fullMatch) {
@@ -430,17 +421,15 @@ export default function WeeklyForecastPage() {
             originalTaskName = newName.trim();
             newTaskName = newName.trim();
           } else {
-            // Último fallback: buscar en feedback
             const taskFeedback = weeklyFeedback.find(f => f.allocationId === distTask.id);
             const originalNameMatch = taskFeedback?.comments?.match(/tarea original: (.+?)(?:\s*\||$)/i);
             originalTaskName = originalNameMatch ? originalNameMatch[1].trim() : (distTask.taskName || 'Tarea');
-            return; // No podemos determinar el empleado origen sin el nombre
+            return;
           }
         }
       }
 
       if (!fromEmployee) return;
-
       const toEmployee = employees.find(e => e.id === distTask.employeeId);
       if (!toEmployee) return;
 
@@ -459,7 +448,9 @@ export default function WeeklyForecastPage() {
           originalTaskName,
           distributedTasks: [],
           totalHours: 0,
-          createdAt: distTask.weekStartDate
+          createdAt: distTask.weekStartDate,
+          originalWeek,
+          targetWeek: distTask.weekStartDate
         });
       }
 
@@ -475,7 +466,6 @@ export default function WeeklyForecastPage() {
 
     // Convertir grupos de distribuciones en entradas de transferencia
     distributedGroups.forEach((group, key) => {
-      // Verificar si ya existe una entrada de transferencia para esta combinación
       const existingKey = Array.from(transferMap.keys()).find(k => {
         const entry = transferMap.get(k);
         return entry?.fromEmployeeId === group.fromEmployeeId &&
@@ -485,20 +475,18 @@ export default function WeeklyForecastPage() {
       });
 
       if (existingKey) {
-        // Actualizar la entrada existente
         const existing = transferMap.get(existingKey)!;
-        existing.hours = group.totalHours; // Actualizar horas totales
-        existing.status = 'distributed'; // Marcar como distribuida
+        existing.hours = group.totalHours;
+        existing.status = 'distributed';
+        existing.targetWeek = group.targetWeek;
         transferMap.set(existingKey, existing);
       } else {
-        // Buscar feedback de distribución para obtener fecha y notas
         const distributionFeedback = weeklyFeedback.find(fb =>
           fb.comments?.includes('Distribuidas en') &&
           fb.projectId === group.projectId &&
           fb.employeeId === group.toEmployeeId
         );
 
-        // Extraer notas del feedback si las hay
         let notes: string | undefined;
         if (distributionFeedback?.comments) {
           const notesMatch = distributionFeedback.comments.match(/\| Motivo: (.+)$/);
@@ -507,7 +495,6 @@ export default function WeeklyForecastPage() {
           }
         }
 
-        // Crear nueva entrada para esta distribución
         transferMap.set(`distributed-${key}`, {
           fromEmployeeId: group.fromEmployeeId,
           fromEmployeeName: group.fromEmployeeName,
@@ -521,17 +508,19 @@ export default function WeeklyForecastPage() {
           taskName: group.originalTaskName,
           status: 'distributed',
           allocationId: group.distributedTasks[0]?.id,
-          createdAt: distributionFeedback?.createdAt || group.createdAt, // Usar fecha del feedback
+          createdAt: distributionFeedback?.createdAt || group.createdAt,
           comments: distributionFeedback?.comments,
-          distributedTasks: group.distributedTasks.map(t => ({ name: t.name, hours: t.hours })),
-          notes
+          distributedTasks: group.distributedTasks.map(t => ({ name: t.name, hours: t.hours, weekDate: t.weekDate })),
+          notes,
+          originalWeek: group.originalWeek, // Propagar semana origen
+          targetWeek: group.targetWeek // Semana destino
         });
       }
     });
 
     let filtered = Array.from(transferMap.values());
 
-    // Filtro por compañero (origen o destino)
+    // Filtro por compañero
     if (filterFeedbackEmployee !== 'all') {
       filtered = filtered.filter(t =>
         t.fromEmployeeId === filterFeedbackEmployee || t.toEmployeeId === filterFeedbackEmployee
@@ -543,14 +532,13 @@ export default function WeeklyForecastPage() {
       filtered = filtered.filter(t => t.projectId === filterFeedbackProject);
     }
 
-    // Filtro por estado de transferencia
+    // Filtro por estado
     if (filterTransferStatus !== 'all') {
       filtered = filtered.filter(t => t.status === filterTransferStatus);
     }
 
-    const result = filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    return Array.isArray(result) ? result : [];
-  }, [weeklyFeedback, allocations, employees, projects, currentWeekStr, currentMonth, filterFeedbackEmployee, filterFeedbackProject, filterTransferStatus]);
+    return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [weeklyFeedback, allocations, employees, projects, currentMonth, filterFeedbackEmployee, filterFeedbackProject, filterTransferStatus]);
 
   // Semanas futuras para el selector de redistribución
   const futureWeeks = useMemo(() => {
@@ -1168,16 +1156,16 @@ export default function WeeklyForecastPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <ArrowRight className="h-5 w-5" />
-                Transferencias de horas
+                <ArrowUpDown className="h-5 w-5 text-indigo-600" />
+                Transferencias de horas ({format(currentMonth, 'MMMM', { locale: es })})
                 {transfers && transfers.length > 0 && (
-                  <Badge variant="outline" className="ml-2 bg-slate-100 text-slate-700 border-slate-300">
+                  <Badge variant="secondary" className="ml-2 font-normal">
                     {transfers.length}
                   </Badge>
                 )}
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-1">
-                Semana del <strong>{format(currentWeekStart, "d 'de' MMMM", { locale: es })}</strong> al <strong>{format(addDays(currentWeekStart, 6), "d 'de' MMMM", { locale: es })}</strong>
+                Historial de tareas reasignadas durante todo el mes de {format(currentMonth, 'MMMM', { locale: es })}
               </p>
             </CardHeader>
             <CardContent>
@@ -1281,7 +1269,24 @@ export default function WeeklyForecastPage() {
                                       {/* Tarea original */}
                                       <div className="mb-1.5">
                                         <p className="text-xs text-slate-500 mb-0.5">Tarea original:</p>
-                                        <p className="text-sm font-medium text-slate-900 leading-tight">{transfer.taskName}</p>
+                                        <div className="flex items-center flex-wrap gap-2">
+                                          <p className="text-sm font-medium text-slate-900 leading-tight">{transfer.taskName}</p>
+                                          <div className="flex items-center gap-1.5">
+                                            {transfer.originalWeek && (
+                                              <Badge variant="outline" className="text-[10px] h-4 px-1 bg-slate-50 text-slate-400 font-normal border-slate-200">
+                                                Del: {format(parseISO(transfer.originalWeek), 'd MMM', { locale: es })}
+                                              </Badge>
+                                            )}
+                                            {transfer.targetWeek && transfer.targetWeek !== transfer.originalWeek && (
+                                              <>
+                                                <ArrowRight className="h-3 w-3 text-slate-300" />
+                                                <Badge variant="outline" className="text-[10px] h-4 px-1 bg-indigo-50 text-indigo-500 font-normal border-indigo-100">
+                                                  Al: {format(parseISO(transfer.targetWeek), 'd MMM', { locale: es })}
+                                                </Badge>
+                                              </>
+                                            )}
+                                          </div>
+                                        </div>
                                       </div>
 
                                       {/* Si está distribuida, mostrar tareas distribuidas */}
