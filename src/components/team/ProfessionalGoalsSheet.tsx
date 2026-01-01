@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useApp } from '@/contexts/AppContext';
+import { useGoals } from '@/contexts/GoalsContext';
 import { ProfessionalGoal } from '@/types';
 import { Plus, Trash2, Target, Pencil, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -91,7 +92,8 @@ const goalFormSchema = z.object({
 type GoalFormValues = z.infer<typeof goalFormSchema>;
 
 export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: ProfessionalGoalsSheetProps) {
-  const { employees, professionalGoals, addProfessionalGoal, updateProfessionalGoal, deleteProfessionalGoal } = useApp();
+  const { employees } = useApp();
+  const { professionalGoals, addProfessionalGoal, updateProfessionalGoal, deleteProfessionalGoal } = useGoals();
   const employee = employees.find(e => e.id === employeeId);
   const employeeGoals = professionalGoals.filter(g => g.employeeId === employeeId);
 
