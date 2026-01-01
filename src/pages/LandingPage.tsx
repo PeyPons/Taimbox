@@ -29,7 +29,9 @@ import {
   HelpCircle,
   Plug,
   Code,
-  FileDown
+  FileDown,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { DemoPlanner } from '@/components/demo/DemoDashboard';
 import { DemoEmployeeDashboard } from '@/components/demo/DemoEmployeeDashboard';
@@ -47,6 +49,7 @@ import { Monitor, AlertCircle } from 'lucide-react';
 export default function LandingPage() {
   const isMobile = useIsMobile();
   const [demoTab, setDemoTab] = useState('planner');
+  const [activeFeature, setActiveFeature] = useState(0);
 
   return (
     <>
@@ -156,531 +159,350 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Features Section - Rediseñado con copywriting expandido */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
-          <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-3 sm:mb-4 px-4">
+        {/* Interactive Feature Carousel - Futuristic Design */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+          <div className="text-center mb-10 sm:mb-14">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-3 px-4">
               <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
-                Todo en un vistazo
+                Funcionalidades que transforman
               </span>
             </h2>
-            <p className="text-base sm:text-lg md:text-xl text-white/90 max-w-2xl mx-auto px-4 font-medium mb-3">
-              Sin complicaciones. Sin perder tiempo. Solo resultados.
-            </p>
-            <div className="max-w-3xl mx-auto px-4">
-              <ul className="text-sm sm:text-base text-white/80 space-y-2 text-left inline-block">
-                <li className="flex items-start gap-2">
-                  <span className="text-indigo-300 mt-1">✓</span>
-                  <span>Visualización en tiempo real de la carga del equipo</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-indigo-300 mt-1">✓</span>
-                  <span>Identificación automática de sobrecargas</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-indigo-300 mt-1">✓</span>
-                  <span>Interfaz visual e intuitiva desde el primer día</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Grid con todas las funcionalidades sin repetir */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
-            {/* Feature 1: Planificación Visual */}
-            <div className="group relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition duration-300" />
-              <Card className="relative h-full border-2 border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/20">
-                <CardContent className="p-5 sm:p-6 flex flex-col items-center text-center">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg shadow-indigo-500/30 group-hover:scale-110 transition-transform">
-                    <Calendar className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Calendario Visual</h3>
-                  <ul className="text-xs sm:text-sm text-white/90 space-y-1.5 text-left">
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-indigo-300 mt-0.5">•</span>
-                      <span>Vista semanal y mensual del equipo</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-indigo-300 mt-0.5">•</span>
-                      <span>Identifica sobrecargas al instante</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-indigo-300 mt-0.5">•</span>
-                      <span>Horas estimadas, reales y computadas</span>
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Feature 2: Dependencias */}
-            <div className="group relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition duration-300" />
-              <Card className="relative h-full border-2 border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20">
-                <CardContent className="p-5 sm:p-6 flex flex-col items-center text-center">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform">
-                    <Link2 className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Dependencias</h3>
-                  <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
-                    Define qué tareas dependen de otras y visualiza el flujo de trabajo completo.
-                    Recibe alertas cuando una tarea bloquea a otras, prioriza automáticamente las tareas críticas
-                    y asegúrate de que tu equipo siempre sepa qué hacer primero y en qué orden.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Feature 3: Deadlines */}
-            <div className="group relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-600 to-orange-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition duration-300" />
-              <Card className="relative h-full border-2 border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-amber-500/20">
-                <CardContent className="p-5 sm:p-6 flex flex-col items-center text-center">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
-                    <Target className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Deadlines</h3>
-                  <ul className="text-xs sm:text-sm text-white/90 space-y-1.5 text-left">
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-amber-300 mt-0.5">•</span>
-                      <span>Objetivos mensuales por proyecto</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-amber-300 mt-0.5">•</span>
-                      <span>Compara planificado vs ejecutado</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-amber-300 mt-0.5">•</span>
-                      <span>Detecta desviaciones a tiempo</span>
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Feature 4: Métricas */}
-            <div className="group relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition duration-300" />
-              <Card className="relative h-full border-2 border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/20">
-                <CardContent className="p-5 sm:p-6 flex flex-col items-center text-center">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
-                    <BarChart3 className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Métricas</h3>
-                  <ul className="text-xs sm:text-sm text-white/90 space-y-1.5 text-left">
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-emerald-300 mt-0.5">•</span>
-                      <span>Precisión de planificación</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-emerald-300 mt-0.5">•</span>
-                      <span>Índice de fiabilidad histórica</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-emerald-300 mt-0.5">•</span>
-                      <span>Decisiones basadas en datos</span>
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Feature 5: Gestión de Equipo */}
-            <div className="group relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition duration-300" />
-              <Card className="relative h-full border-2 border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20">
-                <CardContent className="p-5 sm:p-6 flex flex-col items-center text-center">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform">
-                    <Users className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Equipo</h3>
-                  <ul className="text-xs sm:text-sm text-white/90 space-y-1.5 text-left">
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-blue-300 mt-0.5">•</span>
-                      <span>Horarios personalizados</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-blue-300 mt-0.5">•</span>
-                      <span>Gestión de ausencias y vacaciones</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-blue-300 mt-0.5">•</span>
-                      <span>Objetivos profesionales individuales</span>
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Feature 6: Proyectos */}
-            <div className="group relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-rose-600 to-pink-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition duration-300" />
-              <Card className="relative h-full border-2 border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-rose-500/20">
-                <CardContent className="p-5 sm:p-6 flex flex-col items-center text-center">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-rose-500 to-pink-500 rounded-xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg shadow-rose-500/30 group-hover:scale-110 transition-transform">
-                    <Target className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Proyectos</h3>
-                  <ul className="text-xs sm:text-sm text-white/90 space-y-1.5 text-left">
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-rose-300 mt-0.5">•</span>
-                      <span>Control de horas y presupuestos</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-rose-300 mt-0.5">•</span>
-                      <span>Alertas de estado de salud</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-rose-300 mt-0.5">•</span>
-                      <span>Métricas en tiempo real</span>
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Feature 7: Weekly Reports */}
-            <div className="group relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition duration-300" />
-              <Card className="relative h-full border-2 border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-violet-500/20">
-                <CardContent className="p-5 sm:p-6 flex flex-col items-center text-center">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-violet-500 to-purple-500 rounded-xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg shadow-violet-500/30 group-hover:scale-110 transition-transform">
-                    <FileText className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Weekly Reports</h3>
-                  <ul className="text-xs sm:text-sm text-white/90 space-y-1.5 text-left">
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-violet-300 mt-0.5">•</span>
-                      <span>Cierre semanal automático</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-violet-300 mt-0.5">•</span>
-                      <span>Transferencias y redistribuciones</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-violet-300 mt-0.5">•</span>
-                      <span>Feed completo para managers</span>
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Feature 8: Alertas */}
-            <div className="group relative">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-yellow-600 to-amber-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition duration-300" />
-              <Card className="relative h-full border-2 border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/20">
-                <CardContent className="p-5 sm:p-6 flex flex-col items-center text-center">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-yellow-500 to-amber-500 rounded-xl flex items-center justify-center mb-3 sm:mb-4 shadow-lg shadow-yellow-500/30 group-hover:scale-110 transition-transform">
-                    <Bell className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Alertas</h3>
-                  <ul className="text-xs sm:text-sm text-white/90 space-y-1.5 text-left">
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-yellow-300 mt-0.5">•</span>
-                      <span>Notificaciones inteligentes</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-yellow-300 mt-0.5">•</span>
-                      <span>Sobrecargas y bloqueos</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-yellow-300 mt-0.5">•</span>
-                      <span>Decisiones proactivas</span>
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-
-        {/* Sección de Integraciones */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
-          <div className="text-center mb-8 sm:mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/20 backdrop-blur-sm rounded-full text-indigo-200 text-sm font-medium mb-3 sm:mb-4 border border-indigo-400/30">
-              <Plug className="h-4 w-4" />
-              <span>Integraciones y exportación</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 sm:mb-5 px-4">
-              <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
-                Conecta con tu flujo de trabajo
-              </span>
-            </h2>
-            <p className="text-base sm:text-lg text-white/90 max-w-2xl mx-auto px-4">
-              Exporta datos, integra con tus herramientas y mantén todo sincronizado.
+            <p className="text-lg sm:text-xl text-white/70 max-w-2xl mx-auto">
+              Explora cada herramienta. Haz clic para ver detalles y ejemplos.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
-            <Card className="border-2 border-indigo-500/30 bg-indigo-500/10 backdrop-blur-xl">
-              <CardContent className="p-5 sm:p-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center mb-4">
-                  <Download className="h-6 w-6 text-white" />
+          {/* Feature Bubbles Row */}
+          {(() => {
+            const features = [
+              { icon: Calendar, label: 'Calendario', color: 'from-indigo-500 to-purple-500', title: 'Calendario Visual', subtitle: 'La vista principal de tu equipo', description: 'Ve quién hace qué, cuándo y por qué. Identifica sobrecargas al instante con un vistazo al calendario completo de tu equipo.', featureList: ['Vista semanal y mensual', 'Código de colores por proyecto', 'Drag & drop para reasignar', 'Filtros por empleado o proyecto'], example: 'María está al 120% esta semana. Con un vistazo al calendario, ves que tiene 3 proyectos superpuestos y puedes redistribuir antes de que sea tarde.', stat: '+40%', statLabel: 'visibilidad del equipo' },
+              { icon: Link2, label: 'Dependencias', color: 'from-purple-500 to-pink-500', title: 'Dependencias', subtitle: 'Gestión inteligente de bloqueos', description: 'Visualiza qué tareas bloquean a otras y recibe alertas cuando una dependencia está en riesgo.', featureList: ['Mapa visual de dependencias', 'Alertas de cuellos de botella', 'Priorización automática', 'Notificaciones en cascada'], example: 'El diseño bloquea al desarrollo. Si el diseño se retrasa, automáticamente recibes alerta de que 3 tareas de desarrollo se verán afectadas.', stat: '100%', statLabel: 'visibilidad de bloqueos' },
+              { icon: Target, label: 'Deadlines', color: 'from-amber-500 to-orange-500', title: 'Deadlines', subtitle: 'Objetivos mensuales por proyecto', description: 'Define metas de horas por proyecto y empleado. Compara lo planificado vs ejecutado en tiempo real.', featureList: ['Objetivos por proyecto', 'Seguimiento en tiempo real', 'Sugerencias de redistribución', 'Alertas de desviación'], example: 'Tienes 200h asignadas al proyecto X pero solo 150h disponibles. El sistema te sugiere redistribuir 50h a otro mes o empleado.', stat: '85%', statLabel: 'cumplimiento de deadlines' },
+              { icon: Users, label: 'Equipo', color: 'from-blue-500 to-cyan-500', title: 'Gestión de Equipo', subtitle: 'Todo sobre tu equipo en un lugar', description: 'Horarios, ausencias, vacaciones y capacidad. Cada empleado tiene su perfil completo.', featureList: ['Horarios personalizados', 'Gestión de ausencias', 'Capacidad mensual', 'Objetivos profesionales'], example: 'Juan tiene vacaciones la próxima semana. El sistema ya lo considera y no permite asignarle tareas en ese período.', stat: '0', statLabel: 'conflictos de agenda' },
+              { icon: FileText, label: 'Weekly', color: 'from-violet-500 to-purple-500', title: 'Weekly Reports', subtitle: 'Cierre semanal automático', description: 'Cada semana, el sistema genera un resumen con métricas, redistribuye horas no completadas a compañeros con disponibilidad y prepara la siguiente semana.', featureList: ['Resumen semanal automático', 'Redistribución inteligente', 'Métricas de productividad', 'Comparativa semanal'], example: 'Carlos no completó 15h esta semana. El sistema detecta que Laura tiene 10h libres y Pedro 5h, y les redistribuye el trabajo automáticamente.', stat: 'Auto', statLabel: 'redistribución de carga' },
+              { icon: Bell, label: 'Alertas', color: 'from-yellow-500 to-amber-500', title: 'Alertas Inteligentes', subtitle: 'Nunca más sorpresas', description: 'Recibe notificaciones cuando detectamos sobrecargas, dependencias en riesgo o desviaciones de presupuesto.', featureList: ['Alertas de sobrecarga', 'Notificaciones de dependencias', 'Avisos de presupuesto', 'Recordatorios de deadlines'], example: '3 días antes del deadline, recibes alerta de que el proyecto lleva solo 60% completado. Tiempo de actuar.', stat: '60%', statLabel: 'problemas detectados antes' },
+              { icon: BarChart3, label: 'Métricas', color: 'from-rose-500 to-pink-500', title: 'Métricas y Analytics', subtitle: 'Decisiones basadas en datos', description: 'Índice de fiabilidad de estimaciones, productividad por empleado y proyecto, y tendencias históricas.', featureList: ['Índice de fiabilidad', 'Productividad por equipo', 'Tendencias históricas', 'Exportación de reportes'], example: 'Tu índice de fiabilidad es del 78%. Históricamente, subestimas proyectos de diseño en un 20%. Ahora lo sabes y puedes ajustar.', stat: '+78%', statLabel: 'precisión en estimaciones' },
+            ];
+            const current = features[activeFeature];
+            const FeatureIcon = current.icon;
+
+            return (
+              <>
+                <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-8 sm:mb-12">
+                  {features.map((feature, index) => {
+                    const Icon = feature.icon;
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => setActiveFeature(index)}
+                        className={cn(
+                          "group relative flex flex-col items-center gap-2 p-3 sm:p-4 rounded-2xl transition-all duration-300 cursor-pointer",
+                          activeFeature === index
+                            ? `bg-gradient-to-br ${feature.color} shadow-xl scale-105`
+                            : "bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110",
+                          activeFeature === index ? "bg-white/20" : `bg-gradient-to-br ${feature.color} shadow-lg`
+                        )}>
+                          <Icon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                        </div>
+                        <span className={cn(
+                          "text-xs sm:text-sm font-semibold transition-colors",
+                          activeFeature === index ? "text-white" : "text-white/80"
+                        )}>
+                          {feature.label}
+                        </span>
+                        {activeFeature === index && (
+                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-gradient-to-br from-indigo-900/90 to-purple-900/90" />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-3">Exportación de datos</h3>
-                <ul className="text-white/90 text-sm space-y-1.5">
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-indigo-300 mt-0.5">•</span>
-                    <span>Exporta reportes en múltiples formatos</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-indigo-300 mt-0.5">•</span>
-                    <span>Datos históricos completos</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-indigo-300 mt-0.5">•</span>
-                    <span>Integra con hojas de cálculo</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
 
-            <Card className="border-2 border-purple-500/30 bg-purple-500/10 backdrop-blur-xl">
-              <CardContent className="p-5 sm:p-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mb-4">
-                  <Code className="h-6 w-6 text-white" />
+                {/* Feature Detail Panel */}
+                <div className="relative">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl blur opacity-30" />
+                  <Card className="relative border-2 border-white/20 bg-gradient-to-br from-indigo-900/90 to-purple-900/90 backdrop-blur-xl">
+                    <CardContent className="p-6 sm:p-8 md:p-10">
+                      <div className="grid lg:grid-cols-5 gap-6 sm:gap-8">
+                        <div className="lg:col-span-3">
+                          <div className="flex items-center gap-3 mb-4">
+                            <Badge className="bg-indigo-500/30 text-indigo-200 border-indigo-400/30 px-3 py-1">
+                              {current.label}
+                            </Badge>
+                          </div>
+                          <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2">{current.title}</h3>
+                          <p className="text-indigo-200/70 text-sm mb-4">{current.subtitle}</p>
+                          <p className="text-white/90 text-base sm:text-lg leading-relaxed mb-6">{current.description}</p>
+
+                          <div className="grid grid-cols-2 gap-3 mb-6">
+                            {current.featureList.map((feat, i) => (
+                              <div key={i} className="flex items-center gap-2 p-2 bg-white/5 rounded-lg border border-white/10">
+                                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                                <span className="text-sm text-white/90">{feat}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="p-4 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-xl border border-indigo-400/20">
+                            <p className="text-sm text-indigo-200/90 italic">💡 {current.example}</p>
+                          </div>
+                        </div>
+
+                        <div className="lg:col-span-2 flex flex-col justify-between">
+                          <div className="text-center p-6 bg-gradient-to-br from-white/5 to-white/10 rounded-2xl border border-white/10 mb-4">
+                            <div className="text-5xl sm:text-6xl font-black bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent mb-2">
+                              {current.stat}
+                            </div>
+                            <p className="text-sm text-white/70">{current.statLabel}</p>
+                          </div>
+
+                          <div className="flex justify-center gap-4">
+                            <Button
+                              variant="outline"
+                              size="lg"
+                              className="bg-white/5 border-white/20 text-white hover:bg-white/10"
+                              onClick={() => setActiveFeature(prev => prev === 0 ? 6 : prev - 1)}
+                            >
+                              <ChevronLeft className="h-5 w-5" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="lg"
+                              className="bg-white/5 border-white/20 text-white hover:bg-white/10"
+                              onClick={() => setActiveFeature(prev => prev === 6 ? 0 : prev + 1)}
+                            >
+                              <ChevronRight className="h-5 w-5" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-3">API disponible</h3>
-                <ul className="text-white/90 text-sm space-y-1.5">
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-purple-300 mt-0.5">•</span>
-                    <span>API REST para integraciones personalizadas</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-purple-300 mt-0.5">•</span>
-                    <span>Acceso programático a tus datos</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-purple-300 mt-0.5">•</span>
-                    <span>Documentación completa incluida</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 border-blue-500/30 bg-blue-500/10 backdrop-blur-xl">
-              <CardContent className="p-5 sm:p-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mb-4">
-                  <Calendar className="h-6 w-6 text-white" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-3">Sincronización</h3>
-                <ul className="text-white/90 text-sm space-y-1.5">
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-blue-300 mt-0.5">•</span>
-                    <span>Sincroniza con calendarios externos</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-blue-300 mt-0.5">•</span>
-                    <span>Actualizaciones en tiempo real</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-blue-300 mt-0.5">•</span>
-                    <span>Preparado para futuras integraciones</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Sección de Problemas y Soluciones */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
-          <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-6 px-4">
-              <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
-                ¿Cansado de gestionar el tiempo a ciegas?
-              </span>
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 mb-12">
-            <Card className="border-2 border-red-500/30 bg-red-500/10 backdrop-blur-xl">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <AlertTriangle className="h-8 w-8 text-red-400" />
-                  <h3 className="text-xl font-bold text-white">Los Problemas</h3>
-                </div>
-                <ul className="space-y-2.5 text-white/90 text-sm">
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-400 mt-1 shrink-0">✗</span>
-                    <span>Sobrecargas detectadas demasiado tarde</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-400 mt-1 shrink-0">✗</span>
-                    <span>Estimaciones que no coinciden con la realidad</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-400 mt-1 shrink-0">✗</span>
-                    <span>Bloqueos inesperados por dependencias</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-400 mt-1 shrink-0">✗</span>
-                    <span>Reuniones interminables de coordinación</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-400 mt-1 shrink-0">✗</span>
-                    <span>Sin visibilidad de la carga del equipo</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 border-emerald-500/30 bg-emerald-500/10 backdrop-blur-xl">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <CheckCircle2 className="h-8 w-8 text-emerald-400" />
-                  <h3 className="text-xl font-bold text-white">Nuestra Solución</h3>
-                </div>
-                <ul className="space-y-2.5 text-white/90 text-sm">
-                  <li className="flex items-start gap-2">
-                    <span className="text-emerald-400 mt-1 shrink-0">✓</span>
-                    <span>Visualización en tiempo real del equipo</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-emerald-400 mt-1 shrink-0">✓</span>
-                    <span>Comparación automática estimado vs real</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-emerald-400 mt-1 shrink-0">✓</span>
-                    <span>Alertas inteligentes de dependencias</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-emerald-400 mt-1 shrink-0">✓</span>
-                    <span>Dashboard que elimina reuniones</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-emerald-400 mt-1 shrink-0">✓</span>
-                    <span>Métricas para mejorar planificación</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="text-center">
-            <Button
-              size="lg"
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-6 text-lg font-semibold shadow-2xl"
-              onClick={() => {
-                const demoSection = document.getElementById('demo');
-                demoSection?.scrollIntoView({ behavior: 'smooth' });
-              }}
-            >
-              Ver cómo funciona
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
+              </>
+            );
+          })()}
         </div>
 
 
-        {/* Sección específica de Deadlines */}
-        <div className="relative z-10 bg-gradient-to-br from-amber-950/30 via-orange-950/30 to-amber-950/30 border-y border-amber-500/20 py-8 sm:py-12 md:py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8 sm:mb-10">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/20 backdrop-blur-sm rounded-full text-amber-200 text-sm font-medium mb-3 sm:mb-4 border border-amber-400/30">
-                <Target className="h-4 w-4" />
-                <span>Gestión de deadlines</span>
+        {/* Sección de Integraciones - Rediseño creativo */}
+        <div className="relative z-10 py-12 sm:py-16 md:py-20 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-indigo-950/30 to-transparent" />
+
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <div className="text-center mb-10 sm:mb-14">
+              <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500/30 to-purple-500/30 backdrop-blur-sm rounded-full text-white text-sm font-semibold mb-4 border border-white/20">
+                <Plug className="h-4 w-4" />
+                <span>Conecta todo</span>
               </div>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 sm:mb-5 px-4">
-                <span className="bg-gradient-to-r from-amber-200 via-orange-200 to-amber-200 bg-clip-text text-transparent">
-                  Cumple tus compromisos, siempre
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 px-4">
+                Tu flujo de trabajo,
+                <span className="block bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  amplificado
                 </span>
               </h2>
-              <div className="max-w-2xl mx-auto px-4">
-                <ul className="text-sm sm:text-base text-white/90 space-y-2 text-left inline-block">
-                  <li className="flex items-start gap-2">
-                    <span className="text-amber-300 mt-1">•</span>
-                    <span>Objetivos realistas por proyecto y empleado</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-amber-300 mt-1">•</span>
-                    <span>Monitoreo en tiempo real del progreso</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-amber-300 mt-1">•</span>
-                    <span>Detección temprana de desviaciones</span>
-                  </li>
-                </ul>
-              </div>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6 mb-12">
-              <Card className="border-2 border-amber-500/30 bg-amber-500/10 backdrop-blur-xl">
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mb-4">
-                    <Target className="h-6 w-6 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-3">Objetivos mensuales</h3>
-                  <ul className="text-white/90 text-sm space-y-1.5">
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-amber-300 mt-0.5">•</span>
-                      <span>Horas por proyecto y empleado</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-amber-300 mt-0.5">•</span>
-                      <span>Visualización de distribución</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-amber-300 mt-0.5">•</span>
-                      <span>Objetivos alcanzables</span>
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 relative">
+              <div className="hidden md:block absolute top-1/2 left-[20%] right-[20%] h-px bg-gradient-to-r from-indigo-500/50 via-purple-500/50 to-blue-500/50" />
 
-              <Card className="border-2 border-amber-500/30 bg-amber-500/10 backdrop-blur-xl">
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mb-4">
-                    <Activity className="h-6 w-6 text-white" />
+              <div className="relative group">
+                <div className="bg-gradient-to-br from-indigo-600/20 to-purple-600/20 backdrop-blur-xl rounded-3xl p-8 text-center border border-indigo-500/30 hover:border-indigo-400/50 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/20">
+                  <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-xl shadow-indigo-500/40 group-hover:scale-110 transition-transform">
+                    <Download className="h-10 w-10 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-3">Coherencia de planificación</h3>
-                  <ul className="text-white/90 text-sm space-y-1.5">
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-amber-300 mt-0.5">•</span>
-                      <span>Compara planificado vs ejecutado</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-amber-300 mt-0.5">•</span>
-                      <span>Identifica patrones y mejora estimaciones</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-amber-300 mt-0.5">•</span>
-                      <span>Mantén coherencia prometido-entregado</span>
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
+                  <h3 className="text-2xl font-bold text-white mb-3">Exporta</h3>
+                  <p className="text-indigo-200/80 text-base leading-relaxed">
+                    Reportes en Excel, CSV y JSON. Datos históricos completos.
+                  </p>
+                </div>
+              </div>
 
-              <Card className="border-2 border-amber-500/30 bg-amber-500/10 backdrop-blur-xl">
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mb-4">
-                    <TrendingUp className="h-6 w-6 text-white" />
+              <div className="relative group md:-mt-4">
+                <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 backdrop-blur-xl rounded-3xl p-8 text-center border border-purple-500/30 hover:border-purple-400/50 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20">
+                  <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-xl shadow-purple-500/40 group-hover:scale-110 transition-transform">
+                    <Code className="h-10 w-10 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-3">Sugerencias inteligentes</h3>
-                  <ul className="text-white/90 text-sm space-y-1.5">
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-amber-300 mt-0.5">•</span>
-                      <span>Redistribución automática de horas</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-amber-300 mt-0.5">•</span>
-                      <span>Optimiza carga del equipo</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-amber-300 mt-0.5">•</span>
-                      <span>Maximiza productividad equilibrada</span>
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
+                  <h3 className="text-2xl font-bold text-white mb-3">Conecta</h3>
+                  <p className="text-purple-200/80 text-base leading-relaxed">
+                    API REST completa para integraciones personalizadas.
+                  </p>
+                </div>
+              </div>
+
+              <div className="relative group">
+                <div className="bg-gradient-to-br from-blue-600/20 to-cyan-600/20 backdrop-blur-xl rounded-3xl p-8 text-center border border-blue-500/30 hover:border-blue-400/50 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20">
+                  <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-xl shadow-blue-500/40 group-hover:scale-110 transition-transform">
+                    <Calendar className="h-10 w-10 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-3">Sincroniza</h3>
+                  <p className="text-blue-200/80 text-base leading-relaxed">
+                    Conecta con calendarios externos en tiempo real.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sección de Problemas y Soluciones - Diseño visual transformación */}
+        <div className="relative z-10 py-12 sm:py-16 md:py-20">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-10 sm:mb-14">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 px-4">
+                <span className="bg-gradient-to-r from-red-300 via-white to-emerald-300 bg-clip-text text-transparent">
+                  ¿Cansado de gestionar el tiempo a ciegas?
+                </span>
+              </h2>
+              <p className="text-lg text-white/70 max-w-xl mx-auto">
+                Transforma el caos en claridad
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6 md:gap-8 mb-10 relative">
+              <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+                <div className="bg-gradient-to-r from-red-500 to-emerald-500 rounded-full p-3 shadow-xl">
+                  <ArrowRight className="h-6 w-6 text-white" />
+                </div>
+              </div>
+
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-950/60 via-red-900/40 to-gray-900/60 border border-red-500/30 p-6 sm:p-8">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 blur-3xl" />
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 bg-red-500/30 rounded-xl flex items-center justify-center">
+                    <AlertTriangle className="h-6 w-6 text-red-400" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white">Sin Timeboxing</h3>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 p-3 bg-red-500/10 rounded-xl border border-red-500/20">
+                    <Clock className="h-5 w-5 text-red-400 shrink-0" />
+                    <span className="text-white/90 font-medium">Sobrecargas detectadas tarde</span>
+                  </div>
+                  <div className="flex items-center gap-4 p-3 bg-red-500/10 rounded-xl border border-red-500/20">
+                    <AlertTriangle className="h-5 w-5 text-red-400 shrink-0" />
+                    <span className="text-white/90 font-medium">Estimaciones irrealistas</span>
+                  </div>
+                  <div className="flex items-center gap-4 p-3 bg-red-500/10 rounded-xl border border-red-500/20">
+                    <Users className="h-5 w-5 text-red-400 shrink-0" />
+                    <span className="text-white/90 font-medium">Reuniones interminables</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950/60 via-emerald-900/40 to-gray-900/60 border border-emerald-500/30 p-6 sm:p-8">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-3xl" />
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 bg-emerald-500/30 rounded-xl flex items-center justify-center">
+                    <CheckCircle2 className="h-6 w-6 text-emerald-400" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white">Con Timeboxing</h3>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                    <Zap className="h-5 w-5 text-emerald-400 shrink-0" />
+                    <span className="text-white/90 font-medium">Visibilidad en tiempo real</span>
+                  </div>
+                  <div className="flex items-center gap-4 p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                    <BarChart3 className="h-5 w-5 text-emerald-400 shrink-0" />
+                    <span className="text-white/90 font-medium">Métricas precisas</span>
+                  </div>
+                  <div className="flex items-center gap-4 p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                    <Target className="h-5 w-5 text-emerald-400 shrink-0" />
+                    <span className="text-white/90 font-medium">Decisiones informadas</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="text-center">
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-8 py-6 text-lg font-semibold shadow-2xl"
+                className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-6 text-lg font-semibold shadow-2xl shadow-indigo-500/30"
+                onClick={() => {
+                  const demoSection = document.getElementById('demo');
+                  demoSection?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                Ver cómo funciona
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+
+        {/* Sección específica de Deadlines - Diseño flow horizontal */}
+        <div className="relative z-10 bg-gradient-to-br from-amber-950/40 via-orange-950/40 to-amber-950/40 border-y border-amber-500/30 py-12 sm:py-16 md:py-20">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-10 sm:mb-14">
+              <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500/30 to-orange-500/30 backdrop-blur-sm rounded-full text-white text-sm font-semibold mb-4 border border-amber-400/40">
+                <Target className="h-4 w-4" />
+                <span>Deadlines</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 px-4">
+                <span className="bg-gradient-to-r from-amber-300 via-orange-300 to-amber-300 bg-clip-text text-transparent">
+                  Cumple tus compromisos, siempre
+                </span>
+              </h2>
+              <p className="text-lg text-amber-200/70 max-w-xl mx-auto">
+                Define, rastrea y logra tus objetivos mensuales
+              </p>
+            </div>
+
+            {/* Horizontal Flow - 3 Steps */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-4 mb-12 relative">
+              {/* Connecting lines (desktop) */}
+              <div className="hidden md:block absolute top-1/2 left-[22%] right-[22%] h-1 bg-gradient-to-r from-amber-500/40 via-orange-500/40 to-amber-500/40 rounded-full" />
+
+              {/* Step 1: Define */}
+              <div className="relative group">
+                <div className="bg-gradient-to-br from-amber-600/20 to-orange-600/20 backdrop-blur-xl rounded-3xl p-6 sm:p-8 text-center border border-amber-500/30 hover:border-amber-400/50 transition-all">
+                  <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-amber-500/40">
+                    <Target className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Define</h3>
+                  <p className="text-amber-200/70 text-sm">
+                    Objetivos mensuales por proyecto y empleado
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 2: Track */}
+              <div className="relative group md:-mt-4">
+                <div className="bg-gradient-to-br from-orange-600/25 to-amber-600/25 backdrop-blur-xl rounded-3xl p-6 sm:p-8 text-center border border-orange-500/40 hover:border-orange-400/50 transition-all">
+                  <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-orange-500/40">
+                    <Activity className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Rastrea</h3>
+                  <p className="text-orange-200/70 text-sm">
+                    Compara planificado vs ejecutado en tiempo real
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 3: Achieve */}
+              <div className="relative group">
+                <div className="bg-gradient-to-br from-amber-600/20 to-orange-600/20 backdrop-blur-xl rounded-3xl p-6 sm:p-8 text-center border border-amber-500/30 hover:border-amber-400/50 transition-all">
+                  <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-amber-500/40">
+                    <TrendingUp className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Logra</h3>
+                  <p className="text-amber-200/70 text-sm">
+                    Sugerencias inteligentes de redistribución
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-8 py-6 text-lg font-semibold shadow-2xl shadow-amber-500/30"
                 onClick={() => {
                   setDemoTab('deadlines');
                   const demoSection = document.getElementById('demo');
@@ -694,176 +516,96 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Sección de Seguridad y Privacidad */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
-          <div className="text-center mb-8 sm:mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/20 backdrop-blur-sm rounded-full text-emerald-200 text-sm font-medium mb-3 sm:mb-4 border border-emerald-400/30">
-              <Shield className="h-4 w-4" />
-              <span>Seguridad y privacidad</span>
+        {/* Sección de Seguridad - Diseño visual trust badges */}
+        <div className="relative z-10 py-12 sm:py-16 md:py-20 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-950/20 to-transparent" />
+
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <div className="text-center mb-10 sm:mb-14">
+              <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500/30 to-teal-500/30 backdrop-blur-sm rounded-full text-white text-sm font-semibold mb-4 border border-emerald-400/40">
+                <Shield className="h-4 w-4" />
+                <span>Seguridad</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 px-4">
+                <span className="bg-gradient-to-r from-emerald-300 via-teal-300 to-emerald-300 bg-clip-text text-transparent">
+                  Tus datos, protegidos
+                </span>
+              </h2>
+              <p className="text-lg text-emerald-200/70 max-w-xl mx-auto">
+                Cumplimos los más altos estándares de seguridad
+              </p>
             </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 sm:mb-5 px-4">
-              <span className="bg-gradient-to-r from-emerald-200 via-teal-200 to-emerald-200 bg-clip-text text-transparent">
-                Tus datos están protegidos
-              </span>
-            </h2>
-            <p className="text-base sm:text-lg text-white/90 max-w-2xl mx-auto px-4">
-              Cumplimos con los más altos estándares de seguridad y privacidad.
-            </p>
-          </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 mb-8">
-            <Card className="border-2 border-emerald-500/30 bg-emerald-500/10 backdrop-blur-xl">
-              <CardContent className="p-5 sm:p-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-4">
-                  <Lock className="h-6 w-6 text-white" />
+            {/* Trust Badges Row */}
+            <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-10">
+              <div className="flex items-center gap-3 px-5 py-3 bg-emerald-500/20 rounded-2xl border border-emerald-500/30">
+                <Lock className="h-6 w-6 text-emerald-400" />
+                <span className="text-white font-semibold">TLS/SSL</span>
+              </div>
+              <div className="flex items-center gap-3 px-5 py-3 bg-emerald-500/20 rounded-2xl border border-emerald-500/30">
+                <Shield className="h-6 w-6 text-emerald-400" />
+                <span className="text-white font-semibold">GDPR</span>
+              </div>
+
+              <div className="flex items-center gap-3 px-5 py-3 bg-emerald-500/20 rounded-2xl border border-emerald-500/30">
+                <Activity className="h-6 w-6 text-emerald-400" />
+                <span className="text-white font-semibold">24/7</span>
+              </div>
+            </div>
+
+            {/* 3 Visual Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+              <div className="relative group">
+                <div className="bg-gradient-to-br from-emerald-600/20 to-teal-600/20 backdrop-blur-xl rounded-3xl p-6 sm:p-8 text-center border border-emerald-500/30 hover:border-emerald-400/50 transition-all">
+                  <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-emerald-500/40">
+                    <Lock className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Encriptación</h3>
+                  <p className="text-emerald-200/70 text-sm">
+                    Datos encriptados en tránsito y en reposo con algoritmos empresariales
+                  </p>
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-3">Encriptación de datos</h3>
-                <ul className="text-white/90 text-sm space-y-1.5">
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Encriptación TLS/SSL en todas las conexiones</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Datos encriptados en reposo en la base de datos</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Algoritmos de encriptación de nivel empresarial</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Certificados SSL/TLS actualizados automáticamente</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
+              </div>
 
-            <Card className="border-2 border-emerald-500/30 bg-emerald-500/10 backdrop-blur-xl">
-              <CardContent className="p-5 sm:p-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-4">
-                  <Shield className="h-6 w-6 text-white" />
+              <div className="relative group md:-mt-4">
+                <div className="bg-gradient-to-br from-teal-600/25 to-emerald-600/25 backdrop-blur-xl rounded-3xl p-6 sm:p-8 text-center border border-teal-500/40 hover:border-teal-400/50 transition-all">
+                  <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-teal-500/40">
+                    <Shield className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Privacidad</h3>
+                  <p className="text-teal-200/70 text-sm">
+                    Control total sobre tus datos. Exportación y eliminación cuando quieras.
+                  </p>
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-3">Cumplimiento GDPR</h3>
-                <ul className="text-white/90 text-sm space-y-1.5">
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Totalmente compatible con el Reglamento General de Protección de Datos</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Control total sobre tus datos personales y empresariales</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Derecho al olvido: eliminación completa de datos</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Portabilidad de datos: exportación en formatos estándar</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
+              </div>
 
-            <Card className="border-2 border-emerald-500/30 bg-emerald-500/10 backdrop-blur-xl">
-              <CardContent className="p-5 sm:p-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-4">
-                  <Database className="h-6 w-6 text-white" />
+              <div className="relative group">
+                <div className="bg-gradient-to-br from-emerald-600/20 to-teal-600/20 backdrop-blur-xl rounded-3xl p-6 sm:p-8 text-center border border-emerald-500/30 hover:border-emerald-400/50 transition-all">
+                  <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-emerald-500/40">
+                    <Database className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Infraestructura</h3>
+                  <p className="text-emerald-200/70 text-sm">
+                    Servidores certificados, backups diarios y monitoreo continuo
+                  </p>
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-3">Control de acceso</h3>
-                <ul className="text-white/90 text-sm space-y-1.5">
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Autenticación segura con contraseñas encriptadas</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Permisos granulares por usuario y funcionalidad</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Aislamiento de datos con Row Level Security (RLS)</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Respaldo automático diario de toda la información</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </div>
 
-          {/* Información adicional de seguridad */}
-          <div className="grid md:grid-cols-2 gap-4 sm:gap-5 md:gap-6 mb-8">
-            <Card className="border-2 border-emerald-500/30 bg-emerald-500/10 backdrop-blur-xl">
-              <CardContent className="p-5 sm:p-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-4">
-                  <Shield className="h-6 w-6 text-white" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-3">Infraestructura segura</h3>
-                <ul className="text-white/90 text-sm space-y-1.5">
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Alojamiento en servidores con certificaciones ISO 27001</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Monitoreo continuo de seguridad 24/7</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Actualizaciones de seguridad automáticas</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Protección contra ataques DDoS y vulnerabilidades</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 border-emerald-500/30 bg-emerald-500/10 backdrop-blur-xl">
-              <CardContent className="p-5 sm:p-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-4">
-                  <Lock className="h-6 w-6 text-white" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-3">Privacidad de datos</h3>
-                <ul className="text-white/90 text-sm space-y-1.5">
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Tus datos no se comparten con terceros sin tu consentimiento</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Acceso restringido solo a personal autorizado</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Registro de auditoría de accesos y modificaciones</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Política de privacidad transparente y actualizada</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="text-center">
-            <Button
-              size="lg"
-              variant="outline"
-              className="bg-emerald-500/10 border-2 border-emerald-400/30 text-white hover:bg-emerald-500/20 hover:border-emerald-400/50 px-8 py-6 text-lg font-semibold backdrop-blur-md"
-              onClick={() => {
-                const demoSection = document.getElementById('demo');
-                demoSection?.scrollIntoView({ behavior: 'smooth' });
-              }}
-            >
-              Más información sobre seguridad
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
+            <div className="text-center">
+              <Button
+                size="lg"
+                variant="outline"
+                className="bg-emerald-500/10 border-2 border-emerald-400/40 text-white hover:bg-emerald-500/20 hover:border-emerald-400/60 px-8 py-6 text-lg font-semibold backdrop-blur-md"
+                onClick={() => {
+                  const demoSection = document.getElementById('demo');
+                  demoSection?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                Ver demo
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -973,111 +715,112 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Casos de uso y beneficios */}
+        {/* Casos de uso y beneficios - Para equipos que valoran su tiempo */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
-          <div className="text-center mb-12 sm:mb-16">
+          <div className="text-center mb-10 sm:mb-12">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-6 px-4">
               <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
                 Para equipos que valoran su tiempo
               </span>
             </h2>
-            <div className="max-w-2xl mx-auto px-4">
-              <ul className="text-sm sm:text-base text-white/90 space-y-2 text-left inline-block">
-                <li className="flex items-start gap-2">
-                  <span className="text-indigo-300 mt-1">•</span>
-                  <span>Equipos de marketing digital</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-indigo-300 mt-1">•</span>
-                  <span>Desarrolladores y diseñadores</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-indigo-300 mt-1">•</span>
-                  <span>Cualquier equipo que coordine trabajo</span>
-                </li>
-              </ul>
+            {/* Audience badges */}
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-4">
+              <span className="px-4 py-1.5 bg-indigo-500/20 rounded-full text-indigo-200 text-sm font-medium border border-indigo-500/30">Equipos de marketing digital</span>
+              <span className="px-4 py-1.5 bg-purple-500/20 rounded-full text-purple-200 text-sm font-medium border border-purple-500/30">Desarrolladores y diseñadores</span>
+              <span className="px-4 py-1.5 bg-pink-500/20 rounded-full text-pink-200 text-sm font-medium border border-pink-500/30">Cualquier equipo que coordine trabajo</span>
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            <Card className="border-2 border-indigo-500/30 bg-indigo-500/10 backdrop-blur-xl">
+
+
+          <div className="grid md:grid-cols-3 gap-6 mb-12">
+            {/* Card: Líderes de equipo */}
+            <Card className="border-2 border-indigo-500/40 bg-gradient-to-br from-indigo-950/80 to-purple-950/80 backdrop-blur-xl overflow-hidden group hover:border-indigo-400/60 transition-all">
               <CardContent className="p-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center mb-4">
-                  <Users className="h-6 w-6 text-white" />
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">Para líderes de equipo</h3>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">Para líderes de equipo</h3>
-                <ul className="text-white/90 text-sm space-y-2">
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-indigo-300 mt-0.5">•</span>
-                    <span>Decisiones informadas sobre distribución</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-indigo-300 mt-0.5">•</span>
-                    <span>Identifica quién necesita ayuda</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-indigo-300 mt-0.5">•</span>
-                    <span>Reduce reuniones en un 70%</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-indigo-300 mt-0.5">•</span>
-                    <span>Alertas automáticas de sobrecarga</span>
-                  </li>
-                </ul>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-2.5 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                    <CheckCircle2 className="h-4 w-4 text-indigo-400 shrink-0" />
+                    <span className="text-sm text-white/90">Decisiones informadas sobre distribución</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-2.5 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                    <CheckCircle2 className="h-4 w-4 text-indigo-400 shrink-0" />
+                    <span className="text-sm text-white/90">Identifica quién necesita ayuda</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-2.5 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                    <CheckCircle2 className="h-4 w-4 text-indigo-400 shrink-0" />
+                    <span className="text-sm text-white/90">Reduce reuniones en un 70%</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-2.5 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                    <CheckCircle2 className="h-4 w-4 text-indigo-400 shrink-0" />
+                    <span className="text-sm text-white/90">Alertas automáticas de sobrecarga</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-purple-500/30 bg-purple-500/10 backdrop-blur-xl">
+            {/* Card: Project Managers */}
+            <Card className="border-2 border-purple-500/40 bg-gradient-to-br from-purple-950/80 to-pink-950/80 backdrop-blur-xl overflow-hidden group hover:border-purple-400/60 transition-all">
               <CardContent className="p-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mb-4">
-                  <Target className="h-6 w-6 text-white" />
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30">
+                    <Target className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">Para project managers</h3>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">Para project managers</h3>
-                <ul className="text-white/90 text-sm space-y-2">
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-purple-300 mt-0.5">•</span>
-                    <span>Gestión de múltiples proyectos</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-purple-300 mt-0.5">•</span>
-                    <span>Visualiza dependencias y cuellos de botella</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-purple-300 mt-0.5">•</span>
-                    <span>Control de presupuestos y horas</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-purple-300 mt-0.5">•</span>
-                    <span>Seguimiento de deadlines</span>
-                  </li>
-                </ul>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-2.5 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                    <CheckCircle2 className="h-4 w-4 text-purple-400 shrink-0" />
+                    <span className="text-sm text-white/90">Gestión de múltiples proyectos</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-2.5 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                    <CheckCircle2 className="h-4 w-4 text-purple-400 shrink-0" />
+                    <span className="text-sm text-white/90">Visualiza dependencias y cuellos de botella</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-2.5 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                    <CheckCircle2 className="h-4 w-4 text-purple-400 shrink-0" />
+                    <span className="text-sm text-white/90">Control de presupuestos y horas</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-2.5 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                    <CheckCircle2 className="h-4 w-4 text-purple-400 shrink-0" />
+                    <span className="text-sm text-white/90">Seguimiento de deadlines</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-emerald-500/30 bg-emerald-500/10 backdrop-blur-xl">
+            {/* Card: Empleados */}
+            <Card className="border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-950/80 to-teal-950/80 backdrop-blur-xl overflow-hidden group hover:border-emerald-400/60 transition-all">
               <CardContent className="p-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-4">
-                  <BarChart3 className="h-6 w-6 text-white" />
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                    <BarChart3 className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">Para empleados</h3>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">Para empleados</h3>
-                <ul className="text-white/90 text-sm space-y-2">
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Vista clara de tu carga de trabajo</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Priorización automática de tareas</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Seguimiento de tu progreso</span>
-                  </li>
-                  <li className="flex items-start gap-1.5">
-                    <span className="text-emerald-300 mt-0.5">•</span>
-                    <span>Sabes qué hacer y cuándo</span>
-                  </li>
-                </ul>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                    <span className="text-sm text-white/90">Vista clara de tu carga de trabajo</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                    <span className="text-sm text-white/90">Priorización automática de tareas</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                    <span className="text-sm text-white/90">Seguimiento de tu progreso</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                    <span className="text-sm text-white/90">Sabes qué hacer y cuándo</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
