@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Employee, Client, Project, Allocation, LoadStatus, Absence, TeamEvent, ProfessionalGoal, WeeklyFeedback, EmployeeRole, WorkSchedule } from '@/types';
+import { Employee, Client, Project, Allocation, LoadStatus, Absence, TeamEvent, WeeklyFeedback, EmployeeRole, WorkSchedule } from '@/types';
 import { getWorkingDaysInRange, getMonthlyCapacity, getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange, getTeamEventDetailsInRange } from '@/utils/teamEventUtils';
@@ -71,18 +71,6 @@ interface SupabaseAbsence {
   description?: string;
 }
 
-interface SupabaseProfessionalGoal {
-  id: string;
-  employee_id: string;
-  title: string;
-  description?: string;
-  key_results?: string;
-  progress: number;
-  start_date?: string;
-  due_date?: string;
-  training_url?: string;
-}
-
 interface SupabaseTeamEvent {
   id: string;
   name: string;
@@ -138,11 +126,6 @@ interface AppContextType {
   getClientTotalHoursForMonth: (clientId: string, month: Date) => { used: number; budget: number; percentage: number };
   getProjectById: (id: string) => Project | undefined;
   getClientById: (id: string) => Client | undefined;
-  professionalGoals: ProfessionalGoal[];
-  addProfessionalGoal: (goal: Omit<ProfessionalGoal, 'id'>) => void;
-  updateProfessionalGoal: (goal: ProfessionalGoal) => void;
-  deleteProfessionalGoal: (id: string) => void;
-  getEmployeeGoals: (employeeId: string) => ProfessionalGoal[];
   loadDataForMonth: (month: Date) => Promise<boolean>;
   addWeeklyFeedback: (feedback: Omit<WeeklyFeedback, 'id' | 'createdAt'>) => void;
 }
@@ -162,7 +145,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [teamEvents, setTeamEvents] = useState<TeamEvent[]>([]);
   const [weeklyFeedback, setWeeklyFeedback] = useState<WeeklyFeedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [professionalGoals, setProfessionalGoals] = useState<ProfessionalGoal[]>([]);
 
   // Ref para evitar vinculaciones duplicadas - DEBE estar ANTES de los useEffects
   const hasLinkedUserRef = useRef<string | null>(null);
@@ -187,7 +169,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       // Tablas pequeñas: cargar todo
       // Tablas grandes con fechas: filtrar por rango
-      const [empRes, cliRes, projRes, allocRes, absRes, evRes, goalsRes, feedbackRes] = await Promise.all([
+      const [empRes, cliRes, projRes, allocRes, absRes, evRes, feedbackRes] = await Promise.all([
         supabase.from('employees').select('*'),
         supabase.from('clients').select('*'),
         supabase.from('projects').select('*'),
@@ -206,7 +188,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           .select('*')
           .gte('date', startStr)
           .lte('date', endStr),
-        supabase.from('professional_goals').select('*'),
         supabase.from('weekly_feedback')
           .select('*')
           .gte('week_start_date', startStr)
@@ -294,16 +275,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           type: (ab.type || 'other') as 'vacation' | 'sick_leave' | 'personal' | 'other',
           description: ab.description,
           hours: ab.hours
-        })));
-      }
-      if (goalsRes.data) {
-        setProfessionalGoals(goalsRes.data.map((g: SupabaseProfessionalGoal) => ({
-          ...g,
-          employeeId: g.employee_id,
-          keyResults: g.key_results,
-          trainingUrl: g.training_url,
-          startDate: g.start_date,
-          dueDate: g.due_date
         })));
       }
       if (evRes.data) {
@@ -803,50 +774,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await supabase.from('team_events').delete().eq('id', id);
   }, []);
 
-  // --- PROFESSIONAL GOALS ---
-  const addProfessionalGoal = useCallback(async (goal: Omit<ProfessionalGoal, 'id'>) => {
-    const { data } = await supabase.from('professional_goals').insert({
-      employee_id: goal.employeeId,
-      title: goal.title,
-      description: goal.description,
-      key_results: goal.keyResults,
-      progress: goal.progress,
-      start_date: goal.startDate,
-      due_date: goal.dueDate,
-      training_url: goal.trainingUrl
-    }).select().single();
-    if (data) setProfessionalGoals(prev => [...prev, {
-      ...data,
-      employeeId: data.employee_id,
-      keyResults: data.key_results,
-      trainingUrl: data.training_url,
-      startDate: data.start_date,
-      dueDate: data.due_date
-    }]);
-  }, []);
-
-  const updateProfessionalGoal = useCallback(async (goal: ProfessionalGoal) => {
-    setProfessionalGoals(prev => prev.map(g => g.id === goal.id ? goal : g));
-    await supabase.from('professional_goals').update({
-      title: goal.title,
-      description: goal.description,
-      key_results: goal.keyResults,
-      progress: goal.progress,
-      start_date: goal.startDate,
-      due_date: goal.dueDate,
-      training_url: goal.trainingUrl
-    }).eq('id', goal.id);
-  }, []);
-
-  const deleteProfessionalGoal = useCallback(async (id: string) => {
-    setProfessionalGoals(prev => prev.filter(g => g.id !== id));
-    await supabase.from('professional_goals').delete().eq('id', id);
-  }, []);
-
-  const getEmployeeGoals = useCallback((employeeId: string) => {
-    return professionalGoals.filter(g => g.employeeId === employeeId);
-  }, [professionalGoals]);
-
   // --- WEEKLY FEEDBACK ---
   const addWeeklyFeedback = useCallback(async (feedback: Omit<WeeklyFeedback, 'id' | 'createdAt'>) => {
     const { data } = await supabase.from('weekly_feedback').insert({
@@ -1024,7 +951,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addTeamEvent, updateTeamEvent, deleteTeamEvent,
     getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getEmployeeMonthlyLoad,
     getProjectHoursForMonth, getClientTotalHoursForMonth, getProjectById, getClientById,
-    professionalGoals, addProfessionalGoal, updateProfessionalGoal, deleteProfessionalGoal, getEmployeeGoals,
     loadDataForMonth,
     addWeeklyFeedback
   }), [currentUser, employees, clients, projects, allocations, absences, teamEvents, weeklyFeedback, isLoading,
@@ -1036,7 +962,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addTeamEvent, updateTeamEvent, deleteTeamEvent,
     getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getEmployeeMonthlyLoad,
     getProjectHoursForMonth, getClientTotalHoursForMonth, getProjectById, getClientById,
-    professionalGoals, addProfessionalGoal, updateProfessionalGoal, deleteProfessionalGoal, getEmployeeGoals,
     loadDataForMonth,
     addWeeklyFeedback]);
 

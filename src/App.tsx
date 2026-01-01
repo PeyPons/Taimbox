@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppProvider } from "@/contexts/AppContext";
+import { GoalsProvider } from "@/contexts/GoalsContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 
@@ -71,14 +72,24 @@ const DeadlinesPage = lazyWithRetry(() => import("./pages/DeadlinesPage"));
 const WeeklyForecastPage = lazyWithRetry(() => import("./pages/WeeklyForecastPage"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutos - datos se consideran frescos
+      gcTime: 30 * 60 * 1000, // 30 minutos - tiempo en cache (antes cacheTime)
+      refetchOnWindowFocus: false, // No refetch al cambiar de pestaña
+      retry: 1, // Solo 1 reintento en caso de error
+    },
+  },
+});
 
 const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <AppProvider>
-          <TooltipProvider>
+          <GoalsProvider>
+            <TooltipProvider>
             <Toaster />
             <Sonner />
             <BrowserRouter>
@@ -116,7 +127,8 @@ const App = () => (
 
               </Routes>
             </BrowserRouter>
-          </TooltipProvider>
+            </TooltipProvider>
+          </GoalsProvider>
         </AppProvider>
       </AuthProvider>
     </QueryClientProvider>
