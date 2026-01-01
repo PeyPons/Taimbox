@@ -59,6 +59,17 @@ export default function WeeklyForecastPage() {
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
 
+  // Helper para obtener el índice de la semana relativo al mes (Semana 1, 2, 3...)
+  const getWeekIndex = (dateStr: string) => {
+    if (!dateStr) return -1;
+    // Buscamos la semana que coincida con la fecha de inicio
+    const index = weeks.findIndex(w => {
+      const key = getStorageKey(w.weekStart, currentMonth);
+      return key === dateStr || w.weekStart.toISOString().split('T')[0] === dateStr;
+    });
+    return index !== -1 ? index + 1 : -1;
+  };
+
   const handlePrevMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
   const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
   const handleToday = () => setCurrentMonth(new Date());
@@ -1274,14 +1285,14 @@ export default function WeeklyForecastPage() {
                                           <div className="flex items-center gap-1.5">
                                             {transfer.originalWeek && (
                                               <Badge variant="outline" className="text-[10px] h-4 px-1 bg-slate-50 text-slate-400 font-normal border-slate-200">
-                                                Del: {format(parseISO(transfer.originalWeek), 'd MMM', { locale: es })}
+                                                Semana {getWeekIndex(transfer.originalWeek) !== -1 ? getWeekIndex(transfer.originalWeek) : '?'}
                                               </Badge>
                                             )}
                                             {transfer.targetWeek && transfer.targetWeek !== transfer.originalWeek && (
                                               <>
                                                 <ArrowRight className="h-3 w-3 text-slate-300" />
                                                 <Badge variant="outline" className="text-[10px] h-4 px-1 bg-indigo-50 text-indigo-500 font-normal border-indigo-100">
-                                                  Al: {format(parseISO(transfer.targetWeek), 'd MMM', { locale: es })}
+                                                  Semana {getWeekIndex(transfer.targetWeek) !== -1 ? getWeekIndex(transfer.targetWeek) : '?'}
                                                 </Badge>
                                               </>
                                             )}
