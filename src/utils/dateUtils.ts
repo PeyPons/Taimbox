@@ -5,21 +5,40 @@ import { WorkSchedule } from '@/types';
 // ... (Resto de funciones: getMonthName, formatDateToISO, isCurrentWeek se mantienen igual) ...
 export const getMonthName = (date: Date) => format(date, 'MMMM', { locale: es });
 export const formatDateToISO = (date: Date) => format(date, 'yyyy-MM-dd');
+// ✅ Updated isCurrentWeek to handle split weeks (e.g. Jan 1st vs Dec 29th)
 export const isCurrentWeek = (date: Date) => {
   const now = new Date();
+  // Check if the given date is literally in the same week as "now"
+  // Using endOfWeek ensures we capture the whole real week regardless of the split start
   const start = startOfWeek(now, { weekStartsOn: 1 });
-  return date.getTime() === start.getTime();
+  const end = endOfWeek(now, { weekStartsOn: 1 });
+  return date >= start && date <= end;
 };
 
 export const getStorageKey = (weekStart: Date, viewMonth: Date): string => {
+  // Misma lógica que Split Weeks: Si la fecha está en el mes, úsala.
+  // Si es anterior al mes (caso overlap Dic-Ene), usa el 1 del mes.
   if (isSameMonth(weekStart, viewMonth)) {
     return format(weekStart, 'yyyy-MM-dd');
   }
   const monthStart = startOfMonth(viewMonth);
+  // Si la semana empieza antes del mes pero termina dentro/después, es una semana partida.
+  // La parte que pertenece a este 'viewMonth' empieza el día 1.
   if (weekStart < monthStart) {
     return format(monthStart, 'yyyy-MM-dd');
   }
   return format(weekStart, 'yyyy-MM-dd');
+};
+
+// Nueva función helper para normalizar fechas de inicio de semana
+// Asegura que si estamos en modo estricto, usamos la fecha correcta (1 del mes o Lunes)
+export const normalizeWeekStart = (date: Date | string, viewMonth: Date): string => {
+  const d = typeof date === 'string' ? parseISO(date) : date;
+  // Primero obtenemos el lunes real de esa semana física
+  const monday = startOfWeek(d, { weekStartsOn: 1 });
+
+  // Luego aplicamos la lógica de Storage Key que ya maneja el Split
+  return getStorageKey(monday, viewMonth);
 };
 
 // ✅ FUNCIÓN CORREGIDA PARA FILTRAR SEMANAS SIN DÍAS LABORABLES
@@ -43,13 +62,31 @@ export const getWeeksForMonth = (date: Date) => {
     const daysInInterval = eachDayOfInterval({ start: effectiveStart, end: effectiveEnd });
     const hasWorkingDays = daysInInterval.some(day => !isWeekend(day));
 
+    // Lógica de "Split Weeks": Si la semana cruza meses, usamos el inicio efectivo como key
+    // EXCEPTO si es la última semana del mes anterior (allí usamos el lunes normal)
+    // Para simplificar: En el planner, el contexto de mes manda.
+
+    // Si la semana empieza ANTES del mes y termina DENTRO, es la primera semana parcial.
+    // Su "key" debe ser el 1 del mes para separarla de la semana de diciembre.
+    const isFirstPartialWeek = currentWeekStart < monthStart && currentWeekEnd >= monthStart;
+
+    // Si la semana empieza DENTRO y termina DESPUES, es la última semana parcial.
+    // Su "key" sigue siendo el lunes normal (pertenece a este mes).
+
+    // La clave real para la DB:
+    // - Si es semana normal: LUNES
+    // - Si es primera semana parcial de Enero: 1 de Enero (Jueves)
+    // Esto crea DOS entradas en la DB para la misma semana física: una para Dic (Lunes 29) y otra para Enero (Jueves 1)
+
+    const dbWeekStart = isFirstPartialWeek ? monthStart : currentWeekStart;
+
     // Solo añadimos la semana si tiene días laborables
     if (hasWorkingDays) {
       weeks.push({
-        weekStart: currentWeekStart,
+        weekStart: dbWeekStart, // Usamos la fecha split como inicio real
         weekEnd: currentWeekEnd,
         weekLabel: `Semana ${weeks.length + 1}`,
-        effectiveStart,
+        effectiveStart: dbWeekStart, // Aseguramos que effective matches
         effectiveEnd,
       });
     }
@@ -90,14 +127,9 @@ export const isAllocationInEffectiveMonth = (weekStartDate: string | Date, viewM
   try {
     const allocWeekStart = typeof weekStartDate === 'string' ? parseISO(weekStartDate) : weekStartDate;
 
-    // CORRECCIÓN: Permitir semanas que solapen con el mes efectivo
-    // Esto es necesario para semanas como 29 Dic - 4 Enero
-    const allocWeekEnd = addDays(allocWeekStart, 6);
-    const monthStart = startOfMonth(viewMonth);
-    const monthEnd = endOfMonth(viewMonth);
-
-    // Verificar superposición: (StartA <= EndB) and (EndA >= StartB)
-    return allocWeekStart <= monthEnd && allocWeekEnd >= monthStart;
+    // STRICT MODE: Verificar si la semana PERTENECE al mes (basado en fecha de inicio)
+    // Esto asegura separación total: Una semana de dic (29 dic) SOLO sale en dic.
+    return isSameMonth(allocWeekStart, viewMonth);
   } catch (error) {
     return false;
   }

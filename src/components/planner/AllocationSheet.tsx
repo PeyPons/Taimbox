@@ -343,8 +343,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   };
 
   const startAdd = (weekStartReal: Date) => {
-    // Usar siempre la fecha real de la semana (lunes) para guardar tareas
-    // No usar getStorageKey porque normaliza según el mes visible
+    // Usar la fecha PROPORCIONADA por weeks (puede ser Jueves 1 Enero)
     const weekStartDate = format(weekStartReal, 'yyyy-MM-dd');
     setEditingAllocation(null);
     setNewTasks([{
@@ -355,7 +354,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
   const addTaskRow = () => {
     const lastTask = newTasks.length > 0 ? newTasks[newTasks.length - 1] : null;
-    // Usar siempre la fecha real de la semana (lunes) para guardar tareas
+    // Usar la fecha calculada en weeks (split week aware)
     const defaultKey = weeks.length > 0 ? format(weeks[0].weekStart, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
     setNewTasks(prev => [...prev, {
       id: crypto.randomUUID(),

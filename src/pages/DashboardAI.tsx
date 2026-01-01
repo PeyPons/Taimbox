@@ -164,6 +164,7 @@ export default function DashboardAI() {
     const safeAbsences = absences || [];
 
     // Filtros temporales
+    // Normalizar allocations al mes actual si es necesario (manejo de split weeks)
     const monthAllocations = safeAllocations.filter(a => isAllocationInEffectiveMonth(a.weekStartDate, now));
 
     // 1. DETECCIÓN DE TAREAS ZOMBIE
@@ -469,8 +470,8 @@ PREGUNTA DEL USUARIO: "${input}"
                 return (
                   <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                     <Avatar className={`h-8 w-8 mt-1 border shrink-0 ${msg.role === 'assistant'
-                        ? 'bg-gradient-to-br from-indigo-100 to-purple-100 border-indigo-200'
-                        : 'bg-white border-slate-200'
+                      ? 'bg-gradient-to-br from-indigo-100 to-purple-100 border-indigo-200'
+                      : 'bg-white border-slate-200'
                       }`}>
                       <AvatarFallback className={msg.role === 'assistant' ? 'text-indigo-700' : 'text-slate-700'}>
                         {msg.role === 'assistant' ? <Sparkles className="h-4 w-4" /> : <User className="h-4 w-4" />}
@@ -479,8 +480,8 @@ PREGUNTA DEL USUARIO: "${input}"
 
                     <div className={`flex flex-col max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                       <div className={`px-4 py-2.5 rounded-2xl text-sm shadow-sm ${msg.role === 'user'
-                          ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-tr-sm whitespace-pre-wrap'
-                          : 'bg-white border border-slate-100 text-slate-800 rounded-tl-sm'
+                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-tr-sm whitespace-pre-wrap'
+                        : 'bg-white border border-slate-100 text-slate-800 rounded-tl-sm'
                         }`}>
                         {msg.role === 'assistant' ? parseSimpleMarkdown(msg.text) : msg.text}
                       </div>
