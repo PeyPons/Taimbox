@@ -100,8 +100,15 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
       if (weekStart) {
         try {
           const weekStartDate = parseISO(weekStart);
-          // Usar el mes de la semana clicada para el viewDate
-          targetDate = new Date(weekStartDate.getFullYear(), weekStartDate.getMonth(), 1);
+
+          // CORRECCIÓN: Si tenemos un contexto de fecha (ej. venimos del dashboard de Enero)
+          // y la semana pertenece a ese mes (aunque empiece en el anterior), respetar el contexto.
+          if (viewDateContext && isAllocationInEffectiveMonth(weekStartDate, viewDateContext)) {
+            targetDate = viewDateContext;
+          } else {
+            // Si no hay contexto o la semana no pertenece, usar el mes de inicio de la semana
+            targetDate = new Date(weekStartDate.getFullYear(), weekStartDate.getMonth(), 1);
+          }
 
           // Calcular el índice de la semana dentro del mes
           // Esto se hará después de que weeks esté disponible, pero preparamos la fecha
