@@ -553,12 +553,13 @@ export default function EmployeeDashboard() {
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_80%_80%,rgba(168,85,247,0.1),transparent_50%)]" />
 
       {/* 1. CABECERA + ACCIONES */}
+      {/* 1. CABECERA + ACCIONES */}
       <div className="flex flex-wrap items-center gap-2">
-        {/* Botón Weekly siempre visible para todos los empleados */}
+        {/* Botón Weekly siempre visible */}
         <Button
           onClick={() => setShowWeeklyDialog(true)}
           className={cn(
-            "gap-2 shadow-sm transition-all",
+            "gap-2 shadow-sm transition-all flex-1 sm:flex-initial",
             hasPendingWeeklyTasks
               ? "bg-amber-600 text-white hover:bg-amber-700 animate-pulse shadow-lg shadow-amber-500/50"
               : "bg-indigo-600 text-white hover:bg-indigo-700"
@@ -576,67 +577,101 @@ export default function EmployeeDashboard() {
           )}
         </Button>
 
-        <Button onClick={openAddTasksDialog} className="gap-2 bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm" data-tour="add-tasks">
-          <ListPlus className="h-4 w-4" /> Añadir tareas
+        {/* Añadir tareas siempre visible */}
+        <Button onClick={openAddTasksDialog} className="gap-2 bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm flex-1 sm:flex-initial" data-tour="add-tasks">
+          <ListPlus className="h-4 w-4" /> <span className="hidden xs:inline">Añadir tareas</span><span className="xs:hidden">Tareas</span>
         </Button>
 
-        <Button onClick={handleExportCRM} variant="outline" className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-50"
-          disabled={!myEmployeeProfile?.crmUserId} title={!myEmployeeProfile?.crmUserId ? "Configura tu ID de CRM en el perfil" : "Exportar tareas al CRM"} data-tour="crm-export">
-          <FileDown className="h-4 w-4" /> Tareas CRM
-        </Button>
+        <div className="h-9 w-px bg-slate-200 mx-1 hidden lg:block"></div>
 
-        <Dialog open={isAddingExtra} onOpenChange={setIsAddingExtra}>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="gap-2 border-slate-300 hover:bg-slate-50" data-tour="internal-tasks">
-              <Clock className="h-4 w-4" /> Gestión interna
+        {/* Acciones Secundarias: Agrupadas en mobile, visibles en desktop */}
+        {isMobile ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2 border-slate-300 hover:bg-slate-50 flex-1 sm:flex-initial">
+                <Plus className="h-4 w-4" /> <span className="hidden xs:inline">Más</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={handleExportCRM} disabled={!myEmployeeProfile?.crmUserId} className="gap-2 text-purple-700">
+                <FileDown className="h-4 w-4" /> Tareas CRM
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsAddingExtra(true)} className="gap-2 text-slate-700">
+                <Clock className="h-4 w-4" /> Gestión interna
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowGoals(true)} className="gap-2 text-emerald-700">
+                <TrendingUp className="h-4 w-4" /> Objetivos
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowAbsences(true)} className="gap-2 text-amber-700">
+                <Calendar className="h-4 w-4" /> Ausencias
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={resetTour} className="gap-2">
+                <RotateCcw className="h-4 w-4" /> Ver tour
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <>
+            <Button onClick={handleExportCRM} variant="outline" className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-50"
+              disabled={!myEmployeeProfile?.crmUserId} title={!myEmployeeProfile?.crmUserId ? "Configura tu ID de CRM en el perfil" : "Exportar tareas al CRM"} data-tour="crm-export">
+              <FileDown className="h-4 w-4" /> Tareas CRM
             </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md" aria-describedby="internal-tasks-description">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2"><Clock className="h-5 w-5 text-slate-600" />Registrar gestión interna</DialogTitle>
-              <DialogDescription id="internal-tasks-description">Reuniones, formaciones, deadlines u otras tareas no asociadas a clientes.</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Nombre de la tarea</Label>
-                <Input placeholder="Ej: Reunión de equipo" value={extraTaskName} onChange={e => setExtraTaskName(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Horas</Label>
-                <Input type="number" min="0.5" step="0.5" value={extraHours} onChange={e => setExtraHours(e.target.value)} />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddingExtra(false)}>Cancelar</Button>
-              <Button onClick={handleAddExtraTask} disabled={isCreatingProject}>{isCreatingProject ? 'Creando...' : 'Registrar'}</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
-        <div className="h-9 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+            <Dialog open={isAddingExtra} onOpenChange={setIsAddingExtra}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2 border-slate-300 hover:bg-slate-50" data-tour="internal-tasks">
+                  <Clock className="h-4 w-4" /> Gestión interna
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md" aria-describedby="internal-tasks-description">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2"><Clock className="h-5 w-5 text-slate-600" />Registrar gestión interna</DialogTitle>
+                  <DialogDescription id="internal-tasks-description">Reuniones, formaciones, deadlines u otras tareas no asociadas a clientes.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>Nombre de la tarea</Label>
+                    <Input placeholder="Ej: Reunión de equipo" value={extraTaskName} onChange={e => setExtraTaskName(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Horas</Label>
+                    <Input type="number" min="0.5" step="0.5" value={extraHours} onChange={e => setExtraHours(e.target.value)} />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsAddingExtra(false)}>Cancelar</Button>
+                  <Button onClick={handleAddExtraTask} disabled={isCreatingProject}>{isCreatingProject ? 'Creando...' : 'Registrar'}</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
-        <Button variant="outline" onClick={() => setShowGoals(true)} className="gap-2 text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100" data-tour="goals">
-          <TrendingUp className="h-4 w-4" /> Objetivos
-        </Button>
-
-        <Button variant="outline" onClick={() => setShowAbsences(true)} className="gap-2 text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100" data-tour="absences">
-          <Calendar className="h-4 w-4" /> Ausencias
-        </Button>
-
-        <EmployeeSettings employeeId={myEmployeeProfile.id} />
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-400 hover:text-slate-600">
-              <HelpCircle className="h-5 w-5" />
+            <Button variant="outline" onClick={() => setShowGoals(true)} className="gap-2 text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100" data-tour="goals">
+              <TrendingUp className="h-4 w-4" /> Objetivos
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={resetTour} className="gap-2">
-              <RotateCcw className="h-4 w-4" />Ver tour de bienvenida
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+
+            <Button variant="outline" onClick={() => setShowAbsences(true)} className="gap-2 text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100" data-tour="absences">
+              <Calendar className="h-4 w-4" /> Ausencias
+            </Button>
+          </>
+        )}
+
+        <div className="ml-auto flex items-center gap-2">
+          <EmployeeSettings employeeId={myEmployeeProfile.id} />
+          {!isMobile && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-400 hover:text-slate-600">
+                  <HelpCircle className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={resetTour} className="gap-2">
+                  <RotateCcw className="h-4 w-4" />Ver tour de bienvenida
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
 
       {/* 2. CONTROL MES */}
@@ -653,10 +688,10 @@ export default function EmployeeDashboard() {
       </div>
 
       {/* 3. CALENDARIO */}
-      <Card className="overflow-hidden border-indigo-200/50 shadow-xl bg-white/90 backdrop-blur-sm relative" data-tour="calendar">
+      <Card className="border-indigo-200/50 shadow-xl bg-white/90 backdrop-blur-sm relative overflow-hidden max-w-full" data-tour="calendar">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 -z-10" />
-        <div className="overflow-x-auto custom-scrollbar -mx-3 sm:-mx-4 md:mx-0 px-3 sm:px-4 md:px-0">
-          <div className="min-w-[700px] sm:min-w-[900px] md:min-w-[1000px]">
+        <div className="overflow-x-auto custom-scrollbar w-full max-w-full">
+          <div className="min-w-max px-0">
             <div className="grid bg-slate-50 border-b" style={{ gridTemplateColumns: gridTemplate }}>
               <div className="px-4 py-3 font-bold text-sm text-slate-700 flex items-center border-r">Mi calendario</div>
               {weeks.map((week, index) => {
@@ -711,23 +746,23 @@ export default function EmployeeDashboard() {
 
 
       {/* 4. VISTA ORGANIZADA POR PESTAÑAS - PRIORIDAD DE MAYOR A MENOR */}
-      <Card className="border-indigo-200/50 shadow-xl bg-white/90 backdrop-blur-sm relative overflow-hidden" data-tour="projects-summary">
+      <Card className="border-indigo-200/50 shadow-xl bg-white/90 backdrop-blur-sm relative overflow-hidden max-w-full" data-tour="projects-summary">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/30 to-purple-50/30 -z-10" />
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full justify-start h-auto p-1 bg-gradient-to-r from-indigo-50 to-purple-50 flex-wrap border-b border-indigo-100/50 gap-2">
-            <TabsTrigger value="dependencies" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-full">
+          <TabsList className="w-full justify-start h-auto p-1 bg-gradient-to-r from-indigo-50 to-purple-50 flex-nowrap overflow-x-auto custom-scrollbar border-b border-indigo-100/50 gap-2 max-w-full">
+            <TabsTrigger value="dependencies" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all shrink-0">
               Dependencias
             </TabsTrigger>
-            <TabsTrigger value="coherence" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all">
+            <TabsTrigger value="coherence" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all shrink-0">
               Coherencia
             </TabsTrigger>
-            <TabsTrigger value="teammates" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all">
+            <TabsTrigger value="teammates" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all shrink-0">
               Compañeros
             </TabsTrigger>
-            <TabsTrigger value="projects" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all">
+            <TabsTrigger value="projects" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all shrink-0">
               Proyectos
             </TabsTrigger>
-            <TabsTrigger value="metrics" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all">
+            <TabsTrigger value="metrics" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border-indigo-200 transition-all shrink-0">
               Métricas
             </TabsTrigger>
           </TabsList>
