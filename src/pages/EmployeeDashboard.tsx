@@ -52,6 +52,7 @@ interface NewTaskRow {
   taskName: string;
   hours: string;
   weekDate: string;
+  dependencyId?: string; // Nuevo campo para dependencia
 }
 
 interface ProjectBudgetStatus {
@@ -296,7 +297,7 @@ export default function EmployeeDashboard() {
   const openAddTasksDialog = () => {
     // Usar siempre la fecha real de la semana (lunes) para guardar tareas
     const defaultWeek = weeks[0]?.weekStart ? format(weeks[0].weekStart, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
-    setNewTasks([{ id: crypto.randomUUID(), projectId: '', taskName: '', hours: '', weekDate: defaultWeek }]);
+    setNewTasks([{ id: crypto.randomUUID(), projectId: '', taskName: '', hours: '', weekDate: defaultWeek, dependencyId: 'none' }]);
     setIsAddingTasks(true);
   };
 
@@ -449,8 +450,22 @@ export default function EmployeeDashboard() {
   const getWeekExceedStatus = (weekDate: string): boolean => tasksImpact.weeks.find(w => w.weekDate === weekDate)?.exceeds || false;
 
   const handlePrevMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
-  const handleNextMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  const handleNextMonth = () => setCurrentMonth(prev => {
+    // Bloquear futuro +2 meses (opcional, pero buena práctica)
+    return new Date(prev.getFullYear(), prev.getMonth() + 1, 1);
+  });
   const handleToday = () => setCurrentMonth(new Date());
+
+  // Helper para obtener dependencias disponibles (tareas del mismo proyecto, mes actual, no completadas)
+  const getAvailableDependencies = (projectId: string, currentTaskId?: string) => {
+    if (!projectId) return [];
+    return allocations.filter(a =>
+      a.projectId === projectId &&
+      a.id !== currentTaskId &&
+      a.status !== 'completed' &&
+      isAllocationInEffectiveMonth(a.weekStartDate, currentMonth) // Solo del mes actual
+    );
+  };
 
   // Cargar datos del mes cuando cambia el mes visible (igual que DeadlinesPage)
   useEffect(() => {
@@ -824,6 +839,7 @@ export default function EmployeeDashboard() {
             <div className="flex text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1 mb-2">
               <div className="flex-1 pl-1">Proyecto</div>
               <div className="flex-1 pl-1">Tarea</div>
+              <div className="w-40 px-2">Dependencia</div>
               <div className="w-24 text-center">Horas</div>
               <div className="w-32">Semana</div>
               <div className="w-8"></div>
@@ -851,6 +867,10 @@ export default function EmployeeDashboard() {
                               <CommandGroup>
                                 {activeProjects.map(p => {
                                   const client = clients.find(c => c.id === p.clientId);
+                                  // Calcular presupuesto restante
+                                  const budgetStatus = getProjectBudgetStatus(p.id);
+                                  const remaining = budgetStatus.budgetMax > 0 ? budgetStatus.budgetMax - budgetStatus.totalComputed : null;
+
                                   return (
                                     <CommandItem
                                       key={p.id}
@@ -858,10 +878,22 @@ export default function EmployeeDashboard() {
                                       onSelect={() => { updateTaskRow(task.id, 'projectId', p.id); setOpenComboboxId(null); }}
                                     >
                                       <Check className={cn("mr-2 h-4 w-4", task.projectId === p.id ? "opacity-100" : "opacity-0")} />
-                                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: client?.color || '#6b7280' }} />
-                                        <span className="truncate font-medium">{p.name}</span>
-                                        <span className="text-xs text-muted-foreground truncate">({client?.name})</span>
+                                      <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: client?.color || '#6b7280' }} />
+                                          <span className="truncate font-medium">{p.name}</span>
+                                          <span className="text-xs text-muted-foreground truncate">({client?.name})</span>
+                                        </div>
+                                        {/* Información de presupuesto inmediata */}
+                                        <div className="text-[10px] pl-4 text-slate-500 flex gap-2">
+                                          <span>Plan: {budgetStatus.totalPlanned}h</span>
+                                          <span>Comp: {budgetStatus.totalComputed}h</span>
+                                          {remaining !== null && (
+                                            <span className={cn(remaining < 0 ? "text-red-500 font-bold" : "text-emerald-600")}>
+                                              Disp: {remaining.toFixed(1)}h
+                                            </span>
+                                          )}
+                                        </div>
                                       </div>
                                     </CommandItem>
                                   );
@@ -875,6 +907,19 @@ export default function EmployeeDashboard() {
 
                     <div className="flex-1">
                       <Input placeholder="Nombre de la tarea" className="h-9 text-xs" value={task.taskName} onChange={e => updateTaskRow(task.id, 'taskName', e.target.value)} />
+                    </div>
+
+                    <div className="w-40">
+                      <Select value={task.dependencyId || 'none'} onValueChange={(v) => updateTaskRow(task.id, 'dependencyId', v)} disabled={!task.projectId}>
+                        <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Sin dep." /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">-- Ninguna --</SelectItem>
+                          {getAvailableDependencies(task.projectId, undefined).map(dep => {
+                            const owner = employees.find(e => e.id === dep.employeeId);
+                            return <SelectItem key={dep.id} value={dep.id} className="text-xs">{dep.taskName} ({owner?.name})</SelectItem>;
+                          })}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div className="w-24">
@@ -898,7 +943,18 @@ export default function EmployeeDashboard() {
               })}
             </div>
 
-            <Button variant="outline" size="sm" onClick={addTaskRow} className="w-full mt-4 border-dashed">
+            <Button variant="outline" size="sm" onClick={() => {
+              const lastTask = newTasks.length > 0 ? newTasks[newTasks.length - 1] : null;
+              const defaultKey = weeks.length > 0 ? format(weeks[0].weekStart, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+              setNewTasks(prev => [...prev, {
+                id: crypto.randomUUID(),
+                projectId: lastTask ? lastTask.projectId : '',
+                taskName: '',
+                hours: '',
+                weekDate: lastTask ? lastTask.weekDate : defaultKey,
+                dependencyId: 'none'
+              }]);
+            }} className="w-full mt-4 border-dashed">
               <Plus className="h-4 w-4 mr-2" /> Añadir otra fila
             </Button>
           </div>

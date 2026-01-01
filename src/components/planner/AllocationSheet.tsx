@@ -290,7 +290,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     return allocations.filter(a =>
       a.projectId === projectId &&
       a.id !== currentTaskId &&
-      a.status !== 'completed'
+      a.status !== 'completed' &&
+      isAllocationInEffectiveMonth(a.weekStartDate, viewDate) // Filter by current month
     );
   };
 
@@ -1850,7 +1851,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 <div className="flex text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1 mb-2">
                   <div className="flex-1 pl-1">Proyecto</div>
                   <div className="flex-1 pl-1">Tarea</div>
-                  <div className="w-40 px-2">Dependencia?</div>
+                  <div className="w-40 px-2">Dependencia</div>
                   <div className="w-20 mx-2 text-center">Horas</div>
                   <div className="w-36">Semana</div>
                   <div className="w-8"></div>
