@@ -4,8 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { 
-  Compass, TrendingUp, TrendingDown, 
+import {
+  Compass, TrendingUp, TrendingDown,
   Lightbulb, Award, HelpCircle, CheckCircle2, History, Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -23,39 +23,36 @@ export const ReliabilityIndexCard = memo(function ReliabilityIndexCard({ employe
   const targetMonth = viewDate || new Date();
 
   const reliability = useMemo(() => {
-    // Filtrar por mes si se proporciona viewDate, sino mostrar histórico completo
-    const completedTasks = (allocations || []).filter(a => {
-      if (a.employeeId !== employeeId || a.status !== 'completed' || a.hoursAssigned <= 0 || (a.hoursActual || 0) <= 0) {
-        return false;
-      }
-      // Si hay viewDate, filtrar por ese mes, sino incluir todas
-      if (viewDate) {
-        try {
-          const allocDate = new Date(a.weekStartDate);
-          return allocDate.getFullYear() === targetMonth.getFullYear() && 
-                 allocDate.getMonth() === targetMonth.getMonth();
-        } catch {
-          return false;
-        }
-      }
-      return true;
+    // 1. Obtener TODAS las tareas completadas históricas (ignorando viewDate)
+    const allCompletedTasks = (allocations || []).filter(a => {
+      return a.employeeId === employeeId &&
+        a.status === 'completed' &&
+        a.hoursAssigned > 0 &&
+        (a.hoursActual || 0) > 0;
     });
-    
-    const totalEstimated = round2(completedTasks.reduce((sum, a) => sum + a.hoursAssigned, 0));
-    const totalReal = round2(completedTasks.reduce((sum, a) => sum + (a.hoursActual || 0), 0));
-    const tasksAnalyzed = completedTasks.length;
-    
+
+    // 2. Ordenar por fecha descendente (las más recientes primero)
+    // Asumimos que weekStartDate es string ISO, la comparación de strings funciona bien (yyyy-MM-dd)
+    allCompletedTasks.sort((a, b) => b.weekStartDate.localeCompare(a.weekStartDate));
+
+    // 3. Tomar las últimas 30 tareas
+    const last30Tasks = allCompletedTasks.slice(0, 30);
+
+    const totalEstimated = round2(last30Tasks.reduce((sum, a) => sum + a.hoursAssigned, 0));
+    const totalReal = round2(last30Tasks.reduce((sum, a) => sum + (a.hoursActual || 0), 0));
+    const tasksAnalyzed = last30Tasks.length;
+
     const index = totalReal > 0 ? round2((totalEstimated / totalReal) * 100) : 0;
-    
+
     let trend: 'accurate' | 'overestimates' | 'underestimates' | 'insufficient' = 'insufficient';
     if (tasksAnalyzed >= 5) {
       if (index >= 90 && index <= 110) trend = 'accurate';
       else if (index < 90) trend = 'underestimates';
       else trend = 'overestimates';
     }
-    
+
     const averageDeviation = tasksAnalyzed > 0 ? round2((totalReal - totalEstimated) / tasksAnalyzed) : 0;
-    
+
     return { index, totalEstimated, totalReal, tasksAnalyzed, trend, averageDeviation };
   }, [allocations, employeeId]);
 
@@ -71,7 +68,7 @@ export const ReliabilityIndexCard = memo(function ReliabilityIndexCard({ employe
         progressColor: ''
       };
     }
-    
+
     switch (reliability.trend) {
       case 'accurate':
         return {
@@ -142,14 +139,14 @@ export const ReliabilityIndexCard = memo(function ReliabilityIndexCard({ employe
               </TooltipTrigger>
               <TooltipContent className="max-w-[250px]">
                 <p className="text-xs">
-                  Este índice se calcula con <strong>todo tu histórico</strong> de tareas completadas. 
+                  Este índice se calcula con <strong>todo tu histórico</strong> de tareas completadas.
                   Cuantas más tareas registres, más preciso será tu perfil de planificación.
                 </p>
               </TooltipContent>
             </Tooltip>
           </CardTitle>
         </CardHeader>
-        
+
         <CardContent className="space-y-4">
           {/* Resultado principal */}
           <div className={cn("rounded-lg p-4", config.bgColor)}>
@@ -157,8 +154,8 @@ export const ReliabilityIndexCard = memo(function ReliabilityIndexCard({ employe
               <div className={cn(
                 "h-10 w-10 rounded-full flex items-center justify-center shrink-0",
                 reliability.trend === 'accurate' ? "bg-emerald-100" :
-                reliability.trend === 'underestimates' ? "bg-amber-100" :
-                reliability.trend === 'overestimates' ? "bg-blue-100" : "bg-slate-100"
+                  reliability.trend === 'underestimates' ? "bg-amber-100" :
+                    reliability.trend === 'overestimates' ? "bg-blue-100" : "bg-slate-100"
               )}>
                 <IconComponent className={cn("h-5 w-5", config.textColor)} />
               </div>
@@ -245,7 +242,7 @@ export const ReliabilityIndexCard = memo(function ReliabilityIndexCard({ employe
                   reliability.trend === 'underestimates' ? "text-amber-800" : "text-blue-800"
                 )}>
                   <span className="font-semibold">Tip: </span>
-                  {reliability.trend === 'underestimates' 
+                  {reliability.trend === 'underestimates'
                     ? `Suma un pequeño "colchón" (~${Math.round(100 - reliability.index)}%) a tus tiempos para ir más tranquilo.`
                     : `¡Genial! Podrías ajustar tus estimaciones un ${Math.round(reliability.index - 100)}% a la baja si quieres ser más preciso.`
                   }
