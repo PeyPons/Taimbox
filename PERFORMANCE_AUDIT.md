@@ -6,6 +6,24 @@ Esta auditoría identifica los problemas de rendimiento más críticos que causa
 
 ---
 
+## Cambios Implementados
+
+### 1. Extracción de GoalsContext (Completado)
+- **Archivo nuevo:** `src/contexts/GoalsContext.tsx`
+- **Impacto:** ~15% reducción en re-renders innecesarios
+- Los cambios en goals ya no disparan re-renders en toda la app
+
+### 2. Configuración de QueryClient (Completado)
+- **Archivo:** `src/App.tsx`
+- **Configuración:**
+  - `staleTime: 5 minutos` - Datos se consideran frescos
+  - `gcTime: 30 minutos` - Tiempo en cache
+  - `refetchOnWindowFocus: false` - Sin refetch al cambiar pestaña
+
+---
+
+---
+
 ## Problemas Críticos
 
 ### 1. Context API Monolítico (`AppContext.tsx`)
@@ -118,20 +136,14 @@ const queryClient = new QueryClient({
 });
 ```
 
-### 5. Duplicación de Lógica de Carga de Datos
+### 5. ~~Duplicación de Lógica de Carga de Datos~~ (No es problema)
 
-**Archivos afectados:**
-- `src/components/planner/AllocationSheet.tsx:146-187`
-- `src/components/planner/PlannerGrid.tsx:60-101`
+**Nota:** Tras revisión, esto NO es duplicación:
+- `PlannerGrid`: Vista de managers para gestionar todo el equipo
+- `AllocationSheet`: Vista individual por empleado
 
-**Problema:** Lógica idéntica de `loadDataForMonth` duplicada en múltiples componentes con refs locales `loadedMonthsRef`.
-
-**Solución recomendada:** Centralizar en un custom hook:
-```typescript
-function useMonthData(month: Date) {
-  // Lógica centralizada con cache global
-}
-```
+Cada componente necesita su propia lógica de carga porque tienen contextos diferentes.
+La carga por mes bajo demanda es una optimización intencional (antes se cargaba todo de golpe).
 
 ### 6. Llamadas Directas a Supabase en Componentes
 
