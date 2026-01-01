@@ -191,12 +191,7 @@ export default function EmployeeDashboard() {
     return map;
   }, [clients]);
 
-  const getProjectDisplayName = useCallback((projectId: string) => {
-    const project = projectsMap.get(projectId);
-    if (!project) return 'Seleccionar...';
-    const client = clientsMap.get(project.clientId);
-    return `${client?.name || 'Sin cliente'} - ${project.name}`;
-  }, [projectsMap, clientsMap]);
+
 
   // Memoizado: allocations del mes actual indexadas por projectId
   const monthlyAllocationsByProject = useMemo(() => {
@@ -846,7 +841,7 @@ export default function EmployeeDashboard() {
                       <Popover open={openComboboxId === task.id} onOpenChange={(isOpen) => setOpenComboboxId(isOpen ? task.id : null)}>
                         <PopoverTrigger asChild>
                           <Button variant="outline" role="combobox" className={cn("w-full justify-between h-9 text-xs truncate", projectExceeds && "border-amber-400 bg-amber-50")}>
-                            <span className="truncate">{task.projectId ? formatProjectName(getProjectDisplayName(task.projectId)) : "Seleccionar..."}</span>
+                            <span className="truncate">{task.projectId ? formatProjectName(activeProjects.find(p => p.id === task.projectId)?.name || '') : "Seleccionar..."}</span>
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-[400px] p-0">
@@ -871,7 +866,7 @@ export default function EmployeeDashboard() {
                                       <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                                         <div className="flex items-center gap-2">
                                           <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: client?.color || '#6b7280' }} />
-                                          <span className="truncate font-medium">{p.name}</span>
+                                          <span className="truncate font-medium">{formatProjectName(p.name)}</span>
                                           <span className="text-xs text-muted-foreground truncate">({client?.name})</span>
                                         </div>
                                         {/* Información de presupuesto inmediata */}
