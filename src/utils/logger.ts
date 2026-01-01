@@ -13,7 +13,7 @@ export enum LogLevel {
 interface LogEntry {
   level: LogLevel;
   message: string;
-  data?: any;
+  data?: unknown;
   context?: string;
   timestamp: number;
   userAgent?: string;
@@ -28,7 +28,7 @@ class Logger {
   private createLogEntry(
     level: LogLevel,
     message: string,
-    data?: any,
+    data?: unknown,
     context?: string
   ): LogEntry {
     return {
@@ -58,14 +58,14 @@ class Logger {
   /**
    * Log de información general
    */
-  info(message: string, data?: any, context?: string) {
+  info(message: string, data?: unknown, context?: string) {
     const entry = this.createLogEntry(LogLevel.INFO, message, data, context);
     this.addToHistory(entry);
-    
+
     if (this.isDevelopment) {
       console.log(`ℹ️ ${this.formatMessage(entry)}`);
     }
-    
+
     // En producción, enviar a servicio de logging si está configurado
     // this.sendToLoggingService(entry);
   }
@@ -73,16 +73,16 @@ class Logger {
   /**
    * Log de errores
    */
-  error(message: string, error?: Error | any, context?: string) {
-    const errorData = error instanceof Error 
+  error(message: string, error?: Error | unknown, context?: string) {
+    const errorData = error instanceof Error
       ? { message: error.message, stack: error.stack, name: error.name }
       : error;
-    
+
     const entry = this.createLogEntry(LogLevel.ERROR, message, errorData, context);
     this.addToHistory(entry);
-    
+
     console.error(`❌ ${this.formatMessage(entry)}`);
-    
+
     // En producción, enviar a servicio de tracking de errores (Sentry, etc.)
     // this.sendToErrorTracking(entry);
   }
@@ -90,22 +90,22 @@ class Logger {
   /**
    * Log de advertencias
    */
-  warn(message: string, data?: any, context?: string) {
+  warn(message: string, data?: unknown, context?: string) {
     const entry = this.createLogEntry(LogLevel.WARN, message, data, context);
     this.addToHistory(entry);
-    
+
     console.warn(`⚠️ ${this.formatMessage(entry)}`);
   }
 
   /**
    * Log de debug (solo en desarrollo)
    */
-  debug(message: string, data?: any, context?: string) {
+  debug(message: string, data?: unknown, context?: string) {
     if (!this.isDevelopment) return;
-    
+
     const entry = this.createLogEntry(LogLevel.DEBUG, message, data, context);
     this.addToHistory(entry);
-    
+
     console.debug(`🔍 ${this.formatMessage(entry)}`);
   }
 

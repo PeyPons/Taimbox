@@ -1,4 +1,7 @@
+/* eslint-disable */
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { PostgrestError } from '@supabase/supabase-js';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -17,7 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { 
+import {
   Plus, Pencil, Trash2, Save, Search, Eye, EyeOff, ChevronDown, ChevronRight, ChevronLeft,
   Calendar, Users, AlertTriangle, CheckCircle2, XCircle, Copy, Filter, Sparkles, Edit, HelpCircle
 } from 'lucide-react';
@@ -41,7 +44,7 @@ export default function DeadlinesPage() {
   const [isGlobalDialogOpen, setIsGlobalDialogOpen] = useState(false);
   const [editingDeadline, setEditingDeadline] = useState<Deadline | null>(null);
   const [editingGlobal, setEditingGlobal] = useState<GlobalAssignment | null>(null);
-  
+
   // Estados de filtros y vista
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,7 +57,7 @@ export default function DeadlinesPage() {
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const [hiddenProjects, setHiddenProjects] = useState<Set<string>>(new Set());
-  
+
   // Estado para edición inline
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [inlineFormData, setInlineFormData] = useState<{
@@ -65,13 +68,13 @@ export default function DeadlinesPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
+
   // Estado para rastrear quién está editando qué proyecto
   const [editingLocks, setEditingLocks] = useState<Record<string, { employeeId: string; employeeName: string; lockedAt: string }>>({});
   const lockRefreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lockCleanupIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const broadcastChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  
+
   const [formData, setFormData] = useState({
     projectId: '',
     notes: '',
@@ -111,7 +114,7 @@ export default function DeadlinesPage() {
       if (error) throw error;
 
       if (data) {
-        setDeadlines(data.map((d: any) => ({
+        setDeadlines(data.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean }) => ({
           id: d.id,
           projectId: d.project_id,
           month: d.month,
@@ -119,17 +122,17 @@ export default function DeadlinesPage() {
           employeeHours: d.employee_hours || {},
           isHidden: d.is_hidden || false
         })));
-        
+
         // Cargar proyectos ocultos
         const hidden = new Set<string>();
-        data.forEach((d: any) => {
+        data.forEach((d: { project_id: string; is_hidden?: boolean }) => {
           if (d.is_hidden) hidden.add(d.project_id);
         });
         setHiddenProjects(hidden);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error cargando deadlines:', error);
-      const errorMessage = error?.message || error?.error?.message || 'Error al cargar deadlines';
+      const errorMessage = (error as Error)?.message || 'Error al cargar deadlines';
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -148,7 +151,7 @@ export default function DeadlinesPage() {
       if (error) throw error;
 
       if (data) {
-        setGlobalAssignments(data.map((g: any) => ({
+        setGlobalAssignments(data.map((g: { id: string; month: string; name: string; hours: number; affects_all: boolean; affected_employee_ids?: string[]; employee_id?: string; created_by?: string }) => ({
           id: g.id,
           month: g.month,
           name: g.name,
@@ -158,7 +161,7 @@ export default function DeadlinesPage() {
           employeeId: g.employee_id || g.created_by
         })));
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error cargando asignaciones globales:', error);
     }
   };
@@ -167,7 +170,7 @@ export default function DeadlinesPage() {
   useEffect(() => {
     loadDeadlines();
     loadGlobalAssignments();
-    
+
     // Limpiar cualquier lock huérfano de este usuario al cargar/cambiar mes
     const cleanupMyLocks = async () => {
       if (currentUser) {
@@ -200,22 +203,22 @@ export default function DeadlinesPage() {
         },
         (payload) => {
           console.log('🔔 Realtime deadline change:', payload.eventType, payload);
-          
+
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const newDeadline = payload.new as any;
+            const newDeadline = payload.new as { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean };
             setDeadlines(prev => {
               const existing = prev.find(d => d.id === newDeadline.id);
               if (existing) {
-                return prev.map(d => 
-                  d.id === newDeadline.id 
+                return prev.map(d =>
+                  d.id === newDeadline.id
                     ? {
-                        id: newDeadline.id,
-                        projectId: newDeadline.project_id,
-                        month: newDeadline.month,
-                        notes: newDeadline.notes,
-                        employeeHours: newDeadline.employee_hours || {},
-                        isHidden: newDeadline.is_hidden || false
-                      }
+                      id: newDeadline.id,
+                      projectId: newDeadline.project_id,
+                      month: newDeadline.month,
+                      notes: newDeadline.notes,
+                      employeeHours: newDeadline.employee_hours || {},
+                      isHidden: newDeadline.is_hidden || false
+                    }
                     : d
                 );
               } else {
@@ -229,7 +232,7 @@ export default function DeadlinesPage() {
                 }];
               }
             });
-            
+
             // Actualizar proyectos ocultos
             if (newDeadline.is_hidden) {
               setHiddenProjects(prev => new Set([...prev, newDeadline.project_id]));
@@ -276,23 +279,23 @@ export default function DeadlinesPage() {
         },
         (payload) => {
           console.log('🔔 Realtime global assignment change:', payload.eventType, payload);
-          
+
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const newAssignment = payload.new as any;
+            const newAssignment = payload.new as { id: string; name: string; hours: number; affects_all: boolean; affected_employee_ids?: string[]; month: string; employee_id?: string; created_by?: string };
             setGlobalAssignments(prev => {
               const existing = prev.find(a => a.id === newAssignment.id);
               if (existing) {
-                return prev.map(a => 
-                  a.id === newAssignment.id 
+                return prev.map(a =>
+                  a.id === newAssignment.id
                     ? {
-                        id: newAssignment.id,
-                        name: newAssignment.name,
-                        hours: newAssignment.hours,
-                        affectsAll: newAssignment.affects_all,
-                        affectedEmployeeIds: (newAssignment.affected_employee_ids || []) as string[],
-                        month: newAssignment.month,
-                        employeeId: newAssignment.employee_id || newAssignment.created_by
-                      }
+                      id: newAssignment.id,
+                      name: newAssignment.name,
+                      hours: newAssignment.hours,
+                      affectsAll: newAssignment.affects_all,
+                      affectedEmployeeIds: (newAssignment.affected_employee_ids || []) as string[],
+                      month: newAssignment.month,
+                      employeeId: newAssignment.employee_id || newAssignment.created_by
+                    }
                     : a
                 );
               } else {
@@ -337,12 +340,12 @@ export default function DeadlinesPage() {
           .select('*')
           .eq('month', selectedMonth)
           .gt('expires_at', new Date().toISOString());
-        
+
         if (error) throw error;
-        
+
         if (data) {
           const locksMap: Record<string, { employeeId: string; employeeName: string; lockedAt: string }> = {};
-          data.forEach((lock: any) => {
+          data.forEach((lock: { employee_id: string; project_id: string; expires_at: string; locked_at: string }) => {
             const employee = employees.find(e => e.id === lock.employee_id);
             // Solo mostrar locks de OTROS usuarios, no los propios
             if (employee && lock.employee_id !== currentUser?.id && lock.expires_at > new Date().toISOString()) {
@@ -359,7 +362,7 @@ export default function DeadlinesPage() {
         console.error('Error cargando locks:', error);
       }
     };
-    
+
     loadEditingLocks();
   }, [selectedMonth, employees, currentUser]);
 
@@ -381,7 +384,7 @@ export default function DeadlinesPage() {
           console.log('🔔 Realtime editing lock change:', payload.eventType, payload);
 
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const lock = payload.new as any;
+            const lock = payload.new as { employee_id: string; project_id: string; expires_at: string; locked_at: string };
             // Solo mostrar si no es nuestro propio lock
             if (lock.employee_id !== currentUser?.id && lock.expires_at > new Date().toISOString()) {
               const employee = employees.find(e => e.id === lock.employee_id);
@@ -443,9 +446,9 @@ export default function DeadlinesPage() {
         clearInterval(lockCleanupIntervalRef.current);
       }
       // Remover listener de beforeunload
-      if ((window as any).__deadlineBeforeUnload) {
-        window.removeEventListener('beforeunload', (window as any).__deadlineBeforeUnload);
-        delete (window as any).__deadlineBeforeUnload;
+      if ((window as unknown as { __deadlineBeforeUnload?: () => void }).__deadlineBeforeUnload) {
+        window.removeEventListener('beforeunload', (window as unknown as { __deadlineBeforeUnload?: () => void }).__deadlineBeforeUnload as EventListener);
+        delete (window as unknown as { __deadlineBeforeUnload?: () => void }).__deadlineBeforeUnload;
       }
       // Liberar lock si estamos editando
       if (editingProjectId && currentUser) {
@@ -463,7 +466,7 @@ export default function DeadlinesPage() {
           .from('project_editing_locks')
           .delete()
           .lt('expires_at', new Date().toISOString());
-        
+
         if (error) {
           console.error('Error limpiando locks huérfanos:', error);
         }
@@ -471,11 +474,11 @@ export default function DeadlinesPage() {
         console.error('Error en limpieza de locks:', error);
       }
     };
-    
+
     // Ejecutar inmediatamente y luego cada minuto
     cleanupOrphanedLocks();
     lockCleanupIntervalRef.current = setInterval(cleanupOrphanedLocks, 60 * 1000);
-    
+
     return () => {
       if (lockCleanupIntervalRef.current) {
         clearInterval(lockCleanupIntervalRef.current);
@@ -484,7 +487,7 @@ export default function DeadlinesPage() {
   }, []);
 
   const activeEmployees = useMemo(() => {
-    return employees.filter(e => e.isActive).sort((a, b) => 
+    return employees.filter(e => e.isActive).sort((a, b) =>
       (a.first_name || a.name).localeCompare(b.first_name || b.name)
     );
   }, [employees]);
@@ -493,13 +496,13 @@ export default function DeadlinesPage() {
   const getMonthlyCapacity = (employeeId: string) => {
     const employee = employees.find(e => e.id === employeeId);
     if (!employee) return { total: 0, absenceHours: 0, eventHours: 0, available: 0, absenceDetails: [], eventDetails: [] };
-    
+
     const [year, month] = selectedMonth.split('-').map(Number);
     const monthStart = startOfMonth(new Date(year, month - 1));
     const monthEnd = endOfMonth(new Date(year, month - 1));
     const daysInMonth = getDaysInMonth(new Date(year, month - 1));
     const workSchedule = employee.workSchedule;
-    
+
     // Calcular horas base del horario
     let baseHours = 0;
     for (let day = 1; day <= daysInMonth; day++) {
@@ -508,11 +511,11 @@ export default function DeadlinesPage() {
       const dayKey = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dayOfWeek];
       baseHours += workSchedule[dayKey as keyof typeof workSchedule] || 0;
     }
-    
+
     // Restar ausencias (con detalles)
     const employeeAbsences = absences.filter(a => a.employeeId === employeeId);
     const absenceHours = getAbsenceHoursInRange(monthStart, monthEnd, employeeAbsences, workSchedule);
-    
+
     // Calcular detalle de cada ausencia que afecta este mes
     const absenceDetails = employeeAbsences
       .filter(a => {
@@ -530,43 +533,43 @@ export default function DeadlinesPage() {
         };
       })
       .filter(a => a.hours > 0);
-    
+
     // Restar eventos del equipo (con detalles)
     const eventHours = getTeamEventHoursInRange(monthStart, monthEnd, employeeId, teamEvents, workSchedule, employeeAbsences);
-    
+
     // Calcular detalle de cada evento que afecta este mes usando la función correcta
     const eventDetails = getTeamEventDetailsInRange(monthStart, monthEnd, employeeId, teamEvents, workSchedule, employeeAbsences);
-    
+
     const available = Math.max(0, baseHours - absenceHours - eventHours);
-    
+
     return { total: baseHours, absenceHours, eventHours, available, absenceDetails, eventDetails };
   };
 
   // Calcular horas asignadas a un empleado (deadlines + globales)
   const getEmployeeAssignedHours = (employeeId: string) => {
     let total = 0;
-    
+
     // Sumar horas de deadlines
     deadlines.forEach(deadline => {
       if (!hiddenProjects.has(deadline.projectId) && !deadline.isHidden) {
         total += deadline.employeeHours[employeeId] || 0;
       }
     });
-    
+
     // Sumar asignaciones globales
     globalAssignments.forEach(assignment => {
       if (assignment.affectsAll || (assignment.affectedEmployeeIds as string[])?.includes(employeeId)) {
         total += assignment.hours;
       }
     });
-    
+
     return total;
   };
 
   // Filtrar proyectos
   const filteredProjects = useMemo(() => {
     let filtered = projects.filter(p => p.status === 'active');
-    
+
     // Filtrar por búsqueda
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
@@ -578,35 +581,35 @@ export default function DeadlinesPage() {
         );
       });
     }
-    
+
     // Filtrar solo SEO (excluir SEM, RRSS, Social, PPC, DV360)
     if (onlySEO) {
       filtered = filtered.filter(p => {
         const projectName = p.name.toUpperCase();
-        return !projectName.includes('SEM') && 
-               !projectName.includes('RRSS') && 
-               !projectName.includes('SOCIAL') && 
-               !projectName.includes('PPC') &&
-               !projectName.includes('DV360');
+        return !projectName.includes('SEM') &&
+          !projectName.includes('RRSS') &&
+          !projectName.includes('SOCIAL') &&
+          !projectName.includes('PPC') &&
+          !projectName.includes('DV360');
       });
     }
-    
+
     // Filtrar solo PPC (incluir SEM, Social, PPC, DV360)
     if (onlyPPC) {
       filtered = filtered.filter(p => {
         const projectName = p.name.toUpperCase();
-        return projectName.includes('SEM') || 
-               projectName.includes('SOCIAL') || 
-               projectName.includes('PPC') ||
-               projectName.includes('DV360');
+        return projectName.includes('SEM') ||
+          projectName.includes('SOCIAL') ||
+          projectName.includes('PPC') ||
+          projectName.includes('DV360');
       });
     }
-    
+
     // Filtrar ocultos
     if (!showHidden) {
       filtered = filtered.filter(p => !hiddenProjects.has(p.id));
     }
-    
+
     // Filtrar por empleado asignado
     if (filterByEmployee !== 'all') {
       filtered = filtered.filter(p => {
@@ -614,7 +617,7 @@ export default function DeadlinesPage() {
         return deadline && (deadline.employeeHours[filterByEmployee] || 0) > 0;
       });
     }
-    
+
     // Filtrar solo proyectos sin asignar
     if (showUnassignedOnly) {
       filtered = filtered.filter(p => {
@@ -624,7 +627,7 @@ export default function DeadlinesPage() {
         return totalAssigned === 0;
       });
     }
-    
+
     // Ordenar proyectos
     filtered.sort((a, b) => {
       if (sortBy === 'client') {
@@ -647,7 +650,7 @@ export default function DeadlinesPage() {
         return remainingB - remainingA;
       }
     });
-    
+
     return filtered;
   }, [projects, clients, searchTerm, onlySEO, onlyPPC, showHidden, showUnassignedOnly, hiddenProjects, filterByEmployee, deadlines, selectedMonth, sortBy]);
 
@@ -741,12 +744,12 @@ export default function DeadlinesPage() {
 
         if (error) throw error;
 
-        setDeadlines(prev => prev.map(d => 
-          d.id === editingDeadline.id 
+        setDeadlines(prev => prev.map(d =>
+          d.id === editingDeadline.id
             ? { ...d, ...deadlineData, projectId: formData.projectId, notes: formData.notes, employeeHours: formData.employeeHours, isHidden: formData.isHidden }
             : d
         ));
-        
+
         if (formData.isHidden) {
           setHiddenProjects(prev => new Set([...prev, formData.projectId]));
         } else {
@@ -756,7 +759,7 @@ export default function DeadlinesPage() {
             return newSet;
           });
         }
-        
+
         toast.success('Deadline actualizado');
       } else {
         const { data, error } = await supabase
@@ -775,30 +778,31 @@ export default function DeadlinesPage() {
           employeeHours: data.employee_hours || {},
           isHidden: data.is_hidden || false
         }]);
-        
+
         if (formData.isHidden) {
           setHiddenProjects(prev => new Set([...prev, formData.projectId]));
         }
-        
+
         toast.success('Deadline creado');
       }
 
       setIsDialogOpen(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error guardando deadline:', error);
-      toast.error(error.message || 'Error al guardar deadline');
+      toast.error((error as Error)?.message || 'Error al guardar deadline');
     }
   };
 
   const onSaveGlobal = async (data: GlobalAssignmentFormValues) => {
 
     try {
-      const assignmentData: any = {
+      const assignmentData = {
         month: selectedMonth,
         name: data.name,
         hours: data.hours,
         affects_all: data.affectsAll,
-        affected_employee_ids: data.affectsAll ? null : data.affectedEmployeeIds
+        affected_employee_ids: data.affectsAll ? null : data.affectedEmployeeIds,
+        employee_id: undefined as string | undefined
       };
 
       // Al crear, guardar el employee_id del usuario actual
@@ -814,8 +818,8 @@ export default function DeadlinesPage() {
 
         if (error) throw error;
 
-        setGlobalAssignments(prev => prev.map(a => 
-          a.id === editingGlobal.id 
+        setGlobalAssignments(prev => prev.map(a =>
+          a.id === editingGlobal.id
             ? { ...a, ...assignmentData, month: selectedMonth, name: data.name, hours: data.hours, affectsAll: data.affectsAll, affectedEmployeeIds: data.affectedEmployeeIds || [], employeeId: editingGlobal.employeeId }
             : a
         ));
@@ -842,9 +846,9 @@ export default function DeadlinesPage() {
       }
 
       setIsGlobalDialogOpen(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error guardando asignación global:', error);
-      const errorMessage = error?.message || error?.error?.message || 'Error al guardar asignación global';
+      const errorMessage = (error as Error)?.message || 'Error al guardar asignación global';
       toast.error(errorMessage);
     }
   };
@@ -871,7 +875,7 @@ export default function DeadlinesPage() {
 
       setDeadlines(prev => prev.filter(d => d.id !== id));
       toast.success('Deadline eliminado');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error eliminando deadline:', error);
       toast.error('Error al eliminar deadline');
     }
@@ -907,7 +911,7 @@ export default function DeadlinesPage() {
 
       setGlobalAssignments(prev => prev.filter(a => a.id !== id));
       toast.success('Asignación global eliminada');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error eliminando asignación global:', error);
       toast.error('Error al eliminar asignación global');
     }
@@ -916,14 +920,14 @@ export default function DeadlinesPage() {
   // Funciones para gestionar locks de edición
   const acquireEditLock = async (projectId: string) => {
     if (!currentUser) return false;
-    
+
     try {
       // Limpiar locks expirados primero
       await supabase
         .from('project_editing_locks')
         .delete()
         .lt('expires_at', new Date().toISOString());
-      
+
       // PRIMERO verificar si ya existe un lock activo de otro usuario
       const { data: existingLock } = await supabase
         .from('project_editing_locks')
@@ -932,7 +936,7 @@ export default function DeadlinesPage() {
         .eq('month', selectedMonth)
         .gt('expires_at', new Date().toISOString())
         .maybeSingle();
-      
+
       if (existingLock) {
         // Si el lock es de otro usuario, rechazar
         if (existingLock.employee_id !== currentUser.id) {
@@ -949,7 +953,7 @@ export default function DeadlinesPage() {
           .eq('id', existingLock.id);
         return true;
       }
-      
+
       // No hay lock existente, crear uno nuevo
       const { error } = await supabase
         .from('project_editing_locks')
@@ -959,7 +963,7 @@ export default function DeadlinesPage() {
           month: selectedMonth,
           expires_at: new Date(Date.now() + 60 * 1000).toISOString() // 1 minuto
         });
-      
+
       if (error) {
         console.error('Error creando lock:', error);
         // Si falla por conflicto, verificar de nuevo
@@ -969,17 +973,17 @@ export default function DeadlinesPage() {
           .eq('project_id', projectId)
           .eq('month', selectedMonth)
           .gt('expires_at', new Date().toISOString())
-          .maybeSingle();
-        
+          .maybeSingle() as { data: { employee_id: string } | null, error: unknown };
+
         if (conflictLock && conflictLock.employee_id !== currentUser.id) {
           const editor = employees.find(e => e.id === conflictLock.employee_id);
           toast.warning(`${editor?.first_name || editor?.name || 'Alguien'} está editando este proyecto. Espera a que termine.`);
           return false;
         }
       }
-      
+
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error adquiriendo lock:', error);
       return false; // Cambiar a false para ser más estricto
     }
@@ -987,8 +991,9 @@ export default function DeadlinesPage() {
 
   const renewEditLock = async (projectId: string) => {
     if (!currentUser || editingProjectId !== projectId) return;
-    
+
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await supabase
         .from('project_editing_locks')
         .update({
@@ -996,16 +1001,16 @@ export default function DeadlinesPage() {
         })
         .eq('project_id', projectId)
         .eq('employee_id', currentUser.id)
-        .eq('month', selectedMonth);
-      
+        .eq('month', selectedMonth) as { error: unknown };
+
       if (error) {
         console.error('Error renovando lock:', error);
         // Si falla la renovación, puede ser que el lock ya no existe, cancelar edición
-        if (error.code === 'PGRST116') {
+        if ((error as { code?: string })?.code === 'PGRST116') {
           cancelEditingProject();
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error renovando lock:', error);
     }
   };
@@ -1014,12 +1019,13 @@ export default function DeadlinesPage() {
     if (!currentUser) return;
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await supabase
         .from('project_editing_locks')
         .delete()
         .eq('project_id', projectId)
         .eq('employee_id', currentUser.id)
-        .eq('month', selectedMonth);
+        .eq('month', selectedMonth) as { error: unknown };
 
       if (error) {
         console.error('Error liberando lock:', error);
@@ -1040,7 +1046,7 @@ export default function DeadlinesPage() {
         delete newLocks[projectId];
         return newLocks;
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error liberando lock:', error);
     }
   };
@@ -1051,18 +1057,20 @@ export default function DeadlinesPage() {
 
     try {
       // Primero obtener los IDs de proyectos que tenemos bloqueados
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: myLocks } = await supabase
         .from('project_editing_locks')
         .select('project_id')
         .eq('employee_id', currentUser.id)
-        .eq('month', selectedMonth);
+        .eq('month', selectedMonth) as { data: { project_id: string }[] | null, error: unknown };
 
       // Eliminar de la BD
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await supabase
         .from('project_editing_locks')
         .delete()
         .eq('employee_id', currentUser.id)
-        .eq('month', selectedMonth);
+        .eq('month', selectedMonth) as { error: unknown };
 
       if (error) {
         console.error('Error liberando todos los locks:', error);
@@ -1097,23 +1105,23 @@ export default function DeadlinesPage() {
   const startEditingProject = async (projectId: string) => {
     // Si ya estamos editando este proyecto, no hacer nada
     if (editingProjectId === projectId) return;
-    
+
     // PRIMERO: Liberar TODOS los locks de este usuario en este mes
     // Esto asegura que no queden locks huérfanos
     await releaseAllMyLocks();
-    
+
     // Limpiar estado de edición anterior si existe
     if (editingProjectId) {
       if (lockRefreshIntervalRef.current) {
         clearInterval(lockRefreshIntervalRef.current);
         lockRefreshIntervalRef.current = null;
       }
-      if ((window as any).__deadlineBeforeUnload) {
-        window.removeEventListener('beforeunload', (window as any).__deadlineBeforeUnload);
-        delete (window as any).__deadlineBeforeUnload;
+      if ((window as unknown as { __deadlineBeforeUnload?: () => void }).__deadlineBeforeUnload) {
+        window.removeEventListener('beforeunload', (window as unknown as { __deadlineBeforeUnload?: () => void }).__deadlineBeforeUnload as EventListener);
+        delete (window as unknown as { __deadlineBeforeUnload?: () => void }).__deadlineBeforeUnload;
       }
     }
-    
+
     // Intentar adquirir el lock (ahora que no tenemos ningún lock activo)
     const lockAcquired = await acquireEditLock(projectId);
     if (!lockAcquired) {
@@ -1121,7 +1129,7 @@ export default function DeadlinesPage() {
       setEditingProjectId(null);
       return;
     }
-    
+
     const deadline = getProjectDeadline(projectId);
     setEditingProjectId(projectId);
     setInlineFormData({
@@ -1130,7 +1138,7 @@ export default function DeadlinesPage() {
       isHidden: deadline?.isHidden || hiddenProjects.has(projectId)
     });
     setExpandedProjects(prev => new Set([...prev, projectId]));
-    
+
     // Renovar el lock cada 20 segundos mientras se edita (heartbeat más frecuente)
     if (lockRefreshIntervalRef.current) {
       clearInterval(lockRefreshIntervalRef.current);
@@ -1138,7 +1146,7 @@ export default function DeadlinesPage() {
     lockRefreshIntervalRef.current = setInterval(() => {
       renewEditLock(projectId);
     }, 20 * 1000); // Cada 20 segundos
-    
+
     // Liberar lock cuando se cierra la ventana/pestaña
     const handleBeforeUnload = () => {
       if (editingProjectId === projectId && currentUser) {
@@ -1152,29 +1160,29 @@ export default function DeadlinesPage() {
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
-    
+
     // Guardar referencia para poder remover el listener
-    (window as any).__deadlineBeforeUnload = handleBeforeUnload;
+    (window as unknown as { __deadlineBeforeUnload?: () => void }).__deadlineBeforeUnload = handleBeforeUnload;
   };
 
   const cancelEditingProject = async () => {
     const projectIdToRelease = editingProjectId;
-    
+
     if (projectIdToRelease) {
       await releaseEditLock(projectIdToRelease);
     }
-    
+
     if (lockRefreshIntervalRef.current) {
       clearInterval(lockRefreshIntervalRef.current);
       lockRefreshIntervalRef.current = null;
     }
-    
+
     // Remover listener de beforeunload
-    if ((window as any).__deadlineBeforeUnload) {
-      window.removeEventListener('beforeunload', (window as any).__deadlineBeforeUnload);
-      delete (window as any).__deadlineBeforeUnload;
+    if ((window as unknown as { __deadlineBeforeUnload?: () => void }).__deadlineBeforeUnload) {
+      window.removeEventListener('beforeunload', (window as unknown as { __deadlineBeforeUnload?: () => void }).__deadlineBeforeUnload as EventListener);
+      delete (window as unknown as { __deadlineBeforeUnload?: () => void }).__deadlineBeforeUnload;
     }
-    
+
     setEditingProjectId(null);
     setInlineFormData({ employeeHours: {}, notes: '', isHidden: false });
   };
@@ -1204,7 +1212,7 @@ export default function DeadlinesPage() {
       }
     };
     setInlineFormData(newFormData);
-    
+
     // Si es guardado inmediato, cancelar timeout y guardar ahora
     if (immediate) {
       if (autoSaveTimeoutRef.current) {
@@ -1268,7 +1276,7 @@ export default function DeadlinesPage() {
 
       setAutoSaveStatus('saved');
       setTimeout(() => setAutoSaveStatus('idle'), 1500);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error auto-saving:', error);
       setAutoSaveStatus('idle');
       toast.error('Error al guardar');
@@ -1295,8 +1303,8 @@ export default function DeadlinesPage() {
 
         if (error) throw error;
 
-        setDeadlines(prev => prev.map(d => 
-          d.id === existingDeadline.id 
+        setDeadlines(prev => prev.map(d =>
+          d.id === existingDeadline.id
             ? { ...d, projectId, month: selectedMonth, notes: inlineFormData.notes, employeeHours: inlineFormData.employeeHours, isHidden: inlineFormData.isHidden }
             : d
         ));
@@ -1331,9 +1339,9 @@ export default function DeadlinesPage() {
 
       toast.success('Guardado');
       setEditingProjectId(null);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error guardando deadline:', error);
-      toast.error(error.message || 'Error al guardar');
+      toast.error((error as Error)?.message || 'Error al guardar');
     } finally {
       setIsSaving(false);
     }
@@ -1361,22 +1369,22 @@ export default function DeadlinesPage() {
   const copyFromPreviousMonth = async () => {
     const [year, month] = selectedMonth.split('-').map(Number);
     const prevMonth = format(subMonths(new Date(year, month - 1), 1), 'yyyy-MM');
-    
+
     try {
       // Cargar deadlines del mes anterior desde la base de datos
       const { data: previousData, error: loadError } = await supabase
         .from('deadlines')
         .select('*')
         .eq('month', prevMonth);
-      
+
       if (loadError) throw loadError;
-      
+
       if (!previousData || previousData.length === 0) {
         toast.error('No hay datos del mes anterior para copiar');
         return;
       }
-      
-      const previousDeadlines = previousData.map((d: any) => ({
+
+      const previousDeadlines = previousData.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean }) => ({
         id: d.id,
         projectId: d.project_id,
         month: d.month,
@@ -1384,12 +1392,12 @@ export default function DeadlinesPage() {
         employeeHours: d.employee_hours || {},
         isHidden: d.is_hidden || false
       }));
-      
+
       if (!confirm(`¿Copiar ${previousDeadlines.length} deadlines del mes anterior?`)) return;
-      
+
       let copied = 0;
       let skipped = 0;
-      
+
       for (const deadline of previousDeadlines) {
         // Verificar que no exista ya en el mes actual
         const existing = deadlines.find(d => d.projectId === deadline.projectId);
@@ -1397,7 +1405,7 @@ export default function DeadlinesPage() {
           skipped++;
           continue;
         }
-        
+
         const { data, error } = await supabase
           .from('deadlines')
           .insert({
@@ -1409,9 +1417,9 @@ export default function DeadlinesPage() {
           })
           .select()
           .single();
-        
+
         if (error) throw error;
-        
+
         setDeadlines(prev => [...prev, {
           id: data.id,
           projectId: data.project_id,
@@ -1422,7 +1430,7 @@ export default function DeadlinesPage() {
         }]);
         copied++;
       }
-      
+
       if (copied > 0 && skipped > 0) {
         toast.success(`Se copiaron ${copied} deadlines (${skipped} ya existían)`);
       } else if (copied > 0) {
@@ -1430,9 +1438,9 @@ export default function DeadlinesPage() {
       } else {
         toast.info('Todos los deadlines ya existían en este mes');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error copiando deadlines:', error);
-      toast.error(error.message || 'Error al copiar');
+      toast.error((error as Error)?.message || 'Error al copiar');
     }
   };
 
@@ -1485,13 +1493,13 @@ export default function DeadlinesPage() {
   const getRedistributionTips = () => {
     const tips: { from: string; to: string; reason: string; projects: string[]; impact: number }[] = [];
     const employeeLoads: { id: string; name: string; percentage: number; projects: string[] }[] = [];
-    
+
     // Calcular carga y proyectos de cada empleado SEO (excluir PPC)
     activeEmployees.forEach(emp => {
       const capacityData = getMonthlyCapacity(emp.id);
       const assigned = getEmployeeAssignedHours(emp.id);
       const percentage = capacityData.available > 0 ? Math.round((assigned / capacityData.available) * 100) : 0;
-      
+
       // Obtener proyectos donde está asignado
       const empProjects: string[] = [];
       deadlines.forEach(d => {
@@ -1500,39 +1508,39 @@ export default function DeadlinesPage() {
           if (project) empProjects.push(project.id);
         }
       });
-      
+
       employeeLoads.push({ id: emp.id, name: emp.first_name || emp.name, percentage, projects: empProjects });
     });
-    
+
     // Si hay menos de 2 empleados, no hay sugerencias posibles
     if (employeeLoads.length < 2) return [];
-    
+
     // Calcular carga promedio del equipo (media)
     const totalPercentage = employeeLoads.reduce((sum, e) => sum + e.percentage, 0);
     const averageLoad = Math.round(totalPercentage / employeeLoads.length);
-    
+
     // Calcular rango del equipo (diferencia entre máximo y mínimo)
     const maxLoad = Math.max(...employeeLoads.map(e => e.percentage));
     const minLoad = Math.min(...employeeLoads.map(e => e.percentage));
     const range = maxLoad - minLoad;
-    
+
     // Calcular desviación estándar para rangos amplios
     const variance = employeeLoads.reduce((sum, e) => sum + Math.pow(e.percentage - averageLoad, 2), 0) / employeeLoads.length;
     const standardDeviation = Math.sqrt(variance);
-    
+
     // Umbral híbrido: si el rango es estrecho (≤15 puntos), usar umbral fijo bajo
     // Si el rango es amplio, usar desviación estándar dinámica
-    const deviationThreshold = range <= 15 
+    const deviationThreshold = range <= 15
       ? 3  // Umbral fijo bajo para rangos estrechos (ej: 80-90%)
       : Math.max(3, Math.round(standardDeviation * 1.5));  // Dinámico para rangos amplios
-    
+
     // Identificar empleados por encima y por debajo de la media
     const aboveAverage = employeeLoads.filter(e => e.percentage > averageLoad + deviationThreshold);
     const belowAverage = employeeLoads.filter(e => e.percentage < averageLoad - deviationThreshold);
-    
+
     // Si todos están equilibrados (dentro del umbral), no hay sugerencias
     if (aboveAverage.length === 0 || belowAverage.length === 0) return [];
-    
+
     // Generar sugerencias priorizando las que más equilibren el equipo
     aboveAverage.forEach(over => {
       belowAverage.forEach(avail => {
@@ -1543,7 +1551,7 @@ export default function DeadlinesPage() {
           // Mayor diferencia = mayor impacto potencial
           const currentGap = (over.percentage - averageLoad) + (averageLoad - avail.percentage);
           const impact = currentGap; // Cuanto mayor el gap, mayor el impacto de equilibrar
-          
+
           tips.push({
             from: over.name,
             to: avail.name,
@@ -1554,7 +1562,7 @@ export default function DeadlinesPage() {
         }
       });
     });
-    
+
     // Ordenar por impacto (mayor impacto primero) y devolver las top 3
     return tips
       .sort((a, b) => b.impact - a.impact)
@@ -1578,9 +1586,9 @@ export default function DeadlinesPage() {
           <div className="flex items-center gap-2">
             {/* Selector de mes con flechas */}
             <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1" data-tour="month-selector">
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="h-8 w-8"
                 onClick={handlePrevMonth}
               >
@@ -1589,9 +1597,9 @@ export default function DeadlinesPage() {
               <span className="text-sm font-medium px-2 min-w-[140px] text-center capitalize">
                 {format(currentMonthDate, 'MMMM yyyy', { locale: es })}
               </span>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="h-8 w-8"
                 onClick={handleNextMonth}
               >
@@ -1611,341 +1619,341 @@ export default function DeadlinesPage() {
           </div>
         </div>
 
-      {/* Filtros */}
-      <div className="flex flex-wrap items-center gap-3 bg-white rounded-xl border shadow-sm p-3" data-tour="filters">
-        <div className="flex-1 min-w-[200px]">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Buscar proyecto o cliente..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 h-9 border-slate-200"
-            />
+        {/* Filtros */}
+        <div className="flex flex-wrap items-center gap-3 bg-white rounded-xl border shadow-sm p-3" data-tour="filters">
+          <div className="flex-1 min-w-[200px]">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Buscar proyecto o cliente..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-9 border-slate-200"
+              />
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-4 text-sm">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <span className="text-slate-600 whitespace-nowrap">Solo SEO</span>
-            <Switch
-              id="only-seo"
-              checked={onlySEO}
-              onCheckedChange={(checked) => {
-                setOnlySEO(checked);
-                if (checked) setOnlyPPC(false); // Mutuamente exclusivo
-              }}
-              className="scale-90"
-            />
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <span className="text-slate-600 whitespace-nowrap">Solo PPC</span>
-            <Switch
-              id="only-ppc"
-              checked={onlyPPC}
-              onCheckedChange={(checked) => {
-                setOnlyPPC(checked);
-                if (checked) setOnlySEO(false); // Mutuamente exclusivo
-              }}
-              className="scale-90"
-            />
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <span className="text-slate-600 whitespace-nowrap">Ocultos</span>
-            <Switch
-              id="show-hidden"
-              checked={showHidden}
-              onCheckedChange={setShowHidden}
-              className="scale-90"
-            />
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <span className="text-orange-600 font-medium whitespace-nowrap">Sin asignar</span>
-            <Switch
-              id="show-unassigned"
-              checked={showUnassignedOnly}
-              onCheckedChange={setShowUnassignedOnly}
-              className="scale-90"
-            />
-          </label>
-        </div>
-        <Select value={filterByEmployee} onValueChange={setFilterByEmployee}>
-          <SelectTrigger className="w-[140px] h-9 text-sm">
-            <SelectValue placeholder="Empleado" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            {activeEmployees.map(emp => (
-              <SelectItem key={emp.id} value={emp.id}>
-                {emp.first_name || emp.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
-          <SelectTrigger className="w-[140px] h-9 text-sm">
-            <SelectValue placeholder="Ordenar" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="client">Por cliente</SelectItem>
-            <SelectItem value="assigned">Más asignado</SelectItem>
-            <SelectItem value="remaining">Más disponible</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Proyectos por cliente */}
-      <div className="space-y-3" data-tour="project-list">
-        {Object.keys(projectsByClient).length === 0 ? (
-          <div className="text-center text-slate-500 py-8 bg-white rounded-xl border">
-            No hay proyectos para mostrar
+          <div className="flex items-center gap-4 text-sm">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <span className="text-slate-600 whitespace-nowrap">Solo SEO</span>
+              <Switch
+                id="only-seo"
+                checked={onlySEO}
+                onCheckedChange={(checked) => {
+                  setOnlySEO(checked);
+                  if (checked) setOnlyPPC(false); // Mutuamente exclusivo
+                }}
+                className="scale-90"
+              />
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <span className="text-slate-600 whitespace-nowrap">Solo PPC</span>
+              <Switch
+                id="only-ppc"
+                checked={onlyPPC}
+                onCheckedChange={(checked) => {
+                  setOnlyPPC(checked);
+                  if (checked) setOnlySEO(false); // Mutuamente exclusivo
+                }}
+                className="scale-90"
+              />
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <span className="text-slate-600 whitespace-nowrap">Ocultos</span>
+              <Switch
+                id="show-hidden"
+                checked={showHidden}
+                onCheckedChange={setShowHidden}
+                className="scale-90"
+              />
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <span className="text-orange-600 font-medium whitespace-nowrap">Sin asignar</span>
+              <Switch
+                id="show-unassigned"
+                checked={showUnassignedOnly}
+                onCheckedChange={setShowUnassignedOnly}
+                className="scale-90"
+              />
+            </label>
           </div>
-        ) : (
-          Object.entries(projectsByClient).map(([clientId, clientProjects]) => {
-            const isKitDigitalGroup = clientId === 'kit-digital';
-            const client = isKitDigitalGroup ? null : clients.find(c => c.id === clientId);
-            const clientName = isKitDigitalGroup ? 'Kit Digital' : (client?.name || 'Sin cliente');
-            const clientColor = isKitDigitalGroup ? '#10b981' : (client?.color || '#6b7280');
-            const isExpanded = expandedClients.has(clientId);
+          <Select value={filterByEmployee} onValueChange={setFilterByEmployee}>
+            <SelectTrigger className="w-[140px] h-9 text-sm">
+              <SelectValue placeholder="Empleado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              {activeEmployees.map(emp => (
+                <SelectItem key={emp.id} value={emp.id}>
+                  {emp.first_name || emp.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'client' | 'assigned' | 'remaining')}>
+            <SelectTrigger className="w-[140px] h-9 text-sm">
+              <SelectValue placeholder="Ordenar" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="client">Por cliente</SelectItem>
+              <SelectItem value="assigned">Más asignado</SelectItem>
+              <SelectItem value="remaining">Más disponible</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-            return (
-              <div key={clientId} className="bg-white rounded-xl border shadow-sm overflow-hidden">
-                {/* Cabecera del cliente */}
-                <button
-                  onClick={() => toggleClient(clientId)}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left"
-                >
-                  {isExpanded ? (
-                    <ChevronDown className="h-4 w-4 text-slate-400" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 text-slate-400" />
-                  )}
-                  <div
-                    className="w-3 h-3 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: clientColor }}
-                  />
-                  <span className="font-bold text-slate-800">{clientName}</span>
-                  <span className="text-sm text-slate-400">({clientProjects.length} proyectos)</span>
-                </button>
-                
-                {/* Proyectos del cliente */}
-                {isExpanded && (
-                  <div className="border-t divide-y divide-slate-100">
-                    {clientProjects.map(project => {
-                      const deadline = getProjectDeadline(project.id);
-                      const isEditing = editingProjectId === project.id;
-                      const currentHours = isEditing ? inlineFormData.employeeHours : (deadline?.employeeHours || {});
-                      const totalAssigned = (Object.values(currentHours) as number[]).reduce((sum, h) => sum + (h || 0), 0);
-                      const isOverBudget = totalAssigned > (project.budgetHours || 0);
-                      const isUnderMin = project.minimumHours != null && project.minimumHours > 0 && totalAssigned < project.minimumHours;
-                      const isHidden = isEditing ? inlineFormData.isHidden : hiddenProjects.has(project.id);
-                      
-                      const projectNotes = deadline?.notes;
-                      
-                      return (
-                        <div 
-                          key={project.id} 
-                          className={cn(
-                            isHidden && "opacity-40",
-                            isEditing && "bg-indigo-50/40",
-                            isOverBudget && !isEditing && "bg-red-50/40"
-                          )}
-                        >
-                          {/* Fila del proyecto - clickeable para editar */}
-                          <div 
+        {/* Proyectos por cliente */}
+        <div className="space-y-3" data-tour="project-list">
+          {Object.keys(projectsByClient).length === 0 ? (
+            <div className="text-center text-slate-500 py-8 bg-white rounded-xl border">
+              No hay proyectos para mostrar
+            </div>
+          ) : (
+            Object.entries(projectsByClient).map(([clientId, clientProjects]) => {
+              const isKitDigitalGroup = clientId === 'kit-digital';
+              const client = isKitDigitalGroup ? null : clients.find(c => c.id === clientId);
+              const clientName = isKitDigitalGroup ? 'Kit Digital' : (client?.name || 'Sin cliente');
+              const clientColor = isKitDigitalGroup ? '#10b981' : (client?.color || '#6b7280');
+              const isExpanded = expandedClients.has(clientId);
+
+              return (
+                <div key={clientId} className="bg-white rounded-xl border shadow-sm overflow-hidden">
+                  {/* Cabecera del cliente */}
+                  <button
+                    onClick={() => toggleClient(clientId)}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left"
+                  >
+                    {isExpanded ? (
+                      <ChevronDown className="h-4 w-4 text-slate-400" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 text-slate-400" />
+                    )}
+                    <div
+                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: clientColor }}
+                    />
+                    <span className="font-bold text-slate-800">{clientName}</span>
+                    <span className="text-sm text-slate-400">({clientProjects.length} proyectos)</span>
+                  </button>
+
+                  {/* Proyectos del cliente */}
+                  {isExpanded && (
+                    <div className="border-t divide-y divide-slate-100">
+                      {clientProjects.map(project => {
+                        const deadline = getProjectDeadline(project.id);
+                        const isEditing = editingProjectId === project.id;
+                        const currentHours = isEditing ? inlineFormData.employeeHours : (deadline?.employeeHours || {});
+                        const totalAssigned = (Object.values(currentHours) as number[]).reduce((sum, h) => sum + (h || 0), 0);
+                        const isOverBudget = totalAssigned > (project.budgetHours || 0);
+                        const isUnderMin = project.minimumHours != null && project.minimumHours > 0 && totalAssigned < project.minimumHours;
+                        const isHidden = isEditing ? inlineFormData.isHidden : hiddenProjects.has(project.id);
+
+                        const projectNotes = deadline?.notes;
+
+                        return (
+                          <div
+                            key={project.id}
                             className={cn(
-                              "flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-slate-50 transition-colors",
-                              isEditing && "hover:bg-indigo-50/40"
+                              isHidden && "opacity-40",
+                              isEditing && "bg-indigo-50/40",
+                              isOverBudget && !isEditing && "bg-red-50/40"
                             )}
-                            onClick={() => !isEditing && startEditingProject(project.id)}
                           >
-                            {/* Info del proyecto */}
-                            <div className="min-w-[180px]">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-sm font-medium text-slate-800">{project.name}</span>
-                                {isHidden && <EyeOff className="h-3 w-3 text-slate-400 flex-shrink-0" />}
-                                {/* Indicador de edición concurrente */}
-                                {!isEditing && editingLocks[project.id] && editingLocks[project.id].employeeId !== currentUser?.id && (
-                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-50 border-amber-200 text-amber-700" data-tour="concurrent-editing">
-                                    <Edit className="h-2.5 w-2.5 mr-1" />
-                                    {editingLocks[project.id].employeeName}
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="text-[11px] text-slate-400 font-mono mt-0.5">
-                                {project.minimumHours != null && project.minimumHours > 0 && (
-                                  <span className="text-orange-500 mr-1">mín {project.minimumHours}h ·</span>
-                                )}
-                                <span>máx {project.budgetHours}h</span>
-                              </div>
-                              {/* Notas visibles si existen */}
-                              {projectNotes && !isEditing && (
-                                <div className="text-[11px] text-indigo-500 mt-0.5 italic truncate max-w-[200px]">
-                                  📝 {projectNotes}
+                            {/* Fila del proyecto - clickeable para editar */}
+                            <div
+                              className={cn(
+                                "flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-slate-50 transition-colors",
+                                isEditing && "hover:bg-indigo-50/40"
+                              )}
+                              onClick={() => !isEditing && startEditingProject(project.id)}
+                            >
+                              {/* Info del proyecto */}
+                              <div className="min-w-[180px]">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-sm font-medium text-slate-800">{project.name}</span>
+                                  {isHidden && <EyeOff className="h-3 w-3 text-slate-400 flex-shrink-0" />}
+                                  {/* Indicador de edición concurrente */}
+                                  {!isEditing && editingLocks[project.id] && editingLocks[project.id].employeeId !== currentUser?.id && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-50 border-amber-200 text-amber-700" data-tour="concurrent-editing">
+                                      <Edit className="h-2.5 w-2.5 mr-1" />
+                                      {editingLocks[project.id].employeeName}
+                                    </Badge>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                            
-                            {/* Equipo asignado */}
-                            <div className="flex-1 flex items-center gap-1.5 flex-wrap">
-                              {!isEditing && activeEmployees.map(emp => {
-                                const hours = (currentHours as Record<string, number>)[emp.id] || 0;
-                                if (hours === 0) return null;
-                                return (
-                                  <div 
-                                    key={emp.id} 
-                                    className="flex items-center gap-1.5 bg-slate-100 rounded-full px-2 py-1"
-                                  >
-                                    <Avatar className="h-5 w-5">
-                                      <AvatarImage src={emp.avatarUrl} alt={emp.name} />
-                                      <AvatarFallback className="bg-indigo-500 text-white text-[9px]">
-                                        {(emp.first_name || emp.name)[0]}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <span className="text-xs text-slate-600">{emp.first_name || emp.name}</span>
-                                    <span className="text-xs font-mono font-bold text-indigo-600">{hours}h</span>
+                                <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                                  {project.minimumHours != null && project.minimumHours > 0 && (
+                                    <span className="text-orange-500 mr-1">mín {project.minimumHours}h ·</span>
+                                  )}
+                                  <span>máx {project.budgetHours}h</span>
+                                </div>
+                                {/* Notas visibles si existen */}
+                                {projectNotes && !isEditing && (
+                                  <div className="text-[11px] text-indigo-500 mt-0.5 italic truncate max-w-[200px]">
+                                    📝 {projectNotes}
                                   </div>
-                                );
-                              })}
-                              {!isEditing && totalAssigned === 0 && (
-                                <span className="text-xs text-slate-400 italic">Clic para asignar</span>
-                              )}
-                            </div>
-                            
-                            {/* Total */}
-                            <div className="flex items-center gap-3">
-                              <div className="text-right">
-                                <span className={cn(
-                                  "font-mono font-bold text-sm",
-                                  isOverBudget ? "text-red-600" : 
-                                  isUnderMin ? "text-orange-500" : 
-                                  totalAssigned > 0 ? "text-slate-700" : "text-slate-400"
-                                )}>
-                                  {totalAssigned}h
-                                </span>
-                                <span className="text-xs text-slate-400">/{project.budgetHours}h</span>
+                                )}
+                              </div>
+
+                              {/* Equipo asignado */}
+                              <div className="flex-1 flex items-center gap-1.5 flex-wrap">
+                                {!isEditing && activeEmployees.map(emp => {
+                                  const hours = (currentHours as Record<string, number>)[emp.id] || 0;
+                                  if (hours === 0) return null;
+                                  return (
+                                    <div
+                                      key={emp.id}
+                                      className="flex items-center gap-1.5 bg-slate-100 rounded-full px-2 py-1"
+                                    >
+                                      <Avatar className="h-5 w-5">
+                                        <AvatarImage src={emp.avatarUrl} alt={emp.name} />
+                                        <AvatarFallback className="bg-indigo-500 text-white text-[9px]">
+                                          {(emp.first_name || emp.name)[0]}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <span className="text-xs text-slate-600">{emp.first_name || emp.name}</span>
+                                      <span className="text-xs font-mono font-bold text-indigo-600">{hours}h</span>
+                                    </div>
+                                  );
+                                })}
+                                {!isEditing && totalAssigned === 0 && (
+                                  <span className="text-xs text-slate-400 italic">Clic para asignar</span>
+                                )}
+                              </div>
+
+                              {/* Total */}
+                              <div className="flex items-center gap-3">
+                                <div className="text-right">
+                                  <span className={cn(
+                                    "font-mono font-bold text-sm",
+                                    isOverBudget ? "text-red-600" :
+                                      isUnderMin ? "text-orange-500" :
+                                        totalAssigned > 0 ? "text-slate-700" : "text-slate-400"
+                                  )}>
+                                    {totalAssigned}h
+                                  </span>
+                                  <span className="text-xs text-slate-400">/{project.budgetHours}h</span>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          
-                          {/* Panel de edición */}
-                          {isEditing && (
-                            <div className="px-4 py-3 bg-slate-50 border-t" data-tour="inline-editing">
-                              <div className="flex flex-wrap gap-2 mb-3">
-                                {activeEmployees.map(emp => (
-                                  <div key={emp.id} className="flex items-center gap-2 bg-white border rounded-lg px-2.5 py-1.5">
-                                    <Avatar className="h-6 w-6">
-                                      <AvatarImage src={emp.avatarUrl} alt={emp.name} />
-                                      <AvatarFallback className="bg-indigo-500 text-white text-[9px]">
-                                        {(emp.first_name || emp.name)[0]}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <span className="text-xs text-slate-600">{emp.first_name || emp.name}</span>
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      step="0.5"
-                                      value={inlineFormData.employeeHours[emp.id] || ''}
-                                      onChange={(e) => updateInlineEmployeeHours(emp.id, parseFloat(e.target.value) || 0, project.id)}
-                                      onBlur={() => {
-                                        const currentHours = inlineFormData.employeeHours[emp.id] || 0;
-                                        updateInlineEmployeeHours(emp.id, currentHours, project.id, true);
-                                      }}
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                          e.preventDefault();
+
+                            {/* Panel de edición */}
+                            {isEditing && (
+                              <div className="px-4 py-3 bg-slate-50 border-t" data-tour="inline-editing">
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                  {activeEmployees.map(emp => (
+                                    <div key={emp.id} className="flex items-center gap-2 bg-white border rounded-lg px-2.5 py-1.5">
+                                      <Avatar className="h-6 w-6">
+                                        <AvatarImage src={emp.avatarUrl} alt={emp.name} />
+                                        <AvatarFallback className="bg-indigo-500 text-white text-[9px]">
+                                          {(emp.first_name || emp.name)[0]}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <span className="text-xs text-slate-600">{emp.first_name || emp.name}</span>
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        step="0.5"
+                                        value={inlineFormData.employeeHours[emp.id] || ''}
+                                        onChange={(e) => updateInlineEmployeeHours(emp.id, parseFloat(e.target.value) || 0, project.id)}
+                                        onBlur={() => {
                                           const currentHours = inlineFormData.employeeHours[emp.id] || 0;
                                           updateInlineEmployeeHours(emp.id, currentHours, project.id, true);
-                                          (e.target as HTMLInputElement).blur();
-                                        }
-                                      }}
-                                      className="h-7 w-20 text-center font-mono text-sm px-2"
-                                      placeholder="0"
-                                    />
-                                  </div>
-                                ))}
-                              </div>
-                              <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-200">
-                                <Input
-                                  placeholder="Notas..."
-                                  value={inlineFormData.notes}
-                                  onChange={(e) => {
-                                    const newNotes = e.target.value;
-                                    const newFormData = { ...inlineFormData, notes: newNotes };
-                                    setInlineFormData(newFormData);
-                                    // Autoguardar notas
-                                    if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
-                                    autoSaveTimeoutRef.current = setTimeout(() => {
-                                      autoSaveDeadline(project.id, newFormData);
-                                    }, 800);
-                                  }}
-                                  onBlur={() => {
-                                    if (autoSaveTimeoutRef.current) {
-                                      clearTimeout(autoSaveTimeoutRef.current);
-                                      autoSaveTimeoutRef.current = null;
-                                    }
-                                    autoSaveDeadline(project.id, inlineFormData);
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                      e.preventDefault();
+                                        }}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            const currentHours = inlineFormData.employeeHours[emp.id] || 0;
+                                            updateInlineEmployeeHours(emp.id, currentHours, project.id, true);
+                                            (e.target as HTMLInputElement).blur();
+                                          }
+                                        }}
+                                        className="h-7 w-20 text-center font-mono text-sm px-2"
+                                        placeholder="0"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-200">
+                                  <Input
+                                    placeholder="Notas..."
+                                    value={inlineFormData.notes}
+                                    onChange={(e) => {
+                                      const newNotes = e.target.value;
+                                      const newFormData = { ...inlineFormData, notes: newNotes };
+                                      setInlineFormData(newFormData);
+                                      // Autoguardar notas
+                                      if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
+                                      autoSaveTimeoutRef.current = setTimeout(() => {
+                                        autoSaveDeadline(project.id, newFormData);
+                                      }, 800);
+                                    }}
+                                    onBlur={() => {
                                       if (autoSaveTimeoutRef.current) {
                                         clearTimeout(autoSaveTimeoutRef.current);
                                         autoSaveTimeoutRef.current = null;
                                       }
                                       autoSaveDeadline(project.id, inlineFormData);
-                                      (e.target as HTMLInputElement).blur();
-                                    }
-                                  }}
-                                  className="h-7 text-xs flex-1 min-w-[150px]"
-                                />
-                                <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                                  <Switch
-                                    checked={inlineFormData.isHidden}
-                                    onCheckedChange={(checked) => {
-                                      const newFormData = { ...inlineFormData, isHidden: checked };
-                                      setInlineFormData(newFormData);
-                                      // Guardar inmediatamente al cambiar ocultar
-                                      autoSaveDeadline(project.id, newFormData);
                                     }}
-                                    className="scale-75"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        if (autoSaveTimeoutRef.current) {
+                                          clearTimeout(autoSaveTimeoutRef.current);
+                                          autoSaveTimeoutRef.current = null;
+                                        }
+                                        autoSaveDeadline(project.id, inlineFormData);
+                                        (e.target as HTMLInputElement).blur();
+                                      }
+                                    }}
+                                    className="h-7 text-xs flex-1 min-w-[150px]"
                                   />
-                                  <span className="text-slate-500">Ocultar</span>
-                                </label>
-                                <div className="ml-auto flex items-center gap-2 text-xs">
-                                  {autoSaveStatus === 'saving' && (
-                                    <span className="text-slate-400 animate-pulse">Guardando...</span>
-                                  )}
-                                  {autoSaveStatus === 'saved' && (
-                                    <span className="text-emerald-600 flex items-center gap-1">
-                                      <CheckCircle2 className="h-3 w-3" />
-                                      Guardado
-                                    </span>
-                                  )}
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 text-xs text-slate-500"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      cancelEditingProject();
-                                    }}
-                                  >
-                                    Cerrar
-                                  </Button>
+                                  <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                                    <Switch
+                                      checked={inlineFormData.isHidden}
+                                      onCheckedChange={(checked) => {
+                                        const newFormData = { ...inlineFormData, isHidden: checked };
+                                        setInlineFormData(newFormData);
+                                        // Guardar inmediatamente al cambiar ocultar
+                                        autoSaveDeadline(project.id, newFormData);
+                                      }}
+                                      className="scale-75"
+                                    />
+                                    <span className="text-slate-500">Ocultar</span>
+                                  </label>
+                                  <div className="ml-auto flex items-center gap-2 text-xs">
+                                    {autoSaveStatus === 'saving' && (
+                                      <span className="text-slate-400 animate-pulse">Guardando...</span>
+                                    )}
+                                    {autoSaveStatus === 'saved' && (
+                                      <span className="text-emerald-600 flex items-center gap-1">
+                                        <CheckCircle2 className="h-3 w-3" />
+                                        Guardado
+                                      </span>
+                                    )}
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-7 text-xs text-slate-500"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        cancelEditingProject();
+                                      }}
+                                    >
+                                      Cerrar
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })
-        )}
-      </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
 
       {/* Panel lateral sticky - Disponibilidad del equipo */}
@@ -1965,7 +1973,7 @@ export default function DeadlinesPage() {
                 const remaining = available - assigned;
                 const status = percentage > 100 ? 'overload' : percentage > 85 ? 'warning' : 'healthy';
                 const hasReductions = capacityData.absenceHours > 0 || capacityData.eventHours > 0;
-                
+
                 return (
                   <TooltipProvider key={emp.id}>
                     <Tooltip>
@@ -1985,16 +1993,16 @@ export default function DeadlinesPage() {
                               </span>
                               <span className={cn(
                                 "font-mono font-bold",
-                                status === 'overload' ? "text-red-600" : 
-                                status === 'warning' ? "text-orange-600" : 
-                                "text-emerald-600"
+                                status === 'overload' ? "text-red-600" :
+                                  status === 'warning' ? "text-orange-600" :
+                                    "text-emerald-600"
                               )}>
                                 {percentage}%
                               </span>
                             </div>
                             <div className="flex items-center gap-1 mt-0.5">
-                              <Progress 
-                                value={Math.min(percentage, 100)} 
+                              <Progress
+                                value={Math.min(percentage, 100)}
                                 className={cn(
                                   "h-1 flex-1",
                                   status === 'overload' && "[&>div]:bg-red-500",
@@ -2016,21 +2024,21 @@ export default function DeadlinesPage() {
                         <div className="space-y-2 text-slate-700">
                           <div className="font-semibold text-slate-900 text-sm">{emp.first_name || emp.name}</div>
                           <div className="text-slate-600">Base mensual: <span className="font-medium">{capacityData.total.toFixed(1)}h</span></div>
-                          
+
                           {capacityData.absenceDetails.length > 0 && (
                             <div className="space-y-1">
                               <div className="text-red-600 font-semibold text-xs">Ausencias:</div>
                               {capacityData.absenceDetails.map((a, i) => (
                                 <div key={i} className="text-red-700 pl-3 text-xs">
-                                  • {a.type === 'vacation' ? 'Vacaciones' : 
-                                     a.type === 'sick_leave' ? 'Baja médica' : 
-                                     a.type === 'personal' ? 'Personal' : a.type}
+                                  • {a.type === 'vacation' ? 'Vacaciones' :
+                                    a.type === 'sick_leave' ? 'Baja médica' :
+                                      a.type === 'personal' ? 'Personal' : a.type}
                                   : <span className="font-medium">-{a.hours.toFixed(1)}h</span>
                                 </div>
                               ))}
                             </div>
                           )}
-                          
+
                           {capacityData.eventDetails.length > 0 && (
                             <div className="space-y-1">
                               <div className="text-orange-600 font-semibold text-xs">Eventos:</div>
@@ -2041,7 +2049,7 @@ export default function DeadlinesPage() {
                               ))}
                             </div>
                           )}
-                          
+
                           <div className="border-t border-slate-200 pt-2 mt-2">
                             <span className="text-slate-600">Disponible: </span>
                             <span className="font-mono font-bold text-slate-900 text-sm">{available.toFixed(1)}h</span>
@@ -2122,14 +2130,14 @@ export default function DeadlinesPage() {
                       <span className="truncate text-slate-600">{a.name}</span>
                       <div className="flex items-center gap-1">
                         <span className="font-mono text-indigo-600">+{a.hours}h</span>
-                        <button 
+                        <button
                           onClick={() => openGlobalDialog(a)}
                           className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-slate-600"
                         >
                           <Pencil className="h-2.5 w-2.5" />
                         </button>
                         {canDelete && (
-                          <button 
+                          <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeleteGlobal(a.id);

@@ -41,7 +41,7 @@ const LazyErrorFallback = ({ error, retry }: { error: Error; retry: () => void }
 
 // Wrapper para lazy loading con manejo de errores
 // DEBE estar ANTES de su uso para evitar "Cannot access before initialization"
-const lazyWithRetry = (importFn: () => Promise<any>) => {
+const lazyWithRetry = (importFn: () => Promise<{ default: React.ComponentType<unknown> }>) => {
   return lazy(() =>
     importFn().catch((error) => {
       console.error('Error cargando módulo:', error);
@@ -86,7 +86,7 @@ const App = () => (
               <Routes>
                 {/* Ruta pública Landing */}
                 <Route path="/" element={<LandingPage />} />
-                
+
                 {/* Ruta pública Login */}
                 <Route path="/login" element={<Login />} />
 
@@ -115,7 +115,7 @@ const App = () => (
 
                 {/* 404 */}
                 <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>} />
-                
+
               </Routes>
             </BrowserRouter>
           </TooltipProvider>

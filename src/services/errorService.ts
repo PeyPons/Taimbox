@@ -20,7 +20,7 @@ export enum ErrorType {
 export interface AppError {
   type: ErrorType;
   message: string;
-  originalError?: Error | any;
+  originalError?: Error | unknown;
   context?: string;
   userMessage?: string;
   retryable?: boolean;
@@ -39,10 +39,16 @@ const USER_MESSAGES: Record<ErrorType, string> = {
   [ErrorType.UNKNOWN]: 'Ocurrió un error inesperado. Por favor, intenta de nuevo.',
 };
 
+interface ErrorLike {
+  message?: string;
+  code?: string;
+  status?: number;
+}
+
 /**
  * Detecta el tipo de error basado en el error original
  */
-function detectErrorType(error: any): ErrorType {
+function detectErrorType(error: ErrorLike): ErrorType {
   if (!error) return ErrorType.UNKNOWN;
 
   // Errores de red
@@ -89,7 +95,7 @@ export class ErrorService {
    * @param options - Opciones adicionales
    */
   static handle(
-    error: Error | any,
+    error: Error | ErrorLike,
     context: string,
     options?: {
       showToast?: boolean;
@@ -131,7 +137,7 @@ export class ErrorService {
   /**
    * Maneja errores de forma silenciosa (solo logging, sin toast)
    */
-  static handleSilently(error: Error | any, context: string): AppError {
+  static handleSilently(error: Error | ErrorLike, context: string): AppError {
     return this.handle(error, context, { showToast: false });
   }
 

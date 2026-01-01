@@ -14,8 +14,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { 
-  RefreshCw, Clock, Search, Settings, Layers, 
+import {
+  RefreshCw, Clock, Search, Settings, Layers,
   TrendingUp, TrendingDown, Scissors, Plus, Trash2,
   AlertTriangle, CheckCircle2, Calendar, Target,
   ArrowUpRight, ArrowDownRight, Eye, EyeOff, X
@@ -37,12 +37,16 @@ interface CampaignData {
   status: string;
   cost: number;
   conversions_value?: number;
-  conversions?: number; 
-  daily_budget?: number; 
+  conversions?: number;
+  daily_budget?: number;
   clicks?: number;
   impressions?: number;
-  original_client_name?: string; 
+  original_client_name?: string;
   original_client_id?: string;
+  client_id: string;
+  client_name: string;
+  date?: string;
+  created_at?: string;
 }
 
 interface SegmentationRule {
@@ -72,7 +76,7 @@ interface ClientPacing {
   groupName?: string;
   isManualGroupBudget?: boolean;
   isSalesAccount: boolean;
-  realIdsList: {id: string, name: string}[]; 
+  realIdsList: { id: string, name: string }[];
   globalRoas: number;
 }
 
@@ -97,7 +101,7 @@ const getStatusConfig = (status: string) => {
 
 // Componente de stat card para el header
 interface StatCardProps {
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string;
   subValue?: string;
@@ -126,8 +130,8 @@ const StatCard = memo(function StatCard({ icon: Icon, label, value, subValue, co
 });
 
 export default function AdsPage() {
-  const [rawData, setRawData] = useState<any[]>([]);
-  const [clientSettings, setClientSettings] = useState<Record<string, any>>({});
+  const [rawData, setRawData] = useState<CampaignData[]>([]);
+  const [clientSettings, setClientSettings] = useState<Record<string, { budget: number; group_name: string; is_hidden: boolean; is_sales_account: boolean }>>({});
   const [loading, setLoading] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [segmentationRules, setSegmentationRules] = useState<SegmentationRule[]>([]);
@@ -138,8 +142,8 @@ export default function AdsPage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncLogs, setSyncLogs] = useState<string[]>([]);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'running' | 'completed' | 'error'>('idle');
-  const [syncProgress, setSyncProgress] = useState(0); 
-  const [editingClient, setEditingClient] = useState<{id: string, name: string, group: string, hidden: boolean, isSales: boolean} | null>(null);
+  const [syncProgress, setSyncProgress] = useState(0);
+  const [editingClient, setEditingClient] = useState<{ id: string, name: string, group: string, hidden: boolean, isSales: boolean } | null>(null);
   const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
 
   // Formulario nueva regla
@@ -177,14 +181,14 @@ export default function AdsPage() {
         supabase.from('segmentation_rules').select('*').eq('platform', 'google')
       ]);
 
-      const settingsMap: Record<string, any> = {};
-      settingsRes.data?.forEach((s: any) => { 
+      const settingsMap: Record<string, { budget: number; group_name: string; is_hidden: boolean; is_sales_account: boolean }> = {};
+      settingsRes.data?.forEach((s: { client_id: string; budget_limit?: number; group_name?: string; is_hidden?: boolean; is_sales_account?: boolean }) => {
         settingsMap[s.client_id] = {
           budget: Number(s.budget_limit) || 0,
           group_name: s.group_name || '',
           is_hidden: s.is_hidden || false,
-          is_sales_account: s.is_sales_account !== false 
-        }; 
+          is_sales_account: s.is_sales_account !== false
+        };
       });
 
       setRawData(adsRes.data || []);
@@ -194,7 +198,7 @@ export default function AdsPage() {
       if (logsRes.data) {
         setLastSyncTime(new Date(logsRes.data.created_at));
       } else if (adsRes.data && adsRes.data.length > 0) {
-        const dates = adsRes.data.map((d: any) => new Date(d.created_at || d.date).getTime());
+        const dates = adsRes.data.map((d: CampaignData & { created_at?: string; date?: string }) => new Date(d.created_at || d.date || '').getTime());
         setLastSyncTime(new Date(Math.max(...dates)));
       }
     } catch (error) {
@@ -227,7 +231,7 @@ export default function AdsPage() {
             setSyncStatus('completed');
             setSyncProgress(100);
             toast.success('Sincronización completada');
-            fetchData(); 
+            fetchData();
             setTimeout(() => { supabase.removeChannel(channel); setIsSyncing(false); }, 2000);
           } else if (newRow.status === 'error') {
             setSyncStatus('error');
@@ -241,8 +245,8 @@ export default function AdsPage() {
     }
   };
 
-  useEffect(() => { 
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; 
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [syncLogs, isSyncing]);
 
   const onAddRule = async (data: RuleFormValues) => {
@@ -278,15 +282,15 @@ export default function AdsPage() {
 
   const handleSaveBudget = async (clientId: string, amount: string) => {
     const numAmount = parseFloat(amount);
-    
+
     setClientSettings(prev => ({
       ...prev,
       [clientId]: { ...prev[clientId], budget: isNaN(numAmount) ? 0 : numAmount }
     }));
 
-    const { error } = await supabase.from('client_settings').upsert({ 
-      client_id: clientId, 
-      budget_limit: isNaN(numAmount) ? 0 : numAmount 
+    const { error } = await supabase.from('client_settings').upsert({
+      client_id: clientId,
+      budget_limit: isNaN(numAmount) ? 0 : numAmount
     }, { onConflict: 'client_id' });
 
     if (error) toast.error("Error guardando presupuesto");
@@ -302,39 +306,39 @@ export default function AdsPage() {
       is_sales_account: editingClient.isSales
     }, { onConflict: 'client_id' });
     setEditingClient(null);
-    fetchData(); 
+    fetchData();
     toast.success('Configuración guardada');
   };
 
   // Lógica principal de cálculo
   const reportData = useMemo(() => {
     if (!rawData.length) return [];
-    
+
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
     const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
     const monthEnd = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
 
-    const stats = new Map<string, { 
+    const stats = new Map<string, {
       name: string, spent: number, budget: number, total_conversions_val: number,
       is_group: boolean, isHidden: boolean, isSalesAccount: boolean,
-      realIds: string[], realIdsNames: {id: string, name: string}[],
+      realIds: string[], realIdsNames: { id: string, name: string }[],
       campaigns: CampaignData[], isManualGroupBudget: boolean, autoDailyBudgetSum: number
     }>();
 
-    const uniqueAccounts = Array.from(new Set(rawData.map(r => JSON.stringify({id: r.client_id, name: r.client_name}))))
+    const uniqueAccounts = Array.from(new Set(rawData.map(r => JSON.stringify({ id: r.client_id, name: r.client_name }))))
       .map(s => JSON.parse(s));
 
     uniqueAccounts.forEach(acc => {
       const settings = clientSettings[acc.id] || { budget: 0, group_name: '', is_hidden: false, is_sales_account: true };
       const groupKey = settings.group_name?.trim() ? `GROUP-${settings.group_name}` : acc.id;
-      
+
       if (!settings.group_name?.trim() && !stats.has(groupKey)) {
         stats.set(groupKey, {
           name: acc.name || acc.id,
           spent: 0, budget: settings.budget || 0, total_conversions_val: 0,
           is_group: false, isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false,
-          realIds: [acc.id], realIdsNames: [{id: acc.id, name: acc.name}], 
+          realIds: [acc.id], realIdsNames: [{ id: acc.id, name: acc.name }],
           campaigns: [], isManualGroupBudget: false, autoDailyBudgetSum: 0
         });
       }
@@ -357,7 +361,7 @@ export default function AdsPage() {
       if (rulesForAccount.length > 0) {
         const match = rulesForAccount.find(r => row.campaign_name.toLowerCase().includes(r.keyword.toLowerCase()));
         if (match) {
-          finalId = `${row.client_id}_${match.keyword.toUpperCase()}`; 
+          finalId = `${row.client_id}_${match.keyword.toUpperCase()}`;
           finalName = match.virtual_name;
         }
       }
@@ -370,28 +374,28 @@ export default function AdsPage() {
       const isIndividualManual = !groupKey.startsWith('GROUP-') && settings.budget > 0;
 
       if (!stats.has(groupKey)) {
-        stats.set(groupKey, { 
+        stats.set(groupKey, {
           name: displayName, spent: 0, budget: 0, total_conversions_val: 0,
           is_group: groupKey.startsWith('GROUP-'), isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false,
           realIds: [], realIdsNames: [], campaigns: [], isManualGroupBudget: isGroupManual, autoDailyBudgetSum: 0
         });
       }
-      
+
       const entry = stats.get(groupKey)!;
       const rowCost = Number(row.cost) || 0;
       entry.spent += rowCost;
       totalProcessedCost += rowCost;
       entry.total_conversions_val += (row.conversions_value || 0);
-      
+
       if (row.status === 'ENABLED' && row.daily_budget > 0) entry.autoDailyBudgetSum += row.daily_budget;
 
       if (!entry.realIds.includes(finalId)) {
         entry.realIds.push(finalId);
-        entry.realIdsNames.push({id: finalId, name: finalName});
-        if (!entry.is_group && isIndividualManual) entry.budget = settings.budget; 
+        entry.realIdsNames.push({ id: finalId, name: finalName });
+        if (!entry.is_group && isIndividualManual) entry.budget = settings.budget;
       }
 
-      if (row.cost > 0) { 
+      if (row.cost > 0) {
         entry.campaigns.push({
           ...row,
           original_client_name: finalName,
@@ -401,16 +405,16 @@ export default function AdsPage() {
     });
 
     const report: ClientPacing[] = [];
-    
+
     stats.forEach((value, key) => {
       let finalBudget = 0;
       if (value.is_group) {
-        const groupSettings = clientSettings[key.replace('GROUP-', '')] || clientSettings[key]; 
+        const groupSettings = clientSettings[key.replace('GROUP-', '')] || clientSettings[key];
         if (groupSettings?.budget > 0) finalBudget = groupSettings.budget;
         else finalBudget = value.autoDailyBudgetSum * 30.4;
       } else {
-        if (value.budget > 0) finalBudget = value.budget; 
-        else finalBudget = value.autoDailyBudgetSum * 30.4; 
+        if (value.budget > 0) finalBudget = value.budget;
+        else finalBudget = value.autoDailyBudgetSum * 30.4;
       }
 
       const spent = value.spent;
@@ -429,14 +433,14 @@ export default function AdsPage() {
         else if (progress < 50 && currentDay > 20) status = 'under';
       }
 
-      report.push({ 
+      report.push({
         client_id: key, client_name: value.name, is_group: value.is_group,
-        budget: finalBudget, spent, progress, forecast, recommendedDaily, avgDailySpend, 
+        budget: finalBudget, spent, progress, forecast, recommendedDaily, avgDailySpend,
         currentDailyBudget, status, remainingBudget, total_conversions_val: value.total_conversions_val,
         isHidden: value.isHidden, isSalesAccount: value.isSalesAccount,
         groupName: value.is_group ? value.name : undefined,
         isManualGroupBudget: value.isManualGroupBudget, realIdsList: value.realIdsNames,
-        campaigns: value.campaigns.sort((a,b) => b.cost - a.cost), globalRoas
+        campaigns: value.campaigns.sort((a, b) => b.cost - a.cost), globalRoas
       });
     });
 
@@ -493,13 +497,13 @@ export default function AdsPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="flex gap-2 w-full md:w-auto">
             <Button variant="outline" onClick={() => setIsSplitModalOpen(true)} className="flex-1 md:flex-none">
               <Scissors className="w-4 h-4 mr-2" /> Dividir
             </Button>
             <Button onClick={handleStartSync} disabled={isSyncing} className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700">
-              <RefreshCw className={cn("w-4 h-4 mr-2", isSyncing && "animate-spin")} /> 
+              <RefreshCw className={cn("w-4 h-4 mr-2", isSyncing && "animate-spin")} />
               Sincronizar
             </Button>
           </div>
@@ -507,37 +511,37 @@ export default function AdsPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-          <StatCard 
-            icon={Target} 
-            label="Inversión" 
+          <StatCard
+            icon={Target}
+            label="Inversión"
             value={formatCurrency(globalStats.totalSpent)}
             subValue={`de ${formatCurrency(globalStats.totalBudget)}`}
             color="blue"
           />
-          <StatCard 
-            icon={TrendingUp} 
-            label="Valor conversiones" 
+          <StatCard
+            icon={TrendingUp}
+            label="Valor conversiones"
             value={formatCurrency(globalStats.totalRevenue)}
             subValue={`ROAS ${globalStats.globalRoas.toFixed(2)}x`}
             color="emerald"
           />
-          <StatCard 
-            icon={Calendar} 
-            label="Días restantes" 
+          <StatCard
+            icon={Calendar}
+            label="Días restantes"
             value={daysRemaining.toString()}
             subValue={`${Math.round((currentDay / daysInMonth) * 100)}% del mes`}
             color="slate"
           />
-          <StatCard 
-            icon={ArrowDownRight} 
-            label="Diario recomendado" 
+          <StatCard
+            icon={ArrowDownRight}
+            label="Diario recomendado"
             value={formatCurrency(globalStats.totalRecommendedDaily)}
             subValue="Para no pasarte"
             color={globalStats.totalRecommendedDaily < globalStats.totalCurrentDaily ? 'amber' : 'emerald'}
           />
-          <StatCard 
-            icon={AlertTriangle} 
-            label="En riesgo" 
+          <StatCard
+            icon={AlertTriangle}
+            label="En riesgo"
             value={globalStats.atRisk.toString()}
             subValue="cuentas"
             color={globalStats.atRisk > 0 ? 'red' : 'slate'}
@@ -548,11 +552,11 @@ export default function AdsPage() {
         <div className="flex flex-col sm:flex-row gap-3 items-center bg-white p-3 rounded-xl border shadow-sm">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input 
-              placeholder="Buscar cuenta o campaña..." 
-              value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)} 
-              className="pl-10 bg-slate-50 border-slate-200" 
+            <Input
+              placeholder="Buscar cuenta o campaña..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-slate-50 border-slate-200"
             />
             {searchTerm && (
               <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setSearchTerm('')}>
@@ -580,11 +584,11 @@ export default function AdsPage() {
             const statusConfig = getStatusConfig(client.status);
             const dailyDiff = client.currentDailyBudget - client.recommendedDaily;
             const isOverspending = dailyDiff > 0 && client.status !== 'ok';
-            
+
             return (
-              <AccordionItem 
-                key={client.client_id} 
-                value={client.client_id} 
+              <AccordionItem
+                key={client.client_id}
+                value={client.client_id}
                 className={cn(
                   "bg-white border rounded-xl shadow-sm overflow-hidden",
                   client.isHidden && "opacity-60 border-dashed"
@@ -629,13 +633,13 @@ export default function AdsPage() {
                           <span>{client.progress.toFixed(0)}% gastado</span>
                           <span>Proy: {formatCurrency(client.forecast)}</span>
                         </div>
-                        <Progress 
-                          value={Math.min(client.progress, 100)} 
-                          className={cn("h-2", 
+                        <Progress
+                          value={Math.min(client.progress, 100)}
+                          className={cn("h-2",
                             client.status === 'over' && "[&>div]:bg-red-500",
                             client.status === 'risk' && "[&>div]:bg-amber-500",
                             client.status === 'ok' && "[&>div]:bg-blue-500"
-                          )} 
+                          )}
                         />
                       </div>
                     )}
@@ -654,18 +658,18 @@ export default function AdsPage() {
                       </div>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-8 w-8"
-                            onClick={(e) => { 
-                              e.stopPropagation(); 
+                            onClick={(e) => {
+                              e.stopPropagation();
                               if (!client.is_group) {
                                 setEditingClient({
-                                  id: client.client_id, 
-                                  name: client.client_name, 
-                                  group: clientSettings[client.client_id]?.group_name || '', 
-                                  hidden: clientSettings[client.client_id]?.is_hidden || false, 
+                                  id: client.client_id,
+                                  name: client.client_name,
+                                  group: clientSettings[client.client_id]?.group_name || '',
+                                  hidden: clientSettings[client.client_id]?.is_hidden || false,
                                   isSales: clientSettings[client.client_id]?.is_sales_account !== false
                                 });
                               } else {
@@ -681,7 +685,7 @@ export default function AdsPage() {
                     </div>
                   </div>
                 </AccordionTrigger>
-                
+
                 <AccordionContent className="border-t bg-slate-50/50">
                   <div className="p-4 space-y-6">
                     {/* Cuentas vinculadas (grupos) */}
@@ -694,8 +698,8 @@ export default function AdsPage() {
                           {client.realIdsList.map(sub => (
                             <div key={sub.id} className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border text-sm">
                               <span className="font-medium text-slate-700">{formatProjectName(sub.name)}</span>
-                              <button 
-                                onClick={() => setEditingClient({id: sub.id, name: sub.name, group: client.groupName || '', hidden: false, isSales: true})} 
+                              <button
+                                onClick={() => setEditingClient({ id: sub.id, name: sub.name, group: client.groupName || '', hidden: false, isSales: true })}
                                 className="text-slate-400 hover:text-blue-500"
                               >
                                 <Settings className="w-3.5 h-3.5" />
@@ -722,17 +726,17 @@ export default function AdsPage() {
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-slate-400">€</span>
-                            <Input 
+                            <Input
                               key={`${client.client_id}-${client.budget}`}
-                              type="number" 
-                              defaultValue={clientSettings[client.client_id]?.budget > 0 ? clientSettings[client.client_id]?.budget : ''} 
-                              onBlur={(e) => handleSaveBudget(client.client_id, e.target.value)} 
-                              className="h-8 w-28 text-right" 
-                              placeholder={client.budget.toFixed(0)} 
+                              type="number"
+                              defaultValue={clientSettings[client.client_id]?.budget > 0 ? clientSettings[client.client_id]?.budget : ''}
+                              onBlur={(e) => handleSaveBudget(client.client_id, e.target.value)}
+                              className="h-8 w-28 text-right"
+                              placeholder={client.budget.toFixed(0)}
                             />
                           </div>
                         </div>
-                        
+
                         <div className="space-y-2">
                           <div className="flex justify-between text-xs text-slate-500">
                             <span>Consumo ({client.progress.toFixed(1)}%)</span>
@@ -740,13 +744,13 @@ export default function AdsPage() {
                               Disponible: {formatCurrency(client.remainingBudget)}
                             </span>
                           </div>
-                          <Progress 
-                            value={Math.min(client.progress, 100)} 
-                            className={cn("h-2.5", 
+                          <Progress
+                            value={Math.min(client.progress, 100)}
+                            className={cn("h-2.5",
                               client.status === 'over' && "[&>div]:bg-red-500",
                               client.status === 'risk' && "[&>div]:bg-amber-500",
                               client.status === 'ok' && "[&>div]:bg-blue-500"
-                            )} 
+                            )}
                           />
                         </div>
 
@@ -899,9 +903,9 @@ export default function AdsPage() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Nombre del grupo (Holding)</Label>
-              <Input 
-                value={editingClient?.group || ''} 
-                onChange={(e) => setEditingClient(prev => prev ? {...prev, group: e.target.value} : null)} 
+              <Input
+                value={editingClient?.group || ''}
+                onChange={(e) => setEditingClient(prev => prev ? { ...prev, group: e.target.value } : null)}
                 placeholder="Ej: Grupo Empresarial ABC"
               />
               <p className="text-xs text-slate-500">
@@ -913,9 +917,9 @@ export default function AdsPage() {
                 <Label>Cuenta de ventas (ROAS)</Label>
                 <p className="text-xs text-slate-500">Mostrar métricas de conversión</p>
               </div>
-              <Switch 
-                checked={editingClient?.isSales !== false} 
-                onCheckedChange={(c) => setEditingClient(prev => prev ? {...prev, isSales: c} : null)} 
+              <Switch
+                checked={editingClient?.isSales !== false}
+                onCheckedChange={(c) => setEditingClient(prev => prev ? { ...prev, isSales: c } : null)}
               />
             </div>
             <div className="flex justify-between items-center py-3 border-t">
@@ -923,9 +927,9 @@ export default function AdsPage() {
                 <Label>Ocultar cuenta</Label>
                 <p className="text-xs text-slate-500">No aparecerá en la lista principal</p>
               </div>
-              <Switch 
-                checked={editingClient?.hidden || false} 
-                onCheckedChange={(c) => setEditingClient(prev => prev ? {...prev, hidden: c} : null)} 
+              <Switch
+                checked={editingClient?.hidden || false}
+                onCheckedChange={(c) => setEditingClient(prev => prev ? { ...prev, hidden: c } : null)}
               />
             </div>
           </div>
@@ -1026,10 +1030,10 @@ export default function AdsPage() {
                         <span className="text-slate-300">→</span>
                         <span className="font-bold text-blue-600">{rule.virtual_name}</span>
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => handleDeleteRule(rule.id)} 
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteRule(rule.id)}
                         className="text-red-500 hover:bg-red-50 h-8 w-8"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -1044,7 +1048,7 @@ export default function AdsPage() {
       </Dialog>
 
       {/* Modal Sincronización */}
-      <Dialog open={isSyncing} onOpenChange={(open) => { if(syncStatus !== 'running') setIsSyncing(open); }}>
+      <Dialog open={isSyncing} onOpenChange={(open) => { if (syncStatus !== 'running') setIsSyncing(open); }}>
         <DialogContent className="sm:max-w-md bg-slate-950 text-slate-100 border-slate-800">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-white">

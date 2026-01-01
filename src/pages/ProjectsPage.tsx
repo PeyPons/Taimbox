@@ -17,8 +17,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { format, addMonths, subMonths, isSameMonth, parseISO, getDaysInMonth, getDate } from 'date-fns';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
-import { 
-  FolderKanban, ChevronLeft, ChevronRight, Briefcase, Pencil, Search, 
+import {
+  FolderKanban, ChevronLeft, ChevronRight, Briefcase, Pencil, Search,
   ChevronsUpDown, User, Target, Plus, Trash2, ChevronDown,
   AlertTriangle, AlertCircle, Clock, TrendingUp, TrendingDown,
   CheckCircle2, XCircle, Calendar, Zap, Filter, LayoutGrid, List,
@@ -34,7 +34,7 @@ type FilterType = 'all' | 'needs-planning' | 'behind-schedule' | 'over-budget' |
 
 export default function ProjectsPage() {
   const { projects, clients, allocations, employees, deleteProject, updateProject, addProject } = useApp();
-  
+
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('all');
@@ -47,9 +47,9 @@ export default function ProjectsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-      name: '', clientId: '', budgetHours: '', minimumHours: '', monthlyFee: '',
-      status: 'active' as 'active' | 'archived' | 'completed',
-      okrs: [] as OKR[]
+    name: '', clientId: '', budgetHours: '', minimumHours: '', monthlyFee: '',
+    status: 'active' as 'active' | 'archived' | 'completed',
+    okrs: [] as OKR[]
   });
   const [newOkrTitle, setNewOkrTitle] = useState('');
 
@@ -74,8 +74,8 @@ export default function ProjectsPage() {
       .filter(p => p.status === 'active')
       .map(project => {
         const client = clients.find(c => c.id === project.clientId);
-        let monthTasks = allocations.filter(a => 
-          a.projectId === project.id && 
+        const monthTasks = allocations.filter(a =>
+          a.projectId === project.id &&
           isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)
         );
 
@@ -89,11 +89,11 @@ export default function ProjectsPage() {
 
         const budget = project.budgetHours || 0;
         const minimum = project.minimumHours || 0;
-        
+
         // Cálculos de estado
         const planningPct = budget > 0 ? (totalAssigned / budget) * 100 : 0;
         const executionPct = totalAssigned > 0 ? (hoursComputed / totalAssigned) * 100 : 0;
-        
+
         // Detección de problemas
         const needsPlanning = budget > 0 && totalAssigned < budget * 0.5; // Menos del 50% planificado
         const behindSchedule = monthProgress > 30 && executionPct < (monthProgress - 20); // 20% por debajo del ritmo
@@ -196,106 +196,106 @@ export default function ProjectsPage() {
 
   // Dialog handlers
   const openNewProject = () => {
-      setIsCreating(true);
-      setEditingId(null);
-      setFormData({ name: '', clientId: '', budgetHours: '0', minimumHours: '0', monthlyFee: '0', status: 'active', okrs: [] });
-      setIsDialogOpen(true);
+    setIsCreating(true);
+    setEditingId(null);
+    setFormData({ name: '', clientId: '', budgetHours: '0', minimumHours: '0', monthlyFee: '0', status: 'active', okrs: [] });
+    setIsDialogOpen(true);
   };
 
   const openEditProject = (project: Project) => {
-      setIsCreating(false);
-      setEditingId(project.id);
-      setFormData({
-          name: project.name, clientId: project.clientId,
-          budgetHours: project.budgetHours?.toString() || '0', minimumHours: project.minimumHours?.toString() || '0',
-          monthlyFee: project.monthlyFee?.toString() || '0', status: project.status,
-          okrs: project.okrs || []
-      });
-      setIsDialogOpen(true);
+    setIsCreating(false);
+    setEditingId(project.id);
+    setFormData({
+      name: project.name, clientId: project.clientId,
+      budgetHours: project.budgetHours?.toString() || '0', minimumHours: project.minimumHours?.toString() || '0',
+      monthlyFee: project.monthlyFee?.toString() || '0', status: project.status,
+      okrs: project.okrs || []
+    });
+    setIsDialogOpen(true);
   };
 
   const handleSave = async () => {
-      // Validación mejorada
-      if (!formData.name || formData.name.trim() === '') {
-          toast.error("El nombre del proyecto es obligatorio");
-          return;
-      }
+    // Validación mejorada
+    if (!formData.name || formData.name.trim() === '') {
+      toast.error("El nombre del proyecto es obligatorio");
+      return;
+    }
 
-      if (!formData.clientId || formData.clientId === '') {
-          toast.error("Debes seleccionar un cliente");
-          return;
-      }
+    if (!formData.clientId || formData.clientId === '') {
+      toast.error("Debes seleccionar un cliente");
+      return;
+    }
 
-      const budgetHours = parseFloat(formData.budgetHours);
-      if (isNaN(budgetHours) || budgetHours < 0) {
-          toast.error("Las horas asignadas deben ser un número válido mayor o igual a 0");
-          return;
-      }
+    const budgetHours = parseFloat(formData.budgetHours);
+    if (isNaN(budgetHours) || budgetHours < 0) {
+      toast.error("Las horas asignadas deben ser un número válido mayor o igual a 0");
+      return;
+    }
 
-      const minimumHours = parseFloat(formData.minimumHours);
-      if (isNaN(minimumHours) || minimumHours < 0) {
-          toast.error("Las horas mínimas deben ser un número válido mayor o igual a 0");
-          return;
-      }
+    const minimumHours = parseFloat(formData.minimumHours);
+    if (isNaN(minimumHours) || minimumHours < 0) {
+      toast.error("Las horas mínimas deben ser un número válido mayor o igual a 0");
+      return;
+    }
 
-      const monthlyFee = parseFloat(formData.monthlyFee);
-      if (isNaN(monthlyFee) || monthlyFee < 0) {
-          toast.error("El fee mensual debe ser un número válido mayor o igual a 0");
-          return;
-      }
+    const monthlyFee = parseFloat(formData.monthlyFee);
+    if (isNaN(monthlyFee) || monthlyFee < 0) {
+      toast.error("El fee mensual debe ser un número válido mayor o igual a 0");
+      return;
+    }
 
-      try {
-          if (isCreating) {
-              await addProject({
-                  name: formData.name.trim(),
-                  clientId: formData.clientId,
-                  budgetHours: budgetHours,
-                  minimumHours: minimumHours,
-                  monthlyFee: monthlyFee,
-                  status: formData.status,
-                  okrs: formData.okrs
-              });
-              toast.success("Proyecto creado correctamente");
-          } else if (editingId) {
-              const existingProject = projects.find(p => p.id === editingId);
-              if (existingProject) {
-                  await updateProject({
-                      ...existingProject,
-                      name: formData.name.trim(),
-                      clientId: formData.clientId,
-                      budgetHours: budgetHours,
-                      minimumHours: minimumHours,
-                      monthlyFee: monthlyFee,
-                      status: formData.status,
-                      okrs: formData.okrs
-                  });
-                  toast.success("Proyecto actualizado correctamente");
-              } else {
-                  toast.error("No se encontró el proyecto a editar");
-                  return;
-              }
-          }
-          setIsDialogOpen(false);
-      } catch (error: any) {
-          console.error("Error guardando proyecto:", error);
-          const errorMessage = error?.message || error?.error?.message || "Error al guardar el proyecto";
-          toast.error(errorMessage);
+    try {
+      if (isCreating) {
+        await addProject({
+          name: formData.name.trim(),
+          clientId: formData.clientId,
+          budgetHours: budgetHours,
+          minimumHours: minimumHours,
+          monthlyFee: monthlyFee,
+          status: formData.status,
+          okrs: formData.okrs
+        });
+        toast.success("Proyecto creado correctamente");
+      } else if (editingId) {
+        const existingProject = projects.find(p => p.id === editingId);
+        if (existingProject) {
+          await updateProject({
+            ...existingProject,
+            name: formData.name.trim(),
+            clientId: formData.clientId,
+            budgetHours: budgetHours,
+            minimumHours: minimumHours,
+            monthlyFee: monthlyFee,
+            status: formData.status,
+            okrs: formData.okrs
+          });
+          toast.success("Proyecto actualizado correctamente");
+        } else {
+          toast.error("No se encontró el proyecto a editar");
+          return;
+        }
       }
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error("Error guardando proyecto:", error);
+      const errorMessage = (error as { message?: string })?.message || (error as { error?: { message?: string } })?.error?.message || "Error al guardar el proyecto";
+      toast.error(errorMessage);
+    }
   };
 
   const handleDelete = async () => {
-      if (!editingId) return;
-      if (confirm("¿Estás seguro de eliminar este proyecto? Se borrarán sus asignaciones.")) {
-          try {
-              await deleteProject(editingId);
-              toast.success("Proyecto eliminado correctamente");
-              setIsDialogOpen(false);
-          } catch (e: any) {
-              console.error("Error eliminando proyecto:", e);
-              const errorMessage = e?.message || e?.error?.message || "No se pudo eliminar el proyecto";
-              toast.error(errorMessage);
-          }
+    if (!editingId) return;
+    if (confirm("¿Estás seguro de eliminar este proyecto? Se borrarán sus asignaciones.")) {
+      try {
+        await deleteProject(editingId);
+        toast.success("Proyecto eliminado correctamente");
+        setIsDialogOpen(false);
+      } catch (e) {
+        console.error("Error eliminando proyecto:", e);
+        const errorMessage = (e as { message?: string })?.message || (e as { error?: { message?: string } })?.error?.message || "No se pudo eliminar el proyecto";
+        toast.error(errorMessage);
       }
+    }
   };
 
   const addOkrToForm = () => { if (!newOkrTitle.trim()) return; setFormData({ ...formData, okrs: [...formData.okrs, { id: crypto.randomUUID(), title: newOkrTitle, progress: 0 }] }); setNewOkrTitle(''); };
@@ -306,7 +306,7 @@ export default function ProjectsPage() {
 
   return (
     <div className="flex flex-col h-full space-y-6 p-6 md:p-8 max-w-7xl mx-auto w-full">
-      
+
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -434,11 +434,11 @@ export default function ProjectsPage() {
         {/* Búsqueda */}
         <div className="relative w-full xl:w-64 shrink-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-          <Input 
-            placeholder="Buscar proyecto..." 
-            className="pl-10 bg-slate-50 border-slate-200" 
-            value={searchTerm} 
-            onChange={(e) => setSearchTerm(e.target.value)} 
+          <Input
+            placeholder="Buscar proyecto..."
+            className="pl-10 bg-slate-50 border-slate-200"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
@@ -469,8 +469,8 @@ export default function ProjectsPage() {
                   onClick={() => setActiveFilter('no-activity')}
                   className={cn(
                     "h-8 text-xs gap-1.5",
-                    activeFilter === 'no-activity' 
-                      ? "bg-slate-700" 
+                    activeFilter === 'no-activity'
+                      ? "bg-slate-700"
                       : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                   )}
                 >
@@ -498,8 +498,8 @@ export default function ProjectsPage() {
                   onClick={() => setActiveFilter('needs-planning')}
                   className={cn(
                     "h-8 text-xs gap-1.5",
-                    activeFilter === 'needs-planning' 
-                      ? "bg-amber-600 hover:bg-amber-700" 
+                    activeFilter === 'needs-planning'
+                      ? "bg-amber-600 hover:bg-amber-700"
                       : "bg-white border-amber-200 text-amber-700 hover:bg-amber-50"
                   )}
                 >
@@ -530,8 +530,8 @@ export default function ProjectsPage() {
                   onClick={() => setActiveFilter('behind-schedule')}
                   className={cn(
                     "h-8 text-xs gap-1.5",
-                    activeFilter === 'behind-schedule' 
-                      ? "bg-orange-600 hover:bg-orange-700" 
+                    activeFilter === 'behind-schedule'
+                      ? "bg-orange-600 hover:bg-orange-700"
                       : "bg-white border-orange-200 text-orange-700 hover:bg-orange-50"
                   )}
                 >
@@ -563,8 +563,8 @@ export default function ProjectsPage() {
                   onClick={() => setActiveFilter('over-budget')}
                   className={cn(
                     "h-8 text-xs gap-1.5",
-                    activeFilter === 'over-budget' 
-                      ? "bg-red-600 hover:bg-red-700" 
+                    activeFilter === 'over-budget'
+                      ? "bg-red-600 hover:bg-red-700"
                       : "bg-white border-red-200 text-red-700 hover:bg-red-50"
                   )}
                 >
@@ -593,7 +593,7 @@ export default function ProjectsPage() {
           <PopoverTrigger asChild>
             <Button variant="outline" role="combobox" className="w-full xl:w-[220px] justify-between bg-white shrink-0">
               <span className="flex items-center gap-2 truncate">
-                <User className="h-3.5 w-3.5 text-slate-400 shrink-0" /> 
+                <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                 <span className="truncate">{getSelectedEmployeeName()}</span>
               </span>
               <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50 shrink-0" />
@@ -648,11 +648,11 @@ export default function ProjectsPage() {
         ) : (
           filteredProjects.map((data) => {
             const isExpanded = expandedProjects.has(data.project.id);
-            
+
             return (
-              <Collapsible 
-                key={data.project.id} 
-                open={isExpanded} 
+              <Collapsible
+                key={data.project.id}
+                open={isExpanded}
                 onOpenChange={() => toggleProject(data.project.id)}
               >
                 <Card className={cn(
@@ -674,7 +674,7 @@ export default function ProjectsPage() {
                           <h3 className="font-semibold text-slate-900 truncate">
                             {formatProjectName(data.project.name)}
                           </h3>
-                          
+
                           {/* Badges de estado con tooltips */}
                           <TooltipProvider>
                             {data.noActivity && (
@@ -728,18 +728,18 @@ export default function ProjectsPage() {
                             )}
                           </TooltipProvider>
                         </div>
-                        
+
                         <div className="flex items-center gap-3 mt-1.5">
                           <span className="text-xs text-slate-500 shrink-0">
                             {data.client?.name || 'Sin cliente'}
                           </span>
-                          
+
                           {/* Mini barra de progreso inline */}
                           {data.budget > 0 && (
                             <div className="flex items-center gap-2 flex-1 max-w-[200px]">
                               <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
                                 {/* Barra de ejecución (verde) */}
-                                <div 
+                                <div
                                   className="h-full bg-emerald-500 rounded-full"
                                   style={{ width: `${Math.min(100, (data.hoursComputed / data.budget) * 100)}%` }}
                                 />
@@ -761,8 +761,8 @@ export default function ProjectsPage() {
                               <div className="text-center min-w-[80px] cursor-help">
                                 <p className={cn(
                                   "font-mono font-bold",
-                                  data.overBudget ? "text-red-600" : 
-                                  data.needsPlanning ? "text-amber-600" : "text-slate-700"
+                                  data.overBudget ? "text-red-600" :
+                                    data.needsPlanning ? "text-amber-600" : "text-slate-700"
                                 )}>
                                   {round2(data.totalAssigned)}h
                                 </p>
@@ -809,8 +809,8 @@ export default function ProjectsPage() {
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p className="text-xs">
-                                  {data.gain > 0 
-                                    ? 'Ganancia: Se computó más de lo trabajado realmente' 
+                                  {data.gain > 0
+                                    ? 'Ganancia: Se computó más de lo trabajado realmente'
                                     : 'Pérdida: Se trabajó más de lo que se pudo computar'}
                                 </p>
                               </TooltipContent>
@@ -830,9 +830,9 @@ export default function ProjectsPage() {
                       </div>
 
                       {/* Botón editar */}
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         className="h-8 w-8 text-slate-400 hover:text-slate-600 shrink-0"
                         onClick={(e) => { e.stopPropagation(); openEditProject(data.project); }}
                       >
@@ -861,17 +861,17 @@ export default function ProjectsPage() {
                               Asignadas: <span className="font-semibold text-slate-700">{data.budget}h</span>
                             </span>
                           </div>
-                          
+
                           {/* Barra doble: planificado vs ejecutado */}
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <span className="text-[10px] text-slate-400 w-16">Planificado</span>
                               <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                <div 
+                                <div
                                   className={cn(
                                     "h-full rounded-full transition-all",
-                                    data.overBudget ? "bg-red-500" : 
-                                    data.planningPct < 50 ? "bg-amber-500" : "bg-blue-500"
+                                    data.overBudget ? "bg-red-500" :
+                                      data.planningPct < 50 ? "bg-amber-500" : "bg-blue-500"
                                   )}
                                   style={{ width: `${Math.min(100, data.planningPct)}%` }}
                                 />
@@ -883,7 +883,7 @@ export default function ProjectsPage() {
                             <div className="flex items-center gap-2">
                               <span className="text-[10px] text-slate-400 w-16">Ejecutado</span>
                               <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                <div 
+                                <div
                                   className="h-full bg-emerald-500 rounded-full transition-all"
                                   style={{ width: `${Math.min(100, (data.hoursComputed / data.budget) * 100)}%` }}
                                 />
@@ -901,7 +901,7 @@ export default function ProjectsPage() {
                         <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
                           Tareas pendientes ({data.pendingTasks.length})
                         </h4>
-                        
+
                         {data.pendingTasks.length > 0 ? (
                           <div className="space-y-2">
                             {data.pendingTasks.map(task => {
@@ -942,7 +942,7 @@ export default function ProjectsPage() {
                         <details className="border-t">
                           <summary className="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-slate-100 transition-colors list-none select-none bg-white">
                             <span className="text-xs font-medium text-emerald-700 flex items-center gap-2">
-                              <CheckCircle2 className="h-3.5 w-3.5" /> 
+                              <CheckCircle2 className="h-3.5 w-3.5" />
                               {data.completedTasks.length} tareas completadas
                             </span>
                             <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
@@ -1031,11 +1031,11 @@ export default function ProjectsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Nombre del Proyecto</Label>
-                <Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                <Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label>Cliente asociado</Label>
-                <Select value={formData.clientId} onValueChange={(val) => setFormData({...formData, clientId: val})}>
+                <Select value={formData.clientId} onValueChange={(val) => setFormData({ ...formData, clientId: val })}>
                   <SelectTrigger><SelectValue placeholder="Seleccionar cliente" /></SelectTrigger>
                   <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                 </Select>
@@ -1044,21 +1044,21 @@ export default function ProjectsPage() {
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Horas asignadas</Label>
-                <Input type="number" value={formData.budgetHours} onChange={e => setFormData({...formData, budgetHours: e.target.value})} />
+                <Input type="number" value={formData.budgetHours} onChange={e => setFormData({ ...formData, budgetHours: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label>Horas mínimas</Label>
-                <Input type="number" value={formData.minimumHours} onChange={e => setFormData({...formData, minimumHours: e.target.value})} />
+                <Input type="number" value={formData.minimumHours} onChange={e => setFormData({ ...formData, minimumHours: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label>Fee mensual (€)</Label>
-                <Input type="number" value={formData.monthlyFee} onChange={e => setFormData({...formData, monthlyFee: e.target.value})} />
+                <Input type="number" value={formData.monthlyFee} onChange={e => setFormData({ ...formData, monthlyFee: e.target.value })} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Estado</Label>
-                <Select value={formData.status} onValueChange={(val: any) => setFormData({...formData, status: val})}>
+                <Select value={formData.status} onValueChange={(val: 'active' | 'archived' | 'completed') => setFormData({ ...formData, status: val })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Activo</SelectItem>
@@ -1071,11 +1071,11 @@ export default function ProjectsPage() {
             <div className="border-t pt-4 space-y-4">
               <Label className="text-base font-semibold">Estrategia y OKRs</Label>
               <div className="flex gap-2">
-                <Input 
-                  placeholder="Nuevo objetivo (ej: +20% Tráfico Orgánico)" 
-                  value={newOkrTitle} 
-                  onChange={e => setNewOkrTitle(e.target.value)} 
-                  onKeyDown={e => e.key === 'Enter' && addOkrToForm()} 
+                <Input
+                  placeholder="Nuevo objetivo (ej: +20% Tráfico Orgánico)"
+                  value={newOkrTitle}
+                  onChange={e => setNewOkrTitle(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addOkrToForm()}
                 />
                 <Button type="button" onClick={addOkrToForm} size="sm"><Plus className="h-4 w-4" /></Button>
               </div>

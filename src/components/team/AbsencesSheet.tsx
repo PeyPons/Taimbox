@@ -44,7 +44,7 @@ type AbsenceFormValues = z.infer<typeof absenceFormSchema>;
 export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetProps) {
   const { employees, absences, addAbsence, deleteAbsence } = useApp();
   const employee = employees.find(e => e.id === employeeId);
-  
+
   const employeeAbsences = absences.filter(a => a.employeeId === employeeId);
 
   const form = useForm<AbsenceFormValues>({
@@ -83,9 +83,9 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
         isFullDay: true,
         hours: 4,
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error añadiendo ausencia:', error);
-      const errorMessage = error?.message || error?.error?.message || 'Error al registrar la ausencia';
+      const errorMessage = (error as Error)?.message || 'Error al registrar la ausencia';
       toast.error(errorMessage);
     }
   };
@@ -179,11 +179,11 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
                     <FormItem className="animate-in fade-in slide-in-from-top-1">
                       <FormLabel>Horas de ausencia (por día)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          min={0.5} 
-                          max={24} 
-                          step={0.5} 
+                        <Input
+                          type="number"
+                          min={0.5}
+                          max={24}
+                          step={0.5}
                           {...field}
                           onChange={(e) => field.onChange(Number(e.target.value))}
                         />
@@ -217,35 +217,35 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
           <div className="space-y-3">
             <h4 className="text-sm font-medium text-muted-foreground">Historial</h4>
             {employeeAbsences.length === 0 && <p className="text-sm text-center py-4 text-muted-foreground">No hay ausencias registradas.</p>}
-            
-            {employeeAbsences.sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()).map(absence => (
-                <div key={absence.id} className="flex items-center justify-between p-3 border rounded-lg bg-card shadow-sm">
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <span className={cn(
-                                "text-xs px-2 py-0.5 rounded-full font-medium capitalize",
-                                absence.type === 'vacation' ? "bg-green-100 text-green-700" : 
-                                absence.type === 'sick_leave' ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-700"
-                            )}>
-                                {absence.type === 'sick_leave' ? 'Baja' : absence.type}
-                            </span>
-                            {/* ✅ INDICADOR DE HORAS */}
-                            {absence.hours && absence.hours > 0 && (
-                                <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200">
-                                    -{absence.hours}h
-                                </span>
-                            )}
-                        </div>
-                        <p className="text-sm font-medium mt-1">
-                            {format(new Date(absence.startDate), 'd MMM', { locale: es })} 
-                            {absence.endDate && absence.endDate !== absence.startDate && ` - ${format(new Date(absence.endDate), 'd MMM', { locale: es })}`}
-                        </p>
-                        {absence.description && <p className="text-xs text-muted-foreground">{absence.description}</p>}
-                    </div>
-                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-red-600" onClick={() => deleteAbsence(absence.id)}>
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
+
+            {employeeAbsences.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()).map(absence => (
+              <div key={absence.id} className="flex items-center justify-between p-3 border rounded-lg bg-card shadow-sm">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      "text-xs px-2 py-0.5 rounded-full font-medium capitalize",
+                      absence.type === 'vacation' ? "bg-green-100 text-green-700" :
+                        absence.type === 'sick_leave' ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-700"
+                    )}>
+                      {absence.type === 'sick_leave' ? 'Baja' : absence.type}
+                    </span>
+                    {/* ✅ INDICADOR DE HORAS */}
+                    {absence.hours && absence.hours > 0 && (
+                      <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200">
+                        -{absence.hours}h
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm font-medium mt-1">
+                    {format(new Date(absence.startDate), 'd MMM', { locale: es })}
+                    {absence.endDate && absence.endDate !== absence.startDate && ` - ${format(new Date(absence.endDate), 'd MMM', { locale: es })}`}
+                  </p>
+                  {absence.description && <p className="text-xs text-muted-foreground">{absence.description}</p>}
                 </div>
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-red-600" onClick={() => deleteAbsence(absence.id)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             ))}
           </div>
         </div>

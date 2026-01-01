@@ -19,10 +19,10 @@ export function formatCurrency(amount: number): string {
  */
 export function isKitDigitalProject(projectName: string): boolean {
   if (!projectName) return false;
-  
+
   const nameLower = projectName.toLowerCase();
   const nameUpper = projectName.toUpperCase();
-  
+
   // Patrones de detección (denominador común: contiene KD o kit digital)
   return (
     nameLower.includes('kit digital') ||
@@ -45,7 +45,7 @@ export function isKitDigitalProject(projectName: string): boolean {
  */
 export function formatProjectName(name: string): string {
   if (!name) return '';
-  
+
   // Si detectamos que es Kit Digital
   if (isKitDigitalProject(name)) {
     // Intentar extraer el cliente del patrón con guión
@@ -61,12 +61,12 @@ export function formatProjectName(name: string): string {
         }
       }
     }
-    
+
     // Si tiene el patrón "KD: Cliente" ya está formateado
     if (/^KD:\s/.test(name)) {
       return name;
     }
-    
+
     // Si empieza con "KD " seguido de algo, intentar extraer nombre
     const kdMatch = name.match(/^KD\s+(.+)/i);
     if (kdMatch && kdMatch[1]) {
@@ -79,9 +79,9 @@ export function formatProjectName(name: string): string {
         return `KD: ${cleaned}`;
       }
     }
-    
+
     // Si tiene (KD) o [KD], intentar extraer el resto
-    const kdPatternMatch = name.match(/[\[\(]KD[\]\)]\s*(.+)/i);
+    const kdPatternMatch = name.match(/[[(]KD[\])]\s*(.+)/i);
     if (kdPatternMatch && kdPatternMatch[1]) {
       const cleaned = kdPatternMatch[1]
         .replace(/^\[[^\]]*\]\s*/, '')
@@ -97,11 +97,11 @@ export function formatProjectName(name: string): string {
         return `KD: ${cleaned}`;
       }
     }
-    
+
     // Si no se puede extraer, devolver versión simplificada
-    return `KD: ${name.replace(/[\[\(]KD[\]\)]/gi, '').trim()}`;
+    return `KD: ${name.replace(/[[(]KD[\])]/gi, '').trim()}`;
   }
-  
+
   // Si no es KD, devolvemos el nombre original
   return name;
 }

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
+import {
   AlertTriangle, CheckCircle2, Users, TrendingUp, TrendingDown,
   Info, ChevronDown, ChevronUp, Filter
 } from 'lucide-react';
@@ -43,8 +43,8 @@ interface Inconsistency {
   minimumHours: number;
 }
 
-export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsistencies({ 
-  viewDate 
+export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsistencies({
+  viewDate
 }: GlobalPlanningInconsistenciesProps) {
   const { allocations, projects, employees } = useApp();
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
@@ -68,7 +68,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
         if (error) throw error;
 
         if (data) {
-          setDeadlines(data.map((d: any) => ({
+          setDeadlines(data.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean }) => ({
             id: d.id,
             projectId: d.project_id,
             month: d.month,
@@ -77,7 +77,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
             isHidden: d.is_hidden || false
           })));
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error('Error cargando deadlines:', error);
       } finally {
         setIsLoading(false);
@@ -95,7 +95,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
     const monthEnd = endOfMonth(viewDate);
 
     // Obtener allocations del mes para todos los empleados
-    const monthAllocations = allocations.filter(a => 
+    const monthAllocations = allocations.filter(a =>
       isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
     );
 
@@ -125,7 +125,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
     // Primero procesar proyectos con deadlines
     deadlines.forEach(deadline => {
       if (deadline.isHidden) return;
-      
+
       const projectId = deadline.projectId;
       const project = projects.find(p => p.id === projectId);
       if (!project) return;
@@ -321,7 +321,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[300px]">
                   <p className="text-xs">
-                    Vista global de diferencias entre lo planificado en deadlines y lo realmente ejecutado. 
+                    Vista global de diferencias entre lo planificado en deadlines y lo realmente ejecutado.
                     Agrupado por proyecto para evitar duplicidades.
                   </p>
                 </TooltipContent>
@@ -345,7 +345,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-slate-600">
-            Se han detectado <strong>{inconsistencies.length}</strong> proyecto{inconsistencies.length !== 1 ? 's' : ''} 
+            Se han detectado <strong>{inconsistencies.length}</strong> proyecto{inconsistencies.length !== 1 ? 's' : ''}
             {' '}con variaciones en {format(viewDate, 'MMMM yyyy', { locale: es })}.
           </p>
 
@@ -383,12 +383,12 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                         {inc.totalDeadlineHours === 0 ? (
                           <div className="text-amber-700 font-semibold">
                             ⚠️ Este proyecto <strong>no está en el deadline</strong> pero tiene horas asignadas.
-                            {' '}Total del equipo: <strong>{round2(inc.totalPlannedHours + inc.totalComputedHours)}h</strong> 
+                            {' '}Total del equipo: <strong>{round2(inc.totalPlannedHours + inc.totalComputedHours)}h</strong>
                             {' '}({inc.totalComputedHours.toFixed(1)}h computadas + {inc.totalPlannedHours.toFixed(1)}h planificadas).
                           </div>
                         ) : (
                           <div>
-                            Total del equipo: <strong>{round2(inc.totalPlannedHours + inc.totalComputedHours)}h</strong> 
+                            Total del equipo: <strong>{round2(inc.totalPlannedHours + inc.totalComputedHours)}h</strong>
                             {' '}({inc.totalComputedHours.toFixed(1)}h computadas + {inc.totalPlannedHours.toFixed(1)}h planificadas).
                             {' '}Deadline total: <strong>{inc.totalDeadlineHours}h</strong>.
                           </div>

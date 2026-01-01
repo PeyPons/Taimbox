@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { MyWeekView } from '@/components/employee/MyWeekView';
 import { WeeklyReportDialog } from '@/components/employee/WeeklyReportDialog';
-import { PriorityInsights, ProjectTeamPulse } from '@/components/employee/DashboardWidgets'; 
+import { PriorityInsights, ProjectTeamPulse } from '@/components/employee/DashboardWidgets';
 import { ReliabilityIndexCard } from '@/components/employee/ReliabilityIndexCard';
 import { PlanningInconsistenciesCard } from '@/components/employee/PlanningInconsistenciesCard';
 import { CollaborationCards } from '@/components/employee/CollaborationCards';
@@ -12,7 +12,7 @@ import { EmployeeSettings } from '@/components/employee/EmployeeSettings';
 import { LoadIndicator } from '@/components/shared/LoadIndicator';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { EmployeeRow } from '@/components/planner/EmployeeRow'; 
+import { EmployeeRow } from '@/components/planner/EmployeeRow';
 import { AllocationSheet } from '@/components/planner/AllocationSheet';
 import { AbsencesSheet } from '@/components/team/AbsencesSheet';
 import { ProfessionalGoalsSheet } from '@/components/team/ProfessionalGoalsSheet';
@@ -24,11 +24,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { 
-  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter 
+import {
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter
 } from "@/components/ui/dialog";
-import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger 
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, CheckCircle2, Plus, X, Check, ListPlus, AlertTriangle, CheckCircle2, HelpCircle, RotateCcw, FileDown, CheckSquare, AlertCircle } from 'lucide-react';
 import { startOfMonth, endOfMonth, max, min, format, startOfWeek, isSameMonth, parseISO, addDays, isWeekend } from 'date-fns';
@@ -48,7 +48,7 @@ const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 interface NewTaskRow {
   id: string;
   projectId: string;
-  taskName: string; 
+  taskName: string;
   hours: string;
   weekDate: string;
 }
@@ -61,21 +61,21 @@ interface ProjectBudgetStatus {
 }
 
 export default function EmployeeDashboard() {
-  const { 
+  const {
     employees, allocations, absences, teamEvents, projects, clients,
     addAllocation, isLoading: isGlobalLoading, getEmployeeMonthlyLoad, getEmployeeLoadForWeek,
     currentUser: appCurrentUser, loadDataForMonth, weeklyFeedback
   } = useApp();
-  
+
   // Usar el currentUser del AppContext directamente (ya está vinculado)
   const myEmployeeProfile = appCurrentUser || null;
   const isLoadingProfile = isGlobalLoading;
-  
+
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isLoadingMonth, setIsLoadingMonth] = useState(false);
   const loadedMonthsRef = useRef<Set<string>>(new Set());
   const [selectedCell, setSelectedCell] = useState<{ employeeId: string; weekStart: Date } | null>(null);
-  
+
   const [showGoals, setShowGoals] = useState(false);
   const [showAbsences, setShowAbsences] = useState(false);
   const [isAddingExtra, setIsAddingExtra] = useState(false);
@@ -92,13 +92,13 @@ export default function EmployeeDashboard() {
   const { showTour, resetTour } = useWelcomeTour();
   const { canAccess, hasPermission } = usePermissions();
   const isMobile = useIsMobile();
-  
+
   // Detectar si hay tareas pendientes para Weekly (semanas pasadas, actual O transferidas)
   // Excluir tareas que ya han sido gestionadas (distribuidas, movidas, mantenidas)
   const hasPendingWeeklyTasks = useMemo(() => {
     if (!myEmployeeProfile) return false;
     const today = new Date();
-    
+
     // Obtener IDs de tareas ya gestionadas desde weeklyFeedback
     const processedTaskIds = new Set(
       weeklyFeedback
@@ -110,7 +110,7 @@ export default function EmployeeDashboard() {
         ))
         .map(fb => fb.allocationId!)
     );
-    
+
     // Obtener IDs de tareas distribuidas desde transferencias
     // Estas ya fueron procesadas y no deben aparecer como alertas
     const distributedFromTransferIds = new Set(
@@ -118,14 +118,14 @@ export default function EmployeeDashboard() {
         .filter(fb => fb.allocationId && fb.comments?.includes('Tarea distribuida desde transferencia'))
         .map(fb => fb.allocationId!)
     );
-    
+
     // Buscar tareas en semanas pasadas o actual que no estén completadas Y no hayan sido procesadas
     const hasOpenTasks = allocations.some(a => {
       if (a.employeeId !== myEmployeeProfile.id) return false;
       if (a.status === 'completed') return false;
       if (processedTaskIds.has(a.id)) return false; // Excluir tareas ya procesadas
       if (distributedFromTransferIds.has(a.id)) return false; // EXCLUIR tareas distribuidas desde transferencias
-      
+
       try {
         const taskWeekDate = parseISO(a.weekStartDate);
         const taskWeekEnd = addDays(taskWeekDate, 4); // Viernes de esa semana
@@ -135,7 +135,7 @@ export default function EmployeeDashboard() {
         return false;
       }
     });
-    
+
     // También buscar tareas transferidas (aunque estén en semanas futuras)
     // PERO excluir si ya tienen feedback de "keep" o si ya fueron distribuidas
     const hasTransferredTasks = allocations.some(a => {
@@ -143,12 +143,12 @@ export default function EmployeeDashboard() {
       if (a.status === 'completed') return false;
       if (processedTaskIds.has(a.id)) return false; // Excluir tareas ya procesadas
       if (distributedFromTransferIds.has(a.id)) return false; // EXCLUIR tareas distribuidas desde transferencias
-      
+
       // Usar campo de BD si está disponible, sino fallback al formato de texto
       const isTransferred = a.transferredFromAllocationId !== undefined && a.transferredFromAllocationId !== null
         || a.taskName?.includes('(transferida de');
       if (!isTransferred) return false;
-      
+
       try {
         const taskWeekDate = parseISO(a.weekStartDate);
         return isSameMonth(taskWeekDate, currentMonth);
@@ -156,7 +156,7 @@ export default function EmployeeDashboard() {
         return false;
       }
     });
-    
+
     return hasOpenTasks || hasTransferredTasks;
   }, [allocations, myEmployeeProfile, currentMonth, weeklyFeedback]);
 
@@ -249,9 +249,9 @@ export default function EmployeeDashboard() {
       toast.success(`Proyecto "${INTERNAL_PROJECT_NAME}" creado`);
       return projectData.id;
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creando proyecto interno:', error);
-      const errorMessage = error?.message || error?.error?.message || 'Error al crear proyecto interno';
+      const errorMessage = (error as Error)?.message || 'Error al crear proyecto interno';
       toast.error(errorMessage);
       return null;
     } finally {
@@ -262,7 +262,7 @@ export default function EmployeeDashboard() {
   const handleAddExtraTask = async () => {
     if (!myEmployeeProfile) return;
     if (!extraTaskName.trim()) { toast.error("Escribe un nombre para la tarea"); return; }
-    
+
     const hours = Number(extraHours);
     if (isNaN(hours) || hours <= 0) { toast.error("Las horas deben ser mayores a 0"); return; }
 
@@ -284,9 +284,9 @@ export default function EmployeeDashboard() {
       setExtraTaskName('');
       setExtraHours('1');
       setIsAddingExtra(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error añadiendo tarea interna:', error);
-      const errorMessage = error?.message || error?.error?.message || 'Error al registrar la tarea';
+      const errorMessage = (error as Error)?.message || 'Error al registrar la tarea';
       toast.error(errorMessage);
     }
   };
@@ -358,13 +358,13 @@ export default function EmployeeDashboard() {
 
     monthAllocations.forEach(alloc => {
       const project = projects.find(p => p.id === alloc.projectId);
-      
+
       // Escapar comillas dobles en el nombre de la tarea (reemplazar " por "")
       const taskName = (alloc.taskName || 'Tarea').replace(/"/g, '""');
-      
+
       // Formatear horas: usar punto decimal y convertir a string
       const hoursStr = alloc.hoursAssigned ? alloc.hoursAssigned.toString() : '';
-      
+
       // Construir la línea CSV: nombre entre comillas, luego campos separados por comas
       const csvLine = [
         `"${taskName}"`,                    // Nombre tarea entre comillas dobles
@@ -373,7 +373,7 @@ export default function EmployeeDashboard() {
         project?.externalId || '',          // project_id
         hoursStr                            // horas computables (con punto decimal o vacío)
       ].join(',');
-      
+
       csvRows.push(csvLine);
     });
 
@@ -392,7 +392,7 @@ export default function EmployeeDashboard() {
     if (!myEmployeeProfile) return { projects: [], weeks: [] };
 
     const projectImpact: Record<string, { name: string; adding: number; status: ProjectBudgetStatus }> = {};
-    
+
     newTasks.forEach(task => {
       if (task.projectId && task.hours) {
         const hours = parseFloat(task.hours) || 0;
@@ -413,7 +413,7 @@ export default function EmployeeDashboard() {
     });
 
     const weekImpact: Record<string, { weekIndex: number; adding: number }> = {};
-    
+
     newTasks.forEach(task => {
       if (task.weekDate && task.hours) {
         const hours = parseFloat(task.hours) || 0;
@@ -433,10 +433,10 @@ export default function EmployeeDashboard() {
       const currentLoad = weekData ? getEmployeeLoadForWeek(
         myEmployeeProfile.id, weekDate, weekData.effectiveStart, weekData.effectiveEnd, currentMonth
       ) : { hours: 0, capacity: 40 };
-      
+
       const newTotal = round2(currentLoad.hours + data.adding);
       const exceeds = newTotal > currentLoad.capacity;
-      
+
       return { weekDate, weekIndex: data.weekIndex, adding: data.adding, currentHours: currentLoad.hours, capacity: currentLoad.capacity, newTotal, exceeds };
     }).sort((a, b) => a.weekIndex - b.weekIndex);
 
@@ -454,17 +454,17 @@ export default function EmployeeDashboard() {
   useEffect(() => {
     if (!isGlobalLoading && !isLoadingProfile) {
       const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
-      
+
       // Si ya se cargó este mes según el ref, no hacer nada (evita loops)
       if (loadedMonthsRef.current.has(monthKey)) {
         setIsLoadingMonth(false);
         return;
       }
-      
+
       // Verificar si REALMENTE tenemos datos para este mes en el contexto
       const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-      
+
       const hasDataInContext = allocations.some(a => {
         try {
           const allocDate = new Date(a.weekStartDate);
@@ -473,14 +473,14 @@ export default function EmployeeDashboard() {
           return false;
         }
       });
-      
+
       // Si hay datos, marcar como cargado y salir
       if (hasDataInContext) {
         loadedMonthsRef.current.add(monthKey);
         setIsLoadingMonth(false);
         return;
       }
-      
+
       // Si no hay datos, cargarlos
       setIsLoadingMonth(true);
       loadDataForMonth(currentMonth)
@@ -513,7 +513,7 @@ export default function EmployeeDashboard() {
       </div>
     );
   }
-  
+
   // Solo mostrar error después de que termine de cargar
   if (!myEmployeeProfile) {
     return (
@@ -547,12 +547,12 @@ export default function EmployeeDashboard() {
             Acceso desde escritorio requerido
           </h1>
           <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-            El dashboard está optimizado para pantallas de escritorio. 
+            El dashboard está optimizado para pantallas de escritorio.
             Por favor, accede desde un ordenador o tablet en modo horizontal para una mejor experiencia.
           </p>
           <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-6 mb-6">
             <p className="text-gray-400 text-sm">
-              El dashboard requiere una pantalla más grande para funcionar correctamente. 
+              El dashboard requiere una pantalla más grande para funcionar correctamente.
               En dispositivos móviles, el menú y las funcionalidades no están disponibles.
             </p>
           </div>
@@ -567,7 +567,7 @@ export default function EmployeeDashboard() {
       <div className="fixed inset-0 -z-10 bg-gradient-to-br from-indigo-50 via-white to-purple-50 opacity-50" />
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_20%_50%,rgba(99,102,241,0.1),transparent_50%)]" />
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_80%_80%,rgba(168,85,247,0.1),transparent_50%)]" />
-      
+
       {/* 1. CABECERA + ACCIONES */}
       <div className="flex flex-col gap-4">
         <div className="relative">
@@ -579,7 +579,7 @@ export default function EmployeeDashboard() {
             <p className="text-slate-500 text-sm sm:text-base mt-1">Panel de control operativo</p>
           </div>
         </div>
-        
+
         <div className="flex flex-wrap items-center gap-2">
           {/* Botón Weekly siempre visible para todos los empleados */}
           <Button
@@ -602,7 +602,7 @@ export default function EmployeeDashboard() {
               </>
             )}
           </Button>
-          
+
           <Button onClick={openAddTasksDialog} className="gap-2 bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm" data-tour="add-tasks">
             <ListPlus className="h-4 w-4" /> Añadir tareas
           </Button>
@@ -645,7 +645,7 @@ export default function EmployeeDashboard() {
           <Button variant="outline" onClick={() => setShowGoals(true)} className="gap-2 text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100" data-tour="goals">
             <TrendingUp className="h-4 w-4" /> Objetivos
           </Button>
-          
+
           <Button variant="outline" onClick={() => setShowAbsences(true)} className="gap-2 text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100" data-tour="absences">
             <Calendar className="h-4 w-4" /> Ausencias
           </Button>
@@ -691,7 +691,7 @@ export default function EmployeeDashboard() {
                 // Calcular solo días laborables (lun-vie) en el rango efectivo (igual que en AllocationSheet)
                 const effectiveStart = week.effectiveStart || week.weekStart;
                 const effectiveEnd = week.effectiveEnd || addDays(week.weekStart, 6);
-                
+
                 const workingDays = [];
                 let currentDay = new Date(effectiveStart);
                 while (currentDay <= effectiveEnd) {
@@ -702,14 +702,14 @@ export default function EmployeeDashboard() {
                   }
                   currentDay = addDays(currentDay, 1);
                 }
-                
+
                 // Formatear solo el primer y último día laborable
                 const firstWorkingDay = workingDays[0];
                 const lastWorkingDay = workingDays[workingDays.length - 1];
-                const weekDateLabel = firstWorkingDay && lastWorkingDay 
+                const weekDateLabel = firstWorkingDay && lastWorkingDay
                   ? `${format(firstWorkingDay, 'd', { locale: es })}-${format(lastWorkingDay, 'd MMM', { locale: es })}`
                   : `${format(effectiveStart, 'd', { locale: es })}-${format(effectiveEnd, 'd MMM', { locale: es })}`;
-                
+
                 return (
                   <div key={week.weekStart.toISOString()} className="text-center px-1 py-2 border-r flex flex-col justify-center">
                     <span className="text-xs font-bold uppercase text-slate-500">S{index + 1}</span>
@@ -725,9 +725,9 @@ export default function EmployeeDashboard() {
             <div className="grid bg-white" style={{ gridTemplateColumns: gridTemplate }}>
               <EmployeeRow employee={myEmployeeProfile} weeks={weeks} projects={projects} allocations={allocations} absences={absences} teamEvents={teamEvents} viewDate={currentMonth} onOpenSheet={(empId, date) => setSelectedCell({ employeeId: empId, weekStart: date })} />
               <div className="flex items-center justify-center border-l p-2 bg-slate-50/30">
-                <LoadIndicator 
-                  hours={monthlyLoad.hours} 
-                  capacity={monthlyLoad.capacity} 
+                <LoadIndicator
+                  hours={monthlyLoad.hours}
+                  capacity={monthlyLoad.capacity}
                   percentage={monthlyLoad.percentage}
                   size="md"
                 />
@@ -759,7 +759,7 @@ export default function EmployeeDashboard() {
               Métricas
             </TabsTrigger>
           </TabsList>
-          
+
           {/* 1. DEPENDENCIAS - MÁS IMPORTANTE */}
           <TabsContent value="dependencies" className="mt-4 space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -817,7 +817,7 @@ export default function EmployeeDashboard() {
             <DialogTitle className="flex items-center gap-2"><ListPlus className="h-5 w-5 text-indigo-600" />Añadir tareas</DialogTitle>
             <DialogDescription id="add-tasks-description">Añade múltiples tareas a tu planificación de {getMonthName(currentMonth)}.</DialogDescription>
           </DialogHeader>
-          
+
           <div className="py-4">
             <div className="flex text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1 mb-2">
               <div className="flex-1 pl-1">Proyecto</div>
@@ -826,12 +826,12 @@ export default function EmployeeDashboard() {
               <div className="w-32">Semana</div>
               <div className="w-8"></div>
             </div>
-            
+
             <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-2 -mr-2">
               {newTasks.map((task) => {
                 const projectExceeds = task.projectId && getProjectExceedStatus(task.projectId);
                 const weekExceeds = task.weekDate && getWeekExceedStatus(task.weekDate);
-                
+
                 return (
                   <div key={task.id} className="flex gap-2 items-start">
                     <div className="flex-1 min-w-0">
@@ -850,9 +850,9 @@ export default function EmployeeDashboard() {
                                 {activeProjects.map(p => {
                                   const client = clients.find(c => c.id === p.clientId);
                                   return (
-                                    <CommandItem 
-                                      key={p.id} 
-                                      value={p.name} 
+                                    <CommandItem
+                                      key={p.id}
+                                      value={p.name}
                                       onSelect={() => { updateTaskRow(task.id, 'projectId', p.id); setOpenComboboxId(null); }}
                                     >
                                       <Check className={cn("mr-2 h-4 w-4", task.projectId === p.id ? "opacity-100" : "opacity-0")} />
@@ -870,15 +870,15 @@ export default function EmployeeDashboard() {
                         </PopoverContent>
                       </Popover>
                     </div>
-                    
+
                     <div className="flex-1">
                       <Input placeholder="Nombre de la tarea" className="h-9 text-xs" value={task.taskName} onChange={e => updateTaskRow(task.id, 'taskName', e.target.value)} />
                     </div>
-                    
+
                     <div className="w-24">
                       <Input type="number" min="0.5" step="0.5" placeholder="Horas" className="h-9 text-xs text-center" value={task.hours} onChange={e => updateTaskRow(task.id, 'hours', e.target.value)} />
                     </div>
-                    
+
                     <div className="w-32">
                       <Select value={task.weekDate} onValueChange={(v) => updateTaskRow(task.id, 'weekDate', v)}>
                         <SelectTrigger className={cn("h-9 text-xs", weekExceeds && "border-amber-400 bg-amber-50")}><SelectValue /></SelectTrigger>
@@ -887,7 +887,7 @@ export default function EmployeeDashboard() {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <Button variant="ghost" size="icon" className="h-9 w-8 text-slate-400 hover:text-red-500" onClick={() => removeTaskRow(task.id)} disabled={newTasks.length === 1}>
                       <X className="h-4 w-4" />
                     </Button>
@@ -895,12 +895,12 @@ export default function EmployeeDashboard() {
                 );
               })}
             </div>
-            
+
             <Button variant="outline" size="sm" onClick={addTaskRow} className="w-full mt-4 border-dashed">
               <Plus className="h-4 w-4 mr-2" /> Añadir otra fila
             </Button>
           </div>
-          
+
           <DialogFooter className="flex flex-col gap-2">
             {(tasksImpact.projects.length > 0 || tasksImpact.weeks.length > 0) && (
               <div className="w-full flex items-center gap-2 text-xs p-2 bg-slate-50 rounded-lg flex-wrap">
@@ -921,7 +921,7 @@ export default function EmployeeDashboard() {
                 ))}
               </div>
             )}
-            
+
             <div className="flex justify-end gap-2 w-full">
               <Button variant="outline" onClick={() => setIsAddingTasks(false)}>Cancelar</Button>
               <Button onClick={handleSaveTasks} className="bg-indigo-600 hover:bg-indigo-700">Guardar tareas</Button>
@@ -932,7 +932,7 @@ export default function EmployeeDashboard() {
 
       {showGoals && <ProfessionalGoalsSheet open={showGoals} onOpenChange={setShowGoals} employeeId={myEmployeeProfile.id} />}
       {showAbsences && <AbsencesSheet open={showAbsences} onOpenChange={setShowAbsences} employeeId={myEmployeeProfile.id} />}
-      
+
       {myEmployeeProfile && (
         <>
           <WeeklyReportDialog
@@ -943,7 +943,7 @@ export default function EmployeeDashboard() {
           />
         </>
       )}
-      
+
       <WelcomeTour forceShow={showTour} />
     </div>
   );

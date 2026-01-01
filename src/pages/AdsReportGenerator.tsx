@@ -15,25 +15,32 @@ import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 
 // --- IMPORTAMOS RECHARTS ---
-import { 
-  ComposedChart, 
-  Bar, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer,
-  Area,
-  AreaChart
+import {
+    ComposedChart,
+    Bar,
+    Line,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    ResponsiveContainer,
+    Area,
+    AreaChart
 } from 'recharts';
 
+// Interface para filas de campaña
+interface CampaignRow {
+    cost?: number;
+    conversions?: number;
+    conversions_value?: number;
+}
+
 // --- COMPONENTES VISUALES ---
-const StatCard = ({ label, value, prevValue, formatFn = (v:any) => v, reverseColor = false }: any) => {
+const StatCard = ({ label, value, prevValue, formatFn = (v: number) => String(v), reverseColor = false }: { label: string; value: number; prevValue: number; formatFn?: (v: number) => string; reverseColor?: boolean }) => {
     const diff = prevValue > 0 ? ((value - prevValue) / prevValue) * 100 : 0;
     const isPositive = reverseColor ? diff < 0 : diff > 0;
-    
+
     return (
         <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
             <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">{label}</p>
@@ -55,16 +62,16 @@ const formatEuro = (value: number) => `${value.toLocaleString('es-ES')}€`;
 const formatNumber = (value: number) => value.toLocaleString('es-ES');
 
 // Tooltip personalizado para los gráficos
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-white p-3 rounded-lg shadow-lg border border-slate-200">
                 <p className="font-semibold text-slate-900 mb-2">{label}</p>
-                {payload.map((entry: any, index: number) => (
+                {payload.map((entry: { name: string; value: number; color: string }, index: number) => (
                     <p key={index} className="text-sm" style={{ color: entry.color }}>
-                        {entry.name}: {entry.name.includes('Inversión') || entry.name.includes('Ingresos') 
-                            ? formatEuro(entry.value) 
-                            : entry.name.includes('CPA') 
+                        {entry.name}: {entry.name.includes('Inversión') || entry.name.includes('Ingresos')
+                            ? formatEuro(entry.value)
+                            : entry.name.includes('CPA')
                                 ? `${entry.value.toFixed(2)}€`
                                 : entry.name.includes('ROAS')
                                     ? `${entry.value.toFixed(2)}x`
@@ -78,16 +85,16 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 // Componente para el modal de sincronización
-const SyncModal = ({ 
-    isOpen, 
-    onClose, 
-    logs, 
-    status, 
-    platform 
-}: { 
-    isOpen: boolean; 
-    onClose: () => void; 
-    logs: string[]; 
+const SyncModal = ({
+    isOpen,
+    onClose,
+    logs,
+    status,
+    platform
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    logs: string[];
     status: string;
     platform: 'google' | 'meta';
 }) => {
@@ -97,9 +104,9 @@ const SyncModal = ({
         completed: { icon: <CheckCircle2 className="w-5 h-5 text-emerald-500" />, label: 'Completado', color: 'text-emerald-600' },
         error: { icon: <XCircle className="w-5 h-5 text-red-500" />, label: 'Error', color: 'text-red-600' }
     };
-    
+
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
-    
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-2xl" aria-describedby="ads-sync-description">
@@ -115,12 +122,12 @@ const SyncModal = ({
                         {status === 'running' ? 'Sincronizando datos de la plataforma publicitaria...' : status === 'completed' ? 'Sincronización completada exitosamente.' : 'Error durante la sincronización.'}
                     </DialogDescription>
                 </DialogHeader>
-                
+
                 <div className="space-y-4">
                     {status === 'running' && (
                         <Progress value={undefined} className="h-2" />
                     )}
-                    
+
                     <ScrollArea className="h-[300px] w-full rounded-md border bg-slate-50 p-4">
                         <div className="space-y-1 font-mono text-sm">
                             {logs.length === 0 ? (
@@ -134,7 +141,7 @@ const SyncModal = ({
                             )}
                         </div>
                     </ScrollArea>
-                    
+
                     <div className="flex justify-end">
                         <Button variant="outline" onClick={onClose} disabled={status === 'running'}>
                             {status === 'running' ? 'Sincronizando...' : 'Cerrar'}
@@ -147,25 +154,25 @@ const SyncModal = ({
 };
 
 export default function AdsReportGenerator() {
-    const [clients, setClients] = useState<any[]>([]);
+    const [clients, setClients] = useState<{ client_id: string; client_name: string }[]>([]);
     const [selectedClient, setSelectedClient] = useState<string>('');
     const [loading, setLoading] = useState(false);
-    const [reportData, setReportData] = useState<any>(null);
+    const [reportData, setReportData] = useState<{ currStats: { cost: number; conversions: number; cpa: number; roas: number; value: number }; prevStats: { cost: number; conversions: number; cpa: number; roas: number; value: number }; campaigns: unknown[]; hasRevenue: boolean; historicalStats: HistoricalData[]; dailyChartData: unknown[]; changeLogs: unknown[] } | null>(null);
     const [aiSummary, setAiSummary] = useState('');
     const [aiProvider, setAiProvider] = useState<string>('');
     const [campaignAnalyses, setCampaignAnalyses] = useState<Record<string, { text: string; provider: string; modelName: string }>>({});
     const [showCampaignDetails, setShowCampaignDetails] = useState<Record<string, boolean>>({});
     const [historicalMonths, setHistoricalMonths] = useState(3);
-    
+
     // Estados para sincronización
     const [syncModalOpen, setSyncModalOpen] = useState(false);
     const [syncLogs, setSyncLogs] = useState<string[]>([]);
     const [syncStatus, setSyncStatus] = useState<string>('pending');
     const [syncJobId, setSyncJobId] = useState<string | null>(null);
-    
+
     // Estado para el mensaje de IA
     const [aiGenerating, setAiGenerating] = useState(false);
-    
+
     const printRef = useRef<HTMLDivElement>(null);
 
     // 1. Cargar lista de clientes
@@ -182,7 +189,7 @@ export default function AdsReportGenerator() {
     // 2. Suscribirse a cambios del job de sincronización
     useEffect(() => {
         if (!syncJobId) return;
-        
+
         const channel = supabase
             .channel(`sync-job-${syncJobId}`)
             .on('postgres_changes', {
@@ -191,10 +198,10 @@ export default function AdsReportGenerator() {
                 table: 'ads_sync_logs',
                 filter: `id=eq.${syncJobId}`
             }, (payload) => {
-                const newData = payload.new as any;
+                const newData = payload.new as { logs?: string[]; status?: string };
                 setSyncLogs(newData.logs || []);
                 setSyncStatus(newData.status);
-                
+
                 if (newData.status === 'completed' || newData.status === 'error') {
                     // Recargar clientes después de sincronización
                     setTimeout(() => {
@@ -209,7 +216,7 @@ export default function AdsReportGenerator() {
                 }
             })
             .subscribe();
-            
+
         return () => {
             supabase.removeChannel(channel);
         };
@@ -221,24 +228,24 @@ export default function AdsReportGenerator() {
             toast.error('Selecciona un cliente primero');
             return;
         }
-        
+
         // Crear job de sincronización
         const { data: job, error } = await supabase
             .from('ads_sync_logs')
             .insert({ status: 'pending', logs: ['⏳ Sincronización programada...'] })
             .select()
             .single();
-            
+
         if (error) {
             toast.error('Error al iniciar sincronización');
             return;
         }
-        
+
         setSyncJobId(job.id);
         setSyncLogs(['⏳ Sincronización programada...']);
         setSyncStatus('pending');
         setSyncModalOpen(true);
-        
+
         toast.info('Sincronización iniciada. El worker procesará la solicitud.');
     };
 
@@ -254,7 +261,7 @@ export default function AdsReportGenerator() {
         const now = new Date();
         const startCurrent = startOfMonth(now);
         const endCurrent = endOfMonth(now);
-        
+
         // Calcular rangos para meses históricos
         const historicalRanges = Array.from({ length: historicalMonths }, (_, i) => {
             const monthDate = subMonths(now, i);
@@ -272,18 +279,18 @@ export default function AdsReportGenerator() {
             .eq('client_id', selectedClient)
             .gte('date', format(startCurrent, 'yyyy-MM-dd'))
             .lte('date', format(endCurrent, 'yyyy-MM-dd'));
-            
+
         // Fetch Datos históricos
-        const historicalDataPromises = historicalRanges.map(range => 
+        const historicalDataPromises = historicalRanges.map(range =>
             supabase.from('google_ads_campaigns')
                 .select('*')
                 .eq('client_id', selectedClient)
                 .gte('date', format(range.start, 'yyyy-MM-dd'))
                 .lte('date', format(range.end, 'yyyy-MM-dd'))
         );
-        
+
         const historicalResults = await Promise.all(historicalDataPromises);
-        
+
         // Fetch Logs de cambios del mes actual - con nombres de campaña
         const { data: changeLogs } = await supabase.from('google_ads_changes')
             .select('*')
@@ -307,7 +314,7 @@ export default function AdsReportGenerator() {
             const campaignMatch = log.resource_name?.match(/campaigns\/(\d+)/);
             const campaignId = campaignMatch ? campaignMatch[1] : null;
             const campaignName = campaignId ? campaignNames.get(campaignId) : null;
-            
+
             return {
                 ...log,
                 campaign_name: log.campaign_name || campaignName || (campaignId ? `Campaña ${campaignId}` : 'Desconocido'),
@@ -316,7 +323,7 @@ export default function AdsReportGenerator() {
         });
 
         // Agregación Simple
-        const aggregate = (rows: any[]) => {
+        const aggregate = (rows: CampaignRow[]) => {
             const cost = rows.reduce((acc, r) => acc + Number(r.cost || 0), 0);
             const conv = rows.reduce((acc, r) => acc + Number(r.conversions || 0), 0);
             const val = rows.reduce((acc, r) => acc + Number(r.conversions_value || 0), 0);
@@ -330,7 +337,7 @@ export default function AdsReportGenerator() {
         };
 
         const currStats = aggregate(currentRows || []);
-        
+
         // Procesar datos históricos
         const historicalStats: HistoricalData[] = historicalRanges.map((range, idx) => {
             const rows = historicalResults[idx]?.data || [];
@@ -367,7 +374,7 @@ export default function AdsReportGenerator() {
             entry.conversions += Number(row.conversions || 0);
             entry.value += Number(row.conversions_value || 0);
         });
-        
+
         const dailyChartData = Array.from(dailyMap.values())
             .sort((a, b) => a.date.localeCompare(b.date))
             .map(d => ({
@@ -379,7 +386,7 @@ export default function AdsReportGenerator() {
             }));
 
         // Top Campaigns con más detalles
-        const campaigns = currentRows?.reduce((acc: any[], row) => {
+        const campaigns = currentRows?.reduce((acc: { id: string; campaign_name: string; cost: number; conversions: number; impressions: number; clicks: number; value: number; status?: string; cpa?: number; roas?: number }[], row) => {
             const existing = acc.find(c => c.id === row.campaign_id);
             if (existing) {
                 existing.cost += Number(row.cost);
@@ -388,11 +395,11 @@ export default function AdsReportGenerator() {
                 existing.clicks += Number(row.clicks || 0);
                 existing.value += Number(row.conversions_value || 0);
             } else {
-                acc.push({ 
-                    id: row.campaign_id, 
+                acc.push({
+                    id: row.campaign_id,
                     campaign_name: row.campaign_name,
                     status: row.status,
-                    cost: Number(row.cost), 
+                    cost: Number(row.cost),
                     conversions: Number(row.conversions || 0),
                     impressions: Number(row.impressions || 0),
                     clicks: Number(row.clicks || 0),
@@ -405,18 +412,18 @@ export default function AdsReportGenerator() {
             cpa: c.conversions > 0 ? c.cost / c.conversions : 0,
             roas: c.cost > 0 ? c.value / c.cost : 0,
             ctr: c.impressions > 0 ? (c.clicks / c.impressions) * 100 : 0
-        })).sort((a,b) => b.cost - a.cost).slice(0, 10);
+        })).sort((a, b) => b.cost - a.cost).slice(0, 10);
 
-        setReportData({ 
-            currStats, 
-            prevStats, 
+        setReportData({
+            currStats,
+            prevStats,
             campaigns,
             hasRevenue,
             historicalStats,
             dailyChartData,
             changeLogs: enrichedChangeLogs
         });
-        
+
         setLoading(false);
 
         // Generar resumen ejecutivo con IA (en paralelo)
@@ -441,7 +448,7 @@ export default function AdsReportGenerator() {
     };
 
     // Generar análisis por campaña individual
-    const handleGenerateCampaignAnalysis = async (campaignId: string, campaign: any) => {
+    const handleGenerateCampaignAnalysis = async (campaignId: string, campaign: { id: string; campaign_name: string; cost: number; conversions: number; impressions: number; clicks: number; value: number; status?: string }) => {
         if (campaignAnalyses[campaignId]) {
             setShowCampaignDetails(prev => ({ ...prev, [campaignId]: !prev[campaignId] }));
             return;
@@ -480,14 +487,14 @@ export default function AdsReportGenerator() {
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-8">
             {/* Modal de sincronización */}
-            <SyncModal 
+            <SyncModal
                 isOpen={syncModalOpen}
                 onClose={() => setSyncModalOpen(false)}
                 logs={syncLogs}
                 status={syncStatus}
                 platform="google"
             />
-            
+
             {/* CONTROLES */}
             <div className="flex items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex-wrap">
                 <Select onValueChange={setSelectedClient} value={selectedClient}>
@@ -498,7 +505,7 @@ export default function AdsReportGenerator() {
                         {clients.map(c => <SelectItem key={c.client_id} value={c.client_id}>{c.client_name}</SelectItem>)}
                     </SelectContent>
                 </Select>
-                
+
                 <Select value={historicalMonths.toString()} onValueChange={(v) => setHistoricalMonths(parseInt(v))}>
                     <SelectTrigger className="w-[180px]">
                         <SelectValue />
@@ -511,8 +518,8 @@ export default function AdsReportGenerator() {
                     </SelectContent>
                 </Select>
 
-                <Button 
-                    onClick={handleSync} 
+                <Button
+                    onClick={handleSync}
                     disabled={!selectedClient || syncStatus === 'running'}
                     variant="outline"
                 >
@@ -524,7 +531,7 @@ export default function AdsReportGenerator() {
                     {loading ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="mr-2 h-4 w-4" />}
                     {loading ? 'Cargando datos...' : 'Generar Informe con IA'}
                 </Button>
-                
+
                 {reportData && !loading && (
                     <Button variant="outline" onClick={() => handlePrint()}>
                         <Printer className="mr-2 h-4 w-4" /> Imprimir / PDF
@@ -535,8 +542,8 @@ export default function AdsReportGenerator() {
             {/* VISTA PREVIA (HOJA A4) */}
             {reportData && (
                 <div className="flex justify-center bg-slate-100 p-8 rounded-xl overflow-auto">
-                    <div 
-                        ref={printRef} 
+                    <div
+                        ref={printRef}
                         className="bg-white w-[210mm] min-h-[297mm] p-[15mm] shadow-2xl flex flex-col space-y-8 text-slate-800"
                         style={{ fontFamily: 'Inter, sans-serif' }}
                     >
@@ -557,30 +564,30 @@ export default function AdsReportGenerator() {
 
                         {/* KPIS PRINCIPALES */}
                         <div className="grid grid-cols-2 gap-4">
-                            <StatCard 
-                                label="Inversión Publicitaria" 
-                                value={reportData.currStats.cost} 
-                                prevValue={reportData.prevStats.cost} 
+                            <StatCard
+                                label="Inversión Publicitaria"
+                                value={reportData.currStats.cost}
+                                prevValue={reportData.prevStats.cost}
                                 formatFn={formatCurrency}
                             />
-                            <StatCard 
-                                label="Conversiones (Leads/Ventas)" 
-                                value={reportData.currStats.conversions} 
-                                prevValue={reportData.prevStats.conversions} 
-                                formatFn={(v:number) => Math.round(v)}
+                            <StatCard
+                                label="Conversiones (Leads/Ventas)"
+                                value={reportData.currStats.conversions}
+                                prevValue={reportData.prevStats.conversions}
+                                formatFn={(v: number) => String(Math.round(v))}
                             />
-                            <StatCard 
-                                label="CPA (Coste por Resultado)" 
-                                value={reportData.currStats.cpa} 
-                                prevValue={reportData.prevStats.cpa} 
-                                formatFn={(v:number) => `${v.toFixed(2)}€`}
-                                reverseColor={true} 
+                            <StatCard
+                                label="CPA (Coste por Resultado)"
+                                value={reportData.currStats.cpa}
+                                prevValue={reportData.prevStats.cpa}
+                                formatFn={(v: number) => `${v.toFixed(2)}€`}
+                                reverseColor={true}
                             />
-                            <StatCard 
-                                label="ROAS (Retorno)" 
-                                value={reportData.currStats.roas} 
-                                prevValue={reportData.prevStats.roas} 
-                                formatFn={(v:number) => `${v.toFixed(2)}x`}
+                            <StatCard
+                                label="ROAS (Retorno)"
+                                value={reportData.currStats.roas}
+                                prevValue={reportData.prevStats.roas}
+                                formatFn={(v: number) => `${v.toFixed(2)}x`}
                             />
                         </div>
 
@@ -594,43 +601,43 @@ export default function AdsReportGenerator() {
                                     <ResponsiveContainer width="100%" height="100%">
                                         <ComposedChart data={historicalChartData}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                            <XAxis 
-                                                dataKey="month" 
-                                                tick={{fontSize: 11}} 
-                                                tickLine={false} 
+                                            <XAxis
+                                                dataKey="month"
+                                                tick={{ fontSize: 11 }}
+                                                tickLine={false}
                                                 axisLine={false}
                                             />
-                                            <YAxis 
+                                            <YAxis
                                                 yAxisId="left"
                                                 orientation="left"
-                                                tick={{fontSize: 10}} 
-                                                tickLine={false} 
+                                                tick={{ fontSize: 10 }}
+                                                tickLine={false}
                                                 axisLine={false}
                                                 tickFormatter={formatEuro}
                                             />
-                                            <YAxis 
-                                                yAxisId="right" 
-                                                orientation="right" 
-                                                tick={{fontSize: 10}} 
-                                                tickLine={false} 
+                                            <YAxis
+                                                yAxisId="right"
+                                                orientation="right"
+                                                tick={{ fontSize: 10 }}
+                                                tickLine={false}
                                                 axisLine={false}
                                             />
                                             <Tooltip content={<CustomTooltip />} />
-                                            <Legend wrapperStyle={{fontSize: '12px', paddingTop: '10px'}}/>
-                                            <Bar 
-                                                yAxisId="left" 
-                                                dataKey="Inversión" 
-                                                fill="#6366f1" 
+                                            <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                                            <Bar
+                                                yAxisId="left"
+                                                dataKey="Inversión"
+                                                fill="#6366f1"
                                                 radius={[4, 4, 0, 0]}
                                                 barSize={30}
                                             />
-                                            <Line 
-                                                yAxisId="right" 
-                                                type="monotone" 
-                                                dataKey="Conversiones" 
-                                                stroke="#f59e0b" 
-                                                strokeWidth={3} 
-                                                dot={{r: 5, fill: '#f59e0b'}} 
+                                            <Line
+                                                yAxisId="right"
+                                                type="monotone"
+                                                dataKey="Conversiones"
+                                                stroke="#f59e0b"
+                                                strokeWidth={3}
+                                                dot={{ r: 5, fill: '#f59e0b' }}
                                             />
                                         </ComposedChart>
                                     </ResponsiveContainer>
@@ -640,66 +647,66 @@ export default function AdsReportGenerator() {
 
                         {/* GRÁFICA DE EVOLUCIÓN DIARIA (mes actual) */}
                         {reportData.dailyChartData && reportData.dailyChartData.length > 1 && (
-                        <div className="bg-white p-4 rounded-lg border border-slate-200">
+                            <div className="bg-white p-4 rounded-lg border border-slate-200">
                                 <h3 className="text-sm font-bold text-slate-600 mb-4 uppercase tracking-wider">
                                     Evolución Diaria ({format(new Date(), 'MMMM yyyy', { locale: es })})
                                 </h3>
-                            <div className="h-64 w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <ComposedChart data={reportData.dailyChartData}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                        <XAxis 
-                                            dataKey="shortDate" 
-                                            tick={{fontSize: 10}} 
-                                            tickLine={false} 
-                                            axisLine={false}
+                                <div className="h-64 w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <ComposedChart data={reportData.dailyChartData}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                            <XAxis
+                                                dataKey="shortDate"
+                                                tick={{ fontSize: 10 }}
+                                                tickLine={false}
+                                                axisLine={false}
                                                 interval="preserveStartEnd"
-                                        />
-                                        <YAxis 
-                                            yAxisId="left"
-                                            orientation="left"
-                                            tick={{fontSize: 10}} 
-                                            tickLine={false} 
-                                            axisLine={false}
+                                            />
+                                            <YAxis
+                                                yAxisId="left"
+                                                orientation="left"
+                                                tick={{ fontSize: 10 }}
+                                                tickLine={false}
+                                                axisLine={false}
                                                 tickFormatter={formatEuro}
-                                        />
-                                        <YAxis 
-                                            yAxisId="right" 
-                                            orientation="right" 
-                                            tick={{fontSize: 10}} 
-                                            tickLine={false} 
-                                            axisLine={false}
-                                        />
+                                            />
+                                            <YAxis
+                                                yAxisId="right"
+                                                orientation="right"
+                                                tick={{ fontSize: 10 }}
+                                                tickLine={false}
+                                                axisLine={false}
+                                            />
                                             <Tooltip content={<CustomTooltip />} />
-                                            <Legend wrapperStyle={{fontSize: '12px', paddingTop: '10px'}}/>
-                                            <Bar 
-                                                yAxisId="left" 
-                                                dataKey="Inversión" 
-                                                fill="#6366f1" 
+                                            <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                                            <Bar
+                                                yAxisId="left"
+                                                dataKey="Inversión"
+                                                fill="#6366f1"
                                                 radius={[4, 4, 0, 0]}
                                                 barSize={12}
                                             />
-                                        {reportData.hasRevenue && (
-                                                <Bar 
-                                                    yAxisId="left" 
-                                                    dataKey="Ingresos" 
-                                                    fill="#10b981" 
+                                            {reportData.hasRevenue && (
+                                                <Bar
+                                                    yAxisId="left"
+                                                    dataKey="Ingresos"
+                                                    fill="#10b981"
                                                     radius={[4, 4, 0, 0]}
                                                     barSize={12}
                                                 />
                                             )}
-                                        <Line 
-                                            yAxisId="right" 
-                                            type="monotone" 
-                                                dataKey="Conversiones" 
-                                            stroke="#f59e0b" 
-                                                strokeWidth={2} 
-                                            dot={{r: 3, fill: '#f59e0b'}} 
-                                        />
-                                    </ComposedChart>
-                                </ResponsiveContainer>
+                                            <Line
+                                                yAxisId="right"
+                                                type="monotone"
+                                                dataKey="Conversiones"
+                                                stroke="#f59e0b"
+                                                strokeWidth={2}
+                                                dot={{ r: 3, fill: '#f59e0b' }}
+                                            />
+                                        </ComposedChart>
+                                    </ResponsiveContainer>
+                                </div>
                             </div>
-                        </div>
                         )}
 
                         {/* RESUMEN EJECUTIVO (IA) */}
@@ -716,9 +723,9 @@ export default function AdsReportGenerator() {
                                     </div>
                                 </div>
                             ) : (
-                            <div className="text-indigo-900 text-sm leading-relaxed whitespace-pre-line">
+                                <div className="text-indigo-900 text-sm leading-relaxed whitespace-pre-line">
                                     {aiSummary || 'Haz clic en "Generar Informe con IA" para obtener el análisis.'}
-                            </div>
+                                </div>
                             )}
                         </div>
 
@@ -730,7 +737,7 @@ export default function AdsReportGenerator() {
                                 </h3>
                                 <div className="rounded-lg border border-slate-200 overflow-hidden">
                                     <div className="max-h-48 overflow-y-auto">
-                                        {reportData.changeLogs.slice(0, 15).map((log: any, idx: number) => (
+                                        {reportData.changeLogs.slice(0, 15).map((log: { change_date?: string; change_type?: string; campaign_name?: string; old_value?: string; new_value?: string; details?: string }, idx: number) => (
                                             <div key={idx} className="px-4 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-3">
@@ -772,15 +779,15 @@ export default function AdsReportGenerator() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        {reportData.campaigns?.map((camp: any) => (
+                                        {reportData.campaigns?.map((camp: { id: string; campaign_name: string; cost: number; conversions: number; impressions: number; clicks: number; value: number; status?: string; cpa?: number; roas?: number }) => (
                                             <tr key={camp.id} className="hover:bg-slate-50">
                                                 <td className="px-4 py-3">
                                                     <div className="flex items-center gap-2">
                                                         <span className="font-medium text-slate-700 truncate max-w-[180px]">
                                                             {camp.campaign_name}
                                                         </span>
-                                                        <Badge 
-                                                            variant={camp.status === 'ENABLED' ? 'default' : 'secondary'} 
+                                                        <Badge
+                                                            variant={camp.status === 'ENABLED' ? 'default' : 'secondary'}
                                                             className="text-xs shrink-0"
                                                         >
                                                             {camp.status === 'ENABLED' ? 'Activa' : camp.status}

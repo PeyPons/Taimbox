@@ -22,7 +22,7 @@ export default function Login() {
   const location = useLocation();
 
   // Obtener la ruta de origen desde el state de navegación
-  const from = (location.state as any)?.from?.pathname || "/dashboard";
+  const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || "/dashboard";
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
@@ -66,7 +66,7 @@ export default function Login() {
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
             <div className="h-10 w-10 rounded-lg bg-indigo-600 flex items-center justify-center">
-               <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
             </div>
           </div>
           <CardTitle className="text-2xl text-center font-bold text-slate-900">Iniciar Sesión</CardTitle>
@@ -111,9 +111,9 @@ export default function Login() {
                   </FormItem>
                 )}
               />
-              <Button 
-                type="submit" 
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium" 
+              <Button
+                type="submit"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium"
                 disabled={form.formState.isSubmitting}
               >
                 {form.formState.isSubmitting ? "Entrando..." : "Acceder"}

@@ -112,7 +112,7 @@ async function callOpenRouterAPI(prompt: string, apiKey: string): Promise<AIResp
         };
       }
 
-    } catch (error: any) {
+    } catch {
       // Continuar con el siguiente lote
       if (i === modelBatches.length - 1) {
         throw new Error("Todos los intentos y lotes de OpenRouter han fallado.");
@@ -151,10 +151,10 @@ async function callCocoAPI(prompt: string): Promise<AIResponse> {
   const responseData = await response.json();
   
   if (responseData && responseData.data) {
-    let cleanText = responseData.data
+    const cleanText = responseData.data
       .replace(/```/g, '')                
       .replace(/<[^>]*>/g, '')             
-      .replace(/^\s*[\*\-]\s*$/gm, '')     
+      .replace(/^\s*[*-]\s*$/gm, '')     
       .replace(/\*\*/g, '')                
       .replace(/\*\s*\n/g, '\n')           
       .replace(/^\*\s*/gm, '- ')           
@@ -199,7 +199,7 @@ export class AIService {
       try {
         const result = await callGeminiAPI(prompt, geminiApiKey);
         return result;
-      } catch (error: any) {
+      } catch {
         // Continuar con el siguiente proveedor
       }
     }
@@ -209,7 +209,7 @@ export class AIService {
       try {
         const result = await callOpenRouterAPI(prompt, openRouterApiKey);
         return result;
-      } catch (error: any) {
+      } catch {
         // Continuar con el siguiente proveedor
       }
     }
@@ -218,7 +218,7 @@ export class AIService {
     try {
       const result = await callCocoAPI(prompt);
       return result;
-    } catch (error: any) {
+    } catch {
       throw new Error('No se pudo generar el análisis. Todos los proveedores de IA fallaron.');
     }
   }

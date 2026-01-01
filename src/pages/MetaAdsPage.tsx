@@ -14,24 +14,42 @@ import { supabase } from '@/lib/supabase';
 import { formatCurrency, cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
-interface MetaCampaignData { campaign_id: string; campaign_name: string; status: string; cost: number; conversions_value?: number; conversions?: number; clicks?: number; impressions?: number; daily_budget?: number; original_client_name?: string; original_client_id?: string; }
+interface MetaCampaignData { campaign_id: string; campaign_name: string; status: string; cost: number; conversions_value?: number; conversions?: number; clicks?: number; impressions?: number; daily_budget?: number; original_client_name?: string; original_client_id?: string; date?: string; client_id?: string; client_name?: string; created_at?: string; }
 interface SegmentationRule { id: string; account_id: string; keyword: string; virtual_name: string; platform: string; }
-interface ClientPacing { client_id: string; client_name: string; is_group: boolean; budget: number; spent: number; progress: number; forecast: number; recommendedDaily: number; avgDailySpend: number; currentDailyBudget: number; status: 'ok' | 'risk' | 'over' | 'under'; remainingBudget: number; total_conversions_val: number; campaigns: MetaCampaignData[]; isHidden: boolean; groupName?: string; isManualGroupBudget?: boolean; isSalesAccount: boolean; realIdsList: {id: string, name: string}[]; globalRoas: number; }
+interface ClientPacing { client_id: string; client_name: string; is_group: boolean; budget: number; spent: number; progress: number; forecast: number; recommendedDaily: number; avgDailySpend: number; currentDailyBudget: number; status: 'ok' | 'risk' | 'over' | 'under'; remainingBudget: number; total_conversions_val: number; campaigns: MetaCampaignData[]; isHidden: boolean; groupName?: string; isManualGroupBudget?: boolean; isSalesAccount: boolean; realIdsList: { id: string, name: string }[]; globalRoas: number; }
 
 const formatProjectName = (name: string) => name.replace(/^(Cliente|Client|Cuenta|Account)\s*[-:]?\s*/i, '');
 const normalizeId = (id: string) => id ? id.replace(/^act_/, '').trim() : '';
 const getRoasColor = (roas: number) => { if (roas >= 4) return "text-emerald-600 bg-emerald-50 border-emerald-200"; if (roas >= 2) return "text-blue-600 bg-blue-50 border-blue-200"; if (roas >= 1) return "text-amber-600 bg-amber-50 border-amber-200"; return "text-red-600 bg-red-50 border-red-200"; };
 const getStatusConfig = (status: string) => { switch (status) { case 'over': return { color: 'bg-red-500', text: 'Excedido', badgeClass: 'bg-red-100 text-red-700 border-red-200' }; case 'risk': return { color: 'bg-amber-500', text: 'En riesgo', badgeClass: 'bg-amber-100 text-amber-700 border-amber-200' }; case 'under': return { color: 'bg-blue-500', text: 'Bajo', badgeClass: 'bg-blue-100 text-blue-700 border-blue-200' }; default: return { color: 'bg-emerald-500', text: 'OK', badgeClass: 'bg-emerald-100 text-emerald-700 border-emerald-200' }; } };
 
-function StatCard({ icon: Icon, label, value, subValue, color = 'slate' }: { icon: any; label: string; value: string; subValue?: string; color?: string; }) {
+import { LucideIcon } from 'lucide-react';
+
+function StatCard({ icon: Icon, label, value, subValue, color = 'slate' }: { icon: LucideIcon; label: string; value: string; subValue?: string; color?: string; }) {
   const colorClasses: Record<string, string> = { slate: 'bg-slate-50 border-slate-200', blue: 'bg-blue-50 border-blue-200', emerald: 'bg-emerald-50 border-emerald-200', amber: 'bg-amber-50 border-amber-200', red: 'bg-red-50 border-red-200' };
   return (<div className={cn("rounded-xl border p-4", colorClasses[color])}><div className="flex items-center gap-2 text-slate-500 mb-2"><Icon className="h-4 w-4" /><span className="text-xs font-medium uppercase">{label}</span></div><p className="text-2xl font-bold text-slate-900">{value}</p>{subValue && <p className="text-xs text-slate-500 mt-1">{subValue}</p>}</div>);
 }
 
+interface ClientSettingsMap {
+  [key: string]: {
+    budget: number;
+    group_name: string;
+    is_hidden: boolean;
+    is_sales_account: boolean;
+  };
+}
+
+interface RegisteredAccount {
+  account_id: string;
+  account_name: string;
+  platform: string;
+  is_active: boolean;
+}
+
 export default function MetaAdsPage() {
-  const [rawData, setRawData] = useState<any[]>([]);
-  const [clientSettings, setClientSettings] = useState<Record<string, any>>({});
-  const [registeredAccounts, setRegisteredAccounts] = useState<any[]>([]);
+  const [rawData, setRawData] = useState<MetaCampaignData[]>([]);
+  const [clientSettings, setClientSettings] = useState<ClientSettingsMap>({});
+  const [registeredAccounts, setRegisteredAccounts] = useState<RegisteredAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [segmentationRules, setSegmentationRules] = useState<SegmentationRule[]>([]);
@@ -41,7 +59,7 @@ export default function MetaAdsPage() {
   const [syncLogs, setSyncLogs] = useState<string[]>([]);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'running' | 'completed' | 'error'>('idle');
   const [syncProgress, setSyncProgress] = useState(0);
-  const [editingClient, setEditingClient] = useState<{id: string, name: string, group: string, hidden: boolean, isSales: boolean} | null>(null);
+  const [editingClient, setEditingClient] = useState<{ id: string, name: string, group: string, hidden: boolean, isSales: boolean } | null>(null);
   const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
   const [newRuleAccount, setNewRuleAccount] = useState('');
   const [newRuleKeyword, setNewRuleKeyword] = useState('');
@@ -62,14 +80,14 @@ export default function MetaAdsPage() {
         supabase.from('meta_sync_logs').select('created_at').eq('status', 'completed').order('created_at', { ascending: false }).limit(1).single(),
         supabase.from('segmentation_rules').select('*').eq('platform', 'meta')
       ]);
-      const settingsMap: Record<string, any> = {};
-      settingsRes.data?.forEach((s: any) => { settingsMap[s.client_id] = { budget: Number(s.budget_limit) || 0, group_name: s.group_name || '', is_hidden: s.is_hidden || false, is_sales_account: s.is_sales_account !== false }; });
+      const settingsMap: ClientSettingsMap = {};
+      settingsRes.data?.forEach((s: { client_id: string; budget_limit?: number; group_name?: string; is_hidden?: boolean; is_sales_account?: boolean }) => { settingsMap[s.client_id] = { budget: Number(s.budget_limit) || 0, group_name: s.group_name || '', is_hidden: s.is_hidden || false, is_sales_account: s.is_sales_account !== false }; });
       setRawData(adsRes.data || []);
       setClientSettings(settingsMap);
       setRegisteredAccounts(accountsRes.data || []);
       setSegmentationRules(rulesRes.data || []);
       if (logsRes.data) setLastSyncTime(new Date(logsRes.data.created_at));
-      else if (adsRes.data && adsRes.data.length > 0) { const dates = adsRes.data.map((d: any) => new Date(d.created_at || d.date).getTime()); setLastSyncTime(new Date(Math.max(...dates))); }
+      else if (adsRes.data && adsRes.data.length > 0) { const dates = adsRes.data.map((d: MetaCampaignData & { created_at?: string; date?: string }) => new Date(d.created_at || d.date || '').getTime()); setLastSyncTime(new Date(Math.max(...dates))); }
     } catch (error) { console.error('Error fetching data', error); } finally { setLoading(false); }
   };
 
@@ -121,13 +139,13 @@ export default function MetaAdsPage() {
   const reportData = useMemo(() => {
     if (!rawData.length) return [];
     const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-    const stats = new Map<string, { name: string, spent: number, budget: number, total_conversions_val: number, is_group: boolean, isHidden: boolean, isSalesAccount: boolean, realIds: string[], realIdsNames: {id: string, name: string}[], campaigns: MetaCampaignData[], isManualGroupBudget: boolean, autoDailyBudgetSum: number }>();
+    const stats = new Map<string, { name: string, spent: number, budget: number, total_conversions_val: number, is_group: boolean, isHidden: boolean, isSalesAccount: boolean, realIds: string[], realIdsNames: { id: string, name: string }[], campaigns: MetaCampaignData[], isManualGroupBudget: boolean, autoDailyBudgetSum: number }>();
 
     registeredAccounts.forEach(acc => {
       const settings = clientSettings[acc.account_id] || { budget: 0, group_name: '', is_hidden: false, is_sales_account: true };
       const groupKey = settings.group_name?.trim() ? `GROUP-${settings.group_name}` : acc.account_id;
       if (!settings.group_name?.trim() && !stats.has(groupKey)) {
-        stats.set(groupKey, { name: acc.account_name || acc.account_id, spent: 0, budget: settings.budget || 0, total_conversions_val: 0, is_group: false, isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false, realIds: [acc.account_id], realIdsNames: [{id: acc.account_id, name: acc.account_name}], campaigns: [], isManualGroupBudget: false, autoDailyBudgetSum: 0 });
+        stats.set(groupKey, { name: acc.account_name || acc.account_id, spent: 0, budget: settings.budget || 0, total_conversions_val: 0, is_group: false, isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false, realIds: [acc.account_id], realIdsNames: [{ id: acc.account_id, name: acc.account_name }], campaigns: [], isManualGroupBudget: false, autoDailyBudgetSum: 0 });
       }
     });
 
@@ -146,7 +164,7 @@ export default function MetaAdsPage() {
         entry.spent += Number(row.cost || 0); entry.total_conversions_val += Number(row.conversions_value || 0);
         const dailyBudget = Number(row.daily_budget || 0);
         if (row.status === 'ENABLED' && dailyBudget > 0) entry.autoDailyBudgetSum += dailyBudget;
-        if (!entry.realIds.includes(finalId)) { entry.realIds.push(finalId); entry.realIdsNames.push({id: finalId, name: finalName}); if (!entry.is_group && isIndividualManual) entry.budget = settings.budget; }
+        if (!entry.realIds.includes(finalId)) { entry.realIds.push(finalId); entry.realIdsNames.push({ id: finalId, name: finalName }); if (!entry.is_group && isIndividualManual) entry.budget = settings.budget; }
         if (Number(row.cost) > 0 || Number(row.impressions) > 0) { entry.campaigns.push({ ...row, original_client_name: finalName, original_client_id: finalId, cost: Number(row.cost), conversions_value: Number(row.conversions_value), conversions: Number(row.conversions), clicks: Number(row.clicks), impressions: Number(row.impressions) }); }
       }
     });
@@ -162,7 +180,7 @@ export default function MetaAdsPage() {
       const globalRoas = spent > 0 ? value.total_conversions_val / spent : 0;
       let status: 'ok' | 'risk' | 'over' | 'under' = 'ok';
       if (finalBudget > 0) { if (spent > finalBudget) status = 'over'; else if (forecast > finalBudget) status = 'risk'; else if (progress < 50 && currentDay > 20) status = 'under'; }
-      report.push({ client_id: key, client_name: value.name, is_group: value.is_group, budget: finalBudget, spent, progress, forecast, recommendedDaily, avgDailySpend, currentDailyBudget, status, remainingBudget, total_conversions_val: value.total_conversions_val, isHidden: value.isHidden, isSalesAccount: value.isSalesAccount, groupName: value.is_group ? value.name : undefined, isManualGroupBudget: value.isManualGroupBudget, realIdsList: value.realIdsNames, campaigns: value.campaigns.sort((a,b) => b.cost - a.cost), globalRoas });
+      report.push({ client_id: key, client_name: value.name, is_group: value.is_group, budget: finalBudget, spent, progress, forecast, recommendedDaily, avgDailySpend, currentDailyBudget, status, remainingBudget, total_conversions_val: value.total_conversions_val, isHidden: value.isHidden, isSalesAccount: value.isSalesAccount, groupName: value.is_group ? value.name : undefined, isManualGroupBudget: value.isManualGroupBudget, realIdsList: value.realIdsNames, campaigns: value.campaigns.sort((a, b) => b.cost - a.cost), globalRoas });
     });
     let filtered = report;
     if (!showHidden) filtered = filtered.filter(c => !c.isHidden);
@@ -240,7 +258,7 @@ export default function MetaAdsPage() {
                 </AccordionTrigger>
                 <AccordionContent className="border-t bg-slate-50/50">
                   <div className="p-4 space-y-6">
-                    {client.is_group && <div className="bg-white p-4 rounded-lg border"><h4 className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center gap-2"><Layers className="w-3.5 h-3.5" /> Cuentas Vinculadas ({client.realIdsList.length})</h4><div className="flex flex-wrap gap-2">{client.realIdsList.map(sub => <div key={sub.id} className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border text-sm"><span className="font-medium text-slate-700">{formatProjectName(sub.name)}</span><button onClick={() => setEditingClient({id: sub.id, name: sub.name, group: client.groupName || '', hidden: false, isSales: true})} className="text-slate-400 hover:text-blue-500"><Settings className="w-3.5 h-3.5" /></button></div>)}</div></div>}
+                    {client.is_group && <div className="bg-white p-4 rounded-lg border"><h4 className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center gap-2"><Layers className="w-3.5 h-3.5" /> Cuentas Vinculadas ({client.realIdsList.length})</h4><div className="flex flex-wrap gap-2">{client.realIdsList.map(sub => <div key={sub.id} className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border text-sm"><span className="font-medium text-slate-700">{formatProjectName(sub.name)}</span><button onClick={() => setEditingClient({ id: sub.id, name: sub.name, group: client.groupName || '', hidden: false, isSales: true })} className="text-slate-400 hover:text-blue-500"><Settings className="w-3.5 h-3.5" /></button></div>)}</div></div>}
                     <div className="grid lg:grid-cols-2 gap-6">
                       <div className="bg-white p-4 rounded-lg border space-y-4">
                         <div className="flex justify-between items-center"><div className="flex items-center gap-2"><Label className="text-sm font-medium text-slate-700">Presupuesto {client.is_group ? 'Total' : 'Mensual'}</Label>{!client.isManualGroupBudget && !clientSettings[client.client_id]?.budget && <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-600 border-blue-200">Auto</Badge>}</div><div className="flex items-center gap-2"><span className="text-slate-400">€</span><Input key={`${client.client_id}-${client.budget}`} type="number" defaultValue={clientSettings[client.client_id]?.budget > 0 ? clientSettings[client.client_id]?.budget : ''} onBlur={(e) => handleSaveBudget(client.client_id, e.target.value)} className="h-8 w-28 text-right" placeholder={client.budget.toFixed(0)} /></div></div>
@@ -263,11 +281,11 @@ export default function MetaAdsPage() {
         {reportData.length === 0 && !loading && <div className="text-center py-12 bg-white rounded-xl border"><Facebook className="w-12 h-12 mx-auto text-blue-200" /><h3 className="text-lg font-medium text-slate-700 mt-4">Sin datos</h3><p className="text-sm text-slate-500 mt-1">Sincroniza para cargar cuentas</p></div>}
       </div>
 
-      <Dialog open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)}><DialogContent><DialogHeader><DialogTitle>Configurar cuenta</DialogTitle><DialogDescription>{editingClient?.name}</DialogDescription></DialogHeader><div className="space-y-4 py-4"><div className="space-y-2"><Label>Nombre del grupo (Holding)</Label><Input value={editingClient?.group || ''} onChange={(e) => setEditingClient(prev => prev ? {...prev, group: e.target.value} : null)} placeholder="Ej: Grupo ABC" /><p className="text-xs text-slate-500">Las cuentas del mismo grupo se consolidan.</p></div><div className="flex justify-between items-center py-3 border-t"><div><Label>Cuenta de ventas (ROAS)</Label><p className="text-xs text-slate-500">Mostrar conversiones</p></div><Switch checked={editingClient?.isSales !== false} onCheckedChange={(c) => setEditingClient(prev => prev ? {...prev, isSales: c} : null)} /></div><div className="flex justify-between items-center py-3 border-t"><div><Label>Ocultar cuenta</Label><p className="text-xs text-slate-500">No aparecerá en la lista</p></div><Switch checked={editingClient?.hidden || false} onCheckedChange={(c) => setEditingClient(prev => prev ? {...prev, hidden: c} : null)} /></div></div><DialogFooter><Button variant="outline" onClick={() => setEditingClient(null)}>Cancelar</Button><Button onClick={handleSaveClientSettings}>Guardar</Button></DialogFooter></DialogContent></Dialog>
+      <Dialog open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)}><DialogContent><DialogHeader><DialogTitle>Configurar cuenta</DialogTitle><DialogDescription>{editingClient?.name}</DialogDescription></DialogHeader><div className="space-y-4 py-4"><div className="space-y-2"><Label>Nombre del grupo (Holding)</Label><Input value={editingClient?.group || ''} onChange={(e) => setEditingClient(prev => prev ? { ...prev, group: e.target.value } : null)} placeholder="Ej: Grupo ABC" /><p className="text-xs text-slate-500">Las cuentas del mismo grupo se consolidan.</p></div><div className="flex justify-between items-center py-3 border-t"><div><Label>Cuenta de ventas (ROAS)</Label><p className="text-xs text-slate-500">Mostrar conversiones</p></div><Switch checked={editingClient?.isSales !== false} onCheckedChange={(c) => setEditingClient(prev => prev ? { ...prev, isSales: c } : null)} /></div><div className="flex justify-between items-center py-3 border-t"><div><Label>Ocultar cuenta</Label><p className="text-xs text-slate-500">No aparecerá en la lista</p></div><Switch checked={editingClient?.hidden || false} onCheckedChange={(c) => setEditingClient(prev => prev ? { ...prev, hidden: c } : null)} /></div></div><DialogFooter><Button variant="outline" onClick={() => setEditingClient(null)}>Cancelar</Button><Button onClick={handleSaveClientSettings}>Guardar</Button></DialogFooter></DialogContent></Dialog>
 
       <Dialog open={isSplitModalOpen} onOpenChange={setIsSplitModalOpen}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle className="flex items-center gap-2"><Scissors className="w-5 h-5" /> Dividir Cuentas</DialogTitle><DialogDescription>Separa campañas por palabra clave en cuentas virtuales.</DialogDescription></DialogHeader><div className="space-y-6 py-4"><div className="grid grid-cols-12 gap-3 items-end bg-slate-50 p-4 rounded-lg border"><div className="col-span-12 sm:col-span-4 space-y-1"><Label className="text-xs font-medium">Cuenta Origen</Label><Select value={newRuleAccount} onValueChange={setNewRuleAccount}><SelectTrigger className="bg-white"><SelectValue placeholder="Selecciona..." /></SelectTrigger><SelectContent>{uniqueAccountsForSelector.map(acc => <SelectItem key={acc.id} value={acc.id}>{acc.name || acc.id}</SelectItem>)}</SelectContent></Select></div><div className="col-span-6 sm:col-span-3 space-y-1"><Label className="text-xs font-medium">Si contiene...</Label><Input placeholder="Ej: Loro" className="bg-white" value={newRuleKeyword} onChange={e => setNewRuleKeyword(e.target.value)} /></div><div className="col-span-6 sm:col-span-3 space-y-1"><Label className="text-xs font-medium">Crear cuenta...</Label><Input placeholder="Ej: Loro Parque" className="bg-white" value={newRuleName} onChange={e => setNewRuleName(e.target.value)} /></div><div className="col-span-12 sm:col-span-2"><Button onClick={handleAddRule} className="w-full"><Plus className="w-4 h-4" /></Button></div></div><div className="space-y-2"><h4 className="text-xs font-bold text-slate-500 uppercase">Reglas Activas ({segmentationRules.length})</h4>{segmentationRules.length === 0 ? <p className="text-sm text-slate-400 italic py-4 text-center">No hay reglas</p> : <div className="space-y-2 max-h-[200px] overflow-y-auto">{segmentationRules.map(rule => <div key={rule.id} className="flex items-center justify-between p-3 bg-white border rounded-lg"><div className="flex items-center gap-3 flex-wrap"><Badge variant="outline" className="font-mono text-xs">{normalizeId(rule.account_id).slice(0, 10)}...</Badge><span className="text-sm text-slate-500">Si contiene <strong className="text-slate-700">"{rule.keyword}"</strong></span><span className="text-slate-300">→</span><span className="font-bold text-blue-600">{rule.virtual_name}</span></div><Button variant="ghost" size="icon" onClick={() => handleDeleteRule(rule.id)} className="text-red-500 hover:bg-red-50 h-8 w-8"><Trash2 className="w-4 h-4" /></Button></div>)}</div>}</div></div></DialogContent></Dialog>
 
-      <Dialog open={isSyncing} onOpenChange={(open) => { if(syncStatus !== 'running') setIsSyncing(open); }}><DialogContent className="sm:max-w-md bg-slate-950 text-slate-100 border-slate-800"><DialogHeader><DialogTitle className="flex items-center gap-2 text-white">{syncStatus === 'running' && <RefreshCw className="w-5 h-5 animate-spin text-blue-500" />}{syncStatus === 'completed' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}Sincronizando Meta Ads</DialogTitle><DialogDescription className="text-slate-400">{syncStatus === 'running' ? 'Conectando...' : 'Finalizado'}</DialogDescription></DialogHeader><Progress value={syncProgress} className="h-2 bg-slate-800 [&>div]:bg-blue-500" /><div className="bg-black/50 rounded-lg p-4 font-mono text-xs text-blue-400 h-64 overflow-hidden border border-slate-800"><div className="h-full overflow-y-auto space-y-1" ref={scrollRef}>{syncLogs.map((log, i) => <div key={i} className="break-words">{log}</div>)}</div></div></DialogContent></Dialog>
+      <Dialog open={isSyncing} onOpenChange={(open) => { if (syncStatus !== 'running') setIsSyncing(open); }}><DialogContent className="sm:max-w-md bg-slate-950 text-slate-100 border-slate-800"><DialogHeader><DialogTitle className="flex items-center gap-2 text-white">{syncStatus === 'running' && <RefreshCw className="w-5 h-5 animate-spin text-blue-500" />}{syncStatus === 'completed' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}Sincronizando Meta Ads</DialogTitle><DialogDescription className="text-slate-400">{syncStatus === 'running' ? 'Conectando...' : 'Finalizado'}</DialogDescription></DialogHeader><Progress value={syncProgress} className="h-2 bg-slate-800 [&>div]:bg-blue-500" /><div className="bg-black/50 rounded-lg p-4 font-mono text-xs text-blue-400 h-64 overflow-hidden border border-slate-800"><div className="h-full overflow-y-auto space-y-1" ref={scrollRef}>{syncLogs.map((log, i) => <div key={i} className="break-words">{log}</div>)}</div></div></DialogContent></Dialog>
     </div>
   );
 }

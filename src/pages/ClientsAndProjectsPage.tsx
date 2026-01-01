@@ -18,12 +18,12 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
+import {
   Building2, Plus, Search, ChevronLeft, ChevronRight, ChevronDown,
-  AlertTriangle, TrendingUp, TrendingDown, Pencil, Trash2, Users, 
+  AlertTriangle, TrendingUp, TrendingDown, Pencil, Trash2, Users,
   FolderOpen, Clock, CalendarDays, ArrowUpRight, ArrowDownRight,
   Minus, Eye, X, ChevronsUpDown, User, Target, Filter, LayoutGrid,
-  AlertOctagon, CircleDashed, Ban, CheckCircle2, XCircle, Zap, EyeOff, Eye
+  AlertOctagon, CircleDashed, Ban, CheckCircle2, XCircle, Zap, EyeOff
 } from 'lucide-react';
 import { cn, isKitDigitalProject, formatProjectName } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -43,17 +43,17 @@ type StatusFilter = 'all' | 'active' | 'completed' | 'archived' | 'hidden';
 type ProjectTypeFilter = 'all' | 'seo' | 'ppc';
 
 // Componente para estadísticas del header
-function StatCard({ 
-  icon: Icon, 
-  label, 
-  value, 
-  subValue, 
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  subValue,
   trend,
   color = 'slate'
-}: { 
-  icon: any; 
-  label: string; 
-  value: string | number; 
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string | number;
   subValue?: string;
   trend?: 'up' | 'down' | 'neutral';
   color?: 'slate' | 'emerald' | 'amber' | 'red';
@@ -100,13 +100,13 @@ function StatCard({
 }
 
 export default function ClientsAndProjectsPage() {
-  const { 
-    clients, projects, allocations, employees, 
-    addClient, updateClient, deleteClient, 
+  const {
+    clients, projects, allocations, employees,
+    addClient, updateClient, deleteClient,
     addProject, updateProject, deleteProject,
-    getClientTotalHoursForMonth, getProjectHoursForMonth 
+    getClientTotalHoursForMonth, getProjectHoursForMonth
   } = useApp();
-  
+
   // Estados
   const [searchQuery, setSearchQuery] = useState('');
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -122,13 +122,13 @@ export default function ClientsAndProjectsPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>('needs-planning'); // Por defecto mostrar los que necesitan planificación
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active'); // Por defecto solo activos
   const [projectTypeFilter, setProjectTypeFilter] = useState<ProjectTypeFilter>('all');
-  
+
   const projectFormSchema = z.object({
     name: z.string().min(1, 'El nombre es obligatorio'),
     clientId: z.string().min(1, 'Debes seleccionar un cliente'),
-    budgetHours: z.string().transform((val) => parseFloat(val) || 0).pipe(z.number().min(0, 'Las horas asignadas no pueden ser negativas')),
-    minimumHours: z.string().transform((val) => parseFloat(val) || 0).pipe(z.number().min(0, 'Las horas mínimas no pueden ser negativas')),
-    monthlyFee: z.string().transform((val) => parseFloat(val) || 0).pipe(z.number().min(0, 'El fee mensual no puede ser negativo')),
+    budgetHours: z.coerce.number().min(0, 'Las horas asignadas no pueden ser negativas'),
+    minimumHours: z.coerce.number().min(0, 'Las horas mínimas no pueden ser negativas'),
+    monthlyFee: z.coerce.number().min(0, 'El fee mensual no puede ser negativo'),
     status: z.enum(['active', 'archived', 'completed']),
     okrs: z.array(z.object({
       id: z.string(),
@@ -144,9 +144,9 @@ export default function ClientsAndProjectsPage() {
     defaultValues: {
       name: '',
       clientId: '',
-      budgetHours: '0',
-      minimumHours: '0',
-      monthlyFee: '0',
+      budgetHours: 0,
+      minimumHours: 0,
+      monthlyFee: 0,
       status: 'active',
       okrs: [],
     },
@@ -172,8 +172,8 @@ export default function ClientsAndProjectsPage() {
   const projectsAnalysis = useMemo(() => {
     return projects.map(project => {
       const client = clients.find(c => c.id === project.clientId);
-      let monthTasks = allocations.filter(a => 
-        a.projectId === project.id && 
+      const monthTasks = allocations.filter(a =>
+        a.projectId === project.id &&
         isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)
       );
 
@@ -187,17 +187,17 @@ export default function ClientsAndProjectsPage() {
 
       const budget = project.budgetHours || 0;
       const minimum = project.minimumHours || 0;
-      
+
       // Lógica de horas objetivo según el usuario:
       // - Si tiene budgetHours (horas asignadas): DEBE planificar TODAS
       // - Si solo tiene minimumHours: DEBE planificar al menos esas
       // - Si tiene ambas: DEBE planificar todas las budgetHours (las asignadas son obligatorias)
       const targetHours = budget > 0 ? budget : minimum;
-      
+
       // Cálculos de estado
       const planningPct = targetHours > 0 ? (totalAssigned / targetHours) * 100 : 0;
       const executionPct = totalAssigned > 0 ? (hoursComputed / totalAssigned) * 100 : 0;
-      
+
       // Detección de problemas
       // Falta planificar: si tiene horas objetivo y no se han planificado todas
       // - Si tiene budgetHours: debe planificar todas las budgetHours
@@ -245,25 +245,25 @@ export default function ClientsAndProjectsPage() {
     const regularClients = clients.map(client => {
       // Calcular horas a nivel cliente: planificadas (estimadas), computadas y ganancia
       const clientProjectsForStats = projects.filter(p => p.clientId === client.id && !kitDigitalProjectIds.has(p.id));
-      
+
       // Horas planificadas (estimadas) - suma de todas las horas asignadas
       const plannedHours = clientProjectsForStats.reduce((sum, project) => {
         const analysis = projectsAnalysis.find(a => a.project.id === project.id);
         return sum + (analysis?.totalAssigned || 0);
       }, 0);
-      
+
       // Horas computadas - suma de horas computadas de tareas completadas
       const computedHours = clientProjectsForStats.reduce((sum, project) => {
         const analysis = projectsAnalysis.find(a => a.project.id === project.id);
         return sum + (analysis?.hoursComputed || 0);
       }, 0);
-      
+
       // Horas reales - suma de horas reales de tareas completadas
       const realHours = clientProjectsForStats.reduce((sum, project) => {
         const analysis = projectsAnalysis.find(a => a.project.id === project.id);
         return sum + (analysis?.hoursReal || 0);
       }, 0);
-      
+
       // Ganancia = computadas - reales
       const gain = computedHours - realHours;
 
@@ -278,15 +278,15 @@ export default function ClientsAndProjectsPage() {
         const analysis = projectsAnalysis.find(a => a.project.id === project.id);
         return analysis?.needsPlanning || analysis?.noActivity;
       }).length;
-      
+
       // Porcentaje basado en horas planificadas (no computadas)
       const percentage = totalBudget > 0 ? round2((plannedHours / totalBudget) * 100) : 0;
-      
+
       // Calcular prevStats (mes anterior)
       const prevMonthProjects = projects.filter(p => p.clientId === client.id && !kitDigitalProjectIds.has(p.id));
       const prevPlannedHours = prevMonthProjects.reduce((sum, project) => {
-        const monthTasks = allocations.filter(a => 
-          a.projectId === project.id && 
+        const monthTasks = allocations.filter(a =>
+          a.projectId === project.id &&
           isAllocationInEffectiveMonth(a.weekStartDate, prevMonth)
         );
         return sum + monthTasks.reduce((s, t) => s + t.hoursAssigned, 0);
@@ -397,7 +397,7 @@ export default function ClientsAndProjectsPage() {
         if (searchQuery) {
           const query = searchQuery.toLowerCase();
           const clientMatch = client.name.toLowerCase().includes(query);
-          const projectMatch = stats.projects.some(p => 
+          const projectMatch = stats.projects.some(p =>
             p.project.name.toLowerCase().includes(query)
           );
           if (!clientMatch && !projectMatch) return false;
@@ -417,7 +417,7 @@ export default function ClientsAndProjectsPage() {
 
         // Filtro de empleado
         if (selectedEmployeeId !== 'all') {
-          const hasEmployee = stats.projects.some(p => 
+          const hasEmployee = stats.projects.some(p =>
             p.analysis?.involvedEmployees.includes(selectedEmployeeId)
           );
           if (!hasEmployee) return false;
@@ -446,19 +446,19 @@ export default function ClientsAndProjectsPage() {
             const projectNameUpper = project.name.toUpperCase();
             if (projectTypeFilter === 'seo') {
               // Solo SEO: excluir SEM, RRSS, Social, PPC, DV360
-              if (projectNameUpper.includes('SEM') || 
-                  projectNameUpper.includes('RRSS') || 
-                  projectNameUpper.includes('SOCIAL') || 
-                  projectNameUpper.includes('PPC') ||
-                  projectNameUpper.includes('DV360')) {
+              if (projectNameUpper.includes('SEM') ||
+                projectNameUpper.includes('RRSS') ||
+                projectNameUpper.includes('SOCIAL') ||
+                projectNameUpper.includes('PPC') ||
+                projectNameUpper.includes('DV360')) {
                 return false;
               }
             } else if (projectTypeFilter === 'ppc') {
               // Solo PPC: incluir SEM, Social, PPC, DV360
-              if (!projectNameUpper.includes('SEM') && 
-                  !projectNameUpper.includes('SOCIAL') && 
-                  !projectNameUpper.includes('PPC') &&
-                  !projectNameUpper.includes('DV360')) {
+              if (!projectNameUpper.includes('SEM') &&
+                !projectNameUpper.includes('SOCIAL') &&
+                !projectNameUpper.includes('PPC') &&
+                !projectNameUpper.includes('DV360')) {
                 return false;
               }
             }
@@ -535,16 +535,16 @@ export default function ClientsAndProjectsPage() {
         // Kit Digital y entregables siempre al final
         const aIsSpecial = a.client.id === 'kit-digital' || a.client.name.toLowerCase().includes('entregable');
         const bIsSpecial = b.client.id === 'kit-digital' || b.client.name.toLowerCase().includes('entregable');
-        
+
         if (aIsSpecial && !bIsSpecial) return 1;
         if (!aIsSpecial && bIsSpecial) return -1;
         if (aIsSpecial && bIsSpecial) return a.client.name.localeCompare(b.client.name);
-        
+
         // Ordenar por horas CONTRATADAS (mayor a menor) - no por planificadas
         const aBudget = a.stats.budget || 0;
         const bBudget = b.stats.budget || 0;
         if (bBudget !== aBudget) return bBudget - aBudget;
-        
+
         // Si tienen las mismas horas, ordenar alfabéticamente
         return a.client.name.localeCompare(b.client.name);
       });
@@ -587,7 +587,10 @@ export default function ClientsAndProjectsPage() {
   });
 
   const handleAddClient = (data: ClientFormValues) => {
-    addClient(data);
+    addClient({
+      name: data.name || 'Nuevo Cliente',
+      color: data.color || '#000000'
+    });
     setIsAddingClient(false);
     clientForm.reset();
     toast.success(`${data.name} creado`);
@@ -616,9 +619,9 @@ export default function ClientsAndProjectsPage() {
     projectForm.reset({
       name: '',
       clientId: '',
-      budgetHours: '0',
-      minimumHours: '0',
-      monthlyFee: '0',
+      budgetHours: 0,
+      minimumHours: 0,
+      monthlyFee: 0,
       status: 'active',
       okrs: [],
     });
@@ -630,9 +633,9 @@ export default function ClientsAndProjectsPage() {
     projectForm.reset({
       name: project.name,
       clientId: project.clientId,
-      budgetHours: project.budgetHours?.toString() || '0',
-      minimumHours: project.minimumHours?.toString() || '0',
-      monthlyFee: project.monthlyFee?.toString() || '0',
+      budgetHours: project.budgetHours || 0,
+      minimumHours: project.minimumHours || 0,
+      monthlyFee: project.monthlyFee || 0,
       status: project.status,
       okrs: project.okrs || []
     });
@@ -644,11 +647,11 @@ export default function ClientsAndProjectsPage() {
         await addProject({
           name: data.name,
           clientId: data.clientId,
-          budgetHours: data.budgetHours,
-          minimumHours: data.minimumHours,
-          monthlyFee: data.monthlyFee,
+          budgetHours: Number(data.budgetHours) || 0,
+          minimumHours: Number(data.minimumHours) || 0,
+          monthlyFee: Number(data.monthlyFee) || 0,
           status: data.status,
-          okrs: data.okrs || []
+          okrs: (data.okrs || []).map(o => ({ ...o, id: o.id || crypto.randomUUID() })) as OKR[]
         });
         toast.success('Proyecto creado');
       } else if (editingProject) {
@@ -656,18 +659,18 @@ export default function ClientsAndProjectsPage() {
           ...editingProject,
           name: data.name,
           clientId: data.clientId,
-          budgetHours: data.budgetHours,
-          minimumHours: data.minimumHours,
-          monthlyFee: data.monthlyFee,
+          budgetHours: Number(data.budgetHours) || 0,
+          minimumHours: Number(data.minimumHours) || 0,
+          monthlyFee: Number(data.monthlyFee) || 0,
           status: data.status,
-          okrs: data.okrs || []
+          okrs: (data.okrs || []).map(o => ({ ...o, id: o.id || crypto.randomUUID() })) as OKR[]
         });
         toast.success('Proyecto actualizado');
       }
       setEditingProject(null);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error guardando proyecto:', error);
-      const errorMessage = error?.message || error?.error?.message || 'Error al guardar el proyecto';
+      const errorMessage = (error as Error)?.message || 'Error al guardar el proyecto';
       toast.error(errorMessage);
     }
   };
@@ -679,9 +682,9 @@ export default function ClientsAndProjectsPage() {
         await deleteProject(editingProject.id);
         setEditingProject(null);
         toast.success('Proyecto eliminado');
-      } catch (e: any) {
+      } catch (e) {
         console.error('Error eliminando proyecto:', e);
-        const errorMessage = e?.message || e?.error?.message || 'No se pudo eliminar el proyecto';
+        const errorMessage = (e as Error)?.message || 'No se pudo eliminar el proyecto';
         toast.error(errorMessage);
       }
     }
@@ -749,9 +752,9 @@ export default function ClientsAndProjectsPage() {
     projectForm.setValue('okrs', currentOkrs.filter(o => o.id !== id));
   };
 
-  const getSelectedEmployeeName = () => 
-    selectedEmployeeId === 'all' 
-      ? "Todos los empleados" 
+  const getSelectedEmployeeName = () =>
+    selectedEmployeeId === 'all'
+      ? "Todos los empleados"
       : employees.find(e => e.id === selectedEmployeeId)?.name || "Seleccionar...";
 
   return (
@@ -773,9 +776,9 @@ export default function ClientsAndProjectsPage() {
         <div className="flex items-center gap-2 flex-wrap">
           {/* Selector de mes */}
           <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-8 w-8"
               onClick={() => setCurrentMonth(prev => subMonths(prev, 1))}
             >
@@ -784,17 +787,17 @@ export default function ClientsAndProjectsPage() {
             <span className="text-sm font-medium px-2 min-w-[120px] text-center capitalize">
               {format(currentMonth, 'MMMM yyyy', { locale: es })}
             </span>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-8 w-8"
               onClick={() => setCurrentMonth(prev => addMonths(prev, 1))}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="h-8 text-xs"
               onClick={() => setCurrentMonth(new Date())}
             >
@@ -810,7 +813,7 @@ export default function ClientsAndProjectsPage() {
             }
           }}>
             <DialogTrigger asChild>
-              <Button 
+              <Button
                 className="gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md"
                 onClick={openNewProject}
               >
@@ -822,7 +825,7 @@ export default function ClientsAndProjectsPage() {
               <DialogHeader>
                 <DialogTitle>{isAddingProject ? 'Nuevo proyecto' : 'Editar proyecto'}</DialogTitle>
                 <DialogDescription>
-                  {isAddingProject 
+                  {isAddingProject
                     ? 'Crea un nuevo proyecto y asócialo a un cliente'
                     : 'Modifica los datos del proyecto'}
                 </DialogDescription>
@@ -856,7 +859,7 @@ export default function ClientsAndProjectsPage() {
                                 role="combobox"
                                 className="w-full justify-between"
                               >
-                                {field.value 
+                                {field.value
                                   ? clients.find(c => c.id === field.value)?.name || "Seleccionar cliente"
                                   : "Seleccionar cliente"}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -994,9 +997,9 @@ export default function ClientsAndProjectsPage() {
                   </div>
                   <DialogFooter>
                     {editingProject && (
-                      <Button 
+                      <Button
                         type="button"
-                        variant="destructive" 
+                        variant="destructive"
                         onClick={() => {
                           if (confirm(`¿Estás seguro de eliminar "${editingProject.name}"? Se borrarán sus asignaciones.`)) {
                             handleDeleteProject();
@@ -1091,28 +1094,28 @@ export default function ClientsAndProjectsPage() {
 
       {/* Estadísticas globales */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard 
+        <StatCard
           icon={Building2}
           label="Total clientes"
           value={globalStats.totalClients}
           color="slate"
         />
-        <StatCard 
+        <StatCard
           icon={Clock}
           label="Horas este mes"
           value={`${globalStats.totalHours.toFixed(0)}h`}
           subValue={`de ${globalStats.totalBudget.toFixed(0)}h asignadas`}
-          trend={globalStats.trend as any}
+          trend={globalStats.trend as 'up' | 'down' | 'neutral'}
           color="emerald"
         />
-        <StatCard 
+        <StatCard
           icon={AlertTriangle}
           label="En riesgo"
           value={globalStats.atRisk}
           subValue=">85% de horas contratadas"
           color={globalStats.atRisk > 0 ? 'amber' : 'slate'}
         />
-        <StatCard 
+        <StatCard
           icon={TrendingUp}
           label="Excedidos"
           value={globalStats.overBudget}
@@ -1177,7 +1180,7 @@ export default function ClientsAndProjectsPage() {
             <PopoverTrigger asChild>
               <Button variant="outline" role="combobox" className="w-[180px] h-9 justify-between bg-white shrink-0">
                 <span className="flex items-center gap-2 truncate">
-                  <User className="h-3.5 w-3.5 text-slate-400 shrink-0" /> 
+                  <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                   <span className="truncate">{getSelectedEmployeeName()}</span>
                 </span>
                 <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50 shrink-0" />
@@ -1344,7 +1347,7 @@ export default function ClientsAndProjectsPage() {
             const isOverBudget = stats.percentage > 100;
             const isNearLimit = stats.percentage > 85 && stats.percentage <= 100;
             const trend = stats.used - prevStats.used;
-            
+
             return (
               <div key={client.id} className="bg-white rounded-xl border shadow-sm overflow-hidden">
                 {/* Cabecera del cliente */}
@@ -1357,8 +1360,8 @@ export default function ClientsAndProjectsPage() {
                   ) : (
                     <ChevronRight className="h-4 w-4 text-slate-400 flex-shrink-0" />
                   )}
-                  <div 
-                    className="w-3 h-3 rounded-full flex-shrink-0" 
+                  <div
+                    className="w-3 h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: client.color }}
                   />
                   <span className="font-bold text-slate-800 flex-1 text-left">{client.name}</span>
@@ -1442,7 +1445,7 @@ export default function ClientsAndProjectsPage() {
                         {stats.projects.length} proyecto{stats.projects.length !== 1 ? 's' : ''}
                       </Badge>
                     </div>
-                    
+
                     {/* Botón de acción */}
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Tooltip>
@@ -1456,23 +1459,23 @@ export default function ClientsAndProjectsPage() {
                     </div>
                   </div>
                 </button>
-                
+
                 {/* Proyectos del cliente */}
                 {isExpanded && (
                   <div className="border-t divide-y divide-slate-100">
                     {stats.projects.length > 0 ? (
                       stats.projects.map(({ project, analysis }) => {
                         if (!analysis) return null;
-                        
+
                         const isProjectExpanded = expandedProjects.has(project.id);
                         const isProjectOverBudget = analysis.overBudget;
                         const isProjectNearLimit = analysis.planningPct > 85 && !analysis.overBudget;
-                        
+
                         return (
                           <div key={project.id} className="mb-2">
                             {/* Header del proyecto */}
-                            <Collapsible 
-                              open={isProjectExpanded} 
+                            <Collapsible
+                              open={isProjectExpanded}
                               onOpenChange={() => toggleProject(project.id)}
                             >
                               <CollapsibleTrigger asChild>
@@ -1489,8 +1492,8 @@ export default function ClientsAndProjectsPage() {
                                       "h-4 w-4 text-slate-400 transition-transform shrink-0",
                                       isProjectExpanded && "rotate-180"
                                     )} />
-                                    <div 
-                                      className="h-2 w-2 rounded-full flex-shrink-0" 
+                                    <div
+                                      className="h-2 w-2 rounded-full flex-shrink-0"
                                       style={{ backgroundColor: client.color }}
                                     />
                                     <div className="flex-1 min-w-0">
@@ -1498,7 +1501,7 @@ export default function ClientsAndProjectsPage() {
                                         <p className="text-sm font-medium text-slate-800 truncate">
                                           {formatProjectName(project.name)}
                                         </p>
-                                        
+
                                         {/* Badges de estado del proyecto */}
                                         <TooltipProvider>
                                           {project.status === 'completed' && (
@@ -1534,7 +1537,7 @@ export default function ClientsAndProjectsPage() {
                                               </TooltipTrigger>
                                               <TooltipContent>
                                                 <p className="text-xs">
-                                                  {analysis.project.budgetHours > 0 
+                                                  {analysis.project.budgetHours > 0
                                                     ? `Faltan ${round2(analysis.project.budgetHours - analysis.totalAssigned)}h por planificar (${analysis.project.budgetHours}h asignadas)`
                                                     : `Faltan ${round2((analysis.project.minimumHours || 0) - analysis.totalAssigned)}h por planificar (${analysis.project.minimumHours || 0}h mínimas)`
                                                   }
@@ -1568,13 +1571,13 @@ export default function ClientsAndProjectsPage() {
                                           )}
                                         </TooltipProvider>
                                       </div>
-                                      
+
                                       <div className="flex items-center gap-3 mt-1.5">
                                         {/* Mini barra de progreso */}
                                         {analysis.budget > 0 && (
                                           <div className="flex items-center gap-2 flex-1 max-w-[200px]">
                                             <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                                              <div 
+                                              <div
                                                 className="h-full bg-emerald-500 rounded-full"
                                                 style={{ width: `${Math.min(100, (analysis.hoursComputed / analysis.budget) * 100)}%` }}
                                               />
@@ -1584,16 +1587,16 @@ export default function ClientsAndProjectsPage() {
                                             </span>
                                           </div>
                                         )}
-                                        
+
                                         {/* Métricas rápidas */}
                                         <div className="hidden md:flex items-center gap-4 text-sm shrink-0">
                                           <div className="text-center min-w-[80px]">
                                             <p className={cn(
                                               "font-mono font-bold text-xs",
-                                              analysis.overBudget ? "text-red-600" : 
-                                              analysis.needsPlanning ? "text-amber-600" : "text-slate-700"
+                                              analysis.overBudget ? "text-red-600" :
+                                                analysis.needsPlanning ? "text-amber-600" : "text-slate-700"
                                             )}>
-                                                  {round2(analysis.totalAssigned)}h
+                                              {round2(analysis.totalAssigned)}h
                                             </p>
                                             <p className="text-[10px] text-slate-400">
                                               {analysis.budget > 0 ? `de ${analysis.budget}h` : 'estimado'}
@@ -1630,9 +1633,9 @@ export default function ClientsAndProjectsPage() {
                                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                       <Tooltip>
                                         <TooltipTrigger asChild>
-                                          <Button 
-                                            variant="ghost" 
-                                            size="icon" 
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
                                             className="h-8 w-8 text-slate-400 hover:text-slate-600 shrink-0"
                                             onClick={(e) => { e.stopPropagation(); openEditProject(project); }}
                                           >
@@ -1643,9 +1646,9 @@ export default function ClientsAndProjectsPage() {
                                       </Tooltip>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
-                                          <Button 
-                                            variant="ghost" 
-                                            size="icon" 
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
                                             className="h-8 w-8 text-slate-400 hover:text-slate-600 shrink-0"
                                             onClick={(e) => { e.stopPropagation(); setHidingProject(project); }}
                                           >
@@ -1669,14 +1672,14 @@ export default function ClientsAndProjectsPage() {
                                         <span className="text-slate-600">
                                           <span className="font-semibold text-slate-800">{round2(analysis.totalAssigned)}h</span> estimadas
                                           {(() => {
-                                            const targetHours = analysis.project.budgetHours > 0 
-                                              ? analysis.project.budgetHours 
+                                            const targetHours = analysis.project.budgetHours > 0
+                                              ? analysis.project.budgetHours
                                               : (analysis.project.minimumHours || 0);
                                             if (analysis.totalAssigned < targetHours) {
                                               return (
                                                 <span className="text-amber-600 ml-2">
                                                   (Faltan {round2(targetHours - analysis.totalAssigned)}h
-                                                  {analysis.project.budgetHours > 0 
+                                                  {analysis.project.budgetHours > 0
                                                     ? ` de ${analysis.project.budgetHours}h asignadas`
                                                     : ` de ${analysis.project.minimumHours || 0}h mínimas`
                                                   })
@@ -1701,17 +1704,17 @@ export default function ClientsAndProjectsPage() {
                                           )}
                                         </span>
                                       </div>
-                                      
+
                                       {/* Barras: estimado (planificado), real y computado */}
                                       <div className="space-y-1">
                                         <div className="flex items-center gap-2">
                                           <span className="text-[10px] text-slate-400 w-16">Estimado</span>
                                           <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                            <div 
+                                            <div
                                               className={cn(
                                                 "h-full rounded-full transition-all",
-                                                analysis.overBudget ? "bg-red-500" : 
-                                                analysis.planningPct < 50 ? "bg-amber-500" : "bg-blue-500"
+                                                analysis.overBudget ? "bg-red-500" :
+                                                  analysis.planningPct < 50 ? "bg-amber-500" : "bg-blue-500"
                                               )}
                                               style={{ width: `${Math.min(100, analysis.planningPct)}%` }}
                                             />
@@ -1723,7 +1726,7 @@ export default function ClientsAndProjectsPage() {
                                         <div className="flex items-center gap-2">
                                           <span className="text-[10px] text-slate-400 w-16">Real</span>
                                           <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                            <div 
+                                            <div
                                               className="h-full bg-blue-500 rounded-full transition-all"
                                               style={{ width: `${Math.min(100, analysis.budget > 0 ? (analysis.hoursReal / analysis.budget) * 100 : 0)}%` }}
                                             />
@@ -1735,7 +1738,7 @@ export default function ClientsAndProjectsPage() {
                                         <div className="flex items-center gap-2">
                                           <span className="text-[10px] text-slate-400 w-16">Computado</span>
                                           <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                            <div 
+                                            <div
                                               className="h-full bg-emerald-500 rounded-full transition-all"
                                               style={{ width: `${Math.min(100, (analysis.hoursComputed / analysis.budget) * 100)}%` }}
                                             />
@@ -1753,7 +1756,7 @@ export default function ClientsAndProjectsPage() {
                                     <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
                                       Tareas pendientes ({analysis.pendingTasks.length})
                                     </h4>
-                                    
+
                                     {analysis.pendingTasks.length > 0 ? (
                                       <div className="space-y-2">
                                         {analysis.pendingTasks.map(task => {
@@ -1850,12 +1853,12 @@ export default function ClientsAndProjectsPage() {
                       })
                     ) : (
                       <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-                        {statusFilter === 'all' 
-                          ? 'Sin proyectos (incluye todos los estados)' 
+                        {statusFilter === 'all'
+                          ? 'Sin proyectos (incluye todos los estados)'
                           : `Sin proyectos ${statusFilter === 'active' ? 'activos' : statusFilter === 'completed' ? 'completados' : 'archivados'}`}
                       </div>
                     )}
-                    
+
                     {/* Resumen de equipo asignado */}
                     {assignedEmployees.length > 0 && (
                       <div className="px-4 py-3 bg-slate-50 border-t">
@@ -1864,7 +1867,7 @@ export default function ClientsAndProjectsPage() {
                           <span className="text-xs font-medium text-slate-600">Equipo asignado:</span>
                           <div className="flex items-center gap-1.5 flex-wrap">
                             {assignedEmployees.map((emp) => (
-                              <div 
+                              <div
                                 key={emp.id}
                                 className="flex items-center gap-1.5 text-[10px] bg-white text-slate-600 px-2 py-0.5 rounded-full border border-slate-200"
                               >
@@ -1926,8 +1929,8 @@ export default function ClientsAndProjectsPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button 
-                variant="destructive" 
+              <Button
+                variant="destructive"
                 onClick={() => {
                   if (confirm(`¿Estás seguro de eliminar "${editingClient.name}"? Esta acción no se puede deshacer.`)) {
                     handleDeleteClient();
@@ -1954,7 +1957,7 @@ export default function ClientsAndProjectsPage() {
             <DialogHeader>
               <DialogTitle>{hidingProject.isHidden ? 'Mostrar proyecto' : 'Ocultar proyecto'}</DialogTitle>
               <DialogDescription>
-                {hidingProject.isHidden 
+                {hidingProject.isHidden
                   ? `¿Quieres hacer visible "${hidingProject.name}"? El proyecto volverá a aparecer en la lista.`
                   : `¿Estás seguro de ocultar "${hidingProject.name}"? El proyecto seguirá existiendo pero no se mostrará en la lista.`}
               </DialogDescription>

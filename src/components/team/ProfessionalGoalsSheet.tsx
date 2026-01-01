@@ -33,16 +33,16 @@ type KeyResult = {
   target?: number;
 };
 
-const parseKeyResults = (keyResults: any): KeyResult[] => {
+const parseKeyResults = (keyResults: string | unknown | null): KeyResult[] => {
   if (!keyResults) return [];
-  
+
   try {
     let parsed = keyResults;
     if (typeof keyResults === 'string') {
       parsed = JSON.parse(keyResults);
     }
     if (!Array.isArray(parsed)) return [];
-    
+
     return parsed.map(kr => ({
       id: kr.id || crypto.randomUUID(),
       title: kr.title || '',
@@ -59,7 +59,7 @@ const parseKeyResults = (keyResults: any): KeyResult[] => {
 
 const calculateProgress = (krs: KeyResult[]): number => {
   if (!krs || krs.length === 0) return 0;
-  
+
   let totalPercentage = 0;
   krs.forEach(kr => {
     if (kr.type === 'boolean') {
@@ -97,7 +97,7 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
 
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  
+
   const [newKrTitle, setNewKrTitle] = useState('');
   const [newKrType, setNewKrType] = useState<'boolean' | 'numeric'>('boolean');
   const [newKrTarget, setNewKrTarget] = useState('10');
@@ -156,17 +156,17 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
       };
 
       if (editingId) {
-        await updateProfessionalGoal({ ...goalData, id: editingId, employeeId } as any);
+        await updateProfessionalGoal({ ...goalData, id: editingId, employeeId } as ProfessionalGoal);
         toast.success("Objetivo actualizado");
       } else {
-        await addProfessionalGoal({ ...goalData, employeeId } as any);
+        await addProfessionalGoal({ ...goalData, employeeId } as Omit<ProfessionalGoal, 'id'>);
         toast.success("Objetivo creado");
       }
-      
+
       resetForm();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error guardando objetivo:', error);
-      const errorMessage = error?.message || error?.error?.message || 'Error al guardar el objetivo';
+      const errorMessage = (error as Error)?.message || 'Error al guardar el objetivo';
       toast.error(errorMessage);
     }
   };
@@ -206,24 +206,24 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
     const krs = parseKeyResults(goal.keyResults);
     const updatedKrs = krs.map(kr => kr.id === krId ? { ...kr, completed: !kr.completed } : kr);
     const newProgress = calculateProgress(updatedKrs);
-    
+
     await updateProfessionalGoal({
       ...goal,
       keyResults: JSON.stringify(updatedKrs),
       progress: newProgress
-    } as any);
+    } as ProfessionalGoal);
   };
 
   const updateGoalKrNumeric = async (goal: ProfessionalGoal, krId: string, value: number) => {
     const krs = parseKeyResults(goal.keyResults);
     const updatedKrs = krs.map(kr => kr.id === krId ? { ...kr, current: value } : kr);
     const newProgress = calculateProgress(updatedKrs);
-    
+
     await updateProfessionalGoal({
       ...goal,
       keyResults: JSON.stringify(updatedKrs),
       progress: newProgress
-    } as any);
+    } as ProfessionalGoal);
   };
 
   if (!employee) return null;
@@ -253,7 +253,7 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
                     </FormItem>
                   )}
                 />
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -283,66 +283,66 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
                   />
                 </div>
 
-              <div className="border rounded-lg p-4 bg-slate-50 space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-indigo-600 flex items-center gap-2">
-                    <Target className="h-4 w-4" /> Resultados clave
-                  </Label>
-                  <span className="text-xs font-mono font-bold">{currentProgress}% completado</span>
-                </div>
-                
-                <Progress value={currentProgress} className="h-2" />
-
-                <div className="space-y-2">
-                  {keyResults.map(kr => (
-                    <div key={kr.id} className="flex items-center gap-3 bg-white p-2 rounded border">
-                      {kr.type === 'boolean' ? (
-                        <Checkbox checked={kr.completed} onCheckedChange={() => toggleKrBoolean(kr.id)} />
-                      ) : (
-                        <div className="flex flex-col items-center w-16">
-                          <Input type="number" className="h-7 text-xs text-center px-1" value={kr.current || 0} onChange={(e) => updateKrNumeric(kr.id, e.target.value)} />
-                          <span className="text-[10px] text-muted-foreground">/ {kr.target}</span>
-                        </div>
-                      )}
-                      <span className={cn("flex-1 text-sm", kr.completed && "line-through text-muted-foreground")}>{kr.title}</span>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 text-red-400 hover:text-red-600" onClick={() => removeKeyResult(kr.id)}>
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex gap-2 items-end pt-2 border-t mt-2">
-                  <div className="w-24">
-                    <Select value={newKrType} onValueChange={(v: any) => setNewKrType(v)}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="boolean">Check</SelectItem>
-                        <SelectItem value="numeric">Numérico</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div className="border rounded-lg p-4 bg-slate-50 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-indigo-600 flex items-center gap-2">
+                      <Target className="h-4 w-4" /> Resultados clave
+                    </Label>
+                    <span className="text-xs font-mono font-bold">{currentProgress}% completado</span>
                   </div>
-                  <div className="flex-1">
-                    <Input placeholder={newKrType === 'boolean' ? "Ej: Completar curso..." : "Ej: Ventas conseguidas"} className="h-8 text-xs" value={newKrTitle} onChange={e => setNewKrTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && addKeyResult()} />
+
+                  <Progress value={currentProgress} className="h-2" />
+
+                  <div className="space-y-2">
+                    {keyResults.map(kr => (
+                      <div key={kr.id} className="flex items-center gap-3 bg-white p-2 rounded border">
+                        {kr.type === 'boolean' ? (
+                          <Checkbox checked={kr.completed} onCheckedChange={() => toggleKrBoolean(kr.id)} />
+                        ) : (
+                          <div className="flex flex-col items-center w-16">
+                            <Input type="number" className="h-7 text-xs text-center px-1" value={kr.current || 0} onChange={(e) => updateKrNumeric(kr.id, e.target.value)} />
+                            <span className="text-[10px] text-muted-foreground">/ {kr.target}</span>
+                          </div>
+                        )}
+                        <span className={cn("flex-1 text-sm", kr.completed && "line-through text-muted-foreground")}>{kr.title}</span>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-red-400 hover:text-red-600" onClick={() => removeKeyResult(kr.id)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
-                  {newKrType === 'numeric' && (
-                    <div className="w-16">
-                      <Input type="number" placeholder="Meta" className="h-8 text-xs" value={newKrTarget} onChange={e => setNewKrTarget(e.target.value)} />
+
+                  <div className="flex gap-2 items-end pt-2 border-t mt-2">
+                    <div className="w-24">
+                      <Select value={newKrType} onValueChange={(v: 'boolean' | 'numeric') => setNewKrType(v)}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="boolean">Check</SelectItem>
+                          <SelectItem value="numeric">Numérico</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  )}
-                  <Button size="sm" variant="secondary" className="h-8" onClick={addKeyResult}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
+                    <div className="flex-1">
+                      <Input placeholder={newKrType === 'boolean' ? "Ej: Completar curso..." : "Ej: Ventas conseguidas"} className="h-8 text-xs" value={newKrTitle} onChange={e => setNewKrTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && addKeyResult()} />
+                    </div>
+                    {newKrType === 'numeric' && (
+                      <div className="w-16">
+                        <Input type="number" placeholder="Meta" className="h-8 text-xs" value={newKrTarget} onChange={e => setNewKrTarget(e.target.value)} />
+                      </div>
+                    )}
+                    <Button size="sm" variant="secondary" className="h-8" onClick={addKeyResult}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={resetForm} disabled={form.formState.isSubmitting}>Cancelar</Button>
-              <Button type="submit" disabled={form.formState.isSubmitting} className="bg-indigo-600 hover:bg-indigo-700">
-                {form.formState.isSubmitting ? 'Guardando...' : 'Guardar objetivo'}
-              </Button>
-            </div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={resetForm} disabled={form.formState.isSubmitting}>Cancelar</Button>
+                <Button type="submit" disabled={form.formState.isSubmitting} className="bg-indigo-600 hover:bg-indigo-700">
+                  {form.formState.isSubmitting ? 'Guardando...' : 'Guardar objetivo'}
+                </Button>
+              </div>
             </form>
           </Form>
         ) : (
@@ -355,11 +355,11 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
               {employeeGoals.length === 0 && (
                 <p className="text-center text-muted-foreground text-sm py-8">No hay objetivos definidos.</p>
               )}
-              
+
               {employeeGoals.map(goal => {
                 const goalKrs = parseKeyResults(goal.keyResults);
                 const goalProgress = goalKrs.length > 0 ? calculateProgress(goalKrs) : goal.progress;
-                
+
                 return (
                   <div key={goal.id} className="border rounded-lg p-4 space-y-3 bg-card hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start">

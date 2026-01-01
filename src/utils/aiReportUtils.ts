@@ -51,45 +51,45 @@ export const generateAdsSummary = async (
   historicalData?: HistoricalData[],
   changeLogs?: ChangeLog[]
 ): Promise<{ text: string; provider: 'gemini' | 'openrouter' | 'coco'; modelName: string }> => {
-  
+
   // Sanitización de datos
   const safeSpend = Number(totalSpend) || 0;
   const safeConversions = Number(totalConversions) || 0;
 
   // Formatear campañas para el contexto de la IA
-  const campaignsSummary = campaigns && campaigns.length > 0 
+  const campaignsSummary = campaigns && campaigns.length > 0
     ? campaigns.map(c => {
-        const cCost = Number(c.cost) || 0;
-        const cClicks = Number(c.clicks) || 0;
-        const cImpr = Number(c.impressions) || 0;
-        const cConv = Number(c.conversions) || 0;
-        const cValue = Number(c.conversions_value) || 0;
-        const cpa = cConv > 0 ? (cCost / cConv).toFixed(2) : 'N/A';
-        const roas = cCost > 0 ? (cValue / cCost).toFixed(2) : 'N/A';
-        const ctr = cImpr > 0 ? ((cClicks / cImpr) * 100).toFixed(2) : '0.00';
+      const cCost = Number(c.cost) || 0;
+      const cClicks = Number(c.clicks) || 0;
+      const cImpr = Number(c.impressions) || 0;
+      const cConv = Number(c.conversions) || 0;
+      const cValue = Number(c.conversions_value) || 0;
+      const cpa = cConv > 0 ? (cCost / cConv).toFixed(2) : 'N/A';
+      const roas = cCost > 0 ? (cValue / cCost).toFixed(2) : 'N/A';
+      const ctr = cImpr > 0 ? ((cClicks / cImpr) * 100).toFixed(2) : '0.00';
 
-        return `Campaña: "${c.campaign_name}" (${c.status})
+      return `Campaña: "${c.campaign_name}" (${c.status})
   - Inversión: ${cCost.toFixed(2)}€
   - Impresiones: ${cImpr.toLocaleString()} | Clics: ${cClicks.toLocaleString()} | CTR: ${ctr}%
   - Conversiones: ${cConv} | CPA: ${cpa}€ | ROAS: ${roas}x
   - Ingresos generados: ${cValue.toFixed(2)}€`;
-      }).join('\n\n')
+    }).join('\n\n')
     : "No hay datos detallados de campañas disponibles.";
 
   // Formatear datos históricos si existen
   const historicalSummary = historicalData && historicalData.length > 0
     ? `\n\nTENDENCIAS HISTÓRICAS (últimos ${historicalData.length} meses):\n` +
-      historicalData.map(h => 
-        `  - ${h.month}: Inversión ${h.cost.toFixed(2)}€ | Conversiones ${h.conversions} | CPA ${h.cpa.toFixed(2)}€ | ROAS ${h.roas.toFixed(2)}x`
-      ).join('\n')
+    historicalData.map(h =>
+      `  - ${h.month}: Inversión ${h.cost.toFixed(2)}€ | Conversiones ${h.conversions} | CPA ${h.cpa.toFixed(2)}€ | ROAS ${h.roas.toFixed(2)}x`
+    ).join('\n')
     : '';
 
   // Formatear logs de cambios si existen
   const changesSummary = changeLogs && changeLogs.length > 0
     ? `\n\nACCIONES REALIZADAS DURANTE EL MES (${changeLogs.length} cambios):\n` +
-      changeLogs.slice(0, CONSTANTS.LIMITS.MAX_CHANGE_LOGS).map((log, idx) => 
-        `  ${idx + 1}. ${format(new Date(log.change_date), 'dd/MM/yyyy')} - ${log.change_type}: ${log.campaign_name || log.resource_name}${log.details ? ` (${log.details})` : ''}`
-      ).join('\n')
+    changeLogs.slice(0, CONSTANTS.LIMITS.MAX_CHANGE_LOGS).map((log, idx) =>
+      `  ${idx + 1}. ${format(new Date(log.change_date), 'dd/MM/yyyy')} - ${log.change_type}: ${log.campaign_name || log.resource_name}${log.details ? ` (${log.details})` : ''}`
+    ).join('\n')
     : '';
 
   // Construir el Prompt mejorado
@@ -130,8 +130,8 @@ IMPORTANTE: El texto debe estar listo para imprimir en un PDF profesional. No us
     // Limpiar la respuesta para que sea profesional
     const cleanedText = AIService.cleanAIResponse(result.text);
     return { ...result, text: cleanedText };
-  } catch (error: any) {
-    ErrorService.handle(error, 'generateAdsSummary', {
+  } catch (error) {
+    ErrorService.handle(error as Error, 'generateAdsSummary', {
       userMessage: 'Lo siento, hubo un error al conectar con los servicios de IA para generar el análisis. Por favor, verifica tu conexión o intenta más tarde.'
     });
     return {
@@ -186,8 +186,8 @@ FORMATO: Texto plano profesional, sin markdown ni asteriscos. Usa viñetas (•)
     const result = await AIService.callWithFallback(prompt, 'CampaignAnalysis');
     const cleanedText = AIService.cleanAIResponse(result.text);
     return { ...result, text: cleanedText };
-  } catch (error: any) {
-    ErrorService.handle(error, 'generateCampaignAnalysis');
+  } catch (error) {
+    ErrorService.handle(error as Error, 'generateCampaignAnalysis');
     return {
       text: "Error al generar el análisis de esta campaña.",
       provider: 'coco',

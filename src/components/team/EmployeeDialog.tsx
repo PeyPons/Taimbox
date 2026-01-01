@@ -51,7 +51,7 @@ const employeeFormSchema = z.object({
     saturday: z.number().min(0).max(24),
     sunday: z.number().min(0).max(24),
   }),
-  permissions: z.any().optional(),
+  permissions: z.any().optional(), // Mantenemos any porque UserPermissions tiene keys específicas
 }).refine((data) => {
   // Para nuevos empleados, email y password son obligatorios
   // Esta validación se hará en el handleSubmit
@@ -62,7 +62,7 @@ type EmployeeFormValues = z.infer<typeof employeeFormSchema>;
 
 export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeDialogProps) {
   const { addEmployee, updateEmployee } = useApp();
-  
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [showProjects, setShowProjects] = useState(false);
   const [showGoals, setShowGoals] = useState(false);
@@ -121,186 +121,187 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
 
   const onSubmit = async (data: EmployeeFormValues) => {
     setIsProcessing(true);
-    
+
     let authUserId = employeeToEdit?.user_id;
     let authMessage = "";
 
     try {
-        const isNewEmployee = !employeeToEdit;
-        const hasPassword = (data.password || '').length >= 6;
-        const emailValue = data.email?.trim() || '';
-        
-        // Para NUEVOS empleados, es OBLIGATORIO crear cuenta de acceso
-        if (isNewEmployee) {
-            if (!emailValue) {
-                toast.error("El email es obligatorio para crear un nuevo empleado");
-                form.setError('email', { message: 'El email es obligatorio' });
-                setIsProcessing(false);
-                return;
-            }
-            if (!hasPassword) {
-                toast.error("La contraseña es obligatoria (mínimo 6 caracteres) para crear un nuevo empleado");
-                form.setError('password', { message: 'La contraseña debe tener al menos 6 caracteres' });
-                setIsProcessing(false);
-                return;
-            }
-            
-            // Crear usuario en Supabase Auth
-            console.log('[EmployeeDialog] Creando usuario en Auth:', emailValue);
-            const { data, error } = await supabase.functions.invoke('create-user', {
-                body: { email: emailValue, password: data.password, name: data.name }
-            });
-            
-            if (error) {
-                console.error('[EmployeeDialog] Error en create-user:', error);
-                
-                // Intentar obtener más detalles del error
-                let errorMessage = 'Error al crear cuenta de acceso';
-                if (error.message) {
-                    errorMessage = error.message;
-                } else if (error.context) {
-                    errorMessage = error.context.message || errorMessage;
-                }
-                
-                // Si el error viene de la función, intentar parsear el body
-                if (error.context?.body) {
-                    try {
-                        const errorBody = typeof error.context.body === 'string' 
-                            ? JSON.parse(error.context.body) 
-                            : error.context.body;
-                        if (errorBody.error) {
-                            errorMessage = errorBody.error;
-                        }
-                    } catch (e) {
-                        // Ignorar error de parsing
-                    }
-                }
-                
-                throw new Error(errorMessage);
-            }
-            
-            if (!data?.user?.id) {
-                console.error('[EmployeeDialog] No se recibió user.id. Respuesta completa:', data);
-                throw new Error('No se pudo crear la cuenta de acceso. La función no devolvió un ID de usuario. Verifica que la Edge Function "create-user" esté desplegada en Supabase.');
-            }
-            
-            authUserId = data.user.id;
-            authMessage = "Empleado y cuenta de acceso creados.";
-            console.log('[EmployeeDialog] Usuario Auth creado:', authUserId);
-        } 
-        // Para empleados EXISTENTES, solo actualizar si hay nueva contraseña
-        else if (hasPassword) {
-            if (!emailValue) {
-                toast.error("Debes proporcionar un email para actualizar el acceso");
-                form.setError('email', { message: 'El email es obligatorio' });
-                setIsProcessing(false);
-                return;
-            }
-            
-            if (employeeToEdit?.user_id) {
-                // Ya tiene cuenta de auth -> actualizar credenciales
-                const { error } = await supabase.functions.invoke('update-user', {
-                    body: { userId: employeeToEdit.user_id, password: data.password, email: emailValue }
-                });
-                if (error) throw error;
-                authMessage = "Credenciales actualizadas.";
-            } else {
-                // Empleado existente SIN cuenta de auth -> crear nueva
-                console.log('[EmployeeDialog] Creando cuenta Auth para empleado existente:', emailValue);
-                const { data, error } = await supabase.functions.invoke('create-user', {
-                    body: { email: emailValue, password: data.password, name: data.name }
-                });
-                
-                if (error) {
-                    console.error('[EmployeeDialog] Error en create-user:', error);
-                    
-                    // Intentar obtener más detalles del error
-                    let errorMessage = 'Error al crear cuenta de acceso';
-                    if (error.message) {
-                        errorMessage = error.message;
-                    } else if (error.context) {
-                        errorMessage = error.context.message || errorMessage;
-                    }
-                    
-                    // Si el error viene de la función, intentar parsear el body
-                    if (error.context?.body) {
-                        try {
-                            const errorBody = typeof error.context.body === 'string' 
-                                ? JSON.parse(error.context.body) 
-                                : error.context.body;
-                            if (errorBody.error) {
-                                errorMessage = errorBody.error;
-                            }
-                        } catch (e) {
-                            // Ignorar error de parsing
-                        }
-                    }
-                    
-                    throw new Error(errorMessage);
-                }
-                
-                if (!data?.user?.id) {
-                    console.error('[EmployeeDialog] No se recibió user.id. Respuesta completa:', data);
-                    throw new Error('No se pudo crear la cuenta de acceso. La función no devolvió un ID de usuario.');
-                }
-                
-                authUserId = data.user.id;
-                authMessage = "Cuenta de acceso creada.";
-            }
+      const isNewEmployee = !employeeToEdit;
+      const hasPassword = (data.password || '').length >= 6;
+      const emailValue = data.email?.trim() || '';
+
+      // Para NUEVOS empleados, es OBLIGATORIO crear cuenta de acceso
+      if (isNewEmployee) {
+        if (!emailValue) {
+          toast.error("El email es obligatorio para crear un nuevo empleado");
+          form.setError('email', { message: 'El email es obligatorio' });
+          setIsProcessing(false);
+          return;
+        }
+        if (!hasPassword) {
+          toast.error("La contraseña es obligatoria (mínimo 6 caracteres) para crear un nuevo empleado");
+          form.setError('password', { message: 'La contraseña debe tener al menos 6 caracteres' });
+          setIsProcessing(false);
+          return;
         }
 
-        const employeeData = {
-            name: data.name,
-            email: emailValue || undefined,
-            user_id: authUserId,
-            role: data.role,
-            department: data.department,
-            defaultWeeklyCapacity: data.capacity,
-            hourlyRate: data.hourlyRate,
-            crmUserId: data.crmUserId !== '' ? Number(data.crmUserId) : undefined,
-            workSchedule: data.workSchedule,
-            permissions: data.permissions || DEFAULT_PERMISSIONS,
-            isActive: true,
-            avatarUrl: employeeToEdit?.avatarUrl || `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${data.name}`
-        };
+        // Crear usuario en Supabase Auth
+        console.log('[EmployeeDialog] Creando usuario en Auth:', emailValue);
+        const { data, error } = await supabase.functions.invoke('create-user', {
+          body: { email: emailValue, password: data.password, name: data.name }
+        });
 
-        if (employeeToEdit) {
-            await updateEmployee({ ...employeeToEdit, ...employeeData });
-            toast.success(authMessage || "Empleado actualizado");
+        if (error) {
+          console.error('[EmployeeDialog] Error en create-user:', error);
+
+          // Intentar obtener más detalles del error
+          let errorMessage = 'Error al crear cuenta de acceso';
+          if (error.message) {
+            errorMessage = error.message;
+          } else if (error.context) {
+            errorMessage = error.context.message || errorMessage;
+          }
+
+          // Si el error viene de la función, intentar parsear el body
+          if (error.context?.body) {
+            try {
+              const errorBody = typeof error.context.body === 'string'
+                ? JSON.parse(error.context.body)
+                : error.context.body;
+              if (errorBody.error) {
+                errorMessage = errorBody.error;
+              }
+            } catch (e) {
+              // Ignorar error de parsing
+            }
+          }
+
+          throw new Error(errorMessage);
+        }
+
+        if (!data?.user?.id) {
+          console.error('[EmployeeDialog] No se recibió user.id. Respuesta completa:', data);
+          throw new Error('No se pudo crear la cuenta de acceso. La función no devolvió un ID de usuario. Verifica que la Edge Function "create-user" esté desplegada en Supabase.');
+        }
+
+        authUserId = data.user.id;
+        authMessage = "Empleado y cuenta de acceso creados.";
+        console.log('[EmployeeDialog] Usuario Auth creado:', authUserId);
+      }
+      // Para empleados EXISTENTES, solo actualizar si hay nueva contraseña
+      else if (hasPassword) {
+        if (!emailValue) {
+          toast.error("Debes proporcionar un email para actualizar el acceso");
+          form.setError('email', { message: 'El email es obligatorio' });
+          setIsProcessing(false);
+          return;
+        }
+
+        if (employeeToEdit?.user_id) {
+          // Ya tiene cuenta de auth -> actualizar credenciales
+          const { error } = await supabase.functions.invoke('update-user', {
+            body: { userId: employeeToEdit.user_id, password: data.password, email: emailValue }
+          });
+          if (error) throw error;
+          authMessage = "Credenciales actualizadas.";
         } else {
-            await addEmployee(employeeData);
-            toast.success(authMessage || "Empleado creado");
-        }
-        onOpenChange(false);
+          // Empleado existente SIN cuenta de auth -> crear nueva
+          console.log('[EmployeeDialog] Creando cuenta Auth para empleado existente:', emailValue);
+          const { data, error } = await supabase.functions.invoke('create-user', {
+            body: { email: emailValue, password: data.password, name: data.name }
+          });
 
-    } catch (error: any) {
-        console.error("Error completo:", error);
-        
-        // Intentar extraer el mensaje de error más descriptivo
-        let errorMsg = "Error al guardar";
-        
-        if (error?.message) {
-            errorMsg = error.message;
-        } else if (error?.error?.message) {
-            errorMsg = error.error.message;
-        } else if (typeof error === 'string') {
-            errorMsg = error;
+          if (error) {
+            console.error('[EmployeeDialog] Error en create-user:', error);
+
+            // Intentar obtener más detalles del error
+            let errorMessage = 'Error al crear cuenta de acceso';
+            if (error.message) {
+              errorMessage = error.message;
+            } else if (error.context) {
+              errorMessage = error.context.message || errorMessage;
+            }
+
+            // Si el error viene de la función, intentar parsear el body
+            if (error.context?.body) {
+              try {
+                const errorBody = typeof error.context.body === 'string'
+                  ? JSON.parse(error.context.body)
+                  : error.context.body;
+                if (errorBody.error) {
+                  errorMessage = errorBody.error;
+                }
+              } catch (e) {
+                // Ignorar error de parsing
+              }
+            }
+
+            throw new Error(errorMessage);
+          }
+
+          if (!data?.user?.id) {
+            console.error('[EmployeeDialog] No se recibió user.id. Respuesta completa:', data);
+            throw new Error('No se pudo crear la cuenta de acceso. La función no devolvió un ID de usuario.');
+          }
+
+          authUserId = data.user.id;
+          authMessage = "Cuenta de acceso creada.";
         }
-        
-        // Mensajes específicos para errores comunes
-        if (errorMsg.includes("already been registered") || errorMsg.includes("already exists") || errorMsg.includes("duplicate")) {
-            toast.error("Este email ya tiene una cuenta. Usa otro email.");
-        } else if (errorMsg.includes("invalid email") || errorMsg.includes("email")) {
-            toast.error("El formato del email no es válido.");
-        } else if (errorMsg.includes("password") && errorMsg.includes("weak")) {
-            toast.error("La contraseña es demasiado débil. Usa al menos 6 caracteres.");
-        } else if (errorMsg.includes("Edge Function") || errorMsg.includes("desplegada")) {
-            toast.error("Error: La función 'create-user' no está desplegada. Contacta al administrador.");
-        } else {
-            toast.error(errorMsg);
-        }
+      }
+
+      const employeeData = {
+        name: data.name,
+        email: emailValue || undefined,
+        user_id: authUserId,
+        role: data.role,
+        department: data.department,
+        defaultWeeklyCapacity: data.capacity,
+        hourlyRate: data.hourlyRate,
+        crmUserId: data.crmUserId !== '' ? Number(data.crmUserId) : undefined,
+        workSchedule: data.workSchedule,
+        permissions: data.permissions || DEFAULT_PERMISSIONS,
+        isActive: true,
+        avatarUrl: employeeToEdit?.avatarUrl || `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${data.name}`
+      };
+
+      if (employeeToEdit) {
+        await updateEmployee({ ...employeeToEdit, ...employeeData });
+        toast.success(authMessage || "Empleado actualizado");
+      } else {
+        await addEmployee(employeeData);
+        toast.success(authMessage || "Empleado creado");
+      }
+      onOpenChange(false);
+
+    } catch (error) {
+      console.error("Error completo:", error);
+
+      // Intentar extraer el mensaje de error más descriptivo
+      let errorMsg = "Error al guardar";
+
+      const err = error as { message?: string; error?: { message?: string } };
+      if (err?.message) {
+        errorMsg = err.message;
+      } else if (err?.error?.message) {
+        errorMsg = err.error.message;
+      } else if (typeof error === 'string') {
+        errorMsg = error;
+      }
+
+      // Mensajes específicos para errores comunes
+      if (errorMsg.includes("already been registered") || errorMsg.includes("already exists") || errorMsg.includes("duplicate")) {
+        toast.error("Este email ya tiene una cuenta. Usa otro email.");
+      } else if (errorMsg.includes("invalid email") || errorMsg.includes("email")) {
+        toast.error("El formato del email no es válido.");
+      } else if (errorMsg.includes("password") && errorMsg.includes("weak")) {
+        toast.error("La contraseña es demasiado débil. Usa al menos 6 caracteres.");
+      } else if (errorMsg.includes("Edge Function") || errorMsg.includes("desplegada")) {
+        toast.error("Error: La función 'create-user' no está desplegada. Contacta al administrador.");
+      } else {
+        toast.error(errorMsg);
+      }
     } finally {
-        setIsProcessing(false);
+      setIsProcessing(false);
     }
   };
 
@@ -340,77 +341,77 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
                       </FormItem>
                     )}
                   />
-                  
+
                   <div className={`p-4 border rounded-lg space-y-4 ${isEditing ? 'bg-slate-50' : 'bg-amber-50 border-amber-200'}`}>
-                      <div className="flex items-center gap-2 mb-2">
-                          {hasAccess ? (
-                            <>
-                              <ShieldCheck className="w-4 h-4 text-emerald-600"/>
-                              <span className="text-sm font-semibold text-slate-700">Acceso activo</span>
-                            </>
-                          ) : isEditing ? (
-                            <>
-                              <Lock className="w-4 h-4 text-red-500"/>
-                              <span className="text-sm font-semibold text-red-700">Sin acceso al sistema</span>
-                            </>
-                          ) : (
-                            <>
-                              <Key className="w-4 h-4 text-amber-600"/>
-                              <span className="text-sm font-semibold text-amber-800">Configurar acceso (obligatorio)</span>
-                            </>
-                          )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>
-                                  Email {!isEditing && <span className="text-red-500">*</span>}
-                                </FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    type="email" 
-                                    placeholder="usuario@agencia.com"
-                                    {...field}
-                                    className={!isEditing && !field.value ? 'border-amber-300' : ''}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="password"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>
-                                  {hasAccess ? 'Nueva contraseña' : 'Contraseña'}
-                                  {!isEditing && <span className="text-red-500">*</span>}
-                                </FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    type="password" 
-                                    placeholder={hasAccess ? "Dejar vacío para no cambiar" : "Mínimo 6 caracteres"}
-                                    autoComplete="new-password"
-                                    {...field}
-                                    className={!isEditing && (field.value || '').length < 6 ? 'border-amber-300' : ''}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                      </div>
-                      <p className={`text-xs ${isEditing ? 'text-slate-500' : 'text-amber-700'}`}>
-                          {hasAccess 
-                              ? "Deja la contraseña vacía si no quieres cambiarla." 
-                              : isEditing 
-                                ? "Este empleado no puede acceder al sistema. Introduce email y contraseña para habilitarlo."
-                                : "El email y la contraseña son obligatorios para que el empleado pueda acceder al sistema."}
-                      </p>
+                    <div className="flex items-center gap-2 mb-2">
+                      {hasAccess ? (
+                        <>
+                          <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                          <span className="text-sm font-semibold text-slate-700">Acceso activo</span>
+                        </>
+                      ) : isEditing ? (
+                        <>
+                          <Lock className="w-4 h-4 text-red-500" />
+                          <span className="text-sm font-semibold text-red-700">Sin acceso al sistema</span>
+                        </>
+                      ) : (
+                        <>
+                          <Key className="w-4 h-4 text-amber-600" />
+                          <span className="text-sm font-semibold text-amber-800">Configurar acceso (obligatorio)</span>
+                        </>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              Email {!isEditing && <span className="text-red-500">*</span>}
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="email"
+                                placeholder="usuario@agencia.com"
+                                {...field}
+                                className={!isEditing && !field.value ? 'border-amber-300' : ''}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              {hasAccess ? 'Nueva contraseña' : 'Contraseña'}
+                              {!isEditing && <span className="text-red-500">*</span>}
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="password"
+                                placeholder={hasAccess ? "Dejar vacío para no cambiar" : "Mínimo 6 caracteres"}
+                                autoComplete="new-password"
+                                {...field}
+                                className={!isEditing && (field.value || '').length < 6 ? 'border-amber-300' : ''}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <p className={`text-xs ${isEditing ? 'text-slate-500' : 'text-amber-700'}`}>
+                      {hasAccess
+                        ? "Deja la contraseña vacía si no quieres cambiarla."
+                        : isEditing
+                          ? "Este empleado no puede acceder al sistema. Introduce email y contraseña para habilitarlo."
+                          : "El email y la contraseña son obligatorios para que el empleado pueda acceder al sistema."}
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -468,8 +469,8 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
                         <FormItem>
                           <FormLabel>Capacidad (h/sem)</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
+                            <Input
+                              type="number"
                               {...field}
                               onChange={(e) => field.onChange(Number(e.target.value))}
                             />
@@ -485,9 +486,9 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
                         <FormItem>
                           <FormLabel>Coste/Hora (€)</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
-                              step="0.01" 
+                            <Input
+                              type="number"
+                              step="0.01"
                               {...field}
                               onChange={(e) => field.onChange(Number(e.target.value))}
                             />
@@ -500,39 +501,39 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
 
                   {/* Campo CRM User ID */}
                   <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg space-y-2">
-                      <div className="flex items-center gap-2">
-                          <Hash className="w-4 h-4 text-purple-600"/>
-                          <span className="text-sm font-semibold text-purple-800">Integración CRM</span>
-                      </div>
-                      <FormField
-                        control={form.control}
-                        name="crmUserId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-purple-700">ID Usuario CRM</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                placeholder="Ej: 33"
-                                className="bg-white"
-                                {...field}
-                                value={field.value === '' ? '' : field.value}
-                                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : '')}
-                              />
-                            </FormControl>
-                            <FormDescription className="text-xs text-purple-600">
-                              Este ID se usa para exportar tareas al CRM. Déjalo vacío si no aplica.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    <div className="flex items-center gap-2">
+                      <Hash className="w-4 h-4 text-purple-600" />
+                      <span className="text-sm font-semibold text-purple-800">Integración CRM</span>
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="crmUserId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-purple-700">ID Usuario CRM</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="Ej: 33"
+                              className="bg-white"
+                              {...field}
+                              value={field.value === '' ? '' : field.value}
+                              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : '')}
+                            />
+                          </FormControl>
+                          <FormDescription className="text-xs text-purple-600">
+                            Este ID se usa para exportar tareas al CRM. Déjalo vacío si no aplica.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
 
                   <div className="flex justify-end pt-4">
-                      <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700" disabled={isProcessing}>
-                          {isProcessing ? 'Guardando...' : 'Guardar datos'}
-                      </Button>
+                    <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700" disabled={isProcessing}>
+                      {isProcessing ? 'Guardando...' : 'Guardar datos'}
+                    </Button>
                   </div>
                 </form>
               </Form>
@@ -543,7 +544,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
                 <Key className="h-5 w-5 shrink-0" />
                 <p>Controla a qué secciones puede acceder este empleado. Si un permiso está desactivado, no verá esa sección en el menú.</p>
               </div>
-              
+
               <div className="space-y-4">
                 <div className="space-y-3">
                   <h3 className="text-sm font-semibold text-slate-700 mb-3">Gestión</h3>
@@ -639,44 +640,44 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
 
             <TabsContent value="schedule" className="py-4">
               <div className="space-y-4">
-                  <div className="bg-blue-50 text-blue-800 p-3 rounded-md text-sm flex gap-2">
-                      <Clock className="h-5 w-5 shrink-0" />
-                      <p>Ajusta las horas diarias. Esto recalculará la capacidad semanal automáticamente.</p>
-                  </div>
-                  <ScheduleEditor 
-                      schedule={workSchedule} 
-                      onChange={(newSchedule) => form.setValue('workSchedule', newSchedule)} 
-                  />
-                  <div className="flex justify-end pt-2">
-                      <Button onClick={form.handleSubmit(onSubmit)} className="bg-indigo-600">Guardar horario</Button>
-                  </div>
+                <div className="bg-blue-50 text-blue-800 p-3 rounded-md text-sm flex gap-2">
+                  <Clock className="h-5 w-5 shrink-0" />
+                  <p>Ajusta las horas diarias. Esto recalculará la capacidad semanal automáticamente.</p>
+                </div>
+                <ScheduleEditor
+                  schedule={workSchedule}
+                  onChange={(newSchedule) => form.setValue('workSchedule', newSchedule)}
+                />
+                <div className="flex justify-end pt-2">
+                  <Button onClick={form.handleSubmit(onSubmit)} className="bg-indigo-600">Guardar horario</Button>
+                </div>
               </div>
             </TabsContent>
 
             <TabsContent value="management" className="py-4 space-y-4">
-               <div className="grid grid-cols-1 gap-4">
-                  <Button variant="outline" className="justify-start gap-4 h-auto p-4" onClick={() => setShowProjects(true)}>
-                      <Briefcase className="h-5 w-5 text-indigo-600" />
-                      <div className="text-left">
-                          <div className="font-semibold">Proyectos</div>
-                          <div className="text-xs text-muted-foreground">Asignaciones</div>
-                      </div>
-                  </Button>
-                  <Button variant="outline" className="justify-start gap-4 h-auto p-4" onClick={() => setShowGoals(true)}>
-                      <Target className="h-5 w-5 text-emerald-600" />
-                      <div className="text-left">
-                          <div className="font-semibold">Objetivos</div>
-                          <div className="text-xs text-muted-foreground">OKRs</div>
-                      </div>
-                  </Button>
-                  <Button variant="outline" className="justify-start gap-4 h-auto p-4" onClick={() => setShowAbsences(true)}>
-                      <CalendarClock className="h-5 w-5 text-amber-600" />
-                      <div className="text-left">
-                          <div className="font-semibold">Ausencias</div>
-                          <div className="text-xs text-muted-foreground">Vacaciones</div>
-                      </div>
-                  </Button>
-               </div>
+              <div className="grid grid-cols-1 gap-4">
+                <Button variant="outline" className="justify-start gap-4 h-auto p-4" onClick={() => setShowProjects(true)}>
+                  <Briefcase className="h-5 w-5 text-indigo-600" />
+                  <div className="text-left">
+                    <div className="font-semibold">Proyectos</div>
+                    <div className="text-xs text-muted-foreground">Asignaciones</div>
+                  </div>
+                </Button>
+                <Button variant="outline" className="justify-start gap-4 h-auto p-4" onClick={() => setShowGoals(true)}>
+                  <Target className="h-5 w-5 text-emerald-600" />
+                  <div className="text-left">
+                    <div className="font-semibold">Objetivos</div>
+                    <div className="text-xs text-muted-foreground">OKRs</div>
+                  </div>
+                </Button>
+                <Button variant="outline" className="justify-start gap-4 h-auto p-4" onClick={() => setShowAbsences(true)}>
+                  <CalendarClock className="h-5 w-5 text-amber-600" />
+                  <div className="text-left">
+                    <div className="font-semibold">Ausencias</div>
+                    <div className="text-xs text-muted-foreground">Vacaciones</div>
+                  </div>
+                </Button>
+              </div>
             </TabsContent>
           </Tabs>
         </DialogContent>
@@ -685,9 +686,9 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
       {/* Sheets Auxiliares */}
       {employeeToEdit && (
         <>
-            <ProjectsSheet open={showProjects} onOpenChange={setShowProjects} employeeId={employeeToEdit.id} />
-            <ProfessionalGoalsSheet open={showGoals} onOpenChange={setShowGoals} employeeId={employeeToEdit.id} />
-            <AbsencesSheet open={showAbsences} onOpenChange={setShowAbsences} employeeId={employeeToEdit.id} />
+          <ProjectsSheet open={showProjects} onOpenChange={setShowProjects} employeeId={employeeToEdit.id} />
+          <ProfessionalGoalsSheet open={showGoals} onOpenChange={setShowGoals} employeeId={employeeToEdit.id} />
+          <AbsencesSheet open={showAbsences} onOpenChange={setShowAbsences} employeeId={employeeToEdit.id} />
         </>
       )}
     </>

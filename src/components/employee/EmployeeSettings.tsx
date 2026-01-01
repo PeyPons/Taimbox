@@ -19,11 +19,11 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
   const employee = employees.find(e => e.id === employeeId);
   const [open, setOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  
+
   // Estados para contraseña
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
+
   // Estados para avatar
   const [avatarPhrase, setAvatarPhrase] = useState('');
   const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
@@ -66,7 +66,7 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
       toast.success('Avatar actualizado correctamente');
       setAvatarPhrase('');
       setPreviewAvatar(null);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error actualizando avatar:', error);
       toast.error('Error al actualizar el avatar');
     } finally {
@@ -121,9 +121,9 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
       toast.success('Contraseña actualizada correctamente');
       setNewPassword('');
       setConfirmPassword('');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error cambiando contraseña:', error);
-      toast.error(error.message || 'Error al cambiar la contraseña');
+      toast.error((error as Error)?.message || 'Error al cambiar la contraseña');
     } finally {
       setIsUpdating(false);
     }
@@ -157,7 +157,7 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
               <User className="h-4 w-4" />
               Avatar
             </div>
-            
+
             <div className="flex items-center gap-4">
               <Avatar className="h-20 w-20 border-2 border-slate-200">
                 <AvatarImage src={currentAvatarUrl || undefined} alt={employee.name} />
@@ -166,7 +166,7 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
                   {employee.last_name?.[0] || employee.name[1]}
                 </AvatarFallback>
               </Avatar>
-              
+
               <div className="flex-1 space-y-2">
                 <Label htmlFor="avatar-phrase">Frase para generar avatar</Label>
                 <div className="flex gap-2">
@@ -205,7 +205,7 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
               <Lock className="h-4 w-4" />
               Cambiar contraseña
             </div>
-            
+
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="new-password">Nueva contraseña</Label>
@@ -217,7 +217,7 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
                   onChange={(e) => setNewPassword(e.target.value)}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="confirm-password">Confirmar contraseña</Label>
                 <Input

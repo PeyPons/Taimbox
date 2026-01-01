@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
+import {
   AlertTriangle, CheckCircle2, Users, TrendingUp, TrendingDown,
   Info, ChevronDown, ChevronUp
 } from 'lucide-react';
@@ -22,12 +22,12 @@ interface PlanningInconsistenciesCardProps {
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
-export const PlanningInconsistenciesCard = memo(function PlanningInconsistenciesCard({ 
-  employeeId, 
-  viewDate 
+export const PlanningInconsistenciesCard = memo(function PlanningInconsistenciesCard({
+  employeeId,
+  viewDate
 }: PlanningInconsistenciesCardProps) {
   const { allocations, projects, employees } = useApp();
-  const appContext = useApp() as any;
+  const appContext = useApp() as { deadlines?: Deadline[] };
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
@@ -57,7 +57,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         if (error) throw error;
 
         if (data) {
-          setDeadlines(data.map((d: any) => ({
+          setDeadlines(data.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean }) => ({
             id: d.id,
             projectId: d.project_id,
             month: d.month,
@@ -66,7 +66,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
             isHidden: d.is_hidden || false
           })));
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error('Error cargando deadlines:', error);
       } finally {
         setIsLoading(false);
@@ -84,7 +84,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
     const monthEnd = endOfMonth(viewDate);
 
     // Obtener allocations del mes para este empleado
-    const monthAllocations = allocations.filter(a => 
+    const monthAllocations = allocations.filter(a =>
       a.employeeId === employeeId &&
       isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
     );
@@ -140,13 +140,13 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
       // Solo mostrar si hay diferencia significativa (> 0.5h)
       if (Math.abs(difference) > 0.5) {
         const project = projects.find(p => p.id === deadline.projectId);
-        
+
         // Obtener allocations del proyecto de todos los empleados
-        const allProjectAllocations = allocations.filter(a => 
+        const allProjectAllocations = allocations.filter(a =>
           a.projectId === deadline.projectId &&
           isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
         );
-        
+
         // Calcular totales del proyecto (todos los empleados)
         const totalProjectComputed = allProjectAllocations
           .filter(a => a.status === 'completed')
@@ -154,7 +154,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         const totalProjectPlanned = allProjectAllocations
           .filter(a => a.status !== 'completed')
           .reduce((sum, a) => sum + (a.hoursAssigned || 0), 0);
-        
+
         // Buscar compañeros que también tienen horas en este proyecto para detectar intercambios
         const teammates: Array<{
           employeeId: string;
@@ -189,7 +189,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
             const empAllocs = allocationsByEmployee[empId] || { planned: 0, computed: 0 };
             const empTotal = empAllocs.planned + empAllocs.computed;
             const empDiff = round2(empTotal - deadlineHrs);
-            
+
             // Si este compañero también tiene diferencia, podría ser un intercambio
             if (Math.abs(empDiff) > 0.5) {
               const emp = employees.find(e => e.id === empId);
@@ -227,18 +227,18 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
     Object.entries(allocationsByProject).forEach(([projectId, projectAllocs]) => {
       // Verificar si este proyecto NO está en ningún deadline
       const hasDeadline = deadlines.some(d => d.projectId === projectId);
-      
+
       if (!hasDeadline && (projectAllocs.planned > 0 || projectAllocs.computed > 0)) {
         // Este proyecto tiene horas pero no está en el deadline
         const project = projects.find(p => p.id === projectId);
         const totalPlanned = projectAllocs.planned + projectAllocs.computed;
-        
+
         // Obtener allocations del proyecto de todos los empleados
-        const allProjectAllocations = allocations.filter(a => 
+        const allProjectAllocations = allocations.filter(a =>
           a.projectId === projectId &&
           isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
         );
-        
+
         // Calcular totales del proyecto (todos los empleados)
         const totalProjectComputed = allProjectAllocations
           .filter(a => a.status === 'completed')
@@ -246,7 +246,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         const totalProjectPlanned = allProjectAllocations
           .filter(a => a.status !== 'completed')
           .reduce((sum, a) => sum + (a.hoursAssigned || 0), 0);
-        
+
         // No hay deadline, así que la diferencia es el total de horas
         results.push({
           projectId,
@@ -333,7 +333,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
               </TooltipTrigger>
               <TooltipContent className="max-w-[300px]">
                 <p className="text-xs">
-                  Detecta diferencias entre lo planificado en el deadline y lo realmente planificado en tus tareas. 
+                  Detecta diferencias entre lo planificado en el deadline y lo realmente planificado en tus tareas.
                   Útil para detectar intercambios con compañeros o cambios de planificación.
                 </p>
               </TooltipContent>
@@ -342,7 +342,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-slate-600">
-            Se han detectado <strong>{inconsistencies.length}</strong> variación{inconsistencies.length !== 1 ? 'es' : ''} 
+            Se han detectado <strong>{inconsistencies.length}</strong> variación{inconsistencies.length !== 1 ? 'es' : ''}
             {' '}en {format(viewDate, 'MMMM yyyy', { locale: es })}.
           </p>
 
@@ -382,22 +382,22 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                         {inc.deadlineHours === 0 ? (
                           <div className="text-amber-700 font-semibold">
                             ⚠️ Este proyecto <strong>no está en el deadline</strong> pero tiene horas asignadas.
-                            {' '}Total: <strong>{round2(inc.totalProjectComputed + inc.totalProjectPlanned)}h</strong> 
+                            {' '}Total: <strong>{round2(inc.totalProjectComputed + inc.totalProjectPlanned)}h</strong>
                             {' '}({inc.totalProjectComputed.toFixed(1)}h computadas + {inc.totalProjectPlanned.toFixed(1)}h planificadas).
                           </div>
                         ) : (
                           <>
                             {inc.budgetHours > 0 && (
                               <div>
-                                El proyecto tiene <strong>{inc.budgetHours}h asignadas</strong>. 
-                                {' '}Total del proyecto: <strong>{round2(inc.totalProjectComputed + inc.totalProjectPlanned)}h</strong> 
+                                El proyecto tiene <strong>{inc.budgetHours}h asignadas</strong>.
+                                {' '}Total del proyecto: <strong>{round2(inc.totalProjectComputed + inc.totalProjectPlanned)}h</strong>
                                 {' '}({inc.totalProjectComputed.toFixed(1)}h computadas + {inc.totalProjectPlanned.toFixed(1)}h planificadas).
                               </div>
                             )}
                             {inc.budgetHours === 0 && inc.minimumHours > 0 && (
                               <div>
-                                El proyecto tiene <strong>{inc.minimumHours}h mínimas</strong>. 
-                                {' '}Total del proyecto: <strong>{round2(inc.totalProjectComputed + inc.totalProjectPlanned)}h</strong> 
+                                El proyecto tiene <strong>{inc.minimumHours}h mínimas</strong>.
+                                {' '}Total del proyecto: <strong>{round2(inc.totalProjectComputed + inc.totalProjectPlanned)}h</strong>
                                 {' '}({inc.totalProjectComputed.toFixed(1)}h computadas + {inc.totalProjectPlanned.toFixed(1)}h planificadas).
                               </div>
                             )}

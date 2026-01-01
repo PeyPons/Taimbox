@@ -6,27 +6,27 @@ import { WorkSchedule } from '@/types';
 export const getMonthName = (date: Date) => format(date, 'MMMM', { locale: es });
 export const formatDateToISO = (date: Date) => format(date, 'yyyy-MM-dd');
 export const isCurrentWeek = (date: Date) => {
-    const now = new Date();
-    const start = startOfWeek(now, { weekStartsOn: 1 });
-    return date.getTime() === start.getTime();
+  const now = new Date();
+  const start = startOfWeek(now, { weekStartsOn: 1 });
+  return date.getTime() === start.getTime();
 };
 
 export const getStorageKey = (weekStart: Date, viewMonth: Date): string => {
-    if (isSameMonth(weekStart, viewMonth)) {
-        return format(weekStart, 'yyyy-MM-dd');
-    }
-    const monthStart = startOfMonth(viewMonth);
-    if (weekStart < monthStart) {
-        return format(monthStart, 'yyyy-MM-dd');
-    }
+  if (isSameMonth(weekStart, viewMonth)) {
     return format(weekStart, 'yyyy-MM-dd');
+  }
+  const monthStart = startOfMonth(viewMonth);
+  if (weekStart < monthStart) {
+    return format(monthStart, 'yyyy-MM-dd');
+  }
+  return format(weekStart, 'yyyy-MM-dd');
 };
 
 // ✅ FUNCIÓN CORREGIDA PARA FILTRAR SEMANAS SIN DÍAS LABORABLES
 export const getWeeksForMonth = (date: Date) => {
   const monthStart = startOfMonth(date);
   const monthEnd = endOfMonth(date);
-  
+
   const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
   const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
 
@@ -45,13 +45,13 @@ export const getWeeksForMonth = (date: Date) => {
 
     // Solo añadimos la semana si tiene días laborables
     if (hasWorkingDays) {
-        weeks.push({
-            weekStart: currentWeekStart,
-            weekEnd: currentWeekEnd,
-            weekLabel: `Semana ${weeks.length + 1}`,
-            effectiveStart,
-            effectiveEnd,
-        });
+      weeks.push({
+        weekStart: currentWeekStart,
+        weekEnd: currentWeekEnd,
+        weekLabel: `Semana ${weeks.length + 1}`,
+        effectiveStart,
+        effectiveEnd,
+      });
     }
 
     currentWeekStart = addDays(currentWeekStart, 7);
@@ -62,26 +62,25 @@ export const getWeeksForMonth = (date: Date) => {
 
 // ... (getWorkingDaysInRange y getMonthlyCapacity se mantienen igual) ...
 export const getWorkingDaysInRange = (start: Date, end: Date, schedule: WorkSchedule) => {
-    let totalHours = 0;
-    let days = 0;
-    let current = new Date(start);
-    if (current > end) return { totalHours: 0, days: 0 };
-    while (current <= end) {
-        const dayOfWeek = current.getDay();
-        const dayKey = dayOfWeek === 0 ? 'sunday' : dayOfWeek === 1 ? 'monday' : dayOfWeek === 2 ? 'tuesday' : dayOfWeek === 3 ? 'wednesday' : dayOfWeek === 4 ? 'thursday' : dayOfWeek === 5 ? 'friday' : 'saturday';
-        // @ts-ignore
-        const hours = schedule[dayKey] || 0;
-        if (hours > 0) days++;
-        totalHours += hours;
-        current = addDays(current, 1);
-    }
-    return { totalHours, days };
+  let totalHours = 0;
+  let days = 0;
+  let current = new Date(start);
+  if (current > end) return { totalHours: 0, days: 0 };
+  while (current <= end) {
+    const dayOfWeek = current.getDay();
+    const dayKey = dayOfWeek === 0 ? 'sunday' : dayOfWeek === 1 ? 'monday' : dayOfWeek === 2 ? 'tuesday' : dayOfWeek === 3 ? 'wednesday' : dayOfWeek === 4 ? 'thursday' : dayOfWeek === 5 ? 'friday' : 'saturday';
+    const hours = (schedule as unknown as Record<string, number>)[dayKey] || 0;
+    if (hours > 0) days++;
+    totalHours += hours;
+    current = addDays(current, 1);
+  }
+  return { totalHours, days };
 };
 
 export const getMonthlyCapacity = (year: number, month: number, schedule: WorkSchedule) => {
-    const start = new Date(year, month, 1);
-    const end = new Date(year, month + 1, 0);
-    return getWorkingDaysInRange(start, end, schedule).totalHours;
+  const start = new Date(year, month, 1);
+  const end = new Date(year, month + 1, 0);
+  return getWorkingDaysInRange(start, end, schedule).totalHours;
 };
 
 // ✅ Función helper para verificar si una allocation está en el mes efectivo
@@ -90,7 +89,7 @@ export const getMonthlyCapacity = (year: number, month: number, schedule: WorkSc
 export const isAllocationInEffectiveMonth = (weekStartDate: string | Date, viewMonth: Date): boolean => {
   try {
     const allocWeekStart = typeof weekStartDate === 'string' ? parseISO(weekStartDate) : weekStartDate;
-    
+
     // SOLO incluir si el weekStartDate está en el mes efectivo
     // NO incluir semanas que cruzan meses (trabajamos por mes efectivo, no por semana)
     return isSameMonth(allocWeekStart, viewMonth);

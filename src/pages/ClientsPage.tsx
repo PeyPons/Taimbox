@@ -9,9 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { 
+import {
   Briefcase, Plus, Search, ChevronLeft, ChevronRight,
-  AlertTriangle, TrendingUp, TrendingDown, Pencil, Trash2, Users, 
+  AlertTriangle, TrendingUp, TrendingDown, Pencil, Trash2, Users,
   FolderOpen, Clock, CalendarDays, Building2, ArrowUpRight, ArrowDownRight,
   Minus, Eye, X, ChevronDown
 } from 'lucide-react';
@@ -27,17 +27,17 @@ const colorOptions = [
 ];
 
 // Componente para estadísticas del header
-function StatCard({ 
-  icon: Icon, 
-  label, 
-  value, 
-  subValue, 
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  subValue,
   trend,
   color = 'slate'
-}: { 
-  icon: any; 
-  label: string; 
-  value: string | number; 
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string | number;
   subValue?: string;
   trend?: 'up' | 'down' | 'neutral';
   color?: 'slate' | 'emerald' | 'amber' | 'red';
@@ -87,7 +87,7 @@ function StatCard({
 // Componente principal
 export default function ClientsPage() {
   const { clients, projects, allocations, employees, addClient, updateClient, deleteClient, getClientTotalHoursForMonth, getProjectHoursForMonth, loadDataForMonth, isLoading: isGlobalLoading } = useApp();
-  
+
   // Estados
   const [searchQuery, setSearchQuery] = useState('');
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -107,17 +107,17 @@ export default function ClientsPage() {
   useEffect(() => {
     if (!isGlobalLoading) {
       const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
-      
+
       // Si ya se cargó este mes según el ref, no hacer nada (evita loops)
       if (loadedMonthsRef.current.has(monthKey)) {
         setIsLoadingMonth(false);
         return;
       }
-      
+
       // Verificar si REALMENTE tenemos datos para este mes en el contexto
       const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-      
+
       const hasDataInContext = allocations.some(a => {
         try {
           const allocDate = new Date(a.weekStartDate);
@@ -126,14 +126,14 @@ export default function ClientsPage() {
           return false;
         }
       });
-      
+
       // Si hay datos, marcar como cargado y salir
       if (hasDataInContext) {
         loadedMonthsRef.current.add(monthKey);
         setIsLoadingMonth(false);
         return;
       }
-      
+
       // Si no hay datos, cargarlos
       setIsLoadingMonth(true);
       loadDataForMonth(currentMonth)
@@ -151,7 +151,7 @@ export default function ClientsPage() {
   const clientsWithStats = useMemo(() => {
     // Primero identificamos proyectos Kit Digital usando la función helper
     // Detecta todas las variantes: (KD), KD , KD:, kit digital, etc.
-    const kitDigitalProjects = projects.filter(p => 
+    const kitDigitalProjects = projects.filter(p =>
       p.status === 'active' && isKitDigitalProject(p.name)
     );
     const kitDigitalProjectIds = new Set(kitDigitalProjects.map(p => p.id));
@@ -231,19 +231,13 @@ export default function ClientsPage() {
 
   // Filtrar
   const filteredClients = useMemo(() => {
-    return clientsWithStats.filter(c => 
+    return clientsWithStats.filter(c =>
       c.client.name.toLowerCase().includes(searchQuery.toLowerCase())
     ).sort((a, b) => a.client.name.localeCompare(b.client.name));
   }, [clientsWithStats, searchQuery]);
 
   // Mostrar loading del mes igual que EmployeeDashboard y PlannerGrid (retorno temprano DESPUÉS de todos los hooks)
-  if (isLoadingMonth) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-slate-400">Cargando datos del mes...</div>
-      </div>
-    );
-  }
+
 
   // Estadísticas globales
   const globalStats = useMemo(() => {
@@ -264,6 +258,15 @@ export default function ClientsPage() {
       trend: totalHours > prevTotalHours ? 'up' : totalHours < prevTotalHours ? 'down' : 'neutral'
     };
   }, [clients, clientsWithStats]);
+
+  // Mostrar loading del mes igual que EmployeeDashboard y PlannerGrid (retorno temprano DESPUÉS de todos los hooks)
+  if (isLoadingMonth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-slate-400">Cargando datos del mes...</div>
+      </div>
+    );
+  }
 
   // Handlers
   const handleAddClient = () => {
@@ -322,9 +325,9 @@ export default function ClientsPage() {
         <div className="flex items-center gap-2 flex-wrap">
           {/* Selector de mes */}
           <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-8 w-8"
               onClick={() => setCurrentMonth(prev => subMonths(prev, 1))}
             >
@@ -333,9 +336,9 @@ export default function ClientsPage() {
             <span className="text-sm font-medium px-2 min-w-[120px] text-center capitalize">
               {format(currentMonth, 'MMMM yyyy', { locale: es })}
             </span>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-8 w-8"
               onClick={() => setCurrentMonth(prev => addMonths(prev, 1))}
             >
@@ -399,28 +402,28 @@ export default function ClientsPage() {
 
       {/* Estadísticas globales */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard 
+        <StatCard
           icon={Building2}
           label="Total clientes"
           value={globalStats.totalClients}
           color="slate"
         />
-        <StatCard 
+        <StatCard
           icon={Clock}
           label="Horas este mes"
           value={`${globalStats.totalHours.toFixed(0)}h`}
           subValue={`de ${globalStats.totalBudget}h asignadas`}
-          trend={globalStats.trend as any}
+          trend={globalStats.trend as 'up' | 'down' | 'neutral'}
           color="emerald"
         />
-        <StatCard 
+        <StatCard
           icon={AlertTriangle}
           label="En riesgo"
           value={globalStats.atRisk}
           subValue=">85% de horas contratadas"
           color={globalStats.atRisk > 0 ? 'amber' : 'slate'}
         />
-        <StatCard 
+        <StatCard
           icon={TrendingUp}
           label="Excedidos"
           value={globalStats.overBudget}
@@ -463,7 +466,7 @@ export default function ClientsPage() {
           const isNearLimit = stats.percentage > 85 && stats.percentage <= 100;
           const trend = stats.used - prevStats.used;
           const unplannedProjects = stats.projects.filter(p => p.percentage === 0);
-          
+
           return (
             <div key={client.id} className="bg-white rounded-xl border shadow-sm overflow-hidden">
               {/* Cabecera del cliente */}
@@ -476,8 +479,8 @@ export default function ClientsPage() {
                 ) : (
                   <ChevronRight className="h-4 w-4 text-slate-400 flex-shrink-0" />
                 )}
-                <div 
-                  className="w-3 h-3 rounded-full flex-shrink-0" 
+                <div
+                  className="w-3 h-3 rounded-full flex-shrink-0"
                   style={{ backgroundColor: client.color }}
                 />
                 <span className="font-bold text-slate-800 flex-1 text-left">{client.name}</span>
@@ -504,8 +507,8 @@ export default function ClientsPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <Progress 
-                        value={Math.min(stats.percentage, 100)} 
+                      <Progress
+                        value={Math.min(stats.percentage, 100)}
                         className={cn(
                           "h-2 w-24",
                           isOverBudget && "[&>div]:bg-red-500",
@@ -522,7 +525,7 @@ export default function ClientsPage() {
                       </span>
                     </div>
                   </div>
-                  
+
                   {/* Badges de estado */}
                   <div className="flex items-center gap-1.5">
                     {isOverBudget && (
@@ -547,7 +550,7 @@ export default function ClientsPage() {
                       {stats.projects.length} proyecto{stats.projects.length !== 1 ? 's' : ''}
                     </Badge>
                   </div>
-                  
+
                   {/* Botones de acción */}
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Tooltip>
@@ -577,7 +580,7 @@ export default function ClientsPage() {
                   </div>
                 </div>
               </button>
-              
+
               {/* Proyectos del cliente */}
               {isExpanded && (
                 <div className="border-t divide-y divide-slate-100">
@@ -585,9 +588,9 @@ export default function ClientsPage() {
                     stats.projects.map(project => {
                       const isProjectOverBudget = project.percentage > 100;
                       const isProjectNearLimit = project.percentage > 85 && project.percentage <= 100;
-                      
+
                       return (
-                        <div 
+                        <div
                           key={project.id}
                           className={cn(
                             "px-4 py-3 hover:bg-slate-50 transition-colors",
@@ -597,8 +600,8 @@ export default function ClientsPage() {
                         >
                           <div className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <div 
-                                className="h-2 w-2 rounded-full flex-shrink-0" 
+                              <div
+                                className="h-2 w-2 rounded-full flex-shrink-0"
                                 style={{ backgroundColor: client.color }}
                               />
                               <div className="min-w-0 flex-1">
@@ -610,8 +613,8 @@ export default function ClientsPage() {
                             </div>
                             <div className="flex items-center gap-3 flex-shrink-0">
                               <div className="flex items-center gap-2">
-                                <Progress 
-                                  value={Math.min(project.percentage, 100)} 
+                                <Progress
+                                  value={Math.min(project.percentage, 100)}
                                   className={cn(
                                     "h-2 w-20",
                                     isProjectOverBudget && "[&>div]:bg-red-500",
@@ -643,7 +646,7 @@ export default function ClientsPage() {
                       Sin proyectos activos
                     </div>
                   )}
-                  
+
                   {/* Resumen de equipo asignado */}
                   {assignedEmployees.length > 0 && (
                     <div className="px-4 py-3 bg-slate-50 border-t">
@@ -652,7 +655,7 @@ export default function ClientsPage() {
                         <span className="text-xs font-medium text-slate-600">Equipo asignado:</span>
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {assignedEmployees.map((name, i) => (
-                            <span 
+                            <span
                               key={i}
                               className="text-[10px] bg-white text-slate-600 px-2 py-0.5 rounded-full border border-slate-200"
                             >
@@ -754,7 +757,7 @@ export default function ClientsPage() {
             <DialogTitle className="flex items-center gap-3">
               {detailClient && (
                 <>
-                  <div 
+                  <div
                     className="h-10 w-10 rounded-lg flex items-center justify-center text-white font-bold"
                     style={{ backgroundColor: detailClient.color }}
                   >
@@ -768,7 +771,7 @@ export default function ClientsPage() {
           {detailClient && (() => {
             const data = clientsWithStats.find(c => c.client.id === detailClient.id);
             if (!data) return null;
-            
+
             return (
               <div className="space-y-6 py-4">
                 {/* Resumen */}
@@ -806,8 +809,8 @@ export default function ClientsPage() {
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Progress 
-                            value={Math.min(project.percentage, 100)} 
+                          <Progress
+                            value={Math.min(project.percentage, 100)}
                             className={cn(
                               "h-2 w-16",
                               project.percentage > 100 && "[&>div]:bg-red-500",

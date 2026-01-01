@@ -2,9 +2,10 @@ import { useContext } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 
 // Importar DemoContext de forma condicional
-let DemoContext: any = null;
+let DemoContext: React.Context<unknown> | null = null;
 try {
   // Intentar importar DemoContext solo si está disponible
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const demoModule = require('@/contexts/DemoContext');
   DemoContext = demoModule.DemoContext;
 } catch {
@@ -20,6 +21,7 @@ export function useAppOrDemo() {
   // Intentar usar DemoContext primero si está disponible
   if (DemoContext) {
     try {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
       const demoContext = useContext(DemoContext);
       if (demoContext) {
         // Convertir DemoContext a formato compatible con AppContext
@@ -62,8 +64,9 @@ export function useAppOrDemo() {
       // DemoContext no está disponible en este árbol, continuar con AppContext
     }
   }
-  
+
   // Usar AppContext normal
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const appContext = useContext(AppContext);
   if (!appContext) {
     throw new Error('useAppOrDemo must be used within AppProvider or DemoProvider');

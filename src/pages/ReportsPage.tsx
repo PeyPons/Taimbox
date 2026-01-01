@@ -86,12 +86,12 @@ const getReliabilityLabel = (data: ReliabilityData): string => {
 
 export default function ReportsPage() {
   const { employees, clients, projects, allocations, absences, teamEvents, loadDataForMonth, isLoading: isGlobalLoading } = useApp();
-  
+
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('all');
   const [isLoadingMonth, setIsLoadingMonth] = useState(false);
   const loadedMonthsRef = useRef<Set<string>>(new Set());
-  
+
   const handlePrevMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
   const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
   const handleToday = () => setCurrentMonth(new Date());
@@ -102,8 +102,8 @@ export default function ReportsPage() {
   const monthEnd = endOfMonth(currentMonth);
 
   const activeEmployees = useMemo(() => {
-      if (selectedEmployeeId === 'all') return employees.filter(e => e.isActive);
-      return employees.filter(e => e.id === selectedEmployeeId);
+    if (selectedEmployeeId === 'all') return employees.filter(e => e.isActive);
+    return employees.filter(e => e.id === selectedEmployeeId);
   }, [employees, selectedEmployeeId]);
 
   const monthAllocations = useMemo(() => {
@@ -135,24 +135,24 @@ export default function ReportsPage() {
   // ============================================================================
   const reliabilityByEmployee = useMemo(() => {
     const reliabilityMap: Record<string, ReliabilityData> = {};
-    
+
     // Agrupar TODAS las allocations completadas por empleado (histórico completo)
     (employees || []).forEach(emp => {
-      const completedTasks = (allocations || []).filter(a => 
-        a.employeeId === emp.id && 
+      const completedTasks = (allocations || []).filter(a =>
+        a.employeeId === emp.id &&
         a.status === 'completed' &&
         a.hoursAssigned > 0 &&
         (a.hoursActual || 0) > 0
       );
-      
+
       const totalEstimated = round2(completedTasks.reduce((sum, a) => sum + a.hoursAssigned, 0));
       const totalReal = round2(completedTasks.reduce((sum, a) => sum + (a.hoursActual || 0), 0));
       const tasksAnalyzed = completedTasks.length;
-      
+
       // Calcular índice: (Estimado / Real) * 100
       // 100% = perfecto, <100% = subestima, >100% = sobreestima
       const index = totalReal > 0 ? round2((totalEstimated / totalReal) * 100) : 0;
-      
+
       // Determinar tendencia
       let trend: ReliabilityData['trend'] = 'insufficient';
       if (tasksAnalyzed >= 5) {
@@ -164,12 +164,12 @@ export default function ReportsPage() {
           trend = 'overestimates'; // Estima más de lo que tarda
         }
       }
-      
+
       // Calcular desviación promedio por tarea
-      const deviation = tasksAnalyzed > 0 
-        ? round2((totalReal - totalEstimated) / tasksAnalyzed) 
+      const deviation = tasksAnalyzed > 0
+        ? round2((totalReal - totalEstimated) / tasksAnalyzed)
         : 0;
-      
+
       reliabilityMap[emp.id] = {
         index,
         totalEstimated,
@@ -179,7 +179,7 @@ export default function ReportsPage() {
         deviation
       };
     });
-    
+
     return reliabilityMap;
   }, [employees, allocations]);
 
@@ -188,15 +188,15 @@ export default function ReportsPage() {
       const capacity = getMonthlyCapacity(year, month, e.workSchedule);
       const empAllocations = monthAllocations.filter(a => a.employeeId === e.id);
       const completedTasks = empAllocations.filter(a => a.status === 'completed');
-      
+
       const plannedHours = round2(empAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0));
       const realHours = round2(completedTasks.reduce((sum, a) => sum + (a.hoursActual || 0), 0));
       const computedHours = round2(completedTasks.reduce((sum, a) => sum + (a.hoursComputed || 0), 0));
-      
+
       const percentage = capacity > 0 ? (plannedHours / capacity) * 100 : 0;
       // Eficiencia individual (Comp vs Real)
       const efficiency = realHours > 0 ? (computedHours / realHours) * 100 : 0;
-      
+
       // NUEVO: Añadir datos de fiabilidad histórica
       const reliability = reliabilityByEmployee[e.id] || {
         index: 0,
@@ -213,31 +213,31 @@ export default function ReportsPage() {
 
   const projectData = useMemo(() => {
     const relevantProjectIds = new Set(monthAllocations.map(a => a.projectId));
-    const projectsToShow = selectedEmployeeId === 'all' 
-        ? (projects || []).filter(p => p.status === 'active') 
-        : (projects || []).filter(p => relevantProjectIds.has(p.id));
+    const projectsToShow = selectedEmployeeId === 'all'
+      ? (projects || []).filter(p => p.status === 'active')
+      : (projects || []).filter(p => relevantProjectIds.has(p.id));
 
     return projectsToShow.map(p => {
-        const client = (clients || []).find(c => c.id === p.clientId);
-        const projAllocations = monthAllocations.filter(a => a.projectId === p.id);
-        const completedTasks = projAllocations.filter(a => a.status === 'completed');
-        
-        const planned = round2(projAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0));
-        const real = round2(completedTasks.reduce((sum, a) => sum + (a.hoursActual || 0), 0));
-        const computed = round2(completedTasks.reduce((sum, a) => sum + (a.hoursComputed || 0), 0));
+      const client = (clients || []).find(c => c.id === p.clientId);
+      const projAllocations = monthAllocations.filter(a => a.projectId === p.id);
+      const completedTasks = projAllocations.filter(a => a.status === 'completed');
 
-        const percentage = p.budgetHours > 0 ? (planned / p.budgetHours) * 100 : 0;
+      const planned = round2(projAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0));
+      const real = round2(completedTasks.reduce((sum, a) => sum + (a.hoursActual || 0), 0));
+      const computed = round2(completedTasks.reduce((sum, a) => sum + (a.hoursComputed || 0), 0));
 
-        return {
-            ...p,
-            clientName: client?.name,
-            clientColor: client?.color,
-            hoursPlanned: planned,
-            hoursReal: real,
-            hoursComputed: computed,
-            budget: p.budgetHours,
-            percentage: percentage
-        };
+      const percentage = p.budgetHours > 0 ? (planned / p.budgetHours) * 100 : 0;
+
+      return {
+        ...p,
+        clientName: client?.name,
+        clientColor: client?.color,
+        hoursPlanned: planned,
+        hoursReal: real,
+        hoursComputed: computed,
+        budget: p.budgetHours,
+        percentage: percentage
+      };
     }).filter(p => selectedEmployeeId === 'all' || p.hoursPlanned > 0)
       .sort((a, b) => b.hoursPlanned - a.hoursPlanned);
   }, [projects, clients, monthAllocations, selectedEmployeeId]);
@@ -317,9 +317,9 @@ export default function ReportsPage() {
       const completionRate = p.budget > 0 ? (p.hoursComputed / p.budget) * 100 : 0;
       const projectNameLower = p.name.toLowerCase();
       const isOffPageOrLinkbuilding = projectNameLower.includes('off-page') ||
-                                       projectNameLower.includes('offpage') ||
-                                       projectNameLower.includes('linkbuilding') ||
-                                       projectNameLower.includes('link building');
+        projectNameLower.includes('offpage') ||
+        projectNameLower.includes('linkbuilding') ||
+        projectNameLower.includes('link building');
 
       // Alerta 1: Superó horas contratadas por más de 2h (100% es OK)
       if (hoursOverBudget > 2) {
@@ -523,11 +523,11 @@ export default function ReportsPage() {
     return employees.filter(e => e.isActive).map(emp => {
       // Obtener ausencias del empleado para el mes actual
       const employeeAbsences = (absences || []).filter(a => a.employeeId === emp.id);
-      
+
       const weeklyLoad = weeks.map((week, index) => {
         // Convertir weekStart a formato ISO string para comparar con weekStartDate
         const weekStr = format(week.weekStart, 'yyyy-MM-dd');
-        
+
         // Buscar allocations que coincidan con esta semana y estén en el mes efectivo
         // weekStartDate en allocations es el lunes de la semana, igual que week.weekStart
         const weekAllocations = (allocations || []).filter(a => {
@@ -535,16 +535,16 @@ export default function ReportsPage() {
             const allocationWeekDate = parseISO(a.weekStartDate);
             // Comparar si el inicio de semana de la allocation coincide con esta semana
             // Y filtrar por mes efectivo
-            return a.employeeId === emp.id && 
-                   isSameDay(allocationWeekDate, week.weekStart) &&
-                   isAllocationInEffectiveMonth(a.weekStartDate, currentMonth);
-          } catch { 
-            return false; 
+            return a.employeeId === emp.id &&
+              isSameDay(allocationWeekDate, week.weekStart) &&
+              isAllocationInEffectiveMonth(a.weekStartDate, currentMonth);
+          } catch {
+            return false;
           }
         });
-        
+
         const hoursPlanned = round2(weekAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0));
-        
+
         // Capacidad semanal basada en los días laborables de esta semana específica
         // Usar effectiveStart y effectiveEnd para calcular días reales de trabajo
         const workingDays = week.effectiveEnd.getDate() - week.effectiveStart.getDate() + 1;
@@ -553,7 +553,7 @@ export default function ReportsPage() {
         const baseWeeklyCapacity = emp.workSchedule?.defaultHoursPerDay
           ? emp.workSchedule.defaultHoursPerDay * actualWorkingDays
           : 40 * (actualWorkingDays / 5);
-        
+
         // Restar ausencias de esta semana
         const weekAbsenceHours = getAbsenceHoursInRange(
           week.effectiveStart,
@@ -561,7 +561,7 @@ export default function ReportsPage() {
           employeeAbsences,
           emp.workSchedule || {}
         );
-        
+
         // Restar eventos del equipo de esta semana
         const weekEventHours = getTeamEventHoursInRange(
           week.effectiveStart,
@@ -571,10 +571,10 @@ export default function ReportsPage() {
           emp.workSchedule || {},
           employeeAbsences
         );
-        
+
         // Capacidad disponible después de restar ausencias y eventos
         const availableCapacity = Math.max(0, baseWeeklyCapacity - weekAbsenceHours - weekEventHours);
-        
+
         const percentage = availableCapacity > 0 ? (hoursPlanned / availableCapacity) * 100 : 0;
 
         return {
@@ -600,11 +600,11 @@ export default function ReportsPage() {
   // Estado para deadlines y global assignments del mes siguiente
   const [nextMonthDeadlines, setNextMonthDeadlines] = useState<Deadline[]>([]);
   const [nextMonthGlobalAssignments, setNextMonthGlobalAssignments] = useState<GlobalAssignment[]>([]);
-  
+
   // Estado para deadlines y global assignments del mes actual
   const [currentMonthDeadlines, setCurrentMonthDeadlines] = useState<Deadline[]>([]);
   const [currentMonthGlobalAssignments, setCurrentMonthGlobalAssignments] = useState<GlobalAssignment[]>([]);
-  
+
   // Estado para deadlines y global assignments históricos (últimos 4 meses)
   const [historicalDeadlines, setHistoricalDeadlines] = useState<Record<string, Deadline[]>>({});
   const [historicalGlobalAssignments, setHistoricalGlobalAssignments] = useState<Record<string, GlobalAssignment[]>>({});
@@ -660,7 +660,7 @@ export default function ReportsPage() {
 
       // Capacidad del mes actual (para comparación)
       const currentMonthCapacity = getMonthlyCapacity(year, month, emp.workSchedule);
-      
+
       // 2. LÓGICA DE ESTIMACIÓN "MIX DE CARGA"
       // A. Inercia Recurrente (40%): Usar el mes ACTUAL como referencia principal
       // El mes actual es más relevante porque ya tiene datos planificados y computados
@@ -669,25 +669,25 @@ export default function ReportsPage() {
       const daysInCurrentMonth = endOfMonth(thisMonth).getDate();
       const currentDay = now.getDate();
       const monthProgress = currentDay / daysInCurrentMonth; // 0.0 a 1.0
-      
+
       // Horas de allocations del mes actual
       const currentMonthAllocationsHours = monthAllocations
         .filter(a => a.employeeId === emp.id)
         .reduce((sum, a) => sum + a.hoursAssigned, 0);
-      
+
       // Horas de deadlines del mes actual
       const currentMonthDeadlineHours = currentMonthDeadlines
         .filter(d => !d.isHidden)
         .reduce((sum, d) => sum + (d.employeeHours[emp.id] || 0), 0);
-      
+
       // Horas de global assignments del mes actual
       const currentMonthGlobalHours = currentMonthGlobalAssignments
         .filter(g => g.affectsAll || (g.affectedEmployeeIds || []).includes(emp.id))
         .reduce((sum, g) => sum + g.hours, 0);
-      
+
       // Total del mes actual: allocations + deadlines + global assignments
       const currentMonthTotalHours = currentMonthAllocationsHours + currentMonthDeadlineHours + currentMonthGlobalHours;
-      
+
       // Si estamos a mitad del mes o más, proyectar al mes completo
       // Si estamos al inicio del mes (< 30% del mes), usar el mes anterior como respaldo
       let inertiaHours: number;
@@ -703,29 +703,29 @@ export default function ReportsPage() {
         const previousMonthStart = startOfMonth(previousMonth);
         const previousMonthEnd = endOfMonth(previousMonth);
         const previousMonthStr = format(previousMonth, 'yyyy-MM');
-        
+
         const previousMonthAllocationsHours = (allocations || []).filter(a => {
           try {
             const weekDate = parseISO(a.weekStartDate);
             return a.employeeId === emp.id &&
-                   weekDate >= previousMonthStart &&
-                   weekDate <= previousMonthEnd;
+              weekDate >= previousMonthStart &&
+              weekDate <= previousMonthEnd;
           } catch { return false; }
         }).reduce((sum, a) => sum + a.hoursAssigned, 0);
-        
+
         const previousMonthDeadlines = historicalDeadlines[previousMonthStr] || [];
         const previousMonthDeadlineHours = previousMonthDeadlines
           .filter(d => !d.isHidden)
           .reduce((sum, d) => sum + (d.employeeHours[emp.id] || 0), 0);
-        
+
         const previousMonthGlobals = historicalGlobalAssignments[previousMonthStr] || [];
         const previousMonthGlobalHours = previousMonthGlobals
           .filter(g => g.affectsAll || (g.affectedEmployeeIds || []).includes(emp.id))
           .reduce((sum, g) => sum + g.hours, 0);
-        
+
         inertiaHours = previousMonthAllocationsHours + previousMonthDeadlineHours + previousMonthGlobalHours;
       }
-      
+
       const previousMonthTotalHours = inertiaHours; // Renombrado para mantener compatibilidad con el resto del código
 
       // B. Media Histórica (40%): Promedio de los últimos 3-4 meses
@@ -743,8 +743,8 @@ export default function ReportsPage() {
             try {
               const weekDate = parseISO(a.weekStartDate);
               return a.employeeId === emp.id &&
-                     weekDate >= pastMonthStart &&
-                     weekDate <= pastMonthEnd;
+                weekDate >= pastMonthStart &&
+                weekDate <= pastMonthEnd;
             } catch { return false; }
           })
           .reduce((sum, a) => sum + a.hoursAssigned, 0);
@@ -804,14 +804,14 @@ export default function ReportsPage() {
           committedWeight = 0.85;
           historicalWeight = 0.15;
           inertiaWeight = 0;
-          
+
           // Solo ajustar si históricamente hay más carga que los compromisos base
-          const historicalAdjustment = historicalAvgHours > committedHours 
+          const historicalAdjustment = historicalAvgHours > committedHours
             ? (historicalAvgHours - committedHours) * 0.3  // Solo 30% de la diferencia
             : 0;
-          
+
           estimatedHoursNextMonth = round2(committedHours + historicalAdjustment);
-          
+
           // Asegurar que nunca sea menor que los compromisos reales
           estimatedHoursNextMonth = Math.max(estimatedHoursNextMonth, committedHours);
         } else if (historicalMonths.length >= 1) {
@@ -819,12 +819,12 @@ export default function ReportsPage() {
           committedWeight = 0.9;
           historicalWeight = 0.1;
           inertiaWeight = 0;
-          
+
           estimatedHoursNextMonth = round2(
             (committedHours * committedWeight) +
             (historicalAvgHours * historicalWeight)
           );
-          
+
           // Asegurar que nunca sea menor que los compromisos reales
           estimatedHoursNextMonth = Math.max(estimatedHoursNextMonth, committedHours);
         } else {
@@ -945,7 +945,7 @@ export default function ReportsPage() {
       };
     }).sort((a, b) => b.nextMonth.estimatedAvailable - a.nextMonth.estimatedAvailable);
   }, [employees, allocations, monthAllocations, reliabilityByEmployee, year, month, absences, teamEvents, nextMonthDeadlines, nextMonthGlobalAssignments, currentMonthDeadlines, currentMonthGlobalAssignments, historicalDeadlines, historicalGlobalAssignments]);
-  
+
   // Cargar deadlines y global assignments del mes seleccionado, siguiente y meses históricos
   useEffect(() => {
     const loadData = async () => {
@@ -1079,17 +1079,17 @@ export default function ReportsPage() {
   useEffect(() => {
     if (!isGlobalLoading) {
       const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
-      
+
       // Si ya se cargó este mes según el ref, no hacer nada (evita loops)
       if (loadedMonthsRef.current.has(monthKey)) {
         setIsLoadingMonth(false);
         return;
       }
-      
+
       // Verificar si REALMENTE tenemos datos para este mes en el contexto
       const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-      
+
       const hasDataInContext = allocations.some(a => {
         try {
           const allocDate = new Date(a.weekStartDate);
@@ -1098,14 +1098,14 @@ export default function ReportsPage() {
           return false;
         }
       });
-      
+
       // Si hay datos, marcar como cargado y salir
       if (hasDataInContext) {
         loadedMonthsRef.current.add(monthKey);
         setIsLoadingMonth(false);
         return;
       }
-      
+
       // Si no hay datos, cargarlos
       setIsLoadingMonth(true);
       loadDataForMonth(currentMonth)
@@ -1165,55 +1165,55 @@ export default function ReportsPage() {
 
   return (
     <div className="flex flex-col h-full space-y-6 p-6 md:p-8 max-w-7xl mx-auto w-full">
-      
+
       {/* HEADER */}
       <div className="flex flex-col gap-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
-                    <BarChart3 className="h-8 w-8 text-indigo-600" />
-                    Reportes y métricas
-                </h1>
-                <p className="text-muted-foreground">
-                    Análisis de rendimiento {selectedEmployeeId !== 'all' ? 'individual' : 'del equipo'}.
-                </p>
-            </div>
-            
-            {/* Controles */}
-            <div className="flex items-center gap-3 flex-wrap">
-                {/* Filtro Empleado */}
-                <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-slate-400" />
-                    <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                        <SelectTrigger className="w-[180px] bg-white">
-                            <SelectValue placeholder="Filtrar empleado" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todo el equipo</SelectItem>
-                            {(employees || []).filter(e => e.isActive).map(e => (
-                                <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
+              <BarChart3 className="h-8 w-8 text-indigo-600" />
+              Reportes y métricas
+            </h1>
+            <p className="text-muted-foreground">
+              Análisis de rendimiento {selectedEmployeeId !== 'all' ? 'individual' : 'del equipo'}.
+            </p>
+          </div>
 
-                {/* Navegación Mes */}
-                <div className="flex items-center gap-1 bg-white border rounded-lg px-2 py-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handlePrevMonth}>
-                        <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <div className="flex items-center gap-1.5 px-2 min-w-[140px] justify-center">
-                        <CalendarDays className="h-4 w-4 text-indigo-600" />
-                        <span className="font-medium text-sm capitalize">
-                            {format(currentMonth, 'MMMM yyyy', { locale: es })}
-                        </span>
-                    </div>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleNextMonth}>
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={handleToday} className="text-xs">Hoy</Button>
-                </div>
+          {/* Controles */}
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Filtro Empleado */}
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-slate-400" />
+              <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+                <SelectTrigger className="w-[180px] bg-white">
+                  <SelectValue placeholder="Filtrar empleado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todo el equipo</SelectItem>
+                  {(employees || []).filter(e => e.isActive).map(e => (
+                    <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+
+            {/* Navegación Mes */}
+            <div className="flex items-center gap-1 bg-white border rounded-lg px-2 py-1">
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handlePrevMonth}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex items-center gap-1.5 px-2 min-w-[140px] justify-center">
+                <CalendarDays className="h-4 w-4 text-indigo-600" />
+                <span className="font-medium text-sm capitalize">
+                  {format(currentMonth, 'MMMM yyyy', { locale: es })}
+                </span>
+              </div>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleNextMonth}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleToday} className="text-xs">Hoy</Button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1632,7 +1632,7 @@ export default function ReportsPage() {
                         <p className={cn(
                           "text-lg font-bold",
                           emp.nextMonth.estimatedAvailable >= 20 ? "text-emerald-600" :
-                          emp.nextMonth.estimatedAvailable >= 8 ? "text-amber-600" : "text-red-600"
+                            emp.nextMonth.estimatedAvailable >= 8 ? "text-amber-600" : "text-red-600"
                         )}>
                           {emp.nextMonth.estimatedAvailable.toFixed(1)}h
                         </p>
@@ -1653,7 +1653,7 @@ export default function ReportsPage() {
                           value={Math.min(emp.currentMonth.percentage, 100)}
                           className={cn("h-1.5 mt-1",
                             emp.currentMonth.percentage > 100 ? "[&>div]:bg-red-500" :
-                            emp.currentMonth.percentage > 85 ? "[&>div]:bg-amber-500" : ""
+                              emp.currentMonth.percentage > 85 ? "[&>div]:bg-amber-500" : ""
                           )}
                         />
                         <p className="text-[10px] text-muted-foreground mt-1">
@@ -1674,8 +1674,8 @@ export default function ReportsPage() {
                         </p>
                         <div className="flex justify-between items-baseline">
                           <span className="text-sm font-medium">
-                            {emp.nextMonth.hasDeadlines 
-                              ? `${emp.nextMonth.assigned}h` 
+                            {emp.nextMonth.hasDeadlines
+                              ? `${emp.nextMonth.assigned}h`
                               : `~${emp.nextMonth.estimated.toFixed(1)}h`}
                           </span>
                           <span className="text-xs text-muted-foreground">de {emp.nextMonth.capacity.toFixed(1)}h</span>
@@ -1684,8 +1684,8 @@ export default function ReportsPage() {
                           value={Math.min(emp.nextMonth.percentage, 100)}
                           className={cn("h-1.5 mt-1",
                             emp.nextMonth.percentage > 100 ? "[&>div]:bg-red-500" :
-                            emp.nextMonth.percentage > 85 ? "[&>div]:bg-amber-500" :
-                            !emp.nextMonth.hasDeadlines ? "[&>div]:bg-amber-400" : ""
+                              emp.nextMonth.percentage > 85 ? "[&>div]:bg-amber-500" :
+                                !emp.nextMonth.hasDeadlines ? "[&>div]:bg-amber-400" : ""
                           )}
                         />
                         <p className="text-[10px] text-muted-foreground mt-1">
@@ -1719,7 +1719,7 @@ export default function ReportsPage() {
                           <span className="text-slate-600">Capacidad base del mes:</span>
                           <span className="font-medium">{emp.nextMonth.baseCapacity.toFixed(1)}h</span>
                         </div>
-                        
+
                         {/* Ausencias y eventos */}
                         {(emp.nextMonth.absenceHours > 0 || emp.nextMonth.eventHours > 0) && (
                           <div className="flex justify-between items-center text-xs">
@@ -1729,7 +1729,7 @@ export default function ReportsPage() {
                             </span>
                           </div>
                         )}
-                        
+
                         {/* Ajuste por fiabilidad */}
                         {emp.adjustmentFactor !== 1 && (
                           <div className="flex justify-between items-center text-xs">
@@ -1742,7 +1742,7 @@ export default function ReportsPage() {
                             </span>
                           </div>
                         )}
-                        
+
                         <div className="border-t border-slate-200 pt-1 mt-1">
                           <div className="flex justify-between items-center text-xs font-medium">
                             <span className="text-slate-700">Capacidad disponible ajustada:</span>
@@ -1810,7 +1810,7 @@ export default function ReportsPage() {
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            
+
             <Card className="col-span-4">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" /> Eficiencia & Rentabilidad</CardTitle>
@@ -1818,33 +1818,33 @@ export default function ReportsPage() {
               </CardHeader>
               <CardContent className="space-y-8">
                 <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                        <span className="font-medium text-slate-700">Ocupación (Planificado vs Capacidad)</span>
-                        <span className="font-bold">{utilizationRate.toFixed(1)}%</span>
-                    </div>
-                    <Progress value={utilizationRate} className="h-3 bg-slate-100" />
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium text-slate-700">Ocupación (Planificado vs Capacidad)</span>
+                    <span className="font-bold">{utilizationRate.toFixed(1)}%</span>
+                  </div>
+                  <Progress value={utilizationRate} className="h-3 bg-slate-100" />
                 </div>
-                
+
                 <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                        <span className="font-medium text-emerald-700">Rentabilidad (Computado vs Real)</span>
-                        <div className="flex gap-2 text-xs items-center">
-                            <span className="text-blue-600">Real: {monthStats.real}h</span>
-                            <span className="text-slate-300">|</span>
-                            <span className="text-emerald-700 font-bold">{profitabilityRate.toFixed(1)}% Ratio</span>
-                        </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium text-emerald-700">Rentabilidad (Computado vs Real)</span>
+                    <div className="flex gap-2 text-xs items-center">
+                      <span className="text-blue-600">Real: {monthStats.real}h</span>
+                      <span className="text-slate-300">|</span>
+                      <span className="text-emerald-700 font-bold">{profitabilityRate.toFixed(1)}% Ratio</span>
                     </div>
-                    {/* Barra doble: Fondo azul (Real), Frente verde (Computado) */}
-                    <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden relative">
-                        <div className="absolute top-0 left-0 h-full bg-blue-200 w-full" />
-                        <div 
-                            className="absolute top-0 left-0 h-full bg-emerald-500 transition-all" 
-                            style={{ width: `${Math.min(profitabilityRate, 100)}%` }} 
-                        />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground text-right pt-1">
-                        Si la barra verde no llena la azul, estamos trabajando más de lo que facturamos.
-                    </p>
+                  </div>
+                  {/* Barra doble: Fondo azul (Real), Frente verde (Computado) */}
+                  <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden relative">
+                    <div className="absolute top-0 left-0 h-full bg-blue-200 w-full" />
+                    <div
+                      className="absolute top-0 left-0 h-full bg-emerald-500 transition-all"
+                      style={{ width: `${Math.min(profitabilityRate, 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground text-right pt-1">
+                    Si la barra verde no llena la azul, estamos trabajando más de lo que facturamos.
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -1856,24 +1856,24 @@ export default function ReportsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2">
-                    {projectData.slice(0, 5).map(p => (
-                        <div key={p.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50">
-                            <div className="flex items-center gap-3 min-w-0">
-                                <div className="h-8 w-8 rounded flex items-center justify-center border bg-slate-50 shrink-0">
-                                    <FolderOpen className="h-4 w-4 text-slate-500" />
-                                </div>
-                                <div className="min-w-0">
-                                    <p className="text-sm font-medium leading-none truncate w-32 md:w-40" title={p.name}>{p.name}</p>
-                                    <p className="text-xs text-muted-foreground truncate">{p.clientName}</p>
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <div className="font-bold text-sm">{p.hoursPlanned}h</div>
-                                <div className="text-[10px] text-muted-foreground">de {p.budget}h</div>
-                            </div>
+                  {projectData.slice(0, 5).map(p => (
+                    <div key={p.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="h-8 w-8 rounded flex items-center justify-center border bg-slate-50 shrink-0">
+                          <FolderOpen className="h-4 w-4 text-slate-500" />
                         </div>
-                    ))}
-                    {projectData.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Sin actividad registrada.</p>}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium leading-none truncate w-32 md:w-40" title={p.name}>{p.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{p.clientName}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-sm">{p.hoursPlanned}h</div>
+                        <div className="text-[10px] text-muted-foreground">de {p.budget}h</div>
+                      </div>
+                    </div>
+                  ))}
+                  {projectData.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Sin actividad registrada.</p>}
                 </div>
               </CardContent>
             </Card>
@@ -1881,182 +1881,182 @@ export default function ReportsPage() {
         </TabsContent>
 
         <TabsContent value="team" className="space-y-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Desglose por empleado</CardTitle>
-                    <CardDescription>Análisis de ocupación (Plan), Rentabilidad (Real vs Comp) y Fiabilidad de estimación (Histórico).</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <TooltipProvider>
-                    <div className="space-y-6">
-                        {employeeData.map(emp => (
-                            // ✅ KEY ÚNICA: Fuerza re-render al cambiar de mes para arreglar el bug visual del color rojo
-                            <div key={emp.id + currentMonth.toISOString()} className="grid grid-cols-12 gap-4 items-start group hover:bg-slate-50 p-3 rounded-lg transition-colors border border-transparent hover:border-slate-100">
-                                <div className="col-span-4 md:col-span-3 flex items-center gap-3 mt-1">
-                                    <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs border border-indigo-200">
-                                        {emp.name.substring(0, 2).toUpperCase()}
-                                    </div>
-                                    <div className="min-w-0">
-                                        <div className="font-medium text-sm truncate flex items-center gap-2">
-                                            {emp.name}
-                                            {/* NUEVO: Badge de fiabilidad histórica */}
-                                            <Tooltip>
-                                                <TooltipTrigger>
-                                                    <Badge 
-                                                        variant="outline" 
-                                                        className={cn(
-                                                            "text-[10px] px-1.5 py-0 h-5 font-mono cursor-help flex items-center gap-1",
-                                                            getReliabilityColor(emp.reliability.index, emp.reliability.tasksAnalyzed)
-                                                        )}
-                                                    >
-                                                        {getReliabilityIcon(emp.reliability.trend)}
-                                                        {emp.reliability.tasksAnalyzed >= 5 
-                                                            ? `${emp.reliability.index.toFixed(0)}%` 
-                                                            : '?'}
-                                                    </Badge>
-                                                </TooltipTrigger>
-                                                <TooltipContent side="right" className="max-w-[280px]">
-                                                    <div className="space-y-2">
-                                                        <p className="font-semibold text-sm">
-                                                            Índice de fiabilidad: {getReliabilityLabel(emp.reliability)}
-                                                        </p>
-                                                        {emp.reliability.tasksAnalyzed >= 5 ? (
-                                                            <>
-                                                                <div className="text-xs space-y-1">
-                                                                    <p>📊 <strong>{emp.reliability.tasksAnalyzed}</strong> tareas analizadas</p>
-                                                                    <p>⏱️ Estimado total: <strong>{emp.reliability.totalEstimated}h</strong></p>
-                                                                    <p>⚡ Real total: <strong>{emp.reliability.totalReal}h</strong></p>
-                                                                    <p>📈 Ratio: <strong>{emp.reliability.index.toFixed(1)}%</strong></p>
-                                                                </div>
-                                                                <div className="pt-2 border-t text-xs">
-                                                                    {emp.reliability.trend === 'underestimates' && (
-                                                                        <p className="text-amber-600">
-                                                                            ⚠️ Subestima ~{Math.abs(emp.reliability.deviation).toFixed(1)}h por tarea
-                                                                        </p>
-                                                                    )}
-                                                                    {emp.reliability.trend === 'overestimates' && (
-                                                                        <p className="text-blue-600">
-                                                                            📈 Sobreestima ~{Math.abs(emp.reliability.deviation).toFixed(1)}h por tarea
-                                                                        </p>
-                                                                    )}
-                                                                    {emp.reliability.trend === 'accurate' && (
-                                                                        <p className="text-emerald-600">
-                                                                            ✅ Estimaciones precisas
-                                                                        </p>
-                                                                    )}
-                                                                </div>
-                                                            </>
-                                                        ) : (
-                                                            <p className="text-xs text-muted-foreground">
-                                                                Se necesitan al menos 5 tareas completadas con horas reales para calcular el índice.
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </div>
-                                        <div className="text-xs text-muted-foreground">{emp.role}</div>
-                                    </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Desglose por empleado</CardTitle>
+              <CardDescription>Análisis de ocupación (Plan), Rentabilidad (Real vs Comp) y Fiabilidad de estimación (Histórico).</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TooltipProvider>
+                <div className="space-y-6">
+                  {employeeData.map(emp => (
+                    // ✅ KEY ÚNICA: Fuerza re-render al cambiar de mes para arreglar el bug visual del color rojo
+                    <div key={emp.id + currentMonth.toISOString()} className="grid grid-cols-12 gap-4 items-start group hover:bg-slate-50 p-3 rounded-lg transition-colors border border-transparent hover:border-slate-100">
+                      <div className="col-span-4 md:col-span-3 flex items-center gap-3 mt-1">
+                        <div className="h-9 w-9 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs border border-indigo-200">
+                          {emp.name.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-medium text-sm truncate flex items-center gap-2">
+                            {emp.name}
+                            {/* NUEVO: Badge de fiabilidad histórica */}
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    "text-[10px] px-1.5 py-0 h-5 font-mono cursor-help flex items-center gap-1",
+                                    getReliabilityColor(emp.reliability.index, emp.reliability.tasksAnalyzed)
+                                  )}
+                                >
+                                  {getReliabilityIcon(emp.reliability.trend)}
+                                  {emp.reliability.tasksAnalyzed >= 5
+                                    ? `${emp.reliability.index.toFixed(0)}%`
+                                    : '?'}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent side="right" className="max-w-[280px]">
+                                <div className="space-y-2">
+                                  <p className="font-semibold text-sm">
+                                    Índice de fiabilidad: {getReliabilityLabel(emp.reliability)}
+                                  </p>
+                                  {emp.reliability.tasksAnalyzed >= 5 ? (
+                                    <>
+                                      <div className="text-xs space-y-1">
+                                        <p>📊 <strong>{emp.reliability.tasksAnalyzed}</strong> tareas analizadas</p>
+                                        <p>⏱️ Estimado total: <strong>{emp.reliability.totalEstimated}h</strong></p>
+                                        <p>⚡ Real total: <strong>{emp.reliability.totalReal}h</strong></p>
+                                        <p>📈 Ratio: <strong>{emp.reliability.index.toFixed(1)}%</strong></p>
+                                      </div>
+                                      <div className="pt-2 border-t text-xs">
+                                        {emp.reliability.trend === 'underestimates' && (
+                                          <p className="text-amber-600">
+                                            ⚠️ Subestima ~{Math.abs(emp.reliability.deviation).toFixed(1)}h por tarea
+                                          </p>
+                                        )}
+                                        {emp.reliability.trend === 'overestimates' && (
+                                          <p className="text-blue-600">
+                                            📈 Sobreestima ~{Math.abs(emp.reliability.deviation).toFixed(1)}h por tarea
+                                          </p>
+                                        )}
+                                        {emp.reliability.trend === 'accurate' && (
+                                          <p className="text-emerald-600">
+                                            ✅ Estimaciones precisas
+                                          </p>
+                                        )}
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <p className="text-xs text-muted-foreground">
+                                      Se necesitan al menos 5 tareas completadas con horas reales para calcular el índice.
+                                    </p>
+                                  )}
                                 </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <div className="text-xs text-muted-foreground">{emp.role}</div>
+                        </div>
+                      </div>
 
-                                <div className="col-span-8 md:col-span-9 space-y-4">
-                                    {/* SECCIÓN 1: PLANIFICACIÓN (Barra Única) */}
-                                    <div className="space-y-1">
-                                        <div className="flex justify-between text-xs">
-                                            <span className="text-slate-500">Ocupación Planificada ({emp.plannedHours}/{emp.capacity}h)</span>
-                                            <span className={cn("font-medium", emp.percentage > 100 ? "text-red-600 font-bold" : "text-slate-700")}>
-                                                {emp.percentage.toFixed(0)}%
-                                            </span>
-                                        </div>
-                                        <div className="relative h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                            <div 
-                                                className={cn("absolute top-0 left-0 h-full", 
-                                                    emp.percentage > 100 ? "bg-red-500" : 
-                                                    emp.percentage > 85 ? "bg-amber-500" : "bg-blue-500"
-                                                )}
-                                                style={{ width: `${Math.min(emp.percentage, 100)}%` }}
-                                            />
-                                        </div>
-                                    </div>
+                      <div className="col-span-8 md:col-span-9 space-y-4">
+                        {/* SECCIÓN 1: PLANIFICACIÓN (Barra Única) */}
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-slate-500">Ocupación Planificada ({emp.plannedHours}/{emp.capacity}h)</span>
+                            <span className={cn("font-medium", emp.percentage > 100 ? "text-red-600 font-bold" : "text-slate-700")}>
+                              {emp.percentage.toFixed(0)}%
+                            </span>
+                          </div>
+                          <div className="relative h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <div
+                              className={cn("absolute top-0 left-0 h-full",
+                                emp.percentage > 100 ? "bg-red-500" :
+                                  emp.percentage > 85 ? "bg-amber-500" : "bg-blue-500"
+                              )}
+                              style={{ width: `${Math.min(emp.percentage, 100)}%` }}
+                            />
+                          </div>
+                        </div>
 
-                                    {/* SECCIÓN 2: RENTABILIDAD (Barra Verde sobre Azul) */}
-                                    <div className="space-y-1">
-                                        <div className="flex justify-between text-xs text-muted-foreground">
-                                            <div className="flex gap-2">
-                                                <span>Rentabilidad</span>
-                                                <span className="text-blue-600 flex items-center gap-0.5"><Zap className="h-3 w-3" /> {emp.realHours}h</span>
-                                                <span className="text-emerald-600 flex items-center gap-0.5"><CheckCircle2 className="h-3 w-3" /> {emp.computedHours}h</span>
-                                            </div>
-                                            <span>{emp.efficiency.toFixed(0)}%</span>
-                                        </div>
-                                        <div className="relative h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                            {/* Fondo Azul (Real) */}
-                                            <div className="absolute top-0 left-0 h-full bg-blue-200 w-full" />
-                                            {/* Frente Verde (Computado) */}
-                                            <div 
-                                                className="absolute top-0 left-0 h-full bg-emerald-500 transition-all" 
-                                                style={{ width: `${Math.min(emp.efficiency, 100)}%` }} 
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
+                        {/* SECCIÓN 2: RENTABILIDAD (Barra Verde sobre Azul) */}
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <div className="flex gap-2">
+                              <span>Rentabilidad</span>
+                              <span className="text-blue-600 flex items-center gap-0.5"><Zap className="h-3 w-3" /> {emp.realHours}h</span>
+                              <span className="text-emerald-600 flex items-center gap-0.5"><CheckCircle2 className="h-3 w-3" /> {emp.computedHours}h</span>
                             </div>
-                        ))}
+                            <span>{emp.efficiency.toFixed(0)}%</span>
+                          </div>
+                          <div className="relative h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                            {/* Fondo Azul (Real) */}
+                            <div className="absolute top-0 left-0 h-full bg-blue-200 w-full" />
+                            {/* Frente Verde (Computado) */}
+                            <div
+                              className="absolute top-0 left-0 h-full bg-emerald-500 transition-all"
+                              style={{ width: `${Math.min(emp.efficiency, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    </TooltipProvider>
-                </CardContent>
-            </Card>
+                  ))}
+                </div>
+              </TooltipProvider>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="projects" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {projectData.map(p => {
-                    const gain = p.hoursComputed - p.hoursReal;
-                    return (
-                        <Card key={p.id + currentMonth.toISOString()} className={cn("border-l-4", p.percentage > 100 ? "border-l-red-500" : p.percentage > 80 ? "border-l-amber-500" : "border-l-emerald-500")}>
-                            <CardHeader className="pb-2">
-                                <div className="flex justify-between items-start">
-                                    <div className="min-w-0 pr-2">
-                                        <CardTitle className="text-sm font-semibold truncate" title={p.name}>{p.name}</CardTitle>
-                                        <p className="text-xs text-muted-foreground truncate">{p.clientName}</p>
-                                    </div>
-                                    <Badge variant={p.percentage > 100 ? "destructive" : p.percentage > 80 ? "secondary" : "outline"} className="shrink-0">
-                                        {p.percentage.toFixed(0)}%
-                                    </Badge>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <Progress value={Math.min(p.percentage, 100)} className={cn("h-2", p.percentage > 100 ? "[&>div]:bg-red-500" : p.percentage > 80 ? "[&>div]:bg-amber-500" : "")} />
-                                <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                                    <div>
-                                        <p className="font-bold text-slate-700">{p.hoursPlanned}h</p>
-                                        <p className="text-muted-foreground">Planificado</p>
-                                    </div>
-                                    <div>
-                                        <p className="font-bold text-blue-600">{p.hoursReal}h</p>
-                                        <p className="text-muted-foreground">Real</p>
-                                    </div>
-                                    <div>
-                                        <p className={cn("font-bold", gain >= 0 ? "text-emerald-600" : "text-red-600")}>
-                                            {gain >= 0 ? '+' : ''}{gain.toFixed(1)}h
-                                        </p>
-                                        <p className="text-muted-foreground">Balance</p>
-                                    </div>
-                                </div>
-                                <div className="text-[10px] text-muted-foreground text-right">
-                                    Horas contratadas: {p.budget}h
-                                </div>
-                            </CardContent>
-                        </Card>
-                    );
-                })}
-                {projectData.length === 0 && (
-                    <div className="col-span-full text-center py-12 text-muted-foreground">
-                        <FolderOpen className="h-12 w-12 mx-auto mb-2 opacity-20" />
-                        <p>Sin proyectos con actividad este mes.</p>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {projectData.map(p => {
+              const gain = p.hoursComputed - p.hoursReal;
+              return (
+                <Card key={p.id + currentMonth.toISOString()} className={cn("border-l-4", p.percentage > 100 ? "border-l-red-500" : p.percentage > 80 ? "border-l-amber-500" : "border-l-emerald-500")}>
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
+                      <div className="min-w-0 pr-2">
+                        <CardTitle className="text-sm font-semibold truncate" title={p.name}>{p.name}</CardTitle>
+                        <p className="text-xs text-muted-foreground truncate">{p.clientName}</p>
+                      </div>
+                      <Badge variant={p.percentage > 100 ? "destructive" : p.percentage > 80 ? "secondary" : "outline"} className="shrink-0">
+                        {p.percentage.toFixed(0)}%
+                      </Badge>
                     </div>
-                )}
-            </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Progress value={Math.min(p.percentage, 100)} className={cn("h-2", p.percentage > 100 ? "[&>div]:bg-red-500" : p.percentage > 80 ? "[&>div]:bg-amber-500" : "")} />
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                      <div>
+                        <p className="font-bold text-slate-700">{p.hoursPlanned}h</p>
+                        <p className="text-muted-foreground">Planificado</p>
+                      </div>
+                      <div>
+                        <p className="font-bold text-blue-600">{p.hoursReal}h</p>
+                        <p className="text-muted-foreground">Real</p>
+                      </div>
+                      <div>
+                        <p className={cn("font-bold", gain >= 0 ? "text-emerald-600" : "text-red-600")}>
+                          {gain >= 0 ? '+' : ''}{gain.toFixed(1)}h
+                        </p>
+                        <p className="text-muted-foreground">Balance</p>
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-muted-foreground text-right">
+                      Horas contratadas: {p.budget}h
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+            {projectData.length === 0 && (
+              <div className="col-span-full text-center py-12 text-muted-foreground">
+                <FolderOpen className="h-12 w-12 mx-auto mb-2 opacity-20" />
+                <p>Sin proyectos con actividad este mes.</p>
+              </div>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="coherence" className="space-y-4">

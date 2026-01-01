@@ -110,6 +110,7 @@ export interface ProfessionalGoal {
   id: string;
   employeeId: string;
   title: string;
+  description?: string;
   keyResults?: string;
   actions?: string;
   trainingUrl?: string;

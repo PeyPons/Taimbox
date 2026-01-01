@@ -6,8 +6,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Send, Bot, User, Sparkles, Trash2, TrendingUp, TrendingDown, 
+import {
+  Send, Bot, User, Sparkles, Trash2, TrendingUp, TrendingDown,
   AlertTriangle, Users, Calendar, Target, Clock, Zap, HelpCircle,
   BarChart3, UserX, Link, CheckCircle2, XCircle, Cpu
 } from 'lucide-react';
@@ -51,7 +51,7 @@ function parseSimpleMarkdown(text: string): React.ReactNode {
   const lines = text.split('\n');
   const elements: React.ReactNode[] = [];
   let listItems: string[] = [];
-  
+
   const flushList = () => {
     if (listItems.length > 0) {
       elements.push(
@@ -64,12 +64,12 @@ function parseSimpleMarkdown(text: string): React.ReactNode {
       listItems = [];
     }
   };
-  
+
   const parseLine = (line: string): React.ReactNode => {
     const parts: React.ReactNode[] = [];
     let remaining = line;
     let key = 0;
-    
+
     while (remaining.length > 0) {
       const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
       if (boldMatch && boldMatch.index !== undefined) {
@@ -85,7 +85,7 @@ function parseSimpleMarkdown(text: string): React.ReactNode {
     }
     return parts.length > 0 ? parts : line;
   };
-  
+
   lines.forEach((line, index) => {
     const trimmedLine = line.trim();
     if (!trimmedLine) {
@@ -142,10 +142,10 @@ export default function DashboardAI() {
   // ============================================================
   const analysisData = useMemo(() => {
     const now = new Date();
-    return { 
-        month: format(now, "MMMM yyyy", { locale: es }),
-        employeesCount: employees.length,
-        projectsCount: projects.length
+    return {
+      month: format(now, "MMMM yyyy", { locale: es }),
+      employeesCount: employees.length,
+      projectsCount: projects.length
     };
   }, [employees, projects]);
 
@@ -162,10 +162,10 @@ export default function DashboardAI() {
     const safeAllocations = allocations || [];
     const safeProjects = projects || [];
     const safeAbsences = absences || [];
-    
+
     // Filtros temporales
     const monthAllocations = safeAllocations.filter(a => isAllocationInEffectiveMonth(a.weekStartDate, now));
-    
+
     // 1. DETECCIÓN DE TAREAS ZOMBIE
     const zombieTasks = safeAllocations.filter(a => {
       const taskDate = parseISO(a.weekStartDate);
@@ -178,25 +178,25 @@ export default function DashboardAI() {
     }));
 
     // 2. DETECCIÓN DE DEPENDENCIAS
-    const blockingTasks: any[] = [];
+    const blockingTasks: { ESTADO: string; bloqueador: { empleado: string | undefined; tarea: string }; esperando: { empleado: string | undefined; tarea: string } }[] = [];
     const pendingTasks = safeAllocations.filter(a => a.status !== 'completed');
     pendingTasks.forEach(waitingTask => {
-        if (waitingTask.dependencyId) {
-            const blocker = safeAllocations.find(a => a.id === waitingTask.dependencyId);
-            if (blocker && blocker.status !== 'completed') {
-                blockingTasks.push({
-                    ESTADO: "BLOQUEO ACTIVO",
-                    bloqueador: {
-                        empleado: safeEmployees.find(e => e.id === blocker.employeeId)?.name,
-                        tarea: blocker.taskName || "Tarea sin nombre",
-                    },
-                    esperando: {
-                        empleado: safeEmployees.find(e => e.id === waitingTask.employeeId)?.name,
-                        tarea: waitingTask.taskName || "Tarea sin nombre",
-                    }
-                });
+      if (waitingTask.dependencyId) {
+        const blocker = safeAllocations.find(a => a.id === waitingTask.dependencyId);
+        if (blocker && blocker.status !== 'completed') {
+          blockingTasks.push({
+            ESTADO: "BLOQUEO ACTIVO",
+            bloqueador: {
+              empleado: safeEmployees.find(e => e.id === blocker.employeeId)?.name,
+              tarea: blocker.taskName || "Tarea sin nombre",
+            },
+            esperando: {
+              empleado: safeEmployees.find(e => e.id === waitingTask.employeeId)?.name,
+              tarea: waitingTask.taskName || "Tarea sin nombre",
             }
+          });
         }
+      }
     });
 
     // 3. ANÁLISIS DE PACING (Sin hablar de dinero/ads, solo ritmo de trabajo)
@@ -224,59 +224,59 @@ export default function DashboardAI() {
     // Calcula la desviación media entre Horas Asignadas y Horas Reales por empleado
     const reliabilityStats: Record<string, { totalTasks: number, totalError: number, bias: number, underEstimations: number, overEstimations: number }> = {};
 
-    const completedTasksWithHours = safeAllocations.filter(a => 
-        a.status === 'completed' && 
-        a.hoursActual !== undefined && a.hoursActual !== null &&
-        a.hoursAssigned > 0
+    const completedTasksWithHours = safeAllocations.filter(a =>
+      a.status === 'completed' &&
+      a.hoursActual !== undefined && a.hoursActual !== null &&
+      a.hoursAssigned > 0
     );
 
     completedTasksWithHours.forEach(t => {
-        const empId = t.employeeId;
-        if (!reliabilityStats[empId]) {
-            reliabilityStats[empId] = { totalTasks: 0, totalError: 0, bias: 0, underEstimations: 0, overEstimations: 0 };
-        }
-        
-        const diff = (t.hoursActual || 0) - t.hoursAssigned; // + si tardó más, - si tardó menos
-        const absDiff = Math.abs(diff);
-        
-        reliabilityStats[empId].totalTasks++;
-        reliabilityStats[empId].totalError += absDiff;
-        reliabilityStats[empId].bias += diff;
+      const empId = t.employeeId;
+      if (!reliabilityStats[empId]) {
+        reliabilityStats[empId] = { totalTasks: 0, totalError: 0, bias: 0, underEstimations: 0, overEstimations: 0 };
+      }
 
-        // Tolerancia de 0.5h
-        if (diff > 0.5) reliabilityStats[empId].underEstimations++; 
-        if (diff < -0.5) reliabilityStats[empId].overEstimations++;
+      const diff = (t.hoursActual || 0) - t.hoursAssigned; // + si tardó más, - si tardó menos
+      const absDiff = Math.abs(diff);
+
+      reliabilityStats[empId].totalTasks++;
+      reliabilityStats[empId].totalError += absDiff;
+      reliabilityStats[empId].bias += diff;
+
+      // Tolerancia de 0.5h
+      if (diff > 0.5) reliabilityStats[empId].underEstimations++;
+      if (diff < -0.5) reliabilityStats[empId].overEstimations++;
     });
 
     const reliabilityReport = Object.entries(reliabilityStats).map(([empId, stats]) => {
-        const empName = safeEmployees.find(e => e.id === empId)?.name || 'Unknown';
-        const avgError = (stats.totalError / stats.totalTasks).toFixed(1);
-        const avgBias = (stats.bias / stats.totalTasks).toFixed(1);
-        
-        let tendency = "Preciso";
-        if (Number(avgBias) > 0.5) tendency = "Tendencia a SUBESTIMAR (Tarda más de lo planeado)";
-        if (Number(avgBias) < -0.5) tendency = "Tendencia a SOBREESTIMAR (Infla tiempos)";
+      const empName = safeEmployees.find(e => e.id === empId)?.name || 'Unknown';
+      const avgError = (stats.totalError / stats.totalTasks).toFixed(1);
+      const avgBias = (stats.bias / stats.totalTasks).toFixed(1);
 
-        // Solo mostramos reporte si hay suficientes datos (mínimo 3 tareas)
-        if (stats.totalTasks < 3) return null;
+      let tendency = "Preciso";
+      if (Number(avgBias) > 0.5) tendency = "Tendencia a SUBESTIMAR (Tarda más de lo planeado)";
+      if (Number(avgBias) < -0.5) tendency = "Tendencia a SOBREESTIMAR (Infla tiempos)";
 
-        return {
-            empleado: empName,
-            tareas_analizadas: stats.totalTasks,
-            desviacion_media: avgError + "h",
-            comportamiento: tendency,
-            tareas_retrasadas: stats.underEstimations
-        };
+      // Solo mostramos reporte si hay suficientes datos (mínimo 3 tareas)
+      if (stats.totalTasks < 3) return null;
+
+      return {
+        empleado: empName,
+        tareas_analizadas: stats.totalTasks,
+        desviacion_media: avgError + "h",
+        comportamiento: tendency,
+        tareas_retrasadas: stats.underEstimations
+      };
     }).filter(Boolean);
 
     // 5. CONFLICTOS DE VACACIONES
-    const vacationConflicts: any[] = [];
+    const vacationConflicts: { empleado: string; tarea: string | undefined; semana: string; vacaciones: string }[] = [];
     safeEmployees.forEach(emp => {
       const empAbsences = safeAbsences.filter(a => a.employeeId === emp.id);
       const empTasks = safeAllocations.filter(a => a.employeeId === emp.id && a.status !== 'completed');
       empTasks.forEach(task => {
         const taskWeekStart = parseISO(task.weekStartDate);
-        const taskWeekEnd = addDays(taskWeekStart, 5); 
+        const taskWeekEnd = addDays(taskWeekStart, 5);
         const conflict = empAbsences.find(abs => {
           const absStart = parseISO(abs.startDate);
           const absEnd = parseISO(abs.endDate);
@@ -296,7 +296,7 @@ export default function DashboardAI() {
     // 6. DATOS ESPECÍFICOS DE LA PREGUNTA
     const lowerQ = userQuestion.toLowerCase();
     const mentionedEmployees = safeEmployees.filter(e => lowerQ.includes(e.name.toLowerCase()));
-    
+
     let specificContext = "";
     if (mentionedEmployees.length > 0) {
       specificContext = "\n*** DATOS DE EMPLEADOS MENCIONADOS ***\n";
@@ -306,9 +306,9 @@ export default function DashboardAI() {
         const assigned = empTasks.reduce((sum, t) => sum + t.hoursAssigned, 0);
         specificContext += `Empleado: ${emp.name} | Capacidad: ${capacity}h | Asignado Mes: ${assigned}h\n`;
         const isOnVacation = safeAbsences.some(a => {
-            const start = parseISO(a.startDate);
-            const end = parseISO(a.endDate);
-            return a.employeeId === emp.id && now >= start && now <= end;
+          const start = parseISO(a.startDate);
+          const end = parseISO(a.endDate);
+          return a.employeeId === emp.id && now >= start && now <= end;
         });
         if (isOnVacation) specificContext += "⚠️ ESTADO ACTUAL: DE VACACIONES HOY\n";
       });
@@ -357,7 +357,7 @@ ${specificContext}
 
     try {
       const dataContext = buildDynamicContext(input);
-      
+
       const systemPrompt = `
 ACTÚA COMO: Minguito, un Project Manager Senior, sarcástico pero analítico.
 TU OBJETIVO: Detectar ineficiencias y problemas de planificación.
@@ -388,7 +388,7 @@ PREGUNTA DEL USUARIO: "${input}"
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-    } catch (error: any) {
+    } catch (error) {
       ErrorService.handle(error, 'DashboardAI.handleSend');
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
@@ -445,10 +445,10 @@ PREGUNTA DEL USUARIO: "${input}"
               <Badge variant="outline" className="text-[10px] bg-white">
                 {analysisData.projectsCount} proyectos
               </Badge>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="text-muted-foreground hover:text-red-500 h-8 w-8" 
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-red-500 h-8 w-8"
                 onClick={clearChat}
                 title="Limpiar chat"
               >
@@ -457,48 +457,46 @@ PREGUNTA DEL USUARIO: "${input}"
             </div>
           </CardTitle>
         </CardHeader>
-        
+
         <CardContent className="flex-1 overflow-hidden p-0 bg-slate-50/30">
           <ScrollArea className="h-full p-4">
             <div className="space-y-4 max-w-3xl mx-auto">
               {messages.map((msg) => {
-                const modelStyle = msg.modelName && MODEL_CONFIG[msg.modelName] 
-                  ? MODEL_CONFIG[msg.modelName] 
+                const modelStyle = msg.modelName && MODEL_CONFIG[msg.modelName]
+                  ? MODEL_CONFIG[msg.modelName]
                   : MODEL_CONFIG["default"];
 
                 return (
                   <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                    <Avatar className={`h-8 w-8 mt-1 border shrink-0 ${
-                      msg.role === 'assistant' 
-                        ? 'bg-gradient-to-br from-indigo-100 to-purple-100 border-indigo-200' 
+                    <Avatar className={`h-8 w-8 mt-1 border shrink-0 ${msg.role === 'assistant'
+                        ? 'bg-gradient-to-br from-indigo-100 to-purple-100 border-indigo-200'
                         : 'bg-white border-slate-200'
-                    }`}>
+                      }`}>
                       <AvatarFallback className={msg.role === 'assistant' ? 'text-indigo-700' : 'text-slate-700'}>
                         {msg.role === 'assistant' ? <Sparkles className="h-4 w-4" /> : <User className="h-4 w-4" />}
                       </AvatarFallback>
                     </Avatar>
-                    
+
                     <div className={`flex flex-col max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                      <div className={`px-4 py-2.5 rounded-2xl text-sm shadow-sm ${
-                        msg.role === 'user' 
-                          ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-tr-sm whitespace-pre-wrap' 
+                      <div className={`px-4 py-2.5 rounded-2xl text-sm shadow-sm ${msg.role === 'user'
+                          ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-tr-sm whitespace-pre-wrap'
                           : 'bg-white border border-slate-100 text-slate-800 rounded-tl-sm'
-                      }`}>
+                        }`}>
                         {msg.role === 'assistant' ? parseSimpleMarkdown(msg.text) : msg.text}
                       </div>
-                      
+
                       <span className="text-[10px] text-muted-foreground mt-1 px-1 flex items-center gap-1.5 flex-wrap">
                         {format(msg.timestamp, 'HH:mm')}
-                        
+
                         {msg.provider && (
                           <>
                             <span className={cn(
                               "px-1.5 py-0.5 rounded text-[9px] font-medium border",
-                              msg.provider === 'gemini' 
-                                ? "bg-blue-50 text-blue-600 border-blue-100" 
+                              msg.provider === 'gemini'
+                                ? "bg-blue-50 text-blue-600 border-blue-100"
                                 : msg.provider === 'openrouter'
-                                ? "bg-purple-50 text-purple-600 border-purple-100"
-                                : "bg-orange-50 text-orange-600 border-orange-100"
+                                  ? "bg-purple-50 text-purple-600 border-purple-100"
+                                  : "bg-orange-50 text-orange-600 border-orange-100"
                             )}>
                               {msg.provider === 'gemini' ? '✨ Gemini' : msg.provider === 'openrouter' ? '🟣 OpenRouter' : '🥥 Coco'}
                             </span>
@@ -521,7 +519,7 @@ PREGUNTA DEL USUARIO: "${input}"
                   </div>
                 );
               })}
-              
+
               {isLoading && (
                 <div className="flex gap-3">
                   <div className="h-8 w-8 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center">
@@ -563,20 +561,20 @@ PREGUNTA DEL USUARIO: "${input}"
               ))}
             </div>
           </div>
-          
+
           <div className="p-4 pt-2">
             <div className="flex gap-2 max-w-3xl mx-auto relative">
-              <Input 
-                placeholder="Pregunta lo que quieras sobre el equipo, proyectos, cargas..." 
+              <Input
+                placeholder="Pregunta lo que quieras sobre el equipo, proyectos, cargas..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
                 className="pr-12 py-6 shadow-sm border-slate-200 focus-visible:ring-indigo-500"
                 disabled={isLoading}
               />
-              <Button 
-                size="icon" 
-                onClick={() => handleSend()} 
+              <Button
+                size="icon"
+                onClick={() => handleSend()}
                 disabled={isLoading || !input.trim()}
                 className="absolute right-1.5 top-1.5 h-9 w-9 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-all"
               >

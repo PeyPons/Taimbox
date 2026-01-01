@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Employee, Client, Project, Allocation, LoadStatus, Absence, TeamEvent, ProfessionalGoal, WeeklyFeedback } from '@/types';
+import { Employee, Client, Project, Allocation, LoadStatus, Absence, TeamEvent, ProfessionalGoal, WeeklyFeedback, EmployeeRole, WorkSchedule } from '@/types';
 import { getWorkingDaysInRange, getMonthlyCapacity, getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange, getTeamEventDetailsInRange } from '@/utils/teamEventUtils';
@@ -20,14 +20,14 @@ interface SupabaseEmployee {
   department?: string;
   avatar_url?: string;
   default_weekly_capacity: number;
-  work_schedule?: any;
+  work_schedule?: unknown;
   is_active: boolean;
   hourly_rate?: number;
   crm_user_id?: number;
   welcome_tour_completed?: boolean;
   deadlines_tour_completed?: boolean;
   planner_tour_completed?: boolean;
-  permissions?: any;
+  permissions?: unknown;
 }
 
 interface SupabaseProject {
@@ -41,8 +41,8 @@ interface SupabaseProject {
   external_id?: string;
   project_type?: string;
   is_hidden?: boolean;
-  okrs?: any;
-  deliverables_log?: any;
+  okrs?: { id: string; title: string; progress: number }[];
+  deliverables_log?: Record<string, string[]>;
 }
 
 interface SupabaseAllocation {
@@ -76,7 +76,7 @@ interface SupabaseProfessionalGoal {
   employee_id: string;
   title: string;
   description?: string;
-  key_results?: any;
+  key_results?: string;
   progress: number;
   start_date?: string;
   due_date?: string;
@@ -89,6 +89,17 @@ interface SupabaseTeamEvent {
   date: string;
   hours_reduction: number;
   affected_employee_ids: string[] | 'all';
+}
+
+interface SupabaseWeeklyFeedback {
+  id: string;
+  employee_id: string;
+  week_start_date: string;
+  project_id?: string;
+  allocation_id?: string;
+  reason?: string;
+  comments?: string;
+  created_at: string;
 }
 
 interface AppContextType {
@@ -132,7 +143,7 @@ interface AppContextType {
   updateProfessionalGoal: (goal: ProfessionalGoal) => void;
   deleteProfessionalGoal: (id: string) => void;
   getEmployeeGoals: (employeeId: string) => ProfessionalGoal[];
-  loadDataForMonth: (month: Date) => Promise<void>;
+  loadDataForMonth: (month: Date) => Promise<boolean>;
   addWeeklyFeedback: (feedback: Omit<WeeklyFeedback, 'id' | 'createdAt'>) => void;
 }
 
@@ -203,16 +214,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ]);
 
       if (empRes.data) {
-        const mappedEmployees = empRes.data.map((e: SupabaseEmployee) => ({
-          ...e,
+        const mappedEmployees: Employee[] = empRes.data.map((e: SupabaseEmployee) => ({
+          id: e.id,
+          name: e.name,
+          role: (e.role || 'SEO') as EmployeeRole,
           avatarUrl: e.avatar_url,
           defaultWeeklyCapacity: e.default_weekly_capacity,
-          workSchedule: e.work_schedule,
+          workSchedule: (e.work_schedule || { monday: 8, tuesday: 8, wednesday: 8, thursday: 8, friday: 8, saturday: 0, sunday: 0 }) as WorkSchedule,
           isActive: e.is_active,
           first_name: e.first_name,
           last_name: e.last_name,
           email: e.email,
           user_id: e.user_id,
+          department: e.department,
           hourlyRate: e.hourly_rate || 0,
           crmUserId: e.crm_user_id,
           welcomeTourCompleted: e.welcome_tour_completed === true,
@@ -226,32 +240,38 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       if (cliRes.data) setClients(cliRes.data);
       if (projRes.data) {
-        setProjects(projRes.data.map((p: SupabaseProject) => ({
-          ...p,
+        setProjects(projRes.data.map((p: SupabaseProject): Project => ({
+          id: p.id,
           clientId: p.client_id,
+          name: p.name,
+          status: (p.status || 'active') as 'active' | 'archived' | 'completed',
           budgetHours: round2(p.budget_hours),
           minimumHours: round2(p.minimum_hours || 0),
           monthlyFee: p.monthly_fee,
-          externalId: p.external_id,
+          externalId: p.external_id ? Number(p.external_id) : undefined,
           projectType: p.project_type,
-          isHidden: p.is_hidden || false
+          isHidden: p.is_hidden || false,
+          okrs: p.okrs,
+          deliverables_log: p.deliverables_log
         })));
       }
       if (allocRes.data) {
-        const mappedAllocations = allocRes.data.map((a: SupabaseAllocation) => ({
-          ...a,
+        const mappedAllocations: Allocation[] = allocRes.data.map((a: SupabaseAllocation): Allocation => ({
+          id: a.id,
           employeeId: a.employee_id,
           projectId: a.project_id,
           weekStartDate: a.week_start_date,
           hoursAssigned: round2(a.hours_assigned),
           hoursActual: a.hours_actual ? round2(a.hours_actual) : undefined,
           hoursComputed: a.hours_computed ? round2(a.hours_computed) : undefined,
+          status: (a.status || 'planned') as 'planned' | 'completed' | 'active',
+          description: a.description,
           taskName: a.task_name,
           dependencyId: a.dependency_id,
           transferredFromAllocationId: a.transferred_from_allocation_id,
           distributionSourceAllocationId: a.distribution_source_allocation_id
         }));
-        
+
         // Si skipLoading es true, significa que estamos cargando datos adicionales (merge)
         // Si no, reemplazamos todos los datos
         if (skipLoading) {
@@ -266,11 +286,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       }
       if (absRes.data) {
-        setAbsences(absRes.data.map((ab: SupabaseAbsence) => ({
-          ...ab,
+        setAbsences(absRes.data.map((ab: SupabaseAbsence): Absence => ({
+          id: ab.id,
           employeeId: ab.employee_id,
           startDate: ab.start_date,
           endDate: ab.end_date,
+          type: (ab.type || 'other') as 'vacation' | 'sick_leave' | 'personal' | 'other',
+          description: ab.description,
           hours: ab.hours
         })));
       }
@@ -285,25 +307,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         })));
       }
       if (evRes.data) {
-        setTeamEvents(evRes.data.map((te: SupabaseTeamEvent) => ({
-          ...te,
+        setTeamEvents(evRes.data.map((te: SupabaseTeamEvent): TeamEvent => ({
+          id: te.id,
+          name: te.name,
+          date: te.date,
           hoursReduction: te.hours_reduction,
           affectedEmployeeIds: te.affected_employee_ids
         })));
       }
       if (feedbackRes.data) {
-        setWeeklyFeedback(feedbackRes.data.map((fb: any) => ({
-          ...fb,
+        setWeeklyFeedback(feedbackRes.data.map((fb: SupabaseWeeklyFeedback): WeeklyFeedback => ({
+          id: fb.id,
           employeeId: fb.employee_id,
           weekStartDate: fb.week_start_date,
           projectId: fb.project_id,
           allocationId: fb.allocation_id,
+          reason: fb.reason as WeeklyFeedback['reason'],
+          comments: fb.comments,
           createdAt: fb.created_at
         })));
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error cargando datos:", error);
-      const errorMessage = error?.message || error?.error?.message || "Error al cargar los datos. Por favor, recarga la página.";
+      const errorMessage = (error as Error)?.message || "Error al cargar los datos. Por favor, recarga la página.";
       toast.error(errorMessage);
       setIsLoading(false);
     } finally {
@@ -318,18 +344,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
     const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
     let dataFound = false;
-    
+
     // Calcular el rango de semanas que pueden tener días en este mes (incluyendo semanas que cruzan)
     const weeks = getWeeksForMonth(month);
     const weekStartDates = weeks.map(w => format(w.weekStart, 'yyyy-MM-dd'));
     const minWeekStart = weekStartDates.length > 0 ? weekStartDates[0] : format(monthStart, 'yyyy-MM-dd');
     const maxWeekStart = weekStartDates.length > 0 ? weekStartDates[weekStartDates.length - 1] : format(monthEnd, 'yyyy-MM-dd');
-    
+
     // Cargar solo allocations, absences, team_events y weekly_feedback para este mes (merge)
     try {
       const startStr = format(monthStart, 'yyyy-MM-dd');
       const endStr = format(monthEnd, 'yyyy-MM-dd');
-      
+
       const [allocRes, absRes, evRes, feedRes] = await Promise.all([
         supabase.from('allocations')
           .select('*')
@@ -350,25 +376,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ]);
 
       if (allocRes.data) {
-        const mappedAllocations = allocRes.data.map((a: SupabaseAllocation) => ({
-          ...a,
+        const mappedAllocations: Allocation[] = allocRes.data.map((a: SupabaseAllocation): Allocation => ({
+          id: a.id,
           employeeId: a.employee_id,
           projectId: a.project_id,
           weekStartDate: a.week_start_date,
           hoursAssigned: round2(a.hours_assigned),
           hoursActual: a.hours_actual ? round2(a.hours_actual) : undefined,
           hoursComputed: a.hours_computed ? round2(a.hours_computed) : undefined,
+          status: (a.status || 'planned') as 'planned' | 'completed' | 'active',
+          description: a.description,
           taskName: a.task_name,
           dependencyId: a.dependency_id,
           transferredFromAllocationId: a.transferred_from_allocation_id,
           distributionSourceAllocationId: a.distribution_source_allocation_id
         }));
-        
+
         setAllocations(prev => {
           const existingIds = new Set(prev.map(a => a.id));
           // Filtrar por mes efectivo antes de añadir
-          const newAllocations = mappedAllocations.filter(a => 
-            !existingIds.has(a.id) && 
+          const newAllocations = mappedAllocations.filter(a =>
+            !existingIds.has(a.id) &&
             isAllocationInEffectiveMonth(a.weekStartDate, month)
           );
           return [...prev, ...newAllocations];
@@ -376,14 +404,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (absRes.data) {
-        const mappedAbsences = absRes.data.map((a: SupabaseAbsence) => ({
-          ...a,
+        const mappedAbsences: Absence[] = absRes.data.map((a: SupabaseAbsence): Absence => ({
+          id: a.id,
           employeeId: a.employee_id,
           startDate: a.start_date,
           endDate: a.end_date,
+          type: (a.type || 'other') as 'vacation' | 'sick_leave' | 'personal' | 'other',
+          description: a.description,
           hours: a.hours
         }));
-        
+
         setAbsences(prev => {
           const existingIds = new Set(prev.map(a => a.id));
           const newAbsences = mappedAbsences.filter(a => !existingIds.has(a.id));
@@ -392,11 +422,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (evRes.data) {
-        const mappedEvents = evRes.data.map((e: SupabaseTeamEvent) => ({
-          ...e,
+        const mappedEvents: TeamEvent[] = evRes.data.map((e: SupabaseTeamEvent): TeamEvent => ({
+          id: e.id,
+          name: e.name,
+          date: e.date,
+          hoursReduction: e.hours_reduction,
           affectedEmployeeIds: e.affected_employee_ids
         }));
-        
+
         setTeamEvents(prev => {
           const existingIds = new Set(prev.map(e => e.id));
           const newEvents = mappedEvents.filter(e => !existingIds.has(e.id));
@@ -404,18 +437,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         });
       }
 
-      // NUEVO: Cargar weekly_feedback para el mes
       if (feedRes.data && feedRes.data.length > 0) {
         dataFound = true;
-        const mappedFeedback = feedRes.data.map((fb: any) => ({
-          ...fb,
+        const mappedFeedback: WeeklyFeedback[] = feedRes.data.map((fb: SupabaseWeeklyFeedback): WeeklyFeedback => ({
+          id: fb.id,
           employeeId: fb.employee_id,
           weekStartDate: fb.week_start_date,
           projectId: fb.project_id,
           allocationId: fb.allocation_id,
+          reason: fb.reason as WeeklyFeedback['reason'],
+          comments: fb.comments,
           createdAt: fb.created_at
         }));
-        
+
         setWeeklyFeedback(prev => {
           const existingIds = new Set(prev.map(f => f.id));
           const newItems = mappedFeedback.filter(f => !existingIds.has(f.id));
@@ -425,7 +459,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Error cargando datos del mes:", error);
     }
-    
+
     return dataFound;
   }, []);
 
@@ -440,10 +474,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // No hacer nada si auth no está inicializado
     if (!isAuthInitialized) return;
-    
+
     // No hacer nada si aún estamos cargando datos iniciales
     if (isLoading) return;
-    
+
     // No hacer nada si employees aún no se ha cargado (usar ref para evitar dependencia)
     if (employeesRef.current.length === 0) return;
 
@@ -454,8 +488,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Buscar empleado por user_id o por email (usar ref para evitar dependencia)
-      const foundEmployee = employeesRef.current.find(e => 
-        e.user_id === authUser.id || 
+      const foundEmployee = employeesRef.current.find(e =>
+        e.user_id === authUser.id ||
         (e.email && authUser.email && e.email.toLowerCase() === authUser.email.toLowerCase())
       );
 
@@ -466,11 +500,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         // Si el empleado no tiene user_id pero el email coincide, vincular automáticamente
         if (!foundEmployee.user_id && authUser.id) {
           console.log('[AppContext] Vinculando empleado existente con usuario Auth:', foundEmployee.email);
-          
+
           // Actualizar currentUser PRIMERO (optimistic update)
           const updatedEmployee = { ...foundEmployee, user_id: authUser.id };
           setCurrentUser(updatedEmployee);
-          
+
           // Luego persistir en BD (sin actualizar employees para evitar re-trigger)
           supabase
             .from('employees')
@@ -496,8 +530,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       hasLinkedUserRef.current = null;
       setCurrentUser(undefined);
     }
-  // Usamos employeesRef para acceder al valor actual sin trigger re-renders
-  // El efecto se ejecutará cuando authUser cambie o cuando isLoading pase de true a false
+    // Usamos employeesRef para acceder al valor actual sin trigger re-renders
+    // El efecto se ejecutará cuando authUser cambie o cuando isLoading pase de true a false
   }, [authUser, isAuthInitialized, isLoading]);
 
   const addEmployee = useCallback(async (employee: Omit<Employee, 'id'>) => {
@@ -520,7 +554,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     if (error) {
       console.error('Error creando empleado:', error);
-      const errorMessage = error?.message || error?.error?.message || 'Error al crear el empleado';
+      const errorMessage = error.message || 'Error al crear el empleado';
       toast.error(errorMessage);
       throw error;
     }
@@ -568,10 +602,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       planner_tour_completed: employee.plannerTourCompleted || false,
       permissions: employee.permissions || null
     }).eq('id', employee.id);
-    
+
     if (error) {
       console.error('Error actualizando empleado:', error);
-      const errorMessage = error?.message || error?.error?.message || 'Error al actualizar el empleado';
+      const errorMessage = error.message || 'Error al actualizar el empleado';
       toast.error(errorMessage);
       throw error;
     }
@@ -602,31 +636,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // --- ALLOCATIONS ---
-  const addAllocation = useCallback(async (allocation: Omit<Allocation, 'id'>): Promise<Allocation | null> => { 
-    const { data } = await supabase.from('allocations').insert({ 
-      employee_id: allocation.employeeId, 
-      project_id: allocation.projectId, 
-      week_start_date: allocation.weekStartDate, 
-      hours_assigned: allocation.hoursAssigned, 
-      hours_actual: allocation.hoursActual || 0, 
-      hours_computed: allocation.hoursComputed || 0, 
-      status: allocation.status, 
-      description: allocation.description, 
+  const addAllocation = useCallback(async (allocation: Omit<Allocation, 'id'>): Promise<Allocation | null> => {
+    const { data } = await supabase.from('allocations').insert({
+      employee_id: allocation.employeeId,
+      project_id: allocation.projectId,
+      week_start_date: allocation.weekStartDate,
+      hours_assigned: allocation.hoursAssigned,
+      hours_actual: allocation.hoursActual || 0,
+      hours_computed: allocation.hoursComputed || 0,
+      status: allocation.status,
+      description: allocation.description,
       task_name: allocation.taskName,
       dependency_id: allocation.dependencyId,
       transferred_from_allocation_id: allocation.transferredFromAllocationId,
       distribution_source_allocation_id: allocation.distributionSourceAllocationId
-    }).select().single(); 
-    
+    }).select().single();
+
     if (data) {
-      const mappedAllocation = { 
-        ...data, 
-        employeeId: data.employee_id, 
-        projectId: data.project_id, 
-        weekStartDate: data.week_start_date, 
-        hoursAssigned: round2(data.hours_assigned), 
-        hoursActual: round2(data.hours_actual), 
-        hoursComputed: round2(data.hours_computed), 
+      const mappedAllocation = {
+        ...data,
+        employeeId: data.employee_id,
+        projectId: data.project_id,
+        weekStartDate: data.week_start_date,
+        hoursAssigned: round2(data.hours_assigned),
+        hoursActual: round2(data.hours_actual),
+        hoursComputed: round2(data.hours_computed),
         taskName: data.task_name,
         dependencyId: data.dependency_id,
         transferredFromAllocationId: data.transferred_from_allocation_id,
@@ -638,58 +672,58 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return null;
   }, []);
 
-  const updateAllocation = useCallback(async (allocation: Allocation) => { 
-    setAllocations(prev => prev.map(a => a.id === allocation.id ? allocation : a)); 
-    await supabase.from('allocations').update({ 
-      hours_assigned: allocation.hoursAssigned, 
-      hours_actual: allocation.hoursActual, 
-      hours_computed: allocation.hoursComputed, 
-      status: allocation.status, 
-      description: allocation.description, 
+  const updateAllocation = useCallback(async (allocation: Allocation) => {
+    setAllocations(prev => prev.map(a => a.id === allocation.id ? allocation : a));
+    await supabase.from('allocations').update({
+      hours_assigned: allocation.hoursAssigned,
+      hours_actual: allocation.hoursActual,
+      hours_computed: allocation.hoursComputed,
+      status: allocation.status,
+      description: allocation.description,
       task_name: allocation.taskName,
       dependency_id: allocation.dependencyId,
       transferred_from_allocation_id: allocation.transferredFromAllocationId,
       distribution_source_allocation_id: allocation.distributionSourceAllocationId
-    }).eq('id', allocation.id); 
+    }).eq('id', allocation.id);
   }, []);
 
-  const deleteAllocation = useCallback(async (id: string) => { 
-    setAllocations(prev => prev.filter(a => a.id !== id)); 
-    await supabase.from('allocations').delete().eq('id', id); 
+  const deleteAllocation = useCallback(async (id: string) => {
+    setAllocations(prev => prev.filter(a => a.id !== id));
+    await supabase.from('allocations').delete().eq('id', id);
   }, []);
-  
+
   // --- CLIENTS ---
-  const addClient = useCallback(async (client: Omit<Client, 'id'>) => { 
-    const { data } = await supabase.from('clients').insert(client).select().single(); 
-    if (data) setClients(prev => [...prev, data]); 
+  const addClient = useCallback(async (client: Omit<Client, 'id'>) => {
+    const { data } = await supabase.from('clients').insert(client).select().single();
+    if (data) setClients(prev => [...prev, data]);
   }, []);
 
-  const updateClient = useCallback(async (client: Client) => { 
-    setClients(prev => prev.map(c => c.id === client.id ? client : c)); 
-    await supabase.from('clients').update({ name: client.name, color: client.color }).eq('id', client.id); 
+  const updateClient = useCallback(async (client: Client) => {
+    setClients(prev => prev.map(c => c.id === client.id ? client : c));
+    await supabase.from('clients').update({ name: client.name, color: client.color }).eq('id', client.id);
   }, []);
 
-  const deleteClient = useCallback(async (id: string) => { 
-    setClients(prev => prev.filter(c => c.id !== id)); 
-    setProjects(prev => prev.filter(p => p.clientId !== id)); 
-    await supabase.from('clients').delete().eq('id', id); 
+  const deleteClient = useCallback(async (id: string) => {
+    setClients(prev => prev.filter(c => c.id !== id));
+    setProjects(prev => prev.filter(p => p.clientId !== id));
+    await supabase.from('clients').delete().eq('id', id);
   }, []);
 
   // --- PROJECTS ---
-  const addProject = useCallback(async (project: Omit<Project, 'id'>) => { 
-    const { data } = await supabase.from('projects').insert({ 
-      client_id: project.clientId, 
-      name: project.name, 
-      status: project.status, 
-      budget_hours: project.budgetHours, 
-      minimum_hours: project.minimumHours 
-    }).select().single(); 
-    if (data) setProjects(prev => [...prev, { 
-      ...data, 
-      clientId: data.client_id, 
-      budgetHours: round2(data.budget_hours), 
-      minimumHours: round2(data.minimum_hours) 
-    }]); 
+  const addProject = useCallback(async (project: Omit<Project, 'id'>) => {
+    const { data } = await supabase.from('projects').insert({
+      client_id: project.clientId,
+      name: project.name,
+      status: project.status,
+      budget_hours: project.budgetHours,
+      minimum_hours: project.minimumHours
+    }).select().single();
+    if (data) setProjects(prev => [...prev, {
+      ...data,
+      clientId: data.client_id,
+      budgetHours: round2(data.budget_hours),
+      minimumHours: round2(data.minimum_hours)
+    }]);
   }, []);
 
   const updateProject = useCallback(async (project: Project) => {
@@ -702,17 +736,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       minimum_hours: project.minimumHours,
       monthly_fee: project.monthlyFee,
       okrs: project.okrs,
-      deliverables_log: project.deliverablesLog,
+      deliverables_log: project.deliverables_log,
       external_id: project.externalId,
       project_type: project.projectType,
       is_hidden: project.isHidden || false
     }).eq('id', project.id);
   }, []);
 
-  const deleteProject = useCallback(async (id: string) => { 
-    setProjects(prev => prev.filter(p => p.id !== id)); 
-    setAllocations(prev => prev.filter(a => a.projectId !== id)); 
-    await supabase.from('projects').delete().eq('id', id); 
+  const deleteProject = useCallback(async (id: string) => {
+    setProjects(prev => prev.filter(p => p.id !== id));
+    setAllocations(prev => prev.filter(a => a.projectId !== id));
+    await supabase.from('projects').delete().eq('id', id);
   }, []);
 
   // --- ABSENCES ---
@@ -844,19 +878,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     // Filtrar allocations por employeeId y weekStartDate
     let employeeAllocations = allocations.filter(a => a.employeeId === employeeId && a.weekStartDate === weekStart);
-    
+
     // Si se proporciona viewMonth, filtrar también por mes efectivo (para evitar sumar horas de meses anteriores)
     if (viewMonth) {
       employeeAllocations = employeeAllocations.filter(a => isAllocationInEffectiveMonth(a.weekStartDate, viewMonth));
     }
-    
+
     const totalHours = round2(employeeAllocations.reduce((sum, a) => sum + (a.status === 'completed' && (a.hoursActual || 0) > 0 ? Number(a.hoursActual) : Number(a.hoursAssigned)), 0));
-    
+
     const weekStartDate = new Date(weekStart);
     const weekEndDate = addDays(weekStartDate, 6);
     const rangeStart = effectiveStart || weekStartDate;
     const rangeEnd = effectiveEnd || weekEndDate;
-    
+
     let baseCapacity: number;
     if (effectiveStart && effectiveEnd) {
       const { totalHours: capacityHours } = getWorkingDaysInRange(effectiveStart, effectiveEnd, employee.workSchedule);
@@ -912,8 +946,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     weeks.forEach(week => {
       // Buscar allocations por weekStartDate real, pero filtrar por mes efectivo
       const weekStartDate = format(week.weekStart, 'yyyy-MM-dd');
-      const tasks = allocations.filter(a => 
-        a.employeeId === employeeId && 
+      const tasks = allocations.filter(a =>
+        a.employeeId === employeeId &&
         a.weekStartDate === weekStartDate &&
         isAllocationInEffectiveMonth(a.weekStartDate, monthStart)
       );
@@ -943,8 +977,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     let usedHours = 0;
     weeks.forEach(week => {
       const storageKey = getStorageKey(week.weekStart, month);
-      const tasks = allocations.filter(a => 
-        a.projectId === projectId && 
+      const tasks = allocations.filter(a =>
+        a.projectId === projectId &&
         a.weekStartDate === storageKey &&
         isAllocationInEffectiveMonth(a.weekStartDate, month)
       );

@@ -6,7 +6,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare const Deno: any;
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
@@ -19,7 +21,7 @@ serve(async (req) => {
 
     if (!userId) throw new Error("User ID is required")
 
-    const updates: any = {}
+    const updates: { password?: string; email?: string; email_confirm?: boolean } = {}
     if (password && password.length >= 6) updates.password = password
     if (email) updates.email = email
     if (email) updates.email_confirm = true // Auto-confirmar cambio de email
@@ -29,15 +31,15 @@ serve(async (req) => {
 
     if (error) throw error
 
-    return new Response(JSON.stringify({ user: data.user }), { 
+    return new Response(JSON.stringify({ user: data.user }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200 
+      status: 200
     })
 
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { 
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400 
+      status: 400
     })
   }
 })

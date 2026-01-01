@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { 
-  X, ChevronLeft, ChevronRight, Calendar, Edit, Check, 
+import {
+  X, ChevronLeft, ChevronRight, Calendar, Edit, Check,
   Sparkles, CheckCircle2, Clock, Link, LayoutGrid,
   FoldVertical, ArrowUpDown, MousePointerClick, Palette
 } from 'lucide-react';
@@ -219,7 +219,7 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
 
   const calculatePositions = useCallback(() => {
     const step = tourSteps[currentStep];
-    
+
     if (step.position === 'center' || !step.highlight) {
       setHighlightPos(null);
       setTooltipPos(null);
@@ -237,7 +237,7 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
     }
 
     const rect = element.getBoundingClientRect();
-    
+
     const padding = 6;
     setHighlightPos({
       top: rect.top - padding,
@@ -249,7 +249,7 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
     const tooltipWidth = 360;
     const tooltipHeight = 280;
     const gap = 16;
-    
+
     let top = 0;
     let left = 0;
 
@@ -352,7 +352,7 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
           .from('employees')
           .update({ planner_tour_completed: true })
           .eq('id', currentUser.id);
-        
+
         updateEmployee({ ...currentUser, plannerTourCompleted: true });
       } catch (error) {
         console.error('Error guardando estado del tour:', error);
@@ -397,12 +397,12 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
   const tourContent = (
     <div style={{ position: 'fixed', inset: 0, zIndex: 99999, pointerEvents: 'none' }}>
       {/* Overlay SVG con spotlight - mismo enfoque que WelcomeTour */}
-      <svg 
-        style={{ 
-          position: 'fixed', 
-          top: 0, 
-          left: 0, 
-          width: '100vw', 
+      <svg
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
           height: '100vh',
           pointerEvents: 'auto'
         }}
@@ -413,7 +413,7 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
           <mask id="planner-tour-spotlight-mask">
             <rect x="0" y="0" width="100%" height="100%" fill="white" />
             {highlightPos && isReady && (
-              <rect 
+              <rect
                 x={highlightPos.left - 2}
                 y={highlightPos.top - 2}
                 width={highlightPos.width + 4}
@@ -424,12 +424,12 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
             )}
           </mask>
         </defs>
-        <rect 
-          x="0" 
-          y="0" 
-          width="100%" 
-          height="100%" 
-          fill="rgba(0, 0, 0, 0.75)" 
+        <rect
+          x="0"
+          y="0"
+          width="100%"
+          height="100%"
+          fill="rgba(0, 0, 0, 0.75)"
           mask="url(#planner-tour-spotlight-mask)"
         />
       </svg>
@@ -450,7 +450,7 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
             zIndex: 100000
           }}
         >
-          <div 
+          <div
             style={{
               position: 'absolute',
               inset: 0,
@@ -465,7 +465,7 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
 
       {/* Tooltip */}
       {isReady && (
-        <Card 
+        <Card
           className="shadow-2xl border-0 overflow-hidden"
           ref={cardRef}
           style={{
@@ -480,116 +480,116 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
         >
-        {/* Header con gradiente */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 text-white">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                {step.icon}
+          {/* Header con gradiente */}
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 text-white">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                  {step.icon}
+                </div>
+                <h3 className="font-bold text-lg">{step.title}</h3>
               </div>
-              <h3 className="font-bold text-lg">{step.title}</h3>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20"
-              onClick={(e) => { e.stopPropagation(); handleSkip(); }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Contenido */}
-        <div className="p-4 bg-white">
-          {step.customContent && isLastStep ? (
-            <div className="space-y-4">
-              <p className="text-slate-600">
-                Ya conoces las herramientas del planificador. Recuerda:
-              </p>
-              <ul className="space-y-2 text-sm text-slate-600">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                  <span>Doble clic para editar nombres rápidamente</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                  <span>Los colores te indican el estado de las horas contratadas</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                  <span>Las tareas completadas bajan automáticamente</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                  <span>Puedes ver las dependencias con compañeros</span>
-                </li>
-              </ul>
-              <Button 
-                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
-                onClick={(e) => { e.stopPropagation(); handleComplete(); }}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20"
+                onClick={(e) => { e.stopPropagation(); handleSkip(); }}
               >
-                ¡Empezar a planificar!
+                <X className="h-4 w-4" />
               </Button>
             </div>
-          ) : (
-            <>
-              <p className="text-slate-600 leading-relaxed mb-4">
-                {step.description}
-              </p>
-              {step.interactive && step.interactionHint && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-                  <p className="text-sm text-amber-800 font-medium">
-                    {step.interactionHint}
-                  </p>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+          </div>
 
-        {/* Footer con navegación */}
-        {!step.customContent && (
-          <div className="px-4 pb-4 pt-2 bg-white border-t">
-            <div className="flex items-center justify-between gap-4">
-              {/* Indicador de paso */}
-              <span className="text-xs text-slate-400 whitespace-nowrap">
-                {currentStep + 1} / {tourSteps.length}
-              </span>
-              
-              {/* Botones de navegación */}
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={(e) => { e.stopPropagation(); handleSkip(); }} 
-                  className="text-slate-400 hover:text-slate-600 h-8 px-2"
+          {/* Contenido */}
+          <div className="p-4 bg-white">
+            {step.customContent && isLastStep ? (
+              <div className="space-y-4">
+                <p className="text-slate-600">
+                  Ya conoces las herramientas del planificador. Recuerda:
+                </p>
+                <ul className="space-y-2 text-sm text-slate-600">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>Doble clic para editar nombres rápidamente</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>Los colores te indican el estado de las horas contratadas</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>Las tareas completadas bajan automáticamente</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>Puedes ver las dependencias con compañeros</span>
+                  </li>
+                </ul>
+                <Button
+                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                  onClick={(e) => { e.stopPropagation(); handleComplete(); }}
                 >
-                  Saltar
-                </Button>
-                {!isFirstStep && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={(e) => { e.stopPropagation(); handlePrev(); }}
-                    className="h-8 px-3"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                )}
-                <Button 
-                  size="sm"
-                  className="bg-indigo-600 hover:bg-indigo-700 h-8 px-4"
-                  onClick={(e) => { e.stopPropagation(); isLastStep ? handleComplete() : handleNext(); }}
-                >
-                  {isLastStep ? '¡Listo!' : 'Siguiente'}
-                  <ChevronRight className="h-4 w-4 ml-1" />
+                  ¡Empezar a planificar!
                 </Button>
               </div>
-            </div>
+            ) : (
+              <>
+                <p className="text-slate-600 leading-relaxed mb-4">
+                  {step.description}
+                </p>
+                {step.interactive && step.interactionHint && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                    <p className="text-sm text-amber-800 font-medium">
+                      {step.interactionHint}
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
           </div>
-        )}
-      </Card>
+
+          {/* Footer con navegación */}
+          {!step.customContent && (
+            <div className="px-4 pb-4 pt-2 bg-white border-t">
+              <div className="flex items-center justify-between gap-4">
+                {/* Indicador de paso */}
+                <span className="text-xs text-slate-400 whitespace-nowrap">
+                  {currentStep + 1} / {tourSteps.length}
+                </span>
+
+                {/* Botones de navegación */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => { e.stopPropagation(); handleSkip(); }}
+                    className="text-slate-400 hover:text-slate-600 h-8 px-2"
+                  >
+                    Saltar
+                  </Button>
+                  {!isFirstStep && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); handlePrev(); }}
+                      className="h-8 px-3"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    className="bg-indigo-600 hover:bg-indigo-700 h-8 px-4"
+                    onClick={(e) => { e.stopPropagation(); if (isLastStep) handleComplete(); else handleNext(); }}
+                  >
+                    {isLastStep ? '¡Listo!' : 'Siguiente'}
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </Card>
       )}
 
       {/* Estilos de animación */}
