@@ -58,7 +58,6 @@ const lazyWithRetry = (importFn: () => Promise<{ default: React.ComponentType<un
 
 // Páginas con lazy loading (carga diferida para mejor rendimiento)
 // Usando lazyWithRetry para manejar errores de carga de módulos
-const ProfitabilityPage = lazyWithRetry(() => import("./pages/ProfitabilityPage"));
 const DashboardAI = lazyWithRetry(() => import("./pages/DashboardAI"));
 const ClientReportsPage = lazyWithRetry(() => import("@/pages/ClientReportsPage"));
 const Index = lazyWithRetry(() => import("./pages/Index"));
@@ -68,7 +67,6 @@ const ReportsPage = lazyWithRetry(() => import("./pages/ReportsPage"));
 const SettingsPage = lazyWithRetry(() => import("./pages/SettingsPage"));
 const MetaAdsPage = lazyWithRetry(() => import("./pages/MetaAdsPage"));
 const AdsPage = lazyWithRetry(() => import("@/pages/AdsPage"));
-const AdsReportGenerator = lazyWithRetry(() => import("./pages/AdsReportGenerator"));
 const DeadlinesPage = lazyWithRetry(() => import("./pages/DeadlinesPage"));
 const WeeklyForecastPage = lazyWithRetry(() => import("./pages/WeeklyForecastPage"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
@@ -108,9 +106,7 @@ const App = () => (
                     <Route path="/settings" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><SettingsPage /></PermissionProtectedRoute></Suspense>} />
                     <Route path="/ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/ads"><AdsPage /></PermissionProtectedRoute></Suspense>} />
                     <Route path="/meta-ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/meta-ads"><MetaAdsPage /></PermissionProtectedRoute></Suspense>} />
-                    <Route path="/ads-reports" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/ads-reports"><AdsReportGenerator /></PermissionProtectedRoute></Suspense>} />
                     <Route path="/weekly-forecast" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/weekly-forecast"><WeeklyForecastPage /></PermissionProtectedRoute></Suspense>} />
-                    <Route path="/profitability" element={<Suspense fallback={<PageLoader />}><ProfitabilityPage /></Suspense>} />
                     <Route path="/dashboard-ai" element={<Suspense fallback={<PageLoader />}><DashboardAI /></Suspense>} />
                   </Route>
                 </Route>

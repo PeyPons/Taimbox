@@ -117,9 +117,8 @@ export function Sidebar() {
             )}
 
             {canAccess('/ads-reports') && (
-              <NavLink to="/ads-reports" icon={FileDown} active={location.pathname === '/ads-reports'}>
-                Informes automatizados
-              </NavLink>
+              // Enlace eliminado a petición del usuario
+              null
             )}
           </>
         )}
@@ -130,12 +129,6 @@ export function Sidebar() {
             <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-8 mb-2 px-2">
               Análisis
             </div>
-
-            {canAccess('/reports') && (
-              <NavLink to="/profitability" icon={DollarSign} active={location.pathname === '/profitability'}>
-                Rentabilidad
-              </NavLink>
-            )}
 
             {canAccess('/reports') && (
               <NavLink to="/reports" icon={BarChart3} active={location.pathname === '/reports'}>

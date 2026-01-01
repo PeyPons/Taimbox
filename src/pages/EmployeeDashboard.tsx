@@ -544,34 +544,6 @@ export default function EmployeeDashboard() {
   const gridTemplate = `250px repeat(${weeks.length}, minmax(0, 1fr)) 100px`;
   const monthlyLoad = getEmployeeMonthlyLoad(myEmployeeProfile.id, currentMonth.getFullYear(), currentMonth.getMonth());
 
-  // Si es mobile, mostrar popup bloqueante
-  if (isMobile) {
-    return (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-black">
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-        <div className="relative z-10 max-w-2xl mx-auto px-6 py-12 text-center">
-          <div className="mb-8 flex justify-center">
-            <div className="rounded-full bg-indigo-500/20 p-6 backdrop-blur-sm border border-indigo-500/30">
-              <Monitor className="h-16 w-16 text-indigo-400" />
-            </div>
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-black text-white mb-4">
-            Acceso desde escritorio requerido
-          </h1>
-          <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-            El dashboard está optimizado para pantallas de escritorio.
-            Por favor, accede desde un ordenador o tablet en modo horizontal para una mejor experiencia.
-          </p>
-          <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-6 mb-6">
-            <p className="text-gray-400 text-sm">
-              El dashboard requiere una pantalla más grande para funcionar correctamente.
-              En dispositivos móviles, el menú y las funcionalidades no están disponibles.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 pb-20 animate-in fade-in duration-500">
@@ -804,7 +776,7 @@ export default function EmployeeDashboard() {
             </div>
           </TabsContent>
         </Tabs>
-      </Card>
+      </Card >
 
       {/* MODALES */}
       {
@@ -990,6 +962,6 @@ export default function EmployeeDashboard() {
       }
 
       <WelcomeTour forceShow={showTour} onTabChange={setActiveTab} />
-    </div >
+    </div>
   );
 }
