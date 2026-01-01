@@ -90,9 +90,14 @@ export const isAllocationInEffectiveMonth = (weekStartDate: string | Date, viewM
   try {
     const allocWeekStart = typeof weekStartDate === 'string' ? parseISO(weekStartDate) : weekStartDate;
 
-    // SOLO incluir si el weekStartDate está en el mes efectivo
-    // NO incluir semanas que cruzan meses (trabajamos por mes efectivo, no por semana)
-    return isSameMonth(allocWeekStart, viewMonth);
+    // CORRECCIÓN: Permitir semanas que solapen con el mes efectivo
+    // Esto es necesario para semanas como 29 Dic - 4 Enero
+    const allocWeekEnd = addDays(allocWeekStart, 6);
+    const monthStart = startOfMonth(viewMonth);
+    const monthEnd = endOfMonth(viewMonth);
+
+    // Verificar superposición: (StartA <= EndB) and (EndA >= StartB)
+    return allocWeekStart <= monthEnd && allocWeekEnd >= monthStart;
   } catch (error) {
     return false;
   }
