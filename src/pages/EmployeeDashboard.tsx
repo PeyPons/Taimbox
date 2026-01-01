@@ -315,7 +315,7 @@ export default function EmployeeDashboard() {
   const handleSaveTasks = async () => {
     if (!myEmployeeProfile) return;
 
-    const validTasks = newTasks.filter(t => t.projectId && t.taskName.trim() && parseFloat(t.hours) > 0);
+    const validTasks = newTasks.filter(t => t.projectId && t.taskName.trim() && parseFloat(t.hoursAssigned) > 0);
     if (validTasks.length === 0) { toast.error("Añade al menos una tarea válida"); return; }
 
     try {
@@ -543,7 +543,6 @@ export default function EmployeeDashboard() {
   const monthEnd = endOfMonth(currentMonth);
   const gridTemplate = `${isMobile ? '120px' : '250px'} repeat(${weeks.length}, minmax(${isMobile ? '140px' : '0'}, 1fr)) 100px`;
   const monthlyLoad = getEmployeeMonthlyLoad(myEmployeeProfile.id, currentMonth.getFullYear(), currentMonth.getMonth());
-
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 pb-20 animate-in fade-in duration-500">
