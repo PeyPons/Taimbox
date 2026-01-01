@@ -18,11 +18,19 @@ import {
   Home,
   Calendar,
   TrendingUp,
-  DollarSign
+  DollarSign,
+  X
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const { currentUser } = useApp(); // Obtenemos el usuario real
   const { canAccess } = usePermissions(); // Verificamos permisos
@@ -33,165 +41,190 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="w-64 bg-slate-900 text-white flex flex-col h-screen fixed left-0 top-0 border-r border-slate-800 z-50">
+    <>
+      {/* Overlay - Solo visible en mobile cuando está abierto */}
+      <div
+        className={cn(
+          "fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300",
+          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        )}
+        onClick={onClose}
+      />
 
-      {/* Header del Sidebar */}
-      <div className="h-16 flex items-center px-6 border-b border-slate-800 bg-slate-950/50">
-        <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
-          <div className="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-            <LayoutDashboard className="h-5 w-5 text-white" />
+      <aside className={cn(
+        "bg-slate-900 text-white flex flex-col h-screen fixed left-0 top-0 border-r border-slate-800 z-50 transition-transform duration-300 ease-in-out w-64",
+        // En mobile: se desplaza fuera de la pantalla. En desktop: siempre fijo.
+        isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      )}>
+
+        {/* Header del Sidebar */}
+        <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
+          <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
+            <div className="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+              <LayoutDashboard className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-slate-100">Timeboxing</span>
           </div>
-          <span className="text-slate-100">Timeboxing</span>
+
+          {/* Botón cerrar - Solo visible en mobile */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="lg:hidden text-slate-400 hover:text-white"
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </div>
-      </div>
 
-      {/* Navegación Principal */}
-      <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+        {/* Navegación Principal */}
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
 
-        {/* Enlace directo al Dashboard personal - Siempre visible */}
-        <NavLink to="/dashboard" icon={Home} active={location.pathname === '/dashboard'}>
-          Mi Espacio
-        </NavLink>
-
-        {/* Deadline - Verificar permiso */}
-        {canAccess('/deadlines') && (
-          <NavLink to="/deadlines" icon={Calendar} active={location.pathname === '/deadlines'}>
-            Deadline
+          {/* Enlace directo al Dashboard personal - Siempre visible */}
+          <NavLink to="/dashboard" icon={Home} active={location.pathname === '/dashboard'}>
+            Mi Espacio
           </NavLink>
-        )}
 
-        {/* Sección Gestión - Solo mostrar si tiene al menos un permiso */}
-        {(canAccess('/planner') || canAccess('/projects') || canAccess('/clients') || canAccess('/team')) && (
-          <>
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6 px-2">
-              Gestión
-            </div>
+          {/* Deadline - Verificar permiso */}
+          {canAccess('/deadlines') && (
+            <NavLink to="/deadlines" icon={Calendar} active={location.pathname === '/deadlines'}>
+              Deadline
+            </NavLink>
+          )}
 
-            {canAccess('/planner') && (
-              <NavLink to="/planner" icon={LayoutDashboard} active={location.pathname === '/planner'}>
-                Planificador
-              </NavLink>
-            )}
+          {/* Sección Gestión - Solo mostrar si tiene al menos un permiso */}
+          {(canAccess('/planner') || canAccess('/projects') || canAccess('/clients') || canAccess('/team')) && (
+            <>
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6 px-2">
+                Gestión
+              </div>
 
-            {canAccess('/weekly-forecast') && (
-              <NavLink to="/weekly-forecast" icon={TrendingUp} active={location.pathname === '/weekly-forecast'}>
-                Weekly
-              </NavLink>
-            )}
+              {canAccess('/planner') && (
+                <NavLink to="/planner" icon={LayoutDashboard} active={location.pathname === '/planner'}>
+                  Planificador
+                </NavLink>
+              )}
 
-            {(canAccess('/projects') || canAccess('/clients')) && (
-              <NavLink
-                to={canAccess('/clients') ? "/clients" : "/projects"}
-                icon={Briefcase}
-                active={location.pathname === '/clients' || location.pathname === '/projects'}
+              {canAccess('/weekly-forecast') && (
+                <NavLink to="/weekly-forecast" icon={TrendingUp} active={location.pathname === '/weekly-forecast'}>
+                  Weekly
+                </NavLink>
+              )}
+
+              {(canAccess('/projects') || canAccess('/clients')) && (
+                <NavLink
+                  to={canAccess('/clients') ? "/clients" : "/projects"}
+                  icon={Briefcase}
+                  active={location.pathname === '/clients' || location.pathname === '/projects'}
+                >
+                  Clientes
+                </NavLink>
+              )}
+
+              {canAccess('/team') && (
+                <NavLink to="/team" icon={Users} active={location.pathname === '/team'}>
+                  Equipo
+                </NavLink>
+              )}
+            </>
+          )}
+
+          {/* Sección PPC - Solo mostrar si tiene al menos un permiso */}
+          {(canAccess('/ads') || canAccess('/meta-ads') || canAccess('/ads-reports')) && (
+            <>
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-8 mb-2 px-2">
+                PPC
+              </div>
+
+              {canAccess('/ads') && (
+                <NavLink to="/ads" icon={Megaphone} active={location.pathname === '/ads'}>
+                  Google Ads
+                </NavLink>
+              )}
+
+              {canAccess('/meta-ads') && (
+                <NavLink to="/meta-ads" icon={Facebook} active={location.pathname === '/meta-ads'}>
+                  Meta Ads
+                </NavLink>
+              )}
+
+              {canAccess('/ads-reports') && (
+                // Enlace eliminado a petición del usuario
+                null
+              )}
+            </>
+          )}
+
+          {/* Sección Análisis - Solo mostrar si tiene al menos un permiso */}
+          {(canAccess('/reports') || canAccess('/informes-clientes')) && (
+            <>
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-8 mb-2 px-2">
+                Análisis
+              </div>
+
+              {canAccess('/reports') && (
+                <NavLink to="/reports" icon={BarChart3} active={location.pathname === '/reports'}>
+                  Reportes
+                </NavLink>
+              )}
+
+              {canAccess('/informes-clientes') && (
+                <NavLink to="/informes-clientes" icon={FileDown} active={location.pathname === '/informes-clientes'}>
+                  <span className="truncate">Informes clientes</span>
+                </NavLink>
+              )}
+            </>
+          )}
+
+          <NavLink to="/dashboard-ai" icon={Sparkles} active={location.pathname === '/dashboard-ai'}>
+            Copiloto IA
+          </NavLink>
+        </nav>
+
+        {/* Footer del Sidebar: Usuario Real + Logout */}
+        <div className="p-4 border-t border-slate-800 bg-slate-950/30">
+          <NavLink to="/settings" icon={Settings} active={location.pathname === '/settings'}>
+            Configuración
+          </NavLink>
+
+          {currentUser ? (
+            <div className="mt-4 px-2 flex items-center gap-3 group">
+              <Avatar className="h-8 w-8 border border-indigo-500/30">
+                <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
+                <AvatarFallback className="bg-indigo-600 text-white font-medium text-xs">
+                  {currentUser.first_name?.[0]}{currentUser.last_name?.[0]}
+                </AvatarFallback>
+              </Avatar>
+
+              <div className="flex-1 overflow-hidden min-w-0">
+                <p className="text-sm font-medium text-slate-200 truncate" title={currentUser.name}>
+                  {currentUser.first_name || currentUser.name}
+                </p>
+                <p className="text-xs text-slate-500 truncate" title={currentUser.email}>
+                  {currentUser.email}
+                </p>
+              </div>
+
+              <button
+                onClick={handleLogout}
+                className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-950/30 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+                title="Cerrar sesión"
               >
-                Clientes
-              </NavLink>
-            )}
-
-            {canAccess('/team') && (
-              <NavLink to="/team" icon={Users} active={location.pathname === '/team'}>
-                Equipo
-              </NavLink>
-            )}
-          </>
-        )}
-
-        {/* Sección PPC - Solo mostrar si tiene al menos un permiso */}
-        {(canAccess('/ads') || canAccess('/meta-ads') || canAccess('/ads-reports')) && (
-          <>
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-8 mb-2 px-2">
-              PPC
+                <LogOut className="h-4 w-4" />
+              </button>
             </div>
-
-            {canAccess('/ads') && (
-              <NavLink to="/ads" icon={Megaphone} active={location.pathname === '/ads'}>
-                Google Ads
-              </NavLink>
-            )}
-
-            {canAccess('/meta-ads') && (
-              <NavLink to="/meta-ads" icon={Facebook} active={location.pathname === '/meta-ads'}>
-                Meta Ads
-              </NavLink>
-            )}
-
-            {canAccess('/ads-reports') && (
-              // Enlace eliminado a petición del usuario
-              null
-            )}
-          </>
-        )}
-
-        {/* Sección Análisis - Solo mostrar si tiene al menos un permiso */}
-        {(canAccess('/reports') || canAccess('/informes-clientes')) && (
-          <>
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-8 mb-2 px-2">
-              Análisis
+          ) : (
+            /* Estado de carga discreto */
+            <div className="mt-4 px-2 flex items-center gap-3 opacity-50">
+              <div className="h-8 w-8 rounded-full bg-slate-800 animate-pulse" />
+              <div className="space-y-1">
+                <div className="h-2 w-20 bg-slate-800 rounded animate-pulse" />
+                <div className="h-2 w-16 bg-slate-800 rounded animate-pulse" />
+              </div>
             </div>
-
-            {canAccess('/reports') && (
-              <NavLink to="/reports" icon={BarChart3} active={location.pathname === '/reports'}>
-                Reportes
-              </NavLink>
-            )}
-
-            {canAccess('/informes-clientes') && (
-              <NavLink to="/informes-clientes" icon={FileDown} active={location.pathname === '/informes-clientes'}>
-                <span className="truncate">Informes clientes</span>
-              </NavLink>
-            )}
-          </>
-        )}
-
-        <NavLink to="/dashboard-ai" icon={Sparkles} active={location.pathname === '/dashboard-ai'}>
-          Copiloto IA
-        </NavLink>
-      </nav>
-
-      {/* Footer del Sidebar: Usuario Real + Logout */}
-      <div className="p-4 border-t border-slate-800 bg-slate-950/30">
-        <NavLink to="/settings" icon={Settings} active={location.pathname === '/settings'}>
-          Configuración
-        </NavLink>
-
-        {currentUser ? (
-          <div className="mt-4 px-2 flex items-center gap-3 group">
-            <Avatar className="h-8 w-8 border border-indigo-500/30">
-              <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
-              <AvatarFallback className="bg-indigo-600 text-white font-medium text-xs">
-                {currentUser.first_name?.[0]}{currentUser.last_name?.[0]}
-              </AvatarFallback>
-            </Avatar>
-
-            <div className="flex-1 overflow-hidden min-w-0">
-              <p className="text-sm font-medium text-slate-200 truncate" title={currentUser.name}>
-                {currentUser.first_name || currentUser.name}
-              </p>
-              <p className="text-xs text-slate-500 truncate" title={currentUser.email}>
-                {currentUser.email}
-              </p>
-            </div>
-
-            <button
-              onClick={handleLogout}
-              className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-950/30 rounded-md transition-colors opacity-0 group-hover:opacity-100"
-              title="Cerrar sesión"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
-          </div>
-        ) : (
-          /* Estado de carga discreto */
-          <div className="mt-4 px-2 flex items-center gap-3 opacity-50">
-            <div className="h-8 w-8 rounded-full bg-slate-800 animate-pulse" />
-            <div className="space-y-1">
-              <div className="h-2 w-20 bg-slate-800 rounded animate-pulse" />
-              <div className="h-2 w-16 bg-slate-800 rounded animate-pulse" />
-            </div>
-          </div>
-        )}
-      </div>
-    </aside>
+          )}
+        </div>
+      </aside>
+    </>
   );
 }
