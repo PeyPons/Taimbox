@@ -357,15 +357,19 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange }: Welc
       return;
     }
 
-    // Hacer scroll al elemento
-    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Hacer scroll al elemento con un pequeño delay para asegurar renderizado de tabs
+    setTimeout(() => {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
 
-    // Esperar al scroll y luego calcular
-    const timer = setTimeout(() => {
-      calculatePositions();
-    }, 400);
+    // Esperar al scroll y luego calcular (varios intentos para layout shifts)
+    const timers = [
+      setTimeout(calculatePositions, 300),
+      setTimeout(calculatePositions, 600),
+      setTimeout(calculatePositions, 1000)
+    ];
 
-    return () => clearTimeout(timer);
+    return () => timers.forEach(clearTimeout);
   }, [currentStep, isVisible, calculatePositions]);
 
   // Recalcular en resize/scroll
