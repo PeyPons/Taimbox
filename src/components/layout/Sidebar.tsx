@@ -3,21 +3,22 @@ import { NavLink } from '@/components/NavLink';
 import { useApp } from '@/contexts/AppContext'; // Importamos contexto para datos reales
 import { usePermissions } from '@/hooks/usePermissions'; // Hook de permisos
 import { supabase } from '@/lib/supabase'; // Para el logout
-import { 
-  LayoutDashboard, 
-  Users, 
-  Briefcase, 
-  BarChart3, 
+import {
+  LayoutDashboard,
+  Users,
+  Briefcase,
+  BarChart3,
   FolderKanban,
   Settings,
-  Megaphone, 
+  Megaphone,
   Sparkles,
   Facebook,
   FileDown,
   LogOut,
   Home,
   Calendar,
-  TrendingUp
+  TrendingUp,
+  DollarSign
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -33,7 +34,7 @@ export function Sidebar() {
 
   return (
     <aside className="w-64 bg-slate-900 text-white flex flex-col h-screen fixed left-0 top-0 border-r border-slate-800 z-50">
-      
+
       {/* Header del Sidebar */}
       <div className="h-16 flex items-center px-6 border-b border-slate-800 bg-slate-950/50">
         <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
@@ -46,7 +47,7 @@ export function Sidebar() {
 
       {/* Navegación Principal */}
       <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-        
+
         {/* Enlace directo al Dashboard personal - Siempre visible */}
         <NavLink to="/dashboard" icon={Home} active={location.pathname === '/dashboard'}>
           Mi Espacio
@@ -65,7 +66,7 @@ export function Sidebar() {
             <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6 px-2">
               Gestión
             </div>
-            
+
             {canAccess('/planner') && (
               <NavLink to="/planner" icon={LayoutDashboard} active={location.pathname === '/planner'}>
                 Planificador
@@ -79,9 +80,9 @@ export function Sidebar() {
             )}
 
             {(canAccess('/projects') || canAccess('/clients')) && (
-              <NavLink 
-                to={canAccess('/clients') ? "/clients" : "/projects"} 
-                icon={Briefcase} 
+              <NavLink
+                to={canAccess('/clients') ? "/clients" : "/projects"}
+                icon={Briefcase}
                 active={location.pathname === '/clients' || location.pathname === '/projects'}
               >
                 Clientes
@@ -102,7 +103,7 @@ export function Sidebar() {
             <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-8 mb-2 px-2">
               PPC
             </div>
-            
+
             {canAccess('/ads') && (
               <NavLink to="/ads" icon={Megaphone} active={location.pathname === '/ads'}>
                 Google Ads
@@ -131,6 +132,12 @@ export function Sidebar() {
             </div>
 
             {canAccess('/reports') && (
+              <NavLink to="/profitability" icon={DollarSign} active={location.pathname === '/profitability'}>
+                Rentabilidad
+              </NavLink>
+            )}
+
+            {canAccess('/reports') && (
               <NavLink to="/reports" icon={BarChart3} active={location.pathname === '/reports'}>
                 Reportes
               </NavLink>
@@ -154,7 +161,7 @@ export function Sidebar() {
         <NavLink to="/settings" icon={Settings} active={location.pathname === '/settings'}>
           Configuración
         </NavLink>
-        
+
         {currentUser ? (
           <div className="mt-4 px-2 flex items-center gap-3 group">
             <Avatar className="h-8 w-8 border border-indigo-500/30">
@@ -163,7 +170,7 @@ export function Sidebar() {
                 {currentUser.first_name?.[0]}{currentUser.last_name?.[0]}
               </AvatarFallback>
             </Avatar>
-            
+
             <div className="flex-1 overflow-hidden min-w-0">
               <p className="text-sm font-medium text-slate-200 truncate" title={currentUser.name}>
                 {currentUser.first_name || currentUser.name}
@@ -173,7 +180,7 @@ export function Sidebar() {
               </p>
             </div>
 
-            <button 
+            <button
               onClick={handleLogout}
               className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-950/30 rounded-md transition-colors opacity-0 group-hover:opacity-100"
               title="Cerrar sesión"
@@ -184,11 +191,11 @@ export function Sidebar() {
         ) : (
           /* Estado de carga discreto */
           <div className="mt-4 px-2 flex items-center gap-3 opacity-50">
-             <div className="h-8 w-8 rounded-full bg-slate-800 animate-pulse" />
-             <div className="space-y-1">
-                <div className="h-2 w-20 bg-slate-800 rounded animate-pulse" />
-                <div className="h-2 w-16 bg-slate-800 rounded animate-pulse" />
-             </div>
+            <div className="h-8 w-8 rounded-full bg-slate-800 animate-pulse" />
+            <div className="space-y-1">
+              <div className="h-2 w-20 bg-slate-800 rounded animate-pulse" />
+              <div className="h-2 w-16 bg-slate-800 rounded animate-pulse" />
+            </div>
           </div>
         )}
       </div>
