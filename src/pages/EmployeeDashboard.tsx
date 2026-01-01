@@ -586,102 +586,90 @@ export default function EmployeeDashboard() {
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_80%_80%,rgba(168,85,247,0.1),transparent_50%)]" />
 
       {/* 1. CABECERA + ACCIONES */}
-      <div className="flex flex-col gap-4">
-        <div className="relative">
-          <div className="absolute -inset-1 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl blur opacity-20 group-hover:opacity-30 transition duration-1000 group-hover:duration-200" />
-          <div className="relative bg-white/80 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-indigo-100/50 shadow-lg">
-            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Hola, {myEmployeeProfile.first_name || myEmployeeProfile.name.split(' ')[0]} 👋
-            </h1>
-            <p className="text-slate-500 text-sm sm:text-base mt-1">Panel de control operativo</p>
-          </div>
-        </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Botón Weekly siempre visible para todos los empleados */}
+        <Button
+          onClick={() => setShowWeeklyDialog(true)}
+          className={cn(
+            "gap-2 shadow-sm transition-all",
+            hasPendingWeeklyTasks
+              ? "bg-amber-600 text-white hover:bg-amber-700 animate-pulse shadow-lg shadow-amber-500/50"
+              : "bg-indigo-600 text-white hover:bg-indigo-700"
+          )}
+          data-tour="weekly-button"
+        >
+          {hasPendingWeeklyTasks ? (
+            <>
+              <AlertCircle className="h-4 w-4 animate-bounce" /> Weekly
+            </>
+          ) : (
+            <>
+              <CheckSquare className="h-4 w-4" /> Weekly
+            </>
+          )}
+        </Button>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Botón Weekly siempre visible para todos los empleados */}
-          <Button
-            onClick={() => setShowWeeklyDialog(true)}
-            className={cn(
-              "gap-2 shadow-sm transition-all",
-              hasPendingWeeklyTasks
-                ? "bg-amber-600 text-white hover:bg-amber-700 animate-pulse shadow-lg shadow-amber-500/50"
-                : "bg-indigo-600 text-white hover:bg-indigo-700"
-            )}
-            data-tour="weekly-button"
-          >
-            {hasPendingWeeklyTasks ? (
-              <>
-                <AlertCircle className="h-4 w-4 animate-bounce" /> Weekly
-              </>
-            ) : (
-              <>
-                <CheckSquare className="h-4 w-4" /> Weekly
-              </>
-            )}
-          </Button>
+        <Button onClick={openAddTasksDialog} className="gap-2 bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm" data-tour="add-tasks">
+          <ListPlus className="h-4 w-4" /> Añadir tareas
+        </Button>
 
-          <Button onClick={openAddTasksDialog} className="gap-2 bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm" data-tour="add-tasks">
-            <ListPlus className="h-4 w-4" /> Añadir tareas
-          </Button>
+        <Button onClick={handleExportCRM} variant="outline" className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-50"
+          disabled={!myEmployeeProfile?.crmUserId} title={!myEmployeeProfile?.crmUserId ? "Configura tu ID de CRM en el perfil" : "Exportar tareas al CRM"} data-tour="crm-export">
+          <FileDown className="h-4 w-4" /> Tareas CRM
+        </Button>
 
-          <Button onClick={handleExportCRM} variant="outline" className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-50"
-            disabled={!myEmployeeProfile?.crmUserId} title={!myEmployeeProfile?.crmUserId ? "Configura tu ID de CRM en el perfil" : "Exportar tareas al CRM"} data-tour="crm-export">
-            <FileDown className="h-4 w-4" /> Tareas CRM
-          </Button>
-
-          <Dialog open={isAddingExtra} onOpenChange={setIsAddingExtra}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2 border-slate-300 hover:bg-slate-50" data-tour="internal-tasks">
-                <Clock className="h-4 w-4" /> Gestión interna
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md" aria-describedby="internal-tasks-description">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2"><Clock className="h-5 w-5 text-slate-600" />Registrar gestión interna</DialogTitle>
-                <DialogDescription id="internal-tasks-description">Reuniones, formaciones, deadlines u otras tareas no asociadas a clientes.</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Nombre de la tarea</Label>
-                  <Input placeholder="Ej: Reunión de equipo" value={extraTaskName} onChange={e => setExtraTaskName(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Horas</Label>
-                  <Input type="number" min="0.5" step="0.5" value={extraHours} onChange={e => setExtraHours(e.target.value)} />
-                </div>
+        <Dialog open={isAddingExtra} onOpenChange={setIsAddingExtra}>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="gap-2 border-slate-300 hover:bg-slate-50" data-tour="internal-tasks">
+              <Clock className="h-4 w-4" /> Gestión interna
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md" aria-describedby="internal-tasks-description">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2"><Clock className="h-5 w-5 text-slate-600" />Registrar gestión interna</DialogTitle>
+              <DialogDescription id="internal-tasks-description">Reuniones, formaciones, deadlines u otras tareas no asociadas a clientes.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Nombre de la tarea</Label>
+                <Input placeholder="Ej: Reunión de equipo" value={extraTaskName} onChange={e => setExtraTaskName(e.target.value)} />
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddingExtra(false)}>Cancelar</Button>
-                <Button onClick={handleAddExtraTask} disabled={isCreatingProject}>{isCreatingProject ? 'Creando...' : 'Registrar'}</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              <div className="space-y-2">
+                <Label>Horas</Label>
+                <Input type="number" min="0.5" step="0.5" value={extraHours} onChange={e => setExtraHours(e.target.value)} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAddingExtra(false)}>Cancelar</Button>
+              <Button onClick={handleAddExtraTask} disabled={isCreatingProject}>{isCreatingProject ? 'Creando...' : 'Registrar'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-          <div className="h-9 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+        <div className="h-9 w-px bg-slate-200 mx-1 hidden sm:block"></div>
 
-          <Button variant="outline" onClick={() => setShowGoals(true)} className="gap-2 text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100" data-tour="goals">
-            <TrendingUp className="h-4 w-4" /> Objetivos
-          </Button>
+        <Button variant="outline" onClick={() => setShowGoals(true)} className="gap-2 text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100" data-tour="goals">
+          <TrendingUp className="h-4 w-4" /> Objetivos
+        </Button>
 
-          <Button variant="outline" onClick={() => setShowAbsences(true)} className="gap-2 text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100" data-tour="absences">
-            <Calendar className="h-4 w-4" /> Ausencias
-          </Button>
+        <Button variant="outline" onClick={() => setShowAbsences(true)} className="gap-2 text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100" data-tour="absences">
+          <Calendar className="h-4 w-4" /> Ausencias
+        </Button>
 
-          <EmployeeSettings employeeId={myEmployeeProfile.id} />
+        <EmployeeSettings employeeId={myEmployeeProfile.id} />
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-400 hover:text-slate-600">
-                <HelpCircle className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={resetTour} className="gap-2">
-                <RotateCcw className="h-4 w-4" />Ver tour de bienvenida
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-400 hover:text-slate-600">
+              <HelpCircle className="h-5 w-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={resetTour} className="gap-2">
+              <RotateCcw className="h-4 w-4" />Ver tour de bienvenida
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* 2. CONTROL MES */}
@@ -824,9 +812,11 @@ export default function EmployeeDashboard() {
       </Card>
 
       {/* MODALES */}
-      {selectedCell && (
-        <AllocationSheet open={!!selectedCell} onOpenChange={(open) => !open && setSelectedCell(null)} employeeId={selectedCell.employeeId} weekStart={selectedCell.weekStart.toISOString()} viewDateContext={currentMonth} />
-      )}
+      {
+        selectedCell && (
+          <AllocationSheet open={!!selectedCell} onOpenChange={(open) => !open && setSelectedCell(null)} employeeId={selectedCell.employeeId} weekStart={selectedCell.weekStart.toISOString()} viewDateContext={currentMonth} />
+        )
+      }
 
       <Dialog open={isAddingTasks} onOpenChange={setIsAddingTasks}>
         <DialogContent className="sm:max-w-[900px]" aria-describedby="add-tasks-description">
@@ -991,18 +981,20 @@ export default function EmployeeDashboard() {
       {showGoals && <ProfessionalGoalsSheet open={showGoals} onOpenChange={setShowGoals} employeeId={myEmployeeProfile.id} />}
       {showAbsences && <AbsencesSheet open={showAbsences} onOpenChange={setShowAbsences} employeeId={myEmployeeProfile.id} />}
 
-      {myEmployeeProfile && (
-        <>
-          <WeeklyReportDialog
-            open={showWeeklyDialog}
-            onOpenChange={setShowWeeklyDialog}
-            employeeId={myEmployeeProfile.id}
-            viewDate={currentMonth}
-          />
-        </>
-      )}
+      {
+        myEmployeeProfile && (
+          <>
+            <WeeklyReportDialog
+              open={showWeeklyDialog}
+              onOpenChange={setShowWeeklyDialog}
+              employeeId={myEmployeeProfile.id}
+              viewDate={currentMonth}
+            />
+          </>
+        )
+      }
 
       <WelcomeTour forceShow={showTour} onTabChange={setActiveTab} />
-    </div>
+    </div >
   );
 }
