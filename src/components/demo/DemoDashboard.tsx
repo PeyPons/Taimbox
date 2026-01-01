@@ -15,20 +15,20 @@ import { DemoEmployeeDashboard } from './DemoEmployeeDashboard';
 import { cn } from '@/lib/utils';
 import { AlertCircle, Info, Users, Calendar, BarChart3, Target, TrendingUp, TrendingDown, CheckCircle2, Clock } from 'lucide-react';
 
-function DemoDashboardContent() {
+export function DemoPlanner() {
   const { employees, allocations, projects, clients, getEmployeeMonthlyLoad, getEmployeeLoadForWeek } = useDemo();
   const [currentMonth] = useState(new Date());
   const [selectedTab, setSelectedTab] = useState('overview');
-  
+
   const weeks = useMemo(() => getWeeksForMonth(currentMonth), [currentMonth]);
   const gridTemplate = `250px repeat(${weeks.length}, minmax(0, 1fr)) 100px`;
   const gridTemplateMobile = `repeat(${weeks.length}, minmax(120px, 1fr)) 80px`;
-  
+
   // Empleado demo (María)
   const demoEmployee = employees[0];
   const monthlyLoad = getEmployeeMonthlyLoad(
-    demoEmployee.id, 
-    currentMonth.getFullYear(), 
+    demoEmployee.id,
+    currentMonth.getFullYear(),
     currentMonth.getMonth()
   );
 
@@ -42,7 +42,7 @@ function DemoDashboardContent() {
             Demo Interactivo - Datos de Ejemplo
           </p>
           <p className="text-xs text-blue-700">
-            Esta es una demostración con datos simulados. Explora las diferentes secciones para ver cómo funciona la plataforma. 
+            Esta es una demostración con datos simulados. Explora las diferentes secciones para ver cómo funciona la plataforma.
             No se pueden realizar modificaciones en este modo demo.
           </p>
         </div>
@@ -73,16 +73,16 @@ function DemoDashboardContent() {
               <div className="space-y-3">
                 {employees.map(emp => {
                   const load = getEmployeeMonthlyLoad(
-                    emp.id, 
-                    currentMonth.getFullYear(), 
+                    emp.id,
+                    currentMonth.getFullYear(),
                     currentMonth.getMonth()
                   );
                   return (
                     <div key={emp.id} className="flex items-center justify-between p-2 bg-slate-50 rounded">
                       <span className="text-sm font-medium">{emp.name}</span>
-                      <LoadIndicator 
-                        hours={load.hours} 
-                        capacity={load.capacity} 
+                      <LoadIndicator
+                        hours={load.hours}
+                        capacity={load.capacity}
                         percentage={load.percentage}
                         size="sm"
                       />
@@ -100,7 +100,7 @@ function DemoDashboardContent() {
                   const projectAllocations = allocations.filter(a => a.projectId === proj.id);
                   const totalHours = projectAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
                   const percentage = proj.budgetHours > 0 ? (totalHours / proj.budgetHours) * 100 : 0;
-                  
+
                   return (
                     <div key={proj.id} className="flex items-center justify-between p-2 bg-slate-50 rounded">
                       <div className="flex items-center gap-2">
@@ -109,8 +109,8 @@ function DemoDashboardContent() {
                       </div>
                       <Badge variant="outline" className={cn(
                         percentage > 100 ? "bg-red-50 text-red-700" :
-                        percentage > 80 ? "bg-amber-50 text-amber-700" :
-                        "bg-emerald-50 text-emerald-700"
+                          percentage > 80 ? "bg-amber-50 text-amber-700" :
+                            "bg-emerald-50 text-emerald-700"
                       )}>
                         {percentage.toFixed(0)}%
                       </Badge>
@@ -159,7 +159,7 @@ function DemoDashboardContent() {
                   {weeks.map((week, index) => {
                     const effectiveStart = week.effectiveStart || week.weekStart;
                     const effectiveEnd = week.effectiveEnd || addDays(week.weekStart, 6);
-                    
+
                     const workingDays = [];
                     let currentDay = new Date(effectiveStart);
                     while (currentDay <= effectiveEnd) {
@@ -169,13 +169,13 @@ function DemoDashboardContent() {
                       }
                       currentDay = addDays(currentDay, 1);
                     }
-                    
+
                     const firstWorkingDay = workingDays[0];
                     const lastWorkingDay = workingDays[workingDays.length - 1];
-                    const weekDateLabel = firstWorkingDay && lastWorkingDay 
+                    const weekDateLabel = firstWorkingDay && lastWorkingDay
                       ? `${format(firstWorkingDay, 'd', { locale: es })}-${format(lastWorkingDay, 'd MMM', { locale: es })}`
                       : `${format(effectiveStart, 'd', { locale: es })}-${format(effectiveEnd, 'd MMM', { locale: es })}`;
-                    
+
                     return (
                       <div key={week.weekStart.toISOString()} className="text-center px-1 py-2 border-r flex flex-col justify-center">
                         <span className="text-xs font-bold uppercase text-slate-500">S{index + 1}</span>
@@ -203,40 +203,39 @@ function DemoDashboardContent() {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Celdas de semanas */}
                   {weeks.map((week) => {
                     const weekStartDate = format(week.weekStart, 'yyyy-MM-dd');
                     const load = getEmployeeLoadForWeek(demoEmployee.id, weekStartDate, week.effectiveStart, week.effectiveEnd, currentMonth);
-                    const weekAllocations = allocations.filter(a => 
-                      a.employeeId === demoEmployee.id && 
+                    const weekAllocations = allocations.filter(a =>
+                      a.employeeId === demoEmployee.id &&
                       a.weekStartDate === weekStartDate
                     );
-                    
+
                     return (
                       <div key={week.weekStart.toISOString()} className="border-r last:border-r-0 p-2">
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center justify-between text-xs">
                             <span className={cn(
                               "font-bold",
-                              load.status === 'overload' ? "text-red-600" :
-                              load.status === 'high' ? "text-amber-600" :
-                              load.status === 'optimal' ? "text-emerald-600" :
-                              load.status === 'low' ? "text-blue-600" :
-                              "text-slate-400"
+                              load.percentage > 100 ? "text-red-600" :
+                                load.percentage > 85 ? "text-amber-600" :
+                                  load.percentage > 50 ? "text-emerald-600" :
+                                    "text-blue-600"
                             )}>
                               {load.hours}h
                             </span>
                             <span className="text-slate-400">/{load.capacity}h</span>
                           </div>
-                          <Progress 
-                            value={Math.min(load.percentage, 100)} 
+                          <Progress
+                            value={Math.min(load.percentage, 100)}
                             className={cn(
                               "h-1.5",
-                              load.status === 'overload' && "[&>div]:bg-red-500",
-                              load.status === 'high' && "[&>div]:bg-amber-500",
-                              load.status === 'optimal' && "[&>div]:bg-emerald-500",
-                              load.status === 'low' && "[&>div]:bg-blue-500"
+                              load.percentage > 100 && "[&>div]:bg-red-500",
+                              load.percentage > 85 && "[&>div]:bg-amber-500",
+                              load.percentage > 50 && "[&>div]:bg-emerald-500",
+                              load.percentage <= 50 && "[&>div]:bg-blue-500"
                             )}
                           />
                           {weekAllocations.length > 0 && (
@@ -248,11 +247,11 @@ function DemoDashboardContent() {
                       </div>
                     );
                   })}
-                  
+
                   <div className="flex items-center justify-center border-l p-2 bg-slate-50/30">
-                    <LoadIndicator 
-                      hours={monthlyLoad.hours} 
-                      capacity={monthlyLoad.capacity} 
+                    <LoadIndicator
+                      hours={monthlyLoad.hours}
+                      capacity={monthlyLoad.capacity}
                       percentage={monthlyLoad.percentage}
                       size="md"
                     />
@@ -274,7 +273,7 @@ function DemoDashboardContent() {
               const totalComputed = completed.reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
               const totalReal = completed.reduce((sum, a) => sum + (a.hoursActual || 0), 0);
               const percentage = proj.budgetHours > 0 ? (totalComputed / proj.budgetHours) * 100 : 0;
-              
+
               return (
                 <Card key={proj.id} className="flex flex-col h-full">
                   <CardHeader className="pb-2">
@@ -288,8 +287,8 @@ function DemoDashboardContent() {
                       </div>
                       <Badge variant="outline" className={cn(
                         percentage > 100 ? "bg-red-50 text-red-700" :
-                        percentage > 80 ? "bg-amber-50 text-amber-700" :
-                        "bg-emerald-50 text-emerald-700"
+                          percentage > 80 ? "bg-amber-50 text-amber-700" :
+                            "bg-emerald-50 text-emerald-700"
                       )}>
                         {percentage.toFixed(0)}%
                       </Badge>
@@ -302,7 +301,7 @@ function DemoDashboardContent() {
                         <div>Computadas: {totalComputed}h</div>
                         <div>Presupuesto: {proj.budgetHours}h</div>
                       </div>
-                      <MetricsCard 
+                      <MetricsCard
                         estimated={totalAssigned}
                         real={totalReal}
                         computed={totalComputed}
@@ -332,16 +331,16 @@ function DemoDashboardContent() {
                   const load = getEmployeeMonthlyLoad(emp.id, currentMonth.getFullYear(), currentMonth.getMonth());
                   const empAllocations = allocations.filter(a => a.employeeId === emp.id);
                   const completed = empAllocations.filter(a => a.status === 'completed');
-                  
+
                   return (
                     <div key={emp.id} className="p-3 bg-slate-50 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-sm">{emp.name}</span>
                         <Badge variant="outline" className={cn(
                           load.percentage > 100 ? "bg-red-50 text-red-700" :
-                          load.percentage > 85 ? "bg-amber-50 text-amber-700" :
-                          load.percentage < 60 ? "bg-blue-50 text-blue-700" :
-                          "bg-emerald-50 text-emerald-700"
+                            load.percentage > 85 ? "bg-amber-50 text-amber-700" :
+                              load.percentage < 60 ? "bg-blue-50 text-blue-700" :
+                                "bg-emerald-50 text-emerald-700"
                         )}>
                           {load.percentage.toFixed(0)}%
                         </Badge>
@@ -355,7 +354,7 @@ function DemoDashboardContent() {
                 })}
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm">Estado de Proyectos</CardTitle>
@@ -368,7 +367,7 @@ function DemoDashboardContent() {
                     .filter(a => a.status === 'completed')
                     .reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
                   const percentage = proj.budgetHours > 0 ? (totalComputed / proj.budgetHours) * 100 : 0;
-                  
+
                   return (
                     <div key={proj.id} className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -379,14 +378,14 @@ function DemoDashboardContent() {
                         <span className={cn(
                           "text-xs font-bold",
                           percentage > 100 ? "text-red-600" :
-                          percentage > 80 ? "text-amber-600" :
-                          "text-emerald-600"
+                            percentage > 80 ? "text-amber-600" :
+                              "text-emerald-600"
                         )}>
                           {percentage.toFixed(0)}%
                         </span>
                       </div>
-                      <Progress 
-                        value={Math.min(percentage, 100)} 
+                      <Progress
+                        value={Math.min(percentage, 100)}
                         className={cn(
                           "h-2",
                           percentage > 100 && "[&>div]:bg-red-500",

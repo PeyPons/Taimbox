@@ -2,13 +2,13 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  ArrowRight, 
-  Calendar, 
-  Users, 
-  BarChart3, 
-  Target, 
-  Zap, 
+import {
+  ArrowRight,
+  Calendar,
+  Users,
+  BarChart3,
+  Target,
+  Zap,
   CheckCircle2,
   TrendingUp,
   Clock,
@@ -30,8 +30,10 @@ import {
   Code,
   FileDown
 } from 'lucide-react';
-import { DemoDashboard } from '@/components/demo/DemoDashboard';
+import { DemoPlanner } from '@/components/demo/DemoDashboard';
+import { DemoEmployeeDashboard } from '@/components/demo/DemoEmployeeDashboard';
 import { DemoDeadlinesPage } from '@/components/demo/DemoDeadlinesPage';
+import { DemoWeeklyForecastPage } from '@/components/demo/DemoWeeklyForecastPage';
 import { DemoProvider } from '@/contexts/DemoContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -43,14 +45,15 @@ import { Monitor, AlertCircle } from 'lucide-react';
 
 export default function LandingPage() {
   const isMobile = useIsMobile();
-  
+  const [demoTab, setDemoTab] = useState('planner');
+
   return (
     <>
       <Helmet>
         <title>Timeboxing - Gestión de Recursos y Planificación</title>
         <meta name="description" content="Plataforma de gestión de recursos y planificación para agencias digitales. Visualiza, planifica y optimiza el trabajo de tu equipo." />
       </Helmet>
-      
+
       <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 relative overflow-hidden">
         {/* Efectos de fondo animados mejorados */}
         <div className="absolute inset-0 overflow-hidden">
@@ -62,14 +65,14 @@ export default function LandingPage() {
           <div className="absolute top-40 right-20 w-1.5 h-1.5 bg-purple-400/40 rounded-full animate-pulse" style={{ animationDuration: '4s', animationDelay: '1s' }} />
           <div className="absolute bottom-40 left-1/3 w-2 h-2 bg-pink-400/30 rounded-full animate-pulse" style={{ animationDuration: '5s', animationDelay: '2s' }} />
         </div>
-        
+
         {/* Grid pattern sutil */}
         <div className="absolute inset-0 opacity-10" style={{
           backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
                            linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
           backgroundSize: '50px 50px'
         }} />
-        
+
         {/* Hero Section */}
         <div className="relative z-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 md:pt-28 pb-16 sm:pb-20 md:pb-28">
@@ -80,7 +83,7 @@ export default function LandingPage() {
                 <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 animate-spin-slow relative z-10" />
                 <span className="whitespace-nowrap relative z-10">Tu equipo, tu tiempo, tu control</span>
               </div>
-              
+
               {/* Título principal con efecto mejorado */}
               <div className="relative mb-6 sm:mb-8">
                 <div className="absolute -inset-8 bg-gradient-to-r from-indigo-600/30 via-purple-600/30 to-pink-600/30 blur-3xl opacity-60 -z-10 animate-pulse" />
@@ -94,7 +97,7 @@ export default function LandingPage() {
                   </span>
                 </h1>
               </div>
-              
+
               {/* Descripción más impactante */}
               <div className="mb-10 sm:mb-14 max-w-4xl mx-auto px-4">
                 <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-indigo-100/90 leading-relaxed font-light mb-2">
@@ -104,7 +107,7 @@ export default function LandingPage() {
                   Ve quién hace qué, <span className="bg-gradient-to-r from-indigo-200 to-purple-200 bg-clip-text text-transparent">cuándo</span> y <span className="bg-gradient-to-r from-purple-200 to-pink-200 bg-clip-text text-transparent">por qué</span>.
                 </p>
               </div>
-              
+
               {/* CTA mejorado */}
               <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center px-4 mb-12 sm:mb-16">
                 <Link to="/login" className="group relative">
@@ -114,9 +117,9 @@ export default function LandingPage() {
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
-                <Button 
-                  size="lg" 
-                  variant="outline" 
+                <Button
+                  size="lg"
+                  variant="outline"
                   className="w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-semibold border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50 bg-white/5 backdrop-blur-md shadow-xl"
                   onClick={() => {
                     const demoSection = document.getElementById('demo');
@@ -180,7 +183,7 @@ export default function LandingPage() {
               </ul>
             </div>
           </div>
-          
+
           {/* Grid con todas las funcionalidades sin repetir */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
             {/* Feature 1: Planificación Visual */}
@@ -220,8 +223,8 @@ export default function LandingPage() {
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Dependencias</h3>
                   <p className="text-xs sm:text-sm text-indigo-200/80 leading-relaxed">
-                    Define qué tareas dependen de otras y visualiza el flujo de trabajo completo. 
-                    Recibe alertas cuando una tarea bloquea a otras, prioriza automáticamente las tareas críticas 
+                    Define qué tareas dependen de otras y visualiza el flujo de trabajo completo.
+                    Recibe alertas cuando una tarea bloquea a otras, prioriza automáticamente las tareas críticas
                     y asegúrate de que tu equipo siempre sepa qué hacer primero y en qué orden.
                   </p>
                 </CardContent>
@@ -404,7 +407,7 @@ export default function LandingPage() {
                 Conecta con tu flujo de trabajo
               </span>
             </h2>
-              <p className="text-base sm:text-lg text-white/90 max-w-2xl mx-auto px-4">
+            <p className="text-base sm:text-lg text-white/90 max-w-2xl mx-auto px-4">
               Exporta datos, integra con tus herramientas y mantén todo sincronizado.
             </p>
           </div>
@@ -490,7 +493,7 @@ export default function LandingPage() {
               </span>
             </h2>
           </div>
-          
+
           <div className="grid md:grid-cols-2 gap-8 mb-12">
             <Card className="border-2 border-red-500/30 bg-red-500/10 backdrop-blur-xl">
               <CardContent className="p-6">
@@ -678,13 +681,9 @@ export default function LandingPage() {
                 size="lg"
                 className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white px-8 py-6 text-lg font-semibold shadow-2xl"
                 onClick={() => {
+                  setDemoTab('deadlines');
                   const demoSection = document.getElementById('demo');
                   demoSection?.scrollIntoView({ behavior: 'smooth' });
-                  // Cambiar a tab de deadlines después de un pequeño delay
-                  setTimeout(() => {
-                    const deadlinesTab = document.querySelector('[value="deadlines"]') as HTMLElement;
-                    deadlinesTab?.click();
-                  }, 500);
                 }}
               >
                 Ver demo de Deadlines
@@ -875,12 +874,9 @@ export default function LandingPage() {
               size="lg"
               className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-2xl rounded-full px-6 py-6 h-auto animate-bounce"
               onClick={() => {
+                setDemoTab('deadlines');
                 const demoSection = document.getElementById('demo');
                 demoSection?.scrollIntoView({ behavior: 'smooth' });
-                setTimeout(() => {
-                  const deadlinesTab = document.querySelector('[value="deadlines"]') as HTMLElement;
-                  deadlinesTab?.click();
-                }, 500);
               }}
             >
               <Target className="h-5 w-5 mr-2" />
@@ -898,16 +894,16 @@ export default function LandingPage() {
                 Explora la plataforma en acción
               </h2>
               <p className="text-base sm:text-lg md:text-xl text-indigo-200 max-w-3xl mx-auto px-4 mb-4">
-                Descubre cómo funciona nuestra plataforma con datos de ejemplo realistas. 
+                Descubre cómo funciona nuestra plataforma con datos de ejemplo realistas.
                 Explora diferentes escenarios: equipos equilibrados, sobrecargas, optimizaciones y más.
               </p>
               <p className="text-sm sm:text-base text-indigo-200/70 max-w-2xl mx-auto px-4">
-                Navega por tu dashboard, gestiona deadlines mensuales, visualiza dependencias 
-                entre tareas y descubre cómo nuestras métricas te ayudan a tomar mejores decisiones. 
+                Navega por tu dashboard, gestiona deadlines mensuales, visualiza dependencias
+                entre tareas y descubre cómo nuestras métricas te ayudan a tomar mejores decisiones.
                 Todo con datos simulados que reflejan situaciones reales que enfrentas día a día.
               </p>
             </div>
-            
+
             <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-indigo-200/50 shadow-2xl overflow-hidden relative">
               {/* Overlay oscuro en mobile que bloquea la demo */}
               {isMobile && (
@@ -923,7 +919,7 @@ export default function LandingPage() {
                         Demo optimizada para escritorio
                       </h3>
                       <p className="text-base text-gray-300 mb-6 leading-relaxed">
-                        Esta demo está diseñada para pantallas de escritorio. En dispositivos móviles puede verse de manera incorrecta. 
+                        Esta demo está diseñada para pantallas de escritorio. En dispositivos móviles puede verse de manera incorrecta.
                         Por favor, accede desde un ordenador o tablet en modo horizontal para explorar la demo completa.
                       </p>
                       <div className="bg-white/5 backdrop-blur-md rounded-xl border border-white/10 p-4 mb-6">
@@ -935,22 +931,39 @@ export default function LandingPage() {
                   </div>
                 </>
               )}
-              
+
               <DemoProvider>
-                <Tabs defaultValue="dashboard" className="w-full">
-                  <TabsList className="w-full justify-start h-auto p-1 bg-indigo-50/50 border-b border-indigo-200/50 rounded-none rounded-t-xl">
-                    <TabsTrigger value="dashboard" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm">
-                      Dashboard
+                <Tabs value={demoTab} onValueChange={setDemoTab} className="w-full">
+                  <TabsList className="w-full justify-start h-auto p-1 bg-indigo-50/50 border-b border-indigo-200/50 rounded-none rounded-t-xl overflow-x-auto flex-nowrap">
+                    <TabsTrigger value="planner" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm whitespace-nowrap">
+                      Planificador
                     </TabsTrigger>
-                    <TabsTrigger value="deadlines" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm relative">
+                    <TabsTrigger value="dashboard" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm whitespace-nowrap">
+                      Dashboard Empleado
+                      <Badge className="ml-2 bg-indigo-500 text-white text-[10px] px-1.5 py-0">Nuevo</Badge>
+                    </TabsTrigger>
+                    <TabsTrigger value="weeklys" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm whitespace-nowrap">
+                      Weeklys Forecast
+                    </TabsTrigger>
+                    <TabsTrigger value="deadlines" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm relative whitespace-nowrap">
                       Deadlines
-                      <Badge className="ml-2 bg-amber-500 text-white text-[10px] px-1.5 py-0">Nuevo</Badge>
+                      <Badge className="ml-2 bg-amber-500 text-white text-[10px] px-1.5 py-0">Beta</Badge>
                     </TabsTrigger>
                   </TabsList>
-                  <TabsContent value="dashboard" className="m-0 p-3 sm:p-4 md:p-6">
-                    <DemoDashboard />
+
+                  <TabsContent value="planner" className="m-0 p-3 sm:p-4 md:p-6 bg-white min-h-[600px]">
+                    <DemoPlanner />
                   </TabsContent>
-                  <TabsContent value="deadlines" className="m-0 p-0">
+
+                  <TabsContent value="dashboard" className="m-0 p-0 bg-slate-50 min-h-[600px]">
+                    <DemoEmployeeDashboard />
+                  </TabsContent>
+
+                  <TabsContent value="weeklys" className="m-0 p-0 bg-slate-50 min-h-[600px]">
+                    <DemoWeeklyForecastPage />
+                  </TabsContent>
+
+                  <TabsContent value="deadlines" className="m-0 p-0 bg-slate-50 min-h-[600px]">
                     <DemoDeadlinesPage />
                   </TabsContent>
                 </Tabs>
@@ -991,25 +1004,25 @@ export default function LandingPage() {
                 <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center mb-4">
                   <Users className="h-6 w-6 text-white" />
                 </div>
-                  <h3 className="text-xl font-bold text-white mb-3">Para líderes de equipo</h3>
-                  <ul className="text-white/90 text-sm space-y-2">
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-indigo-300 mt-0.5">•</span>
-                      <span>Decisiones informadas sobre distribución</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-indigo-300 mt-0.5">•</span>
-                      <span>Identifica quién necesita ayuda</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-indigo-300 mt-0.5">•</span>
-                      <span>Reduce reuniones en un 70%</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-indigo-300 mt-0.5">•</span>
-                      <span>Alertas automáticas de sobrecarga</span>
-                    </li>
-                  </ul>
+                <h3 className="text-xl font-bold text-white mb-3">Para líderes de equipo</h3>
+                <ul className="text-white/90 text-sm space-y-2">
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-indigo-300 mt-0.5">•</span>
+                    <span>Decisiones informadas sobre distribución</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-indigo-300 mt-0.5">•</span>
+                    <span>Identifica quién necesita ayuda</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-indigo-300 mt-0.5">•</span>
+                    <span>Reduce reuniones en un 70%</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-indigo-300 mt-0.5">•</span>
+                    <span>Alertas automáticas de sobrecarga</span>
+                  </li>
+                </ul>
               </CardContent>
             </Card>
 
@@ -1018,25 +1031,25 @@ export default function LandingPage() {
                 <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mb-4">
                   <Target className="h-6 w-6 text-white" />
                 </div>
-                  <h3 className="text-xl font-bold text-white mb-3">Para project managers</h3>
-                  <ul className="text-white/90 text-sm space-y-2">
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-purple-300 mt-0.5">•</span>
-                      <span>Gestión de múltiples proyectos</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-purple-300 mt-0.5">•</span>
-                      <span>Visualiza dependencias y cuellos de botella</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-purple-300 mt-0.5">•</span>
-                      <span>Control de presupuestos y horas</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-purple-300 mt-0.5">•</span>
-                      <span>Seguimiento de deadlines</span>
-                    </li>
-                  </ul>
+                <h3 className="text-xl font-bold text-white mb-3">Para project managers</h3>
+                <ul className="text-white/90 text-sm space-y-2">
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-purple-300 mt-0.5">•</span>
+                    <span>Gestión de múltiples proyectos</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-purple-300 mt-0.5">•</span>
+                    <span>Visualiza dependencias y cuellos de botella</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-purple-300 mt-0.5">•</span>
+                    <span>Control de presupuestos y horas</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-purple-300 mt-0.5">•</span>
+                    <span>Seguimiento de deadlines</span>
+                  </li>
+                </ul>
               </CardContent>
             </Card>
 
@@ -1045,25 +1058,25 @@ export default function LandingPage() {
                 <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-4">
                   <BarChart3 className="h-6 w-6 text-white" />
                 </div>
-                  <h3 className="text-xl font-bold text-white mb-3">Para empleados</h3>
-                  <ul className="text-white/90 text-sm space-y-2">
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-emerald-300 mt-0.5">•</span>
-                      <span>Vista clara de tu carga de trabajo</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-emerald-300 mt-0.5">•</span>
-                      <span>Priorización automática de tareas</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-emerald-300 mt-0.5">•</span>
-                      <span>Seguimiento de tu progreso</span>
-                    </li>
-                    <li className="flex items-start gap-1.5">
-                      <span className="text-emerald-300 mt-0.5">•</span>
-                      <span>Sabes qué hacer y cuándo</span>
-                    </li>
-                  </ul>
+                <h3 className="text-xl font-bold text-white mb-3">Para empleados</h3>
+                <ul className="text-white/90 text-sm space-y-2">
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Vista clara de tu carga de trabajo</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Priorización automática de tareas</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Seguimiento de tu progreso</span>
+                  </li>
+                  <li className="flex items-start gap-1.5">
+                    <span className="text-emerald-300 mt-0.5">•</span>
+                    <span>Sabes qué hacer y cuándo</span>
+                  </li>
+                </ul>
               </CardContent>
             </Card>
           </div>
@@ -1131,9 +1144,9 @@ export default function LandingPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    Nuestra plataforma te permite visualizar y gestionar la carga de trabajo de tu equipo en tiempo real. 
-                    Puedes planificar tareas, establecer deadlines, gestionar dependencias y recibir alertas automáticas 
-                    cuando detectamos sobrecargas o problemas. Todo desde una interfaz visual e intuitiva que no requiere 
+                    Nuestra plataforma te permite visualizar y gestionar la carga de trabajo de tu equipo en tiempo real.
+                    Puedes planificar tareas, establecer deadlines, gestionar dependencias y recibir alertas automáticas
+                    cuando detectamos sobrecargas o problemas. Todo desde una interfaz visual e intuitiva que no requiere
                     instalación de software adicional.
                   </AccordionContent>
                 </AccordionItem>
@@ -1146,8 +1159,8 @@ export default function LandingPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    No, nuestra plataforma es completamente web. Solo necesitas un navegador moderno y acceso a internet. 
-                    Funciona en cualquier dispositivo: ordenador, tablet o móvil. No requiere instalación de software ni 
+                    No, nuestra plataforma es completamente web. Solo necesitas un navegador moderno y acceso a internet.
+                    Funciona en cualquier dispositivo: ordenador, tablet o móvil. No requiere instalación de software ni
                     configuraciones complicadas.
                   </AccordionContent>
                 </AccordionItem>
@@ -1160,8 +1173,8 @@ export default function LandingPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    Absolutamente. Utilizamos encriptación de extremo a extremo para proteger tus datos tanto en tránsito 
-                    como en reposo. Cumplimos con el GDPR y todos los estándares de seguridad internacionales. Tienes control 
+                    Absolutamente. Utilizamos encriptación de extremo a extremo para proteger tus datos tanto en tránsito
+                    como en reposo. Cumplimos con el GDPR y todos los estándares de seguridad internacionales. Tienes control
                     total sobre tus datos y puedes exportarlos o eliminarlos en cualquier momento.
                   </AccordionContent>
                 </AccordionItem>
@@ -1174,8 +1187,8 @@ export default function LandingPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    Sí, ofrecemos una API REST completa que te permite integrar la plataforma con tus herramientas existentes. 
-                    También puedes exportar datos en múltiples formatos para trabajar con hojas de cálculo u otros sistemas. 
+                    Sí, ofrecemos una API REST completa que te permite integrar la plataforma con tus herramientas existentes.
+                    También puedes exportar datos en múltiples formatos para trabajar con hojas de cálculo u otros sistemas.
                     Además, estamos trabajando en integraciones nativas con herramientas populares.
                   </AccordionContent>
                 </AccordionItem>
@@ -1188,8 +1201,8 @@ export default function LandingPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    La plataforma está lista para usar desde el primer día. Puedes empezar a añadir tu equipo y proyectos 
-                    inmediatamente. La curva de aprendizaje es mínima gracias a nuestra interfaz intuitiva. La mayoría de 
+                    La plataforma está lista para usar desde el primer día. Puedes empezar a añadir tu equipo y proyectos
+                    inmediatamente. La curva de aprendizaje es mínima gracias a nuestra interfaz intuitiva. La mayoría de
                     los equipos están completamente operativos en menos de una semana.
                   </AccordionContent>
                 </AccordionItem>
@@ -1202,8 +1215,8 @@ export default function LandingPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    Sí, ofrecemos soporte técnico completo. Puedes contactarnos por correo electrónico y nuestro equipo te ayudará con 
-                    cualquier duda o problema. Además, tenemos documentación completa, tutoriales y una comunidad activa 
+                    Sí, ofrecemos soporte técnico completo. Puedes contactarnos por correo electrónico y nuestro equipo te ayudará con
+                    cualquier duda o problema. Además, tenemos documentación completa, tutoriales y una comunidad activa
                     donde puedes encontrar respuestas y compartir experiencias.
                   </AccordionContent>
                 </AccordionItem>
@@ -1216,8 +1229,8 @@ export default function LandingPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    Tus datos se almacenan en servidores seguros ubicados en centros de datos con certificaciones internacionales de seguridad. 
-                    Utilizamos infraestructura en la nube de nivel empresarial que garantiza alta disponibilidad, respaldo automático y 
+                    Tus datos se almacenan en servidores seguros ubicados en centros de datos con certificaciones internacionales de seguridad.
+                    Utilizamos infraestructura en la nube de nivel empresarial que garantiza alta disponibilidad, respaldo automático y
                     protección física de los servidores. Todos los datos están encriptados y protegidos por múltiples capas de seguridad.
                   </AccordionContent>
                 </AccordionItem>
@@ -1230,9 +1243,9 @@ export default function LandingPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    Solo tú y las personas de tu equipo a las que otorgues permisos específicos pueden acceder a los datos. 
-                    Utilizamos un sistema de permisos granulares que te permite controlar exactamente qué puede ver y hacer cada usuario. 
-                    Nuestro equipo técnico solo accede a los datos cuando es estrictamente necesario para proporcionar soporte, 
+                    Solo tú y las personas de tu equipo a las que otorgues permisos específicos pueden acceder a los datos.
+                    Utilizamos un sistema de permisos granulares que te permite controlar exactamente qué puede ver y hacer cada usuario.
+                    Nuestro equipo técnico solo accede a los datos cuando es estrictamente necesario para proporcionar soporte,
                     y siempre con tu autorización previa. Todos los accesos quedan registrados en un log de auditoría.
                   </AccordionContent>
                 </AccordionItem>
@@ -1245,8 +1258,8 @@ export default function LandingPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    Las contraseñas se almacenan utilizando algoritmos de hash seguros (bcrypt) que hacen imposible recuperar la contraseña original. 
-                    Nunca almacenamos contraseñas en texto plano. Además, todas las conexiones utilizan encriptación TLS/SSL para proteger 
+                    Las contraseñas se almacenan utilizando algoritmos de hash seguros (bcrypt) que hacen imposible recuperar la contraseña original.
+                    Nunca almacenamos contraseñas en texto plano. Además, todas las conexiones utilizan encriptación TLS/SSL para proteger
                     las credenciales durante el inicio de sesión. Te recomendamos usar contraseñas fuertes y únicas, y cambiarlas periódicamente.
                   </AccordionContent>
                 </AccordionItem>
@@ -1259,9 +1272,9 @@ export default function LandingPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    Puedes eliminar todos tus datos en cualquier momento desde la configuración de tu cuenta. El proceso de eliminación es 
-                    completo e irreversible: se eliminan todos los datos asociados a tu cuenta, incluyendo proyectos, asignaciones, 
-                    historial y cualquier otra información. También puedes exportar todos tus datos antes de eliminarlos si lo deseas. 
+                    Puedes eliminar todos tus datos en cualquier momento desde la configuración de tu cuenta. El proceso de eliminación es
+                    completo e irreversible: se eliminan todos los datos asociados a tu cuenta, incluyendo proyectos, asignaciones,
+                    historial y cualquier otra información. También puedes exportar todos tus datos antes de eliminarlos si lo deseas.
                     Este proceso cumple con el derecho al olvido establecido en el GDPR.
                   </AccordionContent>
                 </AccordionItem>
@@ -1298,9 +1311,9 @@ export default function LandingPage() {
               <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
                 transformar
               </span>
-              {' '}tu equipo?
+              {' '}a tu equipo?
             </h2>
-              <p className="text-lg sm:text-xl md:text-2xl text-indigo-100 mb-8 sm:mb-10 font-light max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl md:text-2xl text-indigo-100 mb-8 sm:mb-10 font-light max-w-2xl mx-auto">
               Accede ahora y descubre cómo gestionar el tiempo de tu equipo de forma inteligente.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -1311,9 +1324,9 @@ export default function LandingPage() {
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
-              <Button 
-                size="lg" 
-                variant="outline" 
+              <Button
+                size="lg"
+                variant="outline"
                 className="w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-semibold border-2 border-white/40 text-white hover:bg-white/20 hover:border-white/60 bg-white/10 backdrop-blur-md shadow-xl"
                 onClick={() => {
                   const demoSection = document.getElementById('demo');
