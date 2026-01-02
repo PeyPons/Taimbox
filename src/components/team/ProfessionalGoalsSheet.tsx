@@ -287,7 +287,7 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
 
                 <div className="border rounded-lg p-4 bg-slate-50 space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label className="text-indigo-600 flex items-center gap-2">
+                    <Label className="text-primary flex items-center gap-2">
                       <Target className="h-4 w-4" /> Resultados clave
                     </Label>
                     <span className="text-xs font-mono font-bold">{currentProgress}% completado</span>
@@ -341,7 +341,7 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
 
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={resetForm} disabled={form.formState.isSubmitting}>Cancelar</Button>
-                <Button type="submit" disabled={form.formState.isSubmitting} className="bg-indigo-600 hover:bg-indigo-700">
+                <Button type="submit" disabled={form.formState.isSubmitting} className="bg-primary hover:bg-primary/90">
                   {form.formState.isSubmitting ? 'Guardando...' : 'Guardar objetivo'}
                 </Button>
               </div>
@@ -349,7 +349,7 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
           </Form>
         ) : (
           <div className="py-6 space-y-4">
-            <Button className="w-full bg-indigo-600 hover:bg-indigo-700" onClick={() => setIsAdding(true)}>
+            <Button className="w-full bg-primary hover:bg-primary/90" onClick={() => setIsAdding(true)}>
               <Plus className="mr-2 h-4 w-4" /> Nuevo objetivo (OKR)
             </Button>
 
@@ -370,7 +370,7 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
                         <div className="flex items-center gap-3 text-xs text-muted-foreground">
                           {goal.dueDate && <span>Vence: {format(new Date(goal.dueDate), 'd MMM yyyy', { locale: es })}</span>}
                           {goal.trainingUrl && (
-                            <a href={goal.trainingUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-indigo-600 hover:underline">
+                            <a href={goal.trainingUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary hover:underline">
                               <ExternalLink className="h-3 w-3" /> Formación
                             </a>
                           )}
@@ -385,7 +385,7 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
                     <div className="space-y-1">
                       <div className="flex justify-between text-xs">
                         <span className="text-muted-foreground">Progreso general</span>
-                        <span className={cn("font-bold", goalProgress === 100 ? "text-emerald-600" : "text-indigo-600")}>{goalProgress}%</span>
+                        <span className={cn("font-bold", goalProgress === 100 ? "text-emerald-600" : "text-primary")}>{goalProgress}%</span>
                       </div>
                       <Progress value={goalProgress} className={cn("h-2", goalProgress === 100 && "[&>div]:bg-emerald-500")} />
                     </div>

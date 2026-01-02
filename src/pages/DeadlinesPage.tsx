@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useApp } from '@/contexts/AppContext';
+import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -29,7 +31,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Deadline, GlobalAssignment } from '@/types';
 import { cn, isKitDigitalProject } from '@/lib/utils';
-import { format, addMonths, subMonths, getDaysInMonth, startOfMonth, endOfMonth } from 'date-fns';
+import { format, addMonths, subMonths, getDaysInMonth, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange, getTeamEventDetailsInRange } from '@/utils/teamEventUtils';
@@ -51,8 +53,8 @@ export default function DeadlinesPage() {
   // Estados de filtros y vista
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
   const [searchTerm, setSearchTerm] = useState('');
-  const [onlySEO, setOnlySEO] = useState(true);
-  const [onlyPPC, setOnlyPPC] = useState(false);
+  const { activeFilters, filterProject } = useProjectFilters();
+  const [filterId, setFilterId] = useState<string>('all');
   const [showHidden, setShowHidden] = useState(false);
   const [showUnassignedOnly, setShowUnassignedOnly] = useState(false);
   const [filterByEmployee, setFilterByEmployee] = useState<string>('all');
@@ -84,6 +86,8 @@ export default function DeadlinesPage() {
     employeeHours: {} as Record<string, number>,
     isHidden: false
   });
+
+  const [confirmAction, setConfirmAction] = useState<{ type: 'delete_deadline' | 'delete_allocation' | 'copy_month', id?: string, data?: any } | null>(null);
 
   const globalAssignmentFormSchema = z.object({
     name: z.string().min(1, 'El nombre es obligatorio'),
@@ -585,27 +589,9 @@ export default function DeadlinesPage() {
       });
     }
 
-    // Filtrar solo SEO (excluir SEM, RRSS, Social, PPC, DV360)
-    if (onlySEO) {
-      filtered = filtered.filter(p => {
-        const projectName = p.name.toUpperCase();
-        return !projectName.includes('SEM') &&
-          !projectName.includes('RRSS') &&
-          !projectName.includes('SOCIAL') &&
-          !projectName.includes('PPC') &&
-          !projectName.includes('DV360');
-      });
-    }
-
-    // Filtrar solo PPC (incluir SEM, Social, PPC, DV360)
-    if (onlyPPC) {
-      filtered = filtered.filter(p => {
-        const projectName = p.name.toUpperCase();
-        return projectName.includes('SEM') ||
-          projectName.includes('SOCIAL') ||
-          projectName.includes('PPC') ||
-          projectName.includes('DV360');
-      });
+    // Filtro dinámico de proyectos (reemplaza a SEO/PPC hardcodeados)
+    if (filterId !== 'all') {
+      filtered = filtered.filter(p => filterProject(p, filterId));
     }
 
     // Filtrar ocultos
@@ -655,7 +641,7 @@ export default function DeadlinesPage() {
     });
 
     return filtered;
-  }, [projects, clients, searchTerm, onlySEO, onlyPPC, showHidden, showUnassignedOnly, hiddenProjects, filterByEmployee, deadlines, selectedMonth, sortBy]);
+  }, [projects, clients, searchTerm, filterId, showHidden, showUnassignedOnly, hiddenProjects, filterByEmployee, deadlines, selectedMonth, sortBy, filterProject]);
 
   // Agrupar proyectos por cliente (unificando Kit Digital)
   const projectsByClient = useMemo(() => {
@@ -856,35 +842,52 @@ export default function DeadlinesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar este deadline?')) return;
+  const confirmDeleteDeadline = async () => {
+    if (!editingDeadline) return;
 
     try {
       const { error } = await supabase
         .from('deadlines')
         .delete()
-        .eq('id', id);
+        .eq('id', editingDeadline.id);
 
       if (error) throw error;
 
-      const deleted = deadlines.find(d => d.id === id);
-      if (deleted) {
-        setHiddenProjects(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(deleted.projectId);
-          return newSet;
-        });
-      }
-
-      setDeadlines(prev => prev.filter(d => d.id !== id));
+      setDeadlines(prev => prev.filter(d => d.id !== editingDeadline.id));
       toast.success('Deadline eliminado');
+      setIsDialogOpen(false);
     } catch (error) {
       console.error('Error eliminando deadline:', error);
       toast.error('Error al eliminar deadline');
     }
   };
 
-  const handleDeleteGlobal = async (id: string) => {
+  const handleDeleteDeadline = () => {
+    if (!editingDeadline) return;
+    setConfirmAction({ type: 'delete_deadline', id: editingDeadline.id });
+  };
+
+  const confirmDeleteGlobal = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('global_assignments')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setGlobalAssignments(prev => prev.filter(a => a.id !== id));
+      toast.success('Asignación eliminada');
+      if (isGlobalDialogOpen) setIsGlobalDialogOpen(false);
+    } catch (error) {
+      console.error('Error eliminando asignación global:', error);
+      toast.error('Error al eliminar asignación global');
+    }
+  };
+
+
+
+  const handleDeleteGlobal = (id: string) => {
     if (!currentUser) {
       toast.error('No hay usuario autenticado');
       return;
@@ -902,22 +905,22 @@ export default function DeadlinesPage() {
       return;
     }
 
-    if (!confirm('¿Estás seguro de eliminar esta asignación global?')) return;
+    setConfirmAction({ type: 'delete_allocation', id: id });
+  };
 
-    try {
-      const { error } = await supabase
-        .from('global_assignments')
-        .delete()
-        .eq('id', id);
+  const handleConfirmAction = async () => {
+    if (!confirmAction) return;
 
-      if (error) throw error;
-
-      setGlobalAssignments(prev => prev.filter(a => a.id !== id));
-      toast.success('Asignación global eliminada');
-    } catch (error) {
-      console.error('Error eliminando asignación global:', error);
-      toast.error('Error al eliminar asignación global');
+    if (confirmAction.type === 'delete_deadline') {
+      await confirmDeleteDeadline();
+    } else if (confirmAction.type === 'delete_allocation') {
+      if (confirmAction.id) {
+        await confirmDeleteGlobal(confirmAction.id);
+      }
+    } else if (confirmAction.type === 'copy_month') {
+      await executeCopyFromPreviousMonth();
     }
+    setConfirmAction(null);
   };
 
   // Funciones para gestionar locks de edición
@@ -1368,82 +1371,96 @@ export default function DeadlinesPage() {
     return Object.values(deadline.employeeHours).reduce((sum, hours) => sum + hours, 0);
   };
 
-  // Copiar deadlines del mes anterior
-  const copyFromPreviousMonth = async () => {
-    const [year, month] = selectedMonth.split('-').map(Number);
-    const prevMonth = format(subMonths(new Date(year, month - 1), 1), 'yyyy-MM');
-
+  const executeCopyFromPreviousMonth = async () => {
+    setIsLoading(true);
     try {
-      // Cargar deadlines del mes anterior desde la base de datos
-      const { data: previousData, error: loadError } = await supabase
+      // 1. Obtener deadlines del mes anterior
+      const previousMonth = format(subMonths(parseISO(`${selectedMonth}-01`), 1), 'yyyy-MM');
+      const { data: previousDeadlines, error: fetchError } = await supabase
         .from('deadlines')
         .select('*')
-        .eq('month', prevMonth);
+        .eq('month', previousMonth);
 
-      if (loadError) throw loadError;
+      if (fetchError) throw fetchError;
 
-      if (!previousData || previousData.length === 0) {
-        toast.error('No hay datos del mes anterior para copiar');
+      if (!previousDeadlines || previousDeadlines.length === 0) {
+        toast.info('No hay deadlines en el mes anterior');
         return;
       }
 
-      const previousDeadlines = previousData.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean }) => ({
-        id: d.id,
-        projectId: d.project_id,
-        month: d.month,
+      // 2. Insertarlos en el mes actual
+      const newDeadlines = previousDeadlines.map((d: any) => ({
+        project_id: d.project_id,
+        month: selectedMonth,
         notes: d.notes,
-        employeeHours: d.employee_hours || {},
-        isHidden: d.is_hidden || false
+        employee_hours: d.employee_hours,
+        is_hidden: d.is_hidden
       }));
 
-      if (!confirm(`¿Copiar ${previousDeadlines.length} deadlines del mes anterior?`)) return;
+      const { data: insertedData, error: insertError } = await supabase
+        .from('deadlines')
+        .insert(newDeadlines)
+        .select();
 
-      let copied = 0;
-      let skipped = 0;
+      if (insertError) throw insertError;
 
-      for (const deadline of previousDeadlines) {
-        // Verificar que no exista ya en el mes actual
-        const existing = deadlines.find(d => d.projectId === deadline.projectId);
-        if (existing) {
-          skipped++;
-          continue;
-        }
+      // 3. Actualizar estado local
+      if (insertedData) {
+        setDeadlines(prev => [
+          ...prev,
+          ...insertedData.map((d: any) => ({
+            id: d.id,
+            projectId: d.project_id,
+            month: d.month,
+            notes: d.notes,
+            employeeHours: d.employee_hours || {},
+            isHidden: d.is_hidden || false
+          }))
+        ]);
 
-        const { data, error } = await supabase
-          .from('deadlines')
-          .insert({
-            project_id: deadline.projectId,
-            month: selectedMonth,
-            notes: deadline.notes,
-            employee_hours: deadline.employeeHours,
-            is_hidden: deadline.isHidden
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        setDeadlines(prev => [...prev, {
-          id: data.id,
-          projectId: data.project_id,
-          month: data.month,
-          notes: data.notes,
-          employeeHours: data.employee_hours || {},
-          isHidden: data.is_hidden || false
-        }]);
-        copied++;
+        // Actualizar hidden projects
+        insertedData.forEach((d: any) => {
+          if (d.is_hidden) {
+            setHiddenProjects(prev => new Set([...prev, d.project_id]));
+          }
+        });
       }
 
-      if (copied > 0 && skipped > 0) {
-        toast.success(`Se copiaron ${copied} deadlines (${skipped} ya existían)`);
-      } else if (copied > 0) {
-        toast.success(`Se copiaron ${copied} deadlines`);
-      } else {
-        toast.info('Todos los deadlines ya existían en este mes');
-      }
+      toast.success(`Se copiaron ${insertedData ? insertedData.length : 0} deadlines`);
     } catch (error) {
       console.error('Error copiando deadlines:', error);
-      toast.error((error as Error)?.message || 'Error al copiar');
+      toast.error('Error al copiar deadlines');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const copyFromPreviousMonth = async () => {
+    setIsLoading(true);
+    try {
+      const previousMonth = format(subMonths(parseISO(`${selectedMonth}-01`), 1), 'yyyy-MM');
+      const { data: previousDeadlines, error: fetchError } = await supabase
+        .from('deadlines')
+        .select('id') // Only need count
+        .eq('month', previousMonth);
+
+      if (fetchError) throw fetchError;
+
+      if (!previousDeadlines || previousDeadlines.length === 0) {
+        toast.info('No hay deadlines en el mes anterior');
+        return;
+      }
+
+      setConfirmAction({
+        type: 'copy_month',
+        data: { count: previousDeadlines.length }
+      });
+
+    } catch (error) {
+      console.error('Error checking previous deadlines:', error);
+      toast.error('Error al verificar deadlines anteriores');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -1648,7 +1665,7 @@ export default function DeadlinesPage() {
                             <div key={emp.id} className="flex items-center gap-2">
                               <Avatar className="h-6 w-6 flex-shrink-0">
                                 <AvatarImage src={emp.avatarUrl} alt={emp.name} />
-                                <AvatarFallback className="bg-indigo-500 text-white text-[9px]">
+                                <AvatarFallback className="bg-primary/100 text-white text-[9px]">
                                   {(emp.first_name || emp.name)[0]}
                                 </AvatarFallback>
                               </Avatar>
@@ -1688,31 +1705,22 @@ export default function DeadlinesPage() {
               />
             </div>
           </div>
+
+
           <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
-            <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
-              <span className="text-slate-600 whitespace-nowrap">SEO</span>
-              <Switch
-                id="only-seo"
-                checked={onlySEO}
-                onCheckedChange={(checked) => {
-                  setOnlySEO(checked);
-                  if (checked) setOnlyPPC(false);
-                }}
-                className="scale-75 sm:scale-90"
-              />
-            </label>
-            <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
-              <span className="text-slate-600 whitespace-nowrap">PPC</span>
-              <Switch
-                id="only-ppc"
-                checked={onlyPPC}
-                onCheckedChange={(checked) => {
-                  setOnlyPPC(checked);
-                  if (checked) setOnlySEO(false);
-                }}
-                className="scale-75 sm:scale-90"
-              />
-            </label>
+            <Select value={filterId} onValueChange={setFilterId}>
+              <SelectTrigger className="w-[120px] sm:w-[140px] h-8 sm:h-9 text-xs sm:text-sm">
+                <SelectValue placeholder="Tipo de Proyecto" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {activeFilters.map(filter => (
+                  <SelectItem key={filter.id} value={filter.id}>
+                    {filter.displayName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
               <span className="text-slate-600 whitespace-nowrap">Ocultos</span>
               <Switch
@@ -1823,7 +1831,7 @@ export default function DeadlinesPage() {
                             key={project.id}
                             className={cn(
                               isHidden && "opacity-40",
-                              isEditing && "bg-indigo-50/40",
+                              isEditing && "bg-primary/10/40",
                               isOverBudget && !isEditing && "bg-red-50/40"
                             )}
                           >
@@ -1831,7 +1839,7 @@ export default function DeadlinesPage() {
                             <div
                               className={cn(
                                 "flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-slate-50 transition-colors",
-                                isEditing && "hover:bg-indigo-50/40"
+                                isEditing && "hover:bg-primary/10/40"
                               )}
                               onClick={() => !isEditing && startEditingProject(project.id)}
                             >
@@ -1874,12 +1882,12 @@ export default function DeadlinesPage() {
                                     >
                                       <Avatar className="h-5 w-5">
                                         <AvatarImage src={emp.avatarUrl} alt={emp.name} />
-                                        <AvatarFallback className="bg-indigo-500 text-white text-[9px]">
+                                        <AvatarFallback className="bg-primary/100 text-white text-[9px]">
                                           {(emp.first_name || emp.name)[0]}
                                         </AvatarFallback>
                                       </Avatar>
                                       <span className="text-xs text-slate-600">{emp.first_name || emp.name}</span>
-                                      <span className="text-xs font-mono font-bold text-indigo-600">{hours}h</span>
+                                      <span className="text-xs font-mono font-bold text-primary">{hours}h</span>
                                     </div>
                                   );
                                 })}
@@ -1912,7 +1920,7 @@ export default function DeadlinesPage() {
                                     <div key={emp.id} className="flex items-center gap-2 bg-white border rounded-lg px-2.5 py-1.5">
                                       <Avatar className="h-6 w-6">
                                         <AvatarImage src={emp.avatarUrl} alt={emp.name} />
-                                        <AvatarFallback className="bg-indigo-500 text-white text-[9px]">
+                                        <AvatarFallback className="bg-primary/100 text-white text-[9px]">
                                           {(emp.first_name || emp.name)[0]}
                                         </AvatarFallback>
                                       </Avatar>
@@ -2026,207 +2034,209 @@ export default function DeadlinesPage() {
       </div>
 
       {/* Panel lateral sticky - Disponibilidad del equipo (solo desktop) */}
-      {!isMobile && (
-        <div className="w-64 flex-shrink-0">
-          <div className="sticky top-6 space-y-4">
-            {/* Disponibilidad en tiempo real */}
-            <div className="bg-white rounded-xl border shadow-sm p-3" data-tour="availability-panel">
-              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-                Disponibilidad
-              </h3>
-              <div className="space-y-2">
-                {activeEmployees.map(emp => {
-                  const capacityData = getMonthlyCapacity(emp.id);
-                  const assigned = getEmployeeAssignedHours(emp.id);
-                  const available = capacityData.available;
-                  const percentage = available > 0 ? Math.round((assigned / available) * 100) : 0;
-                  const remaining = available - assigned;
-                  const status = percentage > 100 ? 'overload' : percentage > 85 ? 'warning' : 'healthy';
-                  const hasReductions = capacityData.absenceHours > 0 || capacityData.eventHours > 0;
+      {
+        !isMobile && (
+          <div className="w-64 flex-shrink-0">
+            <div className="sticky top-6 space-y-4">
+              {/* Disponibilidad en tiempo real */}
+              <div className="bg-white rounded-xl border shadow-sm p-3" data-tour="availability-panel">
+                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                  Disponibilidad
+                </h3>
+                <div className="space-y-2">
+                  {activeEmployees.map(emp => {
+                    const capacityData = getMonthlyCapacity(emp.id);
+                    const assigned = getEmployeeAssignedHours(emp.id);
+                    const available = capacityData.available;
+                    const percentage = available > 0 ? Math.round((assigned / available) * 100) : 0;
+                    const remaining = available - assigned;
+                    const status = percentage > 100 ? 'overload' : percentage > 85 ? 'warning' : 'healthy';
+                    const hasReductions = capacityData.absenceHours > 0 || capacityData.eventHours > 0;
 
-                  return (
-                    <TooltipProvider key={emp.id}>
+                    return (
+                      <TooltipProvider key={emp.id}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center gap-2 cursor-help">
+                              <Avatar className="h-6 w-6 flex-shrink-0">
+                                <AvatarImage src={emp.avatarUrl} alt={emp.name} />
+                                <AvatarFallback className="bg-primary/100 text-white text-[9px]">
+                                  {(emp.first_name || emp.name)[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="truncate font-medium text-slate-700">
+                                    {emp.first_name || emp.name}
+                                    {hasReductions && <span className="text-orange-400 ml-1">*</span>}
+                                  </span>
+                                  <span className={cn(
+                                    "font-mono font-bold",
+                                    status === 'overload' ? "text-red-600" :
+                                      status === 'warning' ? "text-orange-600" :
+                                        "text-emerald-600"
+                                  )}>
+                                    {percentage}%
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1 mt-0.5">
+                                  <Progress
+                                    value={Math.min(percentage, 100)}
+                                    className={cn(
+                                      "h-1 flex-1",
+                                      status === 'overload' && "[&>div]:bg-red-500",
+                                      status === 'warning' && "[&>div]:bg-orange-500",
+                                      status === 'healthy' && "[&>div]:bg-emerald-500"
+                                    )}
+                                  />
+                                  <span className={cn(
+                                    "text-[10px] font-mono w-10 text-right",
+                                    remaining < 0 ? "text-red-500" : "text-slate-400"
+                                  )}>
+                                    {remaining.toFixed(0)}h
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" className="text-xs max-w-[280px] bg-white border border-slate-200 shadow-xl">
+                            <div className="space-y-2 text-slate-700">
+                              <div className="font-semibold text-slate-900 text-sm">{emp.first_name || emp.name}</div>
+                              <div className="text-slate-600">Base mensual: <span className="font-medium">{capacityData.total.toFixed(1)}h</span></div>
+
+                              {capacityData.absenceDetails.length > 0 && (
+                                <div className="space-y-1">
+                                  <div className="text-red-600 font-semibold text-xs">Ausencias:</div>
+                                  {capacityData.absenceDetails.map((a, i) => (
+                                    <div key={i} className="text-red-700 pl-3 text-xs">
+                                      • {a.type === 'vacation' ? 'Vacaciones' :
+                                        a.type === 'sick_leave' ? 'Baja médica' :
+                                          a.type === 'personal' ? 'Personal' : a.type}
+                                      : <span className="font-medium">-{a.hours.toFixed(1)}h</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {capacityData.eventDetails.length > 0 && (
+                                <div className="space-y-1">
+                                  <div className="text-orange-600 font-semibold text-xs">Eventos:</div>
+                                  {capacityData.eventDetails.map((e, i) => (
+                                    <div key={i} className="text-orange-700 pl-3 text-xs">
+                                      • {e.name}: <span className="font-medium">-{e.hours.toFixed(1)}h</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              <div className="border-t border-slate-200 pt-2 mt-2">
+                                <span className="text-slate-600">Disponible: </span>
+                                <span className="font-mono font-bold text-slate-900 text-sm">{available.toFixed(1)}h</span>
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Tips de redistribución */}
+              {redistributionTips.length > 0 && (
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-3" data-tour="suggestions">
+                  <h3 className="text-xs font-semibold text-orange-800 uppercase tracking-wide mb-2 flex items-center gap-1">
+                    <Sparkles className="h-3 w-3" />
+                    Sugerencias
+                    <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="flex items-center gap-2 cursor-help">
-                            <Avatar className="h-6 w-6 flex-shrink-0">
-                              <AvatarImage src={emp.avatarUrl} alt={emp.name} />
-                              <AvatarFallback className="bg-indigo-500 text-white text-[9px]">
-                                {(emp.first_name || emp.name)[0]}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="truncate font-medium text-slate-700">
-                                  {emp.first_name || emp.name}
-                                  {hasReductions && <span className="text-orange-400 ml-1">*</span>}
-                                </span>
-                                <span className={cn(
-                                  "font-mono font-bold",
-                                  status === 'overload' ? "text-red-600" :
-                                    status === 'warning' ? "text-orange-600" :
-                                      "text-emerald-600"
-                                )}>
-                                  {percentage}%
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1 mt-0.5">
-                                <Progress
-                                  value={Math.min(percentage, 100)}
-                                  className={cn(
-                                    "h-1 flex-1",
-                                    status === 'overload' && "[&>div]:bg-red-500",
-                                    status === 'warning' && "[&>div]:bg-orange-500",
-                                    status === 'healthy' && "[&>div]:bg-emerald-500"
-                                  )}
-                                />
-                                <span className={cn(
-                                  "text-[10px] font-mono w-10 text-right",
-                                  remaining < 0 ? "text-red-500" : "text-slate-400"
-                                )}>
-                                  {remaining.toFixed(0)}h
-                                </span>
-                              </div>
-                            </div>
-                          </div>
+                          <HelpCircle className="h-3 w-3 text-orange-600 cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent side="left" className="text-xs max-w-[280px] bg-white border border-slate-200 shadow-xl">
-                          <div className="space-y-2 text-slate-700">
-                            <div className="font-semibold text-slate-900 text-sm">{emp.first_name || emp.name}</div>
-                            <div className="text-slate-600">Base mensual: <span className="font-medium">{capacityData.total.toFixed(1)}h</span></div>
-
-                            {capacityData.absenceDetails.length > 0 && (
-                              <div className="space-y-1">
-                                <div className="text-red-600 font-semibold text-xs">Ausencias:</div>
-                                {capacityData.absenceDetails.map((a, i) => (
-                                  <div key={i} className="text-red-700 pl-3 text-xs">
-                                    • {a.type === 'vacation' ? 'Vacaciones' :
-                                      a.type === 'sick_leave' ? 'Baja médica' :
-                                        a.type === 'personal' ? 'Personal' : a.type}
-                                    : <span className="font-medium">-{a.hours.toFixed(1)}h</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-
-                            {capacityData.eventDetails.length > 0 && (
-                              <div className="space-y-1">
-                                <div className="text-orange-600 font-semibold text-xs">Eventos:</div>
-                                {capacityData.eventDetails.map((e, i) => (
-                                  <div key={i} className="text-orange-700 pl-3 text-xs">
-                                    • {e.name}: <span className="font-medium">-{e.hours.toFixed(1)}h</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-
-                            <div className="border-t border-slate-200 pt-2 mt-2">
-                              <span className="text-slate-600">Disponible: </span>
-                              <span className="font-mono font-bold text-slate-900 text-sm">{available.toFixed(1)}h</span>
-                            </div>
+                        <TooltipContent side="right" className="max-w-xs z-[100]">
+                          <div className="text-xs space-y-2">
+                            <p className="font-semibold">Cálculo de sugerencias:</p>
+                            <ul className="list-disc list-inside space-y-1 text-slate-600">
+                              <li>Se calcula la carga promedio del equipo</li>
+                              <li>Se identifican empleados por encima y por debajo de la media</li>
+                              <li>Umbral: 3 puntos si el rango es estrecho (≤15 puntos), o 1.5× desviación estándar si es amplio</li>
+                              <li>Solo se sugieren transferencias entre empleados que comparten proyectos</li>
+                              <li>Se priorizan las sugerencias que más equilibran el equipo</li>
+                            </ul>
                           </div>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Tips de redistribución */}
-            {redistributionTips.length > 0 && (
-              <div className="bg-orange-50 border border-orange-200 rounded-xl p-3" data-tour="suggestions">
-                <h3 className="text-xs font-semibold text-orange-800 uppercase tracking-wide mb-2 flex items-center gap-1">
-                  <Sparkles className="h-3 w-3" />
-                  Sugerencias
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <HelpCircle className="h-3 w-3 text-orange-600 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent side="right" className="max-w-xs z-[100]">
-                        <div className="text-xs space-y-2">
-                          <p className="font-semibold">Cálculo de sugerencias:</p>
-                          <ul className="list-disc list-inside space-y-1 text-slate-600">
-                            <li>Se calcula la carga promedio del equipo</li>
-                            <li>Se identifican empleados por encima y por debajo de la media</li>
-                            <li>Umbral: 3 puntos si el rango es estrecho (≤15 puntos), o 1.5× desviación estándar si es amplio</li>
-                            <li>Solo se sugieren transferencias entre empleados que comparten proyectos</li>
-                            <li>Se priorizan las sugerencias que más equilibran el equipo</li>
-                          </ul>
+                  </h3>
+                  <div className="space-y-2">
+                    {redistributionTips.map((tip, i) => (
+                      <div key={i} className="text-xs bg-white border border-orange-100 rounded p-2">
+                        <div className="font-medium text-slate-800 mb-0.5">
+                          {tip.from} → {tip.to}
                         </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </h3>
-                <div className="space-y-2">
-                  {redistributionTips.map((tip, i) => (
-                    <div key={i} className="text-xs bg-white border border-orange-100 rounded p-2">
-                      <div className="font-medium text-slate-800 mb-0.5">
-                        {tip.from} → {tip.to}
-                      </div>
-                      <div className="text-slate-500 text-[10px]">
-                        {tip.reason}
-                      </div>
-                      {tip.projects.length > 0 && (
-                        <div className="text-[10px] text-orange-600 mt-1">
-                          En común: {tip.projects.slice(0, 2).join(', ')}
+                        <div className="text-slate-500 text-[10px]">
+                          {tip.reason}
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Tareas globales compactas */}
-            <div className="bg-white rounded-xl border shadow-sm p-3" data-tour="global-assignments">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Otras asignaciones
-                </h3>
-                <Button onClick={() => openGlobalDialog()} size="sm" variant="ghost" className="h-6 w-6 p-0">
-                  <Plus className="h-3 w-3" />
-                </Button>
-              </div>
-              {globalAssignments.length === 0 ? (
-                <div className="text-[10px] text-slate-400 italic">Sin asignaciones extra</div>
-              ) : (
-                <div className="space-y-1">
-                  {globalAssignments.map(a => {
-                    const canDelete = !a.employeeId || a.employeeId === currentUser?.id;
-                    return (
-                      <div key={a.id} className="flex items-center justify-between text-xs group">
-                        <span className="truncate text-slate-600">{a.name}</span>
-                        <div className="flex items-center gap-1">
-                          <span className="font-mono text-indigo-600">+{a.hours}h</span>
-                          <button
-                            onClick={() => openGlobalDialog(a)}
-                            className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-slate-600"
-                          >
-                            <Pencil className="h-2.5 w-2.5" />
-                          </button>
-                          {canDelete && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteGlobal(a.id);
-                              }}
-                              className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600"
-                            >
-                              <Trash2 className="h-2.5 w-2.5" />
-                            </button>
-                          )}
-                        </div>
+                        {tip.projects.length > 0 && (
+                          <div className="text-[10px] text-orange-600 mt-1">
+                            En común: {tip.projects.slice(0, 2).join(', ')}
+                          </div>
+                        )}
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
               )}
+
+              {/* Tareas globales compactas */}
+              <div className="bg-white rounded-xl border shadow-sm p-3" data-tour="global-assignments">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    Otras asignaciones
+                  </h3>
+                  <Button onClick={() => openGlobalDialog()} size="sm" variant="ghost" className="h-6 w-6 p-0">
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+                {globalAssignments.length === 0 ? (
+                  <div className="text-[10px] text-slate-400 italic">Sin asignaciones extra</div>
+                ) : (
+                  <div className="space-y-1">
+                    {globalAssignments.map(a => {
+                      const canDelete = !a.employeeId || a.employeeId === currentUser?.id;
+                      return (
+                        <div key={a.id} className="flex items-center justify-between text-xs group">
+                          <span className="truncate text-slate-600">{a.name}</span>
+                          <div className="flex items-center gap-1">
+                            <span className="font-mono text-primary">+{a.hours}h</span>
+                            <button
+                              onClick={() => openGlobalDialog(a)}
+                              className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-slate-600"
+                            >
+                              <Pencil className="h-2.5 w-2.5" />
+                            </button>
+                            {canDelete && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteGlobal(a.id);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600"
+                              >
+                                <Trash2 className="h-2.5 w-2.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Dialog para asignaciones globales */}
       <Dialog open={isGlobalDialogOpen} onOpenChange={setIsGlobalDialogOpen}>
@@ -2338,7 +2348,7 @@ export default function DeadlinesPage() {
                 <Button type="button" variant="outline" onClick={() => setIsGlobalDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700">
+                <Button type="submit" className="bg-primary hover:bg-primary/90">
                   <Save className="h-4 w-4 mr-2" />
                   Guardar
                 </Button>
@@ -2347,7 +2357,32 @@ export default function DeadlinesPage() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction?.type === 'delete_deadline' && '¿Eliminar deadline?'}
+              {confirmAction?.type === 'delete_allocation' && '¿Eliminar asignación?'}
+              {confirmAction?.type === 'copy_month' && '¿Copiar deadlines?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction?.type === 'delete_deadline' && 'Esta acción eliminará la planificación de este proyecto para este mes.'}
+              {confirmAction?.type === 'delete_allocation' && 'Esta acción eliminará la asignación global.'}
+              {confirmAction?.type === 'copy_month' && `Se copiarán ${confirmAction.data?.count} deadlines del mes anterior a este mes.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmAction}
+              className={cn(confirmAction?.type === 'copy_month' ? "" : "bg-red-600 hover:bg-red-700")}
+            >
+              {confirmAction?.type === 'copy_month' ? 'Copiar' : 'Eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
-

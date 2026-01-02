@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -44,10 +45,9 @@ export default function WeeklyForecastPage() {
   const [filterTransferStatus, setFilterTransferStatus] = useState<'all' | 'pending' | 'kept' | 'distributed'>('all');
   const [filterProjectStatus, setFilterProjectStatus] = useState<string>('all'); // all, red, yellow, green
   const [filterClient, setFilterClient] = useState<string>('all');
-  const [filterProjectType, setFilterProjectType] = useState<string>('all'); // all, SEO, PPC
+  const { activeFilters, filterProject } = useProjectFilters();
+  const [filterId, setFilterId] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'name' | 'status' | 'difference' | 'contracted'>('status');
-  const [onlySEO, setOnlySEO] = useState(false);
-  const [onlyPPC, setOnlyPPC] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('forecast_date', currentMonth.toISOString());
@@ -84,12 +84,9 @@ export default function WeeklyForecastPage() {
       filteredProjects = filteredProjects.filter(p => p.clientId === filterClient);
     }
 
-    // Filtro por tipo de proyecto (SEO/PPC) - ahora con switches
-    if (onlySEO) {
-      filteredProjects = filteredProjects.filter(p => p.projectType !== 'PPC');
-    }
-    if (onlyPPC) {
-      filteredProjects = filteredProjects.filter(p => p.projectType === 'PPC');
+    // Filtro por tipo de proyecto (Dynamic)
+    if (filterId !== 'all') {
+      filteredProjects = filteredProjects.filter(p => filterProject(p, filterId));
     }
 
     const today = new Date();
@@ -108,9 +105,9 @@ export default function WeeklyForecastPage() {
       const completed = monthAllocations.filter(a => a.status === 'completed');
       const planned = monthAllocations.filter(a => a.status !== 'completed');
 
-      // Para tareas completadas: usar hoursActual si existe, sino hoursAssigned
+      // Para tareas completadas: usar hoursComputed si existe (es la fuente de verdad de facturación), sino fallback a real/asignado
       const completedHours = round2(
-        completed.reduce((sum, a) => sum + ((a.hoursActual || 0) > 0 ? (a.hoursActual || 0) : a.hoursAssigned), 0)
+        completed.reduce((sum, a) => sum + (a.hoursComputed !== undefined ? a.hoursComputed : ((a.hoursActual || 0) > 0 ? (a.hoursActual || 0) : a.hoursAssigned)), 0)
       );
 
       // Para tareas planificadas: usar hoursAssigned (son futuras)
@@ -118,19 +115,28 @@ export default function WeeklyForecastPage() {
         planned.reduce((sum, a) => sum + a.hoursAssigned, 0)
       );
 
+      // Realizado = Computado (de completadas) + Planificado (de pendientes)
+      // Esto refleja "Qué se va a cobrar" = Lo ya hecho (computado) + Lo que falta (planificado)
       const realized = round2(completedHours + plannedHours);
       const difference = round2(contracted - realized);
 
+      const minimum = project.minimumHours || 0;
+
       let status: 'red' | 'yellow' | 'green';
-      // Si no hay horas planificadas pero hay horas contratadas, es "yellow" (pendiente)
-      if (contracted > 0 && realized === 0 && plannedHours === 0) {
-        status = 'yellow'; // Faltan horas por asignar
-      } else if (difference < -5) {
-        status = 'red'; // Nos pasamos por más de 5 horas
-      } else if (difference > 5) {
-        status = 'yellow'; // Faltan más de 5 horas
+
+      // Lógica con Mínimos:
+      const targetHours = minimum > 0 ? minimum : contracted;
+      const hoursMissing = targetHours - realized;
+
+      // Si nos pasamos del budget (siempre alerta roja)
+      if (contracted > 0 && realized > (contracted + 5)) {
+        status = 'red';
+      }
+      // Si faltan horas para llegar al objetivo (sea mínimo o budget)
+      else if (hoursMissing > 5) {
+        status = 'yellow';
       } else {
-        status = 'green'; // On track (±5 horas de margen)
+        status = 'green';
       }
 
       return {
@@ -166,7 +172,7 @@ export default function WeeklyForecastPage() {
     });
 
     return Array.isArray(forecastData) ? forecastData : [];
-  }, [projects, allocations, clients, currentMonth, filterClient, filterProjectStatus, onlySEO, onlyPPC]);
+  }, [projects, allocations, clients, currentMonth, filterClient, filterProjectStatus, filterId, filterProject]);
 
   // Sección B: Transferencias de horas (rediseñado) - muestra quién le pasó a quién
 
@@ -859,30 +865,19 @@ export default function WeeklyForecastPage() {
               </Popover>
             </div>
             <div className="flex items-center gap-4 text-sm">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <span className="text-slate-600 whitespace-nowrap">Solo SEO</span>
-                <Switch
-                  id="only-seo"
-                  checked={onlySEO}
-                  onCheckedChange={(checked) => {
-                    setOnlySEO(checked);
-                    if (checked) setOnlyPPC(false);
-                  }}
-                  className="scale-90"
-                />
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <span className="text-slate-600 whitespace-nowrap">Solo PPC</span>
-                <Switch
-                  id="only-ppc"
-                  checked={onlyPPC}
-                  onCheckedChange={(checked) => {
-                    setOnlyPPC(checked);
-                    if (checked) setOnlySEO(false);
-                  }}
-                  className="scale-90"
-                />
-              </label>
+              <Select value={filterId} onValueChange={setFilterId}>
+                <SelectTrigger className="w-[140px] h-8 text-xs">
+                  <SelectValue placeholder="Tipo de Proyecto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {activeFilters.map(filter => (
+                    <SelectItem key={filter.id} value={filter.id}>
+                      {filter.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -1007,14 +1002,26 @@ export default function WeeklyForecastPage() {
                         </div>
                       </CardHeader>
                       <CardContent className="pt-0">
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div>
-                            <span className="text-muted-foreground">Contratado:</span>
-                            <span className="font-bold ml-1">{proj.contracted}h</span>
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-2 gap-2 text-xs border-b border-slate-100 pb-2">
+                            <div>
+                              <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Contratado</span>
+                              <span className="font-bold text-sm block">{proj.contracted}h</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Total Est.</span>
+                              <span className="font-bold text-sm block">{proj.realized}h</span>
+                            </div>
                           </div>
-                          <div>
-                            <span className="text-muted-foreground">Realizado:</span>
-                            <span className="font-bold ml-1">{proj.realized}h</span>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div>
+                              <span className="text-muted-foreground block text-[10px]">Planificado</span>
+                              <span className="font-semibold text-blue-600 block">{proj.plannedHours}h</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground block text-[10px]">Computado</span>
+                              <span className="font-semibold text-emerald-600 block">{proj.completedHours}h</span>
+                            </div>
                           </div>
                         </div>
                         {proj.status === 'red' && (
@@ -1167,7 +1174,7 @@ export default function WeeklyForecastPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <ArrowUpDown className="h-5 w-5 text-indigo-600" />
+                <ArrowUpDown className="h-5 w-5 text-primary" />
                 Transferencias de horas ({format(currentMonth, 'MMMM', { locale: es })})
                 {transfers && transfers.length > 0 && (
                   <Badge variant="secondary" className="ml-2 font-normal">
@@ -1234,7 +1241,7 @@ export default function WeeklyForecastPage() {
                                       <div className="flex items-center gap-1.5 shrink-0">
                                         <Avatar className="h-9 w-9 border-2 border-slate-200 shrink-0">
                                           <AvatarImage src={transfer.fromEmployeeAvatar} alt={transfer.fromEmployeeName} />
-                                          <AvatarFallback className="bg-indigo-500 text-white text-xs font-bold">
+                                          <AvatarFallback className="bg-primary/100 text-white text-xs font-bold">
                                             {transfer.fromEmployeeName.substring(0, 2).toUpperCase()}
                                           </AvatarFallback>
                                         </Avatar>
@@ -1245,8 +1252,8 @@ export default function WeeklyForecastPage() {
 
                                       {/* Flecha y horas (vertical) */}
                                       <div className="flex flex-col items-center justify-center gap-0.5 shrink-0">
-                                        <ArrowRight className="h-4 w-4 text-indigo-600 shrink-0" />
-                                        <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 font-bold text-[10px] px-1.5 py-0 shrink-0">
+                                        <ArrowRight className="h-4 w-4 text-primary shrink-0" />
+                                        <Badge variant="outline" className="bg-primary/10 text-indigo-700 border-indigo-200 font-bold text-[10px] px-1.5 py-0 shrink-0">
                                           {transfer.hours}h
                                         </Badge>
                                       </div>
@@ -1291,7 +1298,7 @@ export default function WeeklyForecastPage() {
                                             {transfer.targetWeek && transfer.targetWeek !== transfer.originalWeek && (
                                               <>
                                                 <ArrowRight className="h-3 w-3 text-slate-300" />
-                                                <Badge variant="outline" className="text-[10px] h-4 px-1 bg-indigo-50 text-indigo-500 font-normal border-indigo-100">
+                                                <Badge variant="outline" className="text-[10px] h-4 px-1 bg-primary/10 text-indigo-500 font-normal border-indigo-100">
                                                   Semana {getWeekIndex(transfer.targetWeek) !== -1 ? getWeekIndex(transfer.targetWeek) : '?'}
                                                 </Badge>
                                               </>
@@ -1432,7 +1439,7 @@ export default function WeeklyForecastPage() {
                             <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
                               <Avatar className="h-6 w-6">
                                 <AvatarImage src={group.employeeAvatar} alt={group.employeeName} />
-                                <AvatarFallback className="bg-indigo-500 text-white text-[10px]">
+                                <AvatarFallback className="bg-primary/100 text-white text-[10px]">
                                   {group.employeeName.substring(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
@@ -1453,7 +1460,7 @@ export default function WeeklyForecastPage() {
                                     key={task.id}
                                     className={cn(
                                       "flex items-center gap-3 p-2 rounded border cursor-pointer transition-colors",
-                                      isSelected ? "bg-indigo-50 border-indigo-300" : "bg-white border-slate-200 hover:bg-slate-50"
+                                      isSelected ? "bg-primary/10 border-indigo-300" : "bg-white border-slate-200 hover:bg-slate-50"
                                     )}
                                     onClick={() => {
                                       setRedistributeSelectedTasks(prev => {
@@ -1618,7 +1625,7 @@ export default function WeeklyForecastPage() {
                       {/* Botón de redistribuir */}
                       <Button
                         onClick={handleRedistribute}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700"
+                        className="w-full bg-primary hover:bg-primary/90"
                         disabled={redistributeSelectedTasks.size === 0 || !redistributeToEmployee || !redistributeWeek}
                       >
                         Redistribuir Horas

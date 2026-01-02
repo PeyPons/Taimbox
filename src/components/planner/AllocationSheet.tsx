@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -187,6 +188,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   }, [viewDate, open, isGlobalLoading, loadDataForMonth]); // REMOVIDO allocations para evitar loops
 
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editingAllocation, setEditingAllocation] = useState<Allocation | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [recentlyToggled, setRecentlyToggled] = useState<Set<string>>(new Set());
@@ -324,6 +326,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
         <SheetContent className="w-full sm:max-w-4xl overflow-y-auto">
           <SheetHeader>
             <SheetTitle>{employee.name} - Planificación</SheetTitle>
+            <SheetDescription className="sr-only">Cargando planificación del empleado...</SheetDescription>
           </SheetHeader>
           <div className="min-h-[400px] flex items-center justify-center">
             <div className="text-slate-400">Cargando tareas...</div>
@@ -409,12 +412,18 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     setIsFormOpen(false);
   };
 
-  const handleDeleteAllocation = () => {
+
+
+  const handleDeleteClick = () => {
     if (!editingAllocation) return;
-    if (confirm('¿Seguro que quieres eliminar esta tarea?')) {
-      deleteAllocation(editingAllocation.id);
-      setIsFormOpen(false);
-    }
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    if (!editingAllocation) return;
+    deleteAllocation(editingAllocation.id);
+    setShowDeleteConfirm(false);
+    setIsFormOpen(false);
   };
 
   const toggleTaskCompletion = (allocation: Allocation) => {
@@ -586,7 +595,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
               <div className="mt-1.5">
                 <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
                   <div
-                    className={cn("h-full transition-all duration-300", myProgress >= 100 ? "bg-emerald-500" : "bg-indigo-500")}
+                    className={cn("h-full transition-all duration-300", myProgress >= 100 ? "bg-emerald-500" : "bg-primary/100")}
                     style={{ width: `${Math.min(myProgress, 100)}%` }}
                   />
                 </div>
@@ -594,7 +603,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                   <span className="text-[9px] text-slate-500">
                     {myHoursInProject.completed}/{taskCount} tareas
                   </span>
-                  <span className={cn("text-[9px] font-medium", myProgress >= 100 ? "text-emerald-600" : "text-indigo-600")}>
+                  <span className={cn("text-[9px] font-medium", myProgress >= 100 ? "text-emerald-600" : "text-primary")}>
                     {myProgress}%
                   </span>
                 </div>
@@ -607,8 +616,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
             <div className="font-bold text-sm border-b pb-2">{project.name}</div>
 
             {/* Horas del empleado actual */}
-            <div className="bg-indigo-50 rounded p-2 border border-indigo-100">
-              <div className="text-[10px] font-semibold text-indigo-600 uppercase mb-1">Tus horas</div>
+            <div className="bg-primary/10 rounded p-2 border border-indigo-100">
+              <div className="text-[10px] font-semibold text-primary uppercase mb-1">Tus horas</div>
               <div className="flex gap-3 text-xs">
                 <span className="text-blue-600">Plan: <strong>{myHoursInProject.estimated}h</strong></span>
                 <span className="text-emerald-600">Comp: <strong>{myHoursInProject.computed}h</strong></span>
@@ -654,7 +663,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                   {breakdown.map(({ employeeId: empId, employeeName, computed, planned }) => {
                     const isCurrentEmployee = empId === employeeId;
                     return (
-                      <div key={empId} className={cn("text-xs px-1.5 py-1 rounded", isCurrentEmployee ? "bg-indigo-50" : "")}>
+                      <div key={empId} className={cn("text-xs px-1.5 py-1 rounded", isCurrentEmployee ? "bg-primary/10" : "")}>
                         <div className={cn("font-medium", isCurrentEmployee ? "text-indigo-700" : "text-slate-600")}>
                           {employeeName} {isCurrentEmployee && "(tú)"}
                         </div>
@@ -794,7 +803,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                       <Button
                         variant="ghost"
                         size="sm"
-                        className={cn("gap-2", effectiveShowAllWeeks ? "text-indigo-600 bg-indigo-50" : "text-slate-500")}
+                        className={cn("gap-2", effectiveShowAllWeeks ? "text-primary bg-primary/10" : "text-slate-500")}
                         onClick={() => setShowAllWeeks(!showAllWeeks)}
                         title="Cambiar vista"
                       >
@@ -982,7 +991,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                     "px-4 py-2.5 cursor-pointer flex items-center justify-between",
                                     budgetStatus.status === 'overload' ? "bg-red-500 text-white" :
                                       budgetStatus.status === 'warning' ? "bg-amber-500 text-white" :
-                                        allCompleted ? "bg-slate-200 text-slate-700" : "bg-indigo-500 text-white"
+                                        allCompleted ? "bg-slate-200 text-slate-700" : "bg-primary/100 text-white"
                                   )}
                                   onClick={() => setSelectedProjectId(isSelected ? null : projId)}
                                 >
@@ -1189,7 +1198,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                     return (
                                                       <Tooltip>
                                                         <TooltipTrigger asChild>
-                                                          <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-indigo-50 text-indigo-700 border-indigo-200 cursor-help">
+                                                          <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-primary/10 text-indigo-700 border-indigo-200 cursor-help">
                                                             Weekly
                                                           </Badge>
                                                         </TooltipTrigger>
@@ -1247,7 +1256,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                   const isZeroDueToWeekly = (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0) && wasAdjustedViaWeekly;
 
                                                   return isZeroDueToWeekly ? (
-                                                    <Badge variant="outline" className="h-3.5 px-1 text-[8px] bg-indigo-50 text-indigo-700 border-indigo-200">
+                                                    <Badge variant="outline" className="h-3.5 px-1 text-[8px] bg-primary/10 text-indigo-700 border-indigo-200">
                                                       Weekly
                                                     </Badge>
                                                   ) : null;
@@ -1360,7 +1369,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                 </div>
 
                                 <div className="bg-white rounded-lg border shadow-sm overflow-hidden opacity-60" data-tour="planner-projects">
-                                  <div className="bg-indigo-500 text-white px-4 py-2.5 flex items-center justify-between">
+                                  <div className="bg-primary/100 text-white px-4 py-2.5 flex items-center justify-between">
                                     <span className="font-bold text-sm">SEO Mensual [Cliente Ejemplo]</span>
                                     <span className="text-xs opacity-80">(3 tareas)</span>
                                   </div>
@@ -1669,7 +1678,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                         return (
                           <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
                             {/* Header con nombre y botón cerrar */}
-                            <div className="bg-indigo-50 border-b px-4 py-3 flex items-center justify-between">
+                            <div className="bg-primary/10 border-b px-4 py-3 flex items-center justify-between">
                               <h3 className="font-bold text-sm text-slate-800 truncate flex-1" title={project?.name}>
                                 {formatProjectName(project?.name || 'Proyecto')}
                               </h3>
@@ -1758,7 +1767,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                       return (
                                         <div key={empId} className={cn(
                                           "text-xs px-2 py-1.5 rounded flex items-center gap-2",
-                                          isMe ? "bg-indigo-50 border border-indigo-100" : "bg-slate-50"
+                                          isMe ? "bg-primary/10 border border-indigo-100" : "bg-slate-50"
                                         )}>
                                           <Avatar className="h-6 w-6 border border-slate-200">
                                             <AvatarImage src={emp?.avatarUrl} />
@@ -1828,7 +1837,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                     <button
                                       key={projId}
                                       onClick={() => setSelectedProjectId(projId)}
-                                      className="w-full text-left p-2.5 bg-slate-50 hover:bg-indigo-50 rounded-lg border border-slate-100 hover:border-indigo-200 transition-colors"
+                                      className="w-full text-left p-2.5 bg-slate-50 hover:bg-primary/10 rounded-lg border border-slate-100 hover:border-indigo-200 transition-colors"
                                     >
                                       <div className="flex items-center justify-between">
                                         <span className="font-medium text-xs text-slate-700 truncate">
@@ -1844,7 +1853,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                         <div className="mt-1.5">
                                           <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
                                             <div
-                                              className={cn("h-full transition-all duration-300", progress === 100 ? "bg-emerald-500" : "bg-indigo-500")}
+                                              className={cn("h-full transition-all duration-300", progress === 100 ? "bg-emerald-500" : "bg-primary/100")}
                                               style={{ width: `${progress}%` }}
                                             />
                                           </div>
@@ -2024,7 +2033,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
               />
             )}
             <div className="flex justify-between items-center w-full">
-              {editingAllocation && <Button variant="ghost" size="sm" onClick={handleDeleteAllocation} className="text-red-500"><Trash2 className="w-4 h-4 mr-2" /> Eliminar</Button>}
+              {editingAllocation && <Button variant="ghost" size="sm" onClick={handleDeleteClick} className="text-red-500"><Trash2 className="w-4 h-4 mr-2" /> Eliminar</Button>}
               <div className="flex gap-2 ml-auto">
                 <Button variant="ghost" onClick={() => setIsFormOpen(false)}>Cancelar</Button>
                 <Button onClick={handleSave}>Guardar</Button>
@@ -2036,6 +2045,23 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
       {/* Tour interactivo del planificador */}
       {open && <PlannerTour onVisibilityChange={setIsTourActive} />}
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará la tarea "{editingAllocation?.taskName}" y todos sus datos asociados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Eliminar tarea
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 
@@ -2055,7 +2081,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
         "group flex items-start gap-2 p-2.5 transition-all",
         isCompleted
           ? "bg-slate-50/50 hover:bg-slate-100/50"
-          : "hover:bg-indigo-50/30"
+          : "hover:bg-primary/10/30"
       )}>
         <Checkbox
           checked={isCompleted}
@@ -2082,7 +2108,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                         (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0 && alloc.status === 'completed');
 
                       return wasAdjustedViaWeekly ? (
-                        <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-indigo-50 text-indigo-700 border-indigo-200">
+                        <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-primary/10 text-indigo-700 border-indigo-200">
                           Weekly
                         </Badge>
                       ) : null;
@@ -2107,7 +2133,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                             <>
                               <Avatar className="h-3 w-3 border border-slate-300 shrink-0">
                                 <AvatarImage src={depOwner.avatarUrl} alt={depOwner.name} />
-                                <AvatarFallback className="bg-indigo-500 text-white text-[6px] font-bold">
+                                <AvatarFallback className="bg-primary/100 text-white text-[6px] font-bold">
                                   {depOwner.name.substring(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
@@ -2261,7 +2287,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                   const isZeroDueToWeekly = (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0) && wasAdjustedViaWeekly;
 
                   return isZeroDueToWeekly ? (
-                    <Badge variant="outline" className="h-3.5 px-1.5 text-[9px] bg-indigo-50 text-indigo-700 border-indigo-200 mt-1">
+                    <Badge variant="outline" className="h-3.5 px-1.5 text-[9px] bg-primary/10 text-indigo-700 border-indigo-200 mt-1">
                       Weekly
                     </Badge>
                   ) : null;

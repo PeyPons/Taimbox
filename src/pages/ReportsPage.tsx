@@ -33,13 +33,13 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getMonthlyCapacity, getWeeksForMonth, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { getMonthlyCapacity, getWeeksForMonth, isAllocationInEffectiveMonth, getWorkingDaysInRange } from '@/utils/dateUtils';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
 import { format, subMonths, addMonths, startOfMonth, endOfMonth, parseISO, isSameMonth, differenceInWeeks, startOfWeek, addWeeks, getWeek, getDate, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { supabase } from '@/lib/supabase';
-import { Deadline, GlobalAssignment } from '@/types';
+import { Deadline, GlobalAssignment, WorkSchedule } from '@/types';
 import { GlobalPlanningInconsistencies } from '@/components/employee/GlobalPlanningInconsistencies';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
@@ -550,8 +550,8 @@ export default function ReportsPage() {
         const workingDays = week.effectiveEnd.getDate() - week.effectiveStart.getDate() + 1;
         // Asegurar que no exceda 5 días (semana laboral estándar)
         const actualWorkingDays = Math.min(workingDays, 5);
-        const baseWeeklyCapacity = emp.workSchedule?.defaultHoursPerDay
-          ? emp.workSchedule.defaultHoursPerDay * actualWorkingDays
+        const baseWeeklyCapacity = (emp.workSchedule as any)?.defaultHoursPerDay
+          ? (emp.workSchedule as any).defaultHoursPerDay * actualWorkingDays
           : 40 * (actualWorkingDays / 5);
 
         // Restar ausencias de esta semana
@@ -559,7 +559,7 @@ export default function ReportsPage() {
           week.effectiveStart,
           week.effectiveEnd,
           employeeAbsences,
-          emp.workSchedule || {}
+          emp.workSchedule || ({} as WorkSchedule)
         );
 
         // Restar eventos del equipo de esta semana
@@ -568,7 +568,7 @@ export default function ReportsPage() {
           week.effectiveEnd,
           emp.id,
           teamEvents || [],
-          emp.workSchedule || {},
+          emp.workSchedule || ({} as WorkSchedule),
           employeeAbsences
         );
 
@@ -613,6 +613,7 @@ export default function ReportsPage() {
   // Predicción de disponibilidad futura con Modelo de mezcla ponderada
   const futureAvailability = useMemo(() => {
     const thisMonth = startOfMonth(currentMonth); // Usar currentMonth en lugar de new Date()
+    const thisMonthStart = startOfMonth(thisMonth);
     const nextMonth = addMonths(thisMonth, 1);
     const nextMonthStart = startOfMonth(nextMonth);
     const nextMonthEnd = endOfMonth(nextMonth);
@@ -664,11 +665,11 @@ export default function ReportsPage() {
       // 2. LÓGICA DE ESTIMACIÓN "MIX DE CARGA"
       // A. Inercia Recurrente (40%): Usar el mes ACTUAL como referencia principal
       // El mes actual es más relevante porque ya tiene datos planificados y computados
-      const thisMonthStr = format(thisMonth, 'yyyy-MM');
       const now = new Date();
-      const daysInCurrentMonth = endOfMonth(thisMonth).getDate();
-      const currentDay = now.getDate();
-      const monthProgress = currentDay / daysInCurrentMonth; // 0.0 a 1.0
+      // FIX 1: Proyección basada en días laborables
+      const workingDaysPassed = getWorkingDaysInRange(thisMonthStart, now < endOfMonth(thisMonth) ? now : endOfMonth(thisMonth), emp.workSchedule).days;
+      const totalWorkingDays = getWorkingDaysInRange(thisMonthStart, endOfMonth(thisMonth), emp.workSchedule).days;
+      const monthProgress = totalWorkingDays > 0 ? workingDaysPassed / totalWorkingDays : 0;
 
       // Horas de allocations del mes actual
       const currentMonthAllocationsHours = monthAllocations
@@ -773,8 +774,42 @@ export default function ReportsPage() {
         }
       }
 
+      // FIX 2: Pesos exponenciales para el histórico
+      const decayWeights = [0.4, 0.3, 0.2, 0.1];
       const historicalAvgHours = historicalMonths.length > 0
-        ? historicalMonths.reduce((sum, m) => sum + m.hours, 0) / historicalMonths.length
+        ? (() => {
+          const totalWeight = decayWeights.slice(0, historicalMonths.length).reduce((a, b) => a + b, 0);
+          const weightedSum = historicalMonths.reduce((sum, m, i) => sum + m.hours * decayWeights[i], 0);
+          return weightedSum / totalWeight;
+        })()
+        : 0;
+
+      // FIX 4: Detección de tendencias
+      let trendAdjustment = 0;
+      if (historicalMonths.length >= 3) {
+        // Regresión lineal simple: y = a + bx
+        const n = historicalMonths.length;
+        const xMean = (n - 1) / 2;
+        const yMean = historicalMonths.reduce((sum, m) => sum + m.hours, 0) / n;
+
+        let numerator = 0;
+        let denominator = 0;
+        historicalMonths.forEach((m, i) => {
+          numerator += (i - xMean) * (m.hours - yMean);
+          denominator += (i - xMean) ** 2;
+        });
+
+        const slope = denominator !== 0 ? numerator / denominator : 0;
+        // Invertimos el signo porque historicalMonths va de más reciente a más antiguo (mes -1 es índice 0)
+        trendAdjustment = -slope;
+      }
+
+      // FIX 5: Desviación estándar y rango de confianza
+      const historicalStdDev = historicalMonths.length >= 2
+        ? Math.sqrt(
+          historicalMonths.reduce((sum, m) => sum + (m.hours - historicalAvgHours) ** 2, 0) /
+          (historicalMonths.length - 1)
+        )
         : 0;
 
       // C. Compromisos Reales: Horas de deadlines/tareas ya creadas para el mes siguiente
@@ -854,22 +889,30 @@ export default function ReportsPage() {
         }
       }
 
-      // 3. INTEGRACIÓN DE RENTABILIDAD (GANANCIA)
-      // Calcular ratio entre Horas Reales y Horas Computadas del mes actual
-      const currentMonthCompleted = monthAllocations.filter(
-        a => a.employeeId === emp.id && a.status === 'completed'
-      );
-      const currentMonthReal = currentMonthCompleted.reduce(
-        (sum, a) => sum + (a.hoursActual || 0), 0
-      );
-      const currentMonthComputed = currentMonthCompleted.reduce(
-        (sum, a) => sum + (a.hoursComputed || 0), 0
-      );
+      // APLICAR TENDENCIA
+      // Solo aplicar tendencia cuando no hay compromisos reales firmes que dominen la estimación
+      if (trendAdjustment !== 0 && !committedHours) {
+        estimatedHoursNextMonth = round2(estimatedHoursNextMonth + trendAdjustment);
+      }
 
-      // Si rentabilidad es baja (Real > Computado), incrementar estimación
-      if (currentMonthReal > 0 && currentMonthComputed > 0) {
-        const profitabilityRatio = currentMonthComputed / currentMonthReal;
-        // Si ratio < 1, significa que es menos eficiente, ajustar estimación
+      // 3. INTEGRACIÓN DE RENTABILIDAD (GANANCIA)
+      // FIX 3: Calcular ratio de rentabilidad usando últimos 3 meses
+      const threeMonthsAgo = subMonths(thisMonth, 3);
+      const recentCompleted = (allocations || []).filter(a => {
+        try {
+          const weekDate = parseISO(a.weekStartDate);
+          return a.employeeId === emp.id &&
+            a.status === 'completed' &&
+            weekDate >= threeMonthsAgo;
+        } catch { return false; }
+      });
+
+      const totalRecentReal = recentCompleted.reduce((sum, a) => sum + (a.hoursActual || 0), 0);
+      const totalRecentComputed = recentCompleted.reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
+
+      if (totalRecentReal > 0 && totalRecentComputed > 0) {
+        const profitabilityRatio = totalRecentComputed / totalRecentReal;
+        // Si ratio < 0.9, significa que es menos eficiente, ajustar estimación
         if (profitabilityRatio < 0.9) {
           const inefficiencyFactor = 1 / profitabilityRatio;
           estimatedHoursNextMonth = round2(estimatedHoursNextMonth * inefficiencyFactor);
@@ -930,6 +973,11 @@ export default function ReportsPage() {
           avgLoadPercentage: historicalMonths.length > 0
             ? round2(historicalMonths.reduce((sum, m) => sum + (m.hours / m.capacity * 100), 0) / historicalMonths.length)
             : 0,
+          stdDev: round2(historicalStdDev),
+          estimatedRange: {
+            min: round2(Math.max(0, estimatedHoursNextMonth - historicalStdDev)),
+            max: round2(estimatedHoursNextMonth + historicalStdDev)
+          },
           dataMaturity,
           maturityLabel,
           maturityColor
@@ -944,7 +992,7 @@ export default function ReportsPage() {
         }
       };
     }).sort((a, b) => b.nextMonth.estimatedAvailable - a.nextMonth.estimatedAvailable);
-  }, [employees, allocations, monthAllocations, reliabilityByEmployee, year, month, absences, teamEvents, nextMonthDeadlines, nextMonthGlobalAssignments, currentMonthDeadlines, currentMonthGlobalAssignments, historicalDeadlines, historicalGlobalAssignments]);
+  }, [employees, allocations, monthAllocations, reliabilityByEmployee, year, month, absences, teamEvents, nextMonthDeadlines, nextMonthGlobalAssignments, currentMonthDeadlines, currentMonthGlobalAssignments, historicalDeadlines, historicalGlobalAssignments, currentMonth]);
 
   // Cargar deadlines y global assignments del mes seleccionado, siguiente y meses históricos
   useEffect(() => {
@@ -1133,8 +1181,8 @@ export default function ReportsPage() {
       value: `${monthStats.planned}h`,
       subtitle: `${utilizationRate.toFixed(0)}% ocupación`,
       icon: Clock,
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
     },
     {
       title: 'Reales',
@@ -1171,7 +1219,7 @@ export default function ReportsPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
-              <BarChart3 className="h-8 w-8 text-indigo-600" />
+              <BarChart3 className="h-8 w-8 text-primary" />
               Reportes y métricas
             </h1>
             <p className="text-muted-foreground">
@@ -1203,7 +1251,7 @@ export default function ReportsPage() {
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <div className="flex items-center gap-1.5 px-2 min-w-[140px] justify-center">
-                <CalendarDays className="h-4 w-4 text-indigo-600" />
+                <CalendarDays className="h-4 w-4 text-primary" />
                 <span className="font-medium text-sm capitalize">
                   {format(currentMonth, 'MMMM yyyy', { locale: es })}
                 </span>
@@ -1664,7 +1712,7 @@ export default function ReportsPage() {
                       {/* Mes siguiente */}
                       <div className={cn(
                         "rounded-lg p-3",
-                        emp.nextMonth.hasDeadlines ? "bg-indigo-50" : "bg-amber-50 border border-dashed border-amber-200"
+                        emp.nextMonth.hasDeadlines ? "bg-primary/10" : "bg-amber-50 border border-dashed border-amber-200"
                       )}>
                         <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                           Mes siguiente
@@ -1692,7 +1740,7 @@ export default function ReportsPage() {
                           ~{emp.nextMonth.estimatedAvailable.toFixed(1)}h libres ({(100 - emp.nextMonth.percentage).toFixed(0)}%)
                         </p>
                         {emp.nextMonth.hasDeadlines && (
-                          <p className="text-[10px] text-indigo-600 mt-0.5">
+                          <p className="text-[10px] text-primary mt-0.5">
                             {emp.nextMonth.breakdown.deadlineHours > 0 && `${emp.nextMonth.breakdown.deadlineHours}h deadlines`}
                             {emp.nextMonth.breakdown.globalHours > 0 && (
                               <span className="ml-1">
@@ -1789,6 +1837,11 @@ export default function ReportsPage() {
                     <div className="text-xs text-muted-foreground border-t pt-2 flex justify-between">
                       <span>
                         Promedio histórico: {emp.historical.avgLoadPercentage.toFixed(0)}% de ocupación
+                        {emp.historical.stdDev > 0 && (
+                          <span className="text-muted-foreground ml-1 font-normal">
+                            (rango: {emp.historical.estimatedRange.min}h - {emp.historical.estimatedRange.max}h)
+                          </span>
+                        )}
                       </span>
                       {!emp.nextMonth.hasDeadlines && emp.historical.monthsAnalyzed > 0 && (
                         <span className="text-amber-600">

@@ -186,7 +186,7 @@ export function CloseTasksDialog({ open, onOpenChange, employeeId }: CloseTasksD
             Cancelar
           </Button>
           {openTasks.length > 0 && (
-            <Button onClick={handleClose} className="bg-indigo-600 hover:bg-indigo-700">
+            <Button onClick={handleClose} className="bg-primary hover:bg-primary/90">
               Cerrar Tareas
             </Button>
           )}

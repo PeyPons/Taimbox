@@ -208,7 +208,7 @@ export function DemoDeadlinesPage() {
                                     <div key={empId} className="flex items-center justify-between p-2 rounded bg-slate-50 border border-slate-100">
                                       <div className="flex items-center gap-2 overflow-hidden">
                                         <Avatar className="h-6 w-6 border border-white">
-                                          <AvatarFallback className="bg-indigo-100 text-indigo-600 text-[10px]">{employee.name.substring(0, 2)}</AvatarFallback>
+                                          <AvatarFallback className="bg-indigo-100 text-primary text-[10px]">{employee.name.substring(0, 2)}</AvatarFallback>
                                         </Avatar>
                                         <span className="text-sm font-medium text-slate-700 truncate">{employee.first_name || employee.name}</span>
                                       </div>

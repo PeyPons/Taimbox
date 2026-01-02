@@ -208,7 +208,7 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
                 )}
               />
 
-              <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700">
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
                 <Plus className="mr-2 h-4 w-4" /> Añadir ausencia
               </Button>
             </form>

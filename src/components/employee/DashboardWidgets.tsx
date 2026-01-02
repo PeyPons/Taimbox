@@ -120,7 +120,7 @@ export const PriorityInsights = memo(function PriorityInsights({ employeeId, vie
   } else {
       const proj = projects.find(p => p.id === heavyTask?.projectId);
       recommendation = {
-          icon: <Rocket className="w-5 h-5 text-indigo-600" />,
+          icon: <Rocket className="w-5 h-5 text-primary" />,
           title: "🚀 Tu próximo paso",
           content: (
               <p className="text-sm">
@@ -230,7 +230,7 @@ export const ProjectTeamPulse = memo(function ProjectTeamPulse({ employeeId, vie
                                     {item.depOwner && (
                                         <Avatar className="h-4 w-4 border border-slate-300 shrink-0">
                                             <AvatarImage src={item.depOwner.avatarUrl} alt={item.depOwner.name} />
-                                            <AvatarFallback className="bg-indigo-500 text-white text-[8px] font-bold">
+                                            <AvatarFallback className="bg-primary/100 text-white text-[8px] font-bold">
                                                 {item.depOwner.name.substring(0, 2).toUpperCase()}
                                             </AvatarFallback>
                                         </Avatar>

@@ -10,8 +10,8 @@ import { MetricsCard } from '@/components/shared/MetricsCard';
 import { format, isSameMonth, parseISO } from 'date-fns';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
-import { 
-  Sparkles, TrendingUp, TrendingDown, Users, Target, 
+import {
+  Sparkles, TrendingUp, TrendingDown, Users, Target,
   CheckCircle2, Clock, Award, Filter
 } from 'lucide-react';
 import { cn, formatProjectName } from '@/lib/utils';
@@ -25,32 +25,32 @@ const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyWeekViewProps) {
   const { allocations, projects, clients, employees, getEmployeeMonthlyLoad } = useApp();
-  
+
   const [filterProject, setFilterProject] = useState<string>('all');
   const [filterTeammate, setFilterTeammate] = useState<string>('all');
-  
+
   const monthLabel = format(viewDate, 'MMMM yyyy', { locale: es });
-  
+
   // Allocations del mes para este empleado
-  const monthlyAllocations = allocations.filter(a => 
-    a.employeeId === employeeId && 
+  const monthlyAllocations = allocations.filter(a =>
+    a.employeeId === employeeId &&
     isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
   );
 
   // Métricas globales del mes
   const monthlyStats = useMemo(() => {
     const load = getEmployeeMonthlyLoad(employeeId, viewDate.getFullYear(), viewDate.getMonth());
-    
+
     const completed = monthlyAllocations.filter(a => a.status === 'completed');
     const totalTasks = monthlyAllocations.length;
     const completedTasks = completed.length;
-    
+
     const totalEstimated = monthlyAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
     const totalReal = completed.reduce((sum, a) => sum + (a.hoursActual || 0), 0);
     const totalComputed = completed.reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
-    
+
     const executionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-    
+
     return {
       ...load,
       totalTasks,
@@ -76,15 +76,16 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
       myCompletedTasks: number;
       projectTotalComputed: number;
       projectBudget: number;
+      projectMinimum: number;
       // Totales del proyecto (cliente)
       projectTotalAssigned: number; // Horas asignadas totales
       projectTotalPlanned: number; // Horas planificadas totales (no completadas)
       projectTotalComputedAll: number; // Horas computadas totales
       projectPercentageUsed: number; // % usado del presupuesto
       // Compañeros con detalle (Plan y Comp)
-      teammates: { 
-        id: string; 
-        name: string; 
+      teammates: {
+        id: string;
+        name: string;
         avatarUrl?: string;
         hoursPlanned: number; // Horas planificadas
         hoursComputed: number; // Horas computadas
@@ -111,6 +112,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
           myCompletedTasks: 0,
           projectTotalComputed: 0,
           projectBudget: proj?.budgetHours || 0,
+          projectMinimum: proj?.minimumHours || 0,
           projectTotalAssigned: 0,
           projectTotalPlanned: 0,
           projectTotalComputedAll: 0,
@@ -123,7 +125,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
 
       groups[alloc.projectId].myEstimated += alloc.hoursAssigned;
       groups[alloc.projectId].myTasks += 1;
-      
+
       if (alloc.status === 'completed') {
         groups[alloc.projectId].myReal += alloc.hoursActual || 0;
         groups[alloc.projectId].myComputed += alloc.hoursComputed || 0;
@@ -133,11 +135,11 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
 
     // Calcular totales del proyecto y compañeros con sus aportes
     Object.keys(groups).forEach(projId => {
-      const allProjectAllocations = allocations.filter(a => 
-        a.projectId === projId && 
+      const allProjectAllocations = allocations.filter(a =>
+        a.projectId === projId &&
         isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
       );
-      
+
       // Totales del proyecto (cliente)
       const projectTotalAssigned = round2(allProjectAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0));
       const projectTotalPlanned = round2(allProjectAllocations
@@ -146,29 +148,35 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
       const projectTotalComputedAll = round2(allProjectAllocations
         .filter(a => a.status === 'completed')
         .reduce((sum, a) => sum + (a.hoursComputed || 0), 0));
-      
+
       groups[projId].projectTotalAssigned = projectTotalAssigned;
       groups[projId].projectTotalPlanned = projectTotalPlanned;
       groups[projId].projectTotalComputedAll = projectTotalComputedAll;
-      
+
       // % usado del presupuesto
       const budget = groups[projId].projectBudget;
       groups[projId].projectPercentageUsed = budget > 0 ? round2((projectTotalComputedAll / budget) * 100) : 0;
-      
-      // Horas faltantes por asignar (si el presupuesto es mayor que lo asignado)
-      groups[projId].hoursMissing = budget > 0 && projectTotalAssigned < budget 
-        ? round2(budget - projectTotalAssigned) 
+
+      // Horas faltantes por asignar
+      // Si tiene mínimo, solo falta si no llegamos al mínimo
+      // Si no tiene mínimo, falta si no llegamos al budget
+      const minimum = groups[projId].projectMinimum;
+
+      const targetHours = minimum > 0 ? minimum : budget;
+
+      groups[projId].hoursMissing = targetHours > 0 && projectTotalAssigned < targetHours
+        ? round2(targetHours - projectTotalAssigned)
         : 0;
-      
+
       // Total computado del proyecto (para mi impacto)
       const projectTotal = projectTotalComputedAll;
       groups[projId].projectTotalComputed = projectTotal;
-      
+
       // Mi impacto
       if (projectTotal > 0) {
         groups[projId].myImpactPercentage = round2((groups[projId].myComputed / projectTotal) * 100);
       }
-      
+
       // Compañeros con sus horas Plan y Comp
       const teammateData: Record<string, { planned: number; computed: number }> = {};
       allProjectAllocations
@@ -182,7 +190,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
             teammateData[a.employeeId].computed += a.hoursComputed || 0;
           }
         });
-      
+
       groups[projId].teammates = Object.entries(teammateData).map(([empId, data]) => {
         const emp = employees.find(e => e.id === empId);
         return {
@@ -236,7 +244,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                 <Target className="h-3.5 w-3.5" /> Rendimiento por proyecto
               </p>
             </div>
-            
+
             {/* KPIs compactos */}
             <div className="flex items-center gap-3 flex-wrap">
               <Tooltip>
@@ -248,7 +256,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                 </TooltipTrigger>
                 <TooltipContent>Tu capacidad disponible este mes</TooltipContent>
               </Tooltip>
-              
+
               <Tooltip>
                 <TooltipTrigger>
                   <div className={cn(
@@ -285,7 +293,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                   </SelectContent>
                 </Select>
               </div>
-              
+
               {allTeammates.length > 0 && (
                 <Select value={filterTeammate} onValueChange={setFilterTeammate}>
                   <SelectTrigger className="w-[180px] h-8 text-xs">
@@ -309,8 +317,8 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
             <CardContent className="py-12 text-center">
               <Sparkles className="h-12 w-12 mx-auto mb-4 text-slate-300" />
               <p className="text-muted-foreground">
-                {filterProject !== 'all' || filterTeammate !== 'all' 
-                  ? "No hay proyectos con esos filtros." 
+                {filterProject !== 'all' || filterTeammate !== 'all'
+                  ? "No hay proyectos con esos filtros."
                   : "Sin proyectos asignados este mes."}
               </p>
             </CardContent>
@@ -323,7 +331,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
               const completionRate = group.myTasks > 0 ? round2((group.myCompletedTasks / group.myTasks) * 100) : 0;
               const isHighImpact = group.myImpactPercentage >= 50;
               const isMediumImpact = group.myImpactPercentage >= 25 && group.myImpactPercentage < 50;
-              
+
               return (
                 <Card key={group.projectId} className={cn("flex flex-col h-full transition-all hover:shadow-md", isHighImpact && "ring-2 ring-emerald-200")}>
                   {/* Header */}
@@ -338,15 +346,15 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                           <span className="text-xs text-muted-foreground truncate">{group.clientName}</span>
                         </div>
                       </div>
-                      
+
                       {/* Badge de impacto */}
                       <Tooltip>
                         <TooltipTrigger>
                           <Badge variant="outline" className={cn(
                             "shrink-0 gap-1",
-                            isHighImpact ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
-                              : isMediumImpact ? "bg-indigo-50 text-indigo-700 border-indigo-200"
-                              : "bg-slate-50 text-slate-600 border-slate-200"
+                            isHighImpact ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : isMediumImpact ? "bg-primary/10 text-indigo-700 border-indigo-200"
+                                : "bg-slate-50 text-slate-600 border-slate-200"
                           )}>
                             {isHighImpact ? <Award className="h-3 w-3" /> : <Target className="h-3 w-3" />}
                             {group.myImpactPercentage}%
@@ -362,7 +370,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                         </TooltipContent>
                       </Tooltip>
                     </div>
-                    
+
                     {/* Compañeros con avatares */}
                     {group.teammates.length > 0 && (
                       <div className="flex items-center gap-2 mt-2">
@@ -485,7 +493,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                     {/* Mis métricas */}
                     <div className="pt-2 border-t flex-1">
                       <div className="text-[10px] font-semibold text-slate-500 uppercase mb-2">Mis métricas</div>
-                      <MetricsCard 
+                      <MetricsCard
                         estimated={group.myEstimated}
                         real={group.myReal}
                         computed={group.myComputed}

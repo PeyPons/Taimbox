@@ -147,7 +147,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
 
         // Crear usuario en Supabase Auth
         console.log('[EmployeeDialog] Creando usuario en Auth:', emailValue);
-        const { data, error } = await supabase.functions.invoke('create-user', {
+        const { data: authData, error } = await supabase.functions.invoke('create-user', {
           body: { email: emailValue, password: data.password, name: data.name }
         });
 
@@ -179,12 +179,12 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
           throw new Error(errorMessage);
         }
 
-        if (!data?.user?.id) {
-          console.error('[EmployeeDialog] No se recibió user.id. Respuesta completa:', data);
+        if (!authData?.user?.id) {
+          console.error('[EmployeeDialog] No se recibió user.id. Respuesta completa:', authData);
           throw new Error('No se pudo crear la cuenta de acceso. La función no devolvió un ID de usuario. Verifica que la Edge Function "create-user" esté desplegada en Supabase.');
         }
 
-        authUserId = data.user.id;
+        authUserId = authData.user.id;
         authMessage = "Empleado y cuenta de acceso creados.";
         console.log('[EmployeeDialog] Usuario Auth creado:', authUserId);
       }
@@ -531,7 +531,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
                   </div>
 
                   <div className="flex justify-end pt-4">
-                    <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700" disabled={isProcessing}>
+                    <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={isProcessing}>
                       {isProcessing ? 'Guardando...' : 'Guardar datos'}
                     </Button>
                   </div>
@@ -540,7 +540,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
             </TabsContent>
 
             <TabsContent value="permissions" className="py-4 space-y-4">
-              <div className="bg-indigo-50 text-indigo-800 p-3 rounded-md text-sm flex gap-2">
+              <div className="bg-primary/10 text-indigo-800 p-3 rounded-md text-sm flex gap-2">
                 <Key className="h-5 w-5 shrink-0" />
                 <p>Controla a qué secciones puede acceder este empleado. Si un permiso está desactivado, no verá esa sección en el menú.</p>
               </div>
@@ -611,7 +611,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
 
                 <div className="space-y-3 pt-4 border-t">
                   <h3 className="text-sm font-semibold text-slate-700 mb-3">Otros</h3>
-                  {(['can_access_deadlines', 'can_access_weekly_forecast', 'can_access_settings'] as const).map((permission) => (
+                  {(['can_access_deadlines', 'can_access_okrs', 'can_access_weekly_forecast', 'can_access_settings'] as const).map((permission) => (
                     <div key={permission} className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50">
                       <div className="flex-1">
                         <Label htmlFor={permission} className="text-sm font-medium cursor-pointer">
@@ -632,7 +632,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
               </div>
 
               <div className="flex justify-end pt-4 border-t">
-                <Button onClick={form.handleSubmit(onSubmit)} className="bg-indigo-600" disabled={isProcessing}>
+                <Button onClick={form.handleSubmit(onSubmit)} className="bg-primary" disabled={isProcessing}>
                   {isProcessing ? 'Guardando...' : 'Guardar permisos'}
                 </Button>
               </div>
@@ -649,7 +649,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
                   onChange={(newSchedule) => form.setValue('workSchedule', newSchedule)}
                 />
                 <div className="flex justify-end pt-2">
-                  <Button onClick={form.handleSubmit(onSubmit)} className="bg-indigo-600">Guardar horario</Button>
+                  <Button onClick={form.handleSubmit(onSubmit)} className="bg-primary">Guardar horario</Button>
                 </div>
               </div>
             </TabsContent>
@@ -657,7 +657,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
             <TabsContent value="management" className="py-4 space-y-4">
               <div className="grid grid-cols-1 gap-4">
                 <Button variant="outline" className="justify-start gap-4 h-auto p-4" onClick={() => setShowProjects(true)}>
-                  <Briefcase className="h-5 w-5 text-indigo-600" />
+                  <Briefcase className="h-5 w-5 text-primary" />
                   <div className="text-left">
                     <div className="font-semibold">Proyectos</div>
                     <div className="text-xs text-muted-foreground">Asignaciones</div>

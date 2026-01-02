@@ -61,7 +61,7 @@ export default function LandingPage() {
       <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 relative overflow-hidden">
         {/* Efectos de fondo animados mejorados */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/100/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s', animationDelay: '1s' }} />
           <div className="absolute top-1/2 left-1/2 w-72 h-72 bg-indigo-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '5s', animationDelay: '2s' }} />
           {/* Partículas flotantes */}
@@ -230,7 +230,7 @@ export default function LandingPage() {
                       <div className="grid lg:grid-cols-5 gap-6 sm:gap-8">
                         <div className="lg:col-span-3">
                           <div className="flex items-center gap-3 mb-4">
-                            <Badge className="bg-indigo-500/30 text-indigo-200 border-indigo-400/30 px-3 py-1">
+                            <Badge className="bg-primary/100/30 text-indigo-200 border-indigo-400/30 px-3 py-1">
                               {current.label}
                             </Badge>
                           </div>
@@ -629,7 +629,7 @@ export default function LandingPage() {
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-8 sm:mb-10 md:mb-12">
-              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-indigo-500/20 backdrop-blur-sm rounded-full text-indigo-200 text-xs sm:text-sm font-medium mb-3 sm:mb-4 border border-indigo-400/30">
+              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-primary/100/20 backdrop-blur-sm rounded-full text-indigo-200 text-xs sm:text-sm font-medium mb-3 sm:mb-4 border border-indigo-400/30">
                 <Award className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span>Demo interactivo</span>
               </div>
@@ -654,7 +654,7 @@ export default function LandingPage() {
                   <div className="absolute inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-6 rounded-xl">
                     <div className="text-center max-w-md">
                       <div className="mb-6 flex justify-center">
-                        <div className="rounded-full bg-indigo-500/20 p-6 backdrop-blur-sm border border-indigo-500/30">
+                        <div className="rounded-full bg-primary/100/20 p-6 backdrop-blur-sm border border-indigo-500/30">
                           <Monitor className="h-12 w-12 text-indigo-300" />
                         </div>
                       </div>
@@ -677,13 +677,13 @@ export default function LandingPage() {
 
               <DemoProvider>
                 <Tabs value={demoTab} onValueChange={setDemoTab} className="w-full">
-                  <TabsList className="w-full justify-start h-auto p-1 bg-indigo-50/50 border-b border-indigo-200/50 rounded-none rounded-t-xl overflow-x-auto flex-nowrap">
+                  <TabsList className="w-full justify-start h-auto p-1 bg-primary/10/50 border-b border-indigo-200/50 rounded-none rounded-t-xl overflow-x-auto flex-nowrap">
                     <TabsTrigger value="planner" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm whitespace-nowrap">
                       Planificador
                     </TabsTrigger>
                     <TabsTrigger value="dashboard" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm whitespace-nowrap">
                       Dashboard Empleado
-                      <Badge className="ml-2 bg-indigo-500 text-white text-[10px] px-1.5 py-0">Nuevo</Badge>
+                      <Badge className="ml-2 bg-primary/100 text-white text-[10px] px-1.5 py-0">Nuevo</Badge>
                     </TabsTrigger>
                     <TabsTrigger value="weeklys" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm whitespace-nowrap">
                       Weeklys Forecast
@@ -725,7 +725,7 @@ export default function LandingPage() {
             </h2>
             {/* Audience badges */}
             <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-4">
-              <span className="px-4 py-1.5 bg-indigo-500/20 rounded-full text-indigo-200 text-sm font-medium border border-indigo-500/30">Equipos de marketing digital</span>
+              <span className="px-4 py-1.5 bg-primary/100/20 rounded-full text-indigo-200 text-sm font-medium border border-indigo-500/30">Equipos de marketing digital</span>
               <span className="px-4 py-1.5 bg-purple-500/20 rounded-full text-purple-200 text-sm font-medium border border-purple-500/30">Desarrolladores y diseñadores</span>
               <span className="px-4 py-1.5 bg-pink-500/20 rounded-full text-pink-200 text-sm font-medium border border-pink-500/30">Cualquier equipo que coordine trabajo</span>
             </div>
@@ -744,19 +744,19 @@ export default function LandingPage() {
                   <h3 className="text-xl font-bold text-white">Para líderes de equipo</h3>
                 </div>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-2.5 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                  <div className="flex items-center gap-3 p-2.5 bg-primary/100/10 rounded-lg border border-indigo-500/20">
                     <CheckCircle2 className="h-4 w-4 text-indigo-400 shrink-0" />
                     <span className="text-sm text-white/90">Decisiones informadas sobre distribución</span>
                   </div>
-                  <div className="flex items-center gap-3 p-2.5 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                  <div className="flex items-center gap-3 p-2.5 bg-primary/100/10 rounded-lg border border-indigo-500/20">
                     <CheckCircle2 className="h-4 w-4 text-indigo-400 shrink-0" />
                     <span className="text-sm text-white/90">Identifica quién necesita ayuda</span>
                   </div>
-                  <div className="flex items-center gap-3 p-2.5 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                  <div className="flex items-center gap-3 p-2.5 bg-primary/100/10 rounded-lg border border-indigo-500/20">
                     <CheckCircle2 className="h-4 w-4 text-indigo-400 shrink-0" />
                     <span className="text-sm text-white/90">Reduce reuniones en un 70%</span>
                   </div>
-                  <div className="flex items-center gap-3 p-2.5 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                  <div className="flex items-center gap-3 p-2.5 bg-primary/100/10 rounded-lg border border-indigo-500/20">
                     <CheckCircle2 className="h-4 w-4 text-indigo-400 shrink-0" />
                     <span className="text-sm text-white/90">Alertas automáticas de sobrecarga</span>
                   </div>
@@ -863,7 +863,7 @@ export default function LandingPage() {
         {/* Sección FAQ */}
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
           <div className="text-center mb-8 sm:mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/20 backdrop-blur-sm rounded-full text-indigo-200 text-sm font-medium mb-3 sm:mb-4 border border-indigo-400/30">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/100/20 backdrop-blur-sm rounded-full text-indigo-200 text-sm font-medium mb-3 sm:mb-4 border border-indigo-400/30">
               <HelpCircle className="h-4 w-4" />
               <span>Preguntas frecuentes</span>
             </div>
@@ -1063,7 +1063,7 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link to="/login" className="group relative">
                 <div className="absolute -inset-1 bg-white rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300" />
-                <Button size="lg" className="relative w-full sm:w-auto bg-white text-indigo-600 hover:bg-slate-50 px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-bold shadow-2xl hover:shadow-white/50 transition-all transform hover:scale-105">
+                <Button size="lg" className="relative w-full sm:w-auto bg-white text-primary hover:bg-slate-50 px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-bold shadow-2xl hover:shadow-white/50 transition-all transform hover:scale-105">
                   Acceder ahora
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </Button>

@@ -84,7 +84,7 @@ export default function ClientReportsPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
             <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
-                <FileDown className="h-8 w-8 text-indigo-600" />
+                <FileDown className="h-8 w-8 text-primary" />
                 Informes de clientes
             </h1>
             <p className="text-muted-foreground">
@@ -112,7 +112,7 @@ export default function ClientReportsPage() {
 
             <div className="h-6 w-px bg-slate-200" />
 
-            <Button onClick={() => handlePrint()} className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 shadow-sm">
+            <Button onClick={() => handlePrint()} className="bg-primary hover:bg-primary/90 text-white gap-2 shadow-sm">
                 <Printer className="h-4 w-4" />
                 Imprimir PDF
             </Button>
@@ -125,13 +125,13 @@ export default function ClientReportsPage() {
         <div ref={componentRef} className="bg-white shadow-xl w-full max-w-[297mm] min-h-[210mm] p-[15mm] mx-auto print:shadow-none print:w-full print:max-w-none print:p-0 print:m-0">
             
             {/* Cabecera del Informe */}
-            <div className="flex justify-between items-end border-b-2 border-indigo-600 pb-4 mb-6">
+            <div className="flex justify-between items-end border-b-2 border-primary pb-4 mb-6">
                 <div>
                     <h2 className="text-3xl font-bold text-slate-900 uppercase tracking-tight">Informe de horas</h2>
                     <p className="text-base text-slate-500 mt-1">Resumen ejecutivo de actividad y computación</p>
                 </div>
                 <div className="text-right">
-                    <div className="text-xs font-bold text-indigo-600 uppercase tracking-widest mb-1">Periodo Reportado</div>
+                    <div className="text-xs font-bold text-primary uppercase tracking-widest mb-1">Periodo Reportado</div>
                     <div className="text-2xl font-bold text-slate-800 capitalize leading-none">
                         {format(selectedMonth, 'MMMM yyyy', { locale: es })}
                     </div>

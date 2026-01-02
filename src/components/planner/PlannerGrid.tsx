@@ -354,15 +354,15 @@ Responde SOLO JSON válido:
 
           <Popover>
             <PopoverTrigger asChild>
-              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 h-9 shadow-sm">
+              <Button className="bg-primary hover:bg-primary/90 text-white gap-2 h-9 shadow-sm">
                 <Sparkles className="h-4 w-4" />
                 <span className="hidden sm:inline">Insights Minguito</span>
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 p-0" align="end">
-              <div className="bg-indigo-50 dark:bg-indigo-900/30 p-3 border-b flex items-center justify-between">
+              <div className="bg-primary/10 dark:bg-indigo-900/30 p-3 border-b flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-indigo-600" />
+                  <Sparkles className="h-4 w-4 text-primary" />
                   <span className="font-semibold text-sm">Insights</span>
                 </div>
                 {lastProvider && getProviderBadge()}
@@ -370,14 +370,14 @@ Responde SOLO JSON válido:
               <div className="p-4">
                 {!isAnalyzing && !insights && (
                   <div className="text-center py-2">
-                    <Button size="sm" onClick={handleAnalyze} className="w-full bg-indigo-600 text-white">
+                    <Button size="sm" onClick={handleAnalyze} className="w-full bg-primary text-white">
                       Analizar
                     </Button>
                   </div>
                 )}
                 {isAnalyzing && (
                   <div className="text-center py-4 flex flex-col items-center gap-2">
-                    <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     <span className="text-xs text-muted-foreground">Juzgando al equipo...</span>
                   </div>
                 )}
@@ -428,8 +428,8 @@ Responde SOLO JSON válido:
           <div className="grid sticky top-0 z-10 bg-white dark:bg-slate-950 border-b shadow-sm" style={{ gridTemplateColumns: gridTemplate }}>
             <div className="px-4 py-3 font-bold text-sm text-slate-700 dark:text-slate-200 border-r flex items-center bg-slate-50 dark:bg-slate-900">Equipo ({filteredEmployees.length})</div>
             {weeks.map((week, index) => (
-              <div key={week.weekStart.toISOString()} className={cn("text-center px-1 py-2 border-r flex flex-col justify-center", isCurrentWeek(week.weekStart) && "bg-indigo-50/50")}>
-                <span className={cn("text-xs font-bold uppercase", isCurrentWeek(week.weekStart) ? "text-indigo-600" : "text-slate-500")}>Semana {index + 1}</span>
+              <div key={week.weekStart.toISOString()} className={cn("text-center px-1 py-2 border-r flex flex-col justify-center", isCurrentWeek(week.weekStart) && "bg-primary/10/50")}>
+                <span className={cn("text-xs font-bold uppercase", isCurrentWeek(week.weekStart) ? "text-primary" : "text-slate-500")}>Semana {index + 1}</span>
                 <span className="text-[10px] text-slate-400 font-medium">{format(week.weekStart, 'd MMM', { locale: es })} - {format(addDays(week.weekStart, 4), 'd MMM', { locale: es })}</span>
               </div>
             ))}

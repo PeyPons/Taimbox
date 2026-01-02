@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
 import { Client } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -87,6 +88,7 @@ function StatCard({
 // Componente principal
 export default function ClientsPage() {
   const { clients, projects, allocations, employees, addClient, updateClient, deleteClient, getClientTotalHoursForMonth, getProjectHoursForMonth, loadDataForMonth, isLoading: isGlobalLoading } = useApp();
+  const { currentAgency } = useAgency();
 
   // Estados
   const [searchQuery, setSearchQuery] = useState('');
@@ -274,7 +276,10 @@ export default function ClientsPage() {
       toast.error("El nombre es obligatorio");
       return;
     }
-    addClient(newClient);
+    addClient({
+      ...newClient,
+      agencyId: currentAgency?.id || ''
+    });
     setNewClient({ name: '', color: colorOptions[0] });
     setIsAdding(false);
     toast.success(`${newClient.name} creado`);
@@ -767,6 +772,9 @@ export default function ClientsPage() {
                 </>
               )}
             </DialogTitle>
+            <DialogDescription>
+              Detalles del cliente y estado de sus proyectos.
+            </DialogDescription>
           </DialogHeader>
           {detailClient && (() => {
             const data = clientsWithStats.find(c => c.client.id === detailClient.id);

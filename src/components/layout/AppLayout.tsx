@@ -24,7 +24,7 @@ export function AppLayout() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6">
         <div className="text-center space-y-6 max-w-sm">
           <div className="mx-auto w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center">
-            <Monitor className="h-10 w-10 text-indigo-600" />
+            <Monitor className="h-10 w-10 text-primary" />
           </div>
           <div className="space-y-2">
             <h2 className="text-xl font-bold text-slate-800">Acceso desde escritorio</h2>

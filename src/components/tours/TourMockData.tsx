@@ -329,7 +329,7 @@ export function MockInconsistenciesWidget() {
 export function MockTasksTable() {
   return (
     <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-      <div className="bg-indigo-500 text-white px-4 py-2.5 flex items-center justify-between">
+      <div className="bg-primary/100 text-white px-4 py-2.5 flex items-center justify-between">
         <span className="font-bold">SEO Mensual [Cliente ABC]</span>
         <span className="text-sm opacity-80">(3 tareas)</span>
       </div>
@@ -401,7 +401,7 @@ export function MockTasksTable() {
 export function MockDashboardActions() {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button className="gap-2 bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
+      <Button className="gap-2 bg-primary text-white hover:bg-primary/90 shadow-sm">
         <ListPlus className="h-4 w-4" /> Añadir tareas
       </Button>
       <Button variant="outline" className="gap-2 border-purple-300 text-purple-700 hover:bg-purple-50">

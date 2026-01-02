@@ -599,7 +599,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [currentAgency?.id]);
 
   const updateEmployee = useCallback(async (employee: Employee) => {
+    // 1. Actualización optimista del estado local
     setEmployees(prev => prev.map(e => e.id === employee.id ? employee : e));
+
+    // 2. Actualizar en Base de Datos (Employees table)
     const { error } = await supabase.from('employees').update({
       name: employee.name,
       first_name: employee.first_name,
@@ -624,29 +627,87 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       console.error('Error actualizando empleado:', error);
       const errorMessage = error.message || 'Error al actualizar el empleado';
       toast.error(errorMessage);
+      // Revertir estado optimista si falla? Por ahora no, para no complicar UX
       throw error;
+    }
+
+    // 3. Sincronizar con Supabase Auth (si tiene usuario vinculado y hay cambio de email)
+    // Nota: update-user también maneja contraseñas, pero aquí solo tenemos email.
+    if (employee.user_id && employee.email) {
+      try {
+        const { error: fnError } = await supabase.functions.invoke('update-user', {
+          body: {
+            userId: employee.user_id,
+            email: employee.email
+          }
+        });
+
+        if (fnError) {
+          console.error('Error sincronizando Auth (update-user):', fnError);
+          toast.warning('Empleado actualizado, pero hubo un error sincronizando el email de acceso.');
+        }
+      } catch (err) {
+        console.error('Error invocando update-user:', err);
+      }
     }
   }, []);
 
   const deleteEmployee = useCallback(async (id: string) => {
+    // Buscar empleado antes de borrarlo para obtener su user_id
+    // Usamos el estado actual 'employees' (closure) o el ref si queremos ser muy seguros, 
+    // pero useEffect dependencies aseguran 'employees' actualizado? 
+    // No, deleteEmployee dependencies es [], así que 'employees' dentro podría ser stale si no usamos callback en setState
+    // MEJOR: Buscar en el ref que mantenemos actualizado
+    const employeeToDelete = employeesRef.current.find(e => e.id === id);
+
+    // 1. Actualización optimista UI
     setEmployees(prev => prev.filter(e => e.id !== id));
     setAllocations(prev => prev.filter(a => a.employeeId !== id));
     setAbsences(prev => prev.filter(a => a.employeeId !== id));
-    await supabase.from('employees').delete().eq('id', id);
+
+    // 2. Borrar de la tabla employees
+    const { error } = await supabase.from('employees').delete().eq('id', id);
+
+    if (error) {
+      console.error('Error eliminando empleado de BD:', error);
+      toast.error('Error eliminando empleado');
+      // Podríamos revertir el estado aquí si fuera crítico
+      return;
+    }
+
+    // 3. Borrar de Auth (si tiene user_id)
+    if (employeeToDelete?.user_id) {
+      console.log('Intentando eliminar usuario Auth asociado:', employeeToDelete.user_id);
+      try {
+        const { error: fnError } = await supabase.functions.invoke('delete-user', {
+          body: { userId: employeeToDelete.user_id }
+        });
+
+        if (fnError) {
+          console.error('Error eliminando usuario Auth (invoke):', fnError);
+          toast.warning('Empleado eliminado, pero el usuario de acceso podría seguir activo (error de sincronización).');
+        } else {
+          console.log('Usuario Auth eliminado correctamente.');
+        }
+      } catch (err) {
+        console.error('Error invocando delete-user:', err);
+      }
+    }
   }, []);
 
   const toggleEmployeeActive = useCallback(async (id: string) => {
-    // Usamos un ref para obtener el estado actual sin depender de employees
     let newState: boolean | null = null;
 
     setEmployees(prev => {
       const emp = prev.find(e => e.id === id);
       if (!emp) return prev;
       newState = !emp.isActive;
-      return prev.map(e => e.id === id ? { ...e, isActive: newState! } : e);
+      // Actualizar ref también para consistency inmediata
+      const updated = prev.map(e => e.id === id ? { ...e, isActive: newState! } : e);
+      employeesRef.current = updated;
+      return updated;
     });
 
-    // Solo hacer la llamada a supabase si encontramos el empleado
     if (newState !== null) {
       await supabase.from('employees').update({ is_active: newState }).eq('id', id);
     }

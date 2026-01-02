@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { MyWeekView } from '@/components/employee/MyWeekView';
+import { MyDayView } from '@/components/employee/MyDayView';
 import { WeeklyReportDialog } from '@/components/employee/WeeklyReportDialog';
 import { PriorityInsights, ProjectTeamPulse } from '@/components/employee/DashboardWidgets';
 import { ReliabilityIndexCard } from '@/components/employee/ReliabilityIndexCard';
@@ -16,7 +17,7 @@ import { EmployeeRow } from '@/components/planner/EmployeeRow';
 import { AllocationSheet } from '@/components/planner/AllocationSheet';
 import { AbsencesSheet } from '@/components/team/AbsencesSheet';
 import { ProfessionalGoalsSheet } from '@/components/team/ProfessionalGoalsSheet';
-import { getWeeksForMonth, getMonthName, getStorageKey, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { getWeeksForMonth, getMonthName, getStorageKey, isAllocationInEffectiveMonth, normalizeWeekStart } from '@/utils/dateUtils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -269,8 +270,8 @@ export default function EmployeeDashboard() {
       if (!projectId) { toast.error("No se pudo obtener el proyecto interno"); return; }
 
       const today = new Date();
-      const mondayOfCurrentWeek = startOfWeek(today, { weekStartsOn: 1 });
-      const formattedDate = format(mondayOfCurrentWeek, 'yyyy-MM-dd');
+      // Usar normalizeWeekStart para manejar correctamente semanas partidas (Effective Month)
+      const formattedDate = normalizeWeekStart(today, startOfMonth(today));
 
       await addAllocation({
         projectId, employeeId: myEmployeeProfile.id, weekStartDate: formattedDate,
@@ -547,9 +548,9 @@ export default function EmployeeDashboard() {
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6 pb-20 animate-in fade-in duration-500">
       {/* Fondo con gradiente animado */}
-      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-indigo-50 via-white to-purple-50 opacity-50" />
-      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_20%_50%,rgba(99,102,241,0.1),transparent_50%)]" />
-      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_80%_80%,rgba(168,85,247,0.1),transparent_50%)]" />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-primary/5 via-white to-primary/5 opacity-50" />
+      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_20%_50%,rgba(var(--primary-rgb),0.1),transparent_50%)]" />
+      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_80%_80%,rgba(var(--primary-rgb),0.1),transparent_50%)]" />
 
       {/* 1. CABECERA + ACCIONES */}
       {/* 1. CABECERA + ACCIONES */}
@@ -561,7 +562,7 @@ export default function EmployeeDashboard() {
             "gap-2 shadow-sm transition-all flex-1 sm:flex-initial",
             hasPendingWeeklyTasks
               ? "bg-amber-600 text-white hover:bg-amber-700 animate-pulse shadow-lg shadow-amber-500/50"
-              : "bg-indigo-600 text-white hover:bg-indigo-700"
+              : "bg-primary text-white hover:bg-primary/90"
           )}
           data-tour="weekly-button"
         >
@@ -577,7 +578,7 @@ export default function EmployeeDashboard() {
         </Button>
 
         {/* Añadir tareas siempre visible */}
-        <Button onClick={openAddTasksDialog} className="gap-2 bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm flex-1 sm:flex-initial" data-tour="add-tasks">
+        <Button onClick={openAddTasksDialog} className="gap-2 bg-primary text-white hover:bg-primary/90 shadow-sm flex-1 sm:flex-initial" data-tour="add-tasks">
           <ListPlus className="h-4 w-4" /> <span className="hidden xs:inline">Añadir tareas</span><span className="xs:hidden">Tareas</span>
         </Button>
 
@@ -822,7 +823,7 @@ export default function EmployeeDashboard() {
       <Dialog open={isAddingTasks} onOpenChange={setIsAddingTasks}>
         <DialogContent className="sm:max-w-[900px]" aria-describedby="add-tasks-description">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><ListPlus className="h-5 w-5 text-indigo-600" />Añadir tareas</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><ListPlus className="h-5 w-5 text-primary" />Añadir tareas</DialogTitle>
             <DialogDescription id="add-tasks-description">Añade múltiples tareas a tu planificación de {getMonthName(currentMonth)}.</DialogDescription>
           </DialogHeader>
 
@@ -977,7 +978,7 @@ export default function EmployeeDashboard() {
 
             <div className="flex justify-end gap-2 w-full">
               <Button variant="outline" onClick={() => setIsAddingTasks(false)}>Cancelar</Button>
-              <Button onClick={handleSaveTasks} className="bg-indigo-600 hover:bg-indigo-700">Guardar tareas</Button>
+              <Button onClick={handleSaveTasks} className="bg-primary hover:bg-primary/90">Guardar tareas</Button>
             </div>
           </DialogFooter>
         </DialogContent>
@@ -1000,6 +1001,9 @@ export default function EmployeeDashboard() {
       }
 
       <WelcomeTour forceShow={showTour} onTabChange={setActiveTab} />
+
+      {/* Mi Día View - Focus semanal/diario */}
+      <MyDayView />
     </div>
   );
 }

@@ -65,7 +65,7 @@ export default function Login() {
       <Card className="w-full max-w-sm bg-white shadow-xl">
         <CardHeader className="space-y-1">
           <div className="flex justify-center mb-4">
-            <div className="h-10 w-10 rounded-lg bg-indigo-600 flex items-center justify-center">
+            <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
               <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
             </div>
           </div>
@@ -113,7 +113,7 @@ export default function Login() {
               />
               <Button
                 type="submit"
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium"
+                className="w-full bg-primary hover:bg-primary/90 text-white font-medium"
                 disabled={form.formState.isSubmitting}
               >
                 {form.formState.isSubmitting ? "Entrando..." : "Acceder"}

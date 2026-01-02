@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
 import { Client, Project, OKR } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -30,6 +32,7 @@ import { toast } from 'sonner';
 import { format, subMonths, addMonths, isSameMonth, parseISO, getDaysInMonth, getDate } from 'date-fns';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
+import { useProjectFilters } from '@/hooks/useProjectFilters';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -40,7 +43,6 @@ const colorOptions = [
 
 type FilterType = 'all' | 'needs-planning' | 'behind-schedule' | 'over-budget' | 'no-activity';
 type StatusFilter = 'all' | 'active' | 'completed' | 'archived' | 'hidden';
-type ProjectTypeFilter = 'all' | 'seo' | 'ppc';
 
 // Componente para estadísticas del header
 function StatCard({
@@ -106,6 +108,7 @@ export default function ClientsAndProjectsPage() {
     addProject, updateProject, deleteProject,
     getClientTotalHoursForMonth, getProjectHoursForMonth
   } = useApp();
+  const { currentAgency } = useAgency();
 
   // Estados
   const [searchQuery, setSearchQuery] = useState('');
@@ -115,13 +118,19 @@ export default function ClientsAndProjectsPage() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [hidingProject, setHidingProject] = useState<Project | null>(null);
+
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ type: 'client' | 'project', id: string, name: string } | null>(null);
+
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('all');
   const [openEmployeeCombo, setOpenEmployeeCombo] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>('needs-planning'); // Por defecto mostrar los que necesitan planificación
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active'); // Por defecto solo activos
-  const [projectTypeFilter, setProjectTypeFilter] = useState<ProjectTypeFilter>('all');
+  const [projectTypeFilter, setProjectTypeFilter] = useState<string>('all');
+
+  // Custom project filters from agency settings
+  const { activeFilters, filterProject, getFilterDisplayName } = useProjectFilters();
 
   const projectFormSchema = z.object({
     name: z.string().min(1, 'El nombre es obligatorio'),
@@ -202,7 +211,12 @@ export default function ClientsAndProjectsPage() {
       // Falta planificar: si tiene horas objetivo y no se han planificado todas
       // - Si tiene budgetHours: debe planificar todas las budgetHours
       // - Si solo tiene minimumHours: debe planificar al menos las minimumHours
-      const needsPlanning = targetHours > 0 && totalAssigned < targetHours;
+      // Falta planificar:
+      // - Si tiene minimumHours > 0: solo falta si no llegamos al mínimo
+      // - Si NO tiene minimumHours: falta si no llegamos al budget
+      const needsPlanning = minimum > 0
+        ? totalAssigned < minimum
+        : (budget > 0 && totalAssigned < budget);
       const behindSchedule = monthProgress > 30 && executionPct < (monthProgress - 20);
       const overBudget = budget > 0 && totalAssigned > budget;
       const noActivity = targetHours > 0 && totalAssigned === 0;
@@ -441,26 +455,10 @@ export default function ClientsAndProjectsPage() {
             if (project.isHidden) return false;
           }
 
-          // Filtro de tipo de proyecto (SEO/PPC)
+          // Filtro de tipo de proyecto (dinámico desde configuración de agencia)
           if (projectTypeFilter !== 'all') {
-            const projectNameUpper = project.name.toUpperCase();
-            if (projectTypeFilter === 'seo') {
-              // Solo SEO: excluir SEM, RRSS, Social, PPC, DV360
-              if (projectNameUpper.includes('SEM') ||
-                projectNameUpper.includes('RRSS') ||
-                projectNameUpper.includes('SOCIAL') ||
-                projectNameUpper.includes('PPC') ||
-                projectNameUpper.includes('DV360')) {
-                return false;
-              }
-            } else if (projectTypeFilter === 'ppc') {
-              // Solo PPC: incluir SEM, Social, PPC, DV360
-              if (!projectNameUpper.includes('SEM') &&
-                !projectNameUpper.includes('SOCIAL') &&
-                !projectNameUpper.includes('PPC') &&
-                !projectNameUpper.includes('DV360')) {
-                return false;
-              }
+            if (!filterProject(project, projectTypeFilter)) {
+              return false;
             }
           }
 
@@ -589,7 +587,8 @@ export default function ClientsAndProjectsPage() {
   const handleAddClient = (data: ClientFormValues) => {
     addClient({
       name: data.name || 'Nuevo Cliente',
-      color: data.color || '#000000'
+      color: data.color || '#000000',
+      agencyId: currentAgency?.id || ''
     });
     setIsAddingClient(false);
     clientForm.reset();
@@ -608,9 +607,7 @@ export default function ClientsAndProjectsPage() {
 
   const handleDeleteClient = () => {
     if (!editingClient) return;
-    deleteClient(editingClient.id);
-    setEditingClient(null);
-    toast.success(`${editingClient.name} eliminado`);
+    setDeleteConfirmation({ type: 'client', id: editingClient.id, name: editingClient.name });
   };
 
   const openNewProject = () => {
@@ -651,7 +648,8 @@ export default function ClientsAndProjectsPage() {
           minimumHours: Number(data.minimumHours) || 0,
           monthlyFee: Number(data.monthlyFee) || 0,
           status: data.status,
-          okrs: (data.okrs || []).map(o => ({ ...o, id: o.id || crypto.randomUUID() })) as OKR[]
+          okrs: (data.okrs || []).map(o => ({ ...o, id: o.id || crypto.randomUUID() })) as OKR[],
+          agencyId: currentAgency?.id || ''
         });
         toast.success('Proyecto creado');
       } else if (editingProject) {
@@ -677,16 +675,29 @@ export default function ClientsAndProjectsPage() {
 
   const handleDeleteProject = async () => {
     if (!editingProject) return;
-    if (confirm("¿Estás seguro de eliminar este proyecto? Se borrarán sus asignaciones.")) {
-      try {
-        await deleteProject(editingProject.id);
-        setEditingProject(null);
+    setDeleteConfirmation({ type: 'project', id: editingProject.id, name: editingProject.name });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmation) return;
+
+    try {
+      if (deleteConfirmation.type === 'client') {
+        const clientName = deleteConfirmation.name;
+        deleteClient(deleteConfirmation.id);
+        setEditingClient(null); // Close client dialog if open
+        toast.success(`${clientName} eliminado`);
+      } else if (deleteConfirmation.type === 'project') {
+        await deleteProject(deleteConfirmation.id);
+        setEditingProject(null); // Close project dialog if open
         toast.success('Proyecto eliminado');
-      } catch (e) {
-        console.error('Error eliminando proyecto:', e);
-        const errorMessage = (e as Error)?.message || 'No se pudo eliminar el proyecto';
-        toast.error(errorMessage);
       }
+    } catch (e) {
+      console.error('Error eliminando:', e);
+      const errorMessage = (e as Error)?.message || 'Error al eliminar';
+      toast.error(errorMessage);
+    } finally {
+      setDeleteConfirmation(null);
     }
   };
 
@@ -762,7 +773,7 @@ export default function ClientsAndProjectsPage() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-200">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/20">
             <Building2 className="h-5 w-5 text-white" />
           </div>
           <div>
@@ -1001,9 +1012,7 @@ export default function ClientsAndProjectsPage() {
                         type="button"
                         variant="destructive"
                         onClick={() => {
-                          if (confirm(`¿Estás seguro de eliminar "${editingProject.name}"? Se borrarán sus asignaciones.`)) {
-                            handleDeleteProject();
-                          }
+                          setDeleteConfirmation({ type: 'project', id: editingProject.id, name: editingProject.name });
                         }}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
@@ -1163,15 +1172,18 @@ export default function ClientsAndProjectsPage() {
             </SelectContent>
           </Select>
 
-          {/* Filtro de tipo de proyecto (SEO/PPC) */}
-          <Select value={projectTypeFilter} onValueChange={(value: ProjectTypeFilter) => setProjectTypeFilter(value)}>
+          {/* Filtro de tipo de proyecto (dinámico desde configuración de agencia) */}
+          <Select value={projectTypeFilter} onValueChange={setProjectTypeFilter}>
             <SelectTrigger className="w-[140px] h-9">
               <SelectValue placeholder="Tipo" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los tipos</SelectItem>
-              <SelectItem value="seo">Solo SEO</SelectItem>
-              <SelectItem value="ppc">Solo PPC</SelectItem>
+              {activeFilters.map(filter => (
+                <SelectItem key={filter.id} value={filter.id}>
+                  {filter.displayName}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -1351,9 +1363,17 @@ export default function ClientsAndProjectsPage() {
             return (
               <div key={client.id} className="bg-white rounded-xl border shadow-sm overflow-hidden">
                 {/* Cabecera del cliente */}
-                <button
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => toggleClient(client.id)}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left group"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      toggleClient(client.id);
+                    }
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left group cursor-pointer"
                 >
                   {isExpanded ? (
                     <ChevronDown className="h-4 w-4 text-slate-400 flex-shrink-0" />
@@ -1458,7 +1478,7 @@ export default function ClientsAndProjectsPage() {
                       </Tooltip>
                     </div>
                   </div>
-                </button>
+                </div>
 
                 {/* Proyectos del cliente */}
                 {isExpanded && (
@@ -1932,10 +1952,7 @@ export default function ClientsAndProjectsPage() {
               <Button
                 variant="destructive"
                 onClick={() => {
-                  if (confirm(`¿Estás seguro de eliminar "${editingClient.name}"? Esta acción no se puede deshacer.`)) {
-                    handleDeleteClient();
-                    setEditingClient(null);
-                  }
+                  setDeleteConfirmation({ type: 'client', id: editingClient.id, name: editingClient.name });
                 }}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
@@ -1981,6 +1998,25 @@ export default function ClientsAndProjectsPage() {
           </DialogContent>
         </Dialog>
       )}
+      <AlertDialog open={!!deleteConfirmation} onOpenChange={(open) => !open && setDeleteConfirmation(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteConfirmation?.type === 'client'
+                ? `Estás a punto de eliminar el cliente "${deleteConfirmation.name}". Esta acción no se puede deshacer.`
+                : `Estás a punto de eliminar el proyecto "${deleteConfirmation?.name}". Se borrarán todas sus asignaciones y deadline.`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

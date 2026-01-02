@@ -127,7 +127,7 @@ export const ReliabilityIndexCard = memo(function ReliabilityIndexCard({ employe
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center gap-2">
-              <Compass className="h-5 w-5 text-indigo-600" />
+              <Compass className="h-5 w-5 text-primary" />
               <span>Precisión de planificación</span>
             </div>
             <Tooltip>
@@ -203,9 +203,9 @@ export const ReliabilityIndexCard = memo(function ReliabilityIndexCard({ employe
           )}
 
           {/* Sección educativa - Más amigable */}
-          <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
+          <div className="bg-primary/10 rounded-lg p-3 border border-indigo-100">
             <div className="flex items-start gap-2">
-              <Lightbulb className="h-4 w-4 text-indigo-600 mt-0.5 shrink-0" />
+              <Lightbulb className="h-4 w-4 text-primary mt-0.5 shrink-0" />
               <div className="text-xs text-indigo-800">
                 <p className="font-semibold mb-1">¿Para qué sirve esto?</p>
                 <ul className="space-y-1 text-indigo-700">

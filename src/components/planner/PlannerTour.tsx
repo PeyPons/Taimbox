@@ -579,7 +579,7 @@ export function PlannerTour({ onComplete, forceShow = false, onVisibilityChange 
                   )}
                   <Button
                     size="sm"
-                    className="bg-indigo-600 hover:bg-indigo-700 h-8 px-4"
+                    className="bg-primary hover:bg-primary/90 h-8 px-4"
                     onClick={(e) => { e.stopPropagation(); if (isLastStep) handleComplete(); else handleNext(); }}
                   >
                     {isLastStep ? '¡Listo!' : 'Siguiente'}

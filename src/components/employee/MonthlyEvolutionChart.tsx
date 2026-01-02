@@ -32,8 +32,21 @@ export function MonthlyEvolutionChart({
 
             // Filtrar allocations de esta semana que pertenezcan al mes efectivo
             const weekAllocations = allocations.filter(a => {
-                if (a.weekStartDate !== storageKey && a.weekStartDate !== week.weekStart.toISOString().split('T')[0]) return false;
-                return isAllocationInEffectiveMonth(a.weekStartDate, currentMonth);
+                // Pre-filtro: Debe pertenecer al mes efectivo (igual que en los Cards)
+                if (!isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)) return false;
+
+                // Ahora chequeamos si cae dentro de ESTA semana visual
+                // Usamos timestamps para evitar problemas de horas/zonas
+                const allocDate = new Date(a.weekStartDate);
+                allocDate.setHours(0, 0, 0, 0);
+
+                const wStart = new Date(week.effectiveStart);
+                wStart.setHours(0, 0, 0, 0);
+
+                const wEnd = new Date(week.effectiveEnd);
+                wEnd.setHours(23, 59, 59, 999);
+
+                return allocDate.getTime() >= wStart.getTime() && allocDate.getTime() <= wEnd.getTime();
             });
 
             // PLANIFICADO: Todo lo asignado en la semana (completado o no)
@@ -41,10 +54,10 @@ export function MonthlyEvolutionChart({
 
             // COMPUTADO: Solo lo asignado de tareas COMPLETADAS (lo que se factura/gana)
             // Asumimos que al completar se computan las horas asignadas originales (valor entregado)
-            // Si existe un campo explícito hoursComputed, úsalo, si no, fallback a hoursAssigned
+            // Si existe un campo explícito hoursComputed, úsalo.
             const totalComputed = weekAllocations
                 .filter(a => a.status === 'completed')
-                .reduce((sum, a) => sum + (a.hoursAssigned), 0);
+                .reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
 
             // EXPLICACIÓN "TIEMPO GANADO":
             // El usuario quiere ver "cuánto tiempo hemos ganado".
@@ -69,7 +82,7 @@ export function MonthlyEvolutionChart({
                 <CardTitle className="text-sm font-semibold flex items-center justify-between text-slate-700">
                     <div className="flex items-center gap-2">
                         <TrendingUp className="h-4 w-4 text-emerald-600" />
-                        Evolución Mensual (Valor Entregado)
+                        Evolución mensual
                     </div>
                 </CardTitle>
             </CardHeader>
@@ -91,7 +104,7 @@ export function MonthlyEvolutionChart({
                                         style={{ height: `${Math.max(heightPlanned, 4)}%` }}
                                     >
                                         <span className="opacity-0 group-hover:opacity-100 absolute -top-12 left-1/2 -translate-x-1/2 text-[10px] bg-slate-800 text-white px-2 py-1 rounded z-20 whitespace-nowrap shadow-sm">
-                                            Planificado: {data.totalPlanned.toFixed(0)}h
+                                            Planificado: {data.totalPlanned.toFixed(2)}h
                                         </span>
                                     </div>
 
@@ -104,14 +117,14 @@ export function MonthlyEvolutionChart({
                                         style={{ height: `${Math.max(heightComputed, 4)}%` }}
                                     >
                                         <span className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] font-bold bg-emerald-700 text-white px-2 py-1 rounded z-30 whitespace-nowrap shadow-sm">
-                                            Computado: {data.totalComputed.toFixed(0)}h
+                                            Computado: {data.totalComputed.toFixed(2)}h
                                         </span>
                                     </div>
                                 </div>
 
                                 {/* Labels */}
                                 <div className="text-center mt-3 pb-1">
-                                    <p className={cn("text-[9px] font-bold uppercase tracking-wider mb-0.5", data.isCurrent ? "text-indigo-600" : "text-slate-500")}>
+                                    <p className={cn("text-[9px] font-bold uppercase tracking-wider mb-0.5", data.isCurrent ? "text-primary" : "text-slate-500")}>
                                         {data.weekLabel}
                                     </p>
                                     <p className="text-[9px] text-slate-400 scale-90 sm:scale-100 whitespace-nowrap">

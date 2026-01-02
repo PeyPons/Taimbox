@@ -161,7 +161,7 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
             <div className="flex items-center gap-4">
               <Avatar className="h-20 w-20 border-2 border-slate-200">
                 <AvatarImage src={currentAvatarUrl || undefined} alt={employee.name} />
-                <AvatarFallback className="bg-indigo-600 text-white font-medium text-lg">
+                <AvatarFallback className="bg-primary text-white font-medium text-lg">
                   {employee.first_name?.[0] || employee.name[0]}
                   {employee.last_name?.[0] || employee.name[1]}
                 </AvatarFallback>
@@ -244,7 +244,7 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
           <Button
             onClick={handleChangePassword}
             disabled={isUpdating || !newPassword || !confirmPassword}
-            className="bg-indigo-600 hover:bg-indigo-700"
+            className="bg-primary hover:bg-primary/90"
           >
             {isUpdating ? 'Actualizando...' : 'Cambiar contraseña'}
           </Button>

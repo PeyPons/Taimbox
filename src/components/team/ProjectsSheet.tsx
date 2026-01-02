@@ -105,7 +105,7 @@ export function ProjectsSheet({ open, onOpenChange, employeeId }: ProjectsSheetP
                                 
                                 {/* Badge de IMPACTO */}
                                 <div className="flex flex-col items-end gap-1">
-                                    <Badge variant="secondary" className="text-[10px] h-5 bg-indigo-50 text-indigo-700 border border-indigo-100 flex gap-1 shadow-none">
+                                    <Badge variant="secondary" className="text-[10px] h-5 bg-primary/10 text-indigo-700 border border-indigo-100 flex gap-1 shadow-none">
                                         <PieChart className="h-3 w-3" /> Tu impacto: {impactPercentage}%
                                     </Badge>
                                 </div>

@@ -60,7 +60,7 @@ export function TeamEventManager() {
     <Card>
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
-            <Users className="h-5 w-5 text-indigo-600" />
+            <Users className="h-5 w-5 text-primary" />
             Eventos y festivos
         </CardTitle>
         <CardDescription>Añade festivos o eventos de equipo.</CardDescription>
@@ -101,7 +101,7 @@ export function TeamEventManager() {
                     <Input type="number" value={hoursReduction} onChange={(e) => setHoursReduction(e.target.value)} min={0} />
                 </div>
 
-                <Button onClick={handleAddEvent} disabled={!newEventName || !newEventDate} className="bg-indigo-600 hover:bg-indigo-700 w-full md:w-auto">
+                <Button onClick={handleAddEvent} disabled={!newEventName || !newEventDate} className="bg-primary hover:bg-primary/90 w-full md:w-auto">
                     <Plus className="h-4 w-4 mr-2" /> Añadir
                 </Button>
             </div>

@@ -61,7 +61,7 @@ export default function TeamPage() {
                 </DialogContent>
             </Dialog>
 
-            <Button onClick={handleNewEmployee} className="bg-indigo-600 hover:bg-indigo-700 gap-2">
+            <Button onClick={handleNewEmployee} className="bg-primary hover:bg-primary/90 gap-2">
                 <Plus className="h-4 w-4" /> Nuevo empleado
             </Button>
         </div>

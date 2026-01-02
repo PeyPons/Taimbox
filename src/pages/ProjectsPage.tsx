@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -34,6 +36,7 @@ type FilterType = 'all' | 'needs-planning' | 'behind-schedule' | 'over-budget' |
 
 export default function ProjectsPage() {
   const { projects, clients, allocations, employees, deleteProject, updateProject, addProject } = useApp();
+  const { currentAgency } = useAgency();
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,6 +48,7 @@ export default function ProjectsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '', clientId: '', budgetHours: '', minimumHours: '', monthlyFee: '',
@@ -95,7 +99,12 @@ export default function ProjectsPage() {
         const executionPct = totalAssigned > 0 ? (hoursComputed / totalAssigned) * 100 : 0;
 
         // Detección de problemas
-        const needsPlanning = budget > 0 && totalAssigned < budget * 0.5; // Menos del 50% planificado
+        // Lógica de Minimum Hours:
+        // - Si tiene minimumHours > 0: solo falta si no llegamos al mínimo
+        // - Si NO tiene minimumHours: falta si no llegamos al budget (o al 50% del budget como estaba antes)
+        const needsPlanning = minimum > 0
+          ? totalAssigned < minimum
+          : (budget > 0 && totalAssigned < budget * 0.5); // Menos del 50% planificado (lógica original)
         const behindSchedule = monthProgress > 30 && executionPct < (monthProgress - 20); // 20% por debajo del ritmo
         const overBudget = budget > 0 && totalAssigned > budget;
         const noActivity = budget > 0 && totalAssigned === 0;
@@ -247,6 +256,7 @@ export default function ProjectsPage() {
     try {
       if (isCreating) {
         await addProject({
+          agencyId: currentAgency?.id || '',
           name: formData.name.trim(),
           clientId: formData.clientId,
           budgetHours: budgetHours,
@@ -283,18 +293,22 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!editingId) return;
-    if (confirm("¿Estás seguro de eliminar este proyecto? Se borrarán sus asignaciones.")) {
-      try {
-        await deleteProject(editingId);
-        toast.success("Proyecto eliminado correctamente");
-        setIsDialogOpen(false);
-      } catch (e) {
-        console.error("Error eliminando proyecto:", e);
-        const errorMessage = (e as { message?: string })?.message || (e as { error?: { message?: string } })?.error?.message || "No se pudo eliminar el proyecto";
-        toast.error(errorMessage);
-      }
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!editingId) return;
+    try {
+      await deleteProject(editingId);
+      toast.success("Proyecto eliminado correctamente");
+      setIsDialogOpen(false);
+      setShowDeleteConfirm(false);
+    } catch (e) {
+      console.error("Error eliminando proyecto:", e);
+      const errorMessage = (e as { message?: string })?.message || (e as { error?: { message?: string } })?.error?.message || "No se pudo eliminar el proyecto";
+      toast.error(errorMessage);
     }
   };
 
@@ -311,12 +325,12 @@ export default function ProjectsPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
-            <FolderKanban className="h-8 w-8 text-indigo-600" /> Proyectos
+            <FolderKanban className="h-8 w-8 text-primary" /> Proyectos
           </h1>
           <p className="text-muted-foreground">Panel de control y seguimiento operativo</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button onClick={openNewProject} className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
+          <Button onClick={openNewProject} className="bg-primary hover:bg-primary/90 text-white gap-2">
             <Plus className="h-4 w-4" /> Nuevo proyecto
           </Button>
           <div className="flex items-center gap-1 bg-white p-1 rounded-lg border shadow-sm">
@@ -342,7 +356,7 @@ export default function ProjectsPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-indigo-100 rounded-lg">
-                <FolderKanban className="h-5 w-5 text-indigo-600" />
+                <FolderKanban className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-slate-900">{projectsAnalysis.length}</p>
@@ -1003,7 +1017,7 @@ export default function ProjectsPage() {
                               <div key={idx} className="space-y-1">
                                 <div className="flex justify-between text-xs">
                                   <span className="text-slate-600">{okr.title}</span>
-                                  <span className="font-bold text-indigo-600">{okr.progress}%</span>
+                                  <span className="font-bold text-primary">{okr.progress}%</span>
                                 </div>
                                 <Progress value={okr.progress} className="h-1.5" />
                               </div>
@@ -1109,6 +1123,23 @@ export default function ProjectsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar proyecto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de eliminar este proyecto? Se borrarán todas sus asignaciones y deadline. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { AppProvider } from "@/contexts/AppContext";
 import { GoalsProvider } from "@/contexts/GoalsContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
 // Componentes de auth
 import Login from "./pages/Login";
@@ -20,11 +21,13 @@ import { PermissionProtectedRoute } from "./components/auth/PermissionProtectedR
 // Página principal (carga inmediata para mejor UX)
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import LandingPage from "./pages/LandingPage";
+import { ModuleGuard } from "./components/auth/ModuleGuard";
+import { BrandingEffect } from "./components/layout/BrandingEffect";
 
 // Loading fallback para páginas lazy
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50">
-    <div className="h-8 w-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+    <div className="h-8 w-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
   </div>
 );
 
@@ -34,7 +37,7 @@ const LazyErrorFallback = ({ error, retry }: { error: Error; retry: () => void }
     <div className="text-center p-8">
       <h2 className="text-xl font-semibold text-slate-900 mb-2">Error al cargar la página</h2>
       <p className="text-slate-600 mb-4">{error.message}</p>
-      <Button onClick={retry} className="bg-indigo-600 hover:bg-indigo-700">
+      <Button onClick={retry} className="bg-primary hover:bg-primary/90">
         Reintentar
       </Button>
     </div>
@@ -71,6 +74,7 @@ const MetaAdsPage = lazyWithRetry(() => import("./pages/MetaAdsPage"));
 const AdsPage = lazyWithRetry(() => import("@/pages/AdsPage"));
 const DeadlinesPage = lazyWithRetry(() => import("./pages/DeadlinesPage"));
 const WeeklyForecastPage = lazyWithRetry(() => import("./pages/WeeklyForecastPage"));
+const OkrsPage = lazyWithRetry(() => import("./pages/OkrsPage"));
 const AgencySettingsPage = lazyWithRetry(() => import("./pages/AgencySettingsPage"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
@@ -92,46 +96,50 @@ const App = () => (
         <AgencyProvider>
           <AppProvider>
             <GoalsProvider>
-            <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                {/* Ruta pública Landing */}
-                <Route path="/" element={<LandingPage />} />
+              <NotificationProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrandingEffect />
+                  <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                    <Routes>
+                      {/* Ruta pública Landing */}
+                      <Route path="/" element={<LandingPage />} />
 
-                {/* Ruta pública Login */}
-                <Route path="/login" element={<Login />} />
+                      {/* Ruta pública Login */}
+                      <Route path="/login" element={<Login />} />
 
-                {/* Rutas Protegidas */}
-                <Route element={<ProtectedRoute />}>
-                  <Route element={<AppLayout />}>
-                    {/* Dashboard Personal */}
-                    <Route path="/dashboard" element={<EmployeeDashboard />} />
+                      {/* Rutas Protegidas */}
+                      <Route element={<ProtectedRoute />}>
+                        <Route element={<AppLayout />}>
+                          {/* Dashboard Personal */}
+                          <Route path="/dashboard" element={<EmployeeDashboard />} />
 
-                    {/* Resto de rutas protegidas por permisos - con Suspense para lazy loading */}
-                    <Route path="/planner" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/planner"><Index /></PermissionProtectedRoute></Suspense>} />
-                    <Route path="/deadlines" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/deadlines"><DeadlinesPage /></PermissionProtectedRoute></Suspense>} />
-                    <Route path="/team" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/team"><TeamPage /></PermissionProtectedRoute></Suspense>} />
-                    <Route path="/clients" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/clients"><ClientsAndProjectsPage /></PermissionProtectedRoute></Suspense>} />
-                    <Route path="/projects" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/projects"><ClientsAndProjectsPage /></PermissionProtectedRoute></Suspense>} />
-                    <Route path="/reports" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/reports"><ReportsPage /></PermissionProtectedRoute></Suspense>} />
-                    <Route path="/informes-clientes" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/informes-clientes"><ClientReportsPage /></PermissionProtectedRoute></Suspense>} />
-                    <Route path="/settings" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><SettingsPage /></PermissionProtectedRoute></Suspense>} />
-                    <Route path="/agency" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><AgencySettingsPage /></PermissionProtectedRoute></Suspense>} />
-                    <Route path="/ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/ads"><AdsPage /></PermissionProtectedRoute></Suspense>} />
-                    <Route path="/meta-ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/meta-ads"><MetaAdsPage /></PermissionProtectedRoute></Suspense>} />
-                    <Route path="/weekly-forecast" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/weekly-forecast"><WeeklyForecastPage /></PermissionProtectedRoute></Suspense>} />
-                    <Route path="/dashboard-ai" element={<Suspense fallback={<PageLoader />}><DashboardAI /></Suspense>} />
-                  </Route>
-                </Route>
+                          {/* Resto de rutas protegidas por permisos - con Suspense para lazy loading */}
+                          <Route path="/planner" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/planner"><Index /></PermissionProtectedRoute></Suspense>} />
+                          <Route path="/deadlines" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/deadlines"><ModuleGuard module="deadlines"><DeadlinesPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
+                          <Route path="/team" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/team"><TeamPage /></PermissionProtectedRoute></Suspense>} />
+                          <Route path="/clients" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/clients"><ClientsAndProjectsPage /></PermissionProtectedRoute></Suspense>} />
+                          <Route path="/projects" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/projects"><ClientsAndProjectsPage /></PermissionProtectedRoute></Suspense>} />
+                          <Route path="/okrs" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/okrs"><OkrsPage /></PermissionProtectedRoute></Suspense>} />
+                          <Route path="/reports" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/reports"><ReportsPage /></PermissionProtectedRoute></Suspense>} />
+                          <Route path="/informes-clientes" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/informes-clientes"><ClientReportsPage /></PermissionProtectedRoute></Suspense>} />
+                          <Route path="/settings" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><SettingsPage /></PermissionProtectedRoute></Suspense>} />
+                          <Route path="/agency" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><AgencySettingsPage /></PermissionProtectedRoute></Suspense>} />
+                          <Route path="/ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/ads"><ModuleGuard module="ppc"><AdsPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
+                          <Route path="/meta-ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/meta-ads"><ModuleGuard module="ppc"><MetaAdsPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
+                          <Route path="/weekly-forecast" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/weekly-forecast"><ModuleGuard module="weeklyFeedback"><WeeklyForecastPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
+                          <Route path="/dashboard-ai" element={<Suspense fallback={<PageLoader />}><DashboardAI /></Suspense>} />
+                        </Route>
+                      </Route>
 
-                {/* 404 */}
-                <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>} />
+                      {/* 404 */}
+                      <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>} />
 
-              </Routes>
-            </BrowserRouter>
-            </TooltipProvider>
+                    </Routes>
+                  </BrowserRouter>
+                </TooltipProvider>
+              </NotificationProvider>
             </GoalsProvider>
           </AppProvider>
         </AgencyProvider>

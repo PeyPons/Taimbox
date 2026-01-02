@@ -98,7 +98,7 @@ export function DemoWeeklyForecastPage() {
             <Card className="border-indigo-100 shadow-md overflow-hidden">
                 <CardHeader className="bg-gradient-to-r from-indigo-50 to-white pb-2">
                     <CardTitle className="flex items-center gap-2 text-lg sm:text-xl font-bold text-indigo-900">
-                        <TrendingUp className="h-5 w-5 text-indigo-600" />
+                        <TrendingUp className="h-5 w-5 text-primary" />
                         Evolución Mensual (Planificado vs Real)
                     </CardTitle>
                 </CardHeader>
@@ -218,7 +218,7 @@ export function DemoWeeklyForecastPage() {
                                 {/* TO */}
                                 <div className="flex items-center gap-2 min-w-[140px]">
                                     <Avatar className="h-10 w-10 border-2 border-indigo-100">
-                                        <AvatarFallback className="bg-indigo-100 text-indigo-600">{item.toEmployee?.name.substring(0, 2)}</AvatarFallback>
+                                        <AvatarFallback className="bg-indigo-100 text-primary">{item.toEmployee?.name.substring(0, 2)}</AvatarFallback>
                                     </Avatar>
                                     <div className="flex flex-col">
                                         <span className="text-sm font-semibold text-slate-900">{item.toEmployee?.name.split(' ')[0]}</span>
@@ -241,7 +241,7 @@ export function DemoWeeklyForecastPage() {
                                     <span className="text-xs text-slate-500 font-medium uppercase tracking-wide">{item.projectName}</span>
                                     <span className="font-medium text-slate-900 truncate">{item.taskName}</span>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <Badge variant="default" className="bg-indigo-600 hover:bg-indigo-700">
+                                        <Badge variant="default" className="bg-primary hover:bg-primary/90">
                                             {item.hours}h
                                         </Badge>
                                         <span className="text-xs text-slate-500">

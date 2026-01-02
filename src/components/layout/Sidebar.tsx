@@ -2,6 +2,7 @@ import { useLocation } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
 import { useApp } from '@/contexts/AppContext'; // Importamos contexto para datos reales
 import { usePermissions } from '@/hooks/usePermissions'; // Hook de permisos
+import { useAgency } from '@/contexts/AgencyContext'; // Hook de agencia
 import { supabase } from '@/lib/supabase'; // Para el logout
 import {
   LayoutDashboard,
@@ -19,11 +20,14 @@ import {
   Calendar,
   TrendingUp,
   DollarSign,
-  X
+  X,
+  User,
+  Rocket
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -34,10 +38,20 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const { currentUser } = useApp(); // Obtenemos el usuario real
   const { canAccess } = usePermissions(); // Verificamos permisos
+  const { currentAgency } = useAgency(); // Configuración de agencia
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = '/login';
+  };
+
+  // Módulos habilitados (si no hay datos, asumimos true por defecto para evitar bloqueos)
+  const modules = currentAgency?.settings?.modules || {
+    seo: true,
+    ppc: true,
+    weeklyFeedback: true,
+    professionalGoals: true,
+    deadlines: true
   };
 
   return (
@@ -60,21 +74,27 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Header del Sidebar */}
         <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
           <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
-            <div className="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
               <LayoutDashboard className="h-5 w-5 text-white" />
             </div>
             <span className="text-slate-100">Timeboxing</span>
           </div>
 
-          {/* Botón cerrar - Solo visible en mobile */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="lg:hidden text-slate-400 hover:text-white"
-          >
-            <X className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <div className="hidden lg:block">
+              <NotificationBell />
+            </div>
+
+            {/* Botón cerrar - Solo visible en mobile */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="lg:hidden text-slate-400 hover:text-white"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
         {/* Navegación Principal */}
@@ -82,11 +102,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           {/* Enlace directo al Dashboard personal - Siempre visible */}
           <NavLink to="/dashboard" icon={Home} active={location.pathname === '/dashboard'}>
-            Mi Espacio
+            Mi espacio
           </NavLink>
 
-          {/* Deadline - Verificar permiso */}
-          {canAccess('/deadlines') && (
+          {/* Deadline - Verificar permiso Y módulo */}
+          {modules.deadlines && canAccess('/deadlines') && (
             <NavLink to="/deadlines" icon={Calendar} active={location.pathname === '/deadlines'}>
               Deadline
             </NavLink>
@@ -105,7 +125,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </NavLink>
               )}
 
-              {canAccess('/weekly-forecast') && (
+              {canAccess('/okrs') && (
+                <NavLink to="/okrs" icon={Rocket} active={location.pathname === '/okrs'}>
+                  Objetivos
+                </NavLink>
+              )}
+
+              {/* Weekly Forecast - depende del módulo weeklyFeedback */}
+              {modules.weeklyFeedback && canAccess('/weekly-forecast') && (
                 <NavLink to="/weekly-forecast" icon={TrendingUp} active={location.pathname === '/weekly-forecast'}>
                   Weekly
                 </NavLink>
@@ -129,8 +156,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </>
           )}
 
-          {/* Sección PPC - Solo mostrar si tiene al menos un permiso */}
-          {(canAccess('/ads') || canAccess('/meta-ads') || canAccess('/ads-reports')) && (
+          {/* Sección PPC - Solo mostrar si tiene al menos un permiso Y el módulo PPC activado */}
+          {modules.ppc && (canAccess('/ads') || canAccess('/meta-ads') || canAccess('/ads-reports')) && (
             <>
               <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-8 mb-2 px-2">
                 PPC
@@ -189,10 +216,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           {currentUser ? (
             <div className="mt-4 px-2 flex items-center gap-3 group">
-              <Avatar className="h-8 w-8 border border-indigo-500/30">
+              <Avatar className="h-8 w-8 border border-primary/30">
                 <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
-                <AvatarFallback className="bg-indigo-600 text-white font-medium text-xs">
-                  {currentUser.first_name?.[0]}{currentUser.last_name?.[0]}
+                <AvatarFallback className="bg-primary text-white">
+                  {currentUser?.name?.charAt(0) || <User className="h-4 w-4" />}
                 </AvatarFallback>
               </Avatar>
 

@@ -554,7 +554,7 @@ export function DeadlinesTour({ onComplete, forceShow = false }: DeadlinesTourPr
                   className={cn(
                     "h-2 rounded-full transition-all duration-300",
                     index === currentStep 
-                      ? "bg-indigo-500 w-6" 
+                      ? "bg-primary/100 w-6" 
                       : index < currentStep
                         ? "bg-indigo-300 w-2"
                         : "bg-slate-200 w-2"
@@ -589,7 +589,7 @@ export function DeadlinesTour({ onComplete, forceShow = false }: DeadlinesTourPr
                 <Button
                   size="sm"
                   onClick={handleNext}
-                  className="gap-1 bg-indigo-600 hover:bg-indigo-700"
+                  className="gap-1 bg-primary hover:bg-primary/90"
                 >
                   {isLastStep ? (
                     <>

@@ -552,7 +552,7 @@ PREGUNTA DEL USUARIO: "${input}"
                   key={i}
                   variant="outline"
                   size="sm"
-                  className="h-7 text-xs gap-1.5 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 transition-colors"
+                  className="h-7 text-xs gap-1.5 bg-slate-50 hover:bg-primary/10 hover:border-indigo-200 hover:text-indigo-700 transition-colors"
                   onClick={() => handleSuggestedQuestion(q.text)}
                   disabled={isLoading}
                 >

@@ -1,9 +1,10 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Employee } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ScheduleEditor } from './ScheduleEditor';
 import { MoreHorizontal, Mail, Phone, Building2, Clock, UserCog, UserCheck, UserX } from 'lucide-react';
 import {
@@ -24,12 +25,18 @@ interface EmployeeCardProps {
 export const EmployeeCard = memo(function EmployeeCard({ employee }: EmployeeCardProps) {
   const { deleteEmployee, toggleEmployeeActive } = useApp();
 
-  const handleDelete = (e: React.MouseEvent) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('¿Estás seguro de eliminar este empleado?')) {
-      deleteEmployee(employee.id);
-      toast.success("Empleado eliminado");
-    }
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteEmployee(employee.id);
+    toast.success("Empleado eliminado");
+    setShowDeleteConfirm(false);
   };
 
   const handleToggleActive = (e: React.MouseEvent) => {
@@ -62,7 +69,7 @@ export const EmployeeCard = memo(function EmployeeCard({ employee }: EmployeeCar
             )}
           </div>
         </div>
-        
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-slate-400 hover:text-slate-600">
@@ -75,41 +82,59 @@ export const EmployeeCard = memo(function EmployeeCard({ employee }: EmployeeCar
               {employee.isActive ? <><UserX className="mr-2 h-4 w-4" /> Desactivar</> : <><UserCheck className="mr-2 h-4 w-4" /> Activar</>}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={handleDelete}>
+            <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={handleDeleteClick}>
               <UserCog className="mr-2 h-4 w-4" /> Eliminar
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </CardHeader>
-      
+
       <CardContent className="grid gap-4 text-xs pt-2">
         {/* Contacto */}
         <div className="flex flex-col gap-1 text-slate-500">
-            {employee.email && (
-                <div className="flex items-center gap-2">
-                    <Mail className="h-3.5 w-3.5 text-indigo-400" />
-                    <span className="truncate">{employee.email}</span>
-                </div>
-            )}
+          {employee.email && (
+            <div className="flex items-center gap-2">
+              <Mail className="h-3.5 w-3.5 text-indigo-400" />
+              <span className="truncate">{employee.email}</span>
+            </div>
+          )}
         </div>
 
         {/* Horario - MODO LECTURA (Aquí está el cambio clave) */}
         {employee.workSchedule && (
-            <div className="pt-2 border-t border-slate-100">
-                <div className="flex items-center gap-2 mb-2 text-slate-900 font-medium">
-                    <Clock className="h-3.5 w-3.5 text-slate-400" /> 
-                    <span>Horario Semanal</span>
-                </div>
-                <div className="pointer-events-none"> {/* Bloqueo extra por seguridad */}
-                    <ScheduleEditor 
-                        schedule={employee.workSchedule} 
-                        readOnly={true} // <--- ESTO LO HACE SOLO LECTURA
-                        onChange={() => {}} 
-                    />
-                </div>
+          <div className="pt-2 border-t border-slate-100">
+            <div className="flex items-center gap-2 mb-2 text-slate-900 font-medium">
+              <Clock className="h-3.5 w-3.5 text-slate-400" />
+              <span>Horario Semanal</span>
             </div>
+            <div className="pointer-events-none"> {/* Bloqueo extra por seguridad */}
+              <ScheduleEditor
+                schedule={employee.workSchedule}
+                readOnly={true} // <--- ESTO LO HACE SOLO LECTURA
+                onChange={() => { }}
+              />
+            </div>
+          </div>
         )}
       </CardContent>
-    </Card>
+
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción eliminará al empleado "{employee.name}" y no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card >
   );
 });

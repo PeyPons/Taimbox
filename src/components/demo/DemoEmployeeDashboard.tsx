@@ -109,14 +109,14 @@ export function DemoEmployeeDashboard() {
                 
                 return (
                   <div key={week.weekStart.toISOString()} className="text-center px-1 sm:px-2 py-1.5 sm:py-2 border-r border-indigo-200/50 flex flex-col justify-center">
-                    <span className="text-[10px] sm:text-xs font-bold uppercase text-indigo-600">S{index + 1}</span>
+                    <span className="text-[10px] sm:text-xs font-bold uppercase text-primary">S{index + 1}</span>
                     <span className="text-[9px] sm:text-[10px] text-slate-500 font-medium">
                       {weekDateLabel}
                     </span>
                   </div>
                 );
               })}
-              <div className="px-1 sm:px-2 py-2 sm:py-3 font-bold text-[10px] sm:text-xs text-center flex items-center justify-center bg-indigo-50/50">TOTAL MES</div>
+              <div className="px-1 sm:px-2 py-2 sm:py-3 font-bold text-[10px] sm:text-xs text-center flex items-center justify-center bg-primary/10/50">TOTAL MES</div>
             </div>
 
             <div className="grid bg-white" style={{ gridTemplateColumns: gridTemplate }}>

@@ -17,7 +17,6 @@ import { UserPermissions } from './permissions';
 export interface AgencyModules {
   seo?: boolean;
   ppc?: boolean;
-  analytics?: boolean;
   weeklyFeedback?: boolean;
   professionalGoals?: boolean;
   deadlines?: boolean;
@@ -28,11 +27,23 @@ export interface AgencyBranding {
   logo?: string;
 }
 
+// Custom project filter configuration
+export interface CustomProjectFilter {
+  id: string;
+  name: string;           // Internal name: "SEO", "PPC", etc.
+  displayName: string;    // UI display: "Proyectos SEO"
+  enabled: boolean;       // If filter is active for this agency
+  includePatterns: string[];  // Keywords to INCLUDE (OR logic)
+  excludePatterns: string[];  // Keywords to EXCLUDE (AND logic)
+  description?: string;   // Explanation of what the filter does
+}
+
 export interface AgencySettings {
   modules?: AgencyModules;
   roles?: string[];
   branding?: AgencyBranding;
   features?: Record<string, boolean>;
+  projectFilters?: CustomProjectFilter[];  // Custom project filters
 }
 
 export interface Agency {
@@ -109,6 +120,7 @@ export interface OKR {
   id: string;
   title: string;
   progress: number;
+  keyResults?: string; // JSON string of KeyResultItem[]
 }
 
 export interface Allocation {
