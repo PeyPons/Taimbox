@@ -50,12 +50,7 @@ const lazyWithRetry = (importFn: () => Promise<{ default: React.ComponentType<un
   return lazy(() =>
     importFn().catch((error) => {
       console.error('Error cargando módulo:', error);
-      // Si el error es de tipo MIME o fetch, intentar recargar la página
-      if (error.message?.includes('MIME type') || error.message?.includes('Failed to fetch')) {
-        console.warn('Error de servidor detectado, recargando página...');
-        window.location.reload();
-        throw error;
-      }
+      // No recargar automáticamente para evitar bucles infinitos
       throw error;
     })
   );
