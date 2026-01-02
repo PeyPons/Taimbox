@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AgencyProvider } from "@/contexts/AgencyContext";
 import { AppProvider } from "@/contexts/AppContext";
 import { GoalsProvider } from "@/contexts/GoalsContext";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -70,6 +71,7 @@ const MetaAdsPage = lazyWithRetry(() => import("./pages/MetaAdsPage"));
 const AdsPage = lazyWithRetry(() => import("@/pages/AdsPage"));
 const DeadlinesPage = lazyWithRetry(() => import("./pages/DeadlinesPage"));
 const WeeklyForecastPage = lazyWithRetry(() => import("./pages/WeeklyForecastPage"));
+const AgencySettingsPage = lazyWithRetry(() => import("./pages/AgencySettingsPage"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -87,8 +89,9 @@ const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <AppProvider>
-          <GoalsProvider>
+        <AgencyProvider>
+          <AppProvider>
+            <GoalsProvider>
             <TooltipProvider>
             <Toaster />
             <Sonner />
@@ -115,6 +118,7 @@ const App = () => (
                     <Route path="/reports" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/reports"><ReportsPage /></PermissionProtectedRoute></Suspense>} />
                     <Route path="/informes-clientes" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/informes-clientes"><ClientReportsPage /></PermissionProtectedRoute></Suspense>} />
                     <Route path="/settings" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><SettingsPage /></PermissionProtectedRoute></Suspense>} />
+                    <Route path="/agency" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><AgencySettingsPage /></PermissionProtectedRoute></Suspense>} />
                     <Route path="/ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/ads"><AdsPage /></PermissionProtectedRoute></Suspense>} />
                     <Route path="/meta-ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/meta-ads"><MetaAdsPage /></PermissionProtectedRoute></Suspense>} />
                     <Route path="/weekly-forecast" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/weekly-forecast"><WeeklyForecastPage /></PermissionProtectedRoute></Suspense>} />
@@ -128,8 +132,9 @@ const App = () => (
               </Routes>
             </BrowserRouter>
             </TooltipProvider>
-          </GoalsProvider>
-        </AppProvider>
+            </GoalsProvider>
+          </AppProvider>
+        </AgencyProvider>
       </AuthProvider>
     </QueryClientProvider>
   </HelmetProvider>
