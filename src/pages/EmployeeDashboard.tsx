@@ -542,7 +542,7 @@ export default function EmployeeDashboard() {
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
-  const gridTemplate = `${isMobile ? '120px' : '250px'} repeat(${weeks.length}, minmax(${isMobile ? '140px' : '0'}, 1fr)) 100px`;
+  const gridTemplate = `${isMobile ? '100px' : '180px'} repeat(${weeks.length}, minmax(0, 1fr)) 90px`;
   const monthlyLoad = getEmployeeMonthlyLoad(myEmployeeProfile.id, currentMonth.getFullYear(), currentMonth.getMonth());
 
   return (
@@ -690,8 +690,8 @@ export default function EmployeeDashboard() {
       {/* 3. CALENDARIO */}
       <Card className="border-indigo-200/50 shadow-xl bg-white/90 backdrop-blur-sm relative overflow-hidden max-w-full" data-tour="calendar">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 -z-10" />
-        <div className="overflow-x-auto custom-scrollbar w-full max-w-full">
-          <div className="min-w-max px-0">
+        <div className="overflow-x-auto custom-scrollbar w-full">
+          <div className="px-0">
             <div className="grid bg-slate-50 border-b" style={{ gridTemplateColumns: gridTemplate }}>
               <div className="px-4 py-3 font-bold text-sm text-slate-700 flex items-center border-r sticky left-0 z-20 bg-slate-50">Mi calendario</div>
               {weeks.map((week, index) => {

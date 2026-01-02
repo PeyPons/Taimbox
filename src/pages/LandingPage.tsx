@@ -188,7 +188,55 @@ export default function LandingPage() {
 
             return (
               <>
-                <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-8 sm:mb-12">
+                {/* Mobile: Horizontal scroll carousel */}
+                <div className="md:hidden mb-6">
+                  <div className="flex gap-2 overflow-x-auto pb-3 px-1 snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                    {features.map((feature, index) => {
+                      const Icon = feature.icon;
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => setActiveFeature(index)}
+                          className={cn(
+                            "flex-shrink-0 snap-center flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-300",
+                            activeFeature === index
+                              ? `bg-gradient-to-br ${feature.color} shadow-lg`
+                              : "bg-white/10 border border-white/20"
+                          )}
+                        >
+                          <div className={cn(
+                            "w-8 h-8 rounded-lg flex items-center justify-center",
+                            activeFeature === index ? "bg-white/20" : `bg-gradient-to-br ${feature.color}`
+                          )}>
+                            <Icon className="h-4 w-4 text-white" />
+                          </div>
+                          <span className={cn(
+                            "text-xs font-semibold whitespace-nowrap",
+                            activeFeature === index ? "text-white" : "text-white/80"
+                          )}>
+                            {feature.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/* Mobile navigation dots */}
+                  <div className="flex justify-center gap-1.5 mt-2">
+                    {features.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setActiveFeature(index)}
+                        className={cn(
+                          "w-2 h-2 rounded-full transition-all",
+                          activeFeature === index ? "bg-white w-4" : "bg-white/30"
+                        )}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Desktop: Grid layout */}
+                <div className="hidden md:flex flex-wrap justify-center gap-3 sm:gap-4 mb-8 sm:mb-12">
                   {features.map((feature, index) => {
                     const Icon = feature.icon;
                     return (
@@ -222,12 +270,71 @@ export default function LandingPage() {
                   })}
                 </div>
 
-                {/* Feature Detail Panel */}
+                {/* Feature Detail Panel - Optimized for mobile */}
                 <div className="relative">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl blur opacity-30" />
+                  <div className="absolute -inset-1 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-2xl md:rounded-3xl blur opacity-30" />
                   <Card className="relative border-2 border-white/20 bg-gradient-to-br from-indigo-900/90 to-purple-900/90 backdrop-blur-xl">
-                    <CardContent className="p-6 sm:p-8 md:p-10">
-                      <div className="grid lg:grid-cols-5 gap-6 sm:gap-8">
+                    <CardContent className="p-4 sm:p-6 md:p-8 lg:p-10">
+                      {/* Mobile: Stacked layout */}
+                      <div className="md:hidden space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center bg-gradient-to-br", current.color)}>
+                              <FeatureIcon className="h-5 w-5 text-white" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-bold text-white">{current.title}</h3>
+                              <p className="text-xs text-indigo-200/70">{current.subtitle}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-black bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent">
+                              {current.stat}
+                            </div>
+                            <p className="text-[10px] text-white/60">{current.statLabel}</p>
+                          </div>
+                        </div>
+
+                        <p className="text-sm text-white/90 leading-relaxed">{current.description}</p>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          {current.featureList.map((feat, i) => (
+                            <div key={i} className="flex items-center gap-1.5 p-2 bg-white/5 rounded-lg border border-white/10">
+                              <CheckCircle2 className="h-3 w-3 text-emerald-400 shrink-0" />
+                              <span className="text-[11px] text-white/90 leading-tight">{feat}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="p-3 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-lg border border-indigo-400/20">
+                          <p className="text-xs text-indigo-200/90 italic">💡 {current.example}</p>
+                        </div>
+
+                        <div className="flex justify-between items-center pt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-white/5 border-white/20 text-white hover:bg-white/10"
+                            onClick={() => setActiveFeature(prev => prev === 0 ? 6 : prev - 1)}
+                          >
+                            <ChevronLeft className="h-4 w-4 mr-1" />
+                            Anterior
+                          </Button>
+                          <span className="text-xs text-white/50">{activeFeature + 1} / {features.length}</span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-white/5 border-white/20 text-white hover:bg-white/10"
+                            onClick={() => setActiveFeature(prev => prev === 6 ? 0 : prev + 1)}
+                          >
+                            Siguiente
+                            <ChevronRight className="h-4 w-4 ml-1" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Desktop: Original grid layout */}
+                      <div className="hidden md:grid lg:grid-cols-5 gap-6 sm:gap-8">
                         <div className="lg:col-span-3">
                           <div className="flex items-center gap-3 mb-4">
                             <Badge className="bg-primary/100/30 text-indigo-200 border-indigo-400/30 px-3 py-1">

@@ -27,11 +27,12 @@ interface ProfessionalGoalsSheetProps {
 
 type KeyResult = {
   id: string;
-  title: string;
-  type: 'boolean' | 'numeric';
+  text: string;
+  type: 'check' | 'numeric';
   completed: boolean;
-  current?: number;
-  target?: number;
+  currentValue?: number;
+  targetValue?: number;
+  unit?: string;
 };
 
 const parseKeyResults = (keyResults: string | unknown | null): KeyResult[] => {
@@ -46,11 +47,12 @@ const parseKeyResults = (keyResults: string | unknown | null): KeyResult[] => {
 
     return parsed.map(kr => ({
       id: kr.id || crypto.randomUUID(),
-      title: kr.title || '',
-      type: kr.type || 'boolean',
+      text: kr.text || kr.title || '', // Soporte para ambos nombres durante transición
+      type: (kr.type === 'boolean' || kr.type === 'check') ? 'check' : 'numeric',
       completed: Boolean(kr.completed),
-      current: Number(kr.current) || 0,
-      target: Number(kr.target) || 10
+      currentValue: Number(kr.currentValue !== undefined ? kr.currentValue : kr.current) || 0,
+      targetValue: Number(kr.targetValue !== undefined ? kr.targetValue : kr.target) || 10,
+      unit: kr.unit || ''
     }));
   } catch (e) {
     console.warn('Error parsing keyResults:', e);
@@ -63,11 +65,11 @@ const calculateProgress = (krs: KeyResult[]): number => {
 
   let totalPercentage = 0;
   krs.forEach(kr => {
-    if (kr.type === 'boolean') {
+    if (kr.type === 'check') {
       totalPercentage += kr.completed ? 100 : 0;
     } else {
-      const current = kr.current || 0;
-      const target = kr.target || 1;
+      const current = kr.currentValue || 0;
+      const target = kr.targetValue || 1;
       totalPercentage += Math.min((current / target) * 100, 100);
     }
   });
@@ -81,11 +83,12 @@ const goalFormSchema = z.object({
   trainingUrl: z.string().url('URL inválida').optional().or(z.literal('')),
   keyResults: z.array(z.object({
     id: z.string(),
-    title: z.string(),
-    type: z.enum(['boolean', 'numeric']),
+    text: z.string(),
+    type: z.enum(['check', 'numeric']),
     completed: z.boolean(),
-    current: z.number(),
-    target: z.number().optional(),
+    currentValue: z.number(),
+    targetValue: z.number().optional(),
+    unit: z.string().optional()
   })).default([]),
 });
 
@@ -100,8 +103,8 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const [newKrTitle, setNewKrTitle] = useState('');
-  const [newKrType, setNewKrType] = useState<'boolean' | 'numeric'>('boolean');
+  const [newKrText, setNewKrText] = useState('');
+  const [newKrType, setNewKrType] = useState<'check' | 'numeric'>('check');
   const [newKrTarget, setNewKrTarget] = useState('10');
 
   const form = useForm<GoalFormValues>({
@@ -126,8 +129,8 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
     });
     setEditingId(null);
     setIsAdding(false);
-    setNewKrTitle('');
-    setNewKrType('boolean');
+    setNewKrText('');
+    setNewKrType('check');
     setNewKrTarget('10');
   };
 
@@ -144,9 +147,9 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
 
   const onSubmit = async (data: GoalFormValues) => {
     try {
-      // CRÍTICO: Serializar keyResults como JSON string para Supabase JSONB
+      // Serializar keyResults como JSON string
       const keyResultsJson = JSON.stringify(data.keyResults);
-      const calculatedProgress = calculateProgress(data.keyResults);
+      const calculatedProgressValue = calculateProgress(data.keyResults);
 
       const goalData = {
         title: data.title.trim(),
@@ -154,7 +157,7 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
         trainingUrl: data.trainingUrl?.trim() || undefined,
         startDate: new Date().toISOString().split('T')[0],
         dueDate: data.dueDate || undefined,
-        progress: calculatedProgress
+        progress: calculatedProgressValue
       };
 
       if (editingId) {
@@ -174,18 +177,18 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
   };
 
   const addKeyResult = () => {
-    if (!newKrTitle.trim()) return;
+    if (!newKrText.trim()) return;
     const newKr: KeyResult = {
       id: crypto.randomUUID(),
-      title: newKrTitle.trim(),
+      text: newKrText.trim(),
       type: newKrType,
       completed: false,
-      current: 0,
-      target: newKrType === 'numeric' ? Number(newKrTarget) : undefined
+      currentValue: 0,
+      targetValue: newKrType === 'numeric' ? Number(newKrTarget) : undefined
     };
     const currentKrs = form.getValues('keyResults') || [];
     form.setValue('keyResults', [...currentKrs, newKr]);
-    setNewKrTitle('');
+    setNewKrText('');
     setNewKrTarget('10');
   };
 
@@ -196,7 +199,7 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
 
   const updateKrNumeric = (id: string, value: string) => {
     const currentKrs = form.getValues('keyResults') || [];
-    form.setValue('keyResults', currentKrs.map(kr => kr.id === id ? { ...kr, current: Number(value) || 0 } : kr));
+    form.setValue('keyResults', currentKrs.map(kr => kr.id === id ? { ...kr, currentValue: Number(value) || 0 } : kr));
   };
 
   const removeKeyResult = (id: string) => {
@@ -218,7 +221,7 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
 
   const updateGoalKrNumeric = async (goal: ProfessionalGoal, krId: string, value: number) => {
     const krs = parseKeyResults(goal.keyResults);
-    const updatedKrs = krs.map(kr => kr.id === krId ? { ...kr, current: value } : kr);
+    const updatedKrs = krs.map(kr => kr.id === krId ? { ...kr, currentValue: value } : kr);
     const newProgress = calculateProgress(updatedKrs);
 
     await updateProfessionalGoal({
@@ -298,15 +301,15 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
                   <div className="space-y-2">
                     {keyResults.map(kr => (
                       <div key={kr.id} className="flex items-center gap-3 bg-white p-2 rounded border">
-                        {kr.type === 'boolean' ? (
+                        {kr.type === 'check' ? (
                           <Checkbox checked={kr.completed} onCheckedChange={() => toggleKrBoolean(kr.id)} />
                         ) : (
                           <div className="flex flex-col items-center w-16">
-                            <Input type="number" className="h-7 text-xs text-center px-1" value={kr.current || 0} onChange={(e) => updateKrNumeric(kr.id, e.target.value)} />
-                            <span className="text-[10px] text-muted-foreground">/ {kr.target}</span>
+                            <Input type="number" className="h-7 text-xs text-center px-1" value={kr.currentValue || 0} onChange={(e) => updateKrNumeric(kr.id, e.target.value)} />
+                            <span className="text-[10px] text-muted-foreground">/ {kr.targetValue}</span>
                           </div>
                         )}
-                        <span className={cn("flex-1 text-sm", kr.completed && "line-through text-muted-foreground")}>{kr.title}</span>
+                        <span className={cn("flex-1 text-sm", kr.completed && "line-through text-muted-foreground")}>{kr.text}</span>
                         <Button variant="ghost" size="icon" className="h-6 w-6 text-red-400 hover:text-red-600" onClick={() => removeKeyResult(kr.id)}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
@@ -316,16 +319,16 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
 
                   <div className="flex gap-2 items-end pt-2 border-t mt-2">
                     <div className="w-24">
-                      <Select value={newKrType} onValueChange={(v: 'boolean' | 'numeric') => setNewKrType(v)}>
+                      <Select value={newKrType} onValueChange={(v: 'check' | 'numeric') => setNewKrType(v)}>
                         <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="boolean">Check</SelectItem>
+                          <SelectItem value="check">Check</SelectItem>
                           <SelectItem value="numeric">Numérico</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="flex-1">
-                      <Input placeholder={newKrType === 'boolean' ? "Ej: Completar curso..." : "Ej: Ventas conseguidas"} className="h-8 text-xs" value={newKrTitle} onChange={e => setNewKrTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && addKeyResult()} />
+                      <Input placeholder={newKrType === 'check' ? "Ej: Completar curso..." : "Ej: Ventas conseguidas"} className="h-8 text-xs" value={newKrText} onChange={e => setNewKrText(e.target.value)} onKeyDown={e => e.key === 'Enter' && addKeyResult()} />
                     </div>
                     {newKrType === 'numeric' && (
                       <div className="w-16">
@@ -395,15 +398,15 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
                         <p className="text-xs font-medium text-muted-foreground">Resultados clave:</p>
                         {goalKrs.map(kr => (
                           <div key={kr.id} className={cn("flex items-center gap-3 p-2 rounded-md border transition-colors", kr.completed ? "bg-emerald-50 border-emerald-200" : "bg-slate-50 border-slate-200")}>
-                            {kr.type === 'boolean' ? (
+                            {kr.type === 'check' ? (
                               <Checkbox checked={kr.completed} onCheckedChange={() => toggleGoalKr(goal, kr.id)} />
                             ) : (
                               <div className="flex items-center gap-1">
-                                <Input type="number" className="h-6 w-12 text-xs text-center px-1" value={kr.current || 0} onChange={(e) => updateGoalKrNumeric(goal, kr.id, Number(e.target.value))} />
-                                <span className="text-[10px] text-muted-foreground">/{kr.target}</span>
+                                <Input type="number" className="h-6 w-12 text-xs text-center px-1" value={kr.currentValue || 0} onChange={(e) => updateGoalKrNumeric(goal, kr.id, Number(e.target.value))} />
+                                <span className="text-[10px] text-muted-foreground">/{kr.targetValue}</span>
                               </div>
                             )}
-                            <span className={cn("flex-1 text-sm", kr.completed && "line-through text-muted-foreground")}>{kr.title}</span>
+                            <span className={cn("flex-1 text-sm", kr.completed && "line-through text-muted-foreground")}>{kr.text}</span>
                             {kr.completed && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
                           </div>
                         ))}

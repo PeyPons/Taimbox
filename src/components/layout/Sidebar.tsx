@@ -153,6 +153,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   Equipo
                 </NavLink>
               )}
+
+              {canAccess('/team') && (
+                <NavLink to="/team-capacity" icon={TrendingUp} active={location.pathname === '/team-capacity'}>
+                  Capacidad
+                </NavLink>
+              )}
             </>
           )}
 

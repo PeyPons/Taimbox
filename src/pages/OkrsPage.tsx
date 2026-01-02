@@ -255,7 +255,6 @@ export default function OkrsPage() {
         } else {
             const goalData = {
                 title: formData.title,
-                description: formData.description,
                 keyResults: keyResultsString,
                 progress: formData.progress,
                 startDate: formData.startDate,
