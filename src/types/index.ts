@@ -51,6 +51,7 @@ export interface Agency {
   name: string;
   slug: string;
   settings: AgencySettings;
+  setupCompleted?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

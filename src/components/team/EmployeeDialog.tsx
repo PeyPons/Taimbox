@@ -207,7 +207,8 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
         } else {
           // Empleado existente SIN cuenta de auth -> crear nueva
           console.log('[EmployeeDialog] Creando cuenta Auth para empleado existente:', emailValue);
-          const { data, error } = await supabase.functions.invoke('create-user', {
+          // Renombrar 'data' a 'newAuthData' para evitar conflicto con el argumento 'data' de la función
+          const { data: newAuthData, error } = await supabase.functions.invoke('create-user', {
             body: { email: emailValue, password: data.password, name: data.name }
           });
 
@@ -239,17 +240,18 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
             throw new Error(errorMessage);
           }
 
-          if (!data?.user?.id) {
-            console.error('[EmployeeDialog] No se recibió user.id. Respuesta completa:', data);
+          if (!newAuthData?.user?.id) {
+            console.error('[EmployeeDialog] No se recibió user.id. Respuesta completa:', newAuthData);
             throw new Error('No se pudo crear la cuenta de acceso. La función no devolvió un ID de usuario.');
           }
 
-          authUserId = data.user.id;
+          authUserId = newAuthData.user.id;
           authMessage = "Cuenta de acceso creada.";
         }
       }
 
       const employeeData = {
+        agencyId: employeeToEdit?.agencyId || '', // Se rellenará en el backend/contexto pero TS lo requiere
         name: data.name,
         email: emailValue || undefined,
         user_id: authUserId,
@@ -258,7 +260,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
         defaultWeeklyCapacity: data.capacity,
         hourlyRate: data.hourlyRate,
         crmUserId: data.crmUserId !== '' ? Number(data.crmUserId) : undefined,
-        workSchedule: data.workSchedule,
+        workSchedule: data.workSchedule as WorkSchedule,
         permissions: data.permissions || DEFAULT_PERMISSIONS,
         isActive: true,
         avatarUrl: employeeToEdit?.avatarUrl || `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${data.name}`
@@ -290,7 +292,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
 
       // Mensajes específicos para errores comunes
       if (errorMsg.includes("already been registered") || errorMsg.includes("already exists") || errorMsg.includes("duplicate")) {
-        toast.error("Este email ya tiene una cuenta. Usa otro email.");
+        toast.error("Este usuario ya está registrado en Timeboxing");
       } else if (errorMsg.includes("invalid email") || errorMsg.includes("email")) {
         toast.error("El formato del email no es válido.");
       } else if (errorMsg.includes("password") && errorMsg.includes("weak")) {
@@ -645,8 +647,8 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
                   <p>Ajusta las horas diarias. Esto recalculará la capacidad semanal automáticamente.</p>
                 </div>
                 <ScheduleEditor
-                  schedule={workSchedule}
-                  onChange={(newSchedule) => form.setValue('workSchedule', newSchedule)}
+                  schedule={workSchedule as WorkSchedule}
+                  onChange={(newSchedule) => form.setValue('workSchedule', newSchedule as WorkSchedule)}
                 />
                 <div className="flex justify-end pt-2">
                   <Button onClick={form.handleSubmit(onSubmit)} className="bg-primary">Guardar horario</Button>

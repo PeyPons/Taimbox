@@ -4,7 +4,7 @@
 -- ============================================
 
 -- Tabla principal de agencias
-CREATE TABLE agencies (
+CREATE TABLE IF NOT EXISTS agencies (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
   slug TEXT NOT NULL,
@@ -18,8 +18,8 @@ CREATE TABLE agencies (
 );
 
 -- Índices para búsqueda rápida
-CREATE INDEX idx_agencies_slug ON agencies(slug);
-CREATE INDEX idx_agencies_name ON agencies(name);
+CREATE INDEX IF NOT EXISTS idx_agencies_slug ON agencies(slug);
+CREATE INDEX IF NOT EXISTS idx_agencies_name ON agencies(name);
 
 -- Trigger para actualizar updated_at automáticamente
 CREATE OR REPLACE FUNCTION update_agencies_updated_at()

@@ -9,6 +9,7 @@ interface SupabaseAgency {
   name: string;
   slug: string;
   settings: AgencySettings;
+  setup_completed: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -18,6 +19,8 @@ interface AgencyContextType {
   isLoading: boolean;
   error: string | null;
   refreshAgency: () => Promise<void>;
+  completeSetup: () => Promise<void>;
+  updateAgencyName: (name: string) => Promise<void>;
 }
 
 const AgencyContext = createContext<AgencyContextType | undefined>(undefined);
@@ -117,6 +120,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
     name: data.name,
     slug: data.slug,
     settings: data.settings || {},
+    setupCompleted: data.setup_completed ?? true,
     createdAt: data.created_at,
     updatedAt: data.updated_at
   });
@@ -132,11 +136,47 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
     await fetchAgencyForUser();
   }, [fetchAgencyForUser]);
 
+  // Marcar setup como completado
+  const completeSetup = useCallback(async () => {
+    if (!currentAgency?.id) return;
+
+    const { error } = await supabase
+      .from('agencies')
+      .update({ setup_completed: true })
+      .eq('id', currentAgency.id);
+
+    if (error) {
+      console.error('[AgencyContext] Error completando setup:', error);
+      throw error;
+    }
+
+    setCurrentAgency(prev => prev ? { ...prev, setupCompleted: true } : null);
+  }, [currentAgency?.id]);
+
+  // Actualizar nombre de agencia
+  const updateAgencyName = useCallback(async (name: string) => {
+    if (!currentAgency?.id) return;
+
+    const { error } = await supabase
+      .from('agencies')
+      .update({ name })
+      .eq('id', currentAgency.id);
+
+    if (error) {
+      console.error('[AgencyContext] Error actualizando nombre:', error);
+      throw error;
+    }
+
+    setCurrentAgency(prev => prev ? { ...prev, name } : null);
+  }, [currentAgency?.id]);
+
   const value = {
     currentAgency,
     isLoading,
     error,
-    refreshAgency
+    refreshAgency,
+    completeSetup,
+    updateAgencyName
   };
 
   return <AgencyContext.Provider value={value}>{children}</AgencyContext.Provider>;
@@ -149,3 +189,4 @@ export function useAgency() {
   }
   return context;
 }
+

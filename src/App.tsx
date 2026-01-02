@@ -77,6 +77,7 @@ const WeeklyForecastPage = lazyWithRetry(() => import("./pages/WeeklyForecastPag
 const OkrsPage = lazyWithRetry(() => import("./pages/OkrsPage"));
 const AgencySettingsPage = lazyWithRetry(() => import("./pages/AgencySettingsPage"));
 const TeamCapacityPage = lazyWithRetry(() => import("./pages/TeamCapacityPage"));
+const OnboardingWizard = lazyWithRetry(() => import("./components/onboarding/OnboardingWizard"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -112,6 +113,9 @@ const App = () => (
 
                       {/* Rutas Protegidas */}
                       <Route element={<ProtectedRoute />}>
+                        {/* Onboarding Wizard (sin AppLayout) */}
+                        <Route path="/onboarding" element={<Suspense fallback={<PageLoader />}><OnboardingWizard /></Suspense>} />
+
                         <Route element={<AppLayout />}>
                           {/* Dashboard Personal */}
                           <Route path="/dashboard" element={<EmployeeDashboard />} />
