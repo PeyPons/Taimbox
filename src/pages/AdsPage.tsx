@@ -179,7 +179,7 @@ export default function AdsPage() {
       const [adsRes, settingsRes, logsRes, rulesRes] = await Promise.all([
         supabase.from('google_ads_campaigns').select('*'),
         supabase.from('client_settings').select('*'),
-        supabase.from('ads_sync_logs').select('created_at').eq('status', 'completed').order('created_at', { ascending: false }).limit(1).single(),
+        supabase.from('ads_sync_logs').select('created_at').eq('status', 'completed').order('created_at', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('segmentation_rules').select('*').eq('platform', 'google')
       ]);
 

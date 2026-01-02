@@ -79,7 +79,7 @@ export default function MetaAdsPage() {
         supabase.from('meta_ads_campaigns').select('*'),
         supabase.from('client_settings').select('*'),
         supabase.from('ad_accounts_config').select('*').eq('platform', 'meta').eq('is_active', true),
-        supabase.from('meta_sync_logs').select('created_at').eq('status', 'completed').order('created_at', { ascending: false }).limit(1).single(),
+        supabase.from('meta_sync_logs').select('created_at').eq('status', 'completed').order('created_at', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('segmentation_rules').select('*').eq('platform', 'meta')
       ]);
       const settingsMap: ClientSettingsMap = {};
