@@ -226,7 +226,9 @@ async function processSyncJob(jobId) {
 
   try {
     await supabase.from('ads_sync_logs').update({ status: 'running' }).eq('id', jobId);
-    await log(`🚀 Iniciando Google Ads Worker Multi-Agencia`);
+    await log(`🚀 Iniciando Google Ads Worker...`);
+    await log(`📋 Job ID: ${jobId}, Target Agency ID: ${targetAgencyId || 'None (All Agencies)'}`);
+    if (targetAgencyId) await log(`🔒 Modo estricto: Sincronizando solo agencia ${targetAgencyId}`);
 
     // 1. Obtener todas las agencias
     const { data: agencies, error } = await supabase.from('agencies').select('id, name, slug, settings');

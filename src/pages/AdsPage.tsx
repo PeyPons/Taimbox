@@ -213,6 +213,10 @@ export default function AdsPage() {
   useEffect(() => { fetchData(); }, []);
 
   const handleStartSync = async () => {
+    if (!currentAgency) {
+      toast.error("Error: No se ha identificado la agencia actual.");
+      return;
+    }
     setIsSyncing(true);
     setSyncStatus('running');
     setSyncLogs(['🚀 Iniciando conexión con Google Ads...']);

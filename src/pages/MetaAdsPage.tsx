@@ -96,6 +96,10 @@ export default function MetaAdsPage() {
   useEffect(() => { fetchData(); }, []);
 
   const handleStartSync = async () => {
+    if (!currentAgency) {
+      toast.error("Error: No se ha identificado la agencia actual.");
+      return;
+    }
     setIsSyncing(true); setSyncStatus('running'); setSyncLogs(['🚀 Conectando con Meta API...']); setSyncProgress(0);
     try {
       const { data, error } = await supabase.from('meta_sync_logs').insert({

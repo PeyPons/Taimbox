@@ -28,6 +28,7 @@ CREATE INDEX IF NOT EXISTS idx_ads_sync_logs_agency_id ON ads_sync_logs(agency_i
 ALTER TABLE meta_ads_campaigns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE google_ads_campaigns ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Agencies can view their own meta campaigns" ON meta_ads_campaigns;
 CREATE POLICY "Agencies can view their own meta campaigns" ON meta_ads_campaigns
     FOR SELECT USING (
         agency_id IN (
@@ -35,6 +36,7 @@ CREATE POLICY "Agencies can view their own meta campaigns" ON meta_ads_campaigns
         )
     );
 
+DROP POLICY IF EXISTS "Agencies can view their own google campaigns" ON google_ads_campaigns;
 CREATE POLICY "Agencies can view their own google campaigns" ON google_ads_campaigns
     FOR SELECT USING (
         agency_id IN (
@@ -46,6 +48,7 @@ CREATE POLICY "Agencies can view their own google campaigns" ON google_ads_campa
 ALTER TABLE meta_sync_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ads_sync_logs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Agencies can view their own meta logs" ON meta_sync_logs;
 CREATE POLICY "Agencies can view their own meta logs" ON meta_sync_logs
     FOR SELECT USING (
         agency_id IN (
@@ -53,6 +56,7 @@ CREATE POLICY "Agencies can view their own meta logs" ON meta_sync_logs
         )
     );
 
+DROP POLICY IF EXISTS "Agencies can view their own ads logs" ON ads_sync_logs;
 CREATE POLICY "Agencies can view their own ads logs" ON ads_sync_logs
     FOR SELECT USING (
         agency_id IN (
@@ -60,6 +64,7 @@ CREATE POLICY "Agencies can view their own ads logs" ON ads_sync_logs
         )
     );
 
+DROP POLICY IF EXISTS "Agencies can insert their own meta logs" ON meta_sync_logs;
 CREATE POLICY "Agencies can insert their own meta logs" ON meta_sync_logs
     FOR INSERT WITH CHECK (
         agency_id IN (
@@ -67,6 +72,7 @@ CREATE POLICY "Agencies can insert their own meta logs" ON meta_sync_logs
         )
     );
 
+DROP POLICY IF EXISTS "Agencies can insert their own ads logs" ON ads_sync_logs;
 CREATE POLICY "Agencies can insert their own ads logs" ON ads_sync_logs
     FOR INSERT WITH CHECK (
         agency_id IN (
