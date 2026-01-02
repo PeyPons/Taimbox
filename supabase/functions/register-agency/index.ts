@@ -56,13 +56,13 @@ serve(async (req) => {
             throw new Error('La contraseña debe tener al menos 6 caracteres')
         }
 
-        if (!name || typeof name !== 'string' || !name.trim()) {
-            throw new Error('El nombre es obligatorio')
+        if (!agencyName || typeof agencyName !== 'string' || !agencyName.trim()) {
+            throw new Error('El nombre de la empresa es obligatorio')
         }
 
         const cleanEmail = email.trim().toLowerCase()
         const cleanName = name.trim()
-        const cleanAgencyName = (agencyName || `Empresa de ${cleanName}`).trim()
+        const cleanAgencyName = agencyName.trim()
 
         console.log(`Registrando: ${cleanEmail} para agencia "${cleanAgencyName}"`)
 
@@ -102,28 +102,46 @@ serve(async (req) => {
 
         // 7. Crear agencia
         let slug = generateSlug(cleanAgencyName)
+        let finalSlug = slug
+        let attempt = 0
+        const maxAttempts = 5
 
-        // Verificar si el slug ya existe y añadir sufijo si es necesario
-        const { data: existingAgency } = await supabaseAdmin
-            .from('agencies')
-            .select('id')
-            .eq('slug', slug)
-            .single()
+        // Intentar encontrar un slug único
+        while (attempt < maxAttempts) {
+            const { data: existingAgency } = await supabaseAdmin
+                .from('agencies')
+                .select('id')
+                .eq('slug', finalSlug)
+                .single()
 
-        if (existingAgency) {
-            slug = `${slug}-${Date.now()}`
+            if (!existingAgency) {
+                break // Slug disponible
+            }
+
+            // Si existe, probar con sufijo numérico aleatorio corto
+            attempt++
+            finalSlug = `${slug}-${Math.floor(100 + Math.random() * 900)}`
         }
 
         const { data: agencyData, error: agencyError } = await supabaseAdmin
             .from('agencies')
             .insert({
                 name: cleanAgencyName,
-                slug: slug,
+                slug: finalSlug,
                 settings: {
-                    modules: { seo: true, ppc: false, weeklyFeedback: true, professionalGoals: true, deadlines: true },
+                    // Módulos por defecto (nombres genéricos)
+                    modules: {
+                        projects: true, // Antes seo/ppc
+                        weeklyFeedback: true,
+                        professionalGoals: true,
+                        deadlines: true
+                    },
+                    // Filtros vacíos por defecto
+                    projectFilters: [],
                     roles: ['Responsable', 'Coordinador', 'Especialista'],
                     branding: {},
-                    features: {}
+                    features: {},
+                    integrations: {} // Objeto para claves API
                 },
                 setup_completed: false
             })

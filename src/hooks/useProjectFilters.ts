@@ -3,26 +3,7 @@ import { useAgency } from '@/contexts/AgencyContext';
 import { Project, CustomProjectFilter } from '@/types';
 
 // Default filters for agencies without custom configuration
-const DEFAULT_FILTERS: CustomProjectFilter[] = [
-    {
-        id: 'seo',
-        name: 'seo',
-        displayName: 'SEO',
-        enabled: true,
-        includePatterns: [], // Include all by default
-        excludePatterns: ['SEM', 'RRSS', 'SOCIAL', 'PPC', 'DV360'], // Exclude these
-        description: 'Proyectos SEO: Excluye SEM, RRSS, Social, PPC y DV360'
-    },
-    {
-        id: 'ppc',
-        name: 'ppc',
-        displayName: 'PPC',
-        enabled: true,
-        includePatterns: ['SEM', 'SOCIAL', 'PPC', 'DV360'], // Must contain one of these
-        excludePatterns: [],
-        description: 'Proyectos PPC: Incluye SEM, Social, PPC y DV360'
-    }
-];
+const DEFAULT_FILTERS: CustomProjectFilter[] = [];
 
 export function useProjectFilters() {
     const { currentAgency } = useAgency();

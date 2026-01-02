@@ -44,6 +44,13 @@ export interface AgencySettings {
   branding?: AgencyBranding;
   features?: Record<string, boolean>;
   projectFilters?: CustomProjectFilter[];  // Custom project filters
+  integrations?: {
+    metaAccessToken?: string;
+    metaAdAccountIds?: string;
+    googleAdsCustomerId?: string;
+    googleAdsDevToken?: string;
+    googleRefreshToken?: string;
+  };
 }
 
 export interface Agency {

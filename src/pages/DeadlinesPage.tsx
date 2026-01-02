@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,6 +41,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 
 export default function DeadlinesPage() {
   const { projects, clients, employees, absences, teamEvents, currentUser } = useApp();
+  const { currentAgency } = useAgency();
   const { showTour } = useDeadlinesTour();
   const isMobile = useIsMobile();
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
@@ -114,8 +116,9 @@ export default function DeadlinesPage() {
     try {
       const { data, error } = await supabase
         .from('deadlines')
-        .select('*')
+        .select('*, projects!inner(agency_id)') // Join para filtrar por agencia
         .eq('month', selectedMonth)
+        .eq('projects.agency_id', currentAgency?.id) // Filtro de agencia
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -153,6 +156,7 @@ export default function DeadlinesPage() {
         .from('global_assignments')
         .select('*')
         .eq('month', selectedMonth)
+        .eq('agency_id', currentAgency?.id) // Filtro de agencia
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -206,18 +210,24 @@ export default function DeadlinesPage() {
           event: '*',
           schema: 'public',
           table: 'deadlines',
+          // No podemos filtrar por join en realtime, filtrado en cliente
           filter: `month=eq.${selectedMonth}`
         },
         (payload) => {
-          console.log('🔔 Realtime deadline change:', payload.eventType, payload);
-
+          // Filtrar eventos que no pertenecen a nuestra agencia (si es posible verificar)
+          // Nota: lo ideal sería RLS, pero por ahora en cliente verificamos si el proyecto existe en nuestra lista
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const newDeadline = payload.new as { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean };
+            const newDeadline = payload.new as any;
+            // Solo procesar si el proyecto pertenece a nuestra agencia (está en la lista de projects cargados)
+            if (!projects.find(p => p.id === newDeadline.project_id)) return;
+
+            // Cast typed variable
+            const newDeadlineTyped = newDeadline as { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean };
             setDeadlines(prev => {
-              const existing = prev.find(d => d.id === newDeadline.id);
+              const existing = prev.find(d => d.id === newDeadlineTyped.id);
               if (existing) {
                 return prev.map(d =>
-                  d.id === newDeadline.id
+                  d.id === newDeadlineTyped.id
                     ? {
                       id: newDeadline.id,
                       projectId: newDeadline.project_id,
@@ -282,12 +292,17 @@ export default function DeadlinesPage() {
           event: '*',
           schema: 'public',
           table: 'global_assignments',
+          table: 'global_assignments',
           filter: `month=eq.${selectedMonth}`
+          // Nota: Deberíamos filtrar por agency_id pero Supabase Realtime filter syntax es limitado para columnas nuevas sin reiniciar
         },
         (payload) => {
-          console.log('🔔 Realtime global assignment change:', payload.eventType, payload);
 
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const payloadNew = payload.new as any;
+            // Filtrar por agencia
+            if (payloadNew.agency_id && payloadNew.agency_id !== currentAgency?.id) return;
+
             const newAssignment = payload.new as { id: string; name: string; hours: number; affects_all: boolean; affected_employee_ids?: string[]; month: string; employee_id?: string; created_by?: string };
             setGlobalAssignments(prev => {
               const existing = prev.find(a => a.id === newAssignment.id);
@@ -791,7 +806,8 @@ export default function DeadlinesPage() {
         hours: data.hours,
         affects_all: data.affectsAll,
         affected_employee_ids: data.affectsAll ? null : data.affectedEmployeeIds,
-        employee_id: undefined as string | undefined
+        employee_id: undefined as string | undefined,
+        agency_id: currentAgency?.id
       };
 
       // Al crear, guardar el employee_id del usuario actual
