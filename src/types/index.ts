@@ -10,10 +10,49 @@ export interface WorkSchedule {
 
 import { UserPermissions } from './permissions';
 
+// ============================================
+// Agency Types
+// ============================================
+
+export interface AgencyModules {
+  seo?: boolean;
+  ppc?: boolean;
+  analytics?: boolean;
+  weeklyFeedback?: boolean;
+  professionalGoals?: boolean;
+  deadlines?: boolean;
+}
+
+export interface AgencyBranding {
+  primaryColor?: string;
+  logo?: string;
+}
+
+export interface AgencySettings {
+  modules?: AgencyModules;
+  roles?: string[];
+  branding?: AgencyBranding;
+  features?: Record<string, boolean>;
+}
+
+export interface Agency {
+  id: string;
+  name: string;
+  slug: string;
+  settings: AgencySettings;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// ============================================
+// Employee Types
+// ============================================
+
 export type EmployeeRole = 'Responsable' | 'Coordinador' | 'SEO' | 'PPC';
 
 export interface Employee {
   id: string;
+  agencyId: string;  // FK a agencies - agencia a la que pertenece
   name: string;
   email?: string;
   role: EmployeeRole;
@@ -26,7 +65,7 @@ export interface Employee {
   user_id?: string;
   first_name?: string;
   last_name?: string;
-  crmUserId?: number;  // NUEVO: ID del usuario en el CRM
+  crmUserId?: number;  // ID del usuario en el CRM
   welcomeTourCompleted?: boolean;  // Si el usuario completó el tour de bienvenida
   deadlinesTourCompleted?: boolean;  // Si el usuario completó el tour de deadlines
   plannerTourCompleted?: boolean;  // Si el usuario completó el tour del planificador
@@ -44,12 +83,14 @@ export interface TeamEvent {
 
 export interface Client {
   id: string;
+  agencyId: string;  // FK a agencies - agencia a la que pertenece
   name: string;
   color: string;
 }
 
 export interface Project {
   id: string;
+  agencyId: string;  // FK a agencies - agencia a la que pertenece
   clientId: string;
   name: string;
   status: 'active' | 'archived' | 'completed';

@@ -6,11 +6,13 @@ import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange, getTeamEventDetailsInRange } from '@/utils/teamEventUtils';
 import { addDays, format, startOfMonth, endOfMonth } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAgency } from '@/contexts/AgencyContext';
 import { toast } from 'sonner';
 
 // Tipos para respuestas de Supabase (snake_case)
 interface SupabaseEmployee {
   id: string;
+  agency_id: string;
   name: string;
   first_name?: string;
   last_name?: string;
@@ -30,8 +32,16 @@ interface SupabaseEmployee {
   permissions?: unknown;
 }
 
+interface SupabaseClient {
+  id: string;
+  agency_id: string;
+  name: string;
+  color: string;
+}
+
 interface SupabaseProject {
   id: string;
+  agency_id: string;
   client_id: string;
   name: string;
   status: string;
@@ -136,6 +146,7 @@ const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const { user: authUser, isInitialized: isAuthInitialized } = useAuth();
+  const { currentAgency, isLoading: isAgencyLoading } = useAgency();
   const [currentUser, setCurrentUser] = useState<Employee | undefined>(undefined);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
@@ -152,6 +163,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const employeesRef = useRef<Employee[]>([]);
 
   const fetchData = useCallback(async (skipLoading = false, dateRange?: { start: Date; end: Date }) => {
+    // No cargar datos si no hay agencia seleccionada
+    if (!currentAgency?.id) {
+      setIsLoading(false);
+      return;
+    }
+
     if (!skipLoading) {
       setIsLoading(true);
     }
@@ -167,29 +184,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const startStr = format(startDate, 'yyyy-MM-dd');
       const endStr = format(endDate, 'yyyy-MM-dd');
 
-      // Tablas pequeñas: cargar todo
+      const agencyId = currentAgency.id;
+
+      // Tablas pequeñas: cargar todo (filtrado por agency_id)
       // Tablas grandes con fechas: filtrar por rango
       const [empRes, cliRes, projRes, allocRes, absRes, evRes, feedbackRes] = await Promise.all([
-        supabase.from('employees').select('*'),
-        supabase.from('clients').select('*'),
-        supabase.from('projects').select('*'),
-        // Allocations: filtrar por week_start_date
+        supabase.from('employees').select('*').eq('agency_id', agencyId),
+        supabase.from('clients').select('*').eq('agency_id', agencyId),
+        supabase.from('projects').select('*').eq('agency_id', agencyId),
+        // Allocations: filtrar por week_start_date y employee de la agencia
         supabase.from('allocations')
-          .select('*')
+          .select('*, employees!inner(agency_id)')
+          .eq('employees.agency_id', agencyId)
           .gte('week_start_date', startStr)
           .lte('week_start_date', endStr),
-        // Absences: filtrar por rango de fechas (start_date <= endDate AND end_date >= startDate)
+        // Absences: filtrar por rango de fechas y employee de la agencia
         supabase.from('absences')
-          .select('*')
+          .select('*, employees!inner(agency_id)')
+          .eq('employees.agency_id', agencyId)
           .lte('start_date', endStr)
           .gte('end_date', startStr),
-        // Team events: filtrar por date
+        // Team events: filtrar por date (estos son globales por agencia, se filtran por affected_employee_ids)
         supabase.from('team_events')
           .select('*')
           .gte('date', startStr)
           .lte('date', endStr),
         supabase.from('weekly_feedback')
-          .select('*')
+          .select('*, employees!inner(agency_id)')
+          .eq('employees.agency_id', agencyId)
           .gte('week_start_date', startStr)
           .lte('week_start_date', endStr),
       ]);
@@ -197,6 +219,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (empRes.data) {
         const mappedEmployees: Employee[] = empRes.data.map((e: SupabaseEmployee) => ({
           id: e.id,
+          agencyId: e.agency_id,
           name: e.name,
           role: (e.role || 'SEO') as EmployeeRole,
           avatarUrl: e.avatar_url,
@@ -219,10 +242,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         employeesRef.current = mappedEmployees; // Actualizar ref
       }
 
-      if (cliRes.data) setClients(cliRes.data);
+      if (cliRes.data) {
+        setClients(cliRes.data.map((c: SupabaseClient): Client => ({
+          id: c.id,
+          agencyId: c.agency_id,
+          name: c.name,
+          color: c.color
+        })));
+      }
       if (projRes.data) {
         setProjects(projRes.data.map((p: SupabaseProject): Project => ({
           id: p.id,
+          agencyId: p.agency_id,
           clientId: p.client_id,
           name: p.name,
           status: (p.status || 'active') as 'active' | 'archived' | 'completed',
@@ -308,10 +339,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     }
-  }, []);
+  }, [currentAgency?.id]);
 
   // Función para cargar datos de un mes específico (merge con datos existentes)
   const loadDataForMonth = useCallback(async (month: Date): Promise<boolean> => {
+    // No cargar si no hay agencia
+    if (!currentAgency?.id) return false;
+
     const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
     const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
     let dataFound = false;
@@ -322,6 +356,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const minWeekStart = weekStartDates.length > 0 ? weekStartDates[0] : format(monthStart, 'yyyy-MM-dd');
     const maxWeekStart = weekStartDates.length > 0 ? weekStartDates[weekStartDates.length - 1] : format(monthEnd, 'yyyy-MM-dd');
 
+    const agencyId = currentAgency.id;
+
     // Cargar solo allocations, absences, team_events y weekly_feedback para este mes (merge)
     try {
       const startStr = format(monthStart, 'yyyy-MM-dd');
@@ -329,11 +365,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       const [allocRes, absRes, evRes, feedRes] = await Promise.all([
         supabase.from('allocations')
-          .select('*')
+          .select('*, employees!inner(agency_id)')
+          .eq('employees.agency_id', agencyId)
           .gte('week_start_date', minWeekStart)
           .lte('week_start_date', maxWeekStart),
         supabase.from('absences')
-          .select('*')
+          .select('*, employees!inner(agency_id)')
+          .eq('employees.agency_id', agencyId)
           .lte('start_date', endStr)
           .gte('end_date', startStr),
         supabase.from('team_events')
@@ -341,7 +379,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           .gte('date', startStr)
           .lte('date', endStr),
         supabase.from('weekly_feedback')
-          .select('*')
+          .select('*, employees!inner(agency_id)')
+          .eq('employees.agency_id', agencyId)
           .gte('week_start_date', minWeekStart)
           .lte('week_start_date', maxWeekStart),
       ]);
@@ -432,14 +471,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     return dataFound;
-  }, []);
+  }, [currentAgency?.id]);
 
-  // Cargar datos cuando la autenticación esté lista
+  // Cargar datos cuando la autenticación y la agencia estén listas
   useEffect(() => {
-    if (isAuthInitialized) {
+    if (isAuthInitialized && !isAgencyLoading && currentAgency?.id) {
       fetchData();
     }
-  }, [isAuthInitialized, fetchData]);
+  }, [isAuthInitialized, isAgencyLoading, currentAgency?.id, fetchData]);
 
   // Reaccionar a cambios de usuario (login/logout) - SOLO cuando employees esté cargado
   useEffect(() => {
@@ -506,7 +545,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [authUser, isAuthInitialized, isLoading]);
 
   const addEmployee = useCallback(async (employee: Omit<Employee, 'id'>) => {
+    if (!currentAgency?.id) {
+      toast.error('No hay agencia seleccionada');
+      throw new Error('No agency selected');
+    }
+
     const { data, error } = await supabase.from('employees').insert({
+      agency_id: employee.agencyId || currentAgency.id,
       name: employee.name,
       first_name: employee.first_name,
       last_name: employee.last_name,
@@ -533,6 +578,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (data) {
       const mappedEmployee: Employee = {
         ...data,
+        agencyId: data.agency_id,
         avatarUrl: data.avatar_url,
         defaultWeeklyCapacity: data.default_weekly_capacity,
         workSchedule: data.work_schedule,
@@ -550,7 +596,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       };
       setEmployees(prev => [...prev, mappedEmployee]);
     }
-  }, []);
+  }, [currentAgency?.id]);
 
   const updateEmployee = useCallback(async (employee: Employee) => {
     setEmployees(prev => prev.map(e => e.id === employee.id ? employee : e));
@@ -665,9 +711,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // --- CLIENTS ---
   const addClient = useCallback(async (client: Omit<Client, 'id'>) => {
-    const { data } = await supabase.from('clients').insert(client).select().single();
-    if (data) setClients(prev => [...prev, data]);
-  }, []);
+    if (!currentAgency?.id) {
+      toast.error('No hay agencia seleccionada');
+      return;
+    }
+
+    const { data } = await supabase.from('clients').insert({
+      agency_id: client.agencyId || currentAgency.id,
+      name: client.name,
+      color: client.color
+    }).select().single();
+
+    if (data) {
+      setClients(prev => [...prev, {
+        id: data.id,
+        agencyId: data.agency_id,
+        name: data.name,
+        color: data.color
+      }]);
+    }
+  }, [currentAgency?.id]);
 
   const updateClient = useCallback(async (client: Client) => {
     setClients(prev => prev.map(c => c.id === client.id ? client : c));
@@ -682,20 +745,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // --- PROJECTS ---
   const addProject = useCallback(async (project: Omit<Project, 'id'>) => {
+    if (!currentAgency?.id) {
+      toast.error('No hay agencia seleccionada');
+      return;
+    }
+
     const { data } = await supabase.from('projects').insert({
+      agency_id: project.agencyId || currentAgency.id,
       client_id: project.clientId,
       name: project.name,
       status: project.status,
       budget_hours: project.budgetHours,
       minimum_hours: project.minimumHours
     }).select().single();
-    if (data) setProjects(prev => [...prev, {
-      ...data,
-      clientId: data.client_id,
-      budgetHours: round2(data.budget_hours),
-      minimumHours: round2(data.minimum_hours)
-    }]);
-  }, []);
+
+    if (data) {
+      setProjects(prev => [...prev, {
+        id: data.id,
+        agencyId: data.agency_id,
+        clientId: data.client_id,
+        name: data.name,
+        status: (data.status || 'active') as 'active' | 'archived' | 'completed',
+        budgetHours: round2(data.budget_hours),
+        minimumHours: round2(data.minimum_hours || 0)
+      }]);
+    }
+  }, [currentAgency?.id]);
 
   const updateProject = useCallback(async (project: Project) => {
     setProjects(prev => prev.map(p => p.id === project.id ? project : p));
