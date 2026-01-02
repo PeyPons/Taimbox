@@ -194,7 +194,7 @@ async function processAgency(agency, log) {
             .gte('date', range.firstDay)
             .lte('date', range.today);
 
-          const rowsToInsert = campaignData.map(d => ({ ...d, client_name: client.name }));
+          const rowsToInsert = campaignData.map(d => ({ ...d, client_name: client.name, agency_id: agency.id }));
 
           const { error } = await supabase.from('google_ads_campaigns').insert(rowsToInsert);
 

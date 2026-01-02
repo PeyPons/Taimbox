@@ -73,7 +73,7 @@ async function processAgency(agency, log) {
                         campaign_id: row.campaign_id, campaign_name: row.campaign_name,
                         status: 'ENABLED', date: range.start,
                         cost: row.spend, conversions: conv, conversions_value: val,
-                        // agency_id: agency.id // TODO: Añadir columna agency_id en migración futura si se requiere aislamiento estricto en DB
+                        agency_id: agency.id
                     };
                 });
 
