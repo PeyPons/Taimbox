@@ -292,7 +292,6 @@ export default function DeadlinesPage() {
           event: '*',
           schema: 'public',
           table: 'global_assignments',
-          table: 'global_assignments',
           filter: `month=eq.${selectedMonth}`
           // Nota: Deberíamos filtrar por agency_id pero Supabase Realtime filter syntax es limitado para columnas nuevas sin reiniciar
         },
