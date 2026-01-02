@@ -59,3 +59,17 @@ CREATE POLICY "Agencies can view their own ads logs" ON ads_sync_logs
             SELECT agency_id FROM employees WHERE user_id = auth.uid()
         )
     );
+
+CREATE POLICY "Agencies can insert their own meta logs" ON meta_sync_logs
+    FOR INSERT WITH CHECK (
+        agency_id IN (
+            SELECT agency_id FROM employees WHERE user_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "Agencies can insert their own ads logs" ON ads_sync_logs
+    FOR INSERT WITH CHECK (
+        agency_id IN (
+            SELECT agency_id FROM employees WHERE user_id = auth.uid()
+        )
+    );

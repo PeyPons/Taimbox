@@ -1,10 +1,4 @@
-/* Ejecutar con: node ads-worker.js */
-import 'dotenv/config';
-import { createClient } from '@supabase/supabase-js';
 
-// --- CONFIGURACIÓN ---
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 /* Ejecutar con: node ads-worker.js */
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';

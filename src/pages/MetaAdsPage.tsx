@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useAgency } from '@/contexts/AgencyContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
@@ -47,6 +48,7 @@ interface RegisteredAccount {
 }
 
 export default function MetaAdsPage() {
+  const { currentAgency } = useAgency();
   const [rawData, setRawData] = useState<MetaCampaignData[]>([]);
   const [clientSettings, setClientSettings] = useState<ClientSettingsMap>({});
   const [registeredAccounts, setRegisteredAccounts] = useState<RegisteredAccount[]>([]);
@@ -96,7 +98,11 @@ export default function MetaAdsPage() {
   const handleStartSync = async () => {
     setIsSyncing(true); setSyncStatus('running'); setSyncLogs(['🚀 Conectando con Meta API...']); setSyncProgress(0);
     try {
-      const { data, error } = await supabase.from('meta_sync_logs').insert({ status: 'pending', logs: ['Iniciando worker...'] }).select().single();
+      const { data, error } = await supabase.from('meta_sync_logs').insert({
+        status: 'pending',
+        logs: ['Iniciando worker...'],
+        agency_id: currentAgency?.id
+      }).select().single();
       if (error) throw error;
       const jobId = data.id;
       const channel = supabase.channel(`meta-sync-${jobId}`).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'meta_sync_logs', filter: `id=eq.${jobId}` }, (payload) => {

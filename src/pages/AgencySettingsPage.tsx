@@ -489,14 +489,8 @@ export default function AgencySettingsPage() {
                 <Input
                   id="meta-token"
                   type="password"
-                  value={currentAgency.settings?.integrations?.metaAccessToken || ''}
-                  onChange={(e) => {
-                    const newVal = e.target.value;
-                    // Actualizar estado local (nota: esto requiere actualizar currentAgency o un estado local intermedio, 
-                    // aquí simplificamos asumiendo que currentAgency es mutable o usamos un estado separado si fuera necesario.
-                    // Dado que estamos usando useAgency, lo ideal sería tener un estado local 'integrations'.)
-                    // Por simplicidad en este patch, asumiremos que existe un estado local 'integrations' que debemos crear arriba.
-                  }}
+                  value={integrations.metaAccessToken || ''}
+                  onChange={(e) => setIntegrations(prev => ({ ...prev, metaAccessToken: e.target.value }))}
                   placeholder="EAAB..."
                 />
               </div>
@@ -504,11 +498,12 @@ export default function AgencySettingsPage() {
                 <Label htmlFor="meta-accounts">Ad Account IDs</Label>
                 <Input
                   id="meta-accounts"
-                  value={currentAgency.settings?.integrations?.metaAdAccountIds || ''}
-                  onChange={() => { }}
+                  value={integrations.metaAdAccountIds || ''}
+                  onChange={(e) => setIntegrations(prev => ({ ...prev, metaAdAccountIds: e.target.value }))}
                   placeholder="act_123, act_456"
                 />
                 <p className="text-xs text-slate-500">Separados por comas</p>
+                <MetaAccountList accountIds={integrations.metaAdAccountIds || ''} />
               </div>
             </div>
           </div>
@@ -524,9 +519,9 @@ export default function AgencySettingsPage() {
                 <Label htmlFor="google-customer-id">Customer ID</Label>
                 <Input
                   id="google-customer-id"
-                  value={currentAgency.settings?.integrations?.googleAdsCustomerId || ''}
-                  onChange={() => { }}
-                  placeholder="123-456-7890"
+                  value={integrations.googleAdsCustomerId || ''}
+                  onChange={(e) => setIntegrations(prev => ({ ...prev, googleAdsCustomerId: e.target.value }))}
+                  placeholder="Ej: 9810132048"
                 />
               </div>
               <div className="space-y-2">
@@ -534,8 +529,8 @@ export default function AgencySettingsPage() {
                 <Input
                   id="google-dev-token"
                   type="password"
-                  value={currentAgency.settings?.integrations?.googleAdsDevToken || ''}
-                  onChange={() => { }}
+                  value={integrations.googleAdsDevToken || ''}
+                  onChange={(e) => setIntegrations(prev => ({ ...prev, googleAdsDevToken: e.target.value }))}
                   placeholder="Token de desarrollador"
                 />
               </div>

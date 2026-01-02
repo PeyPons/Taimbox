@@ -1,10 +1,4 @@
-/* Ejecutar con: node meta-worker.js */
-import 'dotenv/config';
-import { createClient } from '@supabase/supabase-js';
 
-const cleanEnv = (val) => val ? val.replace(/^"|"$/g, '').replace(/^'|'$/g, '').trim() : '';
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 /* Ejecutar con: node meta-worker.js */
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, memo } from 'react';
+import { useAgency } from '@/contexts/AgencyContext';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -130,6 +131,7 @@ const StatCard = memo(function StatCard({ icon: Icon, label, value, subValue, co
 });
 
 export default function AdsPage() {
+  const { currentAgency } = useAgency();
   const [rawData, setRawData] = useState<CampaignData[]>([]);
   const [clientSettings, setClientSettings] = useState<Record<string, { budget: number; group_name: string; is_hidden: boolean; is_sales_account: boolean }>>({});
   const [loading, setLoading] = useState(true);
@@ -217,7 +219,11 @@ export default function AdsPage() {
     setSyncProgress(0);
 
     try {
-      const { data, error } = await supabase.from('ads_sync_logs').insert({ status: 'pending', logs: ['Esperando worker...'] }).select().single();
+      const { data, error } = await supabase.from('ads_sync_logs').insert({
+        status: 'pending',
+        logs: ['Esperando worker...'],
+        agency_id: currentAgency?.id
+      }).select().single();
       if (error) throw error;
       const jobId = data.id;
 
