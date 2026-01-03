@@ -111,7 +111,7 @@ export default function OnboardingWizard() {
         }
     };
 
-    if (isAgencyLoading) {
+    if (isAgencyLoading && !currentAgency) {
         return (
             <div className="min-h-screen bg-slate-900 flex items-center justify-center">
                 <div className="text-center">
@@ -139,7 +139,9 @@ export default function OnboardingWizard() {
                     : { ...DEFAULT_PERMISSIONS, can_access_team: false, can_access_agency_settings: false }
             }));
 
+            console.log('[Onboarding] Guardando roles:', rolesToSave);
             await updateSettings({ roles: rolesToSave });
+            console.log('[Onboarding] Roles guardados, pasando al siguiente paso');
             goToNextStep();
         } catch (error) {
             console.error('Error al guardar roles:', error);
