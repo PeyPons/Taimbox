@@ -15,8 +15,12 @@ async function getAccountName(id, accessToken) {
     try {
         const res = await fetch(`https://graph.facebook.com/${API_VERSION}/${id}?fields=name&access_token=${accessToken}`);
         const data = await res.json();
+        if (data.error) console.error(`Error fetching name for ${id}:`, data.error.message);
         return data.name || id;
-    } catch { return id; }
+    } catch (e) {
+        console.error(`Error fetching name for ${id}:`, e);
+        return id;
+    }
 }
 
 async function processAgency(agency, log) {
@@ -63,12 +67,7 @@ async function processAgency(agency, log) {
         const url = `https://graph.facebook.com/${API_VERSION}/${id}/insights?level=campaign&fields=campaign_id,campaign_name,spend,actions,action_values&time_range={'since':'${range.start}','until':'${range.end}'}&access_token=${accessToken}`;
 
         try {
-            // FASE LIMPIEZA: Borrar datos existentes de este mes para esta cuenta antes de insertar nuevos
-            // Esto evita duplicados y limpia datos de campañas que ya no existen en la respuesta
-            await supabase.from('meta_ads_campaigns')
-                .delete()
-                .eq('client_id', id)
-                .gte('date', range.start);
+            // (Clean Sync movido dentro de la condición de datos encontrados)
 
             const res = await fetch(url);
             const json = await res.json();
@@ -94,6 +93,12 @@ async function processAgency(agency, log) {
                 });
 
                 if (upsertData.length > 0) {
+                    // CLEAN SYNC CONDICIONAL: Solo borramos si tenemos nuevos datos para reemplazar
+                    await supabase.from('meta_ads_campaigns')
+                        .delete()
+                        .eq('client_id', id)
+                        .gte('date', range.start);
+
                     await supabase.from('meta_ads_campaigns').upsert(upsertData, { onConflict: 'campaign_id, date' });
                     await log(`  ✅ ${upsertData.length} campañas actualizadas.`);
                 } else {
@@ -103,6 +108,19 @@ async function processAgency(agency, log) {
         } catch (err) {
             await log(`  ❌ Error fetch (${name}): ${err.message}`);
         }
+    }
+    // LIMPIEZA DE CUENTAS HUÉRFANAS
+    // Eliminar campañas de esta agencia asociadas a cuentas que NO están en la lista configurada (ids)
+    if (ids.length > 0) {
+        const idsString = ids.map(i => `"${i}"`).join(',');
+        const { error: orphanError } = await supabase
+            .from('meta_ads_campaigns')
+            .delete()
+            .eq('agency_id', agency.id)
+            .not('client_id', 'in', `(${idsString})`);
+
+        if (orphanError) await log(`  ⚠️ Error limpiando huérfanos: ${orphanError.message}`);
+        else await log(`  🧹 Limpieza de cuentas no configuradas completada.`);
     }
 }
 

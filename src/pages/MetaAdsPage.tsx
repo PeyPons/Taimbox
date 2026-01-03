@@ -161,6 +161,10 @@ export default function MetaAdsPage() {
 
     rawData.forEach(row => {
       if (row.date === currentMonthPrefix) {
+        // FILTER: Only show data for accounts present in config
+        const isRegistered = registeredAccounts.some(acc => normalizeId(acc.account_id) === normalizeId(row.client_id));
+        if (!isRegistered) return;
+
         let finalId = row.client_id, finalName = row.client_name;
         const rulesForAccount = segmentationRules.filter(r => normalizeId(r.account_id) === normalizeId(row.client_id));
         if (rulesForAccount.length > 0) { const match = rulesForAccount.find(r => row.campaign_name.toLowerCase().includes(r.keyword.toLowerCase())); if (match) { finalId = `${row.client_id}_${match.keyword.toUpperCase()}`; finalName = match.virtual_name; } }

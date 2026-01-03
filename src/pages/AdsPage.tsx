@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -49,6 +49,14 @@ interface CampaignData {
   date?: string;
   created_at?: string;
 }
+
+interface RegisteredAccount {
+  account_id: string;
+  account_name: string;
+  platform: string;
+  is_active: boolean;
+}
+
 
 interface SegmentationRule {
   id: string;
@@ -134,6 +142,7 @@ export default function AdsPage() {
   const { currentAgency } = useAgency();
   const [rawData, setRawData] = useState<CampaignData[]>([]);
   const [clientSettings, setClientSettings] = useState<Record<string, { budget: number; group_name: string; is_hidden: boolean; is_sales_account: boolean }>>({});
+  const [registeredAccounts, setRegisteredAccounts] = useState<RegisteredAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [segmentationRules, setSegmentationRules] = useState<SegmentationRule[]>([]);
@@ -176,9 +185,10 @@ export default function AdsPage() {
 
   const fetchData = async () => {
     try {
-      const [adsRes, settingsRes, logsRes, rulesRes] = await Promise.all([
+      const [adsRes, settingsRes, accountsRes, logsRes, rulesRes] = await Promise.all([
         supabase.from('google_ads_campaigns').select('*'),
         supabase.from('client_settings').select('*'),
+        supabase.from('ad_accounts_config').select('*').eq('platform', 'google').eq('is_active', true),
         supabase.from('ads_sync_logs').select('created_at').eq('status', 'completed').order('created_at', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('segmentation_rules').select('*').eq('platform', 'google')
       ]);
@@ -195,6 +205,7 @@ export default function AdsPage() {
 
       setRawData(adsRes.data || []);
       setClientSettings(settingsMap);
+      setRegisteredAccounts(accountsRes.data || []);
       setSegmentationRules(rulesRes.data || []);
 
       if (logsRes.data) {
@@ -339,6 +350,14 @@ export default function AdsPage() {
     const uniqueAccounts = Array.from(new Set(rawData.map(r => JSON.stringify({ id: r.client_id, name: r.client_name }))))
       .map(s => JSON.parse(s));
 
+    // Ensure we init stats for registered accounts too (even if no current data)
+    registeredAccounts.forEach(acc => {
+      if (!uniqueAccounts.find(u => normalizeId(u.id) === normalizeId(acc.account_id))) {
+        uniqueAccounts.push({ id: acc.account_id, name: acc.account_name });
+      }
+    });
+
+
     uniqueAccounts.forEach(acc => {
       const settings = clientSettings[acc.id] || { budget: 0, group_name: '', is_hidden: false, is_sales_account: true };
       const groupKey = settings.group_name?.trim() ? `GROUP-${settings.group_name}` : acc.id;
@@ -365,6 +384,13 @@ export default function AdsPage() {
       }
       let finalId = row.client_id;
       let finalName = row.client_name;
+
+      // FILTER: Only show data for accounts present in config
+      const isRegistered = registeredAccounts.some(acc => normalizeId(acc.account_id) === normalizeId(row.client_id));
+      if (!isRegistered) {
+        // Optional: filteredOutCount++; but for now just skip
+        return;
+      }
 
       // Aplicar reglas de segmentación
       const rulesForAccount = segmentationRules.filter(r => normalizeId(r.account_id) === normalizeId(row.client_id));
@@ -462,7 +488,7 @@ export default function AdsPage() {
     }
 
     return filtered.sort((a, b) => b.spent - a.spent);
-  }, [rawData, clientSettings, searchTerm, showHidden, segmentationRules, now, currentDay, daysInMonth, daysRemaining]);
+  }, [rawData, clientSettings, registeredAccounts, searchTerm, showHidden, segmentationRules, now, currentDay, daysInMonth, daysRemaining]);
 
   // Estadísticas globales
   const globalStats = useMemo(() => {
@@ -668,10 +694,9 @@ export default function AdsPage() {
                       </div>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
+                          <div
+                            role="button"
+                            className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-8 w-8 cursor-pointer")}
                             onClick={(e) => {
                               e.stopPropagation();
                               if (!client.is_group) {
@@ -688,7 +713,7 @@ export default function AdsPage() {
                             }}
                           >
                             <Settings className="w-4 h-4 text-slate-400" />
-                          </Button>
+                          </div>
                         </TooltipTrigger>
                         <TooltipContent>Configurar</TooltipContent>
                       </Tooltip>
