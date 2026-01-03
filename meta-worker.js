@@ -54,13 +54,14 @@ async function processAgency(agency, log) {
         await log(`  👉 Cuenta: ${name} (${id})`);
 
         // Actualizar nombre en config
-        await supabase.from('ad_accounts_config').upsert({
-            account_id: id,
-            account_name: name,
-            platform: 'meta',
-            is_active: true,
-            agency_id: agency.id
-        }, { onConflict: 'account_id' });
+        // Actualizar nombre en config (Forzamos UPDATE para asegurar cambio)
+        const { error: updateError } = await supabase
+            .from('ad_accounts_config')
+            .update({ account_name: name })
+            .eq('account_id', id)
+            .eq('agency_id', agency.id);
+
+        if (updateError) await log(`    ⚠️ Error actualizando nombre DB: ${updateError.message}`);
 
         // Fetch Insights (Resumido)
         const range = { start: new Date().toISOString().slice(0, 8) + '01', end: new Date().toISOString().slice(0, 10) };
