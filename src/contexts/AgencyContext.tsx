@@ -189,13 +189,19 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
     updateSettings: async (settings: Partial<AgencySettings>) => {
       if (!currentAgency?.id) return;
 
+      const newSettings = { ...currentAgency.settings, ...settings };
       const { error } = await supabase
         .from('agencies')
-        .update({ settings: { ...currentAgency.settings, ...settings } })
+        .update({ settings: newSettings })
         .eq('id', currentAgency.id);
 
       if (error) throw error;
-      await refreshAgency();
+
+      // Actualizar estado local inmediatamente para evitar parpadeos y loaders innecesarios
+      setCurrentAgency(prev => prev ? { ...prev, settings: newSettings } : null);
+
+      // Opcional: refrescar en segundo plano sin bloquear
+      fetchAgencyForUser().catch(console.error);
     }
   };
 
