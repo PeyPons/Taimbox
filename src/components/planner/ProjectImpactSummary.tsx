@@ -1,20 +1,11 @@
 import { useMemo } from 'react';
 import { cn, formatProjectName } from '@/lib/utils';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { Project, Allocation } from '@/types';
+import { Badge } from '@/components/ui/badge';
+import { Project, Allocation, NewTaskRow } from '@/types';
 import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
-
-interface NewTaskRow {
-  id: string;
-  projectId: string;
-  taskName: string;
-  hours: string;
-  weekDate: string;
-  description: string;
-  dependencyId?: string;
-}
 
 interface ProjectImpactSummaryProps {
   newTasks: NewTaskRow[];
@@ -25,6 +16,7 @@ interface ProjectImpactSummaryProps {
   getEmployeeLoadForWeek: (employeeId: string, weekStart: string, effectiveStart?: Date, effectiveEnd?: Date, viewMonth?: Date) => { hours: number; capacity: number; percentage: number };
   employeeId: string;
   weeks: { weekStart: Date; effectiveStart?: Date; effectiveEnd?: Date }[];
+  variant?: 'horizontal' | 'vertical';
 }
 
 export function ProjectImpactSummary({
@@ -35,12 +27,13 @@ export function ProjectImpactSummary({
   getProjectBudgetStatus,
   getEmployeeLoadForWeek,
   employeeId,
-  weeks
+  weeks,
+  variant = 'horizontal'
 }: ProjectImpactSummaryProps) {
   // Agrupar horas por proyecto
   const projectImpact = useMemo(() => {
     const impact: Record<string, { name: string; adding: number; current: ProjectBudgetStatus }> = {};
-    
+
     newTasks.forEach(task => {
       if (task.projectId && task.hours) {
         const hours = parseFloat(task.hours) || 0;
@@ -57,13 +50,13 @@ export function ProjectImpactSummary({
         }
       }
     });
-    
+
     return Object.entries(impact).map(([id, data]) => ({
       id,
       ...data,
       newTotal: data.current.totalComputed + data.current.totalPlanned + data.adding,
       exceeds: data.current.budgetMax > 0 && (data.current.totalComputed + data.current.totalPlanned + data.adding) > data.current.budgetMax,
-      excessAmount: data.current.budgetMax > 0 
+      excessAmount: data.current.budgetMax > 0
         ? round2((data.current.totalComputed + data.current.totalPlanned + data.adding) - data.current.budgetMax)
         : 0
     }));
@@ -72,7 +65,7 @@ export function ProjectImpactSummary({
   // Agrupar horas por semana para verificar capacidad
   const weekImpact = useMemo(() => {
     const impact: Record<string, { weekIndex: number; adding: number; weekData: { weekStart: Date; effectiveStart?: Date; effectiveEnd?: Date } }> = {};
-    
+
     newTasks.forEach(task => {
       if (task.weekDate && task.hours) {
         const hours = parseFloat(task.hours) || 0;
@@ -93,18 +86,18 @@ export function ProjectImpactSummary({
         }
       }
     });
-    
+
     return Object.entries(impact).map(([weekDate, data]) => {
       const currentLoad = getEmployeeLoadForWeek(
-        employeeId, 
-        weekDate, 
-        data.weekData.effectiveStart, 
+        employeeId,
+        weekDate,
+        data.weekData.effectiveStart,
         data.weekData.effectiveEnd,
         viewDate
       );
       const newTotal = round2(currentLoad.hours + data.adding);
       const exceeds = newTotal > currentLoad.capacity;
-      
+
       return {
         weekDate,
         weekIndex: data.weekIndex,
@@ -122,7 +115,97 @@ export function ProjectImpactSummary({
   const hasWeekExcesses = weekImpact.some(w => w.exceeds);
   const hasAnyExcess = hasProjectExcesses || hasWeekExcesses;
 
-  if (projectImpact.length === 0 && weekImpact.length === 0) return null;
+  if (projectImpact.length === 0 && weekImpact.length === 0) {
+    if (variant === 'vertical') {
+      return (
+        <div className="flex flex-col gap-6 text-slate-400 italic text-xs">
+          <p>Añade tareas para ver el impacto en tu capacidad y en los proyectos.</p>
+        </div>
+      );
+    }
+    return null;
+  }
+
+  if (variant === 'vertical') {
+    return (
+      <div className="flex flex-col gap-6 h-full">
+        <div>
+          <h3 className="font-semibold text-sm text-slate-700 mb-1">Impacto Previsto</h3>
+          <p className="text-xs text-slate-500">Simulación basada en las tareas introducidas.</p>
+        </div>
+
+        {/* Projects Impact */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Proyectos</h4>
+          {projectImpact.length === 0 ? (
+            <p className="text-xs text-slate-400 italic">No hay proyectos afectados.</p>
+          ) : (
+            <div className="space-y-2">
+              {projectImpact.map(p => (
+                <div key={p.id} className="bg-white p-2.5 rounded border shadow-sm text-xs">
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="font-semibold text-slate-700 line-clamp-1 mr-2">{formatProjectName(p.name)}</span>
+                    <Badge variant="secondary" className="h-4 px-1 text-[9px] bg-slate-100 text-slate-600 font-normal shrink-0">
+                      +{p.adding.toFixed(1)}h
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="text-slate-400 text-[10px]">Presupuesto</span>
+                    {p.current.budgetMax > 0 ? (
+                      <span className={cn("font-medium", p.exceeds ? "text-red-600" : "text-emerald-600")}>
+                        {p.newTotal.toFixed(1)} / {p.current.budgetMax}h
+                        {p.exceeds && <AlertTriangle className="h-3 w-3 inline ml-1 text-red-500" />}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 italic">Sin límite</span>
+                    )}
+                  </div>
+                  {p.current.budgetMax > 0 && (
+                    <div className="mt-1 h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className={cn("h-full rounded-full", p.exceeds ? "bg-red-500" : "bg-emerald-500")}
+                        style={{ width: `${Math.min((p.newTotal / p.current.budgetMax) * 100, 100)}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Weeks Impact */}
+        <div className="space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Tu ocupación semanal</h4>
+          {weekImpact.length === 0 ? (
+            <p className="text-xs text-slate-400 italic">No hay semanas afectadas.</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-2">
+              {weekImpact.map(w => {
+                const weekLabel = `Semana ${w.weekIndex + 1}`;
+                return (
+                  <div key={w.weekDate} className={cn("p-2.5 rounded border text-xs flex justify-between items-center group",
+                    w.exceeds ? "bg-red-50 border-red-200" : "bg-white border-slate-200"
+                  )}>
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-slate-700">{weekLabel}</span>
+                      <span className="text-[10px] text-slate-400">Capacidad: {w.capacity}h</span>
+                    </div>
+                    <div className="text-right">
+                      <span className={cn("font-bold block", w.exceeds ? "text-red-600" : "text-slate-700")}>
+                        {w.newTotal.toFixed(1)}h
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-medium">(+{w.adding.toFixed(1)}h)</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn(
@@ -151,12 +234,12 @@ export function ProjectImpactSummary({
           )}
         </div>
       ))}
-      
+
       {/* Separador si hay ambos */}
       {projectImpact.length > 0 && weekImpact.length > 0 && (
         <span className="text-slate-300">║</span>
       )}
-      
+
       {/* Impacto en capacidad por semana */}
       {weekImpact.map((w, idx) => (
         <div key={w.weekDate} className="flex items-center gap-1.5">

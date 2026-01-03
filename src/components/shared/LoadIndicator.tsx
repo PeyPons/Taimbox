@@ -39,7 +39,7 @@ export function LoadIndicator({
       hours: 'text-base',
       capacity: 'text-[10px]',
       percentage: 'text-xs',
-      container: 'w-20 h-14',
+      container: 'w-24 h-16', // Expanded default width/height
       gap: 'gap-1'
     },
     lg: {
@@ -53,15 +53,17 @@ export function LoadIndicator({
 
   const classes = sizeClasses[size];
 
+  // If a custom className provides width/height, we should respect it over defaults
+  const containerClasses = cn(
+    "flex flex-col items-center justify-center rounded-lg border px-1",
+    isOverload ? "bg-red-50 border-red-200 text-red-700"
+      : isNearLimit ? "bg-amber-50 border-amber-200 text-amber-700"
+        : "bg-emerald-50 border-emerald-200 text-emerald-700",
+    classes.container,
+    className
+  );
   const content = (
-    <div className={cn(
-      "flex flex-col items-center justify-center rounded-lg border px-1",
-      isOverload ? "bg-red-50 border-red-200 text-red-700"
-        : isNearLimit ? "bg-amber-50 border-amber-200 text-amber-700"
-          : "bg-emerald-50 border-emerald-200 text-emerald-700",
-      classes.container,
-      className
-    )}>
+    <div className={containerClasses}>
       <div className="flex items-baseline gap-0.5">
         <span className={cn("font-bold leading-none", classes.hours)}>{hours}h</span>
         <span className={cn("opacity-70 font-medium", classes.capacity)}>/ {capacity}h</span>

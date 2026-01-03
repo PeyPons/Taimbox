@@ -52,7 +52,7 @@ const employeeFormSchema = z.object({
     saturday: z.number().min(0).max(24),
     sunday: z.number().min(0).max(24),
   }),
-  permissions: z.any().optional(), // Mantenemos any porque UserPermissions tiene keys específicas
+  // Permissions handled via Role
 }).refine((data) => {
   // Para nuevos empleados, email y password son obligatorios
   // Esta validación se hará en el handleSubmit
@@ -66,7 +66,13 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
   const { currentAgency } = useAgency();
 
   // Obtener roles y departamentos dinámicos de la agencia
-  const availableRoles = currentAgency?.settings?.roles || ['Responsable', 'Coordinador', 'Especialista'];
+  // Helper to extract role names safely handling both new object structure and legacy strings
+  const getRoleNames = (roles: (string | import('@/types').RolePermissions)[] | undefined): string[] => {
+    if (!roles) return ['Responsable', 'Coordinador', 'Especialista'];
+    return roles.map(r => typeof r === 'string' ? r : r.name);
+  };
+
+  const availableRoles = getRoleNames(currentAgency?.settings?.roles);
   const availableDepartments = currentAgency?.settings?.departments || ['SEO', 'PPC'];
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -86,12 +92,10 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
       hourlyRate: 0,
       crmUserId: '',
       workSchedule: defaultSchedule,
-      permissions: DEFAULT_PERMISSIONS,
     },
   });
 
   const workSchedule = form.watch('workSchedule');
-  const permissions = form.watch('permissions') || DEFAULT_PERMISSIONS;
 
   useEffect(() => {
     if (open) {
@@ -106,7 +110,6 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
           hourlyRate: employeeToEdit.hourlyRate || 0,
           crmUserId: employeeToEdit.crmUserId || '',
           workSchedule: employeeToEdit.workSchedule || defaultSchedule,
-          permissions: employeeToEdit.permissions || DEFAULT_PERMISSIONS,
         });
       } else {
         form.reset({
@@ -119,7 +122,6 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
           hourlyRate: 0,
           crmUserId: '',
           workSchedule: defaultSchedule,
-          permissions: DEFAULT_PERMISSIONS,
         });
       }
     }
@@ -267,7 +269,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
         hourlyRate: data.hourlyRate,
         crmUserId: data.crmUserId !== '' ? Number(data.crmUserId) : undefined,
         workSchedule: data.workSchedule as WorkSchedule,
-        permissions: data.permissions || DEFAULT_PERMISSIONS,
+        // permissions: Removed, handled by role now
         isActive: true,
         avatarUrl: employeeToEdit?.avatarUrl || `https://api.dicebear.com/9.x/fun-emoji/svg?seed=${data.name}`
       };
@@ -328,7 +330,6 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
           <Tabs defaultValue="profile" className="w-full mt-2">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="profile">Perfil</TabsTrigger>
-              <TabsTrigger value="permissions" disabled={!isEditing}>Permisos</TabsTrigger>
               <TabsTrigger value="schedule" disabled={!isEditing}>Horario</TabsTrigger>
               <TabsTrigger value="management" disabled={!isEditing}>Gestión</TabsTrigger>
             </TabsList>
@@ -547,104 +548,6 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
               </Form>
             </TabsContent>
 
-            <TabsContent value="permissions" className="py-4 space-y-4">
-              <div className="bg-primary/10 text-indigo-800 p-3 rounded-md text-sm flex gap-2">
-                <Key className="h-5 w-5 shrink-0" />
-                <p>Controla a qué secciones puede acceder este empleado. Si un permiso está desactivado, no verá esa sección en el menú.</p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-3">Gestión</h3>
-                  {(['can_access_planner', 'can_access_projects', 'can_access_clients', 'can_access_team', 'can_access_settings'] as const).map((permission) => (
-                    <div key={permission} className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50">
-                      <div className="flex-1">
-                        <Label htmlFor={permission} className="text-sm font-medium cursor-pointer">
-                          {PERMISSION_LABELS[permission]}
-                        </Label>
-                      </div>
-                      <Switch
-                        id={permission}
-                        checked={permissions[permission] !== false}
-                        onCheckedChange={(checked) => {
-                          const newPermissions = { ...permissions, [permission]: checked };
-                          form.setValue('permissions', newPermissions);
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="space-y-3 pt-4 border-t">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-3">PPC</h3>
-                  {(['can_access_google_ads', 'can_access_meta_ads', 'can_access_ads_reports'] as const).map((permission) => (
-                    <div key={permission} className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50">
-                      <div className="flex-1">
-                        <Label htmlFor={permission} className="text-sm font-medium cursor-pointer">
-                          {PERMISSION_LABELS[permission]}
-                        </Label>
-                      </div>
-                      <Switch
-                        id={permission}
-                        checked={permissions[permission] !== false}
-                        onCheckedChange={(checked) => {
-                          const newPermissions = { ...permissions, [permission]: checked };
-                          form.setValue('permissions', newPermissions);
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="space-y-3 pt-4 border-t">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-3">Análisis</h3>
-                  {(['can_access_reports', 'can_access_client_reports'] as const).map((permission) => (
-                    <div key={permission} className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50">
-                      <div className="flex-1">
-                        <Label htmlFor={permission} className="text-sm font-medium cursor-pointer">
-                          {PERMISSION_LABELS[permission]}
-                        </Label>
-                      </div>
-                      <Switch
-                        id={permission}
-                        checked={permissions[permission] !== false}
-                        onCheckedChange={(checked) => {
-                          const newPermissions = { ...permissions, [permission]: checked };
-                          form.setValue('permissions', newPermissions);
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="space-y-3 pt-4 border-t">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-3">Otros</h3>
-                  {(['can_access_deadlines', 'can_access_okrs', 'can_access_weekly_forecast', 'can_access_settings'] as const).map((permission) => (
-                    <div key={permission} className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50">
-                      <div className="flex-1">
-                        <Label htmlFor={permission} className="text-sm font-medium cursor-pointer">
-                          {PERMISSION_LABELS[permission]}
-                        </Label>
-                      </div>
-                      <Switch
-                        id={permission}
-                        checked={permissions[permission] !== false}
-                        onCheckedChange={(checked) => {
-                          const newPermissions = { ...permissions, [permission]: checked };
-                          form.setValue('permissions', newPermissions);
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-4 border-t">
-                <Button onClick={form.handleSubmit(onSubmit)} className="bg-primary" disabled={isProcessing}>
-                  {isProcessing ? 'Guardando...' : 'Guardar permisos'}
-                </Button>
-              </div>
-            </TabsContent>
 
             <TabsContent value="schedule" className="py-4">
               <div className="space-y-4">

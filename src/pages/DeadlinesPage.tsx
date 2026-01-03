@@ -7,7 +7,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useApp } from '@/contexts/AppContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useAgency } from '@/contexts/AgencyContext';
+
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,6 +43,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 
 export default function DeadlinesPage() {
   const { projects, clients, employees, absences, teamEvents, currentUser } = useApp();
+  const { canAccess } = usePermissions();
+  const isManager = canAccess('/planner') || canAccess('/reports');
   const { currentAgency } = useAgency();
   const { showTour } = useDeadlinesTour();
   const isMobile = useIsMobile();
@@ -631,6 +635,14 @@ export default function DeadlinesPage() {
       });
     }
 
+    // Filtrar vista para empleados (solo ver lo asignado a ellos)
+    if (!isManager && currentUser) {
+      filtered = filtered.filter(p => {
+        const deadline = deadlines.find(d => d.projectId === p.id && d.month === selectedMonth);
+        return deadline && (deadline.employeeHours[currentUser.id] || 0) > 0;
+      });
+    }
+
     // Ordenar proyectos
     filtered.sort((a, b) => {
       if (sortBy === 'client') {
@@ -1124,6 +1136,7 @@ export default function DeadlinesPage() {
 
   // Funciones de edición inline
   const startEditingProject = async (projectId: string) => {
+    if (!isManager) return;
     // Si ya estamos editando este proyecto, no hacer nada
     if (editingProjectId === projectId) return;
 
@@ -1641,7 +1654,7 @@ export default function DeadlinesPage() {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <TooltipProvider>
+            {isManager && <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="outline" size="sm" onClick={copyFromPreviousMonth} className="h-8 w-8 p-0">
@@ -1650,7 +1663,7 @@ export default function DeadlinesPage() {
                 </TooltipTrigger>
                 <TooltipContent>Copiar del mes anterior</TooltipContent>
               </Tooltip>
-            </TooltipProvider>
+            </TooltipProvider>}
             {/* Botón para ver equipo en móvil */}
             {isMobile && (
               <Sheet>
@@ -1780,7 +1793,7 @@ export default function DeadlinesPage() {
               </SelectContent>
             </Select>
             {/* Botón para añadir asignación global (visible en móvil) */}
-            {isMobile && (
+            {isMobile && isManager && (
               <Button
                 variant="outline"
                 size="sm"
@@ -2050,7 +2063,7 @@ export default function DeadlinesPage() {
 
       {/* Panel lateral sticky - Disponibilidad del equipo (solo desktop) */}
       {
-        !isMobile && (
+        !isMobile && isManager && (
           <div className="w-64 flex-shrink-0">
             <div className="sticky top-6 space-y-4">
               {/* Disponibilidad en tiempo real */}

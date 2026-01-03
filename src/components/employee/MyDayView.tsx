@@ -23,18 +23,26 @@ export function MyDayView() {
 
     // --- 1. DETERMINE DAILY CAPACITY ---
     const dailyCapacity = useMemo(() => {
-        if (!currentUser?.workSchedule) return 8;
-        const dayIndex = getDay(today); // 0 = Sunday, 1 = Monday...
-        const scheduleMap = [
-            currentUser.workSchedule.sunday,
-            currentUser.workSchedule.monday,
-            currentUser.workSchedule.tuesday,
-            currentUser.workSchedule.wednesday,
-            currentUser.workSchedule.thursday,
-            currentUser.workSchedule.friday,
-            currentUser.workSchedule.saturday
-        ];
-        return scheduleMap[dayIndex] || 8;
+        // If workSchedule exists and isn't just the default 8s, use it
+        if (currentUser?.workSchedule) {
+            const schedule = currentUser.workSchedule;
+            const isDefault = Object.values(schedule).slice(0, 5).every(h => h === 8); // Mon-Fri (checking broadly)
+
+            if (!isDefault) {
+                const dayIndex = getDay(today);
+                const scheduleMap = [schedule.sunday, schedule.monday, schedule.tuesday, schedule.wednesday, schedule.thursday, schedule.friday, schedule.saturday];
+                return scheduleMap[dayIndex] || 0;
+            }
+        }
+
+        // Fallback: Use defaultWeeklyCapacity / 5 for weekdays
+        if (currentUser?.defaultWeeklyCapacity) {
+            const dayIndex = getDay(today);
+            if (dayIndex === 0 || dayIndex === 6) return 0; // Weekend
+            return currentUser.defaultWeeklyCapacity / 5;
+        }
+
+        return 8;
     }, [currentUser]);
 
     // --- 2. PRE-CALCULATE DATA FOR SORTING ---

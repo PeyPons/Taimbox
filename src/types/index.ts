@@ -38,9 +38,14 @@ export interface CustomProjectFilter {
   description?: string;   // Explanation of what the filter does
 }
 
+export interface RolePermissions {
+  name: string;
+  permissions: import('./permissions').UserPermissions;
+}
+
 export interface AgencySettings {
   modules?: AgencyModules;
-  roles?: string[];
+  roles?: RolePermissions[];
   departments?: string[];
   branding?: AgencyBranding;
   features?: Record<string, boolean>;
@@ -146,6 +151,16 @@ export interface Allocation {
   dependencyId?: string;
   transferredFromAllocationId?: string; // ID de la tarea original de la que proviene esta transferencia
   distributionSourceAllocationId?: string; // ID de la tarea transferida de la que proviene esta distribución
+}
+
+export interface NewTaskRow {
+  id: string;
+  projectId: string;
+  taskName: string;
+  hours: string;
+  weekDate: string;
+  description?: string;
+  dependencyId?: string;
 }
 
 export type LoadStatus = 'empty' | 'healthy' | 'warning' | 'overload';

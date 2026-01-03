@@ -25,8 +25,11 @@ import { toast } from 'sonner';
 import { PlannerTour } from './PlannerTour';
 import { WeekNavigation } from './WeekNavigation';
 import { ProjectImpactSummary } from './ProjectImpactSummary';
-import { useAllocationSheet } from '@/hooks/useAllocationSheet';
+import { BatchTaskRow } from './BatchTaskRow';
+import { useAllocationSheet, ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
+import { useTasksImpact } from '@/hooks/useTasksImpact';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { NewTaskRow } from '@/types';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -38,31 +41,11 @@ interface AllocationSheetProps {
   viewDateContext?: Date;
 }
 
-interface NewTaskRow {
-  id: string;
-  projectId: string;
-  taskName: string;
-  hours: string;
-  weekDate: string;
-  description: string;
-  dependencyId?: string;
-}
-
-interface ProjectBudgetStatus {
-  totalComputed: number;
-  totalPlanned: number;
-  budgetMax: number;
-  budgetMin: number;
-  percentage: number;
-  status: 'healthy' | 'warning' | 'overload' | 'under';
-  breakdown: { employeeId: string; employeeName: string; computed: number; planned: number }[];
-}
-
 type SortOption = 'budget_desc' | 'budget_asc' | 'my_hours_desc' | 'my_hours_asc' | 'name_asc' | 'name_desc';
 
 export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, viewDateContext }: AllocationSheetProps) {
   const {
-    employees, projects, allocations, getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getProjectById,
+    employees, projects, clients, allocations, getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getProjectById,
     addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading, loadDataForMonth, weeklyFeedback
   } = useApp();
 
@@ -241,6 +224,16 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     monthlyProjectSummary,
     getProjectBudgetStatus,
   } = useAllocationSheet(employeeId, viewDate);
+
+  const { getWeekExceedStatus } = useTasksImpact({
+    newTasks,
+    projects,
+    weeks,
+    employeeId,
+    getEmployeeLoadForWeek,
+    getProjectBudgetStatus,
+    viewMonth: viewDate
+  });
 
   // Encontrar el índice de la semana clicada cuando weeks esté disponible
   useEffect(() => {
@@ -1882,166 +1875,130 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
       </Sheet>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className={cn("max-w-[650px] overflow-visible gap-0 p-0", !editingAllocation ? "max-w-[950px]" : "")}>
-          <DialogHeader className="p-6 pb-2">
-            <DialogTitle>{editingAllocation ? 'Editar tarea' : 'Añadir tareas'}</DialogTitle>
-            <DialogDescription>{editingAllocation ? 'Modifica detalles y dependencias.' : 'Añade múltiples tareas rápidamente.'}</DialogDescription>
+        <DialogContent className={cn("overflow-hidden gap-0 p-0 transition-all duration-300",
+          editingAllocation ? "max-w-[650px] overflow-visible" : "max-w-[1100px] h-[80vh] flex flex-col"
+        )}>
+          <DialogHeader className={cn("p-6 pb-4 border-b shrink-0", !editingAllocation && "bg-white z-10")}>
+            <DialogTitle className="flex items-center gap-2">
+              {editingAllocation ? 'Editar tarea' : <><LayoutGrid className="h-5 w-5 text-primary" /> Planificar tareas</>}
+            </DialogTitle>
+            <DialogDescription>
+              {editingAllocation ? 'Modifica detalles y dependencias.' : `Planifica múltiples tareas para ${monthName}.`}
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="p-6 pt-2">
+          <div className={cn("flex-1", !editingAllocation && "flex overflow-hidden")}>
             {editingAllocation ? (
-              <div className="grid gap-4 mt-4">
-                <div className="space-y-2">
-                  <Label>Proyecto</Label>
-                  <Select value={editProjectId} onValueChange={setEditProjectId}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{activeProjects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select>
-                </div>
-                <div className="space-y-2"><Label>Tarea</Label><Input value={editTaskName} onChange={e => setEditTaskName(e.target.value)} /></div>
+              <div className="p-6 pt-2">
+                <div className="grid gap-4 mt-4">
+                  <div className="space-y-2">
+                    <Label>Proyecto</Label>
+                    <Select value={editProjectId} onValueChange={setEditProjectId}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{activeProjects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select>
+                  </div>
+                  <div className="space-y-2"><Label>Tarea</Label><Input value={editTaskName} onChange={e => setEditTaskName(e.target.value)} /></div>
 
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-xs text-slate-500"><LinkIcon className="w-3 h-3" /> Depende de otra tarea</Label>
-                  <Select value={editDependencyId} onValueChange={setEditDependencyId} disabled={!editProjectId}>
-                    <SelectTrigger className="h-9"><SelectValue placeholder="Sin dependencia" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">-- Ninguna --</SelectItem>
-                      {getAvailableDependencies(editProjectId, editingAllocation.id).map(dep => {
-                        const owner = employees.find(e => e.id === dep.employeeId);
-                        return <SelectItem key={dep.id} value={dep.id} className="text-xs">{dep.taskName} ({owner?.name})</SelectItem>;
-                      })}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2 text-xs text-slate-500"><LinkIcon className="w-3 h-3" /> Depende de otra tarea</Label>
+                    <Select value={editDependencyId} onValueChange={setEditDependencyId} disabled={!editProjectId}>
+                      <SelectTrigger className="h-9"><SelectValue placeholder="Sin dependencia" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">-- Ninguna --</SelectItem>
+                        {getAvailableDependencies(editProjectId, editingAllocation.id).map(dep => {
+                          const owner = employees.find(e => e.id === dep.employeeId);
+                          return <SelectItem key={dep.id} value={dep.id} className="text-xs">{dep.taskName} ({owner?.name})</SelectItem>;
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><Label>Horas</Label><Input type="number" value={editHours} onChange={e => setEditHours(e.target.value)} step="0.5" /></div>
-                  <div className="space-y-2"><Label>Semana</Label><Select value={editWeek} onValueChange={setEditWeek}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{weeks.map((w, i) => <SelectItem key={w.weekStart.toISOString()} value={format(w.weekStart, 'yyyy-MM-dd')}>Sem {i + 1}</SelectItem>)}</SelectContent></Select></div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2"><Label>Horas</Label><Input type="number" value={editHours} onChange={e => setEditHours(e.target.value)} step="0.5" /></div>
+                    <div className="space-y-2"><Label>Semana</Label><Select value={editWeek} onValueChange={setEditWeek}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{weeks.map((w, i) => <SelectItem key={w.weekStart.toISOString()} value={format(w.weekStart, 'yyyy-MM-dd')}>Sem {i + 1}</SelectItem>)}</SelectContent></Select></div>
+                  </div>
                 </div>
               </div>
             ) : (
-              <div className="space-y-3 mt-4">
-                <div className="flex text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1 mb-2">
-                  <div className="flex-1 pl-1">Proyecto</div>
-                  <div className="flex-1 pl-1">Tarea</div>
-                  <div className="w-40 px-2">Dependencia</div>
-                  <div className="w-20 mx-2 text-center">Horas</div>
-                  <div className="w-36">Semana</div>
-                  <div className="w-8"></div>
+              <>
+                {/* Left Column: Task Inputs */}
+                <div className="flex-1 flex flex-col p-6 overflow-hidden border-r bg-white w-2/3">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-semibold text-sm text-slate-700">Listado de tareas</h3>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar relative">
+                    <div className="space-y-3 pb-2">
+                      {newTasks.map(task => (
+                        <BatchTaskRow
+                          key={task.id}
+                          task={task}
+                          otherTasks={newTasks}
+                          updateTaskRow={updateTaskRow}
+                          removeTaskRow={removeTaskRow}
+                          canRemove={newTasks.length > 1}
+                          activeProjects={activeProjects}
+                          weeks={weeks}
+                          employees={employees}
+                          clients={clients}
+                          getProjectBudgetStatus={getProjectBudgetStatus}
+                          getAvailableDependencies={getAvailableDependencies}
+                          getWeekExceedStatus={getWeekExceedStatus}
+                        />
+                      ))}
+
+                      <div id="task-list-end" />
+                    </div>
+                  </div>
+
+                  {/* New Row Button at Bottom */}
+                  <div className="pt-3 mt-auto border-t">
+                    <Button variant="outline" size="sm" onClick={() => {
+                      addTaskRow();
+                      setTimeout(() => {
+                        const el = document.getElementById('task-list-end');
+                        el?.scrollIntoView({ behavior: 'smooth' });
+                      }, 100);
+                    }} className="w-full border-dashed h-9 text-slate-500 hover:text-primary hover:border-primary/50">
+                      <Plus className="h-4 w-4 mr-2" /> Añadir otra fila
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-2 -mr-2">
-                  {newTasks.map((task) => {
-                    // Calcular si esta tarea excede las horas contratadas
-                    const taskProject = task.projectId ? projects.find(p => p.id === task.projectId) : null;
-                    const taskHours = parseFloat(task.hours) || 0;
-
-                    // Horas ya planificadas de este proyecto (del formulario actual)
-                    const otherTasksHours = newTasks
-                      .filter(t => t.id !== task.id && t.projectId === task.projectId)
-                      .reduce((sum, t) => sum + (parseFloat(t.hours) || 0), 0);
-
-                    // Horas ya existentes del proyecto este mes
-                    const existingStatus = task.projectId ? getProjectBudgetStatus(task.projectId) : null;
-                    const currentUsed = existingStatus ? existingStatus.totalComputed + existingStatus.totalPlanned : 0;
-                    const budgetMax = taskProject?.budgetHours || 0;
-
-                    // Total proyectado
-                    const projectedTotal = currentUsed + otherTasksHours + taskHours;
-                    const exceedsBy = budgetMax > 0 ? projectedTotal - budgetMax : 0;
-                    const willExceed = exceedsBy > 0 && taskHours > 0;
-
-                    return (
-                      <div key={task.id} className="flex flex-col gap-1">
-                        <div className="flex gap-2 items-start">
-                          <div className="flex-1 min-w-0">
-                            <Popover open={openComboboxId === task.id} onOpenChange={(isOpen) => setOpenComboboxId(isOpen ? task.id : null)}>
-                              <PopoverTrigger asChild>
-                                <Button variant="outline" role="combobox" className={cn("w-full justify-between h-10 px-3 text-left font-normal", !task.projectId && "text-muted-foreground", willExceed && "border-amber-300 bg-amber-50")}>
-                                  <span className="truncate">{task.projectId ? formatProjectName(activeProjects.find((p) => p.id === task.projectId)?.name || '') : "Buscar..."}</span>
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-[300px] p-0" align="start">
-                                <Command>
-                                  <CommandInput placeholder="Buscar..." />
-                                  <CommandList>
-                                    <CommandEmpty>No hay.</CommandEmpty>
-                                    <CommandGroup className="max-h-[200px] overflow-y-auto">
-                                      {activeProjects.map((project) => (
-                                        <CommandItem key={project.id} value={project.name} onSelect={() => { updateTaskRow(task.id, 'projectId', project.id); setOpenComboboxId(null); }}>
-                                          <Check className={cn("mr-2 h-4 w-4", task.projectId === project.id ? "opacity-100" : "opacity-0")} />
-                                          {formatProjectName(project.name)}
-                                        </CommandItem>
-                                      ))}
-                                    </CommandGroup>
-                                  </CommandList>
-                                </Command>
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-
-                          <Input className="flex-1 h-10" placeholder="Nombre..." value={task.taskName} onChange={(e) => updateTaskRow(task.id, 'taskName', e.target.value)} />
-
-                          <div className="w-40">
-                            <Select value={task.dependencyId} onValueChange={(v) => updateTaskRow(task.id, 'dependencyId', v)} disabled={!task.projectId}>
-                              <SelectTrigger className="h-10 text-xs px-2"><SelectValue placeholder="-" /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">Ninguna</SelectItem>
-                                {getAvailableDependencies(task.projectId).map(dep => {
-                                  const owner = employees.find(e => e.id === dep.employeeId);
-                                  return <SelectItem key={dep.id} value={dep.id} className="text-xs">{dep.taskName} ({owner?.name?.substring(0, 6)}..)</SelectItem>;
-                                })}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <Input type="number" className={cn("w-20 h-10 text-center", willExceed && "border-amber-300 bg-amber-50")} placeholder="0" value={task.hours} onChange={(e) => updateTaskRow(task.id, 'hours', e.target.value)} step="0.5" />
-
-                          <div className="w-36">
-                            <Select value={task.weekDate} onValueChange={(v) => updateTaskRow(task.id, 'weekDate', v)}>
-                              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                              <SelectContent>{weeks.map((w, i) => (<SelectItem key={w.weekStart.toISOString()} value={format(w.weekStart, 'yyyy-MM-dd')}>Sem {i + 1}</SelectItem>))}</SelectContent>
-                            </Select>
-                          </div>
-
-                          <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-destructive" onClick={() => removeTaskRow(task.id)} disabled={newTasks.length === 1}><X className="h-4 w-4" /></Button>
-                        </div>
-                        {/* Badge de exceso inline */}
-                        {willExceed && (
-                          <div className="flex items-center gap-1 ml-1 text-[10px] text-amber-700">
-                            <AlertTriangle className="w-3 h-3" />
-                            <span>+{exceedsBy.toFixed(1)}h exceso ({projectedTotal.toFixed(1)}/{budgetMax}h)</span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                {/* Right Column: Impact Summary */}
+                <div className="w-1/3 bg-slate-50 border-l p-6 overflow-y-auto custom-scrollbar">
+                  <ProjectImpactSummary
+                    variant="vertical"
+                    newTasks={newTasks}
+                    projects={projects}
+                    allocations={allocations}
+                    viewDate={viewDate}
+                    getProjectBudgetStatus={getProjectBudgetStatus}
+                    getEmployeeLoadForWeek={getEmployeeLoadForWeek}
+                    employeeId={employeeId}
+                    weeks={weeks}
+                  />
                 </div>
-                <Button variant="outline" size="sm" onClick={addTaskRow} className="w-full mt-4 border-dashed"><Plus className="h-4 w-4 mr-2" /> Añadir otra fila</Button>
-              </div>
+              </>
             )}
           </div>
-          <DialogFooter className="p-6 pt-2 bg-muted/10 border-t flex flex-col gap-2 w-full">
-            {/* Resumen compacto de impacto en proyectos y capacidad */}
-            {!editingAllocation && newTasks.some(t => t.projectId && t.hours) && (
-              <ProjectImpactSummary
-                newTasks={newTasks}
-                projects={projects}
-                allocations={allocations}
-                viewDate={viewDate}
-                getProjectBudgetStatus={getProjectBudgetStatus}
-                getEmployeeLoadForWeek={getEmployeeLoadForWeek}
-                employeeId={employeeId}
-                weeks={weeks}
-              />
-            )}
-            <div className="flex justify-between items-center w-full">
-              {editingAllocation && <Button variant="ghost" size="sm" onClick={handleDeleteClick} className="text-red-500"><Trash2 className="w-4 h-4 mr-2" /> Eliminar</Button>}
-              <div className="flex gap-2 ml-auto">
-                <Button variant="ghost" onClick={() => setIsFormOpen(false)}>Cancelar</Button>
-                <Button onClick={handleSave}>Guardar</Button>
+
+          <DialogFooter className={cn("p-6 py-4 border-t bg-slate-50/50 shrink-0 flex items-center gap-2 w-full", editingAllocation && "bg-transparent border-t-0 p-6 pt-0")}>
+            {!editingAllocation && (
+              <div className="flex items-center gap-2 text-xs text-slate-500 mr-auto">
+                {newTasks.some(t => !t.projectId || !t.taskName || !t.hours || !t.weekDate) && (
+                  <span className="text-amber-600 flex items-center gap-1">
+                    <AlertTriangle className="h-3.5 w-3.5" /> Completa los campos obligatorios
+                  </span>
+                )}
               </div>
+            )}
+            <div className="flex gap-2 ml-auto">
+              {editingAllocation && <Button variant="ghost" size="sm" onClick={handleDeleteClick} className="text-red-500 mr-auto"><Trash2 className="w-4 h-4 mr-2" /> Eliminar</Button>}
+              <Button variant="ghost" onClick={() => setIsFormOpen(false)}>Cancelar</Button>
+              <Button onClick={handleSave}>Guardar</Button>
             </div>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog >
 
       {/* Tour interactivo del planificador */}
       {open && <PlannerTour onVisibilityChange={setIsTourActive} />}

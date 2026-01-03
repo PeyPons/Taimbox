@@ -1,9 +1,10 @@
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
-import { useApp } from '@/contexts/AppContext'; // Importamos contexto para datos reales
-import { usePermissions } from '@/hooks/usePermissions'; // Hook de permisos
-import { useAgency } from '@/contexts/AgencyContext'; // Hook de agencia
-import { supabase } from '@/lib/supabase'; // Para el logout
+import { useApp } from '@/contexts/AppContext';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useAgency } from '@/contexts/AgencyContext';
+import { supabase } from '@/lib/supabase';
 import {
   LayoutDashboard,
   Users,
@@ -19,33 +20,69 @@ import {
   Home,
   Calendar,
   TrendingUp,
-  DollarSign,
+  Rocket,
+  ChevronRight,
+  ChevronDown,
   X,
-  User,
-  Rocket
+  User
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+interface NavGroupProps {
+  label: string;
+  icon?: any;
+  children: React.ReactNode;
+  isActive?: boolean;
+}
+
+function NavGroup({ label, icon: Icon, children, isActive = false }: NavGroupProps) {
+  const [isOpen, setIsOpen] = useState(isActive);
+
+  // Auto-open if a child is active
+  useEffect(() => {
+    if (isActive) setIsOpen(true);
+  }, [isActive]);
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full space-y-1">
+      <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-2 text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 rounded-md transition-colors group">
+        <div className="flex items-center gap-2">
+          {Icon && <Icon className="h-4 w-4" />}
+          <span>{label}</span>
+        </div>
+        <ChevronRight className={cn("h-4 w-4 transition-transform duration-200", isOpen && "rotate-90")} />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-1 pl-4 animate-in slide-in-from-top-1 data-[state=closed]:animate-out data-[state=closed]:slide-out-to-top-1 duration-200 overflow-hidden">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
-  const { currentUser } = useApp(); // Obtenemos el usuario real
-  const { canAccess } = usePermissions(); // Verificamos permisos
-  const { currentAgency } = useAgency(); // Configuración de agencia
+  const { currentUser } = useApp();
+  const { canAccess } = usePermissions();
+  const { currentAgency } = useAgency();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = '/login';
   };
 
-  // Módulos habilitados (si no hay datos, asumimos true por defecto para evitar bloqueos)
   const modules = currentAgency?.settings?.modules || {
     seo: true,
     ppc: true,
@@ -54,9 +91,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     deadlines: true
   };
 
+  const isSuperior = canAccess('/planner') || canAccess('/team') || canAccess('/reports') || canAccess('/settings');
+
   return (
     <>
-      {/* Overlay - Solo visible en mobile cuando está abierto */}
       <div
         className={cn(
           "fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300",
@@ -67,11 +105,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       <aside className={cn(
         "bg-slate-900 text-white flex flex-col h-screen fixed left-0 top-0 border-r border-slate-800 z-50 transition-transform duration-300 ease-in-out w-64",
-        // En mobile: se desplaza fuera de la pantalla. En desktop: siempre fijo.
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
 
-        {/* Header del Sidebar */}
+        {/* Header */}
         <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-950/50">
           <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
@@ -84,8 +121,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <div className="hidden lg:block">
               <NotificationBell />
             </div>
-
-            {/* Botón cerrar - Solo visible en mobile */}
             <Button
               variant="ghost"
               size="icon"
@@ -97,133 +132,154 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
         </div>
 
-        {/* Navegación Principal */}
-        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+        {/* Navigation */}
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar">
 
-          {/* Enlace directo al Dashboard personal - Siempre visible */}
-          <NavLink to="/dashboard" icon={Home} active={location.pathname === '/dashboard'}>
-            Mi espacio
-          </NavLink>
-
-          {/* Deadline - Verificar permiso Y módulo */}
-          {modules.deadlines && canAccess('/deadlines') && (
-            <NavLink to="/deadlines" icon={Calendar} active={location.pathname === '/deadlines'}>
-              Deadline
+          <div className="mb-6">
+            <NavLink to="/dashboard" icon={Home} active={location.pathname === '/dashboard'}>
+              Mi espacio
             </NavLink>
+          </div>
+
+          {/* Employee View: Simple & Focused */}
+          {!isSuperior && (
+            <>
+              {modules.deadlines && canAccess('/deadlines') && (
+                <NavLink to="/deadlines" icon={Calendar} active={location.pathname === '/deadlines'}>
+                  Deadlines
+                </NavLink>
+              )}
+            </>
           )}
 
-          {/* Sección Gestión - Solo mostrar si tiene al menos un permiso */}
-          {(canAccess('/planner') || canAccess('/projects') || canAccess('/clients') || canAccess('/team')) && (
-            <>
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6 px-2">
-                Gestión
-              </div>
-
-              {canAccess('/planner') && (
-                <NavLink to="/planner" icon={LayoutDashboard} active={location.pathname === '/planner'}>
-                  Planificador
-                </NavLink>
-              )}
-
-              {canAccess('/okrs') && (
-                <NavLink to="/okrs" icon={Rocket} active={location.pathname === '/okrs'}>
-                  Objetivos
-                </NavLink>
-              )}
-
-              {/* Weekly Forecast - depende del módulo weeklyFeedback */}
-              {modules.weeklyFeedback && canAccess('/weekly-forecast') && (
-                <NavLink to="/weekly-forecast" icon={TrendingUp} active={location.pathname === '/weekly-forecast'}>
-                  Weekly
-                </NavLink>
-              )}
-
-              {(canAccess('/projects') || canAccess('/clients')) && (
-                <NavLink
-                  to={canAccess('/clients') ? "/clients" : "/projects"}
-                  icon={Briefcase}
-                  active={location.pathname === '/clients' || location.pathname === '/projects'}
+          {/* Superior View: Grouped Command Center */}
+          {isSuperior && (
+            <div className="space-y-4">
+              {/* PLANIFICACIÓN */}
+              {(canAccess('/planner') || (modules.deadlines && canAccess('/deadlines'))) && (
+                <NavGroup
+                  label="Planificación"
+                  isActive={location.pathname === '/planner' || location.pathname === '/deadlines'}
                 >
-                  Clientes
-                </NavLink>
+                  {canAccess('/planner') && (
+                    <NavLink to="/planner" icon={LayoutDashboard} active={location.pathname === '/planner'}>
+                      Planificador
+                    </NavLink>
+                  )}
+                  {modules.deadlines && canAccess('/deadlines') && (
+                    <NavLink to="/deadlines" icon={Calendar} active={location.pathname === '/deadlines'}>
+                      Deadlines
+                    </NavLink>
+                  )}
+                </NavGroup>
               )}
 
-              {canAccess('/team') && (
-                <NavLink to="/team" icon={Users} active={location.pathname === '/team'}>
-                  Equipo
-                </NavLink>
+              {/* EQUIPO */}
+              {(canAccess('/team') || canAccess('/team-capacity') || canAccess('/weekly-forecast') || canAccess('/okrs')) && (
+                <NavGroup
+                  label="Equipo"
+                  isActive={['/team', '/team-capacity', '/weekly-forecast', '/okrs'].includes(location.pathname)}
+                >
+                  {canAccess('/team') && (
+                    <NavLink to="/team" icon={Users} active={location.pathname === '/team'}>
+                      Miembros
+                    </NavLink>
+                  )}
+                  {canAccess('/team-capacity') && (
+                    <NavLink to="/team-capacity" icon={TrendingUp} active={location.pathname === '/team-capacity'}>
+                      Capacidad
+                    </NavLink>
+                  )}
+                  {modules.weeklyFeedback && canAccess('/weekly-forecast') && (
+                    <NavLink to="/weekly-forecast" icon={TrendingUp} active={location.pathname === '/weekly-forecast'}>
+                      Weekly
+                    </NavLink>
+                  )}
+                  {canAccess('/okrs') && (
+                    <NavLink to="/okrs" icon={Rocket} active={location.pathname === '/okrs'}>
+                      Objetivos
+                    </NavLink>
+                  )}
+                </NavGroup>
               )}
 
-              {canAccess('/team') && (
-                <NavLink to="/team-capacity" icon={TrendingUp} active={location.pathname === '/team-capacity'}>
-                  Capacidad
-                </NavLink>
+              {/* PROYECTOS */}
+              {(canAccess('/projects') || canAccess('/clients')) && (
+                <NavGroup
+                  label="Cartera"
+                  isActive={['/clients', '/projects'].includes(location.pathname)}
+                >
+                  <NavLink
+                    to={canAccess('/clients') ? "/clients" : "/projects"}
+                    icon={Briefcase}
+                    active={location.pathname === '/clients' || location.pathname === '/projects'}
+                  >
+                    Clientes y Proyectos
+                  </NavLink>
+                </NavGroup>
               )}
-            </>
+
+              {/* PPC */}
+              {modules.ppc && ((canAccess('/ads') || canAccess('/meta-ads'))) && (
+                <NavGroup
+                  label="PPC & Medios"
+                  isActive={['/ads', '/meta-ads'].includes(location.pathname)}
+                >
+                  {canAccess('/ads') && (
+                    <NavLink to="/ads" icon={Megaphone} active={location.pathname === '/ads'}>
+                      Google Ads
+                    </NavLink>
+                  )}
+                  {canAccess('/meta-ads') && (
+                    <NavLink to="/meta-ads" icon={Facebook} active={location.pathname === '/meta-ads'}>
+                      Meta Ads
+                    </NavLink>
+                  )}
+                </NavGroup>
+              )}
+
+              {/* ANÁLISIS */}
+              {(canAccess('/reports') || canAccess('/informes-clientes')) && (
+                <NavGroup
+                  label="Análisis"
+                  isActive={['/reports', '/informes-clientes'].includes(location.pathname)}
+                >
+                  {canAccess('/reports') && (
+                    <NavLink to="/reports" icon={BarChart3} active={location.pathname === '/reports'}>
+                      Reportes
+                    </NavLink>
+                  )}
+                  {canAccess('/informes-clientes') && (
+                    <NavLink to="/informes-clientes" icon={FileDown} active={location.pathname === '/informes-clientes'}>
+                      Informes Clientes
+                    </NavLink>
+                  )}
+                </NavGroup>
+              )}
+            </div>
           )}
 
-          {/* Sección PPC - Solo mostrar si tiene al menos un permiso Y el módulo PPC activado */}
-          {modules.ppc && (canAccess('/ads') || canAccess('/meta-ads') || canAccess('/ads-reports')) && (
-            <>
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-8 mb-2 px-2">
-                PPC
-              </div>
+          {/* AI Copilot - Always available but separated */}
+          <div className="pt-4 mt-4 border-t border-slate-800">
+            <NavLink to="/dashboard-ai" icon={Sparkles} active={location.pathname === '/dashboard-ai'}>
+              Copiloto IA
+            </NavLink>
+          </div>
 
-              {canAccess('/ads') && (
-                <NavLink to="/ads" icon={Megaphone} active={location.pathname === '/ads'}>
-                  Google Ads
-                </NavLink>
-              )}
-
-              {canAccess('/meta-ads') && (
-                <NavLink to="/meta-ads" icon={Facebook} active={location.pathname === '/meta-ads'}>
-                  Meta Ads
-                </NavLink>
-              )}
-
-              {canAccess('/ads-reports') && (
-                // Enlace eliminado a petición del usuario
-                null
-              )}
-            </>
-          )}
-
-          {/* Sección Análisis - Solo mostrar si tiene al menos un permiso */}
-          {(canAccess('/reports') || canAccess('/informes-clientes')) && (
-            <>
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-8 mb-2 px-2">
-                Análisis
-              </div>
-
-              {canAccess('/reports') && (
-                <NavLink to="/reports" icon={BarChart3} active={location.pathname === '/reports'}>
-                  Reportes
-                </NavLink>
-              )}
-
-              {canAccess('/informes-clientes') && (
-                <NavLink to="/informes-clientes" icon={FileDown} active={location.pathname === '/informes-clientes'}>
-                  <span className="truncate">Informes clientes</span>
-                </NavLink>
-              )}
-            </>
-          )}
-
-          <NavLink to="/dashboard-ai" icon={Sparkles} active={location.pathname === '/dashboard-ai'}>
-            Copiloto IA
-          </NavLink>
         </nav>
 
-        {/* Footer del Sidebar: Usuario Real + Logout */}
+        {/* Footer */}
         <div className="p-4 border-t border-slate-800 bg-slate-950/30">
           {canAccess('/agency') && (
-            <NavLink to="/agency" icon={Settings} active={location.pathname === '/agency'}>
-              Configuración
-            </NavLink>
+            <div className="mb-2">
+              <NavLink to="/agency" icon={Settings} active={location.pathname === '/agency'}>
+                Configuración
+              </NavLink>
+            </div>
           )}
 
           {currentUser ? (
-            <div className="mt-4 px-2 flex items-center gap-3 group">
+            <div className="mt-2 px-2 flex items-center gap-3 group">
               <Avatar className="h-8 w-8 border border-primary/30">
                 <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
                 <AvatarFallback className="bg-primary text-white">
@@ -249,7 +305,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               </button>
             </div>
           ) : (
-            /* Estado de carga discreto */
             <div className="mt-4 px-2 flex items-center gap-3 opacity-50">
               <div className="h-8 w-8 rounded-full bg-slate-800 animate-pulse" />
               <div className="space-y-1">

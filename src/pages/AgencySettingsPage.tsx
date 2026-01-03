@@ -14,8 +14,9 @@ import {
   Filter, Plus, Trash2, HelpCircle, Info, X,
   Rocket, Facebook, Megaphone, PlusCircle, ShieldCheck
 } from 'lucide-react';
-import { CustomProjectFilter } from '@/types';
+import { CustomProjectFilter, RolePermissions } from '@/types';
 import { DEFAULT_FILTERS } from '@/hooks/useProjectFilters';
+import { UserPermissions, PERMISSION_LABELS, DEFAULT_PERMISSIONS } from '@/types/permissions';
 import {
   Tooltip,
   TooltipContent,
@@ -62,6 +63,34 @@ export default function AgencySettingsPage() {
   const [connectedAccounts, setConnectedAccounts] = useState<any[]>([]);
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
 
+  // Roles and Departments state
+  // Safely initialize roles handling legacy string[] data
+  const [roles, setRoles] = useState<RolePermissions[]>(() => {
+    const existingRoles = currentAgency?.settings?.roles;
+    if (!existingRoles) {
+      return [
+        { name: 'Responsable', permissions: DEFAULT_PERMISSIONS },
+        { name: 'Especialista', permissions: { ...DEFAULT_PERMISSIONS, can_access_team: false, can_access_agency_settings: false } }
+      ];
+    }
+    // Migration check: if elements are strings, convert them
+    if (existingRoles.length > 0 && typeof existingRoles[0] === 'string') {
+      return (existingRoles as unknown as string[]).map(r => ({
+        name: r,
+        permissions: r.toLowerCase().includes('responsable') || r.toLowerCase().includes('ceo')
+          ? DEFAULT_PERMISSIONS
+          : { ...DEFAULT_PERMISSIONS, can_access_team: false, can_access_agency_settings: false }
+      }));
+    }
+    return existingRoles as RolePermissions[];
+  });
+
+  const [departments, setDepartments] = useState<string[]>(
+    currentAgency?.settings?.departments || ['SEO', 'PPC']
+  );
+  const [expandedRoleIndex, setExpandedRoleIndex] = useState<number | null>(null);
+  const [newDepartment, setNewDepartment] = useState('');
+
   // Sync state when agency loads
   useEffect(() => {
     if (currentAgency) {
@@ -85,6 +114,25 @@ export default function AgencySettingsPage() {
         googleAdsCustomerId: '',
         googleAdsDevToken: ''
       });
+
+      // Safely set roles with migration check
+      const existingRoles = currentAgency.settings?.roles;
+      if (existingRoles && existingRoles.length > 0 && typeof existingRoles[0] === 'string') {
+        const migratedRoles = (existingRoles as unknown as string[]).map(r => ({
+          name: r,
+          permissions: r.toLowerCase().includes('responsable') || r.toLowerCase().includes('ceo')
+            ? DEFAULT_PERMISSIONS
+            : { ...DEFAULT_PERMISSIONS, can_access_team: false, can_access_agency_settings: false }
+        }));
+        setRoles(migratedRoles);
+      } else {
+        setRoles(currentAgency.settings?.roles || [
+          { name: 'Responsable', permissions: DEFAULT_PERMISSIONS },
+          { name: 'Especialista', permissions: { ...DEFAULT_PERMISSIONS, can_access_team: false, can_access_agency_settings: false } }
+        ]);
+      }
+
+      setDepartments(currentAgency.settings?.departments || ['SEO', 'PPC']);
       fetchConnectedAccounts();
     }
   }, [currentAgency]);
@@ -98,6 +146,50 @@ export default function AgencySettingsPage() {
       .eq('platform', 'meta')
       .eq('is_active', true);
     setConnectedAccounts(data || []);
+  };
+
+  // Role Management
+  const addNewRole = () => {
+    setRoles([...roles, { name: 'Nuevo Rol', permissions: { ...DEFAULT_PERMISSIONS, can_access_agency_settings: false } }]);
+    setExpandedRoleIndex(roles.length); // Open the new role
+  };
+
+  const deleteRole = (index: number) => {
+    const newRoles = [...roles];
+    newRoles.splice(index, 1);
+    setRoles(newRoles);
+    if (expandedRoleIndex === index) setExpandedRoleIndex(null);
+  };
+
+  const updateRoleName = (index: number, name: string) => {
+    const newRoles = [...roles];
+    newRoles[index].name = name;
+    setRoles(newRoles);
+  };
+
+  const toggleRolePermission = (roleIndex: number, permission: keyof UserPermissions, checked: boolean) => {
+    const newRoles = [...roles];
+    // Asegurarse de que permissions objeto existe
+    if (!newRoles[roleIndex].permissions) {
+      newRoles[roleIndex].permissions = { ...DEFAULT_PERMISSIONS };
+    }
+    newRoles[roleIndex].permissions[permission] = checked;
+    setRoles(newRoles);
+  };
+
+  // Department Management
+  const addNewDepartment = () => {
+    if (!newDepartment.trim()) return;
+    if (departments.includes(newDepartment.trim())) {
+      toast.error('Este departamento ya existe');
+      return;
+    }
+    setDepartments([...departments, newDepartment.trim()]);
+    setNewDepartment('');
+  };
+
+  const deleteDepartment = (dept: string) => {
+    setDepartments(departments.filter(d => d !== dept));
   };
 
   const handleSave = async () => {
@@ -115,6 +207,8 @@ export default function AgencySettingsPage() {
           settings: {
             ...currentAgency.settings,
             modules,
+            roles,
+            departments,
             branding: {
               ...currentAgency.settings?.branding,
               primaryColor
@@ -312,6 +406,153 @@ export default function AgencySettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Roles y Departamentos */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Roles y Permisos */}
+        <Card className="h-full">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5 text-indigo-600" />
+                  Roles y Permisos
+                </CardTitle>
+                <CardDescription>
+                  Define los roles y sus accesos
+                </CardDescription>
+              </div>
+              <Button size="sm" onClick={addNewRole}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {roles.map((role, index) => (
+              <div key={index} className="border rounded-lg overflow-hidden">
+                <div
+                  className={`p-3 flex items-center justify-between cursor-pointer hover:bg-slate-50 ${expandedRoleIndex === index ? 'bg-slate-50' : ''}`}
+                  onClick={() => setExpandedRoleIndex(expandedRoleIndex === index ? null : index)}
+                >
+                  <Input
+                    value={role.name}
+                    onChange={(e) => updateRoleName(index, e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="h-8 w-40 font-medium"
+                    placeholder="Nombre del rol"
+                  />
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-red-400 hover:text-red-600"
+                      onClick={(e) => { e.stopPropagation(); deleteRole(index); }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Permissions Area */}
+                {expandedRoleIndex === index && (
+                  <div className="p-3 border-t bg-slate-50/50 space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-slate-500 uppercase">Gestión</Label>
+                      {(['can_access_planner', 'can_access_projects', 'can_access_clients', 'can_access_team', 'can_access_settings'] as const).map(p => (
+                        <div key={p} className="flex items-center justify-between py-1 px-2 rounded hover:bg-white">
+                          <Label htmlFor={`role-${index}-${p}`} className="text-sm font-normal cursor-pointer flex-1">{PERMISSION_LABELS[p]}</Label>
+                          <Switch
+                            id={`role-${index}-${p}`}
+                            checked={role.permissions && role.permissions[p] !== false}
+                            onCheckedChange={(checked) => toggleRolePermission(index, p, checked)}
+                            className="scale-75"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <Separator />
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-slate-500 uppercase">PPC & Ads</Label>
+                      {(['can_access_google_ads', 'can_access_meta_ads', 'can_access_ads_reports'] as const).map(p => (
+                        <div key={p} className="flex items-center justify-between py-1 px-2 rounded hover:bg-white">
+                          <Label htmlFor={`role-${index}-${p}`} className="text-sm font-normal cursor-pointer flex-1">{PERMISSION_LABELS[p]}</Label>
+                          <Switch
+                            id={`role-${index}-${p}`}
+                            checked={role.permissions && role.permissions[p] !== false}
+                            onCheckedChange={(checked) => toggleRolePermission(index, p, checked)}
+                            className="scale-75"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <Separator />
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-slate-500 uppercase">Otros</Label>
+                      {(['can_access_reports', 'can_access_client_reports', 'can_access_deadlines', 'can_access_okrs'] as const).map(p => (
+                        <div key={p} className="flex items-center justify-between py-1 px-2 rounded hover:bg-white">
+                          <Label htmlFor={`role-${index}-${p}`} className="text-sm font-normal cursor-pointer flex-1">{PERMISSION_LABELS[p]}</Label>
+                          <Switch
+                            id={`role-${index}-${p}`}
+                            checked={role.permissions && role.permissions[p] !== false}
+                            onCheckedChange={(checked) => toggleRolePermission(index, p, checked)}
+                            className="scale-75"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Departamentos */}
+        <Card className="h-full">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-blue-600" />
+              Departamentos
+            </CardTitle>
+            <CardDescription>
+              Organiza a tu equipo en departamentos
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nuevo departamento..."
+                value={newDepartment}
+                onChange={(e) => setNewDepartment(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addNewDepartment()}
+              />
+              <Button onClick={addNewDepartment} disabled={!newDepartment.trim()}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              {departments.length === 0 ? (
+                <p className="text-sm text-slate-400 italic text-center py-4">No hay departamentos definidos.</p>
+              ) : (
+                departments.map((dept) => (
+                  <div key={dept} className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm">
+                    <span className="font-medium text-slate-700">{dept}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                      onClick={() => deleteDepartment(dept)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Módulos Habilitados */}
       <Card>

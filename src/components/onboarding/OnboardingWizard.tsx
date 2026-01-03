@@ -323,7 +323,6 @@ export default function OnboardingWizard() {
                         workSchedule: {
                             monday: 8, tuesday: 8, wednesday: 8, thursday: 8, friday: 8, saturday: 0, sunday: 0
                         },
-                        permissions: { can_access_planner: true, can_access_projects: true, can_access_team: false }, // Basic permissions
                         is_active: true,
                     });
 

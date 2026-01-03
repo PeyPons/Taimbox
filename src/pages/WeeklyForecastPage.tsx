@@ -695,85 +695,8 @@ export default function WeeklyForecastPage() {
     }
   };
 
-  // Carga de trabajo de compañeros para semanas restantes del mes (considerando ausencias y eventos)
-  const employeeWorkloads = useMemo(() => {
-    if (!selectedProject) return [];
-
-    const today = new Date();
-    const remainingWeeks = weeks.filter(w => {
-      try {
-        const weekDate = parseISO(getStorageKey(w.weekStart, currentMonth));
-        return weekDate >= today;
-      } catch {
-        return false;
-      }
-    });
-
-    return employees
-      .filter(e => e.isActive)
-      .map(emp => {
-        const employeeAbsences = (absences || []).filter(a => a.employeeId === emp.id);
-
-        const weekLoads = remainingWeeks.map(week => {
-          const storageKey = getStorageKey(week.weekStart, currentMonth);
-          const weekAllocations = (allocations || []).filter(a =>
-            a.employeeId === emp.id &&
-            a.weekStartDate === storageKey &&
-            isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)
-          );
-
-          // Horas asignadas (usando la misma lógica que el resto de la app)
-          const assignedHours = round2(
-            weekAllocations.reduce((sum, a) =>
-              sum + (a.status === 'completed' && (a.hoursActual || 0) > 0
-                ? Number(a.hoursActual)
-                : Number(a.hoursAssigned)), 0
-            )
-          );
-
-          // Capacidad de la semana (considerando ausencias y eventos)
-          const weekStartDate = week.effectiveStart || week.weekStart;
-          const weekEndDate = week.effectiveEnd || addDays(week.weekStart, 6);
-
-          // Capacidad base del horario
-          const baseCapacity = emp.defaultWeeklyCapacity;
-
-          // Restar ausencias
-          const absenceHours = getAbsenceHoursInRange(
-            weekStartDate,
-            weekEndDate,
-            employeeAbsences,
-            emp.workSchedule
-          );
-
-          // Restar eventos del equipo
-          const eventHours = getTeamEventHoursInRange(
-            weekStartDate,
-            weekEndDate,
-            emp.id,
-            teamEvents || [],
-            emp.workSchedule,
-            employeeAbsences
-          );
-
-          const availableCapacity = Math.max(0, round2(baseCapacity - absenceHours - eventHours));
-
-          return {
-            weekStart: storageKey,
-            weekLabel: `Sem ${weeks.findIndex(w => getStorageKey(w.weekStart, currentMonth) === storageKey) + 1}`,
-            hours: assignedHours,
-            capacity: availableCapacity,
-            percentage: availableCapacity > 0 ? round2((assignedHours / availableCapacity) * 100) : (assignedHours > 0 ? 999 : 0)
-          };
-        });
-
-        return {
-          employeeId: emp.id,
-          employeeName: emp.name,
-          weekLoads
-        };
-      });
-  }, [selectedProject, weeks, employees, allocations, currentMonth, absences, teamEvents]);
+  // Carga de trabajo eliminada para evitar redundancia con TeamCapacityPage
+  const employeeWorkloads = useMemo(() => [], []);
 
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-6">
