@@ -57,6 +57,7 @@ export default function MetaAdsPage() {
   const [segmentationRules, setSegmentationRules] = useState<SegmentationRule[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showHidden, setShowHidden] = useState(false);
+  const [expandedSubAccounts, setExpandedSubAccounts] = useState<Record<string, boolean>>({});
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncLogs, setSyncLogs] = useState<string[]>([]);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'running' | 'completed' | 'error'>('idle');
@@ -161,9 +162,7 @@ export default function MetaAdsPage() {
 
     rawData.forEach(row => {
       if (row.date === currentMonthPrefix) {
-        // FILTER: Only show data for accounts present in config
-        const isRegistered = registeredAccounts.some(acc => normalizeId(acc.account_id) === normalizeId(row.client_id));
-        if (!isRegistered) return;
+        // NOTA: Se removió filtro isRegistered - causaba ocultación de datos
 
         let finalId = row.client_id, finalName = row.client_name;
         const rulesForAccount = segmentationRules.filter(r => normalizeId(r.account_id) === normalizeId(row.client_id));
@@ -231,11 +230,12 @@ export default function MetaAdsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        {/* Stats Cards - Optimizadas para Meta (sin daily_budget disponible) */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <StatCard icon={Target} label="Inversión" value={formatCurrency(globalStats.totalSpent)} subValue={`de ${formatCurrency(globalStats.totalBudget)}`} color="blue" />
-          <StatCard icon={TrendingUp} label="Valor Conversiones" value={formatCurrency(globalStats.totalRevenue)} subValue={`ROAS ${globalStats.globalRoas.toFixed(2)}x`} color="emerald" />
+          <StatCard icon={TrendingUp} label="Conversiones" value={reportData.reduce((acc, r) => acc + r.campaigns.reduce((a, c) => a + (c.conversions || 0), 0), 0).toFixed(0)} subValue={`Valor ${formatCurrency(globalStats.totalRevenue)}`} color="emerald" />
+          <StatCard icon={Target} label="ROAS" value={`${globalStats.globalRoas.toFixed(2)}x`} subValue={globalStats.globalRoas >= 2 ? '✓ Objetivo' : globalStats.globalRoas >= 1 ? 'Aceptable' : 'Por debajo'} color={globalStats.globalRoas >= 2 ? 'emerald' : globalStats.globalRoas >= 1 ? 'amber' : 'red'} />
           <StatCard icon={Calendar} label="Días restantes" value={daysRemaining.toString()} subValue={`${Math.round((currentDay / daysInMonth) * 100)}% del mes`} color="slate" />
-          <StatCard icon={ArrowDownRight} label="Diario Recomendado" value={formatCurrency(globalStats.totalRecommendedDaily)} subValue="Para no pasarte" color={globalStats.totalRecommendedDaily < globalStats.totalCurrentDaily ? 'amber' : 'emerald'} />
           <StatCard icon={AlertTriangle} label="En Riesgo" value={globalStats.atRisk.toString()} subValue="cuentas" color={globalStats.atRisk > 0 ? 'red' : 'slate'} />
         </div>
 
@@ -287,7 +287,6 @@ export default function MetaAdsPage() {
                 </AccordionTrigger>
                 <AccordionContent className="border-t bg-slate-50/50">
                   <div className="p-4 space-y-6">
-                    {client.is_group && <div className="bg-white p-4 rounded-lg border"><h4 className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center gap-2"><Layers className="w-3.5 h-3.5" /> Cuentas Vinculadas ({client.realIdsList.length})</h4><div className="flex flex-wrap gap-2">{client.realIdsList.map(sub => <div key={sub.id} className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border text-sm"><span className="font-medium text-slate-700">{formatProjectName(sub.name)}</span><button onClick={() => setEditingClient({ id: sub.id, name: sub.name, group: client.groupName || '', hidden: false, isSales: true })} className="text-slate-400 hover:text-blue-500"><Settings className="w-3.5 h-3.5" /></button></div>)}</div></div>}
                     <div className="grid lg:grid-cols-2 gap-6">
                       <div className="bg-white p-4 rounded-lg border space-y-4">
                         <div className="flex justify-between items-center"><div className="flex items-center gap-2"><Label className="text-sm font-medium text-slate-700">Presupuesto {client.is_group ? 'Total' : 'Mensual'}</Label>{!client.isManualGroupBudget && !clientSettings[client.client_id]?.budget && <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-600 border-blue-200">Auto</Badge>}</div><div className="flex items-center gap-2"><span className="text-slate-400">€</span><Input key={`${client.client_id}-${client.budget}`} type="number" defaultValue={clientSettings[client.client_id]?.budget > 0 ? clientSettings[client.client_id]?.budget : ''} onBlur={(e) => handleSaveBudget(client.client_id, e.target.value)} className="h-8 w-28 text-right" placeholder={client.budget.toFixed(0)} /></div></div>
@@ -301,6 +300,107 @@ export default function MetaAdsPage() {
                       </div>
                       <div className="bg-white rounded-lg border overflow-hidden"><div className="max-h-[350px] overflow-y-auto"><table className="w-full text-xs"><thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b"><tr><th className="px-3 py-2.5 text-left">Campaña</th><th className="px-2 py-2.5 text-right">Gasto</th><th className="px-2 py-2.5 text-right">Valor</th>{client.isSalesAccount && <th className="px-2 py-2.5 text-center">ROAS</th>}</tr></thead><tbody className="divide-y divide-slate-100">{client.campaigns.map((camp, idx) => { const roas = camp.cost > 0 ? (camp.conversions_value || 0) / camp.cost : 0; return <tr key={idx} className="hover:bg-slate-50"><td className="px-3 py-2.5"><div className="font-medium text-slate-700 line-clamp-2" title={camp.campaign_name}>{camp.campaign_name}</div><div className="flex items-center gap-2 mt-1 text-[10px] text-slate-400"><span className="flex items-center gap-1"><span className={cn("w-1.5 h-1.5 rounded-full", camp.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-slate-300')} />{camp.status === 'ENABLED' ? 'Activa' : 'Pausada'}</span>{client.is_group && camp.original_client_name && <span className="truncate max-w-[100px]">| {formatProjectName(camp.original_client_name)}</span>}</div></td><td className="px-2 py-2.5 text-right font-medium text-slate-900">{formatCurrency(camp.cost)}</td><td className="px-2 py-2.5 text-right text-emerald-600">{formatCurrency(camp.conversions_value || 0)}</td>{client.isSalesAccount && <td className="px-2 py-2.5 text-center"><Badge variant="outline" className={cn("text-[10px]", getRoasColor(roas))}>{roas.toFixed(2)}</Badge></td>}</tr>; })}{client.campaigns.length === 0 && <tr><td colSpan={4} className="px-3 py-8 text-center text-slate-400">Sin campañas</td></tr>}</tbody></table></div></div>
                     </div>
+
+                    {/* Cuentas vinculadas - Tabla de desglose */}
+                    {client.is_group && (
+                      <div className="bg-white p-4 rounded-lg border mt-6">
+                        <h4 className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center gap-2">
+                          <Layers className="w-3.5 h-3.5" /> Desglose por Cuenta ({client.realIdsList.length})
+                        </h4>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs">
+                            <thead className="bg-slate-50 text-slate-500 font-medium border-b">
+                              <tr>
+                                <th className="px-3 py-2 text-left w-6"></th>
+                                <th className="px-3 py-2 text-left">Cuenta</th>
+                                <th className="px-2 py-2 text-right">Gasto</th>
+                                <th className="px-2 py-2 text-right">% Grupo</th>
+                                <th className="px-2 py-2 text-right">Conv</th>
+                                <th className="px-2 py-2 text-center">ROAS</th>
+                                <th className="px-2 py-2 text-center" />
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {client.realIdsList.map(sub => {
+                                const subCampaigns = client.campaigns.filter(c => c.original_client_id === sub.id || c.client_id === sub.id);
+                                const subSpent = subCampaigns.reduce((a, c) => a + c.cost, 0);
+                                const subConv = subCampaigns.reduce((a, c) => a + (c.conversions || 0), 0);
+                                const subValue = subCampaigns.reduce((a, c) => a + (c.conversions_value || 0), 0);
+                                const subRoas = subSpent > 0 ? subValue / subSpent : 0;
+                                const pctOfGroup = client.spent > 0 ? (subSpent / client.spent) * 100 : 0;
+
+                                const isExpanded = expandedSubAccounts[sub.id];
+
+                                return (
+                                  <>
+                                    <tr key={sub.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => setExpandedSubAccounts(prev => ({ ...prev, [sub.id]: !prev[sub.id] }))}>
+                                      <td className="px-3 py-2.5 text-slate-400">
+                                        {isExpanded ? <TrendingDown className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                                      </td>
+                                      <td className="px-3 py-2.5 font-medium text-slate-700">{formatProjectName(sub.name)}</td>
+                                      <td className="px-2 py-2.5 text-right font-medium text-slate-900">{formatCurrency(subSpent)}</td>
+                                      <td className="px-2 py-2.5 text-right text-slate-500">{pctOfGroup.toFixed(1)}%</td>
+                                      <td className="px-2 py-2.5 text-right text-emerald-600">{subConv.toFixed(0)}</td>
+                                      <td className="px-2 py-2.5 text-center"><Badge variant="outline" className={cn("text-[10px]", getRoasColor(subRoas))}>{subRoas.toFixed(2)}</Badge></td>
+                                      <td className="px-2 py-2.5 text-center">
+                                        <button onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingClient({ id: sub.id, name: sub.name, group: client.groupName || '', hidden: false, isSales: true });
+                                        }} className="text-slate-400 hover:text-blue-500">
+                                          <Settings className="w-3.5 h-3.5" />
+                                        </button>
+                                      </td>
+                                    </tr>
+                                    {isExpanded && (
+                                      <tr className="bg-slate-50">
+                                        <td colSpan={7} className="p-3">
+                                          <div className="bg-white rounded border overflow-hidden">
+                                            <table className="w-full text-xs">
+                                              <thead className="bg-slate-50/50 text-slate-400 border-b">
+                                                <tr>
+                                                  <th className="px-3 py-2 text-left">Campaña</th>
+                                                  <th className="px-2 py-2 text-right">Gasto</th>
+                                                  <th className="px-2 py-2 text-right">Conv</th>
+                                                  <th className="px-2 py-2 text-center">ROAS</th>
+                                                </tr>
+                                              </thead>
+                                              <tbody>
+                                                {subCampaigns.sort((a, b) => b.cost - a.cost).map(camp => {
+                                                  const campRoas = camp.cost > 0 ? (camp.conversions_value || 0) / camp.cost : 0;
+                                                  return (
+                                                    <tr key={camp.campaign_id} className="border-b last:border-0 hover:bg-slate-50">
+                                                      <td className="px-3 py-2 font-medium text-slate-600 truncate max-w-[200px]" title={camp.campaign_name}>
+                                                        {camp.campaign_name}
+                                                      </td>
+                                                      <td className="px-2 py-2 text-right font-medium text-slate-700">
+                                                        {formatCurrency(camp.cost)}
+                                                      </td>
+                                                      <td className="px-2 py-2 text-right text-emerald-600">
+                                                        {(camp.conversions || 0).toFixed(0)}
+                                                      </td>
+                                                      <td className="px-2 py-2 text-center">
+                                                        <span className={cn("text-[10px] px-1.5 py-0.5 rounded", getRoasColor(campRoas))}>
+                                                          {campRoas.toFixed(2)}
+                                                        </span>
+                                                      </td>
+                                                    </tr>
+                                                  );
+                                                })}
+                                                {subCampaigns.length === 0 && <tr><td colSpan={5} className="p-3 text-center text-slate-400">Sin campañas activas</td></tr>}
+                                              </tbody>
+                                            </table>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </AccordionContent>
               </AccordionItem>

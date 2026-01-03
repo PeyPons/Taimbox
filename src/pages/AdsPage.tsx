@@ -80,6 +80,9 @@ interface ClientPacing {
   status: 'ok' | 'risk' | 'over' | 'under';
   remainingBudget: number;
   total_conversions_val: number;
+  total_clicks: number;
+  total_impressions: number;
+  total_conversions: number;
   campaigns: CampaignData[];
   isHidden: boolean;
   groupName?: string;
@@ -87,6 +90,9 @@ interface ClientPacing {
   isSalesAccount: boolean;
   realIdsList: { id: string, name: string }[];
   globalRoas: number;
+  ctr: number;
+  cpc: number;
+  cpa: number;
 }
 
 const formatProjectName = (name: string) => name.replace(/^(Cliente|Client)\s*[-:]?\s*/i, '');
@@ -148,6 +154,7 @@ export default function AdsPage() {
   const [segmentationRules, setSegmentationRules] = useState<SegmentationRule[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showHidden, setShowHidden] = useState(false);
+  const [expandedSubAccounts, setExpandedSubAccounts] = useState<Record<string, boolean>>({});
 
   // Modales
   const [isSyncing, setIsSyncing] = useState(false);
@@ -184,11 +191,13 @@ export default function AdsPage() {
   const daysRemaining = daysInMonth - currentDay;
 
   const fetchData = async () => {
+    if (!currentAgency?.id) return;
+
     try {
       const [adsRes, settingsRes, accountsRes, logsRes, rulesRes] = await Promise.all([
-        supabase.from('google_ads_campaigns').select('*'),
+        supabase.from('google_ads_campaigns').select('*').eq('agency_id', currentAgency.id),
         supabase.from('client_settings').select('*'),
-        supabase.from('ad_accounts_config').select('*').eq('platform', 'google').eq('is_active', true),
+        supabase.from('ad_accounts_config').select('*').eq('platform', 'google').eq('is_active', true).eq('agency_id', currentAgency.id),
         supabase.from('ads_sync_logs').select('created_at').eq('status', 'completed').order('created_at', { ascending: false }).limit(1).maybeSingle(),
         supabase.from('segmentation_rules').select('*').eq('platform', 'google')
       ]);
@@ -342,6 +351,7 @@ export default function AdsPage() {
 
     const stats = new Map<string, {
       name: string, spent: number, budget: number, total_conversions_val: number,
+      total_clicks: number, total_impressions: number, total_conversions: number,
       is_group: boolean, isHidden: boolean, isSalesAccount: boolean,
       realIds: string[], realIdsNames: { id: string, name: string }[],
       campaigns: CampaignData[], isManualGroupBudget: boolean, autoDailyBudgetSum: number
@@ -366,6 +376,7 @@ export default function AdsPage() {
         stats.set(groupKey, {
           name: acc.name || acc.id,
           spent: 0, budget: settings.budget || 0, total_conversions_val: 0,
+          total_clicks: 0, total_impressions: 0, total_conversions: 0,
           is_group: false, isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false,
           realIds: [acc.id], realIdsNames: [{ id: acc.id, name: acc.name }],
           campaigns: [], isManualGroupBudget: false, autoDailyBudgetSum: 0
@@ -377,7 +388,11 @@ export default function AdsPage() {
     let filteredOutCount = 0;
     rawData.forEach(row => {
       // Filtrar por todos los días del mes actual (del 1 al último día del mes)
-      const isInRange = row.date >= monthStart && row.date <= monthEnd;
+      // Filtrar por todos los días del mes actual (Robust Date check)
+      // Aseguramos formato YYYY-MM-DD para comparación de texto
+      const rowDateStr = typeof row.date === 'string' ? row.date.substring(0, 10) : new Date(row.date).toISOString().substring(0, 10);
+      const isInRange = rowDateStr >= monthStart && rowDateStr <= monthEnd;
+
       if (!isInRange) {
         filteredOutCount++;
         return;
@@ -385,19 +400,8 @@ export default function AdsPage() {
       let finalId = row.client_id;
       let finalName = row.client_name;
 
-      // FILTER: Only show data for accounts present in config
-      const isRegistered = registeredAccounts.some(acc => normalizeId(acc.account_id) === normalizeId(row.client_id));
-
-      // DEBUG: Log first few rows
-      if (filteredOutCount < 3) {
-        console.log(`[AdsDebug] Row: ${row.client_name} (${row.client_id}) | Date: ${row.date} | Cost: ${row.cost} | Registered: ${isRegistered} | Range: ${isInRange}`);
-        console.log(`[AdsDebug] MonthStart: ${monthStart}, MonthEnd: ${monthEnd}`);
-      }
-
-      if (!isRegistered) {
-        // Optional: filteredOutCount++; but for now just skip
-        return;
-      }
+      // NOTA: Se removió el filtro isRegistered porque estaba ocultando todos los datos
+      // ya que los IDs de google_ads_campaigns no coincidían con ad_accounts_config
 
       // Aplicar reglas de segmentación
       const rulesForAccount = segmentationRules.filter(r => normalizeId(r.account_id) === normalizeId(row.client_id));
@@ -419,6 +423,7 @@ export default function AdsPage() {
       if (!stats.has(groupKey)) {
         stats.set(groupKey, {
           name: displayName, spent: 0, budget: 0, total_conversions_val: 0,
+          total_clicks: 0, total_impressions: 0, total_conversions: 0,
           is_group: groupKey.startsWith('GROUP-'), isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false,
           realIds: [], realIdsNames: [], campaigns: [], isManualGroupBudget: isGroupManual, autoDailyBudgetSum: 0
         });
@@ -429,6 +434,9 @@ export default function AdsPage() {
       entry.spent += rowCost;
       totalProcessedCost += rowCost;
       entry.total_conversions_val += (row.conversions_value || 0);
+      entry.total_clicks += (row.clicks || 0);
+      entry.total_impressions += (row.impressions || 0);
+      entry.total_conversions += (row.conversions || 0);
 
       if (row.status === 'ENABLED' && row.daily_budget > 0) entry.autoDailyBudgetSum += row.daily_budget;
 
@@ -469,6 +477,11 @@ export default function AdsPage() {
       const currentDailyBudget = value.autoDailyBudgetSum;
       const globalRoas = spent > 0 ? value.total_conversions_val / spent : 0;
 
+      // Nuevas métricas calculadas
+      const ctr = value.total_impressions > 0 ? (value.total_clicks / value.total_impressions) * 100 : 0;
+      const cpc = value.total_clicks > 0 ? spent / value.total_clicks : 0;
+      const cpa = value.total_conversions > 0 ? spent / value.total_conversions : 0;
+
       let status: 'ok' | 'risk' | 'over' | 'under' = 'ok';
       if (finalBudget > 0) {
         if (spent > finalBudget) status = 'over';
@@ -480,6 +493,8 @@ export default function AdsPage() {
         client_id: key, client_name: value.name, is_group: value.is_group,
         budget: finalBudget, spent, progress, forecast, recommendedDaily, avgDailySpend,
         currentDailyBudget, status, remainingBudget, total_conversions_val: value.total_conversions_val,
+        total_clicks: value.total_clicks, total_impressions: value.total_impressions,
+        total_conversions: value.total_conversions, ctr, cpc, cpa,
         isHidden: value.isHidden, isSalesAccount: value.isSalesAccount,
         groupName: value.is_group ? value.name : undefined,
         isManualGroupBudget: value.isManualGroupBudget, realIdsList: value.realIdsNames,
@@ -507,7 +522,18 @@ export default function AdsPage() {
     const atRisk = reportData.filter(r => r.status === 'risk' || r.status === 'over').length;
     const globalRoas = totalSpent > 0 ? totalRevenue / totalSpent : 0;
 
-    return { totalBudget, totalSpent, totalRevenue, totalRecommendedDaily, totalCurrentDaily, atRisk, globalRoas };
+    // Nuevas estadísticas agregadas
+    const totalClicks = reportData.reduce((acc, r) => acc + r.total_clicks, 0);
+    const totalImpressions = reportData.reduce((acc, r) => acc + r.total_impressions, 0);
+    const totalConversions = reportData.reduce((acc, r) => acc + r.total_conversions, 0);
+    const globalCtr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+    const globalCpc = totalClicks > 0 ? totalSpent / totalClicks : 0;
+    const globalCpa = totalConversions > 0 ? totalSpent / totalConversions : 0;
+
+    return {
+      totalBudget, totalSpent, totalRevenue, totalRecommendedDaily, totalCurrentDaily, atRisk, globalRoas,
+      totalClicks, totalImpressions, totalConversions, globalCtr, globalCpc, globalCpa
+    };
   }, [reportData]);
 
   // Selector para modal de reglas
@@ -552,8 +578,8 @@ export default function AdsPage() {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        {/* Stats Cards - Reorganized for PPC */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <StatCard
             icon={Target}
             label="Inversión"
@@ -562,31 +588,38 @@ export default function AdsPage() {
             color="blue"
           />
           <StatCard
+            icon={ArrowUpRight}
+            label="Clicks"
+            value={globalStats.totalClicks.toLocaleString('es-ES')}
+            subValue={`CTR ${globalStats.globalCtr.toFixed(2)}%`}
+            color="slate"
+          />
+          <StatCard
             icon={TrendingUp}
-            label="Valor conversiones"
-            value={formatCurrency(globalStats.totalRevenue)}
-            subValue={`ROAS ${globalStats.globalRoas.toFixed(2)}x`}
+            label="Conversiones"
+            value={globalStats.totalConversions.toFixed(0)}
+            subValue={`CPA ${formatCurrency(globalStats.globalCpa)}`}
             color="emerald"
           />
           <StatCard
-            icon={Calendar}
-            label="Días restantes"
-            value={daysRemaining.toString()}
-            subValue={`${Math.round((currentDay / daysInMonth) * 100)}% del mes`}
-            color="slate"
+            icon={Target}
+            label="ROAS"
+            value={`${globalStats.globalRoas.toFixed(2)}x`}
+            subValue={`CPC ${formatCurrency(globalStats.globalCpc)}`}
+            color={globalStats.globalRoas >= 2 ? 'emerald' : globalStats.globalRoas >= 1 ? 'amber' : 'red'}
           />
           <StatCard
             icon={ArrowDownRight}
             label="Diario recomendado"
             value={formatCurrency(globalStats.totalRecommendedDaily)}
-            subValue="Para no pasarte"
+            subValue={`Actual: ${formatCurrency(globalStats.totalCurrentDaily)}`}
             color={globalStats.totalRecommendedDaily < globalStats.totalCurrentDaily ? 'amber' : 'emerald'}
           />
           <StatCard
             icon={AlertTriangle}
             label="En riesgo"
             value={globalStats.atRisk.toString()}
-            subValue="cuentas"
+            subValue={`${daysRemaining} días restantes`}
             color={globalStats.atRisk > 0 ? 'red' : 'slate'}
           />
         </div>
@@ -730,27 +763,7 @@ export default function AdsPage() {
 
                 <AccordionContent className="border-t bg-slate-50/50">
                   <div className="p-4 space-y-6">
-                    {/* Cuentas vinculadas (grupos) */}
-                    {client.is_group && (
-                      <div className="bg-white p-4 rounded-lg border">
-                        <h4 className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center gap-2">
-                          <Layers className="w-3.5 h-3.5" /> Cuentas Vinculadas ({client.realIdsList.length})
-                        </h4>
-                        <div className="flex flex-wrap gap-2">
-                          {client.realIdsList.map(sub => (
-                            <div key={sub.id} className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border text-sm">
-                              <span className="font-medium text-slate-700">{formatProjectName(sub.name)}</span>
-                              <button
-                                onClick={() => setEditingClient({ id: sub.id, name: sub.name, group: client.groupName || '', hidden: false, isSales: true })}
-                                className="text-slate-400 hover:text-blue-500"
-                              >
-                                <Settings className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    {/* Cuentas vinculadas (grupos) - Tabla de desglose */}
 
                     <div className="grid lg:grid-cols-2 gap-6">
                       {/* Panel de presupuesto */}
@@ -853,21 +866,28 @@ export default function AdsPage() {
                         </div>
                       </div>
 
-                      {/* Tabla de campañas */}
+                      {/* Tabla de campañas - Mejorada con métricas PPC */}
                       <div className="bg-white rounded-lg border overflow-hidden">
                         <div className="max-h-[350px] overflow-y-auto">
                           <table className="w-full text-xs">
                             <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b">
                               <tr>
                                 <th className="px-3 py-2.5 text-left">Campaña</th>
+                                <th className="px-2 py-2.5 text-right w-24">P. Diario</th>
                                 <th className="px-2 py-2.5 text-right">Gasto</th>
-                                <th className="px-2 py-2.5 text-right">Valor</th>
+                                <th className="px-2 py-2.5 text-right hidden md:table-cell">Clicks</th>
+                                <th className="px-2 py-2.5 text-right hidden lg:table-cell">CTR</th>
+                                <th className="px-2 py-2.5 text-right hidden lg:table-cell">CPC</th>
+                                <th className="px-2 py-2.5 text-right">Conv</th>
                                 {client.isSalesAccount && <th className="px-2 py-2.5 text-center">ROAS</th>}
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                               {client.campaigns.map((camp, idx) => {
                                 const roas = camp.cost > 0 ? (camp.conversions_value || 0) / camp.cost : 0;
+                                const campCtr = (camp.impressions || 0) > 0 ? ((camp.clicks || 0) / (camp.impressions || 1)) * 100 : 0;
+                                const campCpc = (camp.clicks || 0) > 0 ? camp.cost / (camp.clicks || 1) : 0;
+                                const isHighBudget = (camp.daily_budget || 0) > 0 && (camp.cost / (currentDay || 1)) > (camp.daily_budget || 0);
                                 return (
                                   <tr key={idx} className="hover:bg-slate-50">
                                     <td className="px-3 py-2.5">
@@ -889,11 +909,23 @@ export default function AdsPage() {
                                         )}
                                       </div>
                                     </td>
-                                    <td className="px-2 py-2.5 text-right font-medium text-slate-900">
+                                    <td className="px-2 py-2.5 text-right font-mono text-slate-500">
+                                      {camp.daily_budget ? formatCurrency(camp.daily_budget) : '-'}
+                                    </td>
+                                    <td className={cn("px-2 py-2.5 text-right font-medium", isHighBudget ? "text-amber-600" : "text-slate-900")}>
                                       {formatCurrency(camp.cost)}
                                     </td>
+                                    <td className="px-2 py-2.5 text-right hidden md:table-cell text-slate-600">
+                                      {(camp.clicks || 0).toLocaleString('es-ES')}
+                                    </td>
+                                    <td className="px-2 py-2.5 text-right hidden lg:table-cell text-slate-500">
+                                      {campCtr.toFixed(2)}%
+                                    </td>
+                                    <td className="px-2 py-2.5 text-right hidden lg:table-cell text-slate-500">
+                                      {formatCurrency(campCpc)}
+                                    </td>
                                     <td className="px-2 py-2.5 text-right text-emerald-600">
-                                      {formatCurrency(camp.conversions_value || 0)}
+                                      {(camp.conversions || 0).toFixed(0)}
                                     </td>
                                     {client.isSalesAccount && (
                                       <td className="px-2 py-2.5 text-center">
@@ -907,7 +939,7 @@ export default function AdsPage() {
                               })}
                               {client.campaigns.length === 0 && (
                                 <tr>
-                                  <td colSpan={4} className="px-3 py-8 text-center text-slate-400">
+                                  <td colSpan={7} className="px-3 py-8 text-center text-slate-400">
                                     Sin campañas con gasto este mes
                                   </td>
                                 </tr>
@@ -917,6 +949,133 @@ export default function AdsPage() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Cuentas vinculadas (grupos) - Tabla de desglose interactiva */}
+                    {client.is_group && (
+                      <div className="bg-white p-4 rounded-lg border mt-6">
+                        <h4 className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center gap-2">
+                          <Layers className="w-3.5 h-3.5" /> Desglose por Cuenta ({client.realIdsList.length})
+                        </h4>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs">
+                            <thead className="bg-slate-50 text-slate-500 font-medium border-b">
+                              <tr>
+                                <th className="px-3 py-2 text-left w-6"></th>
+                                <th className="px-3 py-2 text-left">Cuenta</th>
+                                <th className="px-2 py-2 text-right">Gasto</th>
+                                <th className="px-2 py-2 text-right">% Grupo</th>
+                                <th className="px-2 py-2 text-right hidden md:table-cell">Clicks</th>
+                                <th className="px-2 py-2 text-right">Conv</th>
+                                <th className="px-2 py-2 text-center">ROAS</th>
+                                <th className="px-2 py-2 text-center" />
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {client.realIdsList.map(sub => {
+                                const subCampaigns = client.campaigns.filter(c => c.original_client_id === sub.id || c.client_id === sub.id);
+                                const subSpent = subCampaigns.reduce((a, c) => a + c.cost, 0);
+                                const subClicks = subCampaigns.reduce((a, c) => a + (c.clicks || 0), 0);
+                                const subConv = subCampaigns.reduce((a, c) => a + (c.conversions || 0), 0);
+                                const subValue = subCampaigns.reduce((a, c) => a + (c.conversions_value || 0), 0);
+                                const subRoas = subSpent > 0 ? subValue / subSpent : 0;
+                                const pctOfGroup = client.spent > 0 ? (subSpent / client.spent) * 100 : 0;
+
+                                const isExpanded = expandedSubAccounts[sub.id];
+
+                                return (
+                                  <>
+                                    <tr key={sub.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => setExpandedSubAccounts(prev => ({ ...prev, [sub.id]: !prev[sub.id] }))}>
+                                      <td className="px-3 py-2.5 text-slate-400">
+                                        {isExpanded ? <TrendingDown className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                                      </td>
+                                      <td className="px-3 py-2.5 font-medium text-slate-700">
+                                        {formatProjectName(sub.name)}
+                                      </td>
+                                      <td className="px-2 py-2.5 text-right font-medium text-slate-900">
+                                        {formatCurrency(subSpent)}
+                                      </td>
+                                      <td className="px-2 py-2.5 text-right text-slate-500">
+                                        {pctOfGroup.toFixed(1)}%
+                                      </td>
+                                      <td className="px-2 py-2.5 text-right hidden md:table-cell text-slate-500">
+                                        {subClicks.toLocaleString('es-ES')}
+                                      </td>
+                                      <td className="px-2 py-2.5 text-right text-emerald-600">
+                                        {subConv.toFixed(0)}
+                                      </td>
+                                      <td className="px-2 py-2.5 text-center">
+                                        <Badge variant="outline" className={cn("text-[10px]", getRoasColor(subRoas))}>
+                                          {subRoas.toFixed(2)}
+                                        </Badge>
+                                      </td>
+                                      <td className="px-2 py-2.5 text-center">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setEditingClient({ id: sub.id, name: sub.name, group: client.groupName || '', hidden: false, isSales: true });
+                                          }}
+                                          className="text-slate-400 hover:text-blue-500"
+                                        >
+                                          <Settings className="w-3.5 h-3.5" />
+                                        </button>
+                                      </td>
+                                    </tr>
+                                    {isExpanded && (
+                                      <tr className="bg-slate-50">
+                                        <td colSpan={8} className="p-3">
+                                          <div className="bg-white rounded border overflow-hidden">
+                                            <table className="w-full text-xs">
+                                              <thead className="bg-slate-50/50 text-slate-400 border-b">
+                                                <tr>
+                                                  <th className="px-3 py-2 text-left">Campaña</th>
+                                                  <th className="px-2 py-2 text-right">P. Diario</th>
+                                                  <th className="px-2 py-2 text-right">Gasto</th>
+                                                  <th className="px-2 py-2 text-right">Conv</th>
+                                                  <th className="px-2 py-2 text-center">ROAS</th>
+                                                </tr>
+                                              </thead>
+                                              <tbody>
+                                                {subCampaigns.sort((a, b) => b.cost - a.cost).map(camp => {
+                                                  const campRoas = camp.cost > 0 ? (camp.conversions_value || 0) / camp.cost : 0;
+                                                  const isHighBudget = (camp.daily_budget || 0) > 0 && (camp.cost / (currentDay || 1)) > (camp.daily_budget || 0);
+
+                                                  return (
+                                                    <tr key={camp.campaign_id} className="border-b last:border-0 hover:bg-slate-50">
+                                                      <td className="px-3 py-2 font-medium text-slate-600 truncate max-w-[200px]" title={camp.campaign_name}>
+                                                        {camp.campaign_name}
+                                                      </td>
+                                                      <td className="px-2 py-2 text-right text-slate-500 font-mono">
+                                                        {camp.daily_budget ? formatCurrency(camp.daily_budget) : '-'}
+                                                      </td>
+                                                      <td className={cn("px-2 py-2.5 text-right font-medium", isHighBudget ? "text-amber-600" : "text-slate-900")}>
+                                                        {formatCurrency(camp.cost)}
+                                                      </td>
+                                                      <td className="px-2 py-2 text-right text-emerald-600">
+                                                        {(camp.conversions || 0).toFixed(0)}
+                                                      </td>
+                                                      <td className="px-2 py-2 text-center">
+                                                        <span className={cn("text-[10px] px-1.5 py-0.5 rounded", getRoasColor(campRoas))}>
+                                                          {campRoas.toFixed(2)}
+                                                        </span>
+                                                      </td>
+                                                    </tr>
+                                                  );
+                                                })}
+                                                {subCampaigns.length === 0 && <tr><td colSpan={5} className="p-3 text-center text-slate-400">Sin campañas activas</td></tr>}
+                                              </tbody>
+                                            </table>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </AccordionContent>
               </AccordionItem>
