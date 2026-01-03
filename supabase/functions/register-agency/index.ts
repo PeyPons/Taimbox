@@ -170,22 +170,7 @@ serve(async (req) => {
                 default_weekly_capacity: 40,
                 work_schedule: { monday: 8, tuesday: 8, wednesday: 8, thursday: 8, friday: 8, saturday: 0, sunday: 0 },
                 is_active: true,
-                hourly_rate: 0,
-                permissions: {
-                    can_access_planner: true,
-                    can_access_projects: true,
-                    can_access_clients: true,
-                    can_access_team: true,
-                    can_access_settings: true,
-                    can_access_google_ads: true,
-                    can_access_meta_ads: true,
-                    can_access_ads_reports: true,
-                    can_access_reports: true,
-                    can_access_client_reports: true,
-                    can_access_deadlines: true,
-                    can_access_okrs: true,
-                    can_access_weekly_forecast: true
-                }
+                hourly_rate: 0
             })
             .select()
             .single()
