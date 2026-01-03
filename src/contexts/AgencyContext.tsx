@@ -21,6 +21,7 @@ interface AgencyContextType {
   refreshAgency: () => Promise<void>;
   completeSetup: () => Promise<void>;
   updateAgencyName: (name: string) => Promise<void>;
+  updateSettings: (settings: Partial<AgencySettings>) => Promise<void>;
 }
 
 const AgencyContext = createContext<AgencyContextType | undefined>(undefined);
@@ -184,7 +185,18 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
     error,
     refreshAgency,
     completeSetup,
-    updateAgencyName
+    updateAgencyName,
+    updateSettings: async (settings: Partial<AgencySettings>) => {
+      if (!currentAgency?.id) return;
+
+      const { error } = await supabase
+        .from('agencies')
+        .update({ settings: { ...currentAgency.settings, ...settings } })
+        .eq('id', currentAgency.id);
+
+      if (error) throw error;
+      await refreshAgency();
+    }
   };
 
   return <AgencyContext.Provider value={value}>{children}</AgencyContext.Provider>;

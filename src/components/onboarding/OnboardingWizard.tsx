@@ -13,8 +13,9 @@ import { useAgency } from '@/contexts/AgencyContext';
 import { useApp } from '@/contexts/AppContext';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { Building2, Users, UserCircle, FolderKanban, Check, ArrowRight, ArrowLeft, Sparkles, X, Plus, Layers, UserPlus, Trash2 } from 'lucide-react';
+import { Building2, Users, UserCircle, FolderKanban, Check, ArrowRight, ArrowLeft, Sparkles, X, Plus, Layers, UserPlus, Trash2, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DEFAULT_PERMISSIONS } from '@/types/permissions';
 
 // Pasos del wizard (sin empresa - ya se pide en el registro)
 type WizardStep = 'roles' | 'departments' | 'employees' | 'client' | 'project';
@@ -59,8 +60,8 @@ const CLIENT_COLORS = [
 
 export default function OnboardingWizard() {
     const navigate = useNavigate();
-    const { currentAgency, updateAgencyName, completeSetup } = useAgency();
-    const { addClient, addProject, clients } = useApp();
+    const { currentAgency, updateAgencyName, updateSettings, completeSetup, isLoading: isAgencyLoading } = useAgency();
+    const { addClient, addProject, addEmployee, clients } = useApp();
 
     const [currentStep, setCurrentStep] = useState<WizardStep>('roles');
     const [isProcessing, setIsProcessing] = useState(false);
@@ -110,6 +111,17 @@ export default function OnboardingWizard() {
         }
     };
 
+    if (isAgencyLoading) {
+        return (
+            <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+                <div className="text-center">
+                    <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
+                    <p className="text-slate-400">Cargando configuración...</p>
+                </div>
+            </div>
+        );
+    }
+
     // Handlers
     const handleRolesSubmit = async () => {
         if (roles.length === 0) {
@@ -118,20 +130,19 @@ export default function OnboardingWizard() {
         }
         setIsProcessing(true);
         try {
-            // Guardar roles en settings de la agencia
-            if (currentAgency?.id) {
-                await supabase
-                    .from('agencies')
-                    .update({
-                        settings: {
-                            ...currentAgency.settings,
-                            roles
-                        }
-                    })
-                    .eq('id', currentAgency.id);
-            }
+            // Guardar roles en settings de la agencia usando el contexto
+            // Convertir string[] a RolePermissions[] para mantener consistencia con el nuevo sistema
+            const rolesToSave = roles.map(r => ({
+                name: r,
+                permissions: r.toLowerCase().includes('responsable') || r.toLowerCase().includes('ceo')
+                    ? DEFAULT_PERMISSIONS
+                    : { ...DEFAULT_PERMISSIONS, can_access_team: false, can_access_agency_settings: false }
+            }));
+
+            await updateSettings({ roles: rolesToSave });
             goToNextStep();
         } catch (error) {
+            console.error('Error al guardar roles:', error);
             toast.error('Error al guardar los roles');
         } finally {
             setIsProcessing(false);
@@ -145,21 +156,18 @@ export default function OnboardingWizard() {
         }
         setIsProcessing(true);
         try {
-            // Guardar departamentos en settings de la agencia
-            if (currentAgency?.id) {
-                await supabase
-                    .from('agencies')
-                    .update({
-                        settings: {
-                            ...currentAgency.settings,
-                            roles,
-                            departments
-                        }
-                    })
-                    .eq('id', currentAgency.id);
-            }
+            // Guardar roles y departamentos en settings de la agencia usando el contexto
+            const rolesToSave = roles.map(r => ({
+                name: r,
+                permissions: r.toLowerCase().includes('responsable') || r.toLowerCase().includes('ceo')
+                    ? DEFAULT_PERMISSIONS
+                    : { ...DEFAULT_PERMISSIONS, can_access_team: false, can_access_agency_settings: false }
+            }));
+
+            await updateSettings({ roles: rolesToSave, departments });
             goToNextStep();
         } catch (error) {
+            console.error('Error al guardar departamentos:', error);
             toast.error('Error al guardar los departamentos');
         } finally {
             setIsProcessing(false);
@@ -202,6 +210,8 @@ export default function OnboardingWizard() {
                 name: data.name,
                 clientId,
                 budgetHours: data.budgetHours,
+                minimumHours: data.minHours,
+                monthlyFee: data.hourlyRate,
                 status: 'active',
                 agencyId: currentAgency?.id || '',
             });
@@ -309,26 +319,21 @@ export default function OnboardingWizard() {
                     continue;
                 }
 
-                // 2. Crear empleado en la tabla employees
-                const { error: empError } = await supabase
-                    .from('employees')
-                    .insert({
-                        agency_id: currentAgency?.id,
-                        name: emp.name,
-                        email: emp.email,
-                        user_id: authData?.user?.id,
-                        role: emp.role || roles[0],
-                        department: emp.department || departments[0],
-                        defaultWeeklyCapacity: 40, // Default 40h
-                        workSchedule: {
-                            monday: 8, tuesday: 8, wednesday: 8, thursday: 8, friday: 8, saturday: 0, sunday: 0
-                        },
-                        is_active: true,
-                    });
-
-                if (empError) {
-                    console.error('Error insertando empleado:', empError);
-                }
+                // 2. Crear empleado usando la función del contexto para asegurar mapeo correcto y actualización de estado
+                await addEmployee({
+                    agencyId: currentAgency?.id || '',
+                    name: emp.name,
+                    email: emp.email,
+                    user_id: authData?.user?.id,
+                    role: emp.role || roles[0],
+                    department: emp.department || departments[0],
+                    defaultWeeklyCapacity: 40,
+                    workSchedule: {
+                        monday: 8, tuesday: 8, wednesday: 8, thursday: 8, friday: 8, saturday: 0, sunday: 0
+                    },
+                    isActive: true,
+                    hourlyRate: 0,
+                });
             }
 
             if (pendingEmployees.length > 0) {

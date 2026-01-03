@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function AgencySettingsPage() {
-  const { currentAgency, refreshAgency, isLoading: isAgencyLoading } = useAgency();
+  const { currentAgency, refreshAgency, updateSettings, updateAgencyName, isLoading: isAgencyLoading } = useAgency();
   const [saving, setSaving] = useState(false);
 
   // Estado local para edición
@@ -200,29 +200,24 @@ export default function AgencySettingsPage() {
 
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('agencies')
-        .update({
-          name: agencyName,
-          settings: {
-            ...currentAgency.settings,
-            modules,
-            roles,
-            departments,
-            branding: {
-              ...currentAgency.settings?.branding,
-              primaryColor
-            },
-            projectFilters,
-            integrations
-          }
-        })
-        .eq('id', currentAgency.id);
+      await updateSettings({
+        modules,
+        roles,
+        departments,
+        branding: {
+          ...currentAgency.settings?.branding,
+          primaryColor
+        },
+        projectFilters,
+        integrations
+      });
 
-      if (error) throw error;
+      // Si el nombre ha cambiado, actualizarlo por separado
+      if (agencyName !== currentAgency.name) {
+        await updateAgencyName(agencyName);
+      }
 
       toast.success('Configuración de agencia guardada');
-      await refreshAgency();
     } catch (error) {
       console.error('Error guardando agencia:', error);
       toast.error('Error al guardar la configuración');

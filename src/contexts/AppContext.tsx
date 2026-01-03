@@ -814,7 +814,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       name: project.name,
       status: project.status,
       budget_hours: project.budgetHours,
-      minimum_hours: project.minimumHours
+      minimum_hours: project.minimumHours,
+      monthly_fee: project.monthlyFee
     }).select().single();
 
     if (data) {
@@ -825,7 +826,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         name: data.name,
         status: (data.status || 'active') as 'active' | 'archived' | 'completed',
         budgetHours: round2(data.budget_hours),
-        minimumHours: round2(data.minimum_hours || 0)
+        minimumHours: round2(data.minimum_hours || 0),
+        monthlyFee: round2(data.monthly_fee || 0)
       }]);
     }
   }, [currentAgency?.id]);
