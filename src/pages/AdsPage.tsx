@@ -387,6 +387,13 @@ export default function AdsPage() {
 
       // FILTER: Only show data for accounts present in config
       const isRegistered = registeredAccounts.some(acc => normalizeId(acc.account_id) === normalizeId(row.client_id));
+
+      // DEBUG: Log first few rows
+      if (filteredOutCount < 3) {
+        console.log(`[AdsDebug] Row: ${row.client_name} (${row.client_id}) | Date: ${row.date} | Cost: ${row.cost} | Registered: ${isRegistered} | Range: ${isInRange}`);
+        console.log(`[AdsDebug] MonthStart: ${monthStart}, MonthEnd: ${monthEnd}`);
+      }
+
       if (!isRegistered) {
         // Optional: filteredOutCount++; but for now just skip
         return;
