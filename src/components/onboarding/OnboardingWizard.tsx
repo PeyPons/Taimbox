@@ -63,16 +63,45 @@ export default function OnboardingWizard() {
     const { currentAgency, updateAgencyName, updateSettings, completeSetup, isLoading: isAgencyLoading } = useAgency();
     const { addClient, addProject, addEmployee, clients } = useApp();
 
-    const [currentStep, setCurrentStep] = useState<WizardStep>('roles');
+    const [instanceId] = useState(() => Math.random().toString(36).substr(2, 9));
+    const [currentStep, setCurrentStep] = useState<WizardStep>(() => {
+        const saved = localStorage.getItem('onboarding_step');
+        return (saved as WizardStep) || 'roles';
+    });
     const [isProcessing, setIsProcessing] = useState(false);
-    const [roles, setRoles] = useState<string[]>(['Responsable', 'Coordinador', 'Especialista']);
+
+    // Persistir el paso actual
+    useEffect(() => {
+        localStorage.setItem('onboarding_step', currentStep);
+    }, [currentStep]);
+
+    // Inicializar estados desde la agencia si ya existen (resiliencia ante remounts)
+    const [roles, setRoles] = useState<string[]>(() => {
+        const agencyRoles = currentAgency?.settings?.roles;
+        if (agencyRoles && agencyRoles.length > 0) {
+            // Manejar tanto el formato antiguo (string[]) como el nuevo (RolePermissions[])
+            if (typeof (agencyRoles as any)[0] === 'string') return agencyRoles as unknown as string[];
+            return (agencyRoles as any[]).map(r => r.name);
+        }
+        return ['Responsable', 'Coordinador', 'Especialista'];
+    });
     const [newRole, setNewRole] = useState('');
-    const [departments, setDepartments] = useState<string[]>(['SEO', 'PPC']);
+
+    const [departments, setDepartments] = useState<string[]>(() => {
+        return currentAgency?.settings?.departments || ['SEO', 'PPC'];
+    });
     const [newDepartment, setNewDepartment] = useState('');
+
     const [pendingEmployees, setPendingEmployees] = useState<PendingEmployee[]>([]);
     const [newEmployee, setNewEmployee] = useState<Omit<PendingEmployee, 'id'>>({
         name: '', email: '', password: '', role: '', department: ''
     });
+
+    // Log de montaje
+    useEffect(() => {
+        console.log(`[Onboarding ${instanceId}] Componente montado. Paso actual:`, currentStep);
+        return () => console.log(`[Onboarding ${instanceId}] Componente desmontado`);
+    }, []);
     // Set default values when steps change or arrays load
     useEffect(() => {
         setNewEmployee(prev => ({
@@ -100,7 +129,9 @@ export default function OnboardingWizard() {
     const goToNextStep = () => {
         const nextIndex = currentStepIndex + 1;
         if (nextIndex < STEPS.length) {
-            setCurrentStep(STEPS[nextIndex].id);
+            const nextStep = STEPS[nextIndex].id;
+            console.log(`[Onboarding ${instanceId}] Transicionando al paso:`, nextStep);
+            setCurrentStep(nextStep);
         }
     };
 
@@ -139,12 +170,12 @@ export default function OnboardingWizard() {
                     : { ...DEFAULT_PERMISSIONS, can_access_team: false, can_access_agency_settings: false }
             }));
 
-            console.log('[Onboarding] Guardando roles:', rolesToSave);
+            console.log(`[Onboarding ${instanceId}] Guardando roles:`, rolesToSave);
             await updateSettings({ roles: rolesToSave });
-            console.log('[Onboarding] Roles guardados, pasando al siguiente paso');
+            console.log(`[Onboarding ${instanceId}] Roles guardados correctamente`);
             goToNextStep();
         } catch (error) {
-            console.error('Error al guardar roles:', error);
+            console.error(`[Onboarding ${instanceId}] Error al guardar roles:`, error);
             toast.error('Error al guardar los roles');
         } finally {
             setIsProcessing(false);
@@ -222,7 +253,8 @@ export default function OnboardingWizard() {
             await completeSetup();
 
             toast.success('¡Configuración completada!');
-            navigate('/dashboard', { replace: true });
+            localStorage.removeItem('onboarding_step');
+            navigate('/planner', { replace: true });
         } catch (error) {
             toast.error('Error al crear el proyecto');
         } finally {
@@ -341,9 +373,10 @@ export default function OnboardingWizard() {
             if (pendingEmployees.length > 0) {
                 toast.success(`${pendingEmployees.length} empleado(s) creado(s)`);
             }
+
             goToNextStep();
         } catch (error) {
-            console.error('Error en handleEmployeesSubmit:', error);
+            console.error(`[Onboarding ${instanceId}] Error en handleEmployeesSubmit:`, error);
             toast.error('Error al crear los empleados');
         } finally {
             setIsProcessing(false);

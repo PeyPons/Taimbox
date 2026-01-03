@@ -7,8 +7,9 @@ export const ProtectedRoute = () => {
   const { currentAgency, isLoading: isAgencyLoading } = useAgency();
   const location = useLocation();
 
-  // Mientras se inicializa la autenticación o la agencia, mostrar spinner
-  if (!isInitialized || loading || isAgencyLoading) {
+  // Mientras se inicializa la autenticación mostrar spinner
+  // Para la agencia, solo mostrar spinner si NO tenemos datos todavía
+  if (!isInitialized || loading || (isAgencyLoading && !currentAgency)) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50">
         <div className="h-8 w-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin opacity-60" />
