@@ -207,10 +207,13 @@ async function processAgency(agency, log) {
 
           const { error } = await supabase.from('google_ads_campaigns').insert(rowsToInsert);
 
+          const totalCost = campaignData.reduce((sum, d) => sum + (d.cost || 0), 0);
+          await log(`    💰 Total Cost calculado: ${totalCost.toFixed(2)} (IDs: ${campaignData.length}, FirstID: ${campaignData[0]?.client_id})`);
+
           if (error) {
             await log(`    ❌ Error DB: ${error.message}`);
           } else {
-            await log(`    ✅ Agregadas ${campaignData.length} a BD.`);
+            await log(`    ✅ Agregadas ${campaignData.length} a BD. Coste total insertado: ${totalCost.toFixed(2)}`);
           }
         }
       } catch (err) {
