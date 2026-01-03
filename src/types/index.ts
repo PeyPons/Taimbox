@@ -41,6 +41,7 @@ export interface CustomProjectFilter {
 export interface AgencySettings {
   modules?: AgencyModules;
   roles?: string[];
+  departments?: string[];
   branding?: AgencyBranding;
   features?: Record<string, boolean>;
   projectFilters?: CustomProjectFilter[];  // Custom project filters
@@ -67,7 +68,7 @@ export interface Agency {
 // Employee Types
 // ============================================
 
-export type EmployeeRole = 'Responsable' | 'Coordinador' | 'SEO' | 'PPC';
+export type EmployeeRole = string;
 
 export interface Employee {
   id: string;

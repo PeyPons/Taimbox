@@ -17,6 +17,7 @@ export interface UserPermissions {
   can_access_weekly_forecast?: boolean;
   can_access_weekly?: boolean;
   can_access_settings?: boolean;
+  can_access_agency_settings?: boolean;
 }
 
 /**
@@ -37,6 +38,7 @@ export const ROUTE_PERMISSIONS: Record<string, keyof UserPermissions> = {
   '/okrs': 'can_access_okrs',
   '/weekly-forecast': 'can_access_weekly_forecast',
   '/settings': 'can_access_settings',
+  '/agency': 'can_access_agency_settings',
 };
 
 /**
@@ -58,6 +60,7 @@ export const DEFAULT_PERMISSIONS: UserPermissions = {
   can_access_weekly_forecast: true,
   can_access_weekly: true,
   can_access_settings: true,
+  can_access_agency_settings: true,
 };
 
 /**
@@ -79,5 +82,6 @@ export const PERMISSION_LABELS: Record<keyof UserPermissions, string> = {
   can_access_weekly_forecast: 'Forecast',
   can_access_weekly: 'Weekly',
   can_access_settings: 'Configuración',
+  can_access_agency_settings: 'Configuración de Agencia',
 };
 

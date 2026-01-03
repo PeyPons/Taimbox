@@ -22,20 +22,24 @@ async function getAccountName(id, accessToken) {
 async function processAgency(agency, log) {
     const integrations = agency.settings?.integrations || {};
     const accessToken = integrations.metaAccessToken;
-    const accountIdsRaw = integrations.metaAdAccountIds;
 
     if (!accessToken) {
         // await log(`⚠️ Agencia ${agency.name} (${agency.slug}) no tiene Access Token configurado.`);
         return;
     }
 
-    let ids = [];
-    if (accountIdsRaw) {
-        ids = accountIdsRaw.split(',').map(i => i.trim()).filter(Boolean);
-    }
+    // NUEVO: Leer cuentas desde la tabla de configuración, NO desde el JSON antiguo
+    const { data: configAccounts } = await supabase
+        .from('ad_accounts_config')
+        .select('account_id')
+        .eq('agency_id', agency.id)
+        .eq('platform', 'meta')
+        .eq('is_active', true);
+
+    const ids = configAccounts?.map(a => a.account_id) || [];
 
     if (!ids.length) {
-        await log(`⚠️ Agencia ${agency.name}: Token presente pero sin cuentas configuradas.`);
+        await log(`⚠️ Agencia ${agency.name}: Token presente pero sin cuentas configuradas en tabla.`);
         return;
     }
 
@@ -45,15 +49,27 @@ async function processAgency(agency, log) {
         const name = await getAccountName(id, accessToken);
         await log(`  👉 Cuenta: ${name} (${id})`);
 
-        // Actualizar nombre en config (Tabla global ad_accounts_config - OJO: esto es compartido, habría que ver si se segrega)
-        // Por ahora lo dejamos igual, asumiendo que el ID es la clave
-        await supabase.from('ad_accounts_config').upsert({ account_id: id, account_name: name, platform: 'meta', is_active: true }, { onConflict: 'account_id' });
+        // Actualizar nombre en config
+        await supabase.from('ad_accounts_config').upsert({
+            account_id: id,
+            account_name: name,
+            platform: 'meta',
+            is_active: true,
+            agency_id: agency.id
+        }, { onConflict: 'account_id' });
 
         // Fetch Insights (Resumido)
         const range = { start: new Date().toISOString().slice(0, 8) + '01', end: new Date().toISOString().slice(0, 10) };
         const url = `https://graph.facebook.com/${API_VERSION}/${id}/insights?level=campaign&fields=campaign_id,campaign_name,spend,actions,action_values&time_range={'since':'${range.start}','until':'${range.end}'}&access_token=${accessToken}`;
 
         try {
+            // FASE LIMPIEZA: Borrar datos existentes de este mes para esta cuenta antes de insertar nuevos
+            // Esto evita duplicados y limpia datos de campañas que ya no existen en la respuesta
+            await supabase.from('meta_ads_campaigns')
+                .delete()
+                .eq('client_id', id)
+                .gte('date', range.start);
+
             const res = await fetch(url);
             const json = await res.json();
 

@@ -153,13 +153,21 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
     setCurrentAgency(prev => prev ? { ...prev, setupCompleted: true } : null);
   }, [currentAgency?.id]);
 
-  // Actualizar nombre de agencia
+  // Actualizar nombre de agencia y regenerar slug
   const updateAgencyName = useCallback(async (name: string) => {
     if (!currentAgency?.id) return;
 
+    // Generar slug a partir del nombre
+    const newSlug = name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
     const { error } = await supabase
       .from('agencies')
-      .update({ name })
+      .update({ name, slug: newSlug })
       .eq('id', currentAgency.id);
 
     if (error) {
@@ -167,7 +175,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       throw error;
     }
 
-    setCurrentAgency(prev => prev ? { ...prev, name } : null);
+    setCurrentAgency(prev => prev ? { ...prev, name, slug: newSlug } : null);
   }, [currentAgency?.id]);
 
   const value = {

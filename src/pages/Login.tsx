@@ -24,7 +24,7 @@ const registerFormSchema = z.object({
   email: z.string().email('Email inválido'),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
   confirmPassword: z.string().min(6, 'Confirma tu contraseña'),
-  agencyName: z.string().optional(),
+  agencyName: z.string().min(2, 'El nombre de la empresa es obligatorio'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden",
   path: ["confirmPassword"],
@@ -316,7 +316,7 @@ export default function Login() {
                     name="agencyName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nombre de tu empresa <span className="text-slate-400 font-normal">(opcional)</span></FormLabel>
+                        <FormLabel>Nombre de tu empresa</FormLabel>
                         <FormControl>
                           <Input
                             placeholder="Mi Agencia"

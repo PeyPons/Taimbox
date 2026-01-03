@@ -13,6 +13,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Employee, WorkSchedule, EmployeeRole } from '@/types';
 import { UserPermissions, PERMISSION_LABELS, DEFAULT_PERMISSIONS } from '@/types/permissions';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Briefcase, CalendarClock, Target, Lock, Clock, ShieldCheck, Hash, Key } from 'lucide-react';
@@ -37,8 +38,8 @@ const employeeFormSchema = z.object({
   name: z.string().min(1, 'El nombre es obligatorio'),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   password: z.string().optional(),
-  role: z.enum(['Responsable', 'Coordinador', 'SEO', 'PPC']),
-  department: z.enum(['SEO', 'PPC']),
+  role: z.string().min(1, 'El rol es obligatorio'),
+  department: z.string().min(1, 'El departamento es obligatorio'),
   capacity: z.number().min(1, 'La capacidad debe ser mayor a 0').max(168, 'La capacidad no puede exceder 168 horas'),
   hourlyRate: z.number().min(0, 'El coste por hora no puede ser negativo'),
   crmUserId: z.number().optional().or(z.literal('')),
@@ -62,6 +63,11 @@ type EmployeeFormValues = z.infer<typeof employeeFormSchema>;
 
 export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeDialogProps) {
   const { addEmployee, updateEmployee } = useApp();
+  const { currentAgency } = useAgency();
+
+  // Obtener roles y departamentos dinámicos de la agencia
+  const availableRoles = currentAgency?.settings?.roles || ['Responsable', 'Coordinador', 'Especialista'];
+  const availableDepartments = currentAgency?.settings?.departments || ['SEO', 'PPC'];
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [showProjects, setShowProjects] = useState(false);
@@ -74,8 +80,8 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
       name: '',
       email: '',
       password: '',
-      role: 'SEO',
-      department: 'SEO',
+      role: availableRoles[0] || 'Responsable',
+      department: availableDepartments[0] || 'SEO',
       capacity: 40,
       hourlyRate: 0,
       crmUserId: '',
@@ -94,8 +100,8 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
           name: employeeToEdit.name,
           email: employeeToEdit.email || '',
           password: '',
-          role: employeeToEdit.role || 'SEO',
-          department: employeeToEdit.department || 'SEO',
+          role: employeeToEdit.role || availableRoles[0] || 'Responsable',
+          department: employeeToEdit.department || availableDepartments[0] || 'SEO',
           capacity: employeeToEdit.defaultWeeklyCapacity,
           hourlyRate: employeeToEdit.hourlyRate || 0,
           crmUserId: employeeToEdit.crmUserId || '',
@@ -107,8 +113,8 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
           name: '',
           email: '',
           password: '',
-          role: 'SEO',
-          department: 'SEO',
+          role: availableRoles[0] || 'Responsable',
+          department: availableDepartments[0] || 'SEO',
           capacity: 40,
           hourlyRate: 0,
           crmUserId: '',
@@ -430,10 +436,9 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="Responsable">Responsable</SelectItem>
-                              <SelectItem value="Coordinador">Coordinador</SelectItem>
-                              <SelectItem value="SEO">SEO</SelectItem>
-                              <SelectItem value="PPC">PPC</SelectItem>
+                              {availableRoles.map(role => (
+                                <SelectItem key={role} value={role}>{role}</SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -449,12 +454,13 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue />
+                                <SelectValue placeholder="Selecciona un departamento" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="SEO">SEO</SelectItem>
-                              <SelectItem value="PPC">PPC</SelectItem>
+                              {availableDepartments.map(dept => (
+                                <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />

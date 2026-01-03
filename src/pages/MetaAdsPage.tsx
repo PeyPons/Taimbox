@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAgency } from '@/contexts/AgencyContext';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -262,7 +262,22 @@ export default function MetaAdsPage() {
                     <div className="flex items-center gap-4 lg:gap-6 justify-end">
                       {client.isSalesAccount && client.total_conversions_val > 0 && <div className="text-right hidden sm:block"><div className="text-[10px] uppercase text-slate-400 font-medium">Valor</div><div className="text-lg font-bold text-emerald-600">{formatCurrency(client.total_conversions_val)}</div></div>}
                       <div className="text-right"><div className="text-[10px] uppercase text-slate-400 font-medium">Invertido</div><div className="text-xl font-bold text-slate-900">{formatCurrency(client.spent)}</div></div>
-                      <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); if (!client.is_group) setEditingClient({ id: client.client_id, name: client.client_name, group: clientSettings[client.client_id]?.group_name || '', hidden: clientSettings[client.client_id]?.is_hidden || false, isSales: clientSettings[client.client_id]?.is_sales_account !== false }); else toast.info("Abre el grupo para editar"); }}><Settings className="w-4 h-4 text-slate-400" /></Button></TooltipTrigger><TooltipContent>Configurar</TooltipContent></Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div
+                            role="button"
+                            className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-8 w-8 cursor-pointer")}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!client.is_group) setEditingClient({ id: client.client_id, name: client.client_name, group: clientSettings[client.client_id]?.group_name || '', hidden: clientSettings[client.client_id]?.is_hidden || false, isSales: clientSettings[client.client_id]?.is_sales_account !== false });
+                              else toast.info("Abre el grupo para editar");
+                            }}
+                          >
+                            <Settings className="w-4 h-4 text-slate-400" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>Configurar</TooltipContent>
+                      </Tooltip>
                     </div>
                   </div>
                 </AccordionTrigger>

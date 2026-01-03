@@ -186,14 +186,23 @@ async function processAgency(agency, log) {
       try {
         const campaignData = await getAccountData(client.id, accessToken, developerToken, mccId, range);
 
-        if (campaignData.length > 0) {
-          // BORRAR datos existentes del mes actual (estrategia de reemplazo mensual)
-          await supabase.from('google_ads_campaigns')
-            .delete()
-            .eq('client_id', client.id)
-            .gte('date', range.firstDay)
-            .lte('date', range.today);
+        // Actualizar referencia en tabla de configuración (Auto-discovery)
+        await supabase.from('ad_accounts_config').upsert({
+          account_id: client.id,
+          account_name: client.name,
+          platform: 'google',
+          is_active: true,
+          agency_id: agency.id
+        }, { onConflict: 'account_id' });
 
+        // CLEAN SYNC: Borrar datos existentes del mes actual SIEMPRE (incluso si ahora no trae datos, para limpiar)
+        await supabase.from('google_ads_campaigns')
+          .delete()
+          .eq('client_id', client.id)
+          .gte('date', range.firstDay)
+          .lte('date', range.today);
+
+        if (campaignData.length > 0) {
           const rowsToInsert = campaignData.map(d => ({ ...d, client_name: client.name, agency_id: agency.id }));
 
           const { error } = await supabase.from('google_ads_campaigns').insert(rowsToInsert);
@@ -203,6 +212,8 @@ async function processAgency(agency, log) {
           } else {
             await log(`    ✅ Agregadas ${campaignData.length} a BD.`);
           }
+        } else {
+          await log(`    ℹ️ Sin datos de campañas (se limpiaron datos previos).`);
         }
       } catch (err) {
         await log(`    ⚠️ Error cuenta ${client.name}: ${err.message}`);

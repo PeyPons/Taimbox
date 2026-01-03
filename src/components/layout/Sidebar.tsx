@@ -216,9 +216,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Footer del Sidebar: Usuario Real + Logout */}
         <div className="p-4 border-t border-slate-800 bg-slate-950/30">
-          <NavLink to="/settings" icon={Settings} active={location.pathname === '/settings'}>
-            Configuración
-          </NavLink>
+          {canAccess('/agency') && (
+            <NavLink to="/agency" icon={Settings} active={location.pathname === '/agency'}>
+              Configuración
+            </NavLink>
+          )}
 
           {currentUser ? (
             <div className="mt-4 px-2 flex items-center gap-3 group">

@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import {
   Building2, Settings, Users, Palette, Save, Loader2,
   Filter, Plus, Trash2, HelpCircle, Info, X,
-  Rocket, Facebook, Megaphone
+  Rocket, Facebook, Megaphone, PlusCircle, ShieldCheck
 } from 'lucide-react';
 import { CustomProjectFilter } from '@/types';
 import { DEFAULT_FILTERS } from '@/hooks/useProjectFilters';
@@ -22,6 +22,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function AgencySettingsPage() {
   const { currentAgency, refreshAgency, isLoading: isAgencyLoading } = useAgency();
@@ -44,10 +54,13 @@ export default function AgencySettingsPage() {
   );
   const [integrations, setIntegrations] = useState(currentAgency?.settings?.integrations || {
     metaAccessToken: '',
-    metaAdAccountIds: '',
     googleAdsCustomerId: '',
     googleAdsDevToken: ''
   });
+  const [newAccountId, setNewAccountId] = useState('');
+  const [isAddingAccount, setIsAddingAccount] = useState(false);
+  const [connectedAccounts, setConnectedAccounts] = useState<any[]>([]);
+  const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
 
   // Sync state when agency loads
   useEffect(() => {
@@ -64,12 +77,28 @@ export default function AgencySettingsPage() {
       setProjectFilters(currentAgency.settings?.projectFilters || DEFAULT_FILTERS);
       setIntegrations(currentAgency.settings?.integrations || {
         metaAccessToken: '',
-        metaAdAccountIds: '',
         googleAdsCustomerId: '',
         googleAdsDevToken: ''
       });
+      setIntegrations(currentAgency.settings?.integrations || {
+        metaAccessToken: '',
+        googleAdsCustomerId: '',
+        googleAdsDevToken: ''
+      });
+      fetchConnectedAccounts();
     }
   }, [currentAgency]);
+
+  const fetchConnectedAccounts = async () => {
+    if (!currentAgency?.id) return;
+    const { data } = await supabase
+      .from('ad_accounts_config')
+      .select('*')
+      .eq('agency_id', currentAgency.id)
+      .eq('platform', 'meta')
+      .eq('is_active', true);
+    setConnectedAccounts(data || []);
+  };
 
   const handleSave = async () => {
     if (!currentAgency?.id) {
@@ -107,6 +136,56 @@ export default function AgencySettingsPage() {
       setSaving(false);
     }
   };
+
+  const handleAddAccount = async () => {
+    if (!newAccountId) return toast.error("Por favor, escribe un ID de cuenta.");
+
+    setIsAddingAccount(true);
+    // Insertamos en la tabla de configuración
+    const { error } = await supabase.from('ad_accounts_config').insert({
+      platform: 'meta',
+      account_id: newAccountId,
+      is_active: true,
+      agency_id: currentAgency?.id
+    });
+
+    if (error) {
+      console.error('Error guardando cuenta:', error);
+      if (error.code === '23505') {
+        toast.error("Esta cuenta ya está registrada.");
+      } else {
+        toast.error(error.message || 'Error al guardar la cuenta');
+      }
+    } else {
+      toast.success('Cuenta añadida correctamente.');
+      setNewAccountId('');
+      fetchConnectedAccounts();
+    }
+    setIsAddingAccount(false);
+  };
+
+  const handleRemoveAccount = (id: string) => {
+    setAccountToDelete(id);
+  };
+
+  const confirmDeleteAccount = async () => {
+    if (!accountToDelete) return;
+
+    const { error } = await supabase
+      .from('ad_accounts_config')
+      .delete()
+      .eq('id', accountToDelete);
+
+    if (error) {
+      toast.error('Error al eliminar cuenta');
+      console.error(error);
+    } else {
+      toast.success('Cuenta eliminada');
+      fetchConnectedAccounts();
+    }
+    setAccountToDelete(null);
+  };
+
 
   const toggleModule = (key: string) => {
     setModules(prev => ({
@@ -494,16 +573,59 @@ export default function AgencySettingsPage() {
                   placeholder="EAAB..."
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="meta-accounts">Ad Account IDs</Label>
-                <Input
-                  id="meta-accounts"
-                  value={integrations.metaAdAccountIds || ''}
-                  onChange={(e) => setIntegrations(prev => ({ ...prev, metaAdAccountIds: e.target.value }))}
-                  placeholder="act_123, act_456"
-                />
-                <p className="text-xs text-slate-500">Separados por comas</p>
-                <MetaAccountList accountIds={integrations.metaAdAccountIds || ''} />
+            </div>
+
+            <div className="mt-4 pt-4 border-t">
+              <div className="space-y-4">
+                <h4 className="font-medium text-sm flex items-center gap-2">
+                  <PlusCircle className="w-4 h-4 text-emerald-600" />
+                  Añadir Cuenta Publicitaria
+                </h4>
+                <div className="flex flex-col md:flex-row gap-3 items-end">
+                  <div className="space-y-1.5 w-full">
+                    <Label className="text-xs">ID de Cuenta (Meta Ads)</Label>
+                    <Input
+                      placeholder="Ej: act_123456789"
+                      value={newAccountId}
+                      onChange={(e) => setNewAccountId(e.target.value)}
+                      className="bg-white"
+                    />
+                  </div>
+                  <Button onClick={handleAddAccount} disabled={isAddingAccount} size="sm" className="w-full md:w-auto shrink-0">
+                    {isAddingAccount ? '...' : 'Añadir'}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-3 mt-4">
+                <h4 className="text-xs font-semibold text-slate-500 uppercase">Cuentas Conectadas ({connectedAccounts.length})</h4>
+                {connectedAccounts.length === 0 ? (
+                  <p className="text-sm text-slate-400 italic">No hay cuentas conectadas.</p>
+                ) : (
+                  <div className="grid gap-2">
+                    {connectedAccounts.map(acc => (
+                      <div key={acc.id} className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                            <Facebook className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-slate-900">{acc.account_name || 'Cuenta de Anuncios'}</p>
+                            <p className="text-xs font-mono text-slate-500">{acc.account_id}</p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-slate-400 hover:text-red-500 hover:bg-red-50"
+                          onClick={() => handleRemoveAccount(acc.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -604,73 +726,22 @@ export default function AgencySettingsPage() {
           )}
         </Button>
       </div>
-    </div>
-  );
-}
-
-function MetaAccountList({ accountIds }: { accountIds: string }) {
-  const [accounts, setAccounts] = useState<{ account_id: string, account_name: string }[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!accountIds) {
-      setAccounts([]);
-      return;
-    }
-
-    const fetchAccounts = async () => {
-      setLoading(true);
-      const ids = accountIds.split(',').map(id => id.trim()).filter(Boolean);
-      if (ids.length === 0) {
-        setLoading(false);
-        return;
-      }
-
-      // Fetch known names from ad_accounts_config
-      const { data } = await supabase
-        .from('ad_accounts_config')
-        .select('account_id, account_name')
-        .in('account_id', ids)
-        .eq('platform', 'meta');
-
-      // Combine with IDs (some might not have names yet if worker hasn't run)
-      const mapped = ids.map(id => {
-        const found = data?.find(d => d.account_id === id);
-        return {
-          account_id: id,
-          account_name: found?.account_name || 'Pendiente de sincronización...'
-        };
-      });
-
-      setAccounts(mapped);
-      setLoading(false);
-    };
-
-    fetchAccounts();
-  }, [accountIds]);
-
-  if (!accountIds) return null;
-
-  return (
-    <div className="mt-4 border-t pt-4">
-      <h4 className="text-sm font-medium text-slate-700 mb-2">Cuentas Configuradas</h4>
-      {loading ? (
-        <div className="text-sm text-slate-500 flex items-center gap-2">
-          <Loader2 className="h-3 w-3 animate-spin" /> Verificando cuentas...
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {accounts.map(acc => (
-            <div key={acc.account_id} className="flex items-center justify-between p-2 bg-white border rounded text-sm">
-              <span className="font-medium text-slate-900">{acc.account_name}</span>
-              <span className="font-mono text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">{acc.account_id}</span>
-            </div>
-          ))}
-          {accounts.length === 0 && (
-            <p className="text-sm text-slate-500 italic">Ninguna cuenta válida detectada.</p>
-          )}
-        </div>
-      )}
-    </div>
+      <AlertDialog open={!!accountToDelete} onOpenChange={(open) => !open && setAccountToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción eliminará la cuenta de la configuración. Podrás volver a añadirla más tarde si lo necesitas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteAccount} className="bg-red-600 hover:bg-red-700">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div >
   );
 }
