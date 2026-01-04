@@ -1366,6 +1366,8 @@ supabase login
 supabase link --project-ref [tu-project-ref]
 
 # Desplegar funciones
+# register-agency debe ser pública (sin verificación JWT) porque se usa durante el registro
+supabase functions deploy register-agency --no-verify-jwt
 supabase functions deploy create-user
 supabase functions deploy update-user
 ```

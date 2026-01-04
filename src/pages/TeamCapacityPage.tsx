@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
+import { getValidRole } from '@/utils/roleUtils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -45,6 +47,7 @@ interface EmployeeCapacity {
 
 export default function TeamCapacityPage() {
     const { employees, allocations, absences, teamEvents } = useApp();
+    const { currentAgency } = useAgency();
 
     const today = new Date();
     const [viewMode, setViewMode] = useState<ViewMode>('month');
@@ -193,6 +196,11 @@ export default function TeamCapacityPage() {
         const styles = getStatusStyles(emp.status, emp.occupancyRate);
         const Icon = styles.icon;
         const hasReductions = emp.absenceReduction > 0 || emp.eventReduction > 0;
+        
+        // Obtener rol válido (nunca vacío)
+        const availableRoles = currentAgency?.settings?.roles || [];
+        const employeeData = employees.find(e => e.id === emp.id);
+        const displayRole = getValidRole(employeeData, availableRoles);
 
         return (
             <div className={cn(
@@ -216,7 +224,7 @@ export default function TeamCapacityPage() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <h4 className="font-bold text-slate-900 truncate">{emp.name}</h4>
-                                <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{emp.role}</p>
+                                <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{displayRole}</p>
                             </div>
                             <Badge variant="outline" className={cn("text-[10px] h-5", styles.bg, styles.text, styles.border)}>
                                 {styles.label}

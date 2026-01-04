@@ -13,7 +13,7 @@ import { useAgency } from '@/contexts/AgencyContext';
 import { useApp } from '@/contexts/AppContext';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { Building2, Users, UserCircle, FolderKanban, Check, ArrowRight, ArrowLeft, Sparkles, X, Plus, Layers, UserPlus, Trash2, Loader2 } from 'lucide-react';
+import { Building2, Users, UserCircle, FolderKanban, Check, ArrowRight, ArrowLeft, Sparkles, X, Plus, Layers, UserPlus, Trash2, Loader2, ShieldCheck } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DEFAULT_PERMISSIONS } from '@/types/permissions';
 
@@ -60,8 +60,8 @@ const CLIENT_COLORS = [
 
 export default function OnboardingWizard() {
     const navigate = useNavigate();
-    const { currentAgency, updateAgencyName, updateSettings, completeSetup, isLoading: isAgencyLoading } = useAgency();
-    const { addClient, addProject, addEmployee, clients } = useApp();
+    const { currentAgency, updateAgencyName, updateSettings, completeSetup, isLoading: isAgencyLoading, refreshAgency, updateUserAgencyRole } = useAgency();
+    const { addClient, addProject, addEmployee, clients, currentUser, updateEmployee } = useApp();
 
     const [instanceId] = useState(() => Math.random().toString(36).substr(2, 9));
     const [currentStep, setCurrentStep] = useState<WizardStep>(() => {
@@ -76,19 +76,34 @@ export default function OnboardingWizard() {
     }, [currentStep]);
 
     // Inicializar estados desde la agencia si ya existen (resiliencia ante remounts)
+    // El rol "Administrador" siempre existe y no se puede eliminar
+    const ADMIN_ROLE_NAME = 'Administrador';
     const [roles, setRoles] = useState<string[]>(() => {
         const agencyRoles = currentAgency?.settings?.roles;
         if (agencyRoles && agencyRoles.length > 0) {
             // Manejar tanto el formato antiguo (string[]) como el nuevo (RolePermissions[])
-            if (typeof (agencyRoles as any)[0] === 'string') return agencyRoles as unknown as string[];
-            return (agencyRoles as any[]).map(r => r.name);
+            if (typeof (agencyRoles as any)[0] === 'string') {
+                const rolesArray = agencyRoles as unknown as string[];
+                // Asegurar que "Administrador" esté presente
+                if (!rolesArray.includes(ADMIN_ROLE_NAME)) {
+                    return [ADMIN_ROLE_NAME, ...rolesArray];
+                }
+                return rolesArray;
+            }
+            const rolesArray = (agencyRoles as any[]).map(r => r.name);
+            // Asegurar que "Administrador" esté presente
+            if (!rolesArray.includes(ADMIN_ROLE_NAME)) {
+                return [ADMIN_ROLE_NAME, ...rolesArray];
+            }
+            return rolesArray;
         }
-        return ['Responsable', 'Coordinador', 'Especialista'];
+        // Si no hay roles, crear solo "Administrador"
+        return [ADMIN_ROLE_NAME];
     });
     const [newRole, setNewRole] = useState('');
 
     const [departments, setDepartments] = useState<string[]>(() => {
-        return currentAgency?.settings?.departments || ['SEO', 'PPC'];
+        return currentAgency?.settings?.departments || [];
     });
     const [newDepartment, setNewDepartment] = useState('');
 
@@ -162,10 +177,11 @@ export default function OnboardingWizard() {
         setIsProcessing(true);
         try {
             // Guardar roles en settings de la agencia usando el contexto
-            // Convertir string[] a RolePermissions[] para mantener consistencia con el nuevo sistema
-            const rolesToSave = roles.map(r => ({
+            // El rol "Administrador" siempre tiene todos los permisos
+            // Los demás roles tendrán permisos restringidos
+            const rolesToSave = roles.map((r) => ({
                 name: r,
-                permissions: r.toLowerCase().includes('responsable') || r.toLowerCase().includes('ceo')
+                permissions: r === ADMIN_ROLE_NAME // El rol "Administrador" siempre tiene todos los permisos
                     ? DEFAULT_PERMISSIONS
                     : { ...DEFAULT_PERMISSIONS, can_access_team: false, can_access_agency_settings: false }
             }));
@@ -173,6 +189,52 @@ export default function OnboardingWizard() {
             console.log(`[Onboarding ${instanceId}] Guardando roles:`, rolesToSave);
             await updateSettings({ roles: rolesToSave });
             console.log(`[Onboarding ${instanceId}] Roles guardados correctamente`);
+            
+            // Actualizar el rol del usuario actual al rol "Administrador"
+            if (currentUser && currentAgency?.id) {
+                try {
+                    // Siempre asignar el rol "Administrador" al usuario creador
+                    const newRole = ADMIN_ROLE_NAME;
+                    const newDepartment = currentUser.department || 'General';
+                    
+                    // 1. Actualizar el rol del empleado (esto también sincronizará con user_agencies)
+                    await updateEmployee({
+                        ...currentUser,
+                        role: newRole, // Asignar el primer rol al usuario
+                        department: newDepartment // Mantener departamento temporal hasta que se defina
+                    });
+                    console.log(`[Onboarding ${instanceId}] Rol del empleado actualizado a: ${newRole}`);
+                    
+                    // 2. También actualizar explícitamente en user_agencies para asegurar sincronización
+                    if (currentUser.user_id) {
+                        try {
+                            await updateUserAgencyRole(
+                                currentUser.user_id,
+                                currentAgency.id,
+                                newRole,
+                                newDepartment
+                            );
+                            console.log(`[Onboarding ${instanceId}] Rol en user_agencies actualizado a: ${newRole}`);
+                        } catch (userAgencyError) {
+                            console.warn(`[Onboarding ${instanceId}] Error actualizando user_agencies (puede que ya esté sincronizado):`, userAgencyError);
+                            // No fallar si esto falla, updateEmployee ya sincroniza
+                        }
+                    }
+                    
+                    // 3. Refrescar la agencia para asegurar que los roles estén actualizados
+                    await refreshAgency();
+                    
+                    // 4. Pequeño delay para asegurar que los cambios se propaguen
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    
+                    // 5. Disparar evento para refrescar datos en toda la app
+                    window.dispatchEvent(new CustomEvent('agency-changed'));
+                } catch (error) {
+                    console.error(`[Onboarding ${instanceId}] Error actualizando rol del usuario:`, error);
+                    // No bloqueamos el flujo si falla la actualización del rol
+                }
+            }
+            
             goToNextStep();
         } catch (error) {
             console.error(`[Onboarding ${instanceId}] Error al guardar roles:`, error);
@@ -190,14 +252,26 @@ export default function OnboardingWizard() {
         setIsProcessing(true);
         try {
             // Guardar roles y departamentos en settings de la agencia usando el contexto
-            const rolesToSave = roles.map(r => ({
-                name: r,
-                permissions: r.toLowerCase().includes('responsable') || r.toLowerCase().includes('ceo')
-                    ? DEFAULT_PERMISSIONS
-                    : { ...DEFAULT_PERMISSIONS, can_access_team: false, can_access_agency_settings: false }
-            }));
-
-            await updateSettings({ roles: rolesToSave, departments });
+            // Los roles ya están guardados, solo necesitamos guardar los departamentos
+            await updateSettings({ departments });
+            
+            // Actualizar el departamento del usuario actual al primer departamento creado
+            if (currentUser && departments.length > 0) {
+                try {
+                    await updateEmployee({
+                        ...currentUser,
+                        department: departments[0] // Asignar el primer departamento al usuario
+                    });
+                    console.log(`[Onboarding ${instanceId}] Departamento del usuario actualizado a: ${departments[0]}`);
+                    
+                    // Refrescar la agencia para asegurar que los departamentos estén actualizados
+                    await refreshAgency();
+                } catch (error) {
+                    console.error(`[Onboarding ${instanceId}] Error actualizando departamento del usuario:`, error);
+                    // No bloqueamos el flujo si falla la actualización
+                }
+            }
+            
             goToNextStep();
         } catch (error) {
             console.error('Error al guardar departamentos:', error);
@@ -267,14 +341,25 @@ export default function OnboardingWizard() {
             toast.error('Máximo 10 roles permitidos');
             return;
         }
-        if (newRole.trim() && !roles.includes(newRole.trim())) {
-            setRoles([...roles, newRole.trim()]);
+        const roleToAdd = newRole.trim();
+        if (roleToAdd && !roles.includes(roleToAdd)) {
+            // No permitir crear un rol con el nombre "Administrador"
+            if (roleToAdd === ADMIN_ROLE_NAME) {
+                toast.error('El nombre "Administrador" está reservado para el rol de administrador');
+                return;
+            }
+            setRoles([...roles, roleToAdd]);
             setNewRole('');
         }
     };
 
 
     const removeRole = (roleToRemove: string) => {
+        // No permitir eliminar el rol "Administrador"
+        if (roleToRemove === ADMIN_ROLE_NAME) {
+            toast.error('El rol "Administrador" no se puede eliminar');
+            return;
+        }
         setRoles(roles.filter(r => r !== roleToRemove));
     };
 
@@ -294,24 +379,41 @@ export default function OnboardingWizard() {
         setDepartments(departments.filter(d => d !== deptToRemove));
     };
 
-    const addPendingEmployee = () => {
+    const addPendingEmployee = async () => {
         if (!newEmployee.name.trim() || !newEmployee.email.trim() || newEmployee.password.length < 6) {
             toast.error('Completa nombre, email y contraseña (mín. 6 caracteres)');
             return;
         }
-        if (pendingEmployees.some(e => e.email === newEmployee.email.trim())) {
-            toast.error('Ya existe un empleado con ese email');
+        
+        const cleanEmail = newEmployee.email.trim().toLowerCase();
+        
+        // Verificar duplicados en la lista local
+        if (pendingEmployees.some(e => e.email === cleanEmail)) {
+            toast.error('Ya existe un empleado con ese email en la lista');
             return;
         }
+
+        // Verificar si el email ya existe en la base de datos
+        const { data: existingEmployee } = await supabase
+            .from('employees')
+            .select('id, email')
+            .eq('email', cleanEmail)
+            .single();
+
+        if (existingEmployee) {
+            toast.error('Este email ya está registrado en Timeboxing. Usa otro email o inicia sesión.');
+            return;
+        }
+
         setPendingEmployees([...pendingEmployees, {
             id: crypto.randomUUID(),
             name: newEmployee.name.trim(),
-            email: newEmployee.email.trim().toLowerCase(),
+            email: cleanEmail,
             password: newEmployee.password,
-            role: newEmployee.role || roles[0] || 'Responsable',
-            department: newEmployee.department || departments[0] || 'SEO',
+            role: newEmployee.role || roles[0] || '',
+            department: newEmployee.department || departments[0] || '',
         }]);
-        setNewEmployee({ name: '', email: '', password: '', role: roles[0] || 'Responsable', department: departments[0] || 'SEO' });
+        setNewEmployee({ name: '', email: '', password: '', role: roles[0] || '', department: departments[0] || '' });
     };
 
     const removePendingEmployee = (id: string) => {
@@ -433,9 +535,16 @@ export default function OnboardingWizard() {
                                         roles.map(role => (
                                             <Badge key={role} variant="secondary" className="px-3 py-1.5 text-sm gap-2">
                                                 {role}
-                                                <button onClick={() => removeRole(role)} className="hover:text-red-500">
-                                                    <X className="h-3 w-3" />
-                                                </button>
+                                                {role !== ADMIN_ROLE_NAME && (
+                                                    <button onClick={() => removeRole(role)} className="hover:text-red-500">
+                                                        <X className="h-3 w-3" />
+                                                    </button>
+                                                )}
+                                                {role === ADMIN_ROLE_NAME && (
+                                                    <span className="text-xs text-slate-500" title="Este rol no se puede eliminar">
+                                                        <ShieldCheck className="h-3 w-3" />
+                                                    </span>
+                                                )}
                                             </Badge>
                                         ))
                                     )}
@@ -444,16 +553,23 @@ export default function OnboardingWizard() {
                                     <Input
                                         value={newRole}
                                         onChange={(e) => setNewRole(e.target.value)}
-                                        placeholder="Nuevo rol..."
+                                        placeholder="nuevo rol..."
                                         onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addRole())}
                                     />
                                     <Button type="button" variant="outline" onClick={addRole}>
                                         <Plus className="h-4 w-4" />
                                     </Button>
                                 </div>
-                                <p className="text-sm text-slate-500">
-                                    Los roles te ayudan a organizar tu equipo. Ej: Responsable, Coordinador, Especialista.
-                                </p>
+                                <div className="space-y-2">
+                                    <p className="text-sm text-slate-500">
+                                        Los roles te ayudan a organizar tu equipo. El rol "Administrador" ya está creado y no se puede eliminar.
+                                    </p>
+                                    {roles.includes(ADMIN_ROLE_NAME) && (
+                                        <p className="text-xs text-slate-400 italic">
+                                            💡 Puedes añadir más roles personalizados como: Responsable, Coordinador, Especialista, etc.
+                                        </p>
+                                    )}
+                                </div>
                                 <div className="flex justify-between">
                                     <Button type="button" variant="ghost" onClick={goToPrevStep}>
                                         <ArrowLeft className="h-4 w-4 mr-2" /> Atrás
@@ -488,7 +604,7 @@ export default function OnboardingWizard() {
                                     <Input
                                         value={newDepartment}
                                         onChange={(e) => setNewDepartment(e.target.value)}
-                                        placeholder="Nuevo departamento..."
+                                        placeholder="nuevo departamento..."
                                         onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addDepartment())}
                                     />
                                     <Button type="button" variant="outline" onClick={addDepartment}>
@@ -563,7 +679,7 @@ export default function OnboardingWizard() {
                                                 onValueChange={(v) => setNewEmployee({ ...newEmployee, role: v })}
                                             >
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccionar rol" />
+                                                    <SelectValue placeholder="seleccionar rol" />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {roles.map(role => (
@@ -579,7 +695,7 @@ export default function OnboardingWizard() {
                                                 onValueChange={(v) => setNewEmployee({ ...newEmployee, department: v })}
                                             >
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccionar departamento" />
+                                                    <SelectValue placeholder="seleccionar departamento" />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {departments.map(dept => (

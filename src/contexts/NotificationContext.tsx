@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useApp } from './AppContext';
 import { useAgency } from './AgencyContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Project, Allocation, Deadline } from '@/types';
 import { differenceInDays, endOfMonth, isFriday, getHours } from 'date-fns';
 
@@ -29,6 +30,7 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export function NotificationProvider({ children }: { children: ReactNode }) {
     const { currentUser, allocations, projects } = useApp();
     const { currentAgency } = useAgency();
+    const { hasPermission } = usePermissions();
     const [notifications, setNotifications] = useState<Notification[]>([]);
 
     // Load notifications from local storage on mount
@@ -63,10 +65,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     // --- POLLING LOGIC ---
 
     // 1. Budget Overrun (For Managers/Admins only) 
-    // Let's assume Managers or the project owner/lead.
-    // For now, if user role is Responsable or Coordinador.
+    // Verificar permisos usando el sistema de permisos dinámico
     useEffect(() => {
-        if (!currentUser || !['Responsable', 'Coordinador'].includes(currentUser.role)) return;
+        if (!currentUser || !(hasPermission('can_access_agency_settings') || hasPermission('can_access_team'))) return;
 
         const notifiedKey = `budget_alert_projects`;
         const notifiedIdsStr = localStorage.getItem(notifiedKey);

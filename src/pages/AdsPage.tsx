@@ -1165,7 +1165,7 @@ export default function AdsPage() {
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger className="bg-white">
-                            <SelectValue placeholder="Selecciona..." />
+                            <SelectValue placeholder="selecciona..." />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useGoals } from '@/contexts/GoalsContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +36,7 @@ interface KeyResultItem {
 export default function OkrsPage() {
     const { projects, clients, updateProject, currentUser, employees, allocations } = useApp();
     const { professionalGoals, addProfessionalGoal, updateProfessionalGoal, deleteProfessionalGoal } = useGoals();
+    const { hasPermission } = usePermissions();
 
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState('projects');
@@ -73,10 +75,7 @@ export default function OkrsPage() {
         }
     }, [currentUser]);
 
-    const isAdminOrManager = useMemo(() => {
-        if (!currentUser) return false;
-        return ['Responsable', 'Coordinador'].includes(currentUser.role);
-    }, [currentUser]);
+    const isAdminOrManager = hasPermission('can_access_agency_settings') || hasPermission('can_access_team');
 
     // --- COMPUTED DATA ---
 
@@ -542,7 +541,7 @@ export default function OkrsPage() {
                                 <Label>Proyecto</Label>
                                 <Select value={formData.projectId} onValueChange={(v) => setFormData(p => ({ ...p, projectId: v }))}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Seleccionar proyecto..." />
+                                        <SelectValue placeholder="seleccionar proyecto..." />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {projects.filter(p => p.status === 'active').map(p => (
@@ -556,7 +555,7 @@ export default function OkrsPage() {
                         <div className="space-y-2">
                             <Label>Objetivo principal</Label>
                             <Input
-                                placeholder="Ej: Mejorar skills de React..."
+                                placeholder="Ej: mejorar skills de React..."
                                 value={formData.title}
                                 onChange={e => setFormData(p => ({ ...p, title: e.target.value }))}
                             />
@@ -628,7 +627,7 @@ export default function OkrsPage() {
                                                     value={kr.text}
                                                     onChange={(e) => handleUpdateKeyResult(kr.id, { text: e.target.value })}
                                                     className="bg-transparent border-0 h-auto p-0 focus-visible:ring-0 shadow-none font-medium text-slate-700 placeholder:text-slate-400"
-                                                    placeholder="Descripción del resultado..."
+                                                    placeholder="descripción del resultado..."
                                                 />
                                             </div>
 
@@ -660,7 +659,7 @@ export default function OkrsPage() {
                                         {newKrType === 'numeric' && (
                                             <Input
                                                 type="number"
-                                                placeholder="Max"
+                                                placeholder="max"
                                                 className="w-16 h-9 bg-white border-0 shadow-sm"
                                                 value={newKrTarget}
                                                 onChange={(e) => setNewKrTarget(Number(e.target.value))}

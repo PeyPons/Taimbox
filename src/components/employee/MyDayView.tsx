@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/contexts/AppContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Circle, Clock, ArrowRight, Sun, Calendar, AlertTriangle, FileText, Zap, X } from 'lucide-react';
@@ -12,6 +14,8 @@ import { Input } from '@/components/ui/input';
 
 export function MyDayView() {
     const { projects, clients, currentUser, updateAllocation, allocations } = useApp();
+    const { canAccess } = usePermissions();
+    const navigate = useNavigate();
     const [completedToday, setCompletedToday] = useState<string[]>([]);
 
     // State for the completion popover
@@ -211,9 +215,23 @@ export function MyDayView() {
                     <p className="text-slate-500 max-w-md mt-1 mb-4">
                         Has completado tus tareas prioritarias. ¡Buen trabajo!
                     </p>
-                    <Button variant="outline" className="gap-2">
+                    <Button 
+                        variant="outline" 
+                        className="gap-2"
+                        onClick={() => {
+                            // Navegar a la página de planificación según los permisos del usuario
+                            if (canAccess('/planner')) {
+                                navigate('/planner');
+                            } else if (canAccess('/deadlines')) {
+                                navigate('/deadlines');
+                            } else {
+                                // Si no tiene acceso a ninguna, navegar al dashboard
+                                navigate('/dashboard');
+                            }
+                        }}
+                    >
                         <Calendar className="h-4 w-4" />
-                        Ver Planificación Completa
+                        Ver planificación completa
                     </Button>
                 </CardContent>
             </Card>
@@ -284,12 +302,12 @@ export function MyDayView() {
                                             <span>{task.hoursAssigned}h</span>
                                         </div>
                                         {isReport && (
-                                            <div title="Prioridad Informe" className="flex items-center justify-center h-6 w-6 rounded bg-indigo-50 text-indigo-600">
+                                            <div title="Prioridad informe" className="flex items-center justify-center h-6 w-6 rounded bg-indigo-50 text-indigo-600">
                                                 <FileText className="h-3 w-3" />
                                             </div>
                                         )}
                                         {isHighValue && !isReport && !isBlocking && (
-                                            <div title="Proyecto Importante" className="flex items-center justify-center h-6 w-6 rounded bg-amber-50 text-amber-600">
+                                            <div title="Proyecto importante" className="flex items-center justify-center h-6 w-6 rounded bg-amber-50 text-amber-600">
                                                 <Zap className="h-3 w-3" />
                                             </div>
                                         )}
@@ -316,7 +334,7 @@ export function MyDayView() {
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-2">
                                                     <div className="space-y-1">
-                                                        <Label className="text-[10px] text-muted-foreground">Horas Reales</Label>
+                                                        <Label className="text-[10px] text-muted-foreground">Horas reales</Label>
                                                         <Input
                                                             type="number"
                                                             className="h-7 text-xs"

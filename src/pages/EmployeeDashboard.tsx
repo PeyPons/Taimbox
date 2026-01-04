@@ -73,7 +73,7 @@ export default function EmployeeDashboard() {
   const [newTasks, setNewTasks] = useState<NewTaskRow[]>([]);
   const [openComboboxId, setOpenComboboxId] = useState<string | null>(null);
   const [showWeeklyDialog, setShowWeeklyDialog] = useState(false);
-  // Default to "projects" (Mi Semana) for better focus
+  // Default to "projects" (Mi semana) for better focus
   const [activeTab, setActiveTab] = useState('projects');
 
   const { showTour, resetTour } = useWelcomeTour();
@@ -503,7 +503,7 @@ export default function EmployeeDashboard() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start h-auto p-1 bg-white border border-slate-200 flex-nowrap overflow-x-auto custom-scrollbar gap-2">
           <TabsTrigger value="projects" className="px-4 py-2 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700">
-            <ListPlus className="h-4 w-4 mr-2" /> Mi Semana
+            <ListPlus className="h-4 w-4 mr-2" /> Mi semana
           </TabsTrigger>
           <TabsTrigger value="dependencies" className="px-4 py-2 data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700">
             <AlertCircle className="h-4 w-4 mr-2" /> Prioridades
@@ -515,7 +515,7 @@ export default function EmployeeDashboard() {
             <div className="flex items-center gap-2">Compañeros</div>
           </TabsTrigger>
           <TabsTrigger value="metrics" className="px-4 py-2">
-            <div className="flex items-center gap-2">Mis Métricas</div>
+            <div className="flex items-center gap-2">Mis métricas</div>
           </TabsTrigger>
         </TabsList>
 
@@ -557,7 +557,7 @@ export default function EmployeeDashboard() {
         />
       )}
 
-      {/* Dialogo Gestión Interna */}
+      {/* Diálogo Gestión Interna */}
       <Dialog open={isAddingExtra} onOpenChange={setIsAddingExtra}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -567,7 +567,7 @@ export default function EmployeeDashboard() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Nombre</Label>
-              <Input placeholder="Ej: Reunión de equipo" value={extraTaskName} onChange={e => setExtraTaskName(e.target.value)} />
+              <Input placeholder="Ej: reunión de equipo" value={extraTaskName} onChange={e => setExtraTaskName(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>Horas</Label>
@@ -581,7 +581,7 @@ export default function EmployeeDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialogo Añadir Tareas (Bulk) */}
+      {/* Diálogo Añadir Tareas (Bulk) */}
       <Dialog open={isAddingTasks} onOpenChange={setIsAddingTasks}>
         <DialogContent className="sm:max-w-[1100px] h-[80vh] flex flex-col p-0 gap-0 overflow-hidden">
           <DialogHeader className="px-6 py-4 border-b shrink-0">

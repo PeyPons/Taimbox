@@ -636,12 +636,15 @@ export default function DeadlinesPage() {
     }
 
     // Filtrar vista para empleados (solo ver lo asignado a ellos)
-    if (!isManager && currentUser) {
-      filtered = filtered.filter(p => {
-        const deadline = deadlines.find(d => d.projectId === p.id && d.month === selectedMonth);
-        return deadline && (deadline.employeeHours[currentUser.id] || 0) > 0;
-      });
-    }
+    // NOTA: Permitimos que los empleados vean todos los proyectos de la agencia
+    // para que puedan ver qué proyectos existen, incluso si aún no tienen asignaciones.
+    // Si se desea restringir más, se puede descomentar el filtro siguiente:
+    // if (!isManager && currentUser) {
+    //   filtered = filtered.filter(p => {
+    //     const deadline = deadlines.find(d => d.projectId === p.id && d.month === selectedMonth);
+    //     return deadline && (deadline.employeeHours[currentUser.id] || 0) > 0;
+    //   });
+    // }
 
     // Ordenar proyectos
     filtered.sort((a, b) => {
@@ -1738,7 +1741,7 @@ export default function DeadlinesPage() {
           <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
             <Select value={filterId} onValueChange={setFilterId}>
               <SelectTrigger className="w-[120px] sm:w-[140px] h-8 sm:h-9 text-xs sm:text-sm">
-                <SelectValue placeholder="Tipo de Proyecto" />
+                <SelectValue placeholder="Tipo de proyecto" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
@@ -1784,7 +1787,7 @@ export default function DeadlinesPage() {
             </Select>
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'client' | 'assigned' | 'remaining')}>
               <SelectTrigger className="w-[100px] sm:w-[140px] h-8 sm:h-9 text-xs sm:text-sm">
-                <SelectValue placeholder="Ordenar" />
+                <SelectValue placeholder="ordenar" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="client">Por cliente</SelectItem>
@@ -2287,7 +2290,7 @@ export default function DeadlinesPage() {
                   <FormItem>
                     <FormLabel>Nombre de la tarea</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ej: Deadline afecta a todos, Creación timeboxing" {...field} />
+                      <Input placeholder="Ej: deadline afecta a todos, creación timeboxing" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

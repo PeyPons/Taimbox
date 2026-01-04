@@ -162,11 +162,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Ref para acceder a employees sin trigger re-renders
   const employeesRef = useRef<Employee[]>([]);
 
+  // Cache para evitar recargas innecesarias
+  const dataCacheRef = useRef<{ agencyId: string | null; timestamp: number }>({
+    agencyId: null,
+    timestamp: 0
+  });
+  
+  const DATA_CACHE_DURATION = 30 * 1000; // 30 segundos
+
   const fetchData = useCallback(async (skipLoading = false, dateRange?: { start: Date; end: Date }) => {
     // No cargar datos si no hay agencia seleccionada
     if (!currentAgency?.id) {
       setIsLoading(false);
       return;
+    }
+
+    // Verificar cache (solo si skipLoading es true, para evitar cache en carga inicial)
+    if (skipLoading) {
+      const now = Date.now();
+      if (
+        dataCacheRef.current.agencyId === currentAgency.id &&
+        (now - dataCacheRef.current.timestamp) < DATA_CACHE_DURATION
+      ) {
+        // Datos en cache y aún válidos
+        return;
+      }
     }
 
     if (!skipLoading) {
@@ -188,7 +208,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       // Tablas pequeñas: cargar todo (filtrado por agency_id)
       // Tablas grandes con fechas: filtrar por rango
-      const [empRes, cliRes, projRes, allocRes, absRes, evRes, feedbackRes] = await Promise.all([
+      // Para employees, también necesitamos obtener los roles específicos de user_agencies
+      const [empRes, cliRes, projRes, allocRes, absRes, evRes, feedbackRes, userAgenciesRes] = await Promise.all([
         supabase.from('employees').select('*').eq('agency_id', agencyId),
         supabase.from('clients').select('*').eq('agency_id', agencyId),
         supabase.from('projects').select('*').eq('agency_id', agencyId),
@@ -214,32 +235,62 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           .eq('employees.agency_id', agencyId)
           .gte('week_start_date', startStr)
           .lte('week_start_date', endStr),
+        // Obtener roles específicos de la agencia desde user_agencies
+        supabase.from('user_agencies')
+          .select('user_id, role, department')
+          .eq('agency_id', agencyId),
       ]);
 
       if (empRes.data) {
-        const mappedEmployees: Employee[] = empRes.data.map((e: SupabaseEmployee) => ({
-          id: e.id,
-          agencyId: e.agency_id,
-          name: e.name,
-          role: (e.role || 'SEO') as EmployeeRole,
-          avatarUrl: e.avatar_url,
-          defaultWeeklyCapacity: e.default_weekly_capacity,
-          workSchedule: (e.work_schedule || { monday: 8, tuesday: 8, wednesday: 8, thursday: 8, friday: 8, saturday: 0, sunday: 0 }) as WorkSchedule,
-          isActive: e.is_active,
-          first_name: e.first_name,
-          last_name: e.last_name,
-          email: e.email,
-          user_id: e.user_id,
-          department: e.department,
-          hourlyRate: e.hourly_rate || 0,
-          crmUserId: e.crm_user_id,
-          welcomeTourCompleted: e.welcome_tour_completed === true,
-          deadlinesTourCompleted: e.deadlines_tour_completed === true,
-          plannerTourCompleted: e.planner_tour_completed === true,
-          permissions: e.permissions || undefined
-        }));
+        // Crear un mapa de user_id -> role/department desde user_agencies para esta agencia
+        const userAgenciesMap = new Map<string, { role: string | null; department: string | null }>();
+        if (userAgenciesRes?.data) {
+          userAgenciesRes.data.forEach((ua: any) => {
+            if (ua.user_id) {
+              userAgenciesMap.set(ua.user_id, {
+                role: ua.role || null,
+                department: ua.department || null
+              });
+            }
+          });
+        }
+
+        const mappedEmployees: Employee[] = empRes.data.map((e: SupabaseEmployee) => {
+          // Obtener rol y departamento específicos de la agencia desde user_agencies
+          const userAgencyInfo = e.user_id ? userAgenciesMap.get(e.user_id) : null;
+          const roleForAgency = userAgencyInfo?.role || e.role || '';
+          const departmentForAgency = userAgencyInfo?.department || e.department || null;
+
+          return {
+            id: e.id,
+            agencyId: e.agency_id,
+            name: e.name,
+            role: (roleForAgency) as EmployeeRole, // Usar rol específico de la agencia
+            avatarUrl: e.avatar_url,
+            defaultWeeklyCapacity: e.default_weekly_capacity,
+            workSchedule: (e.work_schedule || { monday: 8, tuesday: 8, wednesday: 8, thursday: 8, friday: 8, saturday: 0, sunday: 0 }) as WorkSchedule,
+            isActive: e.is_active,
+            first_name: e.first_name,
+            last_name: e.last_name,
+            email: e.email,
+            user_id: e.user_id,
+            department: departmentForAgency, // Usar departamento específico de la agencia
+            hourlyRate: e.hourly_rate || 0,
+            crmUserId: e.crm_user_id,
+            welcomeTourCompleted: e.welcome_tour_completed === true,
+            deadlinesTourCompleted: e.deadlines_tour_completed === true,
+            plannerTourCompleted: e.planner_tour_completed === true,
+            permissions: e.permissions || undefined
+          };
+        });
         setEmployees(mappedEmployees);
         employeesRef.current = mappedEmployees; // Actualizar ref
+        
+        // Actualizar cache
+        dataCacheRef.current = {
+          agencyId: currentAgency.id,
+          timestamp: Date.now()
+        };
       }
 
       if (cliRes.data) {
@@ -479,6 +530,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       fetchData();
     }
   }, [isAuthInitialized, isAgencyLoading, currentAgency?.id, fetchData]);
+  
+  // Refrescar datos cuando cambia la agencia actual (sin mostrar loader)
+  const prevAgencyIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (currentAgency?.id && prevAgencyIdRef.current !== null && prevAgencyIdRef.current !== currentAgency.id) {
+      // La agencia cambió, recargar datos
+      fetchData(true); // skipLoading para evitar parpadeos
+    }
+    prevAgencyIdRef.current = currentAgency?.id || null;
+  }, [currentAgency?.id, fetchData]);
+
+  // Escuchar evento personalizado para recargar datos cuando cambia la agencia
+  useEffect(() => {
+    const handleAgencyChanged = async () => {
+      if (currentAgency?.id) {
+        // Invalidar cache para forzar recarga completa
+        dataCacheRef.current = {
+          agencyId: null,
+          timestamp: 0
+        };
+        
+        // Limpiar employees para forzar recarga con el rol correcto de la nueva agencia
+        setEmployees([]);
+        employeesRef.current = [];
+        setCurrentUser(undefined);
+        hasLinkedUserRef.current = null;
+        
+        // Recargar datos de la nueva agencia
+        await fetchData(false);
+      }
+    };
+
+    window.addEventListener('agency-changed', handleAgencyChanged);
+    return () => {
+      window.removeEventListener('agency-changed', handleAgencyChanged);
+    };
+  }, [currentAgency?.id, fetchData]);
 
   // Reaccionar a cambios de usuario (login/logout) - SOLO cuando employees esté cargado
   useEffect(() => {
@@ -498,10 +586,185 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Buscar empleado por user_id o por email (usar ref para evitar dependencia)
-      const foundEmployee = employeesRef.current.find(e =>
+      let foundEmployee = employeesRef.current.find(e =>
         e.user_id === authUser.id ||
         (e.email && authUser.email && e.email.toLowerCase() === authUser.email.toLowerCase())
       );
+
+      // Si no se encuentra en los empleados cargados, buscar directamente en BD por user_id
+      // Esto puede pasar si el usuario tiene múltiples agencias y currentAgency no es la correcta
+      if (!foundEmployee && authUser.id && currentAgency?.id) {
+        console.log('[AppContext] Empleado no encontrado en agencia actual, buscando en BD por user_id...');
+        // Usar función async dentro del useEffect
+        (async () => {
+          try {
+            // Primero buscar en user_agencies para ver en qué agencias está el usuario
+            const { data: userAgenciesData } = await supabase
+              .from('user_agencies')
+              .select('agency_id, role, department')
+              .eq('user_id', authUser.id);
+
+            // Verificar si el usuario está en la agencia actual según user_agencies
+            const isInCurrentAgency = userAgenciesData?.some(ua => ua.agency_id === currentAgency.id) || false;
+
+            // Buscar empleado que pertenezca a la agencia actual
+            let employeeData = null;
+            let employeeError = null;
+            
+            // Siempre buscar primero en la agencia actual
+            const { data: currentAgencyEmployee, error: currentAgencyError } = await supabase
+              .from('employees')
+              .select('*')
+              .eq('user_id', authUser.id)
+              .eq('agency_id', currentAgency.id)
+              .maybeSingle();
+            
+            if (currentAgencyEmployee) {
+              employeeData = currentAgencyEmployee;
+              employeeError = currentAgencyError;
+            } else if (isInCurrentAgency) {
+              // El usuario está en user_agencies para esta agencia pero no hay empleado
+              // Esto puede pasar si se acaba de invitar al usuario
+              // Buscar cualquier empleado con este user_id y crear uno temporal si es necesario
+              const { data: anyEmployee, error: anyEmployeeError } = await supabase
+                .from('employees')
+                .select('*')
+                .eq('user_id', authUser.id)
+                .limit(1)
+                .maybeSingle();
+              
+              if (anyEmployee) {
+                // Hay un empleado pero en otra agencia, actualizar su agency_id temporalmente para esta búsqueda
+                employeeData = { ...anyEmployee, agency_id: currentAgency.id };
+                employeeError = anyEmployeeError;
+              } else {
+                // No hay empleado en ninguna agencia pero está en user_agencies para esta agencia
+                // Esto puede pasar si se acaba de invitar al usuario y aún no se ha sincronizado
+                // Intentar recargar los datos de la agencia después de un breve delay
+                console.log('[AppContext] Usuario en user_agencies pero sin empleado, recargando datos en 1 segundo...');
+                setTimeout(() => {
+                  console.log('[AppContext] Recargando datos después de detectar usuario en user_agencies sin empleado');
+                  fetchData(true);
+                }, 1000);
+                // Por ahora, establecer currentUser como undefined para evitar errores
+                // La recarga debería encontrar el empleado
+                setCurrentUser(undefined);
+                return;
+              }
+            } else if (userAgenciesData && userAgenciesData.length > 0) {
+              // Si no está en la agencia actual pero está en user_agencies, buscar en la primera agencia disponible
+              const firstAgencyId = userAgenciesData[0].agency_id;
+              const { data: firstAgencyEmployee, error: firstAgencyError } = await supabase
+                .from('employees')
+                .select('*')
+                .eq('user_id', authUser.id)
+                .eq('agency_id', firstAgencyId)
+                .maybeSingle();
+              employeeData = firstAgencyEmployee;
+              employeeError = firstAgencyError;
+            } else {
+              // Si no está en user_agencies, buscar cualquier empleado con este user_id
+              // (puede ser un usuario antiguo que aún no tiene registro en user_agencies)
+              const { data: anyEmployee, error: anyEmployeeError } = await supabase
+                .from('employees')
+                .select('*')
+                .eq('user_id', authUser.id)
+                .limit(1)
+                .maybeSingle();
+              employeeData = anyEmployee;
+              employeeError = anyEmployeeError;
+            }
+
+            if (employeeError) {
+              console.error('[AppContext] Error buscando empleado en BD:', employeeError);
+            } else if (employeeData) {
+              // Obtener rol específico de la agencia desde user_agencies
+              const { data: userAgencyData } = await supabase
+                .from('user_agencies')
+                .select('role, department')
+                .eq('user_id', authUser.id)
+                .eq('agency_id', currentAgency.id)
+                .maybeSingle();
+
+              // Usar rol de user_agencies si existe, sino usar el de employees
+              const roleForAgency = userAgencyData?.role || employeeData.role || '';
+              const departmentForAgency = userAgencyData?.department || employeeData.department || null;
+
+              // Mapear el empleado encontrado
+              const mappedEmployee: Employee = {
+                id: employeeData.id,
+                agencyId: employeeData.agency_id,
+                name: employeeData.name,
+                role: (roleForAgency) as EmployeeRole, // Usar rol específico de la agencia
+                avatarUrl: employeeData.avatar_url,
+                defaultWeeklyCapacity: employeeData.default_weekly_capacity,
+                workSchedule: (employeeData.work_schedule || { monday: 8, tuesday: 8, wednesday: 8, thursday: 8, friday: 8, saturday: 0, sunday: 0 }) as WorkSchedule,
+                isActive: employeeData.is_active,
+                first_name: employeeData.first_name,
+                last_name: employeeData.last_name,
+                email: employeeData.email,
+                user_id: employeeData.user_id,
+                department: departmentForAgency, // Usar departamento específico de la agencia
+                hourlyRate: employeeData.hourly_rate || 0,
+                crmUserId: employeeData.crm_user_id,
+                welcomeTourCompleted: employeeData.welcome_tour_completed === true,
+                deadlinesTourCompleted: employeeData.deadlines_tour_completed === true,
+                plannerTourCompleted: employeeData.planner_tour_completed === true,
+                permissions: employeeData.permissions || undefined
+              };
+              
+              // Solo establecer como currentUser si pertenece a la agencia actual
+              // Si el empleado está en otra agencia, cambiar a esa agencia o recargar datos
+              if (mappedEmployee.agencyId === currentAgency.id) {
+                // Actualizar el estado con el empleado encontrado
+                setCurrentUser(mappedEmployee);
+                hasLinkedUserRef.current = authUser.id;
+                
+                // Agregar el empleado a la lista de employees si no está
+                setEmployees(prev => {
+                  const exists = prev.find(e => e.id === mappedEmployee.id);
+                  if (!exists) {
+                    return [...prev, mappedEmployee];
+                  }
+                  // Si existe, actualizar con el rol correcto de la agencia
+                  return prev.map(e => e.id === mappedEmployee.id ? mappedEmployee : e);
+                });
+                employeesRef.current = [...employeesRef.current.filter(e => e.id !== mappedEmployee.id), mappedEmployee];
+                
+                console.log('[AppContext] Empleado encontrado en BD para agencia actual:', mappedEmployee.email, 'Rol:', roleForAgency);
+              } else {
+                // El empleado está en otra agencia, necesitamos cambiar de agencia o recargar
+                console.log('[AppContext] Empleado encontrado pero en otra agencia. Cambiando a agencia:', mappedEmployee.agencyId);
+                // Disparar evento para cambiar de agencia
+                window.dispatchEvent(new CustomEvent('agency-changed', { detail: { targetAgencyId: mappedEmployee.agencyId } }));
+                // También establecer el empleado temporalmente para evitar el error de "no encontrado"
+                setCurrentUser(mappedEmployee);
+                hasLinkedUserRef.current = authUser.id;
+              }
+            } else {
+              // No se encontró empleado en ninguna parte
+              console.warn('[AppContext] No se encontró empleado en BD para usuario Auth en agencia actual:', authUser.email, currentAgency.id);
+              console.log('[AppContext] user_agencies data:', userAgenciesData);
+              
+              // Si el usuario está en user_agencies para esta agencia pero no hay empleado,
+              // puede ser un problema de sincronización - intentar recargar después de un delay
+              if (isInCurrentAgency) {
+                console.log('[AppContext] Usuario está en user_agencies para esta agencia pero no hay empleado. Recargando en 2 segundos...');
+                setTimeout(() => {
+                  console.log('[AppContext] Recargando datos después de detectar inconsistencia');
+                  fetchData(true);
+                }, 2000);
+              }
+              
+              setCurrentUser(undefined);
+            }
+          } catch (error) {
+            console.error('[AppContext] Error en búsqueda de empleado:', error);
+            setCurrentUser(undefined);
+          }
+        })();
+        return; // Salir temprano si estamos buscando en BD
+      }
 
       if (foundEmployee) {
         // Marcar como vinculado INMEDIATAMENTE (antes de cualquier setState)
@@ -550,8 +813,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       throw new Error('No agency selected');
     }
 
+    const agencyId = employee.agencyId || currentAgency.id;
+
     const { data, error } = await supabase.from('employees').insert({
-      agency_id: employee.agencyId || currentAgency.id,
+      agency_id: agencyId,
       name: employee.name,
       first_name: employee.first_name,
       last_name: employee.last_name,
@@ -593,12 +858,70 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         plannerTourCompleted: data.planner_tour_completed === true
       };
       setEmployees(prev => [...prev, mappedEmployee]);
+
+      // Si el empleado tiene user_id, crear relación en user_agencies (nuevo sistema)
+      // Y sincronizar roles entre employees y user_agencies
+      if (data.user_id) {
+        try {
+          // Verificar si ya existe la relación
+          const { data: existingRelation } = await supabase
+            .from('user_agencies')
+            .select('id, role, department')
+            .eq('user_id', data.user_id)
+            .eq('agency_id', agencyId)
+            .maybeSingle();
+
+          if (!existingRelation) {
+            // Crear relación si no existe
+            const { error: userAgencyError } = await supabase
+              .from('user_agencies')
+              .insert({
+                user_id: data.user_id,
+                agency_id: agencyId,
+                role: employee.role,
+                department: employee.department,
+                is_primary: false // No es primaria porque el usuario ya tiene otra agencia
+              });
+
+            if (userAgencyError) {
+              // Solo loguear, no fallar si la tabla no existe aún
+              if (userAgencyError.code !== '42P01') {
+                console.warn('Error creando relación user_agencies:', userAgencyError);
+              }
+            }
+          } else {
+            // Si existe, sincronizar roles si son diferentes
+            if (
+              existingRelation.role !== employee.role ||
+              existingRelation.department !== employee.department
+            ) {
+              const { error: syncError } = await supabase
+                .from('user_agencies')
+                .update({
+                  role: employee.role,
+                  department: employee.department
+                })
+                .eq('id', existingRelation.id);
+
+              if (syncError && syncError.code !== '42P01') {
+                console.warn('Error sincronizando roles en user_agencies:', syncError);
+              }
+            }
+          }
+        } catch (err) {
+          // Ignorar errores de user_agencies para mantener compatibilidad
+          console.warn('Error al crear/sincronizar relación user_agencies:', err);
+        }
+      }
     }
   }, [currentAgency?.id]);
 
   const updateEmployee = useCallback(async (employee: Employee) => {
     // 1. Actualización optimista del estado local
     setEmployees(prev => prev.map(e => e.id === employee.id ? employee : e));
+    
+    // Si es el usuario actual, actualizar también currentUser
+    setCurrentUser(prev => prev?.id === employee.id ? employee : prev);
 
     // 2. Actualizar en Base de Datos (Employees table)
     const { error } = await supabase.from('employees').update({
@@ -628,7 +951,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       throw error;
     }
 
-    // 3. Sincronizar con Supabase Auth (si tiene usuario vinculado y hay cambio de email)
+    // 3. Sincronizar roles con user_agencies si el empleado tiene user_id
+    if (employee.user_id && employee.agencyId) {
+      try {
+        // Buscar relación existente
+        const { data: existingRelation } = await supabase
+          .from('user_agencies')
+          .select('id, role, department')
+          .eq('user_id', employee.user_id)
+          .eq('agency_id', employee.agencyId)
+          .maybeSingle();
+
+        if (existingRelation) {
+          // Sincronizar roles si son diferentes
+          if (
+            existingRelation.role !== employee.role ||
+            existingRelation.department !== employee.department
+          ) {
+            const { error: syncError } = await supabase
+              .from('user_agencies')
+              .update({
+                role: employee.role,
+                department: employee.department
+              })
+              .eq('id', existingRelation.id);
+
+            if (syncError && syncError.code !== '42P01') {
+              console.warn('Error sincronizando roles en user_agencies:', syncError);
+            }
+          }
+        }
+      } catch (err) {
+        // Ignorar errores de user_agencies para mantener compatibilidad
+        console.warn('Error al sincronizar user_agencies:', err);
+      }
+    }
+
+    // 4. Sincronizar con Supabase Auth (si tiene usuario vinculado y hay cambio de email)
     // Nota: update-user también maneja contraseñas, pero aquí solo tenemos email.
     if (employee.user_id && employee.email) {
       try {
@@ -1074,9 +1433,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const getProjectById = useCallback((id: string) => projects.find(p => p.id === id), [projects]);
   const getClientById = useCallback((id: string) => clients.find(c => c.id === id), [clients]);
 
+  // Calcular isAdmin dinámicamente basado en los permisos del rol
+  const isAdmin = useMemo(() => {
+    if (!currentUser || !currentAgency) return false;
+    const userRoleName = currentUser.role || '';
+    const agencyRoles = currentAgency.settings?.roles || [];
+    
+    // Buscar el rol del usuario en la configuración
+    const roleConfig = agencyRoles.find((r: any) => {
+      if (typeof r === 'string') return r.toLowerCase() === userRoleName.toLowerCase();
+      return r.name && r.name.toLowerCase() === userRoleName.toLowerCase();
+    });
+
+    // Si el rol tiene permisos de admin, es admin
+    if (roleConfig && typeof roleConfig !== 'string' && roleConfig.permissions) {
+      return roleConfig.permissions.can_access_agency_settings === true;
+    }
+
+    // Fallback: verificar keywords de admin
+    // Nota: 'coordinador' se removió de esta lista ya que no debería tener permisos de admin por defecto
+    // Los coordinadores deben tener permisos explícitos configurados en la agencia
+    const MANAGER_KEYWORDS = ['manager', 'admin', 'director', 'ceo', 'founder', 'head', 'lead', 'responsable'];
+    return MANAGER_KEYWORDS.some(k => userRoleName.toLowerCase().includes(k));
+  }, [currentUser, currentAgency]);
+
   const value = useMemo(() => ({
     currentUser,
-    isAdmin: currentUser?.role === 'Responsable' || currentUser?.role === 'Coordinador',
+    isAdmin,
     employees, clients, projects, allocations, absences, teamEvents, weeklyFeedback, isLoading,
     addEmployee, updateEmployee, deleteEmployee, toggleEmployeeActive,
     addClient, updateClient, deleteClient,

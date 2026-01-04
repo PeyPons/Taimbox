@@ -56,7 +56,9 @@ export function usePermissions() {
     }
 
     // 3. Fallback: Si el rol contiene keywords de manager/admin, dar todos los permisos
-    const MANAGER_KEYWORDS = ['manager', 'admin', 'director', 'ceo', 'founder', 'head', 'lead', 'responsable', 'coordinador'];
+    // Nota: 'coordinador' se removió de esta lista ya que no debería tener permisos de admin por defecto
+    // Los coordinadores deben tener permisos explícitos configurados en la agencia
+    const MANAGER_KEYWORDS = ['manager', 'admin', 'director', 'ceo', 'founder', 'head', 'lead', 'responsable'];
     const roleLower = userRoleName.toLowerCase();
     if (MANAGER_KEYWORDS.some(k => roleLower.includes(k))) {
       return DEFAULT_PERMISSIONS;

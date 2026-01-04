@@ -1050,7 +1050,7 @@ export default function ProjectsPage() {
               <div className="space-y-2">
                 <Label>Cliente asociado</Label>
                 <Select value={formData.clientId} onValueChange={(val) => setFormData({ ...formData, clientId: val })}>
-                  <SelectTrigger><SelectValue placeholder="Seleccionar cliente" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="seleccionar cliente" /></SelectTrigger>
                   <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>

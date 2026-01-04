@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -8,11 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/lib/supabase';
 import { useAgency } from '@/contexts/AgencyContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import {
   Building2, Settings, Users, Palette, Save, Loader2,
   Filter, Plus, Trash2, HelpCircle, Info, X,
-  Rocket, Facebook, Megaphone, PlusCircle, ShieldCheck
+  Rocket, Facebook, Megaphone, PlusCircle, ShieldCheck, AlertTriangle
 } from 'lucide-react';
 import { CustomProjectFilter, RolePermissions } from '@/types';
 import { DEFAULT_FILTERS } from '@/hooks/useProjectFilters';
@@ -35,7 +37,9 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function AgencySettingsPage() {
-  const { currentAgency, refreshAgency, updateSettings, updateAgencyName, isLoading: isAgencyLoading } = useAgency();
+  const navigate = useNavigate();
+  const { currentAgency, refreshAgency, updateSettings, updateAgencyName, deleteAgency, userAgencies, isLoading: isAgencyLoading } = useAgency();
+  const { hasPermission } = usePermissions();
   const [saving, setSaving] = useState(false);
 
   // Estado local para edición
@@ -62,31 +66,50 @@ export default function AgencySettingsPage() {
   const [isAddingAccount, setIsAddingAccount] = useState(false);
   const [connectedAccounts, setConnectedAccounts] = useState<any[]>([]);
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
+  const [isDeleteAgencyDialogOpen, setIsDeleteAgencyDialogOpen] = useState(false);
+  const [isDeletingAgency, setIsDeletingAgency] = useState(false);
 
   // Roles and Departments state
-  // Safely initialize roles handling legacy string[] data
+  // El rol "Administrador" siempre existe y no se puede eliminar
+  const ADMIN_ROLE_NAME = 'Administrador';
   const [roles, setRoles] = useState<RolePermissions[]>(() => {
     const existingRoles = currentAgency?.settings?.roles;
-    if (!existingRoles) {
-      return [
-        { name: 'Responsable', permissions: DEFAULT_PERMISSIONS },
-        { name: 'Especialista', permissions: { ...DEFAULT_PERMISSIONS, can_access_team: false, can_access_agency_settings: false } }
-      ];
+    if (!existingRoles || existingRoles.length === 0) {
+      // Si no hay roles, crear el rol "Administrador" por defecto
+      return [{
+        name: ADMIN_ROLE_NAME,
+        permissions: DEFAULT_PERMISSIONS
+      }];
     }
     // Migration check: if elements are strings, convert them
-    if (existingRoles.length > 0 && typeof existingRoles[0] === 'string') {
-      return (existingRoles as unknown as string[]).map(r => ({
+    if (typeof existingRoles[0] === 'string') {
+      const rolesArray = (existingRoles as unknown as string[]).map(r => ({
         name: r,
-        permissions: r.toLowerCase().includes('responsable') || r.toLowerCase().includes('ceo')
+        permissions: r === ADMIN_ROLE_NAME || r.toLowerCase().includes('responsable') || r.toLowerCase().includes('ceo')
           ? DEFAULT_PERMISSIONS
           : { ...DEFAULT_PERMISSIONS, can_access_team: false, can_access_agency_settings: false }
       }));
+      // Asegurar que "Administrador" esté presente
+      if (!rolesArray.find(r => r.name === ADMIN_ROLE_NAME)) {
+        return [{ name: ADMIN_ROLE_NAME, permissions: DEFAULT_PERMISSIONS }, ...rolesArray];
+      }
+      return rolesArray;
     }
-    return existingRoles as RolePermissions[];
+    const rolesArray = existingRoles as RolePermissions[];
+    // Asegurar que "Administrador" esté presente y tenga los permisos correctos
+    const adminRole = rolesArray.find(r => r.name === ADMIN_ROLE_NAME);
+    if (!adminRole) {
+      return [{ name: ADMIN_ROLE_NAME, permissions: DEFAULT_PERMISSIONS }, ...rolesArray];
+    }
+    // Asegurar que el rol "Administrador" siempre tenga can_access_agency_settings: true
+    if (adminRole.permissions && adminRole.permissions.can_access_agency_settings !== true) {
+      adminRole.permissions.can_access_agency_settings = true;
+    }
+    return rolesArray;
   });
 
   const [departments, setDepartments] = useState<string[]>(
-    currentAgency?.settings?.departments || ['SEO', 'PPC']
+    currentAgency?.settings?.departments || []
   );
   const [expandedRoleIndex, setExpandedRoleIndex] = useState<number | null>(null);
   const [newDepartment, setNewDepartment] = useState('');
@@ -126,13 +149,10 @@ export default function AgencySettingsPage() {
         }));
         setRoles(migratedRoles);
       } else {
-        setRoles(currentAgency.settings?.roles || [
-          { name: 'Responsable', permissions: DEFAULT_PERMISSIONS },
-          { name: 'Especialista', permissions: { ...DEFAULT_PERMISSIONS, can_access_team: false, can_access_agency_settings: false } }
-        ]);
+        setRoles(currentAgency.settings?.roles || []);
       }
 
-      setDepartments(currentAgency.settings?.departments || ['SEO', 'PPC']);
+      setDepartments(currentAgency.settings?.departments || []);
       fetchConnectedAccounts();
     }
   }, [currentAgency]);
@@ -155,6 +175,12 @@ export default function AgencySettingsPage() {
   };
 
   const deleteRole = (index: number) => {
+    const roleToDelete = roles[index];
+    // No permitir eliminar el rol "Administrador"
+    if (roleToDelete.name === 'Administrador') {
+      toast.error('El rol "Administrador" no se puede eliminar');
+      return;
+    }
     const newRoles = [...roles];
     newRoles.splice(index, 1);
     setRoles(newRoles);
@@ -162,6 +188,11 @@ export default function AgencySettingsPage() {
   };
 
   const updateRoleName = (index: number, name: string) => {
+    // No permitir cambiar el nombre del rol "Administrador"
+    if (roles[index].name === 'Administrador') {
+      toast.error('El nombre del rol "Administrador" no se puede modificar');
+      return;
+    }
     const newRoles = [...roles];
     newRoles[index].name = name;
     setRoles(newRoles);
@@ -169,11 +200,19 @@ export default function AgencySettingsPage() {
 
   const toggleRolePermission = (roleIndex: number, permission: keyof UserPermissions, checked: boolean) => {
     const newRoles = [...roles];
-    // Asegurarse de que permissions objeto existe
-    if (!newRoles[roleIndex].permissions) {
-      newRoles[roleIndex].permissions = { ...DEFAULT_PERMISSIONS };
+    const role = newRoles[roleIndex];
+    
+    // El rol "Administrador" siempre debe tener can_access_agency_settings: true
+    if (role.name === 'Administrador' && permission === 'can_access_agency_settings' && !checked) {
+      toast.error('El rol "Administrador" siempre debe tener permisos de administrador');
+      return;
     }
-    newRoles[roleIndex].permissions[permission] = checked;
+    
+    // Asegurarse de que permissions objeto existe
+    if (!role.permissions) {
+      role.permissions = { ...DEFAULT_PERMISSIONS };
+    }
+    role.permissions[permission] = checked;
     setRoles(newRoles);
   };
 
@@ -198,11 +237,25 @@ export default function AgencySettingsPage() {
       return;
     }
 
+    // Asegurar que el rol "Administrador" siempre tenga can_access_agency_settings: true
+    const rolesToSave = roles.map(role => {
+      if (role.name === ADMIN_ROLE_NAME) {
+        return {
+          ...role,
+          permissions: {
+            ...role.permissions,
+            can_access_agency_settings: true
+          }
+        };
+      }
+      return role;
+    });
+
     setSaving(true);
     try {
       await updateSettings({
         modules,
-        roles,
+        roles: rolesToSave,
         departments,
         branding: {
           ...currentAgency.settings?.branding,
@@ -435,16 +488,25 @@ export default function AgencySettingsPage() {
                     onClick={(e) => e.stopPropagation()}
                     className="h-8 w-40 font-medium"
                     placeholder="Nombre del rol"
+                    disabled={role.name === 'Administrador'}
                   />
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-red-400 hover:text-red-600"
-                      onClick={(e) => { e.stopPropagation(); deleteRole(index); }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {role.name === 'Administrador' && (
+                      <Badge variant="outline" className="text-xs border-primary/30 text-primary">
+                        <ShieldCheck className="h-3 w-3 mr-1" />
+                        Fijo
+                      </Badge>
+                    )}
+                    {role.name !== 'Administrador' && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-red-400 hover:text-red-600"
+                        onClick={(e) => { e.stopPropagation(); deleteRole(index); }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -495,6 +557,27 @@ export default function AgencySettingsPage() {
                         </div>
                       ))}
                     </div>
+                    <Separator />
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-slate-500 uppercase">Administración</Label>
+                      <div className="flex items-center justify-between py-1 px-2 rounded hover:bg-white">
+                        <Label htmlFor={`role-${index}-can_access_agency_settings`} className="text-sm font-normal cursor-pointer flex-1">
+                          {PERMISSION_LABELS.can_access_agency_settings}
+                        </Label>
+                        <Switch
+                          id={`role-${index}-can_access_agency_settings`}
+                          checked={role.permissions && role.permissions.can_access_agency_settings !== false}
+                          onCheckedChange={(checked) => toggleRolePermission(index, 'can_access_agency_settings', checked)}
+                          disabled={role.name === 'Administrador'}
+                          className="scale-75"
+                        />
+                      </div>
+                      {role.name === 'Administrador' && (
+                        <p className="text-xs text-slate-500 italic px-2">
+                          El rol "Administrador" siempre tiene este permiso activado
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -516,7 +599,7 @@ export default function AgencySettingsPage() {
           <CardContent className="space-y-4">
             <div className="flex gap-2">
               <Input
-                placeholder="Nuevo departamento..."
+                placeholder="nuevo departamento..."
                 value={newDepartment}
                 onChange={(e) => setNewDepartment(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && addNewDepartment()}
@@ -760,7 +843,7 @@ export default function AgencySettingsPage() {
                   <Input
                     value={filter.description || ''}
                     onChange={(e) => updateFilterDescription(filter.id, e.target.value)}
-                    placeholder="Ej: Proyectos de posicionamiento orgánico"
+                    placeholder="Ej: proyectos de posicionamiento orgánico"
                     className="text-sm"
                   />
                 </div>
@@ -889,7 +972,7 @@ export default function AgencySettingsPage() {
                   type="password"
                   value={integrations.googleAdsDevToken || ''}
                   onChange={(e) => setIntegrations(prev => ({ ...prev, googleAdsDevToken: e.target.value }))}
-                  placeholder="Token de desarrollador"
+                  placeholder="token de desarrollador"
                 />
               </div>
             </div>
@@ -943,7 +1026,33 @@ export default function AgencySettingsPage() {
       <Separator />
 
       {/* Botón Guardar */}
-      <div className="flex justify-end">
+      <div className="flex justify-between items-center gap-4">
+        <div className="flex gap-2">
+          {/* Botón para gestionar miembros - solo si tiene permisos */}
+          {hasPermission('can_access_agency_settings') && (
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/agencies/${currentAgency?.id}/manage`)}
+              className="gap-2"
+            >
+              <Users className="h-4 w-4" />
+              Gestionar miembros
+            </Button>
+          )}
+          
+          {/* Zona de peligro - Eliminar agencia */}
+          {userAgencies.length === 1 && hasPermission('can_access_agency_settings') && (
+            <Button
+              variant="destructive"
+              onClick={() => setIsDeleteAgencyDialogOpen(true)}
+              className="gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              Eliminar agencia
+            </Button>
+          )}
+        </div>
+        
         <Button
           onClick={handleSave}
           disabled={saving}
@@ -957,7 +1066,7 @@ export default function AgencySettingsPage() {
           ) : (
             <>
               <Save className="h-4 w-4 mr-2" />
-              Guardar Cambios
+              Guardar cambios
             </>
           )}
         </Button>
@@ -974,6 +1083,71 @@ export default function AgencySettingsPage() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDeleteAccount} className="bg-red-600 hover:bg-red-700">
               Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Diálogo de eliminación de agencia */}
+      <AlertDialog open={isDeleteAgencyDialogOpen} onOpenChange={setIsDeleteAgencyDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              Eliminar agencia permanentemente
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p className="font-medium text-slate-900">
+                Esta acción no se puede deshacer.
+              </p>
+              <p>
+                Se eliminará permanentemente la agencia <strong>{currentAgency?.name}</strong> y todos sus datos asociados:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-sm text-slate-600 ml-2">
+                <li>Proyectos y clientes</li>
+                <li>Asignaciones y deadlines</li>
+                <li>Miembros y relaciones</li>
+                <li>Configuraciones y módulos</li>
+                <li>Datos históricos</li>
+              </ul>
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-800 font-medium">
+                  ⚠️ Esta es tu única agencia. Si la eliminas, perderás acceso a todos los datos.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingAgency}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!currentAgency?.id) return;
+                setIsDeletingAgency(true);
+                try {
+                  await deleteAgency(currentAgency.id);
+                  toast.success('Agencia eliminada correctamente');
+                  // Redirigir a la página de agencias o login
+                  window.location.href = '/agencies';
+                } catch (error: any) {
+                  console.error('Error eliminando agencia:', error);
+                  toast.error(error.message || 'Error al eliminar la agencia');
+                  setIsDeletingAgency(false);
+                }
+              }}
+              disabled={isDeletingAgency}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeletingAgency ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Eliminando...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Eliminar permanentemente
+                </>
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

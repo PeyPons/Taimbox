@@ -790,7 +790,7 @@ export default function WeeklyForecastPage() {
             <div className="flex items-center gap-4 text-sm">
               <Select value={filterId} onValueChange={setFilterId}>
                 <SelectTrigger className="w-[140px] h-8 text-xs">
-                  <SelectValue placeholder="Tipo de Proyecto" />
+                  <SelectValue placeholder="Tipo de proyecto" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
@@ -1432,7 +1432,7 @@ export default function WeeklyForecastPage() {
                           <Label className="text-sm font-medium">Compañero destino</Label>
                           <Select value={redistributeToEmployee} onValueChange={setRedistributeToEmployee}>
                             <SelectTrigger>
-                              <SelectValue placeholder="Seleccionar compañero destino" />
+                              <SelectValue placeholder="seleccionar compañero destino" />
                             </SelectTrigger>
                             <SelectContent>
                               {employees
@@ -1453,7 +1453,7 @@ export default function WeeklyForecastPage() {
                           <Label className="text-sm font-medium">Semana destino</Label>
                           <Select value={redistributeWeek} onValueChange={setRedistributeWeek}>
                             <SelectTrigger>
-                              <SelectValue placeholder="Seleccionar semana" />
+                              <SelectValue placeholder="seleccionar semana" />
                             </SelectTrigger>
                             <SelectContent>
                               {(futureWeeks || []).map((week, idx) => {

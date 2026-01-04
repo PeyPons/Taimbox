@@ -48,14 +48,26 @@ serve(async (req) => {
       throw new Error('La contraseña es obligatoria y debe tener al menos 6 caracteres')
     }
 
-    console.log(`Intentando crear usuario: ${email}`)
+    const cleanEmail = email.trim().toLowerCase()
+    console.log(`Intentando crear usuario: ${cleanEmail}`)
 
-    // 5. Crear el usuario en el sistema de Auth
+    // 5. Verificar que el email no exista ya en la tabla employees
+    const { data: existingEmployee } = await supabaseAdmin
+      .from('employees')
+      .select('id')
+      .eq('email', cleanEmail)
+      .single()
+
+    if (existingEmployee) {
+      throw new Error('Este email ya está registrado en Timeboxing. Inicia sesión o usa otro email.')
+    }
+
+    // 6. Crear el usuario en el sistema de Auth
     const { data: user, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: email.trim().toLowerCase(),
+      email: cleanEmail,
       password: password,
       email_confirm: true, // Confirmamos el email automáticamente para que pueda entrar ya
-      user_metadata: { full_name: name || email }
+      user_metadata: { full_name: name || cleanEmail }
     })
 
     if (authError) {
@@ -78,7 +90,7 @@ serve(async (req) => {
 
     console.log(`Usuario creado exitosamente: ${user.user.id}`)
 
-    // 6. Devolver el ID del usuario creado al frontend
+    // 7. Devolver el ID del usuario creado al frontend
     return new Response(
       JSON.stringify({ user: user.user }),
       {

@@ -68,17 +68,30 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
   // Obtener roles y departamentos dinámicos de la agencia
   // Helper to extract role names safely handling both new object structure and legacy strings
   const getRoleNames = (roles: (string | import('@/types').RolePermissions)[] | undefined): string[] => {
-    if (!roles) return ['Responsable', 'Coordinador', 'Especialista'];
+    if (!roles || roles.length === 0) return [];
     return roles.map(r => typeof r === 'string' ? r : r.name);
   };
 
   const availableRoles = getRoleNames(currentAgency?.settings?.roles);
-  const availableDepartments = currentAgency?.settings?.departments || ['SEO', 'PPC'];
+  const availableDepartments = currentAgency?.settings?.departments || [];
+
+  // Debug: verificar qué valores se están usando
+  useEffect(() => {
+    if (open) {
+      console.log('[EmployeeDialog] Roles disponibles:', availableRoles);
+      console.log('[EmployeeDialog] Departamentos disponibles:', availableDepartments);
+      console.log('[EmployeeDialog] Settings de la agencia:', currentAgency?.settings);
+    }
+  }, [open, availableRoles, availableDepartments, currentAgency]);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [showProjects, setShowProjects] = useState(false);
   const [showGoals, setShowGoals] = useState(false);
   const [showAbsences, setShowAbsences] = useState(false);
+
+  // Calcular valores por defecto dinámicamente
+  const defaultRole = availableRoles.length > 0 ? availableRoles[0] : '';
+  const defaultDepartment = availableDepartments.length > 0 ? availableDepartments[0] : '';
 
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeFormSchema),
@@ -86,8 +99,8 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
       name: '',
       email: '',
       password: '',
-      role: availableRoles[0] || 'Responsable',
-      department: availableDepartments[0] || 'SEO',
+      role: defaultRole,
+      department: defaultDepartment,
       capacity: 40,
       hourlyRate: 0,
       crmUserId: '',
@@ -97,6 +110,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
 
   const workSchedule = form.watch('workSchedule');
 
+  // Actualizar el form cuando cambien los roles/departamentos disponibles o cuando se abra el diálogo
   useEffect(() => {
     if (open) {
       if (employeeToEdit) {
@@ -104,8 +118,8 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
           name: employeeToEdit.name,
           email: employeeToEdit.email || '',
           password: '',
-          role: employeeToEdit.role || availableRoles[0] || 'Responsable',
-          department: employeeToEdit.department || availableDepartments[0] || 'SEO',
+          role: employeeToEdit.role || defaultRole,
+          department: employeeToEdit.department || defaultDepartment,
           capacity: employeeToEdit.defaultWeeklyCapacity,
           hourlyRate: employeeToEdit.hourlyRate || 0,
           crmUserId: employeeToEdit.crmUserId || '',
@@ -116,8 +130,8 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
           name: '',
           email: '',
           password: '',
-          role: availableRoles[0] || 'Responsable',
-          department: availableDepartments[0] || 'SEO',
+          role: defaultRole,
+          department: defaultDepartment,
           capacity: 40,
           hourlyRate: 0,
           crmUserId: '',
@@ -125,7 +139,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
         });
       }
     }
-  }, [open, employeeToEdit, form]);
+  }, [open, employeeToEdit, form, defaultRole, defaultDepartment]);
 
   const onSubmit = async (data: EmployeeFormValues) => {
     setIsProcessing(true);

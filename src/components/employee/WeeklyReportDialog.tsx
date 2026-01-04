@@ -728,7 +728,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                           <Label className="text-xs">Semana destino</Label>
                                           <Select value={moveToMyWeek[task.id]} onValueChange={(val) => setMoveToMyWeek(prev => ({ ...prev, [task.id]: val }))}>
                                             <SelectTrigger className="h-8 text-xs">
-                                              <SelectValue placeholder="Seleccionar semana" />
+                                              <SelectValue placeholder="seleccionar semana" />
                                             </SelectTrigger>
                                             <SelectContent>
                                               {futureWeeks.map(w => (
@@ -759,7 +759,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                             <Label className="text-xs">Compañero</Label>
                                             <Select value={moveToEmployee[task.id]} onValueChange={(val) => setMoveToEmployee(prev => ({ ...prev, [task.id]: val }))}>
                                               <SelectTrigger className="h-8 text-xs">
-                                                <SelectValue placeholder="Seleccionar" />
+                                                <SelectValue placeholder="seleccionar" />
                                               </SelectTrigger>
                                               <SelectContent>
                                                 {employees.filter(e => e.isActive && e.id !== employeeId).map(e => (

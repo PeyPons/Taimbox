@@ -33,7 +33,7 @@ const SUGGESTED_QUESTIONS = [
   { icon: <Users className="w-3 h-3" />, text: "¿Cómo está la carga del equipo?", category: "carga" },
   { icon: <Target className="w-3 h-3" />, text: "¿Quién suele fallar en sus estimaciones?", category: "fiabilidad" },
   { icon: <AlertTriangle className="w-3 h-3" />, text: "¿Hay dependencias bloqueantes?", category: "dependencias" },
-  { icon: <Calendar className="w-3 h-3" />, text: "¿Qué tareas arrastramos de semanas pasadas?", category: "planificacion" },
+  { icon: <Calendar className="w-3 h-3" />, text: "¿Qué tareas arrastramos de semanas pasadas?", category: "planificación" },
   { icon: <Zap className="w-3 h-3" />, text: "Dame un resumen ejecutivo de gestión", category: "resumen" },
 ];
 

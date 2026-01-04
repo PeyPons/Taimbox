@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
 import { useApp } from '@/contexts/AppContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAgency } from '@/contexts/AgencyContext';
-import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
+import { AgencySelectorCompact } from '@/components/agencies/AgencySelectorCompact';
 import {
   LayoutDashboard,
   Users,
@@ -74,13 +75,19 @@ function NavGroup({ label, icon: Icon, children, isActive = false }: NavGroupPro
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { currentUser } = useApp();
   const { canAccess } = usePermissions();
   const { currentAgency } = useAgency();
+  const { signOut } = useAuth();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.href = '/login';
+    try {
+      await signOut();
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
   };
 
   const modules = currentAgency?.settings?.modules || {
@@ -156,10 +163,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           {isSuperior && (
             <div className="space-y-4">
               {/* PLANIFICACIÓN */}
-              {(canAccess('/planner') || (modules.deadlines && canAccess('/deadlines'))) && (
+              {(canAccess('/planner') || (modules.deadlines && canAccess('/deadlines')) || (modules.weeklyFeedback && canAccess('/weekly-forecast'))) && (
                 <NavGroup
                   label="Planificación"
-                  isActive={location.pathname === '/planner' || location.pathname === '/deadlines'}
+                  isActive={location.pathname === '/planner' || location.pathname === '/deadlines' || location.pathname === '/weekly-forecast'}
                 >
                   {canAccess('/planner') && (
                     <NavLink to="/planner" icon={LayoutDashboard} active={location.pathname === '/planner'}>
@@ -171,14 +178,19 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       Deadlines
                     </NavLink>
                   )}
+                  {modules.weeklyFeedback && canAccess('/weekly-forecast') && (
+                    <NavLink to="/weekly-forecast" icon={TrendingUp} active={location.pathname === '/weekly-forecast'}>
+                      Weekly
+                    </NavLink>
+                  )}
                 </NavGroup>
               )}
 
               {/* EQUIPO */}
-              {(canAccess('/team') || canAccess('/team-capacity') || canAccess('/weekly-forecast') || canAccess('/okrs')) && (
+              {(canAccess('/team') || canAccess('/team-capacity') || canAccess('/okrs')) && (
                 <NavGroup
                   label="Equipo"
-                  isActive={['/team', '/team-capacity', '/weekly-forecast', '/okrs'].includes(location.pathname)}
+                  isActive={['/team', '/team-capacity', '/okrs'].includes(location.pathname)}
                 >
                   {canAccess('/team') && (
                     <NavLink to="/team" icon={Users} active={location.pathname === '/team'}>
@@ -188,11 +200,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   {canAccess('/team-capacity') && (
                     <NavLink to="/team-capacity" icon={TrendingUp} active={location.pathname === '/team-capacity'}>
                       Capacidad
-                    </NavLink>
-                  )}
-                  {modules.weeklyFeedback && canAccess('/weekly-forecast') && (
-                    <NavLink to="/weekly-forecast" icon={TrendingUp} active={location.pathname === '/weekly-forecast'}>
-                      Weekly
                     </NavLink>
                   )}
                   {canAccess('/okrs') && (
@@ -269,43 +276,40 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/30">
-          {canAccess('/agency') && (
-            <div className="mb-2">
-              <NavLink to="/agency" icon={Settings} active={location.pathname === '/agency'}>
-                Configuración
-              </NavLink>
-            </div>
-          )}
-
+        <div className="p-4 border-t border-slate-800 bg-slate-950/30 space-y-3">
           {currentUser ? (
-            <div className="mt-2 px-2 flex items-center gap-3 group">
-              <Avatar className="h-8 w-8 border border-primary/30">
-                <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
-                <AvatarFallback className="bg-primary text-white">
-                  {currentUser?.name?.charAt(0) || <User className="h-4 w-4" />}
-                </AvatarFallback>
-              </Avatar>
+            <>
+              <div className="px-2 flex items-center gap-3 group">
+                <Avatar className="h-8 w-8 border border-primary/30">
+                  <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
+                  <AvatarFallback className="bg-primary text-white">
+                    {currentUser?.name?.charAt(0) || <User className="h-4 w-4" />}
+                  </AvatarFallback>
+                </Avatar>
 
-              <div className="flex-1 overflow-hidden min-w-0">
-                <p className="text-sm font-medium text-slate-200 truncate" title={currentUser.name}>
-                  {currentUser.first_name || currentUser.name}
-                </p>
-                <p className="text-xs text-slate-500 truncate" title={currentUser.email}>
-                  {currentUser.email}
-                </p>
+                <div className="flex-1 overflow-hidden min-w-0">
+                  <p className="text-sm font-medium text-slate-200 truncate" title={currentUser.name}>
+                    {currentUser.first_name || currentUser.name}
+                  </p>
+                  <p className="text-xs text-slate-500 truncate" title={currentUser.email}>
+                    {currentUser.email}
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleLogout}
+                  className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-950/30 rounded-md transition-colors"
+                  title="Cerrar sesión"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
               </div>
-
-              <button
-                onClick={handleLogout}
-                className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-950/30 rounded-md transition-colors opacity-0 group-hover:opacity-100"
-                title="Cerrar sesión"
-              >
-                <LogOut className="h-4 w-4" />
-              </button>
-            </div>
+              
+              {/* Agency Selector Compacto - Al final del footer */}
+              <AgencySelectorCompact />
+            </>
           ) : (
-            <div className="mt-4 px-2 flex items-center gap-3 opacity-50">
+            <div className="px-2 flex items-center gap-3 opacity-50">
               <div className="h-8 w-8 rounded-full bg-slate-800 animate-pulse" />
               <div className="space-y-1">
                 <div className="h-2 w-20 bg-slate-800 rounded animate-pulse" />

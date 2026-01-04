@@ -1,6 +1,8 @@
 import { Employee, Project, Allocation, TeamEvent, Absence } from '@/types';
 import { WeekCell } from './WeekCell';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
+import { getValidRole } from '@/utils/roleUtils';
 import { format, startOfWeek } from 'date-fns';
 import { isCurrentWeek, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 
@@ -20,6 +22,11 @@ export function EmployeeRow({
 }: EmployeeRowProps) {
   
   const { getEmployeeLoadForWeek } = useApp();
+  const { currentAgency } = useAgency();
+  
+  // Obtener rol válido (nunca vacío)
+  const availableRoles = currentAgency?.settings?.roles || [];
+  const displayRole = getValidRole(employee, availableRoles);
 
   return (
     <div className="contents group">
@@ -46,7 +53,7 @@ export function EmployeeRow({
           </div>
           <div className="flex flex-col min-w-0">
              <span className="font-semibold text-sm text-foreground truncate">{employee.name}</span>
-             <span className="text-[10px] text-muted-foreground uppercase tracking-wider truncate">{employee.role}</span>
+             <span className="text-[10px] text-muted-foreground uppercase tracking-wider truncate">{displayRole}</span>
           </div>
         </div>
       </div>

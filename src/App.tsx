@@ -71,6 +71,8 @@ const DeadlinesPage = lazyWithRetry(() => import("./pages/DeadlinesPage"));
 const WeeklyForecastPage = lazyWithRetry(() => import("./pages/WeeklyForecastPage"));
 const OkrsPage = lazyWithRetry(() => import("./pages/OkrsPage"));
 const AgencySettingsPage = lazyWithRetry(() => import("./pages/AgencySettingsPage"));
+const AgenciesPage = lazyWithRetry(() => import("./pages/AgenciesPage"));
+const AgencyManagementPage = lazyWithRetry(() => import("./pages/AgencyManagementPage"));
 const TeamCapacityPage = lazyWithRetry(() => import("./pages/TeamCapacityPage"));
 const OnboardingWizard = lazyWithRetry(() => import("./components/onboarding/OnboardingWizard"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
@@ -127,6 +129,8 @@ const App = () => (
                           <Route path="/informes-clientes" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/informes-clientes"><ClientReportsPage /></PermissionProtectedRoute></Suspense>} />
                           <Route path="/settings" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><SettingsPage /></PermissionProtectedRoute></Suspense>} />
                           <Route path="/agency" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><AgencySettingsPage /></PermissionProtectedRoute></Suspense>} />
+                          <Route path="/agencies" element={<Suspense fallback={<PageLoader />}><AgenciesPage /></Suspense>} />
+                          <Route path="/agencies/:id/manage" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><AgencyManagementPage /></PermissionProtectedRoute></Suspense>} />
                           <Route path="/ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/ads"><ModuleGuard module="ppc"><AdsPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
                           <Route path="/meta-ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/meta-ads"><ModuleGuard module="ppc"><MetaAdsPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
                           <Route path="/weekly-forecast" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/weekly-forecast"><ModuleGuard module="weeklyFeedback"><WeeklyForecastPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />

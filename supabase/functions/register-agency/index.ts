@@ -67,11 +67,17 @@ serve(async (req) => {
         console.log(`Registrando: ${cleanEmail} para agencia "${cleanAgencyName}"`)
 
         // 5. Verificar que el email no exista ya
-        const { data: existingEmployee } = await supabaseAdmin
+        const { data: existingEmployee, error: checkError } = await supabaseAdmin
             .from('employees')
             .select('id')
             .eq('email', cleanEmail)
-            .single()
+            .maybeSingle()
+
+        // Si hay un error que no sea "no encontrado", lanzarlo
+        if (checkError && checkError.code !== 'PGRST116') {
+            console.error("Error verificando email:", checkError)
+            throw new Error('Error al verificar el email. Inténtalo de nuevo.')
+        }
 
         if (existingEmployee) {
             throw new Error('Este email ya está registrado en Timeboxing. Inicia sesión o usa otro email.')
@@ -108,11 +114,17 @@ serve(async (req) => {
 
         // Intentar encontrar un slug único
         while (attempt < maxAttempts) {
-            const { data: existingAgency } = await supabaseAdmin
+            const { data: existingAgency, error: slugCheckError } = await supabaseAdmin
                 .from('agencies')
                 .select('id')
                 .eq('slug', finalSlug)
-                .single()
+                .maybeSingle()
+
+            // Si hay un error que no sea "no encontrado", lanzarlo
+            if (slugCheckError && slugCheckError.code !== 'PGRST116') {
+                console.error("Error verificando slug:", slugCheckError)
+                throw new Error('Error al verificar el slug. Inténtalo de nuevo.')
+            }
 
             if (!existingAgency) {
                 break // Slug disponible
@@ -138,7 +150,29 @@ serve(async (req) => {
                     },
                     // Filtros vacíos por defecto
                     projectFilters: [],
-                    roles: ['Responsable', 'Coordinador', 'Especialista'],
+                    // Roles: crear automáticamente el rol "Administrador" con todos los permisos
+                    roles: [{
+                        name: 'Administrador',
+                        permissions: {
+                            can_access_planner: true,
+                            can_access_projects: true,
+                            can_access_clients: true,
+                            can_access_team: true,
+                            can_access_team_capacity: true,
+                            can_access_reports: true,
+                            can_access_client_reports: true,
+                            can_access_google_ads: true,
+                            can_access_meta_ads: true,
+                            can_access_ads_reports: true,
+                            can_access_deadlines: true,
+                            can_access_okrs: true,
+                            can_access_weekly_forecast: true,
+                            can_access_weekly: true,
+                            can_access_settings: true,
+                            can_access_agency_settings: true
+                        }
+                    }],
+                    departments: [],
                     branding: {},
                     features: {},
                     integrations: {} // Objeto para claves API
@@ -163,6 +197,10 @@ serve(async (req) => {
         console.log(`Agencia creada: ${agencyData.id}`)
 
         // 8. Crear empleado admin vinculado
+        // Asignar automáticamente el rol "Administrador" que se creó en los settings
+        const adminRole = 'Administrador'; // Rol fijo que siempre existe
+        const temporaryDepartment = 'General'; // Departamento temporal - se actualizará en el onboarding
+
         const { data: employeeData, error: employeeError } = await supabaseAdmin
             .from('employees')
             .insert({
@@ -170,8 +208,8 @@ serve(async (req) => {
                 name: cleanName,
                 email: cleanEmail,
                 user_id: userId,
-                role: 'Responsable',
-                department: 'SEO',
+                role: adminRole,
+                department: temporaryDepartment,
                 default_weekly_capacity: 40,
                 work_schedule: { monday: 8, tuesday: 8, wednesday: 8, thursday: 8, friday: 8, saturday: 0, sunday: 0 },
                 is_active: true,
@@ -190,6 +228,27 @@ serve(async (req) => {
 
         console.log(`Empleado creado: ${employeeData.id}`)
 
+        // 9. Crear relación en user_agencies (nuevo sistema de múltiples agencias)
+        // Verificar si la tabla existe antes de insertar
+        const { error: userAgencyError } = await supabaseAdmin
+            .from('user_agencies')
+            .insert({
+                user_id: userId,
+                agency_id: agencyData.id,
+                role: adminRole,
+                department: temporaryDepartment,
+                is_primary: true // Primera agencia = primaria
+            })
+
+        if (userAgencyError) {
+            // Si la tabla no existe aún, solo loguear el error pero no fallar
+            // Esto permite compatibilidad con instalaciones que aún no tienen la migración
+            console.warn("Error creando relación user_agencies (puede que la tabla no exista aún):", userAgencyError)
+            // No hacemos rollback porque el sistema antiguo sigue funcionando
+        } else {
+            console.log(`Relación user_agencies creada para usuario ${userId} y agencia ${agencyData.id}`)
+        }
+
         // 9. Retornar datos para auto-login
         return new Response(
             JSON.stringify({
@@ -204,12 +263,18 @@ serve(async (req) => {
             }
         )
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error general:", error)
-        const errorMessage = error?.message || 'Error desconocido al registrar'
+        console.error("Error stack:", error?.stack)
+        console.error("Error details:", JSON.stringify(error, null, 2))
+        
+        const errorMessage = error?.message || error?.toString() || 'Error desconocido al registrar'
 
         return new Response(
-            JSON.stringify({ error: errorMessage }),
+            JSON.stringify({ 
+                error: errorMessage,
+                details: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+            }),
             {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 status: 400

@@ -16,6 +16,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
+import { getValidRole, getValidDepartment } from '@/utils/roleUtils';
 import { toast } from 'sonner';
 
 interface EmployeeCardProps {
@@ -24,6 +26,15 @@ interface EmployeeCardProps {
 
 export const EmployeeCard = memo(function EmployeeCard({ employee }: EmployeeCardProps) {
   const { deleteEmployee, toggleEmployeeActive } = useApp();
+  const { currentAgency } = useAgency();
+  
+  // Obtener roles y departamentos disponibles
+  const availableRoles = currentAgency?.settings?.roles || [];
+  const availableDepartments = currentAgency?.settings?.departments || [];
+  
+  // Obtener rol y departamento válidos (nunca vacíos)
+  const displayRole = getValidRole(employee, availableRoles);
+  const displayDepartment = getValidDepartment(employee, availableDepartments);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -60,11 +71,11 @@ export const EmployeeCard = memo(function EmployeeCard({ employee }: EmployeeCar
           </CardTitle>
           <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
             <Badge variant="secondary" className="font-normal bg-slate-100 text-slate-600 hover:bg-slate-200">
-              {employee.role}
+              {displayRole}
             </Badge>
-            {employee.department && (
+            {displayDepartment && (
               <span className="flex items-center gap-1 truncate">
-                <Building2 className="h-3 w-3" /> {employee.department}
+                <Building2 className="h-3 w-3" /> {displayDepartment}
               </span>
             )}
           </div>
