@@ -17,11 +17,11 @@ serve(async (req) => {
     // 2. Validar variables de entorno
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    
+
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('Variables de entorno faltantes:', { 
-        hasUrl: !!supabaseUrl, 
-        hasKey: !!supabaseServiceKey 
+      console.error('Variables de entorno faltantes:', {
+        hasUrl: !!supabaseUrl,
+        hasKey: !!supabaseServiceKey
       })
       throw new Error('Configuración del servidor incompleta. Contacta al administrador.')
     }
@@ -60,7 +60,7 @@ serve(async (req) => {
 
     if (authError) {
       console.error("Error Auth:", authError)
-      
+
       // Mensajes de error más descriptivos
       if (authError.message?.includes('already registered') || authError.message?.includes('already exists')) {
         throw new Error('Este email ya está registrado. Usa otro email o inicia sesión.')
@@ -81,21 +81,21 @@ serve(async (req) => {
     // 6. Devolver el ID del usuario creado al frontend
     return new Response(
       JSON.stringify({ user: user.user }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
+        status: 200
       }
     )
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error general:", error)
     const errorMessage = error?.message || 'Error desconocido al crear usuario'
-    
+
     return new Response(
       JSON.stringify({ error: errorMessage }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400 
+        status: 400
       }
     )
   }

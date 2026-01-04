@@ -152,6 +152,11 @@ serve(async (req) => {
             console.error("Error creando agencia:", agencyError)
             // Rollback: eliminar usuario de Auth
             await supabaseAdmin.auth.admin.deleteUser(userId)
+
+            if (agencyError.code === '23505' && agencyError.message?.includes('agencies_name_unique')) {
+                throw new Error('El nombre de la empresa ya existe. Por favor elige otro.')
+            }
+
             throw new Error('Error al crear la empresa. Inténtalo de nuevo.')
         }
 

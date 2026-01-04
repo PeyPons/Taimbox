@@ -86,10 +86,64 @@ export default function Login() {
     }
   };
 
+  // Función para verificar disponibilidad
+  const checkAvailability = async (field: 'agencyName' | 'email', value: string) => {
+    if (!value || value.length < 2) return;
+
+    try {
+      const { data: exists, error } = await supabase.rpc('check_availability', {
+        check_type: field === 'agencyName' ? 'agency_name' : 'email',
+        value: value
+      });
+
+      if (error) {
+        console.error('Error verificando disponibilidad:', error);
+        return;
+      }
+
+      if (exists) {
+        if (field === 'agencyName') {
+          registerForm.setError('agencyName', {
+            type: 'manual',
+            message: 'Esta empresa ya existe. Prueba con otro nombre.'
+          });
+        }
+        // Para email no mostramos error específico por seguridad (user enumeration),
+        // pero internamente podríamos manejarlo si quisiéramos ser más explícitos.
+        // Dado que el usuario lo pidió: "que salga un aviso antes de continuar"
+        if (field === 'email') {
+          registerForm.setError('email', {
+            type: 'manual',
+            message: 'Este email ya está registrado.'
+          });
+        }
+      } else {
+        registerForm.clearErrors(field);
+      }
+    } catch (err) {
+      console.error('Error calling RPC:', err);
+    }
+  };
+
   const onRegister = async (data: RegisterFormValues) => {
     setIsRegistering(true);
 
     try {
+      // Doble check antes de enviar
+      const { data: agencyExists } = await supabase.rpc('check_availability', {
+        check_type: 'agency_name',
+        value: data.agencyName
+      });
+
+      if (agencyExists) {
+        registerForm.setError('agencyName', {
+          type: 'manual',
+          message: 'Esta empresa ya existe. Por favor, elige otro nombre.'
+        });
+        setIsRegistering(false);
+        return;
+      }
+
       // Llamar a la edge function para crear usuario + agencia + empleado
       const { data: responseData, error } = await supabase.functions.invoke('register-agency', {
         body: {
@@ -267,6 +321,7 @@ export default function Login() {
                             placeholder="tu@empresa.com"
                             className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                             {...field}
+                            onBlur={(e) => checkAvailability('email', e.target.value)}
                           />
                         </FormControl>
                         <FormMessage />
@@ -279,7 +334,7 @@ export default function Login() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Contraseña</FormLabel>
+                          <FormLabel>Contraseña (mín 6)</FormLabel>
                           <FormControl>
                             <Input
                               type="password"
@@ -322,6 +377,7 @@ export default function Login() {
                             placeholder="Mi Agencia"
                             className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                             {...field}
+                            onBlur={(e) => checkAvailability('agencyName', e.target.value)}
                           />
                         </FormControl>
                         <FormMessage />
@@ -336,7 +392,7 @@ export default function Login() {
                     {isRegistering ? "Creando cuenta..." : "Crear cuenta gratis"}
                   </Button>
                   <p className="text-xs text-center text-slate-500">
-                    Al registrarte, crearás una nueva empresa y serás el administrador.
+                    Al registrarte, crearás una nueva empresa y serás el administrador,
                   </p>
                 </form>
               </Form>
