@@ -56,6 +56,8 @@ export default function EmployeeDashboard() {
 
   const myEmployeeProfile = appCurrentUser || null;
   const isLoadingProfile = isGlobalLoading;
+  const { canAccess } = usePermissions();
+  const isManager = canAccess('/planner') || canAccess('/reports');
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isLoadingMonth, setIsLoadingMonth] = useState(false);
@@ -540,7 +542,7 @@ export default function EmployeeDashboard() {
           </TabsContent>
 
           <TabsContent value="coherence" className="focus-visible:outline-none">
-            <PlanningInconsistenciesCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+            <PlanningInconsistenciesCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} isManager={isManager} />
           </TabsContent>
 
           <TabsContent value="teammates" className="focus-visible:outline-none">

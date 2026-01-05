@@ -180,7 +180,7 @@ export function DemoEmployeeDashboard() {
           {/* 2. COHERENCIA DE PLANIFICACIÓN */}
           <TabsContent value="coherence" className="mt-4">
             <div>
-              <PlanningInconsistenciesCard employeeId={demoEmployee.id} viewDate={currentMonth} />
+              <PlanningInconsistenciesCard employeeId={demoEmployee.id} viewDate={currentMonth} isManager={false} />
             </div>
           </TabsContent>
 
