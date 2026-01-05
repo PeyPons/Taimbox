@@ -22,13 +22,13 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export function AgencySelectorCompact() {
-  const { currentAgency, userAgencies, switchAgency, isLoading, refreshAgency } = useAgency();
+  const { currentAgency, availableAgencies, switchAgency, isLoading, refreshAgency } = useAgency();
   const { hasPermission } = usePermissions();
   const [isSwitching, setIsSwitching] = useState(false);
   const navigate = useNavigate();
 
   // Mostrar solo si hay múltiples agencias o es admin
-  const shouldShow = userAgencies.length > 1 || hasPermission('can_access_agency_settings');
+  const shouldShow = (availableAgencies?.length || 0) > 1 || hasPermission('can_access_agency_settings');
 
   const handleSwitchAgency = async (agencyId: string) => {
     if (agencyId === currentAgency?.id) return;
@@ -56,7 +56,7 @@ export function AgencySelectorCompact() {
     return null;
   }
 
-  const hasMultipleAgencies = userAgencies.length > 1;
+  const hasMultipleAgencies = (availableAgencies?.length || 0) > 1;
   const canManageAgency = hasPermission('can_access_agency_settings');
 
   return (
@@ -75,7 +75,7 @@ export function AgencySelectorCompact() {
                     // Si solo hay una agencia y tiene permisos, hacer click directo navega a gestión
                     if (!hasMultipleAgencies && canManageAgency) {
                       e.preventDefault();
-                      navigate(`/agencies/${currentAgency.id}/manage`);
+                      navigate('/agency');
                     }
                   }}
                 >
@@ -84,7 +84,7 @@ export function AgencySelectorCompact() {
                     <span className="truncate text-xs font-medium">{currentAgency.name}</span>
                     {hasMultipleAgencies && (
                       <span className="ml-1.5 px-1.5 py-0.5 rounded bg-primary/20 text-[10px] text-primary font-semibold">
-                        {userAgencies.length}
+                        {availableAgencies.length}
                       </span>
                     )}
                     {!hasMultipleAgencies && canManageAgency && (
@@ -106,7 +106,7 @@ export function AgencySelectorCompact() {
               <p className="text-xs">{currentAgency.name}</p>
               {hasMultipleAgencies && (
                 <p className="text-[10px] text-slate-400 mt-0.5">
-                  {userAgencies.length} agencias disponibles
+                  {availableAgencies.length} agencias disponibles
                 </p>
               )}
               {!hasMultipleAgencies && canManageAgency && (
@@ -122,26 +122,23 @@ export function AgencySelectorCompact() {
               <DropdownMenuLabel className="text-slate-300 text-xs">Mis Agencias</DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-slate-700" />
               
-              {userAgencies.map((userAgency) => (
+              {availableAgencies.map((agency) => (
                 <DropdownMenuItem
-                  key={userAgency.agency.id}
-                  onClick={() => handleSwitchAgency(userAgency.agency.id)}
+                  key={agency.agencyId}
+                  onClick={() => handleSwitchAgency(agency.agencyId)}
                   className={cn(
                     "cursor-pointer text-slate-200 hover:bg-slate-700 hover:text-white text-xs",
-                    currentAgency.id === userAgency.agency.id && "bg-slate-700"
+                    currentAgency.id === agency.agencyId && "bg-slate-700"
                   )}
                 >
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-2 min-w-0 flex-1">
                       <Building2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                       <div className="min-w-0 flex-1">
-                        <div className="truncate font-medium text-xs">{userAgency.agency.name}</div>
-                        {userAgency.role && (
-                          <div className="text-[10px] text-slate-400 truncate">{userAgency.role}</div>
-                        )}
+                        <div className="truncate font-medium text-xs">{agency.agencyName}</div>
                       </div>
                     </div>
-                    {currentAgency.id === userAgency.agency.id && (
+                    {currentAgency.id === agency.agencyId && (
                       <Check className="h-3.5 w-3.5 shrink-0 text-primary ml-2" />
                     )}
                   </div>
@@ -152,7 +149,7 @@ export function AgencySelectorCompact() {
               
               {canManageAgency && (
                 <DropdownMenuItem
-                  onClick={() => navigate(`/agencies/${currentAgency.id}/manage`)}
+                  onClick={() => navigate('/team')}
                   className="cursor-pointer text-slate-200 hover:bg-slate-700 hover:text-white text-xs"
                 >
                   <Users className="h-3.5 w-3.5 mr-2" />
@@ -161,11 +158,11 @@ export function AgencySelectorCompact() {
               )}
               
               <DropdownMenuItem
-                onClick={() => navigate('/agencies')}
+                onClick={() => navigate('/agency')}
                 className="cursor-pointer text-slate-200 hover:bg-slate-700 hover:text-white text-xs"
               >
                 <Settings className="h-3.5 w-3.5 mr-2" />
-                Gestionar agencias
+                Configuración
               </DropdownMenuItem>
               
               {canManageAgency && (
@@ -187,7 +184,7 @@ export function AgencySelectorCompact() {
               <DropdownMenuSeparator className="bg-slate-700" />
               
               <DropdownMenuItem
-                onClick={() => navigate(`/agencies/${currentAgency.id}/manage`)}
+                onClick={() => navigate('/team')}
                 className="cursor-pointer text-slate-200 hover:bg-slate-700 hover:text-white text-xs"
               >
                 <Users className="h-3.5 w-3.5 mr-2" />
