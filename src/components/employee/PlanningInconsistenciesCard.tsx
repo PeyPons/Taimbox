@@ -288,7 +288,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
 
   if (isLoading) {
     return (
-      <Card>
+      <Card data-tour="planning-inconsistencies">
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-600" />
@@ -304,7 +304,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
 
   if (inconsistencies.length === 0) {
     return (
-      <Card className="border-l-4 border-l-emerald-500">
+      <Card className="border-l-4 border-l-emerald-500" data-tour="planning-inconsistencies">
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-emerald-600" />
@@ -322,7 +322,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
 
   return (
     <TooltipProvider>
-      <Card className="border-l-4 border-l-amber-500">
+      <Card className="border-l-4 border-l-amber-500" data-tour="planning-inconsistencies">
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-600" />

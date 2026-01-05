@@ -232,7 +232,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
 
   return (
     <TooltipProvider>
-      <div className="space-y-6">
+      <div className="space-y-6" data-tour="projects-summary">
         {/* Header con título, KPIs y filtros */}
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

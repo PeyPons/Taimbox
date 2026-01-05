@@ -35,131 +35,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [availableAgencies, setAvailableAgencies] = useState<Array<{ agencyId: string; agencyName: string }>>([]);
 
-  const fetchAgencyForUser = useCallback(async () => {
-    if (!user?.email) {
-      setCurrentAgency(null);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // 1. Buscar TODOS los empleados por email para obtener todas las agencias
-      const { data: employeesData, error: employeeError } = await supabase
-        .from('employees')
-        .select('agency_id, email, user_id, created_at')
-        .eq('email', user.email.toLowerCase())
-        .order('created_at', { ascending: false });
-
-      // Log para diagnóstico
-      if (employeeError) {
-        console.debug('[AgencyContext] Error buscando por email:', employeeError);
-      }
-      
-      let selectedEmployee = employeesData?.[0];
-      let allEmployees = employeesData || [];
-
-      // Si no se encuentra por email, intentar con user_id
-      if (employeeError || !selectedEmployee?.agency_id) {
-        console.debug('[AgencyContext] No se encontró por email, intentando con user_id:', user.id);
-        
-        // Intentar buscar por user_id (también puede haber múltiples)
-        const { data: employeesByUserId, error: userIdError } = await supabase
-          .from('employees')
-          .select('agency_id, email, user_id, created_at')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (userIdError) {
-          console.debug('[AgencyContext] Error buscando por user_id:', userIdError);
-        }
-        
-        allEmployees = employeesByUserId || [];
-        selectedEmployee = allEmployees[0];
-
-        if (userIdError || !selectedEmployee?.agency_id) {
-          console.warn('[AgencyContext] No se encontró empleado para el usuario:', {
-            email: user.email,
-            userId: user.id,
-            emailError: employeeError,
-            userIdError: userIdError
-          });
-          setCurrentAgency(null);
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      // Obtener información de todas las agencias disponibles
-      if (allEmployees.length > 1) {
-        const uniqueAgencyIds = [...new Set(allEmployees.map(emp => emp.agency_id))];
-
-        // Obtener nombres de todas las agencias
-        const { data: agenciesData } = await supabase
-          .from('agencies')
-          .select('id, name')
-          .in('id', uniqueAgencyIds);
-        
-        const agenciesList = (agenciesData || []).map(ag => ({
-          agencyId: ag.id,
-          agencyName: ag.name
-        }));
-        
-        setAvailableAgencies(agenciesList);
-        
-        // Usar localStorage para recordar la preferencia
-        const storageKey = `selected_agency_${user.id}`;
-        const savedAgencyId = localStorage.getItem(storageKey);
-        
-        if (savedAgencyId) {
-          // Buscar el empleado con la agencia guardada
-          const savedEmployee = allEmployees.find(emp => emp.agency_id === savedAgencyId);
-          if (savedEmployee) {
-            selectedEmployee = savedEmployee;
-            console.debug('[AgencyContext] Usando agencia guardada:', savedAgencyId);
-          }
-        } else {
-          // Si no hay preferencia guardada, usar la más reciente y guardarla
-          if (selectedEmployee?.agency_id) {
-            localStorage.setItem(storageKey, selectedEmployee.agency_id);
-            console.debug('[AgencyContext] Guardando agencia por defecto:', selectedEmployee.agency_id);
-          }
-        }
-      } else {
-        setAvailableAgencies([]);
-      }
-
-      // 2. Obtener la agencia por el agency_id del empleado seleccionado
-      const { data: agencyData, error: agencyError } = await supabase
-        .from('agencies')
-        .select('*')
-        .eq('id', selectedEmployee.agency_id)
-        .single();
-
-      if (agencyError || !agencyData) {
-        console.error('[AgencyContext] Error obteniendo agencia:', agencyError);
-        setError('No se pudo cargar la información de la agencia');
-        setCurrentAgency(null);
-        setIsLoading(false);
-        return;
-      }
-
-      const agency = await mapSupabaseAgency(agencyData);
-      setCurrentAgency(agency);
-      console.log('[AgencyContext] Agencia cargada:', agency.name);
-
-    } catch (err) {
-      console.error('[AgencyContext] Error inesperado:', err);
-      setError('Error al cargar la agencia');
-      setCurrentAgency(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user]);
-
-  // Migración automática de integraciones para agencias existentes
+  // Migración automática de integraciones para agencias existentes (definida primero para usarse en mapSupabaseAgency)
   const migrateIntegrations = useCallback(async (agencyId: string, settings: AgencySettings): Promise<AgencySettings> => {
     // Si ya tiene enabledIntegrations, no hacer migración
     if (settings.enabledIntegrations) {
@@ -244,6 +120,144 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
     updatedAt: data.updated_at
     };
   }, [migrateIntegrations]);
+
+  const fetchAgencyForUser = useCallback(async () => {
+    if (!user?.email) {
+      setCurrentAgency(null);
+      setIsLoading(false);
+      return;
+    }
+
+    // --- CORRECCIÓN: Background Revalidation ---
+    // Solo mostrar spinner si es la carga inicial (no hay datos).
+    // Si ya hay datos, el usuario seguirá viéndolos mientras se actualizan por detrás.
+    const isInitialLoad = !currentAgency;
+    if (isInitialLoad) {
+      setIsLoading(true);
+    }
+    
+    setError(null);
+
+    try {
+      // 1. Buscar TODOS los empleados por email para obtener todas las agencias
+      const { data: employeesData, error: employeeError } = await supabase
+        .from('employees')
+        .select('agency_id, email, user_id, created_at')
+        .eq('email', user.email.toLowerCase())
+        .order('created_at', { ascending: false });
+
+      // Log para diagnóstico
+      if (employeeError) {
+        console.debug('[AgencyContext] Error buscando por email:', employeeError);
+      }
+      
+      let selectedEmployee = employeesData?.[0];
+      let allEmployees = employeesData || [];
+
+      // Si no se encuentra por email, intentar con user_id
+      if (employeeError || !selectedEmployee?.agency_id) {
+        console.debug('[AgencyContext] No se encontró por email, intentando con user_id:', user.id);
+        
+        // Intentar buscar por user_id (también puede haber múltiples)
+        const { data: employeesByUserId, error: userIdError } = await supabase
+          .from('employees')
+          .select('agency_id, email, user_id, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (userIdError) {
+          console.debug('[AgencyContext] Error buscando por user_id:', userIdError);
+        }
+        
+        allEmployees = employeesByUserId || [];
+        selectedEmployee = allEmployees[0];
+
+        if (userIdError || !selectedEmployee?.agency_id) {
+          console.warn('[AgencyContext] No se encontró empleado para el usuario:', {
+            email: user.email,
+            userId: user.id,
+            emailError: employeeError,
+            userIdError: userIdError
+          });
+          setCurrentAgency(null);
+          if (isInitialLoad) {
+            setIsLoading(false);
+          }
+          return;
+        }
+      }
+
+      // Obtener información de todas las agencias disponibles
+      if (allEmployees.length > 1) {
+        const uniqueAgencyIds = [...new Set(allEmployees.map(emp => emp.agency_id))];
+
+        // Obtener nombres de todas las agencias
+        const { data: agenciesData } = await supabase
+          .from('agencies')
+          .select('id, name')
+          .in('id', uniqueAgencyIds);
+        
+        const agenciesList = (agenciesData || []).map(ag => ({
+          agencyId: ag.id,
+          agencyName: ag.name
+        }));
+        
+        setAvailableAgencies(agenciesList);
+        
+        // Usar localStorage para recordar la preferencia
+        const storageKey = `selected_agency_${user.id}`;
+        const savedAgencyId = localStorage.getItem(storageKey);
+        
+        if (savedAgencyId) {
+          // Buscar el empleado con la agencia guardada
+          const savedEmployee = allEmployees.find(emp => emp.agency_id === savedAgencyId);
+          if (savedEmployee) {
+            selectedEmployee = savedEmployee;
+            console.debug('[AgencyContext] Usando agencia guardada:', savedAgencyId);
+          }
+        } else {
+          // Si no hay preferencia guardada, usar la más reciente y guardarla
+          if (selectedEmployee?.agency_id) {
+            localStorage.setItem(storageKey, selectedEmployee.agency_id);
+            console.debug('[AgencyContext] Guardando agencia por defecto:', selectedEmployee.agency_id);
+          }
+        }
+      } else {
+        setAvailableAgencies([]);
+      }
+
+      // 2. Obtener la agencia por el agency_id del empleado seleccionado
+      const { data: agencyData, error: agencyError } = await supabase
+        .from('agencies')
+        .select('*')
+        .eq('id', selectedEmployee.agency_id)
+        .single();
+
+      if (agencyError || !agencyData) {
+        console.error('[AgencyContext] Error obteniendo agencia:', agencyError);
+        setError('No se pudo cargar la información de la agencia');
+        setCurrentAgency(null);
+        if (isInitialLoad) {
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      const agency = await mapSupabaseAgency(agencyData);
+      setCurrentAgency(agency);
+      console.log('[AgencyContext] Agencia cargada:', agency.name);
+
+    } catch (err) {
+      console.error('[AgencyContext] Error inesperado:', err);
+      setError('Error al cargar la agencia');
+      setCurrentAgency(null);
+    } finally {
+      // Asegurarnos de quitar el loading solo si lo pusimos (carga inicial)
+      if (isInitialLoad) {
+        setIsLoading(false);
+      }
+    }
+  }, [user, currentAgency, mapSupabaseAgency]);
 
   // Cargar agencia cuando el usuario esté autenticado
   useEffect(() => {

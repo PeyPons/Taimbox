@@ -123,7 +123,7 @@ export const ReliabilityIndexCard = memo(function ReliabilityIndexCard({ employe
 
   return (
     <TooltipProvider>
-      <Card className={cn("border-l-4", config.borderColor)}>
+      <Card className={cn("border-l-4", config.borderColor)} data-tour="reliability-index">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center gap-2">

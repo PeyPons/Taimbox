@@ -132,7 +132,7 @@ export const PriorityInsights = memo(function PriorityInsights({ employeeId, vie
   }
 
   return (
-    <Card className={`border shadow-sm h-full flex flex-col ${recommendation.style}`}>
+    <Card className={`border shadow-sm h-full flex flex-col ${recommendation.style}`} data-tour="priority-widget">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
           {recommendation.icon}
@@ -181,7 +181,7 @@ export const ProjectTeamPulse = memo(function ProjectTeamPulse({ employeeId, vie
     .filter(item => item.blockedTasks.length > 0);
 
   return (
-    <Card className="border-slate-200 shadow-sm h-full flex flex-col">
+    <Card className="border-slate-200 shadow-sm h-full flex flex-col" data-tour="dependencies-widget">
       <CardHeader className="pb-3 border-b bg-slate-50/50">
         <CardTitle className="text-sm font-semibold text-slate-700 flex items-center gap-2">
           <Users className="w-4 h-4 text-indigo-500" />

@@ -76,6 +76,7 @@ export default function EmployeeDashboard() {
   const [showWeeklyDialog, setShowWeeklyDialog] = useState(false);
   // Default to "projects" (Mi Semana) for better focus
   const [activeTab, setActiveTab] = useState('projects');
+  const [actionsDropdownOpen, setActionsDropdownOpen] = useState(false);
 
   const { showTour, resetTour } = useWelcomeTour();
   const isMobile = useIsMobile();
@@ -409,31 +410,31 @@ export default function EmployeeDashboard() {
           </Button>
 
           {/* Action: INTERNAL TASK */}
-          <Button onClick={() => setIsAddingExtra(true)} className="gap-2 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm" data-tour="internal-task">
+          <Button onClick={() => setIsAddingExtra(true)} className="gap-2 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm" data-tour="internal-tasks">
             <Clock className="h-4 w-4 text-slate-600" /> Tarea interna
           </Button>
         </div>
 
         <div className="flex items-center gap-2">
           {/* Dropdown de Acciones Secundarias */}
-          <DropdownMenu>
+          <DropdownMenu open={actionsDropdownOpen} onOpenChange={setActionsDropdownOpen}>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2 border-slate-200">
+              <Button variant="outline" className="gap-2 border-slate-200" data-tour="actions-dropdown">
                 <MoreHorizontal className="h-4 w-4" /> <span className="hidden sm:inline">Acciones</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               {isCrmExportEnabled && (
-                <DropdownMenuItem onClick={handleExportCRM} disabled={!myEmployeeProfile?.crmUserId} className="gap-2">
+                <DropdownMenuItem onClick={handleExportCRM} disabled={!myEmployeeProfile?.crmUserId} className="gap-2" data-tour="crm-export">
                   <FileDown className="h-4 w-4 text-purple-600" /> Exportar a CRM
                 </DropdownMenuItem>
               )}
 
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setShowGoals(true)} className="gap-2">
+              <DropdownMenuItem onClick={() => setShowGoals(true)} className="gap-2" data-tour="goals">
                 <TrendingUp className="h-4 w-4 text-emerald-600" /> Mis Objetivos
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowAbsences(true)} className="gap-2">
+              <DropdownMenuItem onClick={() => setShowAbsences(true)} className="gap-2" data-tour="absences">
                 <Calendar className="h-4 w-4 text-amber-600" /> Mis Ausencias
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -671,7 +672,15 @@ export default function EmployeeDashboard() {
       {myEmployeeProfile && isWeeklyFeedbackEnabled && (
         <WeeklyReportDialog open={showWeeklyDialog} onOpenChange={setShowWeeklyDialog} employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
       )}
-      <WelcomeTour forceShow={showTour} onTabChange={setActiveTab} />
+      <WelcomeTour 
+        forceShow={showTour} 
+        onTabChange={setActiveTab}
+        onDropdownOpen={(dropdownId, isOpen) => {
+          if (dropdownId === 'actions-dropdown') {
+            setActionsDropdownOpen(isOpen);
+          }
+        }}
+      />
       <MyDayView />
     </div >
   );

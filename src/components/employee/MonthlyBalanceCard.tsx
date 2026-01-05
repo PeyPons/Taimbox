@@ -41,7 +41,7 @@ export const MonthlyBalanceCard = memo(function MonthlyBalanceCard({ employeeId,
   // Si no hay datos, mostrar ejemplo
   if (!monthlyStats.hasData) {
     return (
-      <Card className="border-l-4 overflow-hidden border-l-emerald-500 bg-gradient-to-r from-emerald-50/80 to-emerald-50/30 relative" data-tour="balance-card">
+      <Card className="border-l-4 overflow-hidden border-l-emerald-500 bg-gradient-to-r from-emerald-50/80 to-emerald-50/30 relative" data-tour="monthly-balance">
         <div className="absolute top-2 right-2 z-10">
           <Badge variant="outline" className="text-[9px] bg-amber-50 border-amber-200 text-amber-700">
             Ejemplo
@@ -94,7 +94,7 @@ export const MonthlyBalanceCard = memo(function MonthlyBalanceCard({ employeeId,
       isPositiveBalance
         ? "border-l-emerald-500 bg-gradient-to-r from-emerald-50/80 to-emerald-50/30"
         : "border-l-amber-500 bg-gradient-to-r from-amber-50/80 to-amber-50/30"
-    )} data-tour="balance-card">
+    )} data-tour="monthly-balance">
       <CardContent className="py-4 px-5">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">

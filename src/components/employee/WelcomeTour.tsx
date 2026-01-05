@@ -22,6 +22,7 @@ interface TourStep {
   highlight?: boolean;
   customContent?: boolean;
   tab?: string; // Tab value to switch to
+  openDropdown?: string; // Dropdown ID to open (e.g., 'actions-dropdown')
 }
 
 const tourSteps: TourStep[] = [
@@ -58,7 +59,8 @@ const tourSteps: TourStep[] = [
     description: 'Una vez planificadas tus tareas, puedes exportarlas al CRM con un solo clic. Se generará un archivo CSV listo para importar. Necesitas tener configurado tu ID de usuario del CRM.',
     icon: <FileDown className="w-6 h-6 text-purple-500" />,
     position: 'bottom',
-    highlight: true
+    highlight: true,
+    openDropdown: 'actions-dropdown'
   },
   {
     id: 'internal-tasks',
@@ -76,7 +78,8 @@ const tourSteps: TourStep[] = [
     description: 'Aquí puedes ver y gestionar tus objetivos profesionales (OKRs). Mantén el foco en lo que importa para tu crecimiento.',
     icon: <TrendingUp className="w-6 h-6 text-emerald-500" />,
     position: 'bottom',
-    highlight: true
+    highlight: true,
+    openDropdown: 'actions-dropdown'
   },
   {
     id: 'absences',
@@ -85,7 +88,8 @@ const tourSteps: TourStep[] = [
     description: 'Registra tus vacaciones, bajas o permisos para que el planificador tenga en cuenta tu disponibilidad real. Tu capacidad se ajustará automáticamente.',
     icon: <Calendar className="w-6 h-6 text-amber-500" />,
     position: 'bottom',
-    highlight: true
+    highlight: true,
+    openDropdown: 'actions-dropdown'
   },
   {
     id: 'calendar',
@@ -188,9 +192,10 @@ interface WelcomeTourProps {
   onComplete?: () => void;
   forceShow?: boolean;
   onTabChange?: (tab: string) => void;
+  onDropdownOpen?: (dropdownId: string, isOpen: boolean) => void;
 }
 
-export function WelcomeTour({ onComplete, forceShow = false, onTabChange }: WelcomeTourProps) {
+export function WelcomeTour({ onComplete, forceShow = false, onTabChange, onDropdownOpen }: WelcomeTourProps) {
   const { currentUser, updateEmployee } = useApp();
   const [isVisible, setIsVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -199,29 +204,54 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange }: Welc
   const [isReady, setIsReady] = useState(false);
   const [hasBeenCompleted, setHasBeenCompleted] = useState(false); // ✅ Estado local para evitar múltiples ejecuciones
   const lastCheckedUserIdRef = React.useRef<string | null>(null); // ✅ Ref para rastrear qué usuario ya verificamos
+  const isManuallyClosedRef = React.useRef<boolean>(false); // ✅ Ref para rastrear si el usuario cerró el tour manualmente
+  const isCompletingRef = React.useRef<boolean>(false); // ✅ Ref para prevenir múltiples ejecuciones de handleComplete
+  const hasInitializedRef = React.useRef<boolean>(false); // ✅ Ref para rastrear si ya inicializamos el tour
 
-  // Verificar si debe mostrarse (solo una vez por usuario)
+  // Manejar forceShow (resetear todo cuando se fuerza a mostrar)
   useEffect(() => {
-    // ✅ PRIMERO: Verificar localStorage (genérico, sin user_id) - MÁS RÁPIDO
-    const completedInLocalStorage = localStorage.getItem('timeboxing_welcome_tour_completed') === 'true';
-    if (completedInLocalStorage) {
-      setIsVisible(false);
-      return;
-    }
-
-    // ✅ SEGUNDO: Si ya se completó localmente en este render, no mostrar nunca más
-    if (hasBeenCompleted) {
-      setIsVisible(false);
-      return;
-    }
-
     if (forceShow) {
       // ✅ Borrar localStorage y resetear estados cuando se fuerza a mostrar
       localStorage.removeItem('timeboxing_welcome_tour_completed');
       setHasBeenCompleted(false);
+      isManuallyClosedRef.current = false;
+      isCompletingRef.current = false;
       lastCheckedUserIdRef.current = null;
+      hasInitializedRef.current = false;
       setIsVisible(true);
       setCurrentStep(0);
+    }
+  }, [forceShow]);
+
+  // Verificar si debe mostrarse (solo UNA VEZ por usuario, al inicializar)
+  useEffect(() => {
+    // Si ya inicializamos para este usuario, NO hacer nada más
+    if (hasInitializedRef.current) {
+      return;
+    }
+
+    // Si el usuario cerró el tour manualmente, NO hacer nada
+    if (isManuallyClosedRef.current) {
+      return;
+    }
+
+    // Si forceShow está activo, no ejecutar esta lógica (se maneja en el otro useEffect)
+    if (forceShow) {
+      return;
+    }
+
+    // ✅ PRIMERO: Verificar localStorage (genérico, sin user_id) - MÁS RÁPIDO
+    const completedInLocalStorage = localStorage.getItem('timeboxing_welcome_tour_completed') === 'true';
+    if (completedInLocalStorage) {
+      setIsVisible(false);
+      hasInitializedRef.current = true;
+      return;
+    }
+
+    // ✅ SEGUNDO: Si ya se completó localmente, no verificar nada más
+    if (hasBeenCompleted) {
+      setIsVisible(false);
+      hasInitializedRef.current = true;
       return;
     }
 
@@ -235,10 +265,17 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange }: Welc
     if (!currentUser) {
       console.log('[WelcomeTour] No hay currentUser, no se muestra el tour');
       lastCheckedUserIdRef.current = null;
+      hasInitializedRef.current = true;
       return;
     }
 
-    // ✅ TERCERO: Verificar BD (persistente entre dispositivos)
+    // ✅ TERCERO: Si ya verificamos para este usuario específico, NO volver a verificar
+    if (lastCheckedUserIdRef.current === currentUser.id) {
+      hasInitializedRef.current = true;
+      return;
+    }
+
+    // ✅ CUARTO: Verificar BD (persistente entre dispositivos)
     const completedInDB = currentUser.welcomeTourCompleted === true;
     if (completedInDB) {
       console.log('[WelcomeTour] Tour ya completado en BD para usuario:', currentUser.id);
@@ -246,24 +283,24 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange }: Welc
       // Sincronizar a localStorage para futuras verificaciones rápidas
       localStorage.setItem('timeboxing_welcome_tour_completed', 'true');
       lastCheckedUserIdRef.current = currentUser.id;
+      hasInitializedRef.current = true;
       return;
     }
 
-    // Si ya verificamos para este usuario específico, no volver a verificar
-    if (lastCheckedUserIdRef.current === currentUser.id) {
-      return;
-    }
-
-    // Marcar que ya verificamos para este usuario
+    // Marcar que ya verificamos para este usuario ANTES de mostrar
     lastCheckedUserIdRef.current = currentUser.id;
+    hasInitializedRef.current = true;
 
     // Si llegamos aquí, el tour no está completado y debemos mostrarlo
     console.log('[WelcomeTour] Tour no completado, mostrando para usuario:', currentUser.id);
     const timer = setTimeout(() => {
-      setIsVisible(true);
+      // Verificar de nuevo antes de mostrar (por si se cerró mientras esperábamos)
+      if (!isManuallyClosedRef.current && !hasBeenCompleted) {
+        setIsVisible(true);
+      }
     }, 500);
     return () => clearTimeout(timer);
-  }, [forceShow, currentUser, hasBeenCompleted]); // ✅ Quitar isVisible de las dependencias
+  }, [currentUser, hasBeenCompleted, forceShow]);
 
   // Calcular posiciones
   const calculatePositions = useCallback(() => {
@@ -276,100 +313,129 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange }: Welc
       return;
     }
 
-    const element = document.querySelector(step.target);
+    const element = document.querySelector(step.target) as HTMLElement;
     if (!element) {
+      // Si no se encuentra el elemento, mostrar tooltip centrado
       setHighlightPos(null);
-      setTooltipPos(null);
+      setTooltipPos({ top: window.innerHeight / 2, left: window.innerWidth / 2 });
       setIsReady(true);
       return;
     }
 
+    // Verificar que el elemento sea visible
     const rect = element.getBoundingClientRect();
+    const isElementVisible = rect.width > 0 && rect.height > 0;
 
-    // Posición del highlight (coordenadas de viewport para position: fixed)
-    const padding = 6;
-    setHighlightPos({
-      top: rect.top - padding,
-      left: rect.left - padding,
-      width: rect.width + padding * 2,
-      height: rect.height + padding * 2
-    });
-
-    // Posición del tooltip
-    const tooltipWidth = 380;
-    const tooltipHeight = 320;
-    const gap = 16;
-
-    let top = 0;
-    let left = 0;
-
-    switch (step.position) {
-      case 'bottom':
-        top = rect.bottom + gap;
-        left = rect.left + rect.width / 2 - tooltipWidth / 2;
-        break;
-      case 'top':
-        top = rect.top - tooltipHeight - gap;
-        left = rect.left + rect.width / 2 - tooltipWidth / 2;
-        break;
-      case 'left':
-        top = rect.top + rect.height / 2 - tooltipHeight / 2;
-        left = rect.left - tooltipWidth - gap;
-        break;
-      case 'right':
-        top = rect.top + rect.height / 2 - tooltipHeight / 2;
-        left = rect.right + gap;
-        break;
+    if (!isElementVisible) {
+      // Si el elemento no es visible, no mostrar highlight pero sí el tooltip centrado
+      setHighlightPos(null);
+      setTooltipPos({ top: window.innerHeight / 2, left: window.innerWidth / 2 });
+      setIsReady(true);
+      return;
     }
 
-    // Mantener en pantalla
-    left = Math.max(16, Math.min(left, window.innerWidth - tooltipWidth - 16));
-    top = Math.max(16, Math.min(top, window.innerHeight - tooltipHeight - 16));
+    // Hacer scroll al elemento si es necesario
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-    setTooltipPos({ top, left });
-    setIsReady(true);
+    // Recalcular rect después de un breve delay para el scroll
+    setTimeout(() => {
+      const updatedRect = element.getBoundingClientRect();
+      
+      // Posición del highlight (coordenadas de viewport para position: fixed)
+      const padding = 6;
+      setHighlightPos({
+        top: updatedRect.top - padding,
+        left: updatedRect.left - padding,
+        width: updatedRect.width + padding * 2,
+        height: updatedRect.height + padding * 2
+      });
+
+      // Posición del tooltip
+      const tooltipWidth = 380;
+      const tooltipHeight = 320;
+      const gap = 16;
+
+      let top = 0;
+      let left = 0;
+
+      switch (step.position) {
+        case 'bottom':
+          top = updatedRect.bottom + gap;
+          left = updatedRect.left + updatedRect.width / 2 - tooltipWidth / 2;
+          break;
+        case 'top':
+          top = updatedRect.top - tooltipHeight - gap;
+          left = updatedRect.left + updatedRect.width / 2 - tooltipWidth / 2;
+          break;
+        case 'left':
+          top = updatedRect.top + updatedRect.height / 2 - tooltipHeight / 2;
+          left = updatedRect.left - tooltipWidth - gap;
+          break;
+        case 'right':
+          top = updatedRect.top + updatedRect.height / 2 - tooltipHeight / 2;
+          left = updatedRect.right + gap;
+          break;
+      }
+
+      // Mantener en pantalla
+      left = Math.max(16, Math.min(left, window.innerWidth - tooltipWidth - 16));
+      top = Math.max(16, Math.min(top, window.innerHeight - tooltipHeight - 16));
+
+      setTooltipPos({ top, left });
+      setIsReady(true);
+    }, 200);
   }, [currentStep]);
 
-  // Cambiar de tab si el paso lo requiere
+  // Cambiar de tab y abrir dropdowns si el paso lo requiere
   useEffect(() => {
     if (!isVisible) return;
     const step = tourSteps[currentStep];
+    
+    // Cambiar de tab si es necesario (similar a como funciona con tabs)
     if (step.tab && onTabChange) {
-      onTabChange(step.tab);
+      // Usar requestAnimationFrame para asegurar que el cambio de tab se procese antes de buscar elementos
+      requestAnimationFrame(() => {
+        onTabChange(step.tab!);
+      });
     }
-  }, [currentStep, isVisible, onTabChange]);
+    
+    // Abrir dropdown si es necesario (similar a como funciona con tabs)
+    if (step.openDropdown && onDropdownOpen) {
+      requestAnimationFrame(() => {
+        onDropdownOpen(step.openDropdown!, true);
+      });
+    } else if (onDropdownOpen && currentStep > 0) {
+      // Cerrar todos los dropdowns cuando no se necesita ninguno (pero no en el primer paso)
+      const prevStep = tourSteps[currentStep - 1];
+      if (prevStep?.openDropdown) {
+        requestAnimationFrame(() => {
+          onDropdownOpen('actions-dropdown', false);
+        });
+      }
+    }
+  }, [currentStep, isVisible, onTabChange, onDropdownOpen]);
 
   // Actualizar posiciones cuando cambia el paso
   useEffect(() => {
     if (!isVisible) return;
+    const step = tourSteps[currentStep];
 
     setIsReady(false);
-    const step = tourSteps[currentStep];
 
     if (step.position === 'center' || !step.highlight) {
       calculatePositions();
       return;
     }
 
-    const element = document.querySelector(step.target);
-    if (!element) {
+    // Para elementos en dropdowns o tabs, esperar más tiempo para que se rendericen
+    // Tabs necesitan más tiempo porque el contenido se renderiza condicionalmente
+    const delay = step.openDropdown ? 600 : (step.tab ? 500 : 200);
+
+    const timeoutId = setTimeout(() => {
       calculatePositions();
-      return;
-    }
+    }, delay);
 
-    // Hacer scroll al elemento con un pequeño delay para asegurar renderizado de tabs
-    setTimeout(() => {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
-
-    // Esperar al scroll y luego calcular (varios intentos para layout shifts)
-    const timers = [
-      setTimeout(calculatePositions, 300),
-      setTimeout(calculatePositions, 600),
-      setTimeout(calculatePositions, 1000)
-    ];
-
-    return () => timers.forEach(clearTimeout);
+    return () => clearTimeout(timeoutId);
   }, [currentStep, isVisible, calculatePositions]);
 
   // Recalcular en resize/scroll
@@ -406,23 +472,39 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange }: Welc
   }, [currentStep]);
 
   const handleComplete = useCallback(async () => {
-    // ✅ PRIMERO: Guardar en localStorage INMEDIATAMENTE (síncrono, sin delay, genérico)
+    // ✅ PRIMERO: Prevenir múltiples ejecuciones
+    if (isCompletingRef.current) {
+      return;
+    }
+    isCompletingRef.current = true;
+
+    // ✅ SEGUNDO: Marcar que el usuario cerró el tour manualmente (prioridad máxima)
+    isManuallyClosedRef.current = true;
+    
+    // ✅ TERCERO: Marcar como inicializado para prevenir que el useEffect se ejecute de nuevo
+    hasInitializedRef.current = true;
+    
+    // ✅ CUARTO: Marcar como completado en estado local INMEDIATAMENTE
+    setHasBeenCompleted(true);
+    
+    // ✅ QUINTO: Ocultar el tour INMEDIATAMENTE
+    setIsVisible(false);
+    
+    // ✅ SEXTO: Guardar en localStorage INMEDIATAMENTE (síncrono, sin delay, genérico)
     localStorage.setItem('timeboxing_welcome_tour_completed', 'true');
 
-    // ✅ SEGUNDO: Marcar como completado en estado local para evitar que se muestre de nuevo
-    setHasBeenCompleted(true);
-    setIsVisible(false);
-
-    // ✅ TERCERO: Actualizar el ref inmediatamente para evitar que se vuelva a verificar
+    // ✅ SÉPTIMO: Actualizar el ref inmediatamente para evitar que se vuelva a verificar
     if (currentUser?.id) {
       lastCheckedUserIdRef.current = currentUser.id;
     }
 
-    // ✅ CUARTO: Guardar en la base de datos en segundo plano (asíncrono, persistente)
-    if (currentUser) {
+    // ✅ OCTAVO: Guardar en la base de datos en segundo plano (asíncrono, persistente)
+    // Usar el currentUser actual, no depender del closure
+    const userToUpdate = currentUser;
+    if (userToUpdate) {
       try {
         const updatedEmployee = {
-          ...currentUser,
+          ...userToUpdate,
           welcomeTourCompleted: true
         };
         // No esperar, dejar que se guarde en segundo plano
