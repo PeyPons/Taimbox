@@ -155,7 +155,7 @@ export default function AgencySettingsPage() {
 
   // Role Management
   const addNewRole = () => {
-    setRoles([...roles, { name: 'Nuevo Rol', permissions: { ...DEFAULT_PERMISSIONS, can_access_agency_settings: false } }]);
+    setRoles([...roles, { name: 'Nuevo rol', permissions: { ...DEFAULT_PERMISSIONS, can_access_agency_settings: false } }]);
     setExpandedRoleIndex(roles.length); // Open the new role
   };
 
@@ -319,7 +319,7 @@ export default function AgencySettingsPage() {
     const newFilter: CustomProjectFilter = {
       id: `custom-${Date.now()}`,
       name: `custom-${projectFilters.length + 1}`,
-      displayName: 'Nuevo Filtro',
+      displayName: 'Nuevo filtro',
       enabled: true,
       includePatterns: [],
       excludePatterns: [],
@@ -363,7 +363,7 @@ export default function AgencySettingsPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <Building2 className="h-6 w-6" />
-            Configuración de Agencia
+            Configuración de agencia
           </h1>
           <p className="text-slate-500 mt-1">Gestiona la configuración de tu agencia</p>
         </div>
@@ -377,7 +377,7 @@ export default function AgencySettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-primary" />
-            Información General
+            Información general
           </CardTitle>
           <CardDescription>
             Datos básicos de tu agencia
@@ -386,7 +386,7 @@ export default function AgencySettingsPage() {
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="agency-name">Nombre de la Agencia</Label>
+              <Label htmlFor="agency-name">Nombre de la agencia</Label>
               <Input
                 id="agency-name"
                 value={agencyName}
@@ -417,7 +417,7 @@ export default function AgencySettingsPage() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <ShieldCheck className="h-5 w-5 text-indigo-600" />
-                  Roles y Permisos
+                  Roles y permisos
                 </CardTitle>
                 <CardDescription>
                   Define los roles y sus accesos
@@ -560,7 +560,7 @@ export default function AgencySettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5 text-emerald-600" />
-            Módulos Habilitados
+            Módulos habilitados
           </CardTitle>
           <CardDescription>
             Activa o desactiva funcionalidades según las necesidades de tu equipo
@@ -631,7 +631,7 @@ export default function AgencySettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Rocket className="h-5 w-5 text-purple-600" />
-            Integraciones Activables
+            Integraciones activables
           </CardTitle>
           <CardDescription>
             Activa o desactiva integraciones específicas para tu agencia. Cada agencia puede tener configuraciones independientes.
@@ -769,7 +769,7 @@ export default function AgencySettingsPage() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Filter className="h-5 w-5 text-blue-600" />
-                Filtros de Proyectos
+                Filtros de proyectos
               </CardTitle>
               <CardDescription>
                 Configura cómo se filtran los proyectos en las diferentes vistas
@@ -781,7 +781,7 @@ export default function AgencySettingsPage() {
               </Button>
               <Button size="sm" onClick={addNewFilter}>
                 <Plus className="h-4 w-4 mr-1" />
-                Añadir Filtro
+                Añadir filtro
               </Button>
             </div>
           </div>
@@ -957,11 +957,11 @@ export default function AgencySettingsPage() {
               <div className="space-y-4">
                 <h4 className="font-medium text-sm flex items-center gap-2">
                   <PlusCircle className="w-4 h-4 text-emerald-600" />
-                  Añadir Cuenta Publicitaria
+                  Añadir cuenta publicitaria
                 </h4>
                 <div className="flex flex-col md:flex-row gap-3 items-end">
                   <div className="space-y-1.5 w-full">
-                    <Label className="text-xs">ID de Cuenta (Meta Ads)</Label>
+                    <Label className="text-xs">ID de cuenta (Meta Ads)</Label>
                     <Input
                       placeholder="Ej: act_123456789"
                       value={newAccountId}
@@ -976,7 +976,7 @@ export default function AgencySettingsPage() {
               </div>
 
               <div className="space-y-3 mt-4">
-                <h4 className="text-xs font-semibold text-slate-500 uppercase">Cuentas Conectadas ({connectedAccounts.length})</h4>
+                <h4 className="text-xs font-semibold text-slate-500 uppercase">Cuentas conectadas ({connectedAccounts.length})</h4>
                 {connectedAccounts.length === 0 ? (
                   <p className="text-sm text-slate-400 italic">No hay cuentas conectadas.</p>
                 ) : (

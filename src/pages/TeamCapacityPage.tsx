@@ -275,7 +275,7 @@ export default function TeamCapacityPage() {
     return (
         <>
             <Helmet>
-                <title>Disponibilidad del Equipo | Timeboxing</title>
+                <title>Disponibilidad del equipo | Timeboxing</title>
             </Helmet>
 
             <div className="flex flex-col h-full space-y-6 p-6 md:p-8 max-w-[1600px] mx-auto w-full">
@@ -284,7 +284,7 @@ export default function TeamCapacityPage() {
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
                             <Users className="h-8 w-8 text-primary" />
-                            Disponibilidad del Equipo
+                            Disponibilidad del equipo
                         </h1>
                         <p className="text-muted-foreground mt-1 flex items-center gap-2">
                             <CalendarDays className="h-4 w-4" />
@@ -383,7 +383,7 @@ export default function TeamCapacityPage() {
                         <div>
                             <div className="flex items-center gap-2 mb-1">
                                 <Flame className="h-5 w-5 text-orange-500" />
-                                <h3 className="text-lg font-bold text-slate-800">Alta Disponibilidad</h3>
+                                <h3 className="text-lg font-bold text-slate-800">Alta disponibilidad</h3>
                             </div>
                             <p className="text-sm text-slate-500">
                                 Miembros con +{viewMode === 'week' ? '4' : '10'}h libres {viewMode === 'week' ? 'esta semana' : 'este mes'}
@@ -423,7 +423,7 @@ export default function TeamCapacityPage() {
                         <div>
                             <div className="flex items-center gap-2 mb-1">
                                 <Zap className="h-5 w-5 text-indigo-500" />
-                                <h3 className="text-lg font-bold text-slate-800">Carga Crítica</h3>
+                                <h3 className="text-lg font-bold text-slate-800">Carga crítica</h3>
                             </div>
                             <p className="text-sm text-slate-500">Miembros con poca o ninguna disponibilidad</p>
                         </div>

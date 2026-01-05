@@ -702,7 +702,7 @@ export default function WeeklyForecastPage() {
     <div className="max-w-7xl mx-auto p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Previsión Mensual</h1>
+        <h1 className="text-3xl font-bold text-slate-900">Previsión mensual</h1>
         <p className="text-slate-500 mt-1">Seguimiento de horas contratadas y redistribución de carga</p>
       </div>
 

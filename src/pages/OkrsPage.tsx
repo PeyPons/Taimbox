@@ -330,7 +330,7 @@ export default function OkrsPage() {
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
                         <Target className="h-8 w-8 text-primary" />
-                        Objetivos y Resultados Clave (OKRs)
+                        Objetivos y resultados clave (OKRs)
                     </h1>
                     <p className="text-muted-foreground mt-1">
                         Gestiona y monitoriza los objetivos estratégicos y el rendimiento del equipo.
@@ -340,7 +340,7 @@ export default function OkrsPage() {
                 <div className="flex items-center gap-2">
                     <Button onClick={() => openCreateDialog(activeTab === 'projects' ? 'project' : 'personal')} className="gap-2 shadow-sm bg-primary hover:bg-primary/90">
                         <Plus className="h-4 w-4" />
-                        Nuevo Objetivo
+                        Nuevo objetivo
                     </Button>
                 </div>
             </div>
@@ -354,7 +354,7 @@ export default function OkrsPage() {
                         </TabsTrigger>
                         <TabsTrigger value="personal" className="gap-2 px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
                             <User className="h-4 w-4" />
-                            Mis Objetivos
+                            Mis objetivos
                         </TabsTrigger>
                     </TabsList>
                 </Tabs>
@@ -432,7 +432,7 @@ export default function OkrsPage() {
                                     {/* STRATEGIC OBJECTIVES */}
                                     <div className="space-y-4">
                                         <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                                            <Target className="h-3 w-3" /> Objetivos Estratégicos
+                                            <Target className="h-3 w-3" /> Objetivos estratégicos
                                         </h5>
                                         {activeOkrs.map(okr => {
                                             const status = getOkrStatus(okr.progress);
@@ -503,7 +503,7 @@ export default function OkrsPage() {
 
                                     <div>
                                         <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                                            <CheckSquare className="h-3 w-3" /> Resultados Clave
+                                            <CheckSquare className="h-3 w-3" /> Resultados clave
                                         </h5>
                                         {renderKeyResultsList(goal)}
                                     </div>
@@ -529,7 +529,7 @@ export default function OkrsPage() {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>{editingGoal ? 'Editar Objetivo' : 'Crear Nuevo Objetivo'}</DialogTitle>
+                        <DialogTitle>{editingGoal ? 'Editar objetivo' : 'Crear nuevo objetivo'}</DialogTitle>
                         <DialogDescription>
                             {goalType === 'project' ? 'Objetivo asociado a un proyecto activo.' : 'Objetivo de desarrollo profesional.'}
                         </DialogDescription>

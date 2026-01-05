@@ -221,7 +221,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     icon={Briefcase}
                     active={location.pathname === '/clients' || location.pathname === '/projects'}
                   >
-                    Clientes y Proyectos
+                    Clientes y proyectos
                   </NavLink>
                 </NavGroup>
               )}
@@ -229,7 +229,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               {/* PPC */}
               {modules.ppc && ((canAccess('/ads') || canAccess('/meta-ads'))) && (
                 <NavGroup
-                  label="PPC & Medios"
+                  label="PPC & medios"
                   isActive={['/ads', '/meta-ads'].includes(location.pathname)}
                 >
                   {canAccess('/ads') && (
@@ -258,7 +258,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   )}
                   {canAccess('/informes-clientes') && (
                     <NavLink to="/informes-clientes" icon={FileDown} active={location.pathname === '/informes-clientes'}>
-                      Informes Clientes
+                      Informes clientes
                     </NavLink>
                   )}
                 </NavGroup>

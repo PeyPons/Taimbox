@@ -510,7 +510,7 @@ export default function EmployeeDashboard() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start h-auto p-1 bg-white border border-slate-200 flex-nowrap overflow-x-auto custom-scrollbar gap-2">
           <TabsTrigger value="projects" className="px-4 py-2 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700">
-            <ListPlus className="h-4 w-4 mr-2" /> Mi Semana
+            <ListPlus className="h-4 w-4 mr-2" /> Mi semana
           </TabsTrigger>
           <TabsTrigger value="dependencies" className="px-4 py-2 data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700">
             <AlertCircle className="h-4 w-4 mr-2" /> Prioridades
@@ -522,7 +522,7 @@ export default function EmployeeDashboard() {
             <div className="flex items-center gap-2">Compañeros</div>
           </TabsTrigger>
           <TabsTrigger value="metrics" className="px-4 py-2">
-            <div className="flex items-center gap-2">Mis Métricas</div>
+            <div className="flex items-center gap-2">Mis métricas</div>
           </TabsTrigger>
         </TabsList>
 
