@@ -43,6 +43,7 @@ import { toast } from 'sonner';
 import { cn, formatProjectName } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useIntegration } from '@/hooks/useIntegration';
 
 const INTERNAL_CLIENT_NAME = 'Interno';
 const INTERNAL_PROJECT_NAME = 'Gestiones internas';
@@ -73,11 +74,13 @@ export default function EmployeeDashboard() {
   const [newTasks, setNewTasks] = useState<NewTaskRow[]>([]);
   const [openComboboxId, setOpenComboboxId] = useState<string | null>(null);
   const [showWeeklyDialog, setShowWeeklyDialog] = useState(false);
-  // Default to "projects" (Mi semana) for better focus
+  // Default to "projects" (Mi Semana) for better focus
   const [activeTab, setActiveTab] = useState('projects');
 
   const { showTour, resetTour } = useWelcomeTour();
   const isMobile = useIsMobile();
+  const isWeeklyFeedbackEnabled = useIntegration('weekly_feedback');
+  const isCrmExportEnabled = useIntegration('crm_export');
 
   const hasPendingWeeklyTasks = useMemo(() => {
     if (!myEmployeeProfile) return false;
@@ -384,19 +387,21 @@ export default function EmployeeDashboard() {
       <div className="flex flex-wrap items-center gap-2 justify-between">
         <div className="flex gap-2 flex-wrap flex-1">
           {/* Action: WEEKLY */}
-          <Button
-            onClick={() => setShowWeeklyDialog(true)}
-            className={cn(
-              "gap-2 shadow-sm transition-all",
-              hasPendingWeeklyTasks
-                ? "bg-amber-600 text-white hover:bg-amber-700 animate-pulse shadow-lg shadow-amber-500/50"
-                : "bg-primary text-white hover:bg-primary/90"
-            )}
-            data-tour="weekly-button"
-          >
-            {hasPendingWeeklyTasks ? <AlertCircle className="h-4 w-4 animate-bounce" /> : <CheckSquare className="h-4 w-4" />}
-            Weekly
-          </Button>
+          {isWeeklyFeedbackEnabled && (
+            <Button
+              onClick={() => setShowWeeklyDialog(true)}
+              className={cn(
+                "gap-2 shadow-sm transition-all",
+                hasPendingWeeklyTasks
+                  ? "bg-amber-600 text-white hover:bg-amber-700 animate-pulse shadow-lg shadow-amber-500/50"
+                  : "bg-primary text-white hover:bg-primary/90"
+              )}
+              data-tour="weekly-button"
+            >
+              {hasPendingWeeklyTasks ? <AlertCircle className="h-4 w-4 animate-bounce" /> : <CheckSquare className="h-4 w-4" />}
+              Weekly
+            </Button>
+          )}
 
           {/* Action: AÑADIR TAREAS */}
           <Button onClick={openAddTasksDialog} className="gap-2 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm" data-tour="add-tasks">
@@ -418,9 +423,11 @@ export default function EmployeeDashboard() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={handleExportCRM} disabled={!myEmployeeProfile?.crmUserId} className="gap-2">
-                <FileDown className="h-4 w-4 text-purple-600" /> Exportar a CRM
-              </DropdownMenuItem>
+              {isCrmExportEnabled && (
+                <DropdownMenuItem onClick={handleExportCRM} disabled={!myEmployeeProfile?.crmUserId} className="gap-2">
+                  <FileDown className="h-4 w-4 text-purple-600" /> Exportar a CRM
+                </DropdownMenuItem>
+              )}
 
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setShowGoals(true)} className="gap-2">
@@ -503,7 +510,7 @@ export default function EmployeeDashboard() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start h-auto p-1 bg-white border border-slate-200 flex-nowrap overflow-x-auto custom-scrollbar gap-2">
           <TabsTrigger value="projects" className="px-4 py-2 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700">
-            <ListPlus className="h-4 w-4 mr-2" /> Mi semana
+            <ListPlus className="h-4 w-4 mr-2" /> Mi Semana
           </TabsTrigger>
           <TabsTrigger value="dependencies" className="px-4 py-2 data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700">
             <AlertCircle className="h-4 w-4 mr-2" /> Prioridades
@@ -515,7 +522,7 @@ export default function EmployeeDashboard() {
             <div className="flex items-center gap-2">Compañeros</div>
           </TabsTrigger>
           <TabsTrigger value="metrics" className="px-4 py-2">
-            <div className="flex items-center gap-2">Mis métricas</div>
+            <div className="flex items-center gap-2">Mis Métricas</div>
           </TabsTrigger>
         </TabsList>
 
@@ -557,7 +564,7 @@ export default function EmployeeDashboard() {
         />
       )}
 
-      {/* Diálogo Gestión Interna */}
+      {/* Dialogo Gestión Interna */}
       <Dialog open={isAddingExtra} onOpenChange={setIsAddingExtra}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -567,7 +574,7 @@ export default function EmployeeDashboard() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Nombre</Label>
-              <Input placeholder="Ej: reunión de equipo" value={extraTaskName} onChange={e => setExtraTaskName(e.target.value)} />
+              <Input placeholder="Ej: Reunión de equipo" value={extraTaskName} onChange={e => setExtraTaskName(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>Horas</Label>
@@ -581,7 +588,7 @@ export default function EmployeeDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Diálogo Añadir Tareas (Bulk) */}
+      {/* Dialogo Añadir Tareas (Bulk) */}
       <Dialog open={isAddingTasks} onOpenChange={setIsAddingTasks}>
         <DialogContent className="sm:max-w-[1100px] h-[80vh] flex flex-col p-0 gap-0 overflow-hidden">
           <DialogHeader className="px-6 py-4 border-b shrink-0">
@@ -661,7 +668,9 @@ export default function EmployeeDashboard() {
 
       {showGoals && <ProfessionalGoalsSheet open={showGoals} onOpenChange={setShowGoals} employeeId={myEmployeeProfile.id} />}
       {showAbsences && <AbsencesSheet open={showAbsences} onOpenChange={setShowAbsences} employeeId={myEmployeeProfile.id} />}
-      {myEmployeeProfile && <WeeklyReportDialog open={showWeeklyDialog} onOpenChange={setShowWeeklyDialog} employeeId={myEmployeeProfile.id} viewDate={currentMonth} />}
+      {myEmployeeProfile && isWeeklyFeedbackEnabled && (
+        <WeeklyReportDialog open={showWeeklyDialog} onOpenChange={setShowWeeklyDialog} employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+      )}
       <WelcomeTour forceShow={showTour} onTabChange={setActiveTab} />
       <MyDayView />
     </div >

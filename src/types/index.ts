@@ -57,6 +57,12 @@ export interface AgencySettings {
     googleAdsDevToken?: string;
     googleRefreshToken?: string;
   };
+  enabledIntegrations?: {
+    weekly_feedback?: boolean;       // Sistema de cierre semanal (Weekly Reports)
+    crm_export?: boolean;            // Exportación de tareas al CRM
+    crm_user_id?: boolean;           // Campo ID Usuario CRM en perfiles
+    // Futuras integraciones: google_ads, meta_ads, etc.
+  };
 }
 
 export interface Agency {

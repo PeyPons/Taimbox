@@ -17,6 +17,7 @@ import { useAgency } from '@/contexts/AgencyContext';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Briefcase, CalendarClock, Target, Lock, Clock, ShieldCheck, Hash, Key } from 'lucide-react';
+import { useIntegration } from '@/hooks/useIntegration';
 
 import { ScheduleEditor } from './ScheduleEditor';
 import { ProjectsSheet } from './ProjectsSheet';
@@ -64,34 +65,22 @@ type EmployeeFormValues = z.infer<typeof employeeFormSchema>;
 export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeDialogProps) {
   const { addEmployee, updateEmployee } = useApp();
   const { currentAgency } = useAgency();
+  const isCrmUserIdEnabled = useIntegration('crm_user_id');
 
   // Obtener roles y departamentos dinámicos de la agencia
   // Helper to extract role names safely handling both new object structure and legacy strings
   const getRoleNames = (roles: (string | import('@/types').RolePermissions)[] | undefined): string[] => {
-    if (!roles || roles.length === 0) return [];
+    if (!roles) return ['Responsable', 'Coordinador', 'Especialista'];
     return roles.map(r => typeof r === 'string' ? r : r.name);
   };
 
   const availableRoles = getRoleNames(currentAgency?.settings?.roles);
-  const availableDepartments = currentAgency?.settings?.departments || [];
-
-  // Debug: verificar qué valores se están usando
-  useEffect(() => {
-    if (open) {
-      console.log('[EmployeeDialog] Roles disponibles:', availableRoles);
-      console.log('[EmployeeDialog] Departamentos disponibles:', availableDepartments);
-      console.log('[EmployeeDialog] Settings de la agencia:', currentAgency?.settings);
-    }
-  }, [open, availableRoles, availableDepartments, currentAgency]);
+  const availableDepartments = currentAgency?.settings?.departments || ['SEO', 'PPC'];
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [showProjects, setShowProjects] = useState(false);
   const [showGoals, setShowGoals] = useState(false);
   const [showAbsences, setShowAbsences] = useState(false);
-
-  // Calcular valores por defecto dinámicamente
-  const defaultRole = availableRoles.length > 0 ? availableRoles[0] : '';
-  const defaultDepartment = availableDepartments.length > 0 ? availableDepartments[0] : '';
 
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeFormSchema),
@@ -99,8 +88,8 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
       name: '',
       email: '',
       password: '',
-      role: defaultRole,
-      department: defaultDepartment,
+      role: availableRoles[0] || 'Responsable',
+      department: availableDepartments[0] || 'SEO',
       capacity: 40,
       hourlyRate: 0,
       crmUserId: '',
@@ -110,7 +99,6 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
 
   const workSchedule = form.watch('workSchedule');
 
-  // Actualizar el form cuando cambien los roles/departamentos disponibles o cuando se abra el diálogo
   useEffect(() => {
     if (open) {
       if (employeeToEdit) {
@@ -118,8 +106,8 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
           name: employeeToEdit.name,
           email: employeeToEdit.email || '',
           password: '',
-          role: employeeToEdit.role || defaultRole,
-          department: employeeToEdit.department || defaultDepartment,
+          role: employeeToEdit.role || availableRoles[0] || 'Responsable',
+          department: employeeToEdit.department || availableDepartments[0] || 'SEO',
           capacity: employeeToEdit.defaultWeeklyCapacity,
           hourlyRate: employeeToEdit.hourlyRate || 0,
           crmUserId: employeeToEdit.crmUserId || '',
@@ -130,8 +118,8 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
           name: '',
           email: '',
           password: '',
-          role: defaultRole,
-          department: defaultDepartment,
+          role: availableRoles[0] || 'Responsable',
+          department: availableDepartments[0] || 'SEO',
           capacity: 40,
           hourlyRate: 0,
           crmUserId: '',
@@ -139,7 +127,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
         });
       }
     }
-  }, [open, employeeToEdit, form, defaultRole, defaultDepartment]);
+  }, [open, employeeToEdit, form]);
 
   const onSubmit = async (data: EmployeeFormValues) => {
     setIsProcessing(true);
@@ -523,35 +511,37 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
                   </div>
 
                   {/* Campo CRM User ID */}
-                  <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Hash className="w-4 h-4 text-purple-600" />
-                      <span className="text-sm font-semibold text-purple-800">Integración CRM</span>
+                  {isCrmUserIdEnabled && (
+                    <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Hash className="w-4 h-4 text-purple-600" />
+                        <span className="text-sm font-semibold text-purple-800">Integración CRM</span>
+                      </div>
+                      <FormField
+                        control={form.control}
+                        name="crmUserId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-purple-700">ID Usuario CRM</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                placeholder="Ej: 33"
+                                className="bg-white"
+                                {...field}
+                                value={field.value === '' ? '' : field.value}
+                                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : '')}
+                              />
+                            </FormControl>
+                            <FormDescription className="text-xs text-purple-600">
+                              Este ID se usa para exportar tareas al CRM. Déjalo vacío si no aplica.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
-                    <FormField
-                      control={form.control}
-                      name="crmUserId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-purple-700">ID Usuario CRM</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="Ej: 33"
-                              className="bg-white"
-                              {...field}
-                              value={field.value === '' ? '' : field.value}
-                              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : '')}
-                            />
-                          </FormControl>
-                          <FormDescription className="text-xs text-purple-600">
-                            Este ID se usa para exportar tareas al CRM. Déjalo vacío si no aplica.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  )}
 
                   <div className="flex justify-end pt-4">
                     <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={isProcessing}>
