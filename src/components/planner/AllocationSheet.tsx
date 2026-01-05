@@ -29,6 +29,7 @@ import { BatchTaskRow } from './BatchTaskRow';
 import { useAllocationSheet, ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { useTasksImpact } from '@/hooks/useTasksImpact';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { usePermissions } from '@/hooks/usePermissions';
 import { NewTaskRow } from '@/types';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
@@ -46,8 +47,12 @@ type SortOption = 'budget_desc' | 'budget_asc' | 'my_hours_desc' | 'my_hours_asc
 export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, viewDateContext }: AllocationSheetProps) {
   const {
     employees, projects, clients, allocations, getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getProjectById,
-    addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading, loadDataForMonth, weeklyFeedback
+    addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading, loadDataForMonth, weeklyFeedback,
+    currentUser
   } = useApp();
+  
+  const { hasPermission } = usePermissions();
+  const canAssignToOthers = hasPermission('can_assign_tasks_to_others');
 
   // Inicializar con la semana actual si no se especifica otra
   const getInitialViewDate = () => {
@@ -361,7 +366,12 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     setNewTasks(prev => [...prev, {
       id: crypto.randomUUID(),
       projectId: lastTask ? lastTask.projectId : '',
-      taskName: '', hours: '', weekDate: lastTask ? lastTask.weekDate : defaultKey, description: '', dependencyId: 'none'
+      taskName: '', 
+      hours: '', 
+      weekDate: lastTask ? lastTask.weekDate : defaultKey, 
+      description: '', 
+      dependencyId: 'none',
+      employeeId: canAssignToOthers ? undefined : employeeId // Si no puede asignar a otros, usar el employeeId del sheet
     }]);
   };
 
@@ -389,8 +399,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     } else {
       newTasks.forEach(task => {
         if (task.projectId && task.hours) {
+          // Usar el employeeId de la tarea si existe, sino usar el del empleado del sheet
+          const targetEmployeeId = task.employeeId || employeeId;
           addAllocation({
-            employeeId,
+            employeeId: targetEmployeeId,
             projectId: task.projectId,
             taskName: task.taskName,
             weekStartDate: task.weekDate,
@@ -1942,6 +1954,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                           getProjectBudgetStatus={getProjectBudgetStatus}
                           getAvailableDependencies={getAvailableDependencies}
                           getWeekExceedStatus={getWeekExceedStatus}
+                          canAssignToOthers={canAssignToOthers}
+                          currentEmployeeId={employeeId}
                         />
                       ))}
 

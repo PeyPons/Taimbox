@@ -167,6 +167,7 @@ export interface NewTaskRow {
   weekDate: string;
   description?: string;
   dependencyId?: string;
+  employeeId?: string; // Opcional: para asignar tareas a otros empleados
 }
 
 export type LoadStatus = 'empty' | 'healthy' | 'warning' | 'overload';

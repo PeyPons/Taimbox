@@ -18,6 +18,7 @@ export interface UserPermissions {
   can_access_weekly?: boolean;
   can_access_settings?: boolean;
   can_access_agency_settings?: boolean;
+  can_assign_tasks_to_others?: boolean;
 }
 
 /**
@@ -61,6 +62,7 @@ export const DEFAULT_PERMISSIONS: UserPermissions = {
   can_access_weekly: true,
   can_access_settings: true,
   can_access_agency_settings: true,
+  can_assign_tasks_to_others: true,
 };
 
 /**
@@ -83,5 +85,6 @@ export const PERMISSION_LABELS: Record<keyof UserPermissions, string> = {
   can_access_weekly: 'Weekly',
   can_access_settings: 'Configuración',
   can_access_agency_settings: 'Configuración de Agencia',
+  can_assign_tasks_to_others: 'Asignar tareas a otros',
 };
 

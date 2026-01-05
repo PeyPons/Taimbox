@@ -84,6 +84,8 @@ export default function EmployeeDashboard() {
   const isMobile = useIsMobile();
   const isWeeklyFeedbackEnabled = useIntegration('weekly_feedback');
   const isCrmExportEnabled = useIntegration('crm_export');
+  const { hasPermission } = usePermissions();
+  const canAssignToOthers = hasPermission('can_assign_tasks_to_others');
 
   const hasPendingWeeklyTasks = useMemo(() => {
     if (!myEmployeeProfile) return false;
@@ -219,14 +221,30 @@ export default function EmployeeDashboard() {
 
   const openAddTasksDialog = () => {
     const defaultWeek = weeks[0]?.weekStart ? format(weeks[0].weekStart, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
-    setNewTasks([{ id: crypto.randomUUID(), projectId: '', taskName: '', hours: '', weekDate: defaultWeek, dependencyId: 'none' }]);
+    setNewTasks([{ 
+      id: crypto.randomUUID(), 
+      projectId: '', 
+      taskName: '', 
+      hours: '', 
+      weekDate: defaultWeek, 
+      dependencyId: 'none',
+      employeeId: canAssignToOthers ? undefined : myEmployeeProfile?.id // Si no puede asignar a otros, usar su propio ID
+    }]);
     setIsAddingTasks(true);
   };
 
   const addTaskRow = () => {
     const lastTask = newTasks[newTasks.length - 1];
     const defaultWeek = lastTask?.weekDate || (weeks[0]?.weekStart ? format(weeks[0].weekStart, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'));
-    setNewTasks(prev => [...prev, { id: crypto.randomUUID(), projectId: lastTask?.projectId || '', taskName: '', hours: '', weekDate: defaultWeek, dependencyId: 'none' }]);
+    setNewTasks(prev => [...prev, { 
+      id: crypto.randomUUID(), 
+      projectId: lastTask?.projectId || '', 
+      taskName: '', 
+      hours: '', 
+      weekDate: defaultWeek, 
+      dependencyId: 'none',
+      employeeId: canAssignToOthers ? undefined : myEmployeeProfile?.id // Si no puede asignar a otros, usar su propio ID
+    }]);
   };
 
   const removeTaskRow = (id: string) => {
@@ -245,10 +263,15 @@ export default function EmployeeDashboard() {
 
     try {
       for (const task of validTasks) {
+        // Usar el employeeId de la tarea si existe, sino usar el del empleado actual
+        const targetEmployeeId = task.employeeId || myEmployeeProfile.id;
         await addAllocation({
-          projectId: task.projectId, employeeId: myEmployeeProfile.id,
-          weekStartDate: task.weekDate, hoursAssigned: parseFloat(task.hours),
-          taskName: task.taskName, status: 'planned'
+          projectId: task.projectId, 
+          employeeId: targetEmployeeId,
+          weekStartDate: task.weekDate, 
+          hoursAssigned: parseFloat(task.hours),
+          taskName: task.taskName, 
+          status: 'planned'
         });
       }
       toast.success(`${validTasks.length} tarea(s) añadida(s)`);
@@ -623,6 +646,8 @@ export default function EmployeeDashboard() {
                       getProjectBudgetStatus={getProjectBudgetStatus}
                       getAvailableDependencies={getAvailableDependencies}
                       getWeekExceedStatus={getWeekExceedStatus}
+                      canAssignToOthers={canAssignToOthers}
+                      currentEmployeeId={myEmployeeProfile?.id}
                     />
                   ))}
                   <div id="task-list-end" />
