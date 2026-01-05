@@ -133,24 +133,27 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
 
     deadlines.forEach(deadline => {
       const deadlineHours = deadline.employeeHours[employeeId] || 0;
+      const projectAllocs = allocationsByProject[deadline.projectId] || { planned: 0, computed: 0 };
       
-      // FILTRAR: Solo procesar proyectos donde el empleado tiene deadline asignado
-      // Si no es manager, solo mostrar sus propios proyectos
-      if (!isManager && deadlineHours === 0) {
-        return; // Saltar este deadline si el empleado no tiene horas asignadas
+      // FILTRAR: Para empleados no-managers, solo mostrar proyectos donde están asignados
+      // (tienen deadline asignado O tienen allocations en ese proyecto)
+      if (!isManager) {
+        const hasAllocations = (projectAllocs.planned > 0 || projectAllocs.computed > 0);
+        if (deadlineHours === 0 && !hasAllocations) {
+          return; // Saltar si el empleado no está asignado a este proyecto
+        }
       }
       
-      const projectAllocs = allocationsByProject[deadline.projectId] || { planned: 0, computed: 0 };
       // El deadline planifica según lo que se estima computar, así que comparamos con lo computado + planificado
       // (porque lo planificado aún no computado también cuenta)
       const totalPlanned = projectAllocs.planned + projectAllocs.computed;
       const difference = round2(totalPlanned - deadlineHours);
 
-      // Solo mostrar si hay diferencia significativa (> 0.5h) O si el empleado tiene allocations pero no deadline
-      // Para empleados no-managers, solo mostrar si tienen deadline asignado
+      // Solo mostrar si hay diferencia significativa (> 0.5h)
+      // Para empleados no-managers, solo mostrar proyectos donde están asignados Y hay diferencia
       const shouldShow = isManager 
         ? Math.abs(difference) > 0.5 
-        : (deadlineHours > 0 && Math.abs(difference) > 0.5);
+        : ((deadlineHours > 0 || projectAllocs.planned > 0 || projectAllocs.computed > 0) && Math.abs(difference) > 0.5);
       
       if (shouldShow) {
         const project = projects.find(p => p.id === deadline.projectId);
@@ -197,30 +200,32 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
           }
         });
 
-        // Comparar con deadlines de cada empleado (solo si es manager)
-        if (isManager) {
-          Object.entries(deadline.employeeHours).forEach(([empId, deadlineHrs]) => {
-            if (empId !== employeeId) {
-              const empAllocs = allocationsByEmployee[empId] || { planned: 0, computed: 0 };
-              const empTotal = empAllocs.planned + empAllocs.computed;
-              const empDiff = round2(empTotal - deadlineHrs);
+        // Comparar con deadlines de cada empleado
+        // Para managers: mostrar todos los compañeros con diferencias
+        // Para empleados: mostrar compañeros con diferencias solo en proyectos donde están asignados
+        Object.entries(deadline.employeeHours).forEach(([empId, deadlineHrs]) => {
+          if (empId !== employeeId) {
+            const empAllocs = allocationsByEmployee[empId] || { planned: 0, computed: 0 };
+            const empTotal = empAllocs.planned + empAllocs.computed;
+            const empDiff = round2(empTotal - deadlineHrs);
 
-              // Si este compañero también tiene diferencia, podría ser un intercambio
-              if (Math.abs(empDiff) > 0.5) {
-                const emp = employees.find(e => e.id === empId);
-                teammates.push({
-                  employeeId: empId,
-                  employeeName: emp?.name || 'Desconocido',
-                  avatarUrl: emp?.avatarUrl,
-                  deadlineHours: deadlineHrs,
-                  plannedHours: round2(empAllocs.planned),
-                  computedHours: round2(empAllocs.computed),
-                  difference: empDiff
-                });
-              }
+            // Si este compañero también tiene diferencia, podría ser un intercambio
+            // Para empleados: solo mostrar si hay diferencia significativa (para que puedan avisar)
+            // Para managers: mostrar todos los que tienen diferencia
+            if (Math.abs(empDiff) > 0.5) {
+              const emp = employees.find(e => e.id === empId);
+              teammates.push({
+                employeeId: empId,
+                employeeName: emp?.name || 'Desconocido',
+                avatarUrl: emp?.avatarUrl,
+                deadlineHours: deadlineHrs,
+                plannedHours: round2(empAllocs.planned),
+                computedHours: round2(empAllocs.computed),
+                difference: empDiff
+              });
             }
-          });
-        }
+          }
+        });
 
         results.push({
           projectId: deadline.projectId,
