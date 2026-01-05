@@ -77,27 +77,29 @@ export function BatchTaskRow({
             isIncomplete ? "border-slate-200" : "border-slate-200",
             isIncomplete && (otherTasks.length > 0) && "border-l-4 border-l-amber-300 left-border-fix"
         )}>
-            {/* Fila 1: Selector de Proyecto (Full Width) */}
-            <div className="w-full">
-                <Popover open={openCombobox} onOpenChange={setOpenCombobox} modal={true}>
-                    <PopoverTrigger asChild>
-                        <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn(
-                                "w-full justify-between h-10 px-3 text-left font-normal",
-                                !task.projectId && "text-muted-foreground",
-                                willExceed && "border-amber-300 bg-amber-50 text-amber-900"
-                            )}>
-                            <span className="truncate text-sm">
-                                {task.projectId ? formatProjectName(activeProjects.find((p) => p.id === task.projectId)?.name || '') : "Seleccionar proyecto..."}
-                            </span>
-                            <div className="flex items-center gap-2 opacity-50">
-                                {willExceed && <AlertTriangle className="h-4 w-4 text-amber-600" />}
-                                <Plus className="h-4 w-4" />
-                            </div>
-                        </Button>
-                    </PopoverTrigger>
+            {/* Fila 1: Proyecto + Nombre de tarea */}
+            <div className="flex gap-3 items-center">
+                {/* Selector de Proyecto (ancho fijo más compacto) */}
+                <div className="w-[280px] shrink-0">
+                    <Popover open={openCombobox} onOpenChange={setOpenCombobox} modal={true}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn(
+                                    "w-full justify-between h-9 px-3 text-left font-normal text-sm",
+                                    !task.projectId && "text-muted-foreground",
+                                    willExceed && "border-amber-300 bg-amber-50 text-amber-900"
+                                )}>
+                                <span className="truncate text-sm">
+                                    {task.projectId ? formatProjectName(activeProjects.find((p) => p.id === task.projectId)?.name || '') : "Seleccionar proyecto..."}
+                                </span>
+                                <div className="flex items-center gap-2 opacity-50 shrink-0">
+                                    {willExceed && <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />}
+                                    <Plus className="h-3.5 w-3.5" />
+                                </div>
+                            </Button>
+                        </PopoverTrigger>
                     <PopoverContent className="w-[450px] p-0" align="start">
                         <Command
                             filter={(value, search) => {
@@ -181,13 +183,22 @@ export function BatchTaskRow({
                         </Command>
                     </PopoverContent>
                 </Popover>
+                </div>
+                
+                {/* Nombre de la tarea (más espacio ahora) */}
+                <Input
+                    className="flex-1 h-9 text-sm min-w-0"
+                    placeholder="Nombre de la tarea"
+                    value={task.taskName}
+                    onChange={(e) => updateTaskRow(task.id, 'taskName', e.target.value)}
+                />
             </div>
 
-            {/* Fila 2: Detalles de la tarea */}
+            {/* Fila 2: Detalles adicionales */}
             <div className="flex gap-3 items-center">
                 {/* Selector de empleado (solo si tiene permiso) */}
                 {canAssignToOthers && (
-                    <div className="w-[160px]">
+                    <div className="w-[160px] shrink-0">
                         <Popover open={openEmployeeCombobox} onOpenChange={setOpenEmployeeCombobox} modal={true}>
                             <PopoverTrigger asChild>
                                 <Button
@@ -239,13 +250,6 @@ export function BatchTaskRow({
                         </Popover>
                     </div>
                 )}
-                
-                <Input
-                    className="flex-1 h-9 text-sm"
-                    placeholder="Nombre de la tarea"
-                    value={task.taskName}
-                    onChange={(e) => updateTaskRow(task.id, 'taskName', e.target.value)}
-                />
 
                 <div className="w-[140px]">
                     <Select value={task.dependencyId || 'none'} onValueChange={(v) => updateTaskRow(task.id, 'dependencyId', v)} disabled={!task.projectId}>
