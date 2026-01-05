@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Agency, AgencySettings } from '@/types';
 import { useAuth } from './AuthContext';
@@ -34,6 +34,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [availableAgencies, setAvailableAgencies] = useState<Array<{ agencyId: string; agencyName: string }>>([]);
+  const isInitialLoadRef = useRef(true);
 
   // Migración automática de integraciones para agencias existentes (definida primero para usarse en mapSupabaseAgency)
   const migrateIntegrations = useCallback(async (agencyId: string, settings: AgencySettings): Promise<AgencySettings> => {
@@ -125,13 +126,14 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
     if (!user?.email) {
       setCurrentAgency(null);
       setIsLoading(false);
+      isInitialLoadRef.current = false;
       return;
     }
 
     // --- CORRECCIÓN: Background Revalidation ---
     // Solo mostrar spinner si es la carga inicial (no hay datos).
     // Si ya hay datos, el usuario seguirá viéndolos mientras se actualizan por detrás.
-    const isInitialLoad = !currentAgency;
+    const isInitialLoad = isInitialLoadRef.current;
     if (isInitialLoad) {
       setIsLoading(true);
     }
@@ -244,20 +246,31 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       }
 
       const agency = await mapSupabaseAgency(agencyData);
-      setCurrentAgency(agency);
-      console.log('[AgencyContext] Agencia cargada:', agency.name);
+      
+      // Solo actualizar si la agencia cambió para evitar loops infinitos
+      setCurrentAgency(prev => {
+        if (prev?.id === agency.id && JSON.stringify(prev.settings) === JSON.stringify(agency.settings)) {
+          // La agencia no cambió, no actualizar para evitar re-renders innecesarios
+          return prev;
+        }
+        console.log('[AgencyContext] Agencia cargada:', agency.name);
+        return agency;
+      });
+      
+      isInitialLoadRef.current = false;
 
     } catch (err) {
       console.error('[AgencyContext] Error inesperado:', err);
       setError('Error al cargar la agencia');
       setCurrentAgency(null);
+      isInitialLoadRef.current = false;
     } finally {
       // Asegurarnos de quitar el loading solo si lo pusimos (carga inicial)
       if (isInitialLoad) {
         setIsLoading(false);
       }
     }
-  }, [user, currentAgency, mapSupabaseAgency]);
+  }, [user, mapSupabaseAgency]);
 
   // Cargar agencia cuando el usuario esté autenticado
   useEffect(() => {
