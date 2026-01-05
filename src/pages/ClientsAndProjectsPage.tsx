@@ -5,7 +5,7 @@ import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
-import { Client, Project, OKR } from '@/types';
+import { Client, Project, OKR, Allocation } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -25,12 +25,12 @@ import {
   AlertTriangle, TrendingUp, TrendingDown, Pencil, Trash2, Users,
   FolderOpen, Clock, CalendarDays, ArrowUpRight, ArrowDownRight,
   Minus, Eye, X, ChevronsUpDown, User, Target, Filter, LayoutGrid,
-  AlertOctagon, CircleDashed, Ban, CheckCircle2, XCircle, Zap, EyeOff
+  AlertOctagon, CircleDashed, Ban, CheckCircle2, XCircle, Zap, EyeOff, Link as LinkIcon
 } from 'lucide-react';
 import { cn, isKitDigitalProject, formatProjectName } from '@/lib/utils';
 import { toast } from 'sonner';
 import { format, subMonths, addMonths, isSameMonth, parseISO, getDaysInMonth, getDate } from 'date-fns';
-import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { isAllocationInEffectiveMonth, getWeeksForMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 
@@ -106,7 +106,8 @@ export default function ClientsAndProjectsPage() {
     clients, projects, allocations, employees,
     addClient, updateClient, deleteClient,
     addProject, updateProject, deleteProject,
-    getClientTotalHoursForMonth, getProjectHoursForMonth
+    getClientTotalHoursForMonth, getProjectHoursForMonth,
+    updateAllocation
   } = useApp();
   const { currentAgency } = useAgency();
 
@@ -118,8 +119,19 @@ export default function ClientsAndProjectsPage() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [hidingProject, setHidingProject] = useState<Project | null>(null);
+  const [editingTask, setEditingTask] = useState<Allocation | null>(null);
 
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ type: 'client' | 'project', id: string, name: string } | null>(null);
+  
+  // Estados para edición de tarea
+  const [editTaskProjectId, setEditTaskProjectId] = useState('');
+  const [editTaskName, setEditTaskName] = useState('');
+  const [editTaskHours, setEditTaskHours] = useState('');
+  const [editTaskWeek, setEditTaskWeek] = useState('');
+  const [editTaskEmployeeId, setEditTaskEmployeeId] = useState('');
+  const [editTaskHoursActual, setEditTaskHoursActual] = useState('');
+  const [editTaskHoursComputed, setEditTaskHoursComputed] = useState('');
+  const [editTaskDependencyId, setEditTaskDependencyId] = useState('none');
 
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
@@ -676,6 +688,46 @@ export default function ClientsAndProjectsPage() {
   const handleDeleteProject = async () => {
     if (!editingProject) return;
     setDeleteConfirmation({ type: 'project', id: editingProject.id, name: editingProject.name });
+  };
+
+  const openEditTask = (task: Allocation) => {
+    setEditingTask(task);
+    setEditTaskProjectId(task.projectId);
+    setEditTaskName(task.taskName || '');
+    setEditTaskHours(task.hoursAssigned.toString());
+    setEditTaskWeek(task.weekStartDate);
+    setEditTaskEmployeeId(task.employeeId);
+    setEditTaskHoursActual((task.hoursActual || 0).toString());
+    setEditTaskHoursComputed((task.hoursComputed || 0).toString());
+    setEditTaskDependencyId(task.dependencyId || 'none');
+  };
+
+  const handleSaveTask = async () => {
+    if (!editingTask) return;
+    
+    if (!editTaskProjectId || !editTaskName.trim() || !editTaskHours || !editTaskWeek || !editTaskEmployeeId) {
+      toast.error('Completa todos los campos obligatorios');
+      return;
+    }
+
+    try {
+      await updateAllocation({
+        ...editingTask,
+        projectId: editTaskProjectId,
+        taskName: editTaskName,
+        hoursAssigned: parseFloat(editTaskHours) || 0,
+        weekStartDate: editTaskWeek,
+        employeeId: editTaskEmployeeId,
+        hoursActual: parseFloat(editTaskHoursActual) || undefined,
+        hoursComputed: parseFloat(editTaskHoursComputed) || undefined,
+        dependencyId: editTaskDependencyId === 'none' ? undefined : editTaskDependencyId
+      });
+      toast.success('Tarea actualizada');
+      setEditingTask(null);
+    } catch (error) {
+      console.error('Error actualizando tarea:', error);
+      toast.error('Error al actualizar la tarea');
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -1782,24 +1834,42 @@ export default function ClientsAndProjectsPage() {
                                         {analysis.pendingTasks.map(task => {
                                           const emp = employees.find(e => e.id === task.employeeId);
                                           return (
-                                            <div key={task.id} className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm">
-                                              <div className="flex items-center gap-3 min-w-0">
+                                            <div key={task.id} className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm group">
+                                              <div className="flex items-center gap-3 min-w-0 flex-1">
                                                 <Avatar className="h-7 w-7 border shrink-0">
                                                   <AvatarImage src={emp?.avatarUrl} />
                                                   <AvatarFallback className="bg-indigo-100 text-indigo-700 text-[9px] font-bold">
                                                     {emp?.name.substring(0, 2).toUpperCase() || "??"}
                                                   </AvatarFallback>
                                                 </Avatar>
-                                                <div className="min-w-0">
+                                                <div className="min-w-0 flex-1">
                                                   <p className="text-sm font-medium truncate">{task.taskName}</p>
                                                   <p className="text-[10px] text-slate-400">
                                                     {emp?.name} • Sem {format(parseISO(task.weekStartDate), 'w')}
                                                   </p>
                                                 </div>
                                               </div>
-                                              <div className="text-right shrink-0">
-                                                <p className="font-mono font-bold text-sm">{task.hoursAssigned}h</p>
-                                                <p className="text-[10px] text-slate-400">estimadas</p>
+                                              <div className="flex items-center gap-2 shrink-0">
+                                                <div className="text-right">
+                                                  <p className="font-mono font-bold text-sm">{task.hoursAssigned}h</p>
+                                                  <p className="text-[10px] text-slate-400">estimadas</p>
+                                                </div>
+                                                <Tooltip>
+                                                  <TooltipTrigger asChild>
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="icon"
+                                                      className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        openEditTask(task);
+                                                      }}
+                                                    >
+                                                      <Pencil className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                  </TooltipTrigger>
+                                                  <TooltipContent>Editar tarea</TooltipContent>
+                                                </Tooltip>
                                               </div>
                                             </div>
                                           );
@@ -1830,33 +1900,51 @@ export default function ClientsAndProjectsPage() {
                                           {analysis.completedTasks.map(task => {
                                             const emp = employees.find(e => e.id === task.employeeId);
                                             return (
-                                              <div key={task.id} className="flex items-center justify-between p-3 bg-white border rounded-lg">
-                                                <div className="flex items-center gap-3 min-w-0">
+                                              <div key={task.id} className="flex items-center justify-between p-3 bg-white border rounded-lg group">
+                                                <div className="flex items-center gap-3 min-w-0 flex-1">
                                                   <Avatar className="h-7 w-7 border shrink-0">
                                                     <AvatarImage src={emp?.avatarUrl} />
                                                     <AvatarFallback className="bg-emerald-100 text-emerald-700 text-[9px] font-bold">
                                                       {emp?.name.substring(0, 2).toUpperCase() || "??"}
                                                     </AvatarFallback>
                                                   </Avatar>
-                                                  <div className="min-w-0">
+                                                  <div className="min-w-0 flex-1">
                                                     <p className="text-sm font-medium truncate">{task.taskName}</p>
                                                     <p className="text-[10px] text-slate-400">
                                                       {emp?.name} • Sem {format(parseISO(task.weekStartDate), 'w')}
                                                     </p>
                                                   </div>
                                                 </div>
-                                                <div className="text-right shrink-0">
-                                                  <div className="space-y-0.5">
-                                                    <p className="font-mono font-bold text-xs text-slate-700">
-                                                      Est: {task.hoursAssigned}h
-                                                    </p>
-                                                    <p className="font-mono font-bold text-xs text-blue-600">
-                                                      Real: {task.hoursActual || task.hoursAssigned}h
-                                                    </p>
-                                                    <p className="font-mono font-bold text-xs text-emerald-600">
-                                                      Comp: {task.hoursComputed || task.hoursAssigned}h
-                                                    </p>
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                  <div className="text-right">
+                                                    <div className="space-y-0.5">
+                                                      <p className="font-mono font-bold text-xs text-slate-700">
+                                                        Est: {task.hoursAssigned}h
+                                                      </p>
+                                                      <p className="font-mono font-bold text-xs text-blue-600">
+                                                        Real: {task.hoursActual || task.hoursAssigned}h
+                                                      </p>
+                                                      <p className="font-mono font-bold text-xs text-emerald-600">
+                                                        Comp: {task.hoursComputed || task.hoursAssigned}h
+                                                      </p>
+                                                    </div>
                                                   </div>
+                                                  <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          openEditTask(task);
+                                                        }}
+                                                      >
+                                                        <Pencil className="h-3.5 w-3.5" />
+                                                      </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>Editar tarea</TooltipContent>
+                                                  </Tooltip>
                                                 </div>
                                               </div>
                                             );
@@ -1998,6 +2086,159 @@ export default function ClientsAndProjectsPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Diálogo de edición de tarea */}
+      {editingTask && (() => {
+        const weeks = getWeeksForMonth(currentMonth);
+        const availableDependencies = allocations.filter(a => 
+          a.projectId === editTaskProjectId && 
+          a.id !== editingTask.id &&
+          a.status !== 'completed'
+        );
+        
+        return (
+          <Dialog open={!!editingTask} onOpenChange={(open) => !open && setEditingTask(null)}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Editar tarea</DialogTitle>
+                <DialogDescription>
+                  Modifica todos los detalles de la tarea.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-6 py-4">
+                <div className="space-y-2">
+                  <Label>Proyecto</Label>
+                  <Select value={editTaskProjectId} onValueChange={setEditTaskProjectId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar proyecto" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects.filter(p => p.status === 'active').map(project => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Nombre de la tarea</Label>
+                  <Input
+                    value={editTaskName}
+                    onChange={(e) => setEditTaskName(e.target.value)}
+                    placeholder="Nombre de la tarea"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Empleado</Label>
+                  <Select value={editTaskEmployeeId} onValueChange={setEditTaskEmployeeId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar empleado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employees.filter(e => e.isActive).map(emp => (
+                        <SelectItem key={emp.id} value={emp.id}>
+                          {emp.name || emp.first_name || 'Sin nombre'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 text-xs text-slate-500">
+                    <LinkIcon className="w-3 h-3" /> Depende de otra tarea
+                  </Label>
+                  <Select 
+                    value={editTaskDependencyId} 
+                    onValueChange={setEditTaskDependencyId}
+                    disabled={!editTaskProjectId}
+                  >
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Sin dependencia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">-- Ninguna --</SelectItem>
+                      {availableDependencies.map(dep => {
+                        const owner = employees.find(e => e.id === dep.employeeId);
+                        return (
+                          <SelectItem key={dep.id} value={dep.id} className="text-xs">
+                            {dep.taskName} ({owner?.name || 'Desconocido'})
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Horas estimadas</Label>
+                    <Input
+                      type="number"
+                      step="0.5"
+                      value={editTaskHours}
+                      onChange={(e) => setEditTaskHours(e.target.value)}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Semana</Label>
+                    <Select value={editTaskWeek} onValueChange={setEditTaskWeek}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar semana" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {weeks.map((w, i) => (
+                          <SelectItem key={format(w.weekStart, 'yyyy-MM-dd')} value={format(w.weekStart, 'yyyy-MM-dd')}>
+                            Sem {i + 1} ({format(w.weekStart, 'dd/MM')})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {editingTask.status === 'completed' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Horas reales</Label>
+                      <Input
+                        type="number"
+                        step="0.5"
+                        value={editTaskHoursActual}
+                        onChange={(e) => setEditTaskHoursActual(e.target.value)}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Horas computadas</Label>
+                      <Input
+                        type="number"
+                        step="0.5"
+                        value={editTaskHoursComputed}
+                        onChange={(e) => setEditTaskHoursComputed(e.target.value)}
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditingTask(null)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleSaveTask} className="bg-gradient-to-r from-indigo-500 to-purple-600">
+                  Guardar cambios
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
+
       <AlertDialog open={!!deleteConfirmation} onOpenChange={(open) => !open && setDeleteConfirmation(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
