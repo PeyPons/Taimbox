@@ -45,6 +45,7 @@ export default function DeadlinesPage() {
   const { projects, clients, employees, absences, teamEvents, currentUser } = useApp();
   const { canAccess } = usePermissions();
   const isManager = canAccess('/planner') || canAccess('/reports');
+  const canEditDeadlines = isManager || canAccess('/deadlines');
   const { currentAgency } = useAgency();
   const { showTour } = useDeadlinesTour();
   const isMobile = useIsMobile();
@@ -1139,7 +1140,7 @@ export default function DeadlinesPage() {
 
   // Funciones de edición inline
   const startEditingProject = async (projectId: string) => {
-    if (!isManager) return;
+    if (!canEditDeadlines) return;
     // Si ya estamos editando este proyecto, no hacer nada
     if (editingProjectId === projectId) return;
 
@@ -1657,7 +1658,7 @@ export default function DeadlinesPage() {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            {isManager && <TooltipProvider>
+            {canEditDeadlines && <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="outline" size="sm" onClick={copyFromPreviousMonth} className="h-8 w-8 p-0">
@@ -1796,7 +1797,7 @@ export default function DeadlinesPage() {
               </SelectContent>
             </Select>
             {/* Botón para añadir asignación global (visible en móvil) */}
-            {isMobile && isManager && (
+            {isMobile && canEditDeadlines && (
               <Button
                 variant="outline"
                 size="sm"
@@ -2066,7 +2067,7 @@ export default function DeadlinesPage() {
 
       {/* Panel lateral sticky - Disponibilidad del equipo (solo desktop) */}
       {
-        !isMobile && isManager && (
+        !isMobile && canEditDeadlines && (
           <div className="w-64 flex-shrink-0">
             <div className="sticky top-6 space-y-4">
               {/* Disponibilidad en tiempo real */}
