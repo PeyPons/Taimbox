@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AgencyProvider } from "@/contexts/AgencyContext";
@@ -102,8 +102,11 @@ const App = () => (
                   <BrandingEffect />
                   <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                     <Routes>
-                      {/* Ruta pública Landing */}
-                      <Route path="/" element={<LandingPage />} />
+                      {/* Redirección de landing al dashboard (temporalmente oculta) */}
+                      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+                      {/* Ruta pública Landing (comentada temporalmente) */}
+                      {/* <Route path="/landing" element={<LandingPage />} /> */}
 
                       {/* Ruta pública Login */}
                       <Route path="/login" element={<Login />} />
