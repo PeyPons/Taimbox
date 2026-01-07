@@ -601,7 +601,7 @@ export default function EmployeeDashboard() {
             <AlertCircle className="h-4 w-4 mr-2" /> Prioridades
           </TabsTrigger>
           <TabsTrigger value="coherence" className="px-4 py-2 data-[state=active]:bg-red-50 data-[state=active]:text-red-700">
-            <CheckCircle2 className="h-4 w-4 mr-2" /> Validaciones
+            <CheckCircle2 className="h-4 w-4 mr-2" /> Control de planificación
           </TabsTrigger>
           <TabsTrigger value="teammates" className="px-4 py-2">
             <div className="flex items-center gap-2">Compañeros</div>

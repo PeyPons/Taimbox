@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   AlertTriangle, CheckCircle2, Users, TrendingUp, TrendingDown,
-  Info, ChevronDown, ChevronUp
+  Info, ChevronDown, ChevronUp, User
 } from 'lucide-react';
 import { cn, formatProjectName } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
@@ -134,6 +134,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
     deadlines.forEach(deadline => {
       const deadlineHours = deadline.employeeHours[employeeId] || 0;
       const projectAllocs = allocationsByProject[deadline.projectId] || { planned: 0, computed: 0 };
+      const project = projects.find(p => p.id === deadline.projectId);
       
       // FILTRAR: Para empleados no-managers, solo mostrar proyectos donde están asignados
       // (tienen deadline asignado O tienen allocations en ese proyecto)
@@ -156,7 +157,6 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         : ((deadlineHours > 0 || projectAllocs.planned > 0 || projectAllocs.computed > 0) && Math.abs(difference) > 0.5);
       
       if (shouldShow) {
-        const project = projects.find(p => p.id === deadline.projectId);
 
         // Obtener allocations del proyecto de todos los empleados
         const allProjectAllocations = allocations.filter(a =>
@@ -200,24 +200,47 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
           }
         });
 
-        // Comparar con deadlines de cada empleado
-        // Para managers: mostrar todos los compañeros con diferencias
-        // Para empleados: mostrar compañeros con diferencias solo en proyectos donde están asignados
-        Object.entries(deadline.employeeHours).forEach(([empId, deadlineHrs]) => {
+        // CORRECCIÓN: Incluir TODOS los empleados con horas (planificadas o computadas) > 0
+        // O con deadline asignado (incluso si no tienen horas todavía)
+        // Esto corrige el bug de "Empleado Fantasma" donde las horas suman pero no aparecen
+        // Y también el caso donde un compañero tiene deadline pero aún no tiene horas
+        const allEmployeeIdsForTeammates = new Set<string>();
+        
+        // Añadir empleados con allocations
+        Object.keys(allocationsByEmployee).forEach(empId => {
           if (empId !== employeeId) {
-            const empAllocs = allocationsByEmployee[empId] || { planned: 0, computed: 0 };
-            const empTotal = empAllocs.planned + empAllocs.computed;
+            allEmployeeIdsForTeammates.add(empId);
+          }
+        });
+        
+        // Añadir empleados con deadline asignado (aunque no tengan horas todavía)
+        if (deadline.employeeHours) {
+          Object.keys(deadline.employeeHours).forEach(empId => {
+            if (empId !== employeeId) {
+              allEmployeeIdsForTeammates.add(empId);
+            }
+          });
+        }
+        
+        allEmployeeIdsForTeammates.forEach((empId) => {
+          const empAllocs = allocationsByEmployee[empId] || { planned: 0, computed: 0 };
+          const empTotal = empAllocs.planned + empAllocs.computed;
+          
+          // Mostrar si tiene horas imputadas (planificadas o computadas) > 0
+          // O si tiene deadline asignado
+          const deadlineHrs = deadline.employeeHours[empId] || 0;
+          const hasHours = empTotal > 0;
+          const hasDeadline = deadlineHrs > 0;
+          
+          if (hasHours || hasDeadline) {
             const empDiff = round2(empTotal - deadlineHrs);
-
-            // Si este compañero también tiene diferencia, podría ser un intercambio
-            // Para empleados: solo mostrar si hay diferencia significativa (para que puedan avisar)
-            // Para managers: mostrar todos los que tienen diferencia
-            if (Math.abs(empDiff) > 0.5) {
-              const emp = employees.find(e => e.id === empId);
+            const emp = employees.find(e => e.id === empId);
+            
+            if (emp) {
               teammates.push({
                 employeeId: empId,
-                employeeName: emp?.name || 'Desconocido',
-                avatarUrl: emp?.avatarUrl,
+                employeeName: emp.name,
+                avatarUrl: emp.avatarUrl,
                 deadlineHours: deadlineHrs,
                 plannedHours: round2(empAllocs.planned),
                 computedHours: round2(empAllocs.computed),
@@ -243,14 +266,21 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
       }
     });
 
-    // NUEVO: Detectar proyectos con horas pero sin deadline
+    // NUEVO: Detectar proyectos con horas pero sin deadline PARA EL USUARIO
     // Iterar sobre todos los proyectos que tienen allocations para este empleado
+    // IMPORTANTE: Verificar que el proyecto no esté ya en results (evitar duplicados)
+    const processedProjectIds = new Set(results.map(r => r.projectId));
+    
     Object.entries(allocationsByProject).forEach(([projectId, projectAllocs]) => {
-      // Verificar si este proyecto NO está en ningún deadline
-      const hasDeadline = deadlines.some(d => d.projectId === projectId);
-
-      if (!hasDeadline && (projectAllocs.planned > 0 || projectAllocs.computed > 0)) {
-        // Este proyecto tiene horas pero no está en el deadline
+      // Si el proyecto ya está en results, saltarlo (evitar duplicados)
+      if (processedProjectIds.has(projectId)) return;
+      
+      // Verificar si el usuario tiene deadline asignado en este proyecto
+      const userDeadline = deadlines.find(d => d.projectId === projectId);
+      const userDeadlineHours = userDeadline?.employeeHours[employeeId] || 0;
+      
+      // Si el usuario NO tiene deadline asignado pero tiene horas, mostrar el proyecto
+      if (userDeadlineHours === 0 && (projectAllocs.planned > 0 || projectAllocs.computed > 0)) {
         const project = projects.find(p => p.id === projectId);
         const totalPlanned = projectAllocs.planned + projectAllocs.computed;
 
@@ -268,6 +298,84 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
           .filter(a => a.status !== 'completed')
           .reduce((sum, a) => sum + (a.hoursAssigned || 0), 0);
 
+        // CORRECCIÓN: Incluir compañeros con horas O con deadline asignado
+        // Esto corrige el caso donde el usuario no tiene deadline pero otros compañeros sí
+        const teammatesWithoutDeadline: Array<{
+          employeeId: string;
+          employeeName: string;
+          avatarUrl?: string;
+          deadlineHours: number;
+          plannedHours: number;
+          computedHours: number;
+          difference: number;
+        }> = [];
+
+        // Agrupar por empleado
+        const allocationsByEmployeeNoDeadline: Record<string, {
+          planned: number;
+          computed: number;
+        }> = {};
+
+        allProjectAllocations.forEach(a => {
+          if (!allocationsByEmployeeNoDeadline[a.employeeId]) {
+            allocationsByEmployeeNoDeadline[a.employeeId] = { planned: 0, computed: 0 };
+          }
+          if (a.status === 'completed') {
+            allocationsByEmployeeNoDeadline[a.employeeId].computed += a.hoursComputed || 0;
+          } else {
+            allocationsByEmployeeNoDeadline[a.employeeId].planned += a.hoursAssigned || 0;
+          }
+        });
+
+        // Obtener deadline del proyecto (si existe) para incluir compañeros con deadline
+        const projectDeadline = deadlines.find(d => d.projectId === projectId);
+
+        // Incluir todos los empleados con horas > 0 O con deadline asignado (excepto el usuario logueado)
+        // IMPORTANTE: Incluir TODOS los empleados que tienen deadline en este proyecto, incluso si no tienen horas todavía
+        const allEmployeeIds = new Set<string>();
+        
+        // Añadir empleados con allocations
+        Object.keys(allocationsByEmployeeNoDeadline).forEach(empId => {
+          if (empId !== employeeId) {
+            allEmployeeIds.add(empId);
+          }
+        });
+        
+        // Añadir empleados con deadline asignado (aunque no tengan horas todavía)
+        // Esto es crítico: si el proyecto tiene deadline para otros empleados, deben aparecer
+        if (projectDeadline && projectDeadline.employeeHours) {
+          Object.keys(projectDeadline.employeeHours).forEach(empId => {
+            if (empId !== employeeId) {
+              allEmployeeIds.add(empId);
+            }
+          });
+        }
+
+        allEmployeeIds.forEach((empId) => {
+          const empAllocs = allocationsByEmployeeNoDeadline[empId] || { planned: 0, computed: 0 };
+          const empTotal = empAllocs.planned + empAllocs.computed;
+          const empDeadlineHours = projectDeadline?.employeeHours?.[empId] || 0;
+          
+          // Mostrar si tiene horas imputadas O si tiene deadline asignado
+          // Esto asegura que aparezcan compañeros con deadline aunque no tengan horas todavía
+          if (empTotal > 0 || empDeadlineHours > 0) {
+            const empDiff = round2(empTotal - empDeadlineHours);
+            const emp = employees.find(e => e.id === empId);
+            
+            if (emp) { // Solo añadir si el empleado existe
+              teammatesWithoutDeadline.push({
+                employeeId: empId,
+                employeeName: emp.name,
+                avatarUrl: emp.avatarUrl,
+                deadlineHours: empDeadlineHours, // Puede tener deadline aunque el usuario no
+                plannedHours: round2(empAllocs.planned),
+                computedHours: round2(empAllocs.computed),
+                difference: empDiff
+              });
+            }
+          }
+        });
+
         // No hay deadline, así que la diferencia es el total de horas
         results.push({
           projectId,
@@ -280,7 +388,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
           minimumHours: project?.minimumHours || 0,
           totalProjectComputed: round2(totalProjectComputed),
           totalProjectPlanned: round2(totalProjectPlanned),
-          teammates: [] // No hay deadline para comparar con otros empleados
+          teammates: teammatesWithoutDeadline
         });
       }
     });
@@ -288,12 +396,8 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
     return results.sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference));
   }, [deadlines, allocations, projects, employees, employeeId, viewDate, isLoading]);
 
-  // Expandir todos los proyectos por defecto cuando cambian las inconsistencias
-  useEffect(() => {
-    if (inconsistencies.length > 0) {
-      setExpandedProjects(new Set(inconsistencies.map(inc => inc.projectId)));
-    }
-  }, [inconsistencies]);
+  // Mantener proyectos colapsados por defecto (no expandir automáticamente)
+  // El usuario puede expandir manualmente si necesita ver detalles
 
   const toggleProject = (projectId: string) => {
     setExpandedProjects(prev => {
@@ -313,7 +417,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-600" />
-            <span>Coherencia de planificación</span>
+            <span>Control de planificación</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -329,7 +433,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-            <span>Coherencia de planificación</span>
+            <span>Control de planificación</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -347,7 +451,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-600" />
-            <span>Coherencia de planificación</span>
+            <span>Alertas de planificación</span>
             <Tooltip>
               <TooltipTrigger>
                 <Info className="h-4 w-4 text-slate-400" />
@@ -367,28 +471,93 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
             {' '}en {format(viewDate, 'MMMM yyyy', { locale: es })}.
           </p>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {inconsistencies.map(inc => {
               const isExpanded = expandedProjects.has(inc.projectId);
               const hasMore = inc.teammates.length > 0;
               const isPositive = inc.difference > 0;
+              const currentEmployee = employees.find(e => e.id === employeeId);
 
               return (
                 <div
                   key={inc.projectId}
                   className={cn(
-                    "border rounded-lg p-3 transition-colors",
+                    "border rounded-lg transition-colors",
                     isPositive ? "bg-amber-50 border-amber-200" : "bg-blue-50 border-blue-200"
                   )}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
+                  {/* HEADER - Siempre visible (colapsado) */}
+                  <div 
+                    className="flex items-center justify-between gap-2 p-2.5 cursor-pointer hover:bg-white/50 transition-colors"
+                    onClick={() => toggleProject(inc.projectId)}
+                  >
+                    <div className="flex-1 min-w-0 flex items-center gap-3">
+                      {/* Botón de expandir/colapsar */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleProject(inc.projectId);
+                        }}
+                        className="text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0"
+                      >
+                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </button>
+                      
+                      {/* Nombre del proyecto */}
                       <div className="font-semibold text-sm text-slate-800 truncate">
                         {formatProjectName(inc.projectName)}
                       </div>
+                      
+                      {/* Resumen compacto cuando está colapsado */}
+                      {!isExpanded && (
+                        <div className="flex items-center gap-2 text-xs text-slate-600">
+                          <div className="flex items-center gap-1 text-slate-700 font-semibold">
+                            <User className="h-3 w-3" />
+                            <span>Mis Horas:</span>
+                          </div>
+                          {inc.deadlineHours > 0 && (
+                            <span>Deadline: <strong className="text-slate-800">{inc.deadlineHours}h</strong></span>
+                          )}
+                          <span className="text-slate-300">→</span>
+                          <span className="text-blue-600">
+                            Plan: <strong>{inc.plannedHours}h</strong>
+                          </span>
+                          <span className="text-emerald-600">
+                            Comp: <strong>{inc.computedHours}h</strong>
+                          </span>
+                          <span className="text-slate-300">→</span>
+                          {/* DIFERENCIA - Compacta pero destacada */}
+                          <div className={cn(
+                            "flex items-center gap-1 px-2 py-0.5 rounded font-bold text-sm",
+                            inc.difference < 0 
+                              ? "bg-red-100 text-red-700 border border-red-300" 
+                              : isPositive 
+                              ? "bg-amber-100 text-amber-700 border border-amber-300"
+                              : "bg-blue-100 text-blue-700 border border-blue-300"
+                          )}>
+                            {inc.difference < 0 ? (
+                              <>
+                                <TrendingDown className="h-3.5 w-3.5" />
+                                <span>{inc.difference}h</span>
+                              </>
+                            ) : (
+                              <>
+                                {isPositive ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                                <span>{isPositive ? '+' : ''}{inc.difference}h</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* CONTENIDO EXPANDIDO */}
+                  {isExpanded && (
+                    <div className="px-2.5 pb-2.5 space-y-2">
                       {/* Información del proyecto */}
                       {(inc.budgetHours > 0 || inc.minimumHours > 0) && (
-                        <div className="mt-1 text-[10px] text-slate-500">
+                        <div className="text-[10px] text-slate-500">
                           {inc.budgetHours > 0 && (
                             <span>Asignadas: <strong>{inc.budgetHours}h</strong></span>
                           )}
@@ -398,133 +567,173 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                           )}
                         </div>
                       )}
-                      {/* Explicación de la incoherencia */}
-                      <div className="mt-1.5 text-[11px] text-slate-600 bg-white/50 rounded px-2 py-1 border border-slate-200">
-                        {inc.deadlineHours === 0 ? (
-                          <div className="text-amber-700 font-semibold">
-                            ⚠️ Este proyecto <strong>no está en el deadline</strong> pero tiene horas asignadas.
-                            {' '}Total: <strong>{round2(inc.totalProjectComputed + inc.totalProjectPlanned)}h</strong>
-                            {' '}({inc.totalProjectComputed.toFixed(1)}h computadas + {inc.totalProjectPlanned.toFixed(1)}h planificadas).
+                      
+                      {/* Tu estado - Estilo similar a compañeros pero destacado */}
+                      <div className="bg-gradient-to-br from-indigo-50 via-indigo-100/30 to-white rounded-lg px-3 py-2.5 border-2 border-indigo-400 shadow-lg ring-2 ring-indigo-200/50">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8 border-2 border-indigo-400 shadow-md ring-2 ring-indigo-200">
+                            <AvatarImage src={currentEmployee?.avatarUrl} />
+                            <AvatarFallback className="text-xs bg-gradient-to-br from-indigo-500 to-indigo-600 text-white font-bold">
+                              {currentEmployee?.name.substring(0, 2).toUpperCase() || 'TU'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-bold text-slate-900 text-sm">Tú</span>
+                              <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-indigo-100 text-indigo-700 border-indigo-300 font-semibold">
+                                TUS DATOS
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {inc.deadlineHours > 0 ? (
+                                <>
+                                  <span className="text-xs text-slate-500">
+                                    Deadline: <span className="font-semibold text-slate-700">{inc.deadlineHours}h</span>
+                                  </span>
+                                  <span className="text-slate-300">→</span>
+                                </>
+                              ) : (
+                                <span className="text-xs text-slate-400 italic">Sin deadline</span>
+                              )}
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs text-blue-600">
+                                  Plan: <span className="font-semibold">{inc.plannedHours}h</span>
+                                </span>
+                                <span className="text-xs text-emerald-600">
+                                  Comp: <span className="font-semibold">{inc.computedHours}h</span>
+                                </span>
+                              </div>
+                              <span className="text-slate-300">|</span>
+                              <span className="text-xs font-semibold text-slate-700">
+                                Total: <span className="text-sm">{round2(inc.plannedHours + inc.computedHours)}h</span>
+                              </span>
+                              {inc.deadlineHours > 0 && (
+                                <>
+                                  <span className="text-slate-300">→</span>
+                                  <Badge 
+                                    variant="outline" 
+                                    className={cn(
+                                      "text-[10px] h-5 px-1.5 font-semibold",
+                                      inc.difference < 0
+                                        ? "bg-red-50 text-red-700 border-red-300" 
+                                        : inc.difference > 0
+                                        ? "bg-amber-50 text-amber-700 border-amber-300"
+                                        : "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                    )}
+                                  >
+                                    {inc.difference < 0 ? '' : inc.difference > 0 ? '+' : ''}{inc.difference}h
+                                  </Badge>
+                                </>
+                              )}
+                            </div>
+                            {/* Feedback Directo integrado */}
+                            <div className={cn(
+                              "mt-2 flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold",
+                              inc.difference < 0 
+                                ? "bg-red-50 text-red-700 border border-red-200" 
+                                : inc.difference > 0
+                                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            )}>
+                              {inc.difference < 0 ? (
+                                <>
+                                  <AlertTriangle className="h-3 w-3" />
+                                  <span>Te faltan <strong>{Math.abs(inc.difference)}h</strong> por planificar</span>
+                                </>
+                              ) : inc.difference > 0 ? (
+                                <>
+                                  <AlertTriangle className="h-3 w-3" />
+                                  <span>Te has excedido en <strong>{inc.difference}h</strong></span>
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  <span>Planificación perfecta</span>
+                                </>
+                              )}
+                            </div>
                           </div>
-                        ) : (
-                          <>
-                            {inc.budgetHours > 0 && (
-                              <div>
-                                El proyecto tiene <strong>{inc.budgetHours}h asignadas</strong>.
-                                {' '}Total del proyecto: <strong>{round2(inc.totalProjectComputed + inc.totalProjectPlanned)}h</strong>
-                                {' '}({inc.totalProjectComputed.toFixed(1)}h computadas + {inc.totalProjectPlanned.toFixed(1)}h planificadas).
-                              </div>
-                            )}
-                            {inc.budgetHours === 0 && inc.minimumHours > 0 && (
-                              <div>
-                                El proyecto tiene <strong>{inc.minimumHours}h mínimas</strong>.
-                                {' '}Total del proyecto: <strong>{round2(inc.totalProjectComputed + inc.totalProjectPlanned)}h</strong>
-                                {' '}({inc.totalProjectComputed.toFixed(1)}h computadas + {inc.totalProjectPlanned.toFixed(1)}h planificadas).
-                              </div>
-                            )}
-                          </>
-                        )}
+                        </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2 text-xs">
-                        {inc.deadlineHours === 0 ? (
-                          <>
-                            <div className="text-slate-500 italic shrink-0">
-                              Sin deadline
-                            </div>
-                            <span className="text-slate-300 hidden xs:inline">→</span>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className="text-blue-600">
-                                Plan: <span className="font-medium">{inc.plannedHours}h</span>
-                              </span>
-                              <span className="text-emerald-600">
-                                Comp: <span className="font-medium">{inc.computedHours}h</span>
-                              </span>
-                            </div>
-                            <span className="text-slate-300 hidden xs:inline">→</span>
-                            <div className="flex items-center gap-1 font-bold text-amber-700 shrink-0">
-                              <TrendingUp className="h-3 w-3" />
-                              +{inc.difference}h
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="shrink-0">
-                              <span className="text-slate-500">Deadline:</span>{' '}
-                              <span className="font-medium">{inc.deadlineHours}h</span>
-                            </div>
-                            <span className="text-slate-300 hidden xs:inline">→</span>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className="text-blue-600">
-                                Plan: <span className="font-medium">{inc.plannedHours}h</span>
-                              </span>
-                              <span className="text-emerald-600">
-                                Comp: <span className="font-medium">{inc.computedHours}h</span>
-                              </span>
-                            </div>
-                            <span className="text-slate-300 hidden xs:inline">→</span>
-                            <div className={cn("flex items-center gap-1 font-bold shrink-0", isPositive ? "text-amber-700" : "text-blue-700")}>
-                              {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                              {isPositive ? '+' : ''}{inc.difference}h
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    {hasMore && (
-                      <button
-                        onClick={() => toggleProject(inc.projectId)}
-                        className="text-slate-400 hover:text-slate-600 transition-colors"
-                      >
-                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </button>
-                    )}
-                  </div>
+                      
 
-                  {isExpanded && hasMore && (
-                    <div className="mt-3 pt-3 border-t border-amber-300">
-                      <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-600 uppercase mb-2">
-                        <Users className="h-3 w-3" />
-                        Posibles intercambios con compañeros
-                      </div>
-                      <div className="space-y-1.5">
-                        {inc.teammates.map(tm => {
-                          const tmIsPositive = tm.difference > 0;
-                          return (
-                            <div
-                              key={tm.employeeId}
-                              className="text-xs bg-white rounded p-2 border border-slate-200 flex items-center gap-2"
-                            >
-                              <Avatar className="h-6 w-6 border border-slate-200">
-                                <AvatarImage src={tm.avatarUrl} />
-                                <AvatarFallback className="text-[10px] bg-slate-100">
-                                  {tm.employeeName.substring(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium text-slate-700 truncate">{tm.employeeName}</div>
-                                <div className="flex flex-col gap-0.5 mt-1 text-[10px]">
-                                  <div className="flex items-center gap-x-2 gap-y-1 flex-wrap">
-                                    <span className="text-slate-500 shrink-0">
-                                      Dead: <span className="font-medium text-slate-700">{tm.deadlineHours}h</span>
-                                    </span>
-                                    <span className="text-slate-300 hidden xs:inline">→</span>
-                                    <span className="text-blue-600 shrink-0">
-                                      P: <span className="font-medium">{tm.plannedHours}h</span>
-                                    </span>
-                                    <span className="text-emerald-600 shrink-0">
-                                      C: <span className="font-medium">{tm.computedHours}h</span>
-                                    </span>
-                                    <span className="text-slate-300 hidden xs:inline">→</span>
-                                    <span className={cn("font-bold shrink-0", tmIsPositive ? "text-amber-600" : "text-blue-600")}>
-                                      {tmIsPositive ? '+' : ''}{tm.difference}h
-                                    </span>
+                      {isExpanded && hasMore && (
+                        <div className="pt-3 border-t-2 border-slate-300">
+                          <div className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase mb-3">
+                            <Users className="h-4 w-4 text-indigo-600" />
+                            <span>Estado del resto del equipo</span>
+                            <Badge variant="outline" className="ml-auto text-[10px] h-5 px-1.5">
+                              {inc.teammates.length} {inc.teammates.length === 1 ? 'persona' : 'personas'}
+                            </Badge>
+                          </div>
+                          <div className="space-y-2">
+                            {inc.teammates.map(tm => {
+                              const tmIsPositive = tm.difference > 0;
+                              const tmTotal = round2(tm.plannedHours + tm.computedHours);
+                              return (
+                                <div
+                                  key={tm.employeeId}
+                                  className="bg-white rounded-lg px-3 py-2.5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <Avatar className="h-8 w-8 border-2 border-slate-200 shadow-sm">
+                                      <AvatarImage src={tm.avatarUrl} />
+                                      <AvatarFallback className="text-xs bg-gradient-to-br from-indigo-100 to-slate-100 text-indigo-700 font-semibold">
+                                        {tm.employeeName.substring(0, 2).toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-semibold text-slate-800 truncate text-sm mb-1">{tm.employeeName}</div>
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        {tm.deadlineHours > 0 ? (
+                                          <>
+                                            <span className="text-xs text-slate-500">
+                                              Deadline: <span className="font-semibold text-slate-700">{tm.deadlineHours}h</span>
+                                            </span>
+                                            <span className="text-slate-300">→</span>
+                                          </>
+                                        ) : (
+                                          <span className="text-xs text-slate-400 italic">Sin deadline</span>
+                                        )}
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="text-xs text-blue-600">
+                                            Plan: <span className="font-semibold">{tm.plannedHours}h</span>
+                                          </span>
+                                          <span className="text-xs text-emerald-600">
+                                            Comp: <span className="font-semibold">{tm.computedHours}h</span>
+                                          </span>
+                                        </div>
+                                        <span className="text-slate-300">|</span>
+                                        <span className="text-xs font-semibold text-slate-700">
+                                          Total: <span className="text-sm">{tmTotal}h</span>
+                                        </span>
+                                        {tm.deadlineHours > 0 && (
+                                          <>
+                                            <span className="text-slate-300">→</span>
+                                            <Badge 
+                                              variant="outline" 
+                                              className={cn(
+                                                "text-[10px] h-5 px-1.5 font-semibold",
+                                                tmIsPositive 
+                                                  ? "bg-amber-50 text-amber-700 border-amber-300" 
+                                                  : tm.difference < 0
+                                                  ? "bg-red-50 text-red-700 border-red-300"
+                                                  : "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                              )}
+                                            >
+                                              {tmIsPositive ? '+' : ''}{tm.difference}h
+                                            </Badge>
+                                          </>
+                                        )}
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

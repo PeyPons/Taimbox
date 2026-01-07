@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { TimelineSheet } from '@/components/shared/TimelineSheet';
+import { WeeklyReportDialog } from '@/components/employee/WeeklyReportDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
@@ -16,7 +18,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useApp } from '@/contexts/AppContext';
 import { Allocation, Project } from '@/types';
-import { Plus, Pencil, CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, Check, TrendingUp, TrendingDown, Trash2, Link as LinkIcon, AlertOctagon, CheckCircle2, AlertTriangle, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc } from 'lucide-react';
+import { Plus, Pencil, CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, Check, TrendingUp, TrendingDown, Trash2, Link as LinkIcon, AlertOctagon, CheckCircle2, AlertTriangle, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc, GanttChart } from 'lucide-react';
 import { cn, formatProjectName } from '@/lib/utils';
 import { getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { format, addMonths, subMonths, isSameMonth, parseISO, addDays, isBefore, startOfWeek, startOfMonth, endOfMonth } from 'date-fns';
@@ -54,6 +56,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   
   const { hasPermission } = usePermissions();
   const canAssignToOthers = hasPermission('can_assign_tasks_to_others');
+  
+  // Estados para los sheets de Timeline y Weekly
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [weeklyOpen, setWeeklyOpen] = useState(false);
 
   // Inicializar con la semana actual si no se especifica otra
   const getInitialViewDate = () => {
@@ -864,6 +870,42 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                     </TooltipTrigger>
                     <TooltipContent>
                       {showAllWeeks ? "Ver solo la semana actual" : "Ver todas las semanas del mes"}
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {/* Botón Timeline */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 px-3 gap-2"
+                        onClick={() => setTimelineOpen(true)}
+                      >
+                        <GanttChart className="h-4 w-4" />
+                        <span className="hidden lg:inline text-xs">Timeline</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Ver vista Timeline (Gantt)
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {/* Botón Weekly */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 px-3 gap-2"
+                        onClick={() => setWeeklyOpen(true)}
+                      >
+                        <TrendingUp className="h-4 w-4" />
+                        <span className="hidden lg:inline text-xs">Weekly</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Ver vista Weekly Forecast
                     </TooltipContent>
                   </Tooltip>
 
@@ -2084,6 +2126,19 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Sheets de Timeline y Weekly */}
+      <TimelineSheet 
+        open={timelineOpen} 
+        onOpenChange={setTimelineOpen}
+        initialViewDate={viewDate}
+      />
+      <WeeklyReportDialog 
+        open={weeklyOpen} 
+        onOpenChange={setWeeklyOpen}
+        employeeId={employeeId}
+        viewDate={viewDate}
+      />
     </>
   );
 
