@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
+import { useIntegration } from '@/hooks/useIntegration';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -24,7 +25,7 @@ import {
   ChevronsUpDown, User, Target, Plus, Trash2, ChevronDown,
   AlertTriangle, AlertCircle, Clock, TrendingUp, TrendingDown,
   CheckCircle2, XCircle, Calendar, Zap, Filter, LayoutGrid, List,
-  AlertOctagon, CircleDashed, Ban
+  AlertOctagon, CircleDashed, Ban, Link as LinkIcon
 } from 'lucide-react';
 import { Project, OKR } from '@/types';
 import { cn, formatProjectName } from '@/lib/utils';
@@ -37,6 +38,7 @@ type FilterType = 'all' | 'needs-planning' | 'behind-schedule' | 'over-budget' |
 export default function ProjectsPage() {
   const { projects, clients, allocations, employees, deleteProject, updateProject, addProject } = useApp();
   const { currentAgency } = useAgency();
+  const isCrmExportEnabled = useIntegration('crm_export');
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,6 +55,7 @@ export default function ProjectsPage() {
   const [formData, setFormData] = useState({
     name: '', clientId: '', budgetHours: '', minimumHours: '', monthlyFee: '',
     status: 'active' as 'active' | 'archived' | 'completed',
+    externalId: '',
     okrs: [] as OKR[]
   });
   const [newOkrTitle, setNewOkrTitle] = useState('');
@@ -207,7 +210,7 @@ export default function ProjectsPage() {
   const openNewProject = () => {
     setIsCreating(true);
     setEditingId(null);
-    setFormData({ name: '', clientId: '', budgetHours: '0', minimumHours: '0', monthlyFee: '0', status: 'active', okrs: [] });
+    setFormData({ name: '', clientId: '', budgetHours: '0', minimumHours: '0', monthlyFee: '0', status: 'active', externalId: '', okrs: [] });
     setIsDialogOpen(true);
   };
 
@@ -218,6 +221,7 @@ export default function ProjectsPage() {
       name: project.name, clientId: project.clientId,
       budgetHours: project.budgetHours?.toString() || '0', minimumHours: project.minimumHours?.toString() || '0',
       monthlyFee: project.monthlyFee?.toString() || '0', status: project.status,
+      externalId: project.externalId?.toString() || '',
       okrs: project.okrs || []
     });
     setIsDialogOpen(true);
@@ -263,6 +267,7 @@ export default function ProjectsPage() {
           minimumHours: minimumHours,
           monthlyFee: monthlyFee,
           status: formData.status,
+          externalId: formData.externalId !== '' ? Number(formData.externalId) : undefined,
           okrs: formData.okrs
         });
         toast.success("Proyecto creado correctamente");
@@ -277,6 +282,7 @@ export default function ProjectsPage() {
             minimumHours: minimumHours,
             monthlyFee: monthlyFee,
             status: formData.status,
+            externalId: formData.externalId !== '' ? Number(formData.externalId) : undefined,
             okrs: formData.okrs
           });
           toast.success("Proyecto actualizado correctamente");
@@ -1082,6 +1088,25 @@ export default function ProjectsPage() {
                 </Select>
               </div>
             </div>
+            {/* Campo CRM Project ID */}
+            {isCrmExportEnabled && (
+              <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg space-y-2">
+                <div className="flex items-center gap-2">
+                  <LinkIcon className="w-4 h-4 text-purple-600" />
+                  <span className="text-sm font-semibold text-purple-800">Integración CRM</span>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-purple-700">ID Proyecto CRM</Label>
+                  <Input
+                    type="number"
+                    placeholder="Ej: 123"
+                    className="bg-white"
+                    value={formData.externalId}
+                    onChange={(e) => setFormData({ ...formData, externalId: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
             <div className="border-t pt-4 space-y-4">
               <Label className="text-base font-semibold">Estrategia y OKRs</Label>
               <div className="flex gap-2">

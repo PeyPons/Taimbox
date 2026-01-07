@@ -32,7 +32,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { supabase } from '@/lib/supabase';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter }
   from "@/components/ui/dialog";
-import { NewTaskRow } from '@/types';
+import { NewTaskRow, Deadline } from '@/types';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
@@ -56,6 +56,8 @@ export default function EmployeeDashboard() {
 
   const myEmployeeProfile = appCurrentUser || null;
   const isLoadingProfile = isGlobalLoading;
+  const { canAccess } = usePermissions();
+  const isManager = canAccess('/planner') || canAccess('/reports');
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isLoadingMonth, setIsLoadingMonth] = useState(false);
@@ -77,11 +79,15 @@ export default function EmployeeDashboard() {
   // Default to "projects" (Mi Semana) for better focus
   const [activeTab, setActiveTab] = useState('projects');
   const [actionsDropdownOpen, setActionsDropdownOpen] = useState(false);
+  const [deadlines, setDeadlines] = useState<Deadline[]>([]);
+  const [dialogDeadlines, setDialogDeadlines] = useState<Deadline[]>([]);
 
   const { showTour, resetTour } = useWelcomeTour();
   const isMobile = useIsMobile();
   const isWeeklyFeedbackEnabled = useIntegration('weekly_feedback');
   const isCrmExportEnabled = useIntegration('crm_export');
+  const { hasPermission } = usePermissions();
+  const canAssignToOthers = hasPermission('can_assign_tasks_to_others');
 
   const hasPendingWeeklyTasks = useMemo(() => {
     if (!myEmployeeProfile) return false;
@@ -217,14 +223,30 @@ export default function EmployeeDashboard() {
 
   const openAddTasksDialog = () => {
     const defaultWeek = weeks[0]?.weekStart ? format(weeks[0].weekStart, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
-    setNewTasks([{ id: crypto.randomUUID(), projectId: '', taskName: '', hours: '', weekDate: defaultWeek, dependencyId: 'none' }]);
+    setNewTasks([{ 
+      id: crypto.randomUUID(), 
+      projectId: '', 
+      taskName: '', 
+      hours: '', 
+      weekDate: defaultWeek, 
+      dependencyId: 'none',
+      employeeId: canAssignToOthers ? undefined : myEmployeeProfile?.id // Si no puede asignar a otros, usar su propio ID
+    }]);
     setIsAddingTasks(true);
   };
 
   const addTaskRow = () => {
     const lastTask = newTasks[newTasks.length - 1];
     const defaultWeek = lastTask?.weekDate || (weeks[0]?.weekStart ? format(weeks[0].weekStart, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'));
-    setNewTasks(prev => [...prev, { id: crypto.randomUUID(), projectId: lastTask?.projectId || '', taskName: '', hours: '', weekDate: defaultWeek, dependencyId: 'none' }]);
+    setNewTasks(prev => [...prev, { 
+      id: crypto.randomUUID(), 
+      projectId: lastTask?.projectId || '', 
+      taskName: '', 
+      hours: '', 
+      weekDate: defaultWeek, 
+      dependencyId: 'none',
+      employeeId: canAssignToOthers ? undefined : myEmployeeProfile?.id // Si no puede asignar a otros, usar su propio ID
+    }]);
   };
 
   const removeTaskRow = (id: string) => {
@@ -243,10 +265,15 @@ export default function EmployeeDashboard() {
 
     try {
       for (const task of validTasks) {
+        // Usar el employeeId de la tarea si existe, sino usar el del empleado actual
+        const targetEmployeeId = task.employeeId || myEmployeeProfile.id;
         await addAllocation({
-          projectId: task.projectId, employeeId: myEmployeeProfile.id,
-          weekStartDate: task.weekDate, hoursAssigned: parseFloat(task.hours),
-          taskName: task.taskName, status: 'planned'
+          projectId: task.projectId, 
+          employeeId: targetEmployeeId,
+          weekStartDate: task.weekDate, 
+          hoursAssigned: parseFloat(task.hours),
+          taskName: task.taskName, 
+          status: 'planned'
         });
       }
       toast.success(`${validTasks.length} tarea(s) añadida(s)`);
@@ -315,6 +342,57 @@ export default function EmployeeDashboard() {
     getProjectBudgetStatus,
     viewMonth: currentMonth
   });
+
+  // Cargar deadlines del mes
+  const loadDeadlinesForMonth = useCallback(async (month: Date) => {
+    const monthKey = format(startOfMonth(month), 'yyyy-MM');
+    try {
+      const { data, error } = await supabase
+        .from('deadlines')
+        .select('*')
+        .eq('month', monthKey)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        const mappedDeadlines = data.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean }) => ({
+          id: d.id,
+          projectId: d.project_id,
+          month: d.month,
+          notes: d.notes,
+          employeeHours: d.employee_hours || {},
+          isHidden: d.is_hidden || false
+        }));
+        setDeadlines(mappedDeadlines);
+      } else {
+        setDeadlines([]);
+      }
+    } catch (error) {
+      console.error('Error cargando deadlines:', error);
+      setDeadlines([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDeadlinesForMonth(currentMonth);
+  }, [currentMonth, loadDeadlinesForMonth]);
+
+  // Cargar deadlines cuando se abre el diálogo de añadir tareas y sincronizar
+  useEffect(() => {
+    if (isAddingTasks) {
+      loadDeadlinesForMonth(currentMonth);
+    }
+  }, [isAddingTasks, currentMonth, loadDeadlinesForMonth]);
+
+  // Sincronizar deadlines del diálogo cuando se actualizan
+  useEffect(() => {
+    if (isAddingTasks) {
+      setDialogDeadlines(deadlines);
+    } else {
+      setDialogDeadlines([]);
+    }
+  }, [isAddingTasks, deadlines]);
 
   useEffect(() => {
     if (!isGlobalLoading && !isLoadingProfile) {
@@ -500,7 +578,13 @@ export default function EmployeeDashboard() {
               <div className="flex flex-col items-center">
                 <span className="text-lg font-bold text-slate-800">{monthlyLoad.hours}h</span>
                 <span className="text-[10px] text-slate-400 font-medium">/ {monthlyLoad.capacity}h</span>
-                <span className={cn("text-[10px] font-bold mt-1 px-1.5 rounded-full", monthlyLoad.percentage > 100 ? "text-red-600 bg-red-50" : "text-emerald-600 bg-emerald-50")}>{monthlyLoad.percentage}%</span>
+                <span className={cn(
+                  "text-[10px] font-bold mt-1 px-1.5 rounded-full",
+                  monthlyLoad.status === 'overload' ? "text-red-600 bg-red-50" :
+                  monthlyLoad.status === 'warning' ? "text-amber-600 bg-amber-50" :
+                  monthlyLoad.status === 'healthy' ? "text-emerald-600 bg-emerald-50" :
+                  "text-slate-400 bg-slate-50"
+                )}>{monthlyLoad.percentage.toFixed(1)}%</span>
               </div>
             </div>
           </div>
@@ -517,7 +601,7 @@ export default function EmployeeDashboard() {
             <AlertCircle className="h-4 w-4 mr-2" /> Prioridades
           </TabsTrigger>
           <TabsTrigger value="coherence" className="px-4 py-2 data-[state=active]:bg-red-50 data-[state=active]:text-red-700">
-            <CheckCircle2 className="h-4 w-4 mr-2" /> Validaciones
+            <CheckCircle2 className="h-4 w-4 mr-2" /> Control de planificación
           </TabsTrigger>
           <TabsTrigger value="teammates" className="px-4 py-2">
             <div className="flex items-center gap-2">Compañeros</div>
@@ -540,7 +624,7 @@ export default function EmployeeDashboard() {
           </TabsContent>
 
           <TabsContent value="coherence" className="focus-visible:outline-none">
-            <PlanningInconsistenciesCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+            <PlanningInconsistenciesCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} isManager={isManager} />
           </TabsContent>
 
           <TabsContent value="teammates" className="focus-visible:outline-none">
@@ -621,6 +705,11 @@ export default function EmployeeDashboard() {
                       getProjectBudgetStatus={getProjectBudgetStatus}
                       getAvailableDependencies={getAvailableDependencies}
                       getWeekExceedStatus={getWeekExceedStatus}
+                      canAssignToOthers={canAssignToOthers}
+                      currentEmployeeId={myEmployeeProfile?.id}
+                      deadlines={deadlines}
+                      allocations={allocations}
+                      viewDate={currentMonth}
                     />
                   ))}
                   <div id="task-list-end" />
@@ -649,6 +738,8 @@ export default function EmployeeDashboard() {
                 getEmployeeLoadForWeek={getEmployeeLoadForWeek}
                 employeeId={myEmployeeProfile?.id || ''}
                 weeks={weeks}
+                deadlines={dialogDeadlines}
+                employees={employees}
               />
             </div>
           </div>

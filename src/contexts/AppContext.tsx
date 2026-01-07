@@ -69,6 +69,7 @@ interface SupabaseAllocation {
   dependency_id?: string;
   transferred_from_allocation_id?: string;
   distribution_source_allocation_id?: string;
+  parent_allocation_id?: string;
 }
 
 interface SupabaseAbsence {
@@ -281,7 +282,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           taskName: a.task_name,
           dependencyId: a.dependency_id,
           transferredFromAllocationId: a.transferred_from_allocation_id,
-          distributionSourceAllocationId: a.distribution_source_allocation_id
+          distributionSourceAllocationId: a.distribution_source_allocation_id,
+          parentAllocationId: a.parent_allocation_id
         }));
 
         // Si skipLoading es true, significa que estamos cargando datos adicionales (merge)
@@ -399,7 +401,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           taskName: a.task_name,
           dependencyId: a.dependency_id,
           transferredFromAllocationId: a.transferred_from_allocation_id,
-          distributionSourceAllocationId: a.distribution_source_allocation_id
+          distributionSourceAllocationId: a.distribution_source_allocation_id,
+          parentAllocationId: a.parent_allocation_id
         }));
 
         setAllocations(prev => {
@@ -724,7 +727,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       task_name: allocation.taskName,
       dependency_id: allocation.dependencyId,
       transferred_from_allocation_id: allocation.transferredFromAllocationId,
-      distribution_source_allocation_id: allocation.distributionSourceAllocationId
+      distribution_source_allocation_id: allocation.distributionSourceAllocationId,
+      parent_allocation_id: allocation.parentAllocationId
     }).select().single();
 
     if (data) {
@@ -739,7 +743,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         taskName: data.task_name,
         dependencyId: data.dependency_id,
         transferredFromAllocationId: data.transferred_from_allocation_id,
-        distributionSourceAllocationId: data.distribution_source_allocation_id
+        distributionSourceAllocationId: data.distribution_source_allocation_id,
+        parentAllocationId: data.parent_allocation_id
       };
       setAllocations(prev => [...prev, mappedAllocation]);
       return mappedAllocation;
@@ -759,7 +764,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       task_name: allocation.taskName,
       dependency_id: allocation.dependencyId,
       transferred_from_allocation_id: allocation.transferredFromAllocationId,
-      distribution_source_allocation_id: allocation.distributionSourceAllocationId
+      distribution_source_allocation_id: allocation.distributionSourceAllocationId,
+      parent_allocation_id: allocation.parentAllocationId
     }).eq('id', allocation.id);
   }, []);
 
@@ -816,7 +822,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       status: project.status,
       budget_hours: project.budgetHours,
       minimum_hours: project.minimumHours,
-      monthly_fee: project.monthlyFee
+      monthly_fee: project.monthlyFee,
+      external_id: project.externalId
     }).select().single();
 
     if (data) {
@@ -828,7 +835,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         status: (data.status || 'active') as 'active' | 'archived' | 'completed',
         budgetHours: round2(data.budget_hours),
         minimumHours: round2(data.minimum_hours || 0),
-        monthlyFee: round2(data.monthly_fee || 0)
+        monthlyFee: round2(data.monthly_fee || 0),
+        externalId: data.external_id ? Number(data.external_id) : undefined
       }]);
     }
   }, [currentAgency?.id]);
@@ -990,12 +998,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     reducedCapacity = Math.max(0, round2(reducedCapacity));
     const percentage = reducedCapacity > 0 ? round2((totalHours / reducedCapacity) * 100) : (totalHours > 0 ? 999 : 0);
+    const hoursRemaining = reducedCapacity - totalHours;
     let status: LoadStatus = 'empty';
     if (totalHours === 0) status = 'empty';
     else if (reducedCapacity === 0 && totalHours > 0) status = 'overload';
-    else if (percentage <= 85) status = 'healthy';
-    else if (percentage <= 100) status = 'warning';
-    else status = 'overload';
+    else if (totalHours > reducedCapacity) status = 'overload'; // Rojo: se pasa del límite
+    else if (hoursRemaining >= 2 && hoursRemaining <= 5) status = 'healthy'; // Verde: tiene entre 2-5 horas libres
+    else status = 'warning'; // Amarillo: cerca del límite (menos de 2h libres o más de 5h libres)
 
     return { hours: totalHours, capacity: reducedCapacity, baseCapacity, status, percentage, breakdown };
   }, [employees, allocations, absences, teamEvents]);
@@ -1024,12 +1033,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     capacity = Math.max(0, capacity - getTeamEventHoursInRange(monthStart, monthEnd, employeeId, teamEvents, employee.workSchedule, employeeAbsences));
     capacity = round2(capacity);
     const percentage = capacity > 0 ? round2((totalHours / capacity) * 100) : (totalHours > 0 ? 999 : 0);
+    const hoursRemaining = capacity - totalHours;
     let status: LoadStatus = 'empty';
     if (totalHours === 0) status = 'empty';
     else if (capacity === 0 && totalHours > 0) status = 'overload';
-    else if (percentage <= 85) status = 'healthy';
-    else if (percentage <= 100) status = 'warning';
-    else status = 'overload';
+    else if (totalHours > capacity) status = 'overload'; // Rojo: se pasa del límite
+    else if (hoursRemaining >= 2 && hoursRemaining <= 5) status = 'healthy'; // Verde: tiene entre 2-5 horas libres
+    else status = 'warning'; // Amarillo: cerca del límite (menos de 2h libres o más de 5h libres)
     return { hours: totalHours, capacity, status, percentage };
   }, [employees, allocations, absences, teamEvents]);
 

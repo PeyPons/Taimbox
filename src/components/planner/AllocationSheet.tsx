@@ -1,5 +1,7 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { TimelineSheet } from '@/components/shared/TimelineSheet';
+import { WeeklyReportDialog } from '@/components/employee/WeeklyReportDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
@@ -16,7 +18,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useApp } from '@/contexts/AppContext';
 import { Allocation, Project } from '@/types';
-import { Plus, Pencil, CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, Check, TrendingUp, TrendingDown, Trash2, Link as LinkIcon, AlertOctagon, CheckCircle2, AlertTriangle, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc } from 'lucide-react';
+import { Plus, Pencil, CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, Check, TrendingUp, TrendingDown, Trash2, Link as LinkIcon, AlertOctagon, CheckCircle2, AlertTriangle, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc, GanttChart } from 'lucide-react';
 import { cn, formatProjectName } from '@/lib/utils';
 import { getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { format, addMonths, subMonths, isSameMonth, parseISO, addDays, isBefore, startOfWeek, startOfMonth, endOfMonth } from 'date-fns';
@@ -29,7 +31,9 @@ import { BatchTaskRow } from './BatchTaskRow';
 import { useAllocationSheet, ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { useTasksImpact } from '@/hooks/useTasksImpact';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { NewTaskRow } from '@/types';
+import { usePermissions } from '@/hooks/usePermissions';
+import { NewTaskRow, Deadline } from '@/types';
+import { supabase } from '@/lib/supabase';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -46,8 +50,16 @@ type SortOption = 'budget_desc' | 'budget_asc' | 'my_hours_desc' | 'my_hours_asc
 export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, viewDateContext }: AllocationSheetProps) {
   const {
     employees, projects, clients, allocations, getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getProjectById,
-    addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading, loadDataForMonth, weeklyFeedback
+    addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading, loadDataForMonth, weeklyFeedback,
+    currentUser
   } = useApp();
+  
+  const { hasPermission } = usePermissions();
+  const canAssignToOthers = hasPermission('can_assign_tasks_to_others');
+  
+  // Estados para los sheets de Timeline y Weekly
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [weeklyOpen, setWeeklyOpen] = useState(false);
 
   // Inicializar con la semana actual si no se especifica otra
   const getInitialViewDate = () => {
@@ -177,6 +189,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const [recentlyToggled, setRecentlyToggled] = useState<Set<string>>(new Set());
 
   const [newTasks, setNewTasks] = useState<NewTaskRow[]>([]);
+  const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
   const [inlineNameValue, setInlineNameValue] = useState('');
   const inlineInputRef = useRef<HTMLInputElement>(null);
@@ -234,6 +247,50 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     getProjectBudgetStatus,
     viewMonth: viewDate
   });
+
+  // Cargar deadlines del mes
+  const loadDeadlinesForMonth = useCallback(async (month: Date) => {
+    const monthKey = format(startOfMonth(month), 'yyyy-MM');
+    try {
+      const { data, error } = await supabase
+        .from('deadlines')
+        .select('*')
+        .eq('month', monthKey)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        const mappedDeadlines = data.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean }) => ({
+          id: d.id,
+          projectId: d.project_id,
+          month: d.month,
+          notes: d.notes,
+          employeeHours: d.employee_hours || {},
+          isHidden: d.is_hidden || false
+        }));
+        setDeadlines(mappedDeadlines);
+      } else {
+        setDeadlines([]);
+      }
+    } catch (error) {
+      console.error('Error cargando deadlines:', error);
+      setDeadlines([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      loadDeadlinesForMonth(viewDate);
+    }
+  }, [open, viewDate, loadDeadlinesForMonth]);
+
+  // Cargar deadlines cuando se abre el formulario de añadir tareas
+  useEffect(() => {
+    if (isFormOpen) {
+      loadDeadlinesForMonth(viewDate);
+    }
+  }, [isFormOpen, viewDate, loadDeadlinesForMonth]);
 
   // Encontrar el índice de la semana clicada cuando weeks esté disponible
   useEffect(() => {
@@ -361,7 +418,12 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     setNewTasks(prev => [...prev, {
       id: crypto.randomUUID(),
       projectId: lastTask ? lastTask.projectId : '',
-      taskName: '', hours: '', weekDate: lastTask ? lastTask.weekDate : defaultKey, description: '', dependencyId: 'none'
+      taskName: '', 
+      hours: '', 
+      weekDate: lastTask ? lastTask.weekDate : defaultKey, 
+      description: '', 
+      dependencyId: 'none',
+      employeeId: canAssignToOthers ? undefined : employeeId // Si no puede asignar a otros, usar el employeeId del sheet
     }]);
   };
 
@@ -389,8 +451,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     } else {
       newTasks.forEach(task => {
         if (task.projectId && task.hours) {
+          // Usar el employeeId de la tarea si existe, sino usar el del empleado del sheet
+          const targetEmployeeId = task.employeeId || employeeId;
           addAllocation({
-            employeeId,
+            employeeId: targetEmployeeId,
             projectId: task.projectId,
             taskName: task.taskName,
             weekStartDate: task.weekDate,
@@ -806,6 +870,42 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                     </TooltipTrigger>
                     <TooltipContent>
                       {showAllWeeks ? "Ver solo la semana actual" : "Ver todas las semanas del mes"}
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {/* Botón Timeline */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 px-3 gap-2"
+                        onClick={() => setTimelineOpen(true)}
+                      >
+                        <GanttChart className="h-4 w-4" />
+                        <span className="hidden lg:inline text-xs">Timeline</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Ver vista Timeline (Gantt)
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {/* Botón Weekly */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 px-3 gap-2"
+                        onClick={() => setWeeklyOpen(true)}
+                      >
+                        <TrendingUp className="h-4 w-4" />
+                        <span className="hidden lg:inline text-xs">Weekly</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Ver vista Weekly Forecast
                     </TooltipContent>
                   </Tooltip>
 
@@ -1942,6 +2042,11 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                           getProjectBudgetStatus={getProjectBudgetStatus}
                           getAvailableDependencies={getAvailableDependencies}
                           getWeekExceedStatus={getWeekExceedStatus}
+                          canAssignToOthers={canAssignToOthers}
+                          currentEmployeeId={employeeId}
+                          deadlines={deadlines}
+                          allocations={allocations}
+                          viewDate={viewDate}
                         />
                       ))}
 
@@ -1975,6 +2080,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                     getEmployeeLoadForWeek={getEmployeeLoadForWeek}
                     employeeId={employeeId}
                     weeks={weeks}
+                    deadlines={deadlines}
+                    employees={employees}
                   />
                 </div>
               </>
@@ -2019,6 +2126,19 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Sheets de Timeline y Weekly */}
+      <TimelineSheet 
+        open={timelineOpen} 
+        onOpenChange={setTimelineOpen}
+        initialViewDate={viewDate}
+      />
+      <WeeklyReportDialog 
+        open={weeklyOpen} 
+        onOpenChange={setWeeklyOpen}
+        employeeId={employeeId}
+        viewDate={viewDate}
+      />
     </>
   );
 

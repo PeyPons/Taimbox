@@ -4,8 +4,9 @@ import { format, addDays, startOfMonth, endOfMonth, eachWeekOfInterval, differen
 import { es } from 'date-fns/locale';
 import { cn, formatProjectName } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, CalendarDays, User, Clock, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { ChevronLeft, ChevronRight, CalendarDays, User, Clock, ChevronDown, ChevronUp, CheckCircle2, Check, ChevronDown as ChevronDownIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 
@@ -36,6 +37,7 @@ export function GanttView({ initialViewDate }: GanttViewProps) {
     const [selectedProject, setSelectedProject] = useState<string>('all');
     const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
     const [allExpanded, setAllExpanded] = useState(true);
+    const [projectFilterOpen, setProjectFilterOpen] = useState(false);
 
     // Sincronizar si cambia desde afuera
     useEffect(() => {
@@ -231,17 +233,68 @@ export function GanttView({ initialViewDate }: GanttViewProps) {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <Select value={selectedProject} onValueChange={setSelectedProject}>
-                            <SelectTrigger className="w-[220px] h-9 bg-white shadow-sm">
-                                <SelectValue placeholder="Filtrar por proyecto" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todos los proyectos</SelectItem>
-                                {projects.filter(p => p.status === 'active').map(p => (
-                                    <SelectItem key={p.id} value={p.id}>{formatProjectName(p.name)}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Popover open={projectFilterOpen} onOpenChange={setProjectFilterOpen}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    className="w-[220px] h-9 bg-white shadow-sm justify-between"
+                                >
+                                    <span className="truncate">
+                                        {selectedProject === 'all' 
+                                            ? 'Todos los proyectos' 
+                                            : formatProjectName(projects.find(p => p.id === selectedProject)?.name || 'Proyecto')
+                                        }
+                                    </span>
+                                    <ChevronDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[220px] p-0" align="start">
+                                <Command>
+                                    <CommandInput placeholder="Buscar proyecto..." />
+                                    <CommandList>
+                                        <CommandEmpty>No se encontraron proyectos</CommandEmpty>
+                                        <CommandGroup>
+                                            <CommandItem
+                                                value="all"
+                                                onSelect={() => {
+                                                    setSelectedProject('all');
+                                                    setProjectFilterOpen(false);
+                                                }}
+                                            >
+                                                <Check
+                                                    className={cn(
+                                                        "mr-2 h-4 w-4",
+                                                        selectedProject === 'all' ? "opacity-100" : "opacity-0"
+                                                    )}
+                                                />
+                                                Todos los proyectos
+                                            </CommandItem>
+                                            {projects
+                                                .filter(p => p.status === 'active')
+                                                .map(p => (
+                                                    <CommandItem
+                                                        key={p.id}
+                                                        value={formatProjectName(p.name)}
+                                                        onSelect={() => {
+                                                            setSelectedProject(p.id);
+                                                            setProjectFilterOpen(false);
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                selectedProject === p.id ? "opacity-100" : "opacity-0"
+                                                            )}
+                                                        />
+                                                        {formatProjectName(p.name)}
+                                                    </CommandItem>
+                                                ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
 
                         <div className="flex items-center bg-slate-100 rounded-lg p-0.5 border shadow-inner">
                             <Button

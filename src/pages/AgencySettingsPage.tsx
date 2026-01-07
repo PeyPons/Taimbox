@@ -489,7 +489,7 @@ export default function AgencySettingsPage() {
                     <Separator />
                     <div className="space-y-2">
                       <Label className="text-xs font-semibold text-slate-500 uppercase">Otros</Label>
-                      {(['can_access_reports', 'can_access_client_reports', 'can_access_deadlines', 'can_access_okrs'] as const).map(p => (
+                      {(['can_access_reports', 'can_access_client_reports', 'can_access_deadlines', 'can_access_okrs', 'can_assign_tasks_to_others'] as const).map(p => (
                         <div key={p} className="flex items-center justify-between py-1 px-2 rounded hover:bg-white">
                           <Label htmlFor={`role-${index}-${p}`} className="text-sm font-normal cursor-pointer flex-1">{PERMISSION_LABELS[p]}</Label>
                           <Switch

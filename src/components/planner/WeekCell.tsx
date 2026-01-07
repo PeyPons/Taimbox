@@ -17,7 +17,7 @@ interface WeekCellProps {
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
-export function WeekCell({ allocations, hours, capacity, isCurrentWeek, breakdown, onClick }: WeekCellProps) {
+export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, breakdown, onClick }: WeekCellProps) {
 
   const totalEst = round2(allocations.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0));
 
@@ -30,13 +30,12 @@ export function WeekCell({ allocations, hours, capacity, isCurrentWeek, breakdow
   const hasActivity = allocations.length > 0;
   const hasCompleted = completedTasks.length > 0;
 
-  // Lógica Semáforo (90-110%)
-  const ratio = capacity > 0 ? (hours / capacity) : 0;
+  // Usar el status que viene de getEmployeeLoadForWeek (ya calculado con la nueva lógica)
   // Caso especial: tareas asignadas pero capacidad 0 (vacaciones completas)
   const isZeroCapacityOverload = hours > 0 && capacity === 0;
-  const isOverload = ratio > 1.1 || isZeroCapacityOverload;
-  const isUnderload = ratio < 0.9 && capacity > 0;
-  const isHealthy = ratio >= 0.9 && ratio <= 1.1 && capacity > 0;
+  const isOverload = status === 'overload' || isZeroCapacityOverload;
+  const isWarning = status === 'warning';
+  const isHealthy = status === 'healthy';
 
   const hasReductions = breakdown && breakdown.length > 0;
 
@@ -51,7 +50,7 @@ export function WeekCell({ allocations, hours, capacity, isCurrentWeek, breakdow
         "h-full min-h-[140px] p-2 transition-all cursor-pointer border rounded-lg relative flex flex-col group tabular-nums",
         // HEATMAP DE FONDO
         isOverload ? "bg-red-50/80 border-red-200 hover:bg-red-50 hover:border-red-300" :
-        isUnderload ? "bg-amber-50/50 border-amber-200 hover:bg-amber-50 hover:border-amber-300" :
+        isWarning ? "bg-amber-50/50 border-amber-200 hover:bg-amber-50 hover:border-amber-300" :
         isHealthy ? "bg-emerald-50/50 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300" :
         isCurrentWeek ? "bg-white border-indigo-300 shadow-sm" : "bg-slate-50/50 border-slate-200 hover:bg-white hover:border-slate-300",
 
@@ -201,13 +200,13 @@ export function WeekCell({ allocations, hours, capacity, isCurrentWeek, breakdow
           <div className={cn(
             "flex items-center justify-between text-[11px] font-bold",
             isOverload ? "text-red-600" :
-            isUnderload ? "text-amber-600" :
+            isWarning ? "text-amber-600" :
             isHealthy ? "text-emerald-600" :
             "text-slate-400"
           )}>
             <span className="flex items-center gap-1">
               {isOverload && <AlertCircle className="h-3.5 w-3.5" />}
-              {isUnderload && <AlertTriangle className="h-3.5 w-3.5" />}
+              {isWarning && <AlertTriangle className="h-3.5 w-3.5" />}
               {isHealthy && <CheckCircle2 className="h-3.5 w-3.5" />}
             </span>
             <span className="font-mono">{hours}/{capacity}h</span>
