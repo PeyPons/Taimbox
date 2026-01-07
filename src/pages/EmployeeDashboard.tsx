@@ -68,10 +68,12 @@ export default function EmployeeDashboard() {
   const [showAbsences, setShowAbsences] = useState(false);
   const [isAddingExtra, setIsAddingExtra] = useState(false);
   const [isAddingTasks, setIsAddingTasks] = useState(false);
+  const [isSavingTasks, setIsSavingTasks] = useState(false);
 
   const [extraTaskName, setExtraTaskName] = useState('');
   const [extraHours, setExtraHours] = useState('1');
   const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const [isSavingExtraTask, setIsSavingExtraTask] = useState(false);
 
   const [newTasks, setNewTasks] = useState<NewTaskRow[]>([]);
   const [openComboboxId, setOpenComboboxId] = useState<string | null>(null);
@@ -195,11 +197,15 @@ export default function EmployeeDashboard() {
   };
 
   const handleAddExtraTask = async () => {
+    // Prevenir múltiples ejecuciones simultáneas
+    if (isSavingExtraTask || isCreatingProject) return;
+    
     if (!myEmployeeProfile) return;
     if (!extraTaskName.trim()) { toast.error("Escribe un nombre para la tarea"); return; }
     const hours = Number(extraHours);
     if (isNaN(hours) || hours <= 0) { toast.error("Las horas deben ser mayores a 0"); return; }
 
+    setIsSavingExtraTask(true);
     try {
       const projectId = await getOrCreateInternalProject();
       if (!projectId) { toast.error("No se pudo obtener el proyecto interno"); return; }
@@ -218,6 +224,8 @@ export default function EmployeeDashboard() {
     } catch (error) {
       console.error('Error añadiendo tarea interna:', error);
       toast.error((error as Error)?.message || 'Error al registrar la tarea');
+    } finally {
+      setIsSavingExtraTask(false);
     }
   };
 
@@ -259,10 +267,14 @@ export default function EmployeeDashboard() {
   };
 
   const handleSaveTasks = async () => {
+    // Prevenir múltiples ejecuciones simultáneas
+    if (isSavingTasks) return;
+    
     if (!myEmployeeProfile) return;
     const validTasks = newTasks.filter(t => t.projectId && t.taskName.trim() && parseFloat(t.hours) > 0);
     if (validTasks.length === 0) { toast.error("Añade al menos una tarea válida"); return; }
 
+    setIsSavingTasks(true);
     try {
       for (const task of validTasks) {
         // Usar el employeeId de la tarea si existe, sino usar el del empleado actual
@@ -282,6 +294,8 @@ export default function EmployeeDashboard() {
     } catch (error) {
       console.error('Error guardando tareas:', error);
       toast.error('Error al guardar las tareas');
+    } finally {
+      setIsSavingTasks(false);
     }
   };
 
@@ -668,7 +682,16 @@ export default function EmployeeDashboard() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddingExtra(false)}>Cancelar</Button>
-            <Button onClick={handleAddExtraTask} disabled={isCreatingProject}>{isCreatingProject ? 'Guardando...' : 'Registrar'}</Button>
+            <Button onClick={handleAddExtraTask} disabled={isCreatingProject || isSavingExtraTask}>
+              {(isCreatingProject || isSavingExtraTask) ? (
+                <>
+                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                  Guardando...
+                </>
+              ) : (
+                'Registrar'
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -752,8 +775,17 @@ export default function EmployeeDashboard() {
                 </span>
               )}
             </div>
-            <Button variant="outline" onClick={() => setIsAddingTasks(false)}>Cancelar</Button>
-            <Button onClick={handleSaveTasks}>Guardar tareas</Button>
+            <Button variant="outline" onClick={() => setIsAddingTasks(false)} disabled={isSavingTasks}>Cancelar</Button>
+            <Button onClick={handleSaveTasks} disabled={isSavingTasks}>
+              {isSavingTasks ? (
+                <>
+                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                  Guardando...
+                </>
+              ) : (
+                'Guardar tareas'
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

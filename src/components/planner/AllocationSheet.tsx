@@ -185,6 +185,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editingAllocation, setEditingAllocation] = useState<Allocation | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [recentlyToggled, setRecentlyToggled] = useState<Set<string>>(new Set());
 
@@ -436,37 +437,52 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     setNewTasks(prev => prev.map(t => t.id === id ? { ...t, [field]: value } : t));
   };
 
-  const handleSave = () => {
-    if (editingAllocation) {
-      if (!editProjectId || !editHours) return;
-      updateAllocation({
-        ...editingAllocation,
-        projectId: editProjectId,
-        taskName: editTaskName,
-        weekStartDate: editWeek,
-        hoursAssigned: parseFloat(editHours),
-        description: editDescription,
-        dependencyId: editDependencyId === 'none' ? undefined : editDependencyId
-      });
-    } else {
-      newTasks.forEach(task => {
-        if (task.projectId && task.hours) {
-          // Usar el employeeId de la tarea si existe, sino usar el del empleado del sheet
-          const targetEmployeeId = task.employeeId || employeeId;
-          addAllocation({
-            employeeId: targetEmployeeId,
-            projectId: task.projectId,
-            taskName: task.taskName,
-            weekStartDate: task.weekDate,
-            hoursAssigned: parseFloat(task.hours),
-            status: 'planned',
-            description: task.description,
-            dependencyId: task.dependencyId === 'none' ? undefined : task.dependencyId
-          });
+  const handleSave = async () => {
+    // Prevenir múltiples ejecuciones simultáneas
+    if (isSaving) return;
+    
+    setIsSaving(true);
+    try {
+      if (editingAllocation) {
+        if (!editProjectId || !editHours) {
+          setIsSaving(false);
+          return;
         }
-      });
+        await updateAllocation({
+          ...editingAllocation,
+          projectId: editProjectId,
+          taskName: editTaskName,
+          weekStartDate: editWeek,
+          hoursAssigned: parseFloat(editHours),
+          description: editDescription,
+          dependencyId: editDependencyId === 'none' ? undefined : editDependencyId
+        });
+      } else {
+        // Procesar todas las tareas en paralelo para mejor rendimiento
+        const savePromises = newTasks
+          .filter(task => task.projectId && task.hours)
+          .map(task => {
+            const targetEmployeeId = task.employeeId || employeeId;
+            return addAllocation({
+              employeeId: targetEmployeeId,
+              projectId: task.projectId,
+              taskName: task.taskName,
+              weekStartDate: task.weekDate,
+              hoursAssigned: parseFloat(task.hours),
+              status: 'planned',
+              description: task.description,
+              dependencyId: task.dependencyId === 'none' ? undefined : task.dependencyId
+            });
+          });
+        
+        await Promise.all(savePromises);
+      }
+      setIsFormOpen(false);
+    } catch (error) {
+      console.error('Error guardando tareas:', error);
+    } finally {
+      setIsSaving(false);
     }
-    setIsFormOpen(false);
   };
 
 
@@ -2099,9 +2115,18 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
               </div>
             )}
             <div className="flex gap-2 ml-auto">
-              {editingAllocation && <Button variant="ghost" size="sm" onClick={handleDeleteClick} className="text-red-500 mr-auto"><Trash2 className="w-4 h-4 mr-2" /> Eliminar</Button>}
-              <Button variant="ghost" onClick={() => setIsFormOpen(false)}>Cancelar</Button>
-              <Button onClick={handleSave}>Guardar</Button>
+              {editingAllocation && <Button variant="ghost" size="sm" onClick={handleDeleteClick} className="text-red-500 mr-auto" disabled={isSaving}><Trash2 className="w-4 h-4 mr-2" /> Eliminar</Button>}
+              <Button variant="ghost" onClick={() => setIsFormOpen(false)} disabled={isSaving}>Cancelar</Button>
+              <Button onClick={handleSave} disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                    Guardando...
+                  </>
+                ) : (
+                  'Guardar'
+                )}
+              </Button>
             </div>
           </DialogFooter>
         </DialogContent>
