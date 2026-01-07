@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { format, startOfMonth } from 'date-fns';
 import { cn, formatProjectName } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,9 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Check, X, Plus, Trash2, AlertTriangle, Link as LinkIcon, User } from 'lucide-react';
-import { Project, Employee, Allocation, NewTaskRow, Client } from '@/types';
+import { Project, Employee, Allocation, NewTaskRow, Client, Deadline } from '@/types';
 import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 
 interface BatchTaskRowProps {
     task: NewTaskRow;
@@ -25,7 +26,12 @@ interface BatchTaskRowProps {
     getWeekExceedStatus?: (weekDate: string) => boolean;
     canAssignToOthers?: boolean; // Si puede asignar tareas a otros empleados
     currentEmployeeId?: string; // ID del empleado actual
+    deadlines?: Deadline[]; // Deadlines del mes
+    allocations?: Allocation[]; // Todas las allocations para calcular horas del empleado
+    viewDate?: Date; // Fecha del mes para filtrar allocations
 }
+
+const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 export function BatchTaskRow({
     task,
@@ -41,7 +47,10 @@ export function BatchTaskRow({
     getAvailableDependencies,
     getWeekExceedStatus,
     canAssignToOthers = false,
-    currentEmployeeId
+    currentEmployeeId,
+    deadlines = [],
+    allocations = [],
+    viewDate
 }: BatchTaskRowProps) {
     const [openCombobox, setOpenCombobox] = useState(false);
     const [openEmployeeCombobox, setOpenEmployeeCombobox] = useState(false);
@@ -49,6 +58,51 @@ export function BatchTaskRow({
     // Calcular si esta tarea excede las horas contratadas
     const taskProject = task.projectId ? activeProjects.find(p => p.id === task.projectId) : null;
     const taskHours = parseFloat(task.hours) || 0;
+
+    // Calcular horas del deadline del empleado para este proyecto
+    // Usar el empleado asignado a la tarea, o el empleado actual si no hay uno asignado
+    const taskEmployeeId = task.employeeId || currentEmployeeId;
+    const deadlineInfo = useMemo(() => {
+        if (!task.projectId || !taskEmployeeId || !viewDate) return null;
+        
+        const monthKey = format(startOfMonth(viewDate), 'yyyy-MM');
+        const deadline = deadlines.find(d => d.projectId === task.projectId && d.month === monthKey && !d.isHidden);
+        if (!deadline) return null;
+
+        const deadlineHours = deadline.employeeHours[taskEmployeeId] || 0;
+        if (deadlineHours === 0) return null;
+
+        // Calcular horas ya asignadas del empleado en este proyecto
+        const employeeAllocations = allocations.filter(a => 
+            a.employeeId === taskEmployeeId && 
+            a.projectId === task.projectId &&
+            isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
+        );
+
+        const planned = employeeAllocations
+            .filter(a => a.status !== 'completed')
+            .reduce((sum, a) => sum + (a.hoursAssigned || 0), 0);
+        
+        const computed = employeeAllocations
+            .filter(a => a.status === 'completed')
+            .reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
+
+        // Sumar horas de otras tareas del mismo proyecto y empleado en este formulario
+        const otherTasksSameProjectAndEmployee = otherTasks
+            .filter(t => t.id !== task.id && t.projectId === task.projectId && (t.employeeId || currentEmployeeId) === taskEmployeeId)
+            .reduce((sum, t) => sum + (parseFloat(t.hours) || 0), 0);
+
+        const totalAssigned = round2(planned + computed + otherTasksSameProjectAndEmployee + taskHours);
+        const remaining = round2(deadlineHours - totalAssigned);
+
+        return {
+            deadlineHours,
+            totalAssigned,
+            remaining,
+            exceeds: totalAssigned > deadlineHours,
+            employeeId: taskEmployeeId
+        };
+    }, [task.projectId, task.hours, task.employeeId, taskEmployeeId, currentEmployeeId, deadlines, allocations, viewDate, otherTasks, task.id]);
 
     // Horas ya planificadas de este proyecto (del formulario actual, excluyendo esta fila)
     const otherTasksHours = otherTasks
@@ -125,6 +179,51 @@ export function BatchTaskRow({
                                             ? Math.round((budgetStatus.totalPlanned / budgetStatus.budgetMax) * 100)
                                             : 0;
 
+                                        // Calcular deadline del empleado para este proyecto
+                                        // En el selector, mostrar el deadline del empleado asignado en la tarea (si existe) o del empleado actual
+                                        const taskEmployeeId = task.employeeId || currentEmployeeId;
+                                        let projectDeadlineInfo: { deadlineHours: number; totalAssigned: number; employeeName?: string } | null = null;
+                                        if (taskEmployeeId && viewDate) {
+                                            const monthKey = format(startOfMonth(viewDate), 'yyyy-MM');
+                                            const deadline = deadlines.find(d => d.projectId === project.id && d.month === monthKey && !d.isHidden);
+                                            if (deadline) {
+                                                const deadlineHours = deadline.employeeHours[taskEmployeeId] || 0;
+                                                if (deadlineHours > 0) {
+                                                    const employeeAllocations = allocations.filter(a => 
+                                                        a.employeeId === taskEmployeeId && 
+                                                        a.projectId === project.id &&
+                                                        isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
+                                                    );
+
+                                                    const planned = employeeAllocations
+                                                        .filter(a => a.status !== 'completed')
+                                                        .reduce((sum, a) => sum + (a.hoursAssigned || 0), 0);
+                                                    
+                                                    const computed = employeeAllocations
+                                                        .filter(a => a.status === 'completed')
+                                                        .reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
+
+                                                    // Sumar horas de otras tareas del mismo proyecto y empleado en este formulario
+                                                    const otherTasksSameProjectAndEmployee = otherTasks
+                                                        .filter(t => t.id !== task.id && t.projectId === project.id && (t.employeeId || currentEmployeeId) === taskEmployeeId)
+                                                        .reduce((sum, t) => sum + (parseFloat(t.hours) || 0), 0);
+                                                    
+                                                    // Si esta es la tarea actual y el proyecto coincide, sumar sus horas también
+                                                    const currentTaskHours = (task.projectId === project.id && (task.employeeId || currentEmployeeId) === taskEmployeeId) 
+                                                        ? (parseFloat(task.hours) || 0) 
+                                                        : 0;
+
+                                                    const totalAssigned = round2(planned + computed + otherTasksSameProjectAndEmployee + currentTaskHours);
+                                                    const employee = employees.find(e => e.id === taskEmployeeId);
+                                                    projectDeadlineInfo = { 
+                                                        deadlineHours, 
+                                                        totalAssigned,
+                                                        employeeName: employee?.name
+                                                    };
+                                                }
+                                            }
+                                        }
+
                                         // Search value includes client name for better filtering
                                         const searchValue = `${project.name} ${client?.name || ''}`;
 
@@ -174,6 +273,25 @@ export function BatchTaskRow({
                                                             </span>
                                                         )}
                                                     </div>
+                                                    {/* Indicador de deadline del empleado */}
+                                                    {projectDeadlineInfo && (
+                                                        <div className="text-[10px] pl-4 flex items-center gap-1.5 mt-0.5">
+                                                            <span className={cn(
+                                                                "font-medium",
+                                                                taskEmployeeId === currentEmployeeId ? "text-blue-600" : "text-indigo-600"
+                                                            )}>
+                                                                {taskEmployeeId === currentEmployeeId ? "Tu deadline:" : `${projectDeadlineInfo.employeeName || 'Su'} deadline:`}
+                                                            </span>
+                                                            <span className={cn(
+                                                                "font-bold",
+                                                                projectDeadlineInfo.totalAssigned > projectDeadlineInfo.deadlineHours ? "text-red-600" :
+                                                                projectDeadlineInfo.totalAssigned >= projectDeadlineInfo.deadlineHours * 0.9 ? "text-amber-600" :
+                                                                taskEmployeeId === currentEmployeeId ? "text-blue-600" : "text-indigo-600"
+                                                            )}>
+                                                                {projectDeadlineInfo.totalAssigned.toFixed(1)} / {projectDeadlineInfo.deadlineHours}h
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </CommandItem>
                                         );
@@ -302,6 +420,52 @@ export function BatchTaskRow({
                     </div>
                 )
             }
+
+            {/* Indicador de deadline del empleado */}
+            {deadlineInfo && (() => {
+                const isCurrentEmployee = deadlineInfo.employeeId === currentEmployeeId;
+                const employee = employees.find(e => e.id === deadlineInfo.employeeId);
+                const employeeName = employee?.name || 'Empleado';
+                return (
+                    <div className="flex items-center gap-2 mt-1 p-2 rounded-md bg-blue-50 border border-blue-200">
+                        <div className="flex items-center gap-2 flex-1">
+                            <span className={cn(
+                                "text-[10px] font-medium",
+                                isCurrentEmployee ? "text-blue-700" : "text-indigo-700"
+                            )}>
+                                {isCurrentEmployee ? "Tu deadline:" : `${employeeName} deadline:`}
+                            </span>
+                            <span className={cn(
+                                "text-[11px] font-bold",
+                                deadlineInfo.exceeds ? "text-red-600" :
+                                deadlineInfo.totalAssigned >= deadlineInfo.deadlineHours * 0.9 ? "text-amber-600" :
+                                isCurrentEmployee ? "text-blue-600" : "text-indigo-600"
+                            )}>
+                                {deadlineInfo.totalAssigned.toFixed(1)} / {deadlineInfo.deadlineHours}h
+                                {deadlineInfo.exceeds && (
+                                    <span className="ml-1 text-red-600">(+{round2(deadlineInfo.totalAssigned - deadlineInfo.deadlineHours)}h)</span>
+                                )}
+                                {!deadlineInfo.exceeds && deadlineInfo.remaining > 0 && (
+                                    <span className={cn("ml-1 font-normal", isCurrentEmployee ? "text-blue-500" : "text-indigo-500")}>
+                                        ({deadlineInfo.remaining.toFixed(1)}h rest.)
+                                    </span>
+                                )}
+                            </span>
+                        </div>
+                        <div className="w-24 h-1.5 bg-blue-100 rounded-full overflow-hidden">
+                            <div
+                                className={cn(
+                                    "h-full rounded-full",
+                                    deadlineInfo.exceeds ? "bg-red-500" :
+                                    deadlineInfo.totalAssigned >= deadlineInfo.deadlineHours * 0.9 ? "bg-amber-500" :
+                                    "bg-blue-500"
+                                )}
+                                style={{ width: `${Math.min((deadlineInfo.totalAssigned / deadlineInfo.deadlineHours) * 100, 100)}%` }}
+                            />
+                        </div>
+                    </div>
+                );
+            })()}
         </div>
     );
 }

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -30,7 +30,8 @@ import { useAllocationSheet, ProjectBudgetStatus } from '@/hooks/useAllocationSh
 import { useTasksImpact } from '@/hooks/useTasksImpact';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePermissions } from '@/hooks/usePermissions';
-import { NewTaskRow } from '@/types';
+import { NewTaskRow, Deadline } from '@/types';
+import { supabase } from '@/lib/supabase';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -182,6 +183,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const [recentlyToggled, setRecentlyToggled] = useState<Set<string>>(new Set());
 
   const [newTasks, setNewTasks] = useState<NewTaskRow[]>([]);
+  const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
   const [inlineNameValue, setInlineNameValue] = useState('');
   const inlineInputRef = useRef<HTMLInputElement>(null);
@@ -239,6 +241,50 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     getProjectBudgetStatus,
     viewMonth: viewDate
   });
+
+  // Cargar deadlines del mes
+  const loadDeadlinesForMonth = useCallback(async (month: Date) => {
+    const monthKey = format(startOfMonth(month), 'yyyy-MM');
+    try {
+      const { data, error } = await supabase
+        .from('deadlines')
+        .select('*')
+        .eq('month', monthKey)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        const mappedDeadlines = data.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean }) => ({
+          id: d.id,
+          projectId: d.project_id,
+          month: d.month,
+          notes: d.notes,
+          employeeHours: d.employee_hours || {},
+          isHidden: d.is_hidden || false
+        }));
+        setDeadlines(mappedDeadlines);
+      } else {
+        setDeadlines([]);
+      }
+    } catch (error) {
+      console.error('Error cargando deadlines:', error);
+      setDeadlines([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      loadDeadlinesForMonth(viewDate);
+    }
+  }, [open, viewDate, loadDeadlinesForMonth]);
+
+  // Cargar deadlines cuando se abre el formulario de añadir tareas
+  useEffect(() => {
+    if (isFormOpen) {
+      loadDeadlinesForMonth(viewDate);
+    }
+  }, [isFormOpen, viewDate, loadDeadlinesForMonth]);
 
   // Encontrar el índice de la semana clicada cuando weeks esté disponible
   useEffect(() => {
@@ -1956,6 +2002,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                           getWeekExceedStatus={getWeekExceedStatus}
                           canAssignToOthers={canAssignToOthers}
                           currentEmployeeId={employeeId}
+                          deadlines={deadlines}
+                          allocations={allocations}
+                          viewDate={viewDate}
                         />
                       ))}
 
@@ -1989,6 +2038,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                     getEmployeeLoadForWeek={getEmployeeLoadForWeek}
                     employeeId={employeeId}
                     weeks={weeks}
+                    deadlines={deadlines}
+                    employees={employees}
                   />
                 </div>
               </>

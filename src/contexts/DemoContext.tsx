@@ -93,12 +93,13 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     const hours = weekAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
     const capacity = employee.defaultWeeklyCapacity;
     const percentage = capacity > 0 ? (hours / capacity) * 100 : 0;
+    const hoursRemaining = capacity - hours;
 
     let status: LoadStatus = 'empty';
-    if (percentage === 0) status = 'empty';
-    else if (percentage < 50) status = 'healthy';
-    else if (percentage <= 100) status = percentage > 85 ? 'warning' : 'healthy';
-    else status = 'overload';
+    if (hours === 0) status = 'empty';
+    else if (hours > capacity) status = 'overload'; // Rojo: se pasa del límite
+    else if (hoursRemaining >= 2 && hoursRemaining <= 5) status = 'healthy'; // Verde: tiene entre 2-5 horas libres
+    else status = 'warning'; // Amarillo: cerca del límite (menos de 2h libres o más de 5h libres)
 
     return {
       hours,

@@ -1348,12 +1348,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     reducedCapacity = Math.max(0, round2(reducedCapacity));
     const percentage = reducedCapacity > 0 ? round2((totalHours / reducedCapacity) * 100) : (totalHours > 0 ? 999 : 0);
+    const hoursRemaining = reducedCapacity - totalHours;
     let status: LoadStatus = 'empty';
     if (totalHours === 0) status = 'empty';
     else if (reducedCapacity === 0 && totalHours > 0) status = 'overload';
-    else if (percentage <= 85) status = 'healthy';
-    else if (percentage <= 100) status = 'warning';
-    else status = 'overload';
+    else if (totalHours > reducedCapacity) status = 'overload'; // Rojo: se pasa del límite
+    else if (hoursRemaining >= 2 && hoursRemaining <= 5) status = 'healthy'; // Verde: tiene entre 2-5 horas libres
+    else status = 'warning'; // Amarillo: cerca del límite (menos de 2h libres o más de 5h libres)
 
     return { hours: totalHours, capacity: reducedCapacity, baseCapacity, status, percentage, breakdown };
   }, [employees, allocations, absences, teamEvents]);
@@ -1382,12 +1383,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     capacity = Math.max(0, capacity - getTeamEventHoursInRange(monthStart, monthEnd, employeeId, teamEvents, employee.workSchedule, employeeAbsences));
     capacity = round2(capacity);
     const percentage = capacity > 0 ? round2((totalHours / capacity) * 100) : (totalHours > 0 ? 999 : 0);
+    const hoursRemaining = capacity - totalHours;
     let status: LoadStatus = 'empty';
     if (totalHours === 0) status = 'empty';
     else if (capacity === 0 && totalHours > 0) status = 'overload';
-    else if (percentage <= 85) status = 'healthy';
-    else if (percentage <= 100) status = 'warning';
-    else status = 'overload';
+    else if (totalHours > capacity) status = 'overload'; // Rojo: se pasa del límite
+    else if (hoursRemaining >= 2 && hoursRemaining <= 5) status = 'healthy'; // Verde: tiene entre 2-5 horas libres
+    else status = 'warning'; // Amarillo: cerca del límite (menos de 2h libres o más de 5h libres)
     return { hours: totalHours, capacity, status, percentage };
   }, [employees, allocations, absences, teamEvents]);
 

@@ -24,8 +24,10 @@ export function LoadIndicator({
   variant = 'compact'
 }: LoadIndicatorProps) {
   const calculatedPercentage = percentage ?? (capacity > 0 ? (hours / capacity) * 100 : 0);
-  const isOverload = calculatedPercentage > 100;
-  const isNearLimit = calculatedPercentage >= 80 && calculatedPercentage <= 100;
+  const hoursRemaining = capacity - hours;
+  const isOverload = hours > capacity; // Rojo: se pasa del límite
+  const isHealthy = hoursRemaining >= 2 && hoursRemaining <= 5; // Verde: tiene entre 2-5 horas libres
+  const isNearLimit = !isOverload && !isHealthy; // Amarillo: cerca del límite
 
   const sizeClasses = {
     sm: {
@@ -57,8 +59,9 @@ export function LoadIndicator({
   const containerClasses = cn(
     "flex flex-col items-center justify-center rounded-lg border px-1",
     isOverload ? "bg-red-50 border-red-200 text-red-700"
-      : isNearLimit ? "bg-amber-50 border-amber-200 text-amber-700"
-        : "bg-emerald-50 border-emerald-200 text-emerald-700",
+      : isHealthy ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+        : isNearLimit ? "bg-amber-50 border-amber-200 text-amber-700"
+          : "bg-slate-50 border-slate-200 text-slate-400",
     classes.container,
     className
   );

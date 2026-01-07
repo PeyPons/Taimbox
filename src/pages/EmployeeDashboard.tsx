@@ -32,7 +32,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { supabase } from '@/lib/supabase';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter }
   from "@/components/ui/dialog";
-import { NewTaskRow } from '@/types';
+import { NewTaskRow, Deadline } from '@/types';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
@@ -79,6 +79,8 @@ export default function EmployeeDashboard() {
   // Default to "projects" (Mi Semana) for better focus
   const [activeTab, setActiveTab] = useState('projects');
   const [actionsDropdownOpen, setActionsDropdownOpen] = useState(false);
+  const [deadlines, setDeadlines] = useState<Deadline[]>([]);
+  const [dialogDeadlines, setDialogDeadlines] = useState<Deadline[]>([]);
 
   const { showTour, resetTour } = useWelcomeTour();
   const isMobile = useIsMobile();
@@ -341,6 +343,57 @@ export default function EmployeeDashboard() {
     viewMonth: currentMonth
   });
 
+  // Cargar deadlines del mes
+  const loadDeadlinesForMonth = useCallback(async (month: Date) => {
+    const monthKey = format(startOfMonth(month), 'yyyy-MM');
+    try {
+      const { data, error } = await supabase
+        .from('deadlines')
+        .select('*')
+        .eq('month', monthKey)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        const mappedDeadlines = data.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean }) => ({
+          id: d.id,
+          projectId: d.project_id,
+          month: d.month,
+          notes: d.notes,
+          employeeHours: d.employee_hours || {},
+          isHidden: d.is_hidden || false
+        }));
+        setDeadlines(mappedDeadlines);
+      } else {
+        setDeadlines([]);
+      }
+    } catch (error) {
+      console.error('Error cargando deadlines:', error);
+      setDeadlines([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDeadlinesForMonth(currentMonth);
+  }, [currentMonth, loadDeadlinesForMonth]);
+
+  // Cargar deadlines cuando se abre el diálogo de añadir tareas y sincronizar
+  useEffect(() => {
+    if (isAddingTasks) {
+      loadDeadlinesForMonth(currentMonth);
+    }
+  }, [isAddingTasks, currentMonth, loadDeadlinesForMonth]);
+
+  // Sincronizar deadlines del diálogo cuando se actualizan
+  useEffect(() => {
+    if (isAddingTasks) {
+      setDialogDeadlines(deadlines);
+    } else {
+      setDialogDeadlines([]);
+    }
+  }, [isAddingTasks, deadlines]);
+
   useEffect(() => {
     if (!isGlobalLoading && !isLoadingProfile) {
       const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
@@ -525,7 +578,13 @@ export default function EmployeeDashboard() {
               <div className="flex flex-col items-center">
                 <span className="text-lg font-bold text-slate-800">{monthlyLoad.hours}h</span>
                 <span className="text-[10px] text-slate-400 font-medium">/ {monthlyLoad.capacity}h</span>
-                <span className={cn("text-[10px] font-bold mt-1 px-1.5 rounded-full", monthlyLoad.percentage > 100 ? "text-red-600 bg-red-50" : "text-emerald-600 bg-emerald-50")}>{monthlyLoad.percentage}%</span>
+                <span className={cn(
+                  "text-[10px] font-bold mt-1 px-1.5 rounded-full",
+                  monthlyLoad.status === 'overload' ? "text-red-600 bg-red-50" :
+                  monthlyLoad.status === 'warning' ? "text-amber-600 bg-amber-50" :
+                  monthlyLoad.status === 'healthy' ? "text-emerald-600 bg-emerald-50" :
+                  "text-slate-400 bg-slate-50"
+                )}>{monthlyLoad.percentage.toFixed(1)}%</span>
               </div>
             </div>
           </div>
@@ -648,6 +707,9 @@ export default function EmployeeDashboard() {
                       getWeekExceedStatus={getWeekExceedStatus}
                       canAssignToOthers={canAssignToOthers}
                       currentEmployeeId={myEmployeeProfile?.id}
+                      deadlines={deadlines}
+                      allocations={allocations}
+                      viewDate={currentMonth}
                     />
                   ))}
                   <div id="task-list-end" />
@@ -676,6 +738,8 @@ export default function EmployeeDashboard() {
                 getEmployeeLoadForWeek={getEmployeeLoadForWeek}
                 employeeId={myEmployeeProfile?.id || ''}
                 weeks={weeks}
+                deadlines={dialogDeadlines}
+                employees={employees}
               />
             </div>
           </div>
