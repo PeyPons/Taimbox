@@ -22,7 +22,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   realtime: {
     params: {
       eventsPerSecond: 10
-    }
+    },
+    // Configuración adicional para autohosteado
+    transport: 'websocket',
+    timeout: 20000, // 20 segundos de timeout
   },
   db: {
     schema: 'public'
@@ -349,9 +352,22 @@ const processingJobs = new Set();
 
 // Intentar suscripción Realtime (opcional, fallback a polling)
 let realtimeConnected = false;
+let realtimeChannel = null;
+
 try {
-  const channel = supabase.channel('google-worker-listener')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ads_sync_logs' }, (payload) => {
+  console.log('🔌 Intentando conectar Realtime...');
+  realtimeChannel = supabase.channel('google-worker-listener', {
+    config: {
+      broadcast: { self: false },
+      presence: { key: '' }
+    }
+  })
+    .on('postgres_changes', { 
+      event: 'INSERT', 
+      schema: 'public', 
+      table: 'ads_sync_logs' 
+    }, (payload) => {
+      console.log('📨 Evento Realtime recibido:', payload.new.id);
       if (payload.new.status === 'pending' && !processingJobs.has(payload.new.id)) {
         processingJobs.add(payload.new.id);
         processSyncJob(payload.new.id).finally(() => {
@@ -359,17 +375,34 @@ try {
         });
       }
     })
-    .subscribe((status) => {
+    .subscribe((status, err) => {
+      console.log(`🔌 Estado Realtime: ${status}`);
       if (status === 'SUBSCRIBED') {
         realtimeConnected = true;
         console.log('✅ Realtime conectado para Google Ads Worker');
-      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+      } else if (status === 'CHANNEL_ERROR') {
         realtimeConnected = false;
-        console.warn('⚠️ Realtime no disponible, usando solo polling');
+        console.warn('⚠️ Error en canal Realtime:', err?.message || 'Error desconocido');
+        console.warn('⚠️ Usando solo polling');
+      } else if (status === 'TIMED_OUT') {
+        realtimeConnected = false;
+        console.warn('⚠️ Timeout en conexión Realtime, usando solo polling');
+      } else if (status === 'CLOSED') {
+        realtimeConnected = false;
+        console.warn('⚠️ Canal Realtime cerrado, usando solo polling');
       }
     });
+  
+  // Timeout para detectar si no se conecta en 10 segundos
+  setTimeout(() => {
+    if (!realtimeConnected) {
+      console.warn('⚠️ Realtime no se conectó en 10 segundos, usando solo polling');
+    }
+  }, 10000);
+  
 } catch (err) {
-  console.warn('⚠️ Error configurando Realtime, usando solo polling:', err.message);
+  console.warn('⚠️ Error configurando Realtime:', err.message);
+  console.warn('⚠️ Usando solo polling');
   realtimeConnected = false;
 }
 
