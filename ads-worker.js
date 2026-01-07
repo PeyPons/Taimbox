@@ -9,10 +9,29 @@ const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const API_VERSION = 'v22';
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error("❌ Faltan claves de Supabase"); process.exit(1);
+  console.error("❌ Faltan claves de Supabase");
+  console.error("VITE_SUPABASE_URL:", SUPABASE_URL ? "✓" : "✗");
+  console.error("SUPABASE_SERVICE_ROLE_KEY:", SUPABASE_KEY ? "✓" : "✗");
+  process.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+console.log(`🔗 Conectando a Supabase: ${SUPABASE_URL}`);
+
+// Configuración explícita para Supabase autohosteado
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
+  },
+  db: {
+    schema: 'public'
+  },
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false
+  }
+});
 
 // --- UTILIDADES ---
 
@@ -242,15 +261,36 @@ async function processAgency(agency, log) {
 
 // --- MAIN LOOP ---
 async function processSyncJob(jobId) {
+  // Verificar que el job no esté ya siendo procesado o ya completado
+  const { data: existingJob } = await supabase.from('ads_sync_logs').select('status').eq('id', jobId).single();
+  if (!existingJob || existingJob.status !== 'pending') {
+    console.log(`[Job ${jobId}] Saltado: estado actual es '${existingJob?.status || 'no encontrado'}'`);
+    return;
+  }
+
   const log = async (msg) => {
     console.log(`[Job ${jobId}] ${msg}`);
-    const { data } = await supabase.from('ads_sync_logs').select('logs').eq('id', jobId).single();
-    const currentLogs = data?.logs || [];
-    await supabase.from('ads_sync_logs').update({ logs: [...currentLogs, msg].slice(-50) }).eq('id', jobId);
+    try {
+      const { data } = await supabase.from('ads_sync_logs').select('logs').eq('id', jobId).single();
+      const currentLogs = data?.logs || [];
+      await supabase.from('ads_sync_logs').update({ logs: [...currentLogs, msg].slice(-50) }).eq('id', jobId);
+    } catch (err) {
+      console.error(`[Job ${jobId}] Error actualizando logs:`, err.message);
+    }
   };
 
   try {
-    await supabase.from('ads_sync_logs').update({ status: 'running' }).eq('id', jobId);
+    // Actualizar estado a 'running' de forma atómica
+    const { error: updateError } = await supabase
+      .from('ads_sync_logs')
+      .update({ status: 'running' })
+      .eq('id', jobId)
+      .eq('status', 'pending'); // Solo actualizar si sigue siendo 'pending'
+    
+    if (updateError) {
+      console.log(`[Job ${jobId}] Ya está siendo procesado por otro worker`);
+      return;
+    }
 
     // Fetch target agency from the log
     const { data: logData } = await supabase.from('ads_sync_logs').select('agency_id').eq('id', jobId).single();
@@ -288,15 +328,89 @@ async function processSyncJob(jobId) {
   }
 }
 
-supabase.channel('google-worker-listener')
-  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ads_sync_logs' }, (payload) => {
-    if (payload.new.status === 'pending') processSyncJob(payload.new.id);
-  })
-  .subscribe();
+// Verificar conexión a Supabase
+async function testConnection() {
+  try {
+    const { data, error } = await supabase.from('ads_sync_logs').select('id').limit(1);
+    if (error) {
+      console.error('❌ Error de conexión a Supabase:', error.message);
+      return false;
+    }
+    console.log('✅ Conexión a Supabase verificada');
+    return true;
+  } catch (err) {
+    console.error('❌ Error verificando conexión:', err.message);
+    return false;
+  }
+}
 
+// Set para evitar procesar el mismo job múltiples veces
+const processingJobs = new Set();
+
+// Intentar suscripción Realtime (opcional, fallback a polling)
+let realtimeConnected = false;
+try {
+  const channel = supabase.channel('google-worker-listener')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ads_sync_logs' }, (payload) => {
+      if (payload.new.status === 'pending' && !processingJobs.has(payload.new.id)) {
+        processingJobs.add(payload.new.id);
+        processSyncJob(payload.new.id).finally(() => {
+          processingJobs.delete(payload.new.id);
+        });
+      }
+    })
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        realtimeConnected = true;
+        console.log('✅ Realtime conectado para Google Ads Worker');
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        realtimeConnected = false;
+        console.warn('⚠️ Realtime no disponible, usando solo polling');
+      }
+    });
+} catch (err) {
+  console.warn('⚠️ Error configurando Realtime, usando solo polling:', err.message);
+  realtimeConnected = false;
+}
+
+// Polling como método principal (más confiable en Supabase local)
 setInterval(async () => {
-  const { data } = await supabase.from('ads_sync_logs').select('id').eq('status', 'pending').limit(1);
-  if (data?.length) processSyncJob(data[0].id);
-}, 5000);
+  try {
+    const { data, error } = await supabase
+      .from('ads_sync_logs')
+      .select('id')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true })
+      .limit(1);
+    
+    if (error) {
+      console.error('❌ Error consultando jobs pendientes:', error.message);
+      return;
+    }
+    
+    if (data?.length && !processingJobs.has(data[0].id)) {
+      processingJobs.add(data[0].id);
+      processSyncJob(data[0].id).finally(() => {
+        processingJobs.delete(data[0].id);
+      });
+    }
+  } catch (err) {
+    console.error('❌ Error en polling:', err.message);
+  }
+}, 3000); // Reducido a 3 segundos para mejor respuesta
 
-console.log(`📡 Google Worker Multi-Tenant Listo.`);
+// Inicializar worker
+(async () => {
+  const connected = await testConnection();
+  if (!connected) {
+    console.error('❌ No se pudo conectar a Supabase. Verifica tu configuración.');
+    process.exit(1);
+  }
+  
+  // Esperar un momento para que Realtime se conecte
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  
+  const mode = realtimeConnected ? 'Realtime + Polling' : 'Solo Polling';
+  console.log(`📡 Google Worker Multi-Tenant Listo. Modo: ${mode}`);
+  console.log(`📊 Polling cada 3 segundos para jobs pendientes`);
+})();
