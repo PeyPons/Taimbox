@@ -69,6 +69,7 @@ interface SupabaseAllocation {
   dependency_id?: string;
   transferred_from_allocation_id?: string;
   distribution_source_allocation_id?: string;
+  parent_allocation_id?: string;
 }
 
 interface SupabaseAbsence {
@@ -332,7 +333,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           taskName: a.task_name,
           dependencyId: a.dependency_id,
           transferredFromAllocationId: a.transferred_from_allocation_id,
-          distributionSourceAllocationId: a.distribution_source_allocation_id
+          distributionSourceAllocationId: a.distribution_source_allocation_id,
+          parentAllocationId: a.parent_allocation_id
         }));
 
         // Si skipLoading es true, significa que estamos cargando datos adicionales (merge)
@@ -450,7 +452,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           taskName: a.task_name,
           dependencyId: a.dependency_id,
           transferredFromAllocationId: a.transferred_from_allocation_id,
-          distributionSourceAllocationId: a.distribution_source_allocation_id
+          distributionSourceAllocationId: a.distribution_source_allocation_id,
+          parentAllocationId: a.parent_allocation_id
         }));
 
         setAllocations(prev => {
@@ -1083,7 +1086,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       task_name: allocation.taskName,
       dependency_id: allocation.dependencyId,
       transferred_from_allocation_id: allocation.transferredFromAllocationId,
-      distribution_source_allocation_id: allocation.distributionSourceAllocationId
+      distribution_source_allocation_id: allocation.distributionSourceAllocationId,
+      parent_allocation_id: allocation.parentAllocationId
     }).select().single();
 
     if (data) {
@@ -1098,7 +1102,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         taskName: data.task_name,
         dependencyId: data.dependency_id,
         transferredFromAllocationId: data.transferred_from_allocation_id,
-        distributionSourceAllocationId: data.distribution_source_allocation_id
+        distributionSourceAllocationId: data.distribution_source_allocation_id,
+        parentAllocationId: data.parent_allocation_id
       };
       setAllocations(prev => [...prev, mappedAllocation]);
       return mappedAllocation;
@@ -1117,7 +1122,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       task_name: allocation.taskName,
       dependency_id: allocation.dependencyId,
       transferred_from_allocation_id: allocation.transferredFromAllocationId,
-      distribution_source_allocation_id: allocation.distributionSourceAllocationId
+      distribution_source_allocation_id: allocation.distributionSourceAllocationId,
+      parent_allocation_id: allocation.parentAllocationId
     }).eq('id', allocation.id);
   }, []);
 
@@ -1174,7 +1180,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       status: project.status,
       budget_hours: project.budgetHours,
       minimum_hours: project.minimumHours,
-      monthly_fee: project.monthlyFee
+      monthly_fee: project.monthlyFee,
+      external_id: project.externalId
     }).select().single();
 
     if (data) {
@@ -1186,7 +1193,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         status: (data.status || 'active') as 'active' | 'archived' | 'completed',
         budgetHours: round2(data.budget_hours),
         minimumHours: round2(data.minimum_hours || 0),
-        monthlyFee: round2(data.monthly_fee || 0)
+        monthlyFee: round2(data.monthly_fee || 0),
+        externalId: data.external_id ? Number(data.external_id) : undefined
       }]);
     }
   }, [currentAgency?.id]);

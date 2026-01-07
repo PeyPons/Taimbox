@@ -33,6 +33,7 @@ import { format, subMonths, addMonths, isSameMonth, parseISO, getDaysInMonth, ge
 import { isAllocationInEffectiveMonth, getWeeksForMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
+import { useIntegration } from '@/hooks/useIntegration';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -110,6 +111,7 @@ export default function ClientsAndProjectsPage() {
     updateAllocation
   } = useApp();
   const { currentAgency } = useAgency();
+  const isCrmExportEnabled = useIntegration('crm_export');
 
   // Estados
   const [searchQuery, setSearchQuery] = useState('');
@@ -137,7 +139,7 @@ export default function ClientsAndProjectsPage() {
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('all');
   const [openEmployeeCombo, setOpenEmployeeCombo] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<FilterType>('needs-planning'); // Por defecto mostrar los que necesitan planificación
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all'); // Por defecto mostrar todos los proyectos
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active'); // Por defecto solo activos
   const [projectTypeFilter, setProjectTypeFilter] = useState<string>('all');
 
@@ -151,6 +153,7 @@ export default function ClientsAndProjectsPage() {
     minimumHours: z.coerce.number().min(0, 'Las horas mínimas no pueden ser negativas'),
     monthlyFee: z.coerce.number().min(0, 'El fee mensual no puede ser negativo'),
     status: z.enum(['active', 'archived', 'completed']),
+    externalId: z.coerce.number().optional().or(z.literal('')),
     okrs: z.array(z.object({
       id: z.string(),
       title: z.string(),
@@ -169,6 +172,7 @@ export default function ClientsAndProjectsPage() {
       minimumHours: 0,
       monthlyFee: 0,
       status: 'active',
+      externalId: '',
       okrs: [],
     },
   });
@@ -632,6 +636,7 @@ export default function ClientsAndProjectsPage() {
       minimumHours: 0,
       monthlyFee: 0,
       status: 'active',
+      externalId: '',
       okrs: [],
     });
   };
@@ -646,6 +651,7 @@ export default function ClientsAndProjectsPage() {
       minimumHours: project.minimumHours || 0,
       monthlyFee: project.monthlyFee || 0,
       status: project.status,
+      externalId: project.externalId || '',
       okrs: project.okrs || []
     });
   };
@@ -660,6 +666,7 @@ export default function ClientsAndProjectsPage() {
           minimumHours: Number(data.minimumHours) || 0,
           monthlyFee: Number(data.monthlyFee) || 0,
           status: data.status,
+          externalId: data.externalId !== '' ? Number(data.externalId) : undefined,
           okrs: (data.okrs || []).map(o => ({ ...o, id: o.id || crypto.randomUUID() })) as OKR[],
           agencyId: currentAgency?.id || ''
         });
@@ -673,6 +680,7 @@ export default function ClientsAndProjectsPage() {
           minimumHours: Number(data.minimumHours) || 0,
           monthlyFee: Number(data.monthlyFee) || 0,
           status: data.status,
+          externalId: data.externalId !== '' ? Number(data.externalId) : undefined,
           okrs: (data.okrs || []).map(o => ({ ...o, id: o.id || crypto.randomUUID() })) as OKR[]
         });
         toast.success('Proyecto actualizado');
@@ -1016,6 +1024,35 @@ export default function ClientsAndProjectsPage() {
                       </FormItem>
                     )}
                   />
+                  {/* Campo CRM Project ID */}
+                  {isCrmExportEnabled && (
+                    <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg space-y-2">
+                      <div className="flex items-center gap-2">
+                        <LinkIcon className="w-4 h-4 text-purple-600" />
+                        <span className="text-sm font-semibold text-purple-800">Integración CRM</span>
+                      </div>
+                      <FormField
+                        control={projectForm.control}
+                        name="externalId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-purple-700">ID Proyecto CRM</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                placeholder="Ej: 123"
+                                className="bg-white"
+                                {...field}
+                                value={field.value === '' ? '' : field.value}
+                                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : '')}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
                   {/* OKRs */}
                   <div className="space-y-2">
                     <Label>Objetivos (OKRs)</Label>

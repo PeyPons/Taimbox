@@ -1546,7 +1546,7 @@ export default function DeadlinesPage() {
     const tips: { from: string; to: string; reason: string; projects: string[]; impact: number }[] = [];
     const employeeLoads: { id: string; name: string; percentage: number; projects: string[] }[] = [];
 
-    // Calcular carga y proyectos de cada empleado SEO (excluir PPC)
+    // Calcular carga y proyectos de cada empleado
     activeEmployees.forEach(emp => {
       const capacityData = getMonthlyCapacity(emp.id);
       const assigned = getEmployeeAssignedHours(emp.id);
@@ -1576,44 +1576,75 @@ export default function DeadlinesPage() {
     const minLoad = Math.min(...employeeLoads.map(e => e.percentage));
     const range = maxLoad - minLoad;
 
+    // Si el rango es muy pequeño (menos de 5 puntos), no hay necesidad de redistribución
+    if (range < 5) return [];
+
     // Calcular desviación estándar para rangos amplios
     const variance = employeeLoads.reduce((sum, e) => sum + Math.pow(e.percentage - averageLoad, 2), 0) / employeeLoads.length;
     const standardDeviation = Math.sqrt(variance);
 
-    // Umbral híbrido: si el rango es estrecho (≤15 puntos), usar umbral fijo bajo
-    // Si el rango es amplio, usar desviación estándar dinámica
+    // Umbral más flexible: reducir el umbral mínimo para detectar más desequilibrios
     const deviationThreshold = range <= 15
-      ? 3  // Umbral fijo bajo para rangos estrechos (ej: 80-90%)
-      : Math.max(3, Math.round(standardDeviation * 1.5));  // Dinámico para rangos amplios
+      ? 2  // Umbral más bajo para rangos estrechos (antes era 3)
+      : Math.max(2, Math.round(standardDeviation * 1.2));  // Dinámico pero más flexible (antes era 1.5)
 
     // Identificar empleados por encima y por debajo de la media
     const aboveAverage = employeeLoads.filter(e => e.percentage > averageLoad + deviationThreshold);
     const belowAverage = employeeLoads.filter(e => e.percentage < averageLoad - deviationThreshold);
 
-    // Si todos están equilibrados (dentro del umbral), no hay sugerencias
-    if (aboveAverage.length === 0 || belowAverage.length === 0) return [];
-
-    // Generar sugerencias priorizando las que más equilibren el equipo
-    aboveAverage.forEach(over => {
-      belowAverage.forEach(avail => {
-        // Solo sugerir si comparten proyectos
-        const sharedProjects = over.projects.filter(p => avail.projects.includes(p));
-        if (sharedProjects.length > 0) {
-          // Calcular impacto: cuánto se acerca cada uno a la media después de la transferencia
-          // Mayor diferencia = mayor impacto potencial
+    // Si no hay desequilibrio suficiente, intentar con umbral más bajo
+    if (aboveAverage.length === 0 || belowAverage.length === 0) {
+      // Usar umbral mínimo más bajo (5 puntos de diferencia)
+      const relaxedThreshold = 5;
+      const aboveRelaxed = employeeLoads.filter(e => e.percentage > averageLoad + relaxedThreshold);
+      const belowRelaxed = employeeLoads.filter(e => e.percentage < averageLoad - relaxedThreshold);
+      
+      if (aboveRelaxed.length === 0 || belowRelaxed.length === 0) return [];
+      
+      // Usar los grupos relajados
+      aboveRelaxed.forEach(over => {
+        belowRelaxed.forEach(avail => {
+          // Buscar proyectos compartidos
+          const sharedProjects = over.projects.filter(p => avail.projects.includes(p));
+          
+          // Calcular impacto
           const currentGap = (over.percentage - averageLoad) + (averageLoad - avail.percentage);
-          const impact = currentGap; // Cuanto mayor el gap, mayor el impacto de equilibrar
+          const impact = sharedProjects.length > 0 ? currentGap * 1.5 : currentGap; // Priorizar si comparten proyectos
 
           tips.push({
             from: over.name,
             to: avail.name,
             reason: `${over.name} está al ${over.percentage}% (media: ${averageLoad}%), ${avail.name} al ${avail.percentage}%`,
-            projects: sharedProjects.map(pid => projects.find(p => p.id === pid)?.name || '').filter(Boolean),
+            projects: sharedProjects.length > 0 
+              ? sharedProjects.map(pid => projects.find(p => p.id === pid)?.name || '').filter(Boolean)
+              : ['Considera redistribuir horas de proyectos comunes'],
             impact
           });
-        }
+        });
       });
-    });
+    } else {
+      // Generar sugerencias con el umbral normal
+      aboveAverage.forEach(over => {
+        belowAverage.forEach(avail => {
+          // Buscar proyectos compartidos
+          const sharedProjects = over.projects.filter(p => avail.projects.includes(p));
+          
+          // Calcular impacto: priorizar si comparten proyectos, pero también sugerir si no
+          const currentGap = (over.percentage - averageLoad) + (averageLoad - avail.percentage);
+          const impact = sharedProjects.length > 0 ? currentGap * 1.5 : currentGap * 0.8; // Priorizar si comparten proyectos
+
+          tips.push({
+            from: over.name,
+            to: avail.name,
+            reason: `${over.name} está al ${over.percentage}% (media: ${averageLoad}%), ${avail.name} al ${avail.percentage}%`,
+            projects: sharedProjects.length > 0 
+              ? sharedProjects.map(pid => projects.find(p => p.id === pid)?.name || '').filter(Boolean)
+              : ['Considera redistribuir horas de proyectos comunes'],
+            impact
+          });
+        });
+      });
+    }
 
     // Ordenar por impacto (mayor impacto primero) y devolver las top 3
     return tips
