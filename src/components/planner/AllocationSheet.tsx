@@ -53,10 +53,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading, loadDataForMonth, weeklyFeedback,
     currentUser
   } = useApp();
-  
+
   const { hasPermission } = usePermissions();
   const canAssignToOthers = hasPermission('can_assign_tasks_to_others');
-  
+
   // Estados para los sheets de Timeline y Weekly
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [weeklyOpen, setWeeklyOpen] = useState(false);
@@ -419,10 +419,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     setNewTasks(prev => [...prev, {
       id: crypto.randomUUID(),
       projectId: lastTask ? lastTask.projectId : '',
-      taskName: '', 
-      hours: '', 
-      weekDate: lastTask ? lastTask.weekDate : defaultKey, 
-      description: '', 
+      taskName: '',
+      hours: '',
+      weekDate: lastTask ? lastTask.weekDate : defaultKey,
+      description: '',
       dependencyId: 'none',
       employeeId: canAssignToOthers ? undefined : employeeId // Si no puede asignar a otros, usar el employeeId del sheet
     }]);
@@ -440,7 +440,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const handleSave = async () => {
     // Prevenir múltiples ejecuciones simultáneas
     if (isSaving) return;
-    
+
     setIsSaving(true);
     try {
       if (editingAllocation) {
@@ -474,7 +474,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
               dependencyId: task.dependencyId === 'none' ? undefined : task.dependencyId
             });
           });
-        
+
         await Promise.all(savePromises);
       }
       setIsFormOpen(false);
@@ -1249,7 +1249,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                   </div>
                                                   {/* Badge Weekly si la tarea fue ajustada vía Weekly (horas=0 o transferida) */}
                                                   {(() => {
-                                                    const isTransferred = alloc.taskName?.includes('(transferida de') || alloc.transferredFromAllocationId;
+                                                    const isTransferred = alloc.transferSourceEmployeeId || alloc.taskName?.includes('(transferida de') || alloc.transferredFromAllocationId;
                                                     const isDistributed = alloc.distributionSourceAllocationId;
                                                     const hasWeeklyFeedback = weeklyFeedback.some(fb => fb.allocationId === alloc.id);
                                                     const wasAdjustedViaWeekly = hasWeeklyFeedback || isTransferred || isDistributed ||
@@ -1260,8 +1260,18 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                     // Extraer información de transferencia/distribución para el tooltip
                                                     let transferInfo: string | null = null;
 
-                                                    // Caso 1: Tarea distribuida desde una transferencia
-                                                    if (isDistributed && alloc.distributionSourceAllocationId) {
+                                                    // Caso 0: Nuevas columnas (Tracking Robusto)
+                                                    if (alloc.transferSourceEmployeeId) {
+                                                      const sourceEmployee = employees.find(e => e.id === alloc.transferSourceEmployeeId);
+                                                      const originalName = alloc.originalTransferredTaskName || alloc.taskName || 'Tarea';
+                                                      if (isDistributed) {
+                                                        transferInfo = `Distribuida (origen genérico)\nFuente original: ${sourceEmployee?.name || 'compañero'}\nTarea original: ${originalName}`;
+                                                      } else {
+                                                        transferInfo = `Transferida de ${sourceEmployee?.name || 'compañero'}\nTarea original: ${originalName}`;
+                                                      }
+                                                    }
+                                                    // Caso 1: Tarea distribuida desde una transferencia (Legacy)
+                                                    else if (isDistributed && alloc.distributionSourceAllocationId) {
                                                       const sourceTask = allocations.find(a => a.id === alloc.distributionSourceAllocationId);
                                                       if (sourceTask) {
                                                         const sourceEmployee = employees.find(e => e.id === sourceTask.employeeId);
@@ -2153,13 +2163,13 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
       </AlertDialog>
 
       {/* Sheets de Timeline y Weekly */}
-      <TimelineSheet 
-        open={timelineOpen} 
+      <TimelineSheet
+        open={timelineOpen}
         onOpenChange={setTimelineOpen}
         initialViewDate={viewDate}
       />
-      <WeeklyReportDialog 
-        open={weeklyOpen} 
+      <WeeklyReportDialog
+        open={weeklyOpen}
         onOpenChange={setWeeklyOpen}
         employeeId={employeeId}
         viewDate={viewDate}

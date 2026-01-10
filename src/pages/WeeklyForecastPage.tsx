@@ -16,13 +16,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { format, startOfMonth, endOfMonth, isSameMonth, parseISO, addDays, startOfWeek, subMonths, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { AlertCircle, TrendingUp, TrendingDown, CheckCircle2, Users, Plus, ArrowRight, ChevronLeft, ChevronRight, CalendarDays, Check, ChevronDown, ArrowUpDown, Search } from 'lucide-react';
+import { AlertCircle, TrendingUp, TrendingDown, CheckCircle2, Users, Plus, ArrowRight, ChevronLeft, ChevronRight, CalendarDays, Check, ChevronDown, ArrowUpDown, Search, Activity } from 'lucide-react';
 import { cn, formatProjectName } from '@/lib/utils';
 import { toast } from 'sonner';
 import { getStorageKey, getWeeksForMonth, getMonthlyCapacity, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
 import { MonthlyEvolutionChart } from '@/components/employee/MonthlyEvolutionChart';
+import { ActivityLogSection } from '@/components/shared/ActivityLogSection';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -220,7 +221,7 @@ export default function WeeklyForecastPage() {
       allocationId?: string;
       createdAt: string;
       comments?: string;
-      distributedTasks?: Array<{ name: string; hours: number; weekDate: string }>;
+      distributedTasks?: Array<{ name: string; hours: number; weekDate: string; employeeName?: string }>;
       notes?: string;
       originalWeek?: string; // Nueva info: Semana origen
       targetWeek?: string;   // Nueva info: Semana destino
@@ -311,9 +312,20 @@ export default function WeeklyForecastPage() {
 
     // Añadir tareas transferidas sin feedback explícito
     transferredTasks.forEach(task => {
-      const match = task.taskName?.match(/\(transferida de (.+)\)/);
-      const fromEmployeeName = match ? match[1] : null;
-      const fromEmployee = fromEmployeeName ? employees.find(e => e.name === fromEmployeeName) : null;
+      // Intentar obtener origen desde nuevas columnas
+      let fromEmployee: typeof employees[0] | undefined | null;
+      let originalTaskName = 'Tarea transferida';
+
+      if (task.transferSourceEmployeeId) {
+        fromEmployee = employees.find(e => e.id === task.transferSourceEmployeeId);
+        originalTaskName = task.originalTransferredTaskName || task.taskName || 'Tarea transferida';
+      } else {
+        // Fallback IDs/Regex
+        const match = task.taskName?.match(/\(transferida de (.+)\)/);
+        const fromEmployeeName = match ? match[1] : null;
+        fromEmployee = fromEmployeeName ? employees.find(e => e.name === fromEmployeeName) : null;
+        originalTaskName = task.taskName?.replace(/\(transferida de .+\)/, '').trim() || 'Tarea transferida';
+      }
 
       if (fromEmployee && task.employeeId) {
         const toEmployee = employees.find(e => e.id === task.employeeId);
@@ -337,7 +349,7 @@ export default function WeeklyForecastPage() {
               // status = 'kept'; // O lo dejamos pending si queremos confirmación explícita
             }
 
-            let taskName = task.taskName?.replace(/\(transferida de .+\)/, '').trim() || 'Tarea transferida';
+            let taskName = originalTaskName;
             if (taskFeedback?.comments && status === 'distributed') {
               const nameMatch = taskFeedback.comments.match(/Nombre original: (.+?)(?:\s*\||$)/);
               if (nameMatch) {
@@ -384,7 +396,7 @@ export default function WeeklyForecastPage() {
       projectId: string;
       projectName: string;
       originalTaskName: string;
-      distributedTasks: Array<{ id: string; name: string; hours: number; weekDate: string }>;
+      distributedTasks: Array<{ id: string; name: string; hours: number; weekDate: string; employeeName: string }>;
       totalHours: number;
       createdAt: string;
       originalWeek?: string;
@@ -397,8 +409,15 @@ export default function WeeklyForecastPage() {
       let newTaskName: string = distTask.taskName || 'Tarea';
       let originalWeek: string | undefined;
 
-      // ... (Lógica de búsqueda de tarea original igual que antes) ...
-      if (distTask.distributionSourceAllocationId) {
+      // 1. Intentar usar columnas de tracking robusto (Nuevo sistema)
+      if (distTask.transferSourceEmployeeId && distTask.originalTransferredTaskName) {
+        fromEmployee = employees.find(e => e.id === distTask.transferSourceEmployeeId);
+        originalTaskName = distTask.originalTransferredTaskName;
+        originalWeek = distTask.weekStartDate; // Aproximación si no rastreamos fecha original exacta en columna separada
+      }
+
+      // 2. Si no hay datos nuevos, intentar rastrear por IDs (Sistema híbrido)
+      if (!fromEmployee && distTask.distributionSourceAllocationId) {
         const transferredTask = allocations.find(a => a.id === distTask.distributionSourceAllocationId);
         if (transferredTask) {
           originalWeek = transferredTask.weekStartDate; // Fecha de la tarea intermedia
@@ -476,7 +495,8 @@ export default function WeeklyForecastPage() {
         id: distTask.id,
         name: newTaskName.trim(),
         hours: distTask.hoursAssigned,
-        weekDate: distTask.weekStartDate
+        weekDate: distTask.weekStartDate,
+        employeeName: toEmployee.name
       });
       group.totalHours += distTask.hoursAssigned;
     });
@@ -496,6 +516,7 @@ export default function WeeklyForecastPage() {
         existing.hours = group.totalHours;
         existing.status = 'distributed';
         existing.targetWeek = group.targetWeek;
+        existing.distributedTasks = group.distributedTasks.map(t => ({ name: t.name, hours: t.hours, weekDate: t.weekDate, employeeName: t.employeeName }));
         transferMap.set(existingKey, existing);
       } else {
         const distributionFeedback = weeklyFeedback.find(fb =>
@@ -527,7 +548,7 @@ export default function WeeklyForecastPage() {
           allocationId: group.distributedTasks[0]?.id,
           createdAt: distributionFeedback?.createdAt || group.createdAt,
           comments: distributionFeedback?.comments,
-          distributedTasks: group.distributedTasks.map(t => ({ name: t.name, hours: t.hours, weekDate: t.weekDate })),
+          distributedTasks: group.distributedTasks.map(t => ({ name: t.name, hours: t.hours, weekDate: t.weekDate, employeeName: t.employeeName })),
           notes,
           originalWeek: group.originalWeek, // Propagar semana origen
           targetWeek: group.targetWeek // Semana destino
@@ -736,18 +757,26 @@ export default function WeeklyForecastPage() {
 
       {/* TABS */}
       <Tabs defaultValue="traffic" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="traffic" className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
-            Semáforo de proyectos
+            Semáforo
+          </TabsTrigger>
+          <TabsTrigger value="transfers" className="flex items-center gap-2">
+            <ArrowUpDown className="h-4 w-4" />
+            Transferencias
           </TabsTrigger>
           <TabsTrigger value="blockers" className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4" />
-            Feed de bloqueos
+            Bloqueos
           </TabsTrigger>
           <TabsTrigger value="redistribute" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Redistribución
+          </TabsTrigger>
+          <TabsTrigger value="activity" className="flex items-center gap-2">
+            <Activity className="h-4 w-4" />
+            Historial
           </TabsTrigger>
         </TabsList>
 
@@ -975,7 +1004,7 @@ export default function WeeklyForecastPage() {
         </TabsContent>
 
         {/* TAB 2: Transferencias de horas */}
-        <TabsContent value="blockers" className="space-y-4">
+        <TabsContent value="transfers" className="space-y-4">
           {/* Filtros */}
           <div className="flex flex-wrap items-center gap-3 bg-white rounded-xl border shadow-sm p-3">
             {/* Chips de filtro rápido por estado */}
@@ -1232,17 +1261,24 @@ export default function WeeklyForecastPage() {
 
                                       {/* Si está distribuida, mostrar tareas distribuidas */}
                                       {transfer.status === 'distributed' && transfer.distributedTasks && transfer.distributedTasks.length > 0 && (
-                                        <div className="mb-1.5 p-1.5 bg-purple-50/50 rounded border border-purple-200">
-                                          <p className="text-xs text-slate-600 mb-1 font-medium">Tareas distribuidas:</p>
-                                          <div className="space-y-0.5">
-                                            {transfer.distributedTasks.map((task, taskIdx) => (
-                                              <div key={taskIdx} className="flex items-center gap-1.5 text-xs">
-                                                <span className="text-slate-700">{task.name}</span>
-                                                <Badge variant="outline" className="bg-white text-purple-700 border-purple-300 text-[10px] px-1.5 py-0 shrink-0">
-                                                  {task.hours}h
-                                                </Badge>
-                                              </div>
-                                            ))}
+                                        <div className="mb-1.5 p-2 bg-purple-50/50 rounded border border-purple-200">
+                                          <p className="text-xs text-slate-600 mb-1.5 font-medium">
+                                            Distribuida en {transfer.distributedTasks.length} tarea{transfer.distributedTasks.length > 1 ? 's' : ''}:
+                                          </p>
+                                          <div className="space-y-1">
+                                            {transfer.distributedTasks.map((task, taskIdx) => {
+                                              const weekNum = task.weekDate ? Math.ceil(new Date(task.weekDate).getDate() / 7) : 0;
+                                              return (
+                                                <div key={taskIdx} className="flex items-center gap-2 text-xs bg-white rounded px-2 py-1 border border-purple-100">
+                                                  <span className="font-medium text-slate-800">{task.employeeName || 'Empleado'}</span>
+                                                  <span className="text-slate-400">→</span>
+                                                  <span className="text-slate-600">{task.name}</span>
+                                                  <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-300 text-[10px] px-1.5 py-0">
+                                                    {task.hours}h · S{weekNum}
+                                                  </Badge>
+                                                </div>
+                                              );
+                                            })}
                                           </div>
                                         </div>
                                       )}
@@ -1292,7 +1328,151 @@ export default function WeeklyForecastPage() {
           </Card>
         </TabsContent>
 
-        {/* TAB 3: Redistribución - Formulario directo */}
+        {/* TAB 3: Bloqueos - Quién bloquea a quién */}
+        <TabsContent value="blockers" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" />
+                Bloqueos entre tareas
+                <Badge variant="outline" className="ml-2">
+                  {(() => {
+                    // Find tasks that have dependencyId pointing to an uncompleted task
+                    const blockedTasks = allocations.filter(a => {
+                      if (!a.dependencyId || a.status === 'completed') return false;
+                      if (!isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)) return false;
+                      const blockingTask = allocations.find(b => b.id === a.dependencyId);
+                      return blockingTask && blockingTask.status !== 'completed';
+                    });
+                    return blockedTasks.length;
+                  })()}
+                </Badge>
+              </CardTitle>
+              <p className="text-sm text-slate-500">
+                Tareas que dependen de otras para avanzar. Ayuda a identificar cuellos de botella.
+              </p>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                // Find tasks that have dependencyId pointing to an uncompleted task
+                const blockedTasks = allocations.filter(a => {
+                  if (!a.dependencyId || a.status === 'completed') return false;
+                  if (!isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)) return false;
+                  const blockingTask = allocations.find(b => b.id === a.dependencyId);
+                  return blockingTask && blockingTask.status !== 'completed';
+                });
+
+                if (blockedTasks.length === 0) {
+                  return (
+                    <div className="text-center py-8 text-slate-500">
+                      <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-emerald-500" />
+                      <p className="font-medium">Sin bloqueos activos</p>
+                      <p className="text-xs">No hay tareas esperando a que otras terminen</p>
+                    </div>
+                  );
+                }
+
+                // Group by blocking employee
+                const blockingGroups = new Map<string, {
+                  blockerName: string;
+                  blockerAvatar?: string;
+                  blockingTasks: Array<{
+                    blockingTaskName: string;
+                    blockedTaskName: string;
+                    blockedEmployee: string;
+                    blockedEmployeeAvatar?: string;
+                    projectName: string;
+                    weekNum: number;
+                  }>;
+                }>();
+
+                blockedTasks.forEach(blocked => {
+                  const blockingTask = allocations.find(a => a.id === blocked.dependencyId);
+                  if (!blockingTask) return;
+
+                  const blockerEmployee = employees.find(e => e.id === blockingTask.employeeId);
+                  if (!blockerEmployee) return;
+
+                  const key = blockerEmployee.id;
+                  if (!blockingGroups.has(key)) {
+                    blockingGroups.set(key, {
+                      blockerName: blockerEmployee.name,
+                      blockerAvatar: blockerEmployee.avatarUrl,
+                      blockingTasks: []
+                    });
+                  }
+
+                  const blockedEmployee = employees.find(e => e.id === blocked.employeeId);
+                  const project = projects.find(p => p.id === blocked.projectId);
+                  const weekNum = Math.ceil(new Date(blocked.weekStartDate).getDate() / 7);
+
+                  blockingGroups.get(key)!.blockingTasks.push({
+                    blockingTaskName: blockingTask.taskName || 'Tarea bloqueadora',
+                    blockedTaskName: blocked.taskName || 'Tarea bloqueada',
+                    blockedEmployee: blockedEmployee?.name || 'Empleado',
+                    blockedEmployeeAvatar: blockedEmployee?.avatarUrl,
+                    projectName: project?.name || 'Proyecto',
+                    weekNum
+                  });
+                });
+
+                const groupsArray = Array.from(blockingGroups.entries())
+                  .sort((a, b) => b[1].blockingTasks.length - a[1].blockingTasks.length);
+
+                return (
+                  <div className="space-y-3">
+                    {groupsArray.map(([employeeId, group]) => (
+                      <div key={employeeId} className="border rounded-lg p-3 bg-red-50/30">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={group.blockerAvatar} />
+                            <AvatarFallback className="bg-red-500 text-white text-xs">
+                              {group.blockerName.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{group.blockerName}</p>
+                            <p className="text-xs text-slate-500">
+                              Bloquea {group.blockingTasks.length} tarea{group.blockingTasks.length > 1 ? 's' : ''}
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="bg-red-100 text-red-700 border-red-300">
+                            {group.blockingTasks.length} bloqueo{group.blockingTasks.length > 1 ? 's' : ''}
+                          </Badge>
+                        </div>
+                        <div className="space-y-1 ml-11">
+                          {group.blockingTasks.map((task, idx) => (
+                            <div key={idx} className="flex items-center gap-2 text-xs bg-white rounded px-2 py-1.5 border flex-wrap">
+                              <span className="text-slate-600 font-medium">
+                                "{task.blockingTaskName}"
+                              </span>
+                              <ArrowRight className="h-3 w-3 text-red-400 shrink-0" />
+                              <span className="text-slate-500">bloquea</span>
+                              <Avatar className="h-4 w-4 shrink-0">
+                                <AvatarImage src={task.blockedEmployeeAvatar} />
+                                <AvatarFallback className="text-[8px] bg-slate-500 text-white">
+                                  {task.blockedEmployee.slice(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium">{task.blockedEmployee}</span>
+                              <span className="text-slate-400">en</span>
+                              <span className="text-slate-600">"{task.blockedTaskName}"</span>
+                              <Badge variant="outline" className="text-[9px] shrink-0">
+                                {task.projectName} · S{task.weekNum}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* TAB 4: Redistribución - Formulario directo */}
         <TabsContent value="redistribute" className="space-y-4">
           <Card>
             <CardHeader>
@@ -1566,7 +1746,12 @@ export default function WeeklyForecastPage() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+
+        {/* TAB 4: Historial de Cambios */}
+        <TabsContent value="activity" className="space-y-4">
+          <ActivityLogSection currentMonth={currentMonth} />
+        </TabsContent>
+      </Tabs >
     </div >
   );
 }

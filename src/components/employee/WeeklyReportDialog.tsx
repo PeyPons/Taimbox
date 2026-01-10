@@ -33,13 +33,13 @@ interface WeeklyReportDialogProps {
 export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }: WeeklyReportDialogProps) {
   const { allocations, projects, clients, employees, absences, teamEvents, weeklyFeedback, updateAllocation, addAllocation, deleteAllocation, addWeeklyFeedback, getEmployeeLoadForWeek, loadDataForMonth } = useApp();
   const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
-  
+
   // Función helper para normalizar números (acepta tanto coma como punto como separador decimal)
   const normalizeNumber = (value: string): string => {
     // Reemplazar coma por punto para parseFloat
     return value.replace(',', '.');
   };
-  
+
   // Función helper para parsear horas con soporte para coma y punto
   const parseHours = (value: string): number => {
     const normalized = normalizeNumber(value);
@@ -124,6 +124,12 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
       try {
         const taskWeekDate = parseISO(a.weekStartDate);
         if (!isAllocationInEffectiveMonth(a.weekStartDate, viewDate)) return;
+
+        // NEW: Strict Week Filtering. Only show tasks for the TARGET WEEK.
+        // This prevents tasks from future weeks (Week 3) appearing when doing Weekly for Week 2.
+        // It also prevents stale tasks from weeks prior to the target one if they weren't caught.
+        // Note: targetWeek comes from getTargetWeek() which defaults to current week or last week of month.
+        if (getStorageKey(taskWeekDate, viewDate) !== targetWeek) return;
 
         // Usar campo de BD si está disponible, sino fallback al formato de texto
         const isTransferredTask = a.transferredFromAllocationId !== undefined && a.transferredFromAllocationId !== null
@@ -223,7 +229,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
       [taskId]: (prev[taskId] || []).map(r => r.id === rowId ? { ...r, [field]: value } : r)
     }));
   };
-  
+
   // Handler especial para horas que normaliza el valor
   const updateDistributionHours = (taskId: string, rowId: string, value: string) => {
     // Permitir entrada con coma o punto, pero normalizar internamente
@@ -338,8 +344,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
               status: 'completed'
             });
 
-            // 2. Crear tarea para el otro empleado
-            const taskNameTransferred = `${task.taskName || 'Tarea'} (transferida de ${employees.find(e => e.id === employeeId)?.name || 'compañero'})`;
+            // 2. Crear tarea para el otro empleado - NOMBRE LIMPIO
+            const taskNameTransferred = task.taskName || 'Tarea';
             await addAllocation({
               employeeId: targetEmployeeId,
               projectId: task.projectId,
@@ -347,7 +353,9 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
               hoursAssigned: remainingHours,
               taskName: taskNameTransferred,
               status: 'planned',
-              transferredFromAllocationId: task.id // Rastrear de qué tarea original proviene esta transferencia
+              transferredFromAllocationId: task.id, // Rastrear de qué tarea original proviene esta transferencia
+              originalTransferredTaskName: task.originalTransferredTaskName || taskNameTransferred.replace(/\(transferida de .+\)/, '').trim(),
+              transferSourceEmployeeId: employeeId // Quién está transfiriendo (yo)
             });
 
             // 3. Registrar feedback para trazabilidad con nombre de tarea original
@@ -378,12 +386,12 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
           const hours = keepTaskHours[task.id];
           const actual = hours ? parseHours(hours.actual) : (task.hoursActual || task.hoursAssigned);
           const computed = hours ? parseHours(hours.computed) : (task.hoursComputed || actual);
-          
+
           if (actual <= 0) {
             toast.error(`"${task.taskName}" necesita horas reales mayores a 0`);
             continue;
           }
-          
+
           // Actualizar la tarea con las horas reales y computadas, y marcarla como completada
           await updateAllocation({
             ...task,
@@ -391,7 +399,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
             hoursComputed: computed,
             status: 'completed'
           });
-          
+
           // Registrar feedback para marcarla como procesada
           const comment = taskComments[task.id] || `Tarea completada: ${actual.toFixed(2)}h reales, ${computed.toFixed(2)}h computadas`;
           await addWeeklyFeedback({
@@ -406,26 +414,26 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
           // Imputar y Continuar: Cerrar tarea actual y crear nueva en semana siguiente
           const hours = rolloverHours[task.id];
           const newHoursEstimate = rolloverNewHours[task.id];
-          
+
           if (!hours || !newHoursEstimate) {
             toast.error(`"${task.taskName}" necesita horas reales y nueva estimación completadas`);
             continue;
           }
-          
+
           const actual = parseHours(hours.actual);
           const computed = parseHours(hours.computed) || actual;
           const newEstimate = parseHours(newHoursEstimate);
-          
+
           if (actual <= 0) {
             toast.error(`"${task.taskName}" necesita horas reales mayores a 0`);
             continue;
           }
-          
+
           if (newEstimate <= 0) {
             toast.error(`"${task.taskName}" necesita una nueva estimación mayor a 0`);
             continue;
           }
-          
+
           // 1. Cerrar tarea actual (Semana N) - NO cambiar la fecha, se queda en Semana N
           await updateAllocation({
             ...task,
@@ -433,13 +441,13 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
             hoursComputed: computed,
             status: 'completed'
           });
-          
+
           // 2. Calcular semana siguiente (lunes de la semana siguiente)
           const currentWeekDate = parseISO(task.weekStartDate);
           const nextWeekStart = startOfWeek(addDays(currentWeekDate, 7), { weekStartsOn: 1 });
           // Usar getStorageKey para normalizar la fecha según el mes (maneja semanas partidas)
           const nextWeekStr = getStorageKey(nextWeekStart, viewDate);
-          
+
           console.log('[Rollover] Creando tarea:', {
             taskName: task.taskName,
             currentWeek: task.weekStartDate,
@@ -448,7 +456,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
             newEstimate,
             parentId: task.id
           });
-          
+
           // 3. Crear nueva tarea (Semana N+1) con parent_allocation_id
           try {
             const newAllocation = await addAllocation({
@@ -463,19 +471,19 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
               description: task.description,
               parentAllocationId: task.id // ENLACE CRÍTICO para trazabilidad
             });
-            
+
             if (!newAllocation) {
               console.error('[Rollover] addAllocation retornó null');
               toast.error(`Error al crear la tarea en la semana siguiente para "${task.taskName}"`);
               continue;
             }
-            
+
             console.log('[Rollover] Tarea creada exitosamente:', newAllocation);
-            
+
             // Si la semana siguiente está en un mes diferente, cargar datos de ese mes
             const nextWeekMonth = new Date(nextWeekStart.getFullYear(), nextWeekStart.getMonth(), 1);
             const currentViewMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
-            
+
             if (nextWeekMonth.getTime() !== currentViewMonth.getTime()) {
               console.log('[Rollover] Cargando datos del mes siguiente:', format(nextWeekMonth, 'yyyy-MM'));
               await loadDataForMonth(nextWeekMonth);
@@ -485,7 +493,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
             toast.error(`Error al crear la tarea en la semana siguiente: ${error instanceof Error ? error.message : 'Error desconocido'}`);
             continue;
           }
-          
+
           // 4. Registrar feedback
           const comment = taskComments[task.id] || `Tarea con rollover: ${actual.toFixed(2)}h imputadas esta semana, ${newEstimate.toFixed(2)}h planificadas para próxima semana`;
           await addWeeklyFeedback({
@@ -545,16 +553,19 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
             }
           }
 
-          // Detectar si la tarea a distribuir es transferida
-          const isTransferredTask = task.taskName?.includes('(transferida de');
+          // Detectar si la tarea a distribuir es transferida (usando IDs o string legacy)
+          const isTransferredTask = !!task.transferredFromAllocationId || task.taskName?.includes('(transferida de');
           const transferMatch = task.taskName?.match(/\(transferida de (.+)\)/);
-          const fromEmployeeName = transferMatch ? transferMatch[1] : null;
+          const fromEmployeeName = transferMatch ? transferMatch[1] : (
+            task.transferSourceEmployeeId ? employees.find(e => e.id === task.transferSourceEmployeeId)?.name : null
+          );
 
-          // Extraer el nombre original de la tarea transferida (sin el indicador)
-          // Ejemplo: "jaime (transferida de Miguel)" -> "jaime"
-          const originalTransferredTaskName = isTransferredTask
-            ? task.taskName?.replace(/\(transferida de .+\)/, '').trim() || task.taskName
-            : null;
+          // Extraer el nombre original de la tarea transferida
+          const originalTransferredTaskName = task.originalTransferredTaskName || (
+            isTransferredTask
+              ? task.taskName?.replace(/\(transferida de .+\)/, '').trim() || task.taskName
+              : null
+          );
 
           // Guardar el ID de la tarea original ANTES de eliminarla (necesario para la foreign key)
           const originalTaskId = task.id;
@@ -577,17 +588,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
           // Crear las nuevas tareas distribuidas ANTES de eliminar la original
           // (necesario para que la foreign key constraint funcione)
           for (const distTask of validTasks) {
-            // Si la tarea original era transferida, añadir el indicador y el nombre original
-            let finalTaskName = distTask.taskName;
-            if (isTransferredTask && fromEmployeeName) {
-              if (originalTransferredTaskName && originalTransferredTaskName !== distTask.taskName) {
-                // Si el nombre original es diferente, incluirlo: "pepe (transferida de Miguel, original: jaime)"
-                finalTaskName = `${distTask.taskName} (transferida de ${fromEmployeeName}, original: ${originalTransferredTaskName})`;
-              } else {
-                // Si es el mismo nombre o no hay nombre original, solo añadir el indicador
-                finalTaskName = `${distTask.taskName} (transferida de ${fromEmployeeName})`;
-              }
-            }
+            // Si la tarea original era transferida, usar NOMBRE LIMPIO
+            const finalTaskName = distTask.taskName;
 
             const newAllocation = await addAllocation({
               employeeId,
@@ -598,7 +600,9 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
               status: 'planned',
               // Si la tarea original era transferida, rastrear tanto la transferencia como la distribución
               transferredFromAllocationId: isTransferredTask && task.transferredFromAllocationId ? task.transferredFromAllocationId : undefined,
-              distributionSourceAllocationId: originalTaskId // Rastrear de qué tarea transferida proviene esta distribución
+              distributionSourceAllocationId: originalTaskId, // Rastrear de qué tarea transferida proviene esta distribución
+              originalTransferredTaskName: originalTransferredTaskName || finalTaskName, // Propagar nombre original
+              transferSourceEmployeeId: task.transferSourceEmployeeId || (isTransferredTask ? undefined : employeeId) // Propagar source original o soy yo
             });
 
             // Crear feedback para cada tarea distribuida si proviene de transferencia (para trazabilidad)
@@ -643,13 +647,13 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col" aria-describedby="weekly-report-description">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col" aria-describedby="weekly-report-desc">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-primary" />
             Weekly
           </DialogTitle>
-          <DialogDescription id="weekly-report-description" className="space-y-2">
+          <DialogDescription id="weekly-report-desc" className="space-y-2">
             <span className="block text-sm">Revisa las tareas que te quedaron abiertas y las que tus compañeros te han pasado.</span>
             <span className="block text-xs text-muted-foreground">
               <strong>Importante:</strong> Únicamente se mostrarán tareas que dejaste sin completar de la semana anterior. Elige cómo gestionar cada tarea para mantener tu planificación actualizada.
@@ -680,15 +684,15 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                   tasksByFilter[filter.id] = allTasks.filter(t => {
                     // Si la tarea ya fue asignada a otro filtro, no la incluimos aquí
                     if (assignedTaskIds.has(t.id)) return false;
-                    
+
                     const proj = projects.find(p => p.id === t.projectId);
                     const matches = proj && filterProject(proj, filter.id);
-                    
+
                     // Si coincide con este filtro, marcarla como asignada
                     if (matches) {
                       assignedTaskIds.add(t.id);
                     }
-                    
+
                     return matches;
                   });
                 });
@@ -843,11 +847,11 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
 
                                     {/* Logic for 'keep' */}
                                     {taskActions[task.id] === 'keep' && (() => {
-                                      const hours = keepTaskHours[task.id] || { 
-                                        actual: (task.hoursActual || task.hoursAssigned || 0).toFixed(2), 
-                                        computed: (task.hoursComputed || task.hoursActual || task.hoursAssigned || 0).toFixed(2) 
+                                      const hours = keepTaskHours[task.id] || {
+                                        actual: (task.hoursActual || task.hoursAssigned || 0).toFixed(2),
+                                        computed: (task.hoursComputed || task.hoursActual || task.hoursAssigned || 0).toFixed(2)
                                       };
-                                      
+
                                       return (
                                         <div className="mt-3 space-y-3 pl-3 border-l-4 bg-gradient-to-r from-emerald-50/30 to-teal-50/30 rounded-r-lg p-4 border-emerald-300">
                                           <div className="grid grid-cols-2 gap-3">
@@ -907,16 +911,16 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
 
                                     {/* Logic for 'rollover' */}
                                     {taskActions[task.id] === 'rollover' && (() => {
-                                      const hours = rolloverHours[task.id] || { 
-                                        actual: (task.hoursActual || missingHours || 0).toFixed(2), 
-                                        computed: (task.hoursComputed || task.hoursActual || missingHours || 0).toFixed(2) 
+                                      const hours = rolloverHours[task.id] || {
+                                        actual: (task.hoursActual || missingHours || 0).toFixed(2),
+                                        computed: (task.hoursComputed || task.hoursActual || missingHours || 0).toFixed(2)
                                       };
                                       const newHoursEstimate = rolloverNewHours[task.id] || (missingHours > 0 ? missingHours.toFixed(2) : '0.00');
-                                      
+
                                       // Calcular semana siguiente
                                       const nextWeekStart = addDays(parseISO(task.weekStartDate), 7);
                                       const nextWeekStr = format(nextWeekStart, 'yyyy-MM-dd');
-                                      
+
                                       return (
                                         <div className="mt-3 space-y-3 pl-3 border-l-4 bg-gradient-to-r from-blue-50/30 to-cyan-50/30 rounded-r-lg p-4 border-blue-300">
                                           <div className="space-y-2">
@@ -1005,8 +1009,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                         <div className="space-y-3">
                                           <div className="flex items-center justify-between text-xs font-medium px-1">
                                             <span className="text-indigo-700 dark:text-indigo-400">Distribuir {round2(missingHours).toFixed(2)}h:</span>
-                                            <span className={round2(missingHours - (distributionTasks[task.id]?.reduce((acc, d) => acc + parseHours(d.hours), 0) || 0)) === 0 
-                                              ? "text-emerald-600 dark:text-emerald-400 font-semibold" 
+                                            <span className={round2(missingHours - (distributionTasks[task.id]?.reduce((acc, d) => acc + parseHours(d.hours), 0) || 0)) === 0
+                                              ? "text-emerald-600 dark:text-emerald-400 font-semibold"
                                               : "text-amber-600 dark:text-amber-400"}>
                                               Falta: {round2(missingHours - (distributionTasks[task.id]?.reduce((acc, d) => acc + parseHours(d.hours), 0) || 0)).toFixed(2)}h
                                             </span>
@@ -1018,13 +1022,13 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                               const weekHours = weekLoad?.hours || 0;
                                               const weekCapacity = weekLoad?.capacity || 0;
                                               const weekAvailable = round2(weekCapacity - weekHours);
-                                              
+
                                               const hoursValue = parseHours(dist.hours);
                                               const isOverCapacity = weekLoad && (weekHours + hoursValue) > weekCapacity;
-                                              const availabilityStatus = weekLoad 
+                                              const availabilityStatus = weekLoad
                                                 ? (weekAvailable >= 5 ? 'healthy' : weekAvailable >= 0 ? 'warning' : 'overload')
                                                 : 'unknown';
-                                              
+
                                               return (
                                                 <div key={dist.id} className="space-y-2 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 p-3 rounded-lg border-2 border-indigo-200/50 shadow-sm hover:shadow-md transition-all">
                                                   <div className="flex items-center gap-2">
@@ -1039,11 +1043,10 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                                     <Input
                                                       type="text"
                                                       inputMode="decimal"
-                                                      className={`h-9 w-24 text-xs font-mono border-2 ${
-                                                        isOverCapacity 
-                                                          ? 'border-red-400 focus:border-red-500 focus:ring-red-500' 
-                                                          : 'border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500'
-                                                      }`}
+                                                      className={`h-9 w-24 text-xs font-mono border-2 ${isOverCapacity
+                                                        ? 'border-red-400 focus:border-red-500 focus:ring-red-500'
+                                                        : 'border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500'
+                                                        }`}
                                                       value={dist.hours}
                                                       onChange={(e) => {
                                                         // Permitir entrada con coma o punto
@@ -1056,10 +1059,10 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                                       placeholder="0.00"
                                                       step="0.01"
                                                     />
-                                                    <Button 
-                                                      variant="ghost" 
-                                                      size="icon" 
-                                                      className="h-9 w-9 text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-md transition-colors" 
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="icon"
+                                                      className="h-9 w-9 text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-200 rounded-md transition-colors"
                                                       onClick={() => removeDistributionRow(task.id, dist.id)}
                                                     >
                                                       <Trash2 className="h-4 w-4" />
@@ -1082,8 +1085,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                                           const available = round2(capacity - hours);
                                                           const status = available >= 5 ? 'healthy' : available >= 0 ? 'warning' : 'overload';
                                                           return (
-                                                            <SelectItem 
-                                                              key={w.weekStart.toISOString()} 
+                                                            <SelectItem
+                                                              key={w.weekStart.toISOString()}
                                                               value={weekKey}
                                                               className={status === 'healthy' ? 'text-emerald-700' : status === 'warning' ? 'text-amber-700' : 'text-red-700'}
                                                             >
@@ -1094,13 +1097,12 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                                       </SelectContent>
                                                     </Select>
                                                     {weekLoad && (
-                                                      <div className={`text-xs font-medium whitespace-nowrap px-2 py-1 rounded ${
-                                                        availabilityStatus === 'healthy' 
-                                                          ? 'bg-emerald-100 text-emerald-700 border border-emerald-300' 
-                                                          : availabilityStatus === 'warning'
+                                                      <div className={`text-xs font-medium whitespace-nowrap px-2 py-1 rounded ${availabilityStatus === 'healthy'
+                                                        ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                                                        : availabilityStatus === 'warning'
                                                           ? 'bg-amber-100 text-amber-700 border border-amber-300'
                                                           : 'bg-red-100 text-red-700 border border-red-300'
-                                                      }`}>
+                                                        }`}>
                                                         {weekHours.toFixed(2)}h / {weekCapacity.toFixed(2)}h
                                                       </div>
                                                     )}
@@ -1137,10 +1139,10 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                       const weekHours = weekLoad?.hours || 0;
                                       const weekCapacity = weekLoad?.capacity || 0;
                                       const weekAvailable = round2(weekCapacity - weekHours);
-                                      const availabilityStatus = weekLoad 
+                                      const availabilityStatus = weekLoad
                                         ? (weekAvailable >= 5 ? 'healthy' : weekAvailable >= 0 ? 'warning' : 'overload')
                                         : 'unknown';
-                                      
+
                                       return (
                                         <div className="mt-3 space-y-3 pl-3 border-l-4 bg-gradient-to-r from-blue-50/30 to-cyan-50/30 rounded-r-lg p-4 border-blue-300">
                                           <div className="space-y-1">
@@ -1158,20 +1160,19 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                                   const available = round2(capacity - hours);
                                                   return (
                                                     <SelectItem key={w.weekStart.toISOString()} value={weekKey}>
-                                                        Semana {getWeekNumber(w.weekStart)} ({format(w.weekStart, 'd MMM')}) - {available.toFixed(2)}h libres
+                                                      Semana {getWeekNumber(w.weekStart)} ({format(w.weekStart, 'd MMM')}) - {available.toFixed(2)}h libres
                                                     </SelectItem>
                                                   );
                                                 })}
                                               </SelectContent>
                                             </Select>
                                             {weekLoad && (
-                                              <div className={`text-xs font-medium mt-2 px-3 py-2 rounded-lg border-2 ${
-                                                availabilityStatus === 'healthy' 
-                                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300' 
-                                                  : availabilityStatus === 'warning'
+                                              <div className={`text-xs font-medium mt-2 px-3 py-2 rounded-lg border-2 ${availabilityStatus === 'healthy'
+                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                                : availabilityStatus === 'warning'
                                                   ? 'bg-amber-50 text-amber-700 border-amber-300'
                                                   : 'bg-red-50 text-red-700 border-red-300'
-                                              }`}>
+                                                }`}>
                                                 Disponibilidad: {weekHours.toFixed(2)}h / {weekCapacity.toFixed(2)}h ({weekAvailable >= 0 ? `${weekAvailable.toFixed(2)}h libres` : `${Math.abs(weekAvailable).toFixed(2)}h excedidas`})
                                               </div>
                                             )}
@@ -1193,7 +1194,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                     {taskActions[task.id] === 'moveToEmployee' && (() => {
                                       const selectedEmployeeId = moveToEmployee[task.id];
                                       const selectedWeek = moveToWeek[task.id];
-                                      
+
                                       // Calcular disponibilidad total del compañero (promedio de todas las semanas futuras)
                                       const employeeTotalLoad = selectedEmployeeId ? (() => {
                                         const loads = futureWeeks.map(w => {
@@ -1204,19 +1205,19 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                         const totalCapacity = loads.reduce((sum, l) => sum + (l?.capacity || 0), 0);
                                         return { hours: totalHours, capacity: totalCapacity, available: round2(totalCapacity - totalHours) };
                                       })() : null;
-                                      
+
                                       // Calcular disponibilidad de la semana seleccionada para el compañero
                                       const weekLoad = selectedEmployeeId && selectedWeek ? getEmployeeLoadForWeek(selectedEmployeeId, selectedWeek, undefined, undefined, viewDate) : null;
                                       const weekHours = weekLoad?.hours || 0;
                                       const weekCapacity = weekLoad?.capacity || 0;
                                       const weekAvailable = round2(weekCapacity - weekHours);
-                                      const totalAvailabilityStatus = employeeTotalLoad 
+                                      const totalAvailabilityStatus = employeeTotalLoad
                                         ? (employeeTotalLoad.available >= 20 ? 'healthy' : employeeTotalLoad.available >= 0 ? 'warning' : 'overload')
                                         : 'unknown';
-                                      const weekAvailabilityStatus = weekLoad 
+                                      const weekAvailabilityStatus = weekLoad
                                         ? (weekAvailable >= 5 ? 'healthy' : weekAvailable >= 0 ? 'warning' : 'overload')
                                         : 'unknown';
-                                      
+
                                       return (
                                         <div className="mt-3 space-y-3 pl-3 border-l-4 bg-gradient-to-r from-violet-50/30 to-fuchsia-50/30 rounded-r-lg p-4 border-violet-300">
                                           <div className="grid grid-cols-2 gap-2">
@@ -1238,8 +1239,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                                     const available = round2(totalCapacity - totalHours);
                                                     const status = available >= 20 ? 'healthy' : available >= 0 ? 'warning' : 'overload';
                                                     return (
-                                                      <SelectItem 
-                                                        key={e.id} 
+                                                      <SelectItem
+                                                        key={e.id}
                                                         value={e.id}
                                                         className={status === 'healthy' ? 'text-emerald-700' : status === 'warning' ? 'text-amber-700' : 'text-red-700'}
                                                       >
@@ -1265,8 +1266,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                                     const available = round2(capacity - hours);
                                                     const status = available >= 5 ? 'healthy' : available >= 0 ? 'warning' : 'overload';
                                                     return (
-                                                      <SelectItem 
-                                                        key={w.weekStart.toISOString()} 
+                                                      <SelectItem
+                                                        key={w.weekStart.toISOString()}
                                                         value={weekKey}
                                                         className={status === 'healthy' ? 'text-emerald-700' : status === 'warning' ? 'text-amber-700' : 'text-red-700'}
                                                       >
@@ -1372,7 +1373,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                   } else if (action === 'keep') {
                     const hours = keepTaskHours[task.id];
                     const actual = hours ? parseHours(hours.actual) : (task.hoursActual || task.hoursAssigned);
-                    
+
                     if (!actual || actual <= 0) {
                       canSubmit = false;
                       validationErrors.push(`"${task.taskName}": las horas reales deben ser mayores a 0`);
@@ -1380,7 +1381,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                   } else if (action === 'rollover') {
                     const hours = rolloverHours[task.id];
                     const newHoursEstimate = rolloverNewHours[task.id];
-                    
+
                     if (!hours || !hours.actual) {
                       canSubmit = false;
                       validationErrors.push(`"${task.taskName}": completa las horas reales imputadas`);
@@ -1391,7 +1392,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                         validationErrors.push(`"${task.taskName}": las horas reales deben ser mayores a 0`);
                       }
                     }
-                    
+
                     if (!newHoursEstimate) {
                       canSubmit = false;
                       validationErrors.push(`"${task.taskName}": completa la nueva estimación para la semana siguiente`);

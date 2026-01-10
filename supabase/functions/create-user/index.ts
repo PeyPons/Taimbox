@@ -41,7 +41,7 @@ serve(async (req) => {
     const { email, password, name } = body
 
     if (!email || typeof email !== 'string' || !email.trim()) {
-      throw new Error('El email es obligatorio y debe ser una cadena de texto válida')
+      throw new Error('El email es obligatorio y debe ser una cadena de texto válido')
     }
 
     if (!password || typeof password !== 'string' || password.length < 6) {
@@ -49,7 +49,66 @@ serve(async (req) => {
     }
 
     const cleanEmail = email.trim().toLowerCase()
-    console.log(`Intentando crear usuario: ${cleanEmail}`)
+
+    // ========================================
+    // SECURITY: Verify caller is authorized
+    // ========================================
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'No se proporcionó token de autorización' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+
+    const token = authHeader.replace('Bearer ', '')
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')
+
+    if (!anonKey) {
+      console.error('SUPABASE_ANON_KEY no configurada')
+      throw new Error('Configuración del servidor incompleta')
+    }
+
+    // Create a client with the caller's token to verify their identity
+    const { createClient: createAnonClient } = await import("https://esm.sh/@supabase/supabase-js@2")
+    const supabaseWithAuth = createAnonClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } }
+    })
+
+    const { data: { user: callerUser }, error: callerAuthError } = await supabaseWithAuth.auth.getUser()
+    if (callerAuthError || !callerUser) {
+      console.error('Error verificando token del llamante:', callerAuthError)
+      return new Response(
+        JSON.stringify({ error: 'Token de autorización inválido o expirado' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+
+    // Verify the caller has admin role (Director or Responsable)
+    const { data: callerEmployee, error: callerEmployeeError } = await supabaseAdmin
+      .from('employees')
+      .select('id, role, name')
+      .eq('user_id', callerUser.id)
+      .single()
+
+    if (callerEmployeeError || !callerEmployee) {
+      console.error('Llamante no encontrado en employees:', callerUser.id)
+      return new Response(
+        JSON.stringify({ error: 'No tienes permiso para crear usuarios. Tu cuenta no está asociada a un empleado.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      )
+    }
+
+    const ADMIN_ROLES = ['Director', 'Responsable']
+    if (!ADMIN_ROLES.includes(callerEmployee.role || '')) {
+      console.warn(`Usuario ${callerEmployee.name} (${callerEmployee.role}) intentó crear usuario sin permisos`)
+      return new Response(
+        JSON.stringify({ error: 'Solo los usuarios con rol Director o Responsable pueden crear nuevos usuarios.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      )
+    }
+
+    console.log(`Usuario autorizado ${callerEmployee.name} (${callerEmployee.role}) creando: ${cleanEmail}`)
 
     // 5. Verificar que el email no exista ya en la tabla employees
     const { data: existingEmployee } = await supabaseAdmin

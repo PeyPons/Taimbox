@@ -158,6 +158,8 @@ export interface Allocation {
   transferredFromAllocationId?: string; // ID de la tarea original de la que proviene esta transferencia
   distributionSourceAllocationId?: string; // ID de la tarea transferida de la que proviene esta distribución
   parentAllocationId?: string | null; // ID de la tarea padre cuando se hace rollover
+  originalTransferredTaskName?: string; // Nombre original de la tarea transferida (snapshot)
+  transferSourceEmployeeId?: string; // ID del empleado origen de la transferencia
 }
 
 export interface NewTaskRow {

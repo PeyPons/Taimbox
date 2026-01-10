@@ -55,13 +55,11 @@ export function usePermissions() {
       return roleConfig.permissions;
     }
 
-    // 3. Fallback: Si el rol contiene keywords de manager/admin, dar todos los permisos
-    // Nota: 'coordinador' se removió de esta lista ya que no debería tener permisos de admin por defecto
-    // Los coordinadores deben tener permisos explícitos configurados en la agencia
-    const MANAGER_KEYWORDS = ['manager', 'admin', 'director', 'ceo', 'founder', 'head', 'lead', 'responsable'];
-    const roleLower = userRoleName.toLowerCase();
-    if (MANAGER_KEYWORDS.some(k => roleLower.includes(k))) {
-      return DEFAULT_PERMISSIONS;
+    // 3. No role configuration found - log warning and return restricted permissions
+    // SECURITY: Permissions must be explicitly configured in agency_settings.roles
+    // No implicit admin access based on role name keywords
+    if (userRoleName) {
+      console.warn(`[usePermissions] No role configuration found for role "${userRoleName}". User will have restricted access. Configure permissions in Agency Settings.`);
     }
 
     // 4. Default: Permisos restringidos para roles no configurados
