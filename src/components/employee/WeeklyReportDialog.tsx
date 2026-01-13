@@ -63,17 +63,23 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
   const currentWeekStr = format(currentWeekStart, 'yyyy-MM-dd');
   const isCurrentWeekInMonth = isSameMonth(currentWeekStart, viewDate);
 
-  // Encontrar la última semana pasada del mes si la actual no está en el mes
+  // Encontrar semanas pasadas para mostrar en el Weekly
+  // Devolver null significa "mostrar todas las semanas pasadas del mes"
   const getTargetWeek = (): string | null => {
-    if (isCurrentWeekInMonth) {
-      return currentWeekStr;
-    }
+    // Si el mes visualizado es un mes pasado completo, mostrar la última semana
     const monthStart = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
     const monthEnd = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0);
 
     if (isBefore(monthEnd, new Date())) {
+      // Es un mes pasado completo, mostrar última semana
       const lastWeekStart = startOfWeek(monthEnd, { weekStartsOn: 1 });
       return format(lastWeekStart, 'yyyy-MM-dd');
+    }
+
+    // Si estamos en el mes actual, retornar null para mostrar TODAS las semanas pasadas
+    // Esto permite ver tareas de semana 1 y 2 cuando estamos en semana 3
+    if (isCurrentWeekInMonth) {
+      return null;
     }
 
     return null;
@@ -84,26 +90,21 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
   // Separar tareas abiertas y transferidas
   const { openTasks, transferredTasks } = useMemo(() => {
     const today = new Date();
+    const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
 
-    // Obtener IDs de tareas que ya tienen feedback de "keep" (mantener)
-    const keptTaskIds = new Set(
+    // Obtener IDs de tareas que ya fueron PROCESADAS por el Weekly
+    // Estas tienen feedback específico indicando que ya se gestionaron
+    const processedByWeeklyIds = new Set(
       weeklyFeedback
-        .filter(fb => fb.allocationId && fb.comments?.includes('Tarea mantenida tal cual'))
-        .map(fb => fb.allocationId!)
-    );
-
-    // Obtener IDs de tareas que fueron distribuidas (tienen feedback de distribución)
-    const distributedTaskIds = new Set(
-      weeklyFeedback
-        .filter(fb => fb.allocationId && fb.comments?.includes('Distribuidas en'))
-        .map(fb => fb.allocationId!)
-    );
-
-    // Obtener IDs de tareas que fueron creadas como resultado de una distribución desde transferencia
-    // Estas tienen feedback con "Tarea distribuida desde transferencia"
-    const distributedFromTransferIds = new Set(
-      weeklyFeedback
-        .filter(fb => fb.allocationId && fb.comments?.includes('Tarea distribuida desde transferencia'))
+        .filter(fb => fb.allocationId && (
+          fb.comments?.includes('Tarea completada:') ||
+          fb.comments?.includes('Tarea movida a semana futura') ||
+          fb.comments?.includes('Tarea transferida a') ||
+          fb.comments?.includes('Distribuidas en') ||
+          fb.comments?.includes('Tarea distribuida desde') ||
+          fb.comments?.includes('Tarea con rollover:') ||
+          fb.comments?.includes('Tarea mantenida tal cual')
+        ))
         .map(fb => fb.allocationId!)
     );
 
@@ -112,24 +113,27 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
 
     allocations.forEach(a => {
       if (a.employeeId !== employeeId) return;
-      if (keptTaskIds.has(a.id)) return;
 
-      // EXCLUIR: Tareas que fueron distribuidas (tienen feedback de distribución)
-      if (distributedTaskIds.has(a.id)) return;
-
-      // EXCLUIR: Tareas distribuidas desde transferencias (tienen feedback específico)
-      // Estas ya fueron procesadas y no deben aparecer como pendientes
-      if (distributedFromTransferIds.has(a.id)) return;
+      // EXCLUIR: Tareas que ya fueron procesadas por el Weekly
+      if (processedByWeeklyIds.has(a.id)) return;
 
       try {
         const taskWeekDate = parseISO(a.weekStartDate);
         if (!isAllocationInEffectiveMonth(a.weekStartDate, viewDate)) return;
 
-        // NEW: Strict Week Filtering. Only show tasks for the TARGET WEEK.
-        // This prevents tasks from future weeks (Week 3) appearing when doing Weekly for Week 2.
-        // It also prevents stale tasks from weeks prior to the target one if they weren't caught.
-        // Note: targetWeek comes from getTargetWeek() which defaults to current week or last week of month.
-        if (getStorageKey(taskWeekDate, viewDate) !== targetWeek) return;
+        // El viernes de esa semana es el último día laboral
+        const taskWeekEnd = addDays(taskWeekDate, 4); // Viernes
+
+        // Filtrado de semanas:
+        // - Si targetWeek está definido (mes pasado completo), solo mostrar tareas de la última semana
+        // - Si targetWeek es null (mes actual), mostrar tareas de semanas cuyo VIERNES ya pasó
+        if (targetWeek !== null) {
+          // Mes pasado: filtrar por la última semana
+          if (getStorageKey(taskWeekDate, viewDate) !== targetWeek) return;
+        } else {
+          // Mes actual: solo mostrar tareas cuyo viernes YA PASÓ (semanas anteriores)
+          if (taskWeekEnd > today) return;
+        }
 
         // Usar campo de BD si está disponible, sino fallback al formato de texto
         const isTransferredTask = a.transferredFromAllocationId !== undefined && a.transferredFromAllocationId !== null
@@ -140,10 +144,9 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
           return;
         }
 
-        const taskWeekEnd = addDays(taskWeekDate, 4);
-        if (taskWeekEnd > today) return;
-
-        if (a.status !== 'completed' || ((a.hoursActual || 0) < a.hoursAssigned)) {
+        // Solo incluir si NO está completada
+        // (Si el usuario marcó la tarea como completed, la consideramos cerrada)
+        if (a.status !== 'completed') {
           open.push(a);
         }
       } catch {

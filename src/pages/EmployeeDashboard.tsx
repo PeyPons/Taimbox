@@ -1,7 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { MyWeekView } from '@/components/employee/MyWeekView';
-import { MyDayView } from '@/components/employee/MyDayView';
 import { WeeklyReportDialog } from '@/components/employee/WeeklyReportDialog';
 import { PriorityInsights, ProjectTeamPulse } from '@/components/employee/DashboardWidgets';
 import { ReliabilityIndexCard } from '@/components/employee/ReliabilityIndexCard';
@@ -44,6 +43,9 @@ import { cn, formatProjectName } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useIntegration } from '@/hooks/useIntegration';
+import { useDashboardView } from '@/hooks/useDashboardView';
+import { ViewToggle, ViewModeIndicator } from '@/components/employee/ViewToggle';
+import { DailyZenDashboard } from '@/components/employee/DailyZenDashboard';
 
 const INTERNAL_CLIENT_NAME = 'Interno';
 const INTERNAL_PROJECT_NAME = 'Gestiones internas';
@@ -78,8 +80,8 @@ export default function EmployeeDashboard() {
   const [newTasks, setNewTasks] = useState<NewTaskRow[]>([]);
   const [openComboboxId, setOpenComboboxId] = useState<string | null>(null);
   const [showWeeklyDialog, setShowWeeklyDialog] = useState(false);
-  // Default to "projects" (Mi Semana) for better focus
-  const [activeTab, setActiveTab] = useState('projects');
+  // Default to "dependencies" (Prioridades) for better focus
+  const [activeTab, setActiveTab] = useState('dependencies');
   const [actionsDropdownOpen, setActionsDropdownOpen] = useState(false);
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [dialogDeadlines, setDialogDeadlines] = useState<Deadline[]>([]);
@@ -90,6 +92,9 @@ export default function EmployeeDashboard() {
   const isCrmExportEnabled = useIntegration('crm_export');
   const { hasPermission } = usePermissions();
   const canAssignToOthers = hasPermission('can_assign_tasks_to_others');
+
+  // View mode hook for weekly vs daily zen view
+  const { activeView, showToggle, setView, isStrict, departmentDefaultView, isLoading: isLoadingViewConfig } = useDashboardView();
 
   const hasPendingWeeklyTasks = useMemo(() => {
     if (!myEmployeeProfile) return false;
@@ -199,7 +204,7 @@ export default function EmployeeDashboard() {
   const handleAddExtraTask = async () => {
     // Prevenir múltiples ejecuciones simultáneas
     if (isSavingExtraTask || isCreatingProject) return;
-    
+
     if (!myEmployeeProfile) return;
     if (!extraTaskName.trim()) { toast.error("Escribe un nombre para la tarea"); return; }
     const hours = Number(extraHours);
@@ -231,12 +236,12 @@ export default function EmployeeDashboard() {
 
   const openAddTasksDialog = () => {
     const defaultWeek = weeks[0]?.weekStart ? format(weeks[0].weekStart, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
-    setNewTasks([{ 
-      id: crypto.randomUUID(), 
-      projectId: '', 
-      taskName: '', 
-      hours: '', 
-      weekDate: defaultWeek, 
+    setNewTasks([{
+      id: crypto.randomUUID(),
+      projectId: '',
+      taskName: '',
+      hours: '',
+      weekDate: defaultWeek,
       dependencyId: 'none',
       employeeId: canAssignToOthers ? undefined : myEmployeeProfile?.id // Si no puede asignar a otros, usar su propio ID
     }]);
@@ -246,12 +251,12 @@ export default function EmployeeDashboard() {
   const addTaskRow = () => {
     const lastTask = newTasks[newTasks.length - 1];
     const defaultWeek = lastTask?.weekDate || (weeks[0]?.weekStart ? format(weeks[0].weekStart, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'));
-    setNewTasks(prev => [...prev, { 
-      id: crypto.randomUUID(), 
-      projectId: lastTask?.projectId || '', 
-      taskName: '', 
-      hours: '', 
-      weekDate: defaultWeek, 
+    setNewTasks(prev => [...prev, {
+      id: crypto.randomUUID(),
+      projectId: lastTask?.projectId || '',
+      taskName: '',
+      hours: '',
+      weekDate: defaultWeek,
       dependencyId: 'none',
       employeeId: canAssignToOthers ? undefined : myEmployeeProfile?.id // Si no puede asignar a otros, usar su propio ID
     }]);
@@ -269,7 +274,7 @@ export default function EmployeeDashboard() {
   const handleSaveTasks = async () => {
     // Prevenir múltiples ejecuciones simultáneas
     if (isSavingTasks) return;
-    
+
     if (!myEmployeeProfile) return;
     const validTasks = newTasks.filter(t => t.projectId && t.taskName.trim() && parseFloat(t.hours) > 0);
     if (validTasks.length === 0) { toast.error("Añade al menos una tarea válida"); return; }
@@ -280,11 +285,11 @@ export default function EmployeeDashboard() {
         // Usar el employeeId de la tarea si existe, sino usar el del empleado actual
         const targetEmployeeId = task.employeeId || myEmployeeProfile.id;
         await addAllocation({
-          projectId: task.projectId, 
+          projectId: task.projectId,
           employeeId: targetEmployeeId,
-          weekStartDate: task.weekDate, 
+          weekStartDate: task.weekDate,
           hoursAssigned: parseFloat(task.hours),
-          taskName: task.taskName, 
+          taskName: task.taskName,
           status: 'planned'
         });
       }
@@ -508,6 +513,19 @@ export default function EmployeeDashboard() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* View Mode Toggle or Indicator */}
+          {showToggle ? (
+            <ViewToggle
+              value={activeView}
+              onChange={setView}
+            />
+          ) : (
+            <ViewModeIndicator
+              isStrict={isStrict}
+              departmentView={departmentDefaultView}
+            />
+          )}
+
           {/* Dropdown de Acciones Secundarias */}
           <DropdownMenu open={actionsDropdownOpen} onOpenChange={setActionsDropdownOpen}>
             <DropdownMenuTrigger asChild>
@@ -540,117 +558,126 @@ export default function EmployeeDashboard() {
         </div>
       </div>
 
-      {/* 2. CONTROL MES */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white/60 p-3 rounded-lg border border-slate-200 backdrop-blur-sm">
-        <div className="flex items-center gap-2">
-          <h2 className="text-lg font-bold capitalize text-slate-800 flex items-center gap-2">
-            {getMonthName(currentMonth)}
-            <Badge variant="secondary" className="font-normal text-slate-500 bg-slate-100">{currentMonth.getFullYear()}</Badge>
-          </h2>
-        </div>
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-md">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handlePrevMonth}><ChevronLeft className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="sm" onClick={handleToday} className="h-7 text-xs px-2">Hoy</Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleNextMonth}><ChevronRight className="h-4 w-4" /></Button>
-        </div>
-      </div>
-
-      {/* 3. CALENDARIO - VISUAL RESUMEN */}
-      <Card className="border-indigo-100 shadow-sm overflow-hidden" data-tour="calendar">
-        <div className="overflow-x-auto custom-scrollbar w-full">
-          <div className="grid bg-slate-50/50 border-b" style={{ gridTemplateColumns: gridTemplate }}>
-            <div className="px-4 py-3 font-bold text-sm text-slate-700 flex items-center border-r sticky left-0 z-20 bg-slate-50">Calendario</div>
-            {weeks.map((week, index) => {
-              const effectiveStart = week.effectiveStart || week.weekStart;
-              const effectiveEnd = week.effectiveEnd || addDays(week.weekStart, 6);
-              const workingDays = [];
-              let currentDay = new Date(effectiveStart);
-              while (currentDay <= effectiveEnd) {
-                const dayOfWeek = currentDay.getDay();
-                if (dayOfWeek >= 1 && dayOfWeek <= 5) workingDays.push(new Date(currentDay));
-                currentDay = addDays(currentDay, 1);
-              }
-              const firstWorkingDay = workingDays[0];
-              const lastWorkingDay = workingDays[workingDays.length - 1];
-              const weekDateLabel = firstWorkingDay && lastWorkingDay
-                ? `${format(firstWorkingDay, 'd', { locale: es })}-${format(lastWorkingDay, 'd MMM', { locale: es })}`
-                : `${format(effectiveStart, 'd', { locale: es })}-${format(effectiveEnd, 'd MMM', { locale: es })}`;
-
-              return (
-                <div key={week.weekStart.toISOString()} className="text-center px-1 py-2 border-r flex flex-col justify-center">
-                  <span className="text-xs font-bold uppercase text-slate-500">S{index + 1}</span>
-                  <span className="text-[10px] text-slate-400 font-medium">{weekDateLabel}</span>
-                </div>
-              );
-            })}
-            <div className="px-2 py-3 font-bold text-xs text-center flex items-center justify-center">TOTAL</div>
+      {/* CONTENT BASED ON VIEW MODE */}
+      {activeView === 'daily' ? (
+        /* DAILY ZEN MODE - Minimalist focused view */
+        <DailyZenDashboard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+      ) : (
+        /* WEEKLY MODE - Full planning view */
+        <>
+          {/* 2. CONTROL MES */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white/60 p-3 rounded-lg border border-slate-200 backdrop-blur-sm">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold capitalize text-slate-800 flex items-center gap-2">
+                {getMonthName(currentMonth)}
+                <Badge variant="secondary" className="font-normal text-slate-500 bg-slate-100">{currentMonth.getFullYear()}</Badge>
+              </h2>
+            </div>
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-md">
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handlePrevMonth}><ChevronLeft className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="sm" onClick={handleToday} className="h-7 text-xs px-2">Hoy</Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleNextMonth}><ChevronRight className="h-4 w-4" /></Button>
+            </div>
           </div>
 
-          <div className="grid bg-white" style={{ gridTemplateColumns: gridTemplate }}>
-            <EmployeeRow employee={myEmployeeProfile} weeks={weeks} projects={projects} allocations={allocations} absences={absences} teamEvents={teamEvents} viewDate={currentMonth} onOpenSheet={(empId, date) => setSelectedCell({ employeeId: empId, weekStart: date })} />
-            <div className="flex items-center justify-center border-l p-2 bg-white">
-              <div className="flex flex-col items-center">
-                <span className="text-lg font-bold text-slate-800">{monthlyLoad.hours}h</span>
-                <span className="text-[10px] text-slate-400 font-medium">/ {monthlyLoad.capacity}h</span>
-                <span className={cn(
-                  "text-[10px] font-bold mt-1 px-1.5 rounded-full",
-                  monthlyLoad.status === 'overload' ? "text-red-600 bg-red-50" :
-                  monthlyLoad.status === 'warning' ? "text-amber-600 bg-amber-50" :
-                  monthlyLoad.status === 'healthy' ? "text-emerald-600 bg-emerald-50" :
-                  "text-slate-400 bg-slate-50"
-                )}>{monthlyLoad.percentage.toFixed(1)}%</span>
+          {/* 3. CALENDARIO - VISUAL RESUMEN */}
+          <Card className="border-indigo-100 shadow-sm overflow-hidden" data-tour="calendar">
+            <div className="overflow-x-auto custom-scrollbar w-full">
+              <div className="grid bg-slate-50/50 border-b" style={{ gridTemplateColumns: gridTemplate }}>
+                <div className="px-4 py-3 font-bold text-sm text-slate-700 flex items-center border-r sticky left-0 z-20 bg-slate-50">Calendario</div>
+                {weeks.map((week, index) => {
+                  const effectiveStart = week.effectiveStart || week.weekStart;
+                  const effectiveEnd = week.effectiveEnd || addDays(week.weekStart, 6);
+                  const workingDays = [];
+                  let currentDay = new Date(effectiveStart);
+                  while (currentDay <= effectiveEnd) {
+                    const dayOfWeek = currentDay.getDay();
+                    if (dayOfWeek >= 1 && dayOfWeek <= 5) workingDays.push(new Date(currentDay));
+                    currentDay = addDays(currentDay, 1);
+                  }
+                  const firstWorkingDay = workingDays[0];
+                  const lastWorkingDay = workingDays[workingDays.length - 1];
+                  const weekDateLabel = firstWorkingDay && lastWorkingDay
+                    ? `${format(firstWorkingDay, 'd', { locale: es })}-${format(lastWorkingDay, 'd MMM', { locale: es })}`
+                    : `${format(effectiveStart, 'd', { locale: es })}-${format(effectiveEnd, 'd MMM', { locale: es })}`;
+
+                  return (
+                    <div key={week.weekStart.toISOString()} className="text-center px-1 py-2 border-r flex flex-col justify-center">
+                      <span className="text-xs font-bold uppercase text-slate-500">S{index + 1}</span>
+                      <span className="text-[10px] text-slate-400 font-medium">{weekDateLabel}</span>
+                    </div>
+                  );
+                })}
+                <div className="px-2 py-3 font-bold text-xs text-center flex items-center justify-center">TOTAL</div>
+              </div>
+
+              <div className="grid bg-white" style={{ gridTemplateColumns: gridTemplate }}>
+                <EmployeeRow employee={myEmployeeProfile} weeks={weeks} projects={projects} allocations={allocations} absences={absences} teamEvents={teamEvents} viewDate={currentMonth} onOpenSheet={(empId, date) => setSelectedCell({ employeeId: empId, weekStart: date })} />
+                <div className="flex items-center justify-center border-l p-2 bg-white">
+                  <div className="flex flex-col items-center">
+                    <span className="text-lg font-bold text-slate-800">{monthlyLoad.hours}h</span>
+                    <span className="text-[10px] text-slate-400 font-medium">/ {monthlyLoad.capacity}h</span>
+                    <span className={cn(
+                      "text-[10px] font-bold mt-1 px-1.5 rounded-full",
+                      monthlyLoad.status === 'overload' ? "text-red-600 bg-red-50" :
+                        monthlyLoad.status === 'warning' ? "text-amber-600 bg-amber-50" :
+                          monthlyLoad.status === 'healthy' ? "text-emerald-600 bg-emerald-50" :
+                            "text-slate-400 bg-slate-50"
+                    )}>{monthlyLoad.percentage.toFixed(1)}%</span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </Card>
+          </Card>
 
-      {/* 4. VISTA DETALLADA POR PESTAÑAS */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full justify-start h-auto p-1 bg-white border border-slate-200 flex-nowrap overflow-x-auto custom-scrollbar gap-2">
-          <TabsTrigger value="projects" className="px-4 py-2 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700">
-            <ListPlus className="h-4 w-4 mr-2" /> Mi semana
-          </TabsTrigger>
-          <TabsTrigger value="dependencies" className="px-4 py-2 data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700">
-            <AlertCircle className="h-4 w-4 mr-2" /> Prioridades
-          </TabsTrigger>
-          <TabsTrigger value="coherence" className="px-4 py-2 data-[state=active]:bg-red-50 data-[state=active]:text-red-700">
-            <CheckCircle2 className="h-4 w-4 mr-2" /> Control de planificación
-          </TabsTrigger>
-          <TabsTrigger value="teammates" className="px-4 py-2">
-            <div className="flex items-center gap-2">Compañeros</div>
-          </TabsTrigger>
-          <TabsTrigger value="metrics" className="px-4 py-2">
-            <div className="flex items-center gap-2">Mis métricas</div>
-          </TabsTrigger>
-        </TabsList>
+          {/* 4. VISTA DETALLADA POR PESTAÑAS */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="w-full justify-start h-auto p-1 bg-white border border-slate-200 flex-nowrap overflow-x-auto custom-scrollbar gap-2">
+              <TabsTrigger value="dependencies" className="px-4 py-2 data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700">
+                <AlertCircle className="h-4 w-4 mr-2" /> Prioridades
+              </TabsTrigger>
+              <TabsTrigger value="projects" className="px-4 py-2 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700">
+                <ListPlus className="h-4 w-4 mr-2" /> Mis proyectos
+              </TabsTrigger>
+              <TabsTrigger value="coherence" className="px-4 py-2 data-[state=active]:bg-red-50 data-[state=active]:text-red-700">
+                <CheckCircle2 className="h-4 w-4 mr-2" /> Control de planificación
+              </TabsTrigger>
+              <TabsTrigger value="teammates" className="px-4 py-2">
+                <div className="flex items-center gap-2">Compañeros</div>
+              </TabsTrigger>
+              <TabsTrigger value="metrics" className="px-4 py-2">
+                <div className="flex items-center gap-2">Mis métricas</div>
+              </TabsTrigger>
+            </TabsList>
 
-        <div className="mt-4">
-          <TabsContent value="projects" className="space-y-4 focus-visible:outline-none">
-            <MyWeekView employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
-          </TabsContent>
+            <div className="mt-4">
+              <TabsContent value="dependencies" className="space-y-6 focus-visible:outline-none">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <PriorityInsights employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+                  <ProjectTeamPulse employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+                </div>
+              </TabsContent>
 
-          <TabsContent value="dependencies" className="space-y-6 focus-visible:outline-none">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <PriorityInsights employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
-              <ProjectTeamPulse employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+              <TabsContent value="projects" className="space-y-4 focus-visible:outline-none">
+                <MyWeekView employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+              </TabsContent>
+
+              <TabsContent value="coherence" className="focus-visible:outline-none">
+                <PlanningInconsistenciesCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} isManager={isManager} />
+              </TabsContent>
+
+              <TabsContent value="teammates" className="focus-visible:outline-none">
+                <CollaborationCards employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+              </TabsContent>
+
+              <TabsContent value="metrics" className="space-y-6 focus-visible:outline-none">
+                <MonthlyBalanceCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+                <ReliabilityIndexCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+              </TabsContent>
             </div>
-          </TabsContent>
-
-          <TabsContent value="coherence" className="focus-visible:outline-none">
-            <PlanningInconsistenciesCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} isManager={isManager} />
-          </TabsContent>
-
-          <TabsContent value="teammates" className="focus-visible:outline-none">
-            <CollaborationCards employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
-          </TabsContent>
-
-          <TabsContent value="metrics" className="space-y-6 focus-visible:outline-none">
-            <MonthlyBalanceCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
-            <ReliabilityIndexCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
-          </TabsContent>
-        </div>
-      </Tabs>
+          </Tabs>
+        </>
+      )}
 
       {/* MODALES Y DIÁLOGOS (Hidden UI) */}
       {selectedCell && (
@@ -795,8 +822,8 @@ export default function EmployeeDashboard() {
       {myEmployeeProfile && isWeeklyFeedbackEnabled && (
         <WeeklyReportDialog open={showWeeklyDialog} onOpenChange={setShowWeeklyDialog} employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
       )}
-      <WelcomeTour 
-        forceShow={showTour} 
+      <WelcomeTour
+        forceShow={showTour}
         onTabChange={setActiveTab}
         onDropdownOpen={(dropdownId, isOpen) => {
           if (dropdownId === 'actions-dropdown') {
@@ -804,7 +831,6 @@ export default function EmployeeDashboard() {
           }
         }}
       />
-      <MyDayView />
     </div >
   );
 }

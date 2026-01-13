@@ -12,7 +12,8 @@ import { toast } from 'sonner';
 import {
   Building2, Settings, Users, Palette, Save, Loader2,
   Filter, Plus, Trash2, HelpCircle, Info, X,
-  Rocket, Facebook, Megaphone, PlusCircle, ShieldCheck, GitBranch, Database, AlertTriangle
+  Rocket, Facebook, Megaphone, PlusCircle, ShieldCheck, GitBranch, Database, AlertTriangle,
+  Eye, Lock, Unlock
 } from 'lucide-react';
 import { AVAILABLE_INTEGRATIONS } from '@/config/integrations';
 import { CustomProjectFilter, RolePermissions } from '@/types';
@@ -34,6 +35,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DepartmentViewConfigDialog } from '@/components/agencies/DepartmentViewConfigDialog';
+import { useDepartmentConfigs } from '@/hooks/useDashboardView';
 
 export default function AgencySettingsPage() {
   const { currentAgency, refreshAgency, updateSettings, updateAgencyName, isLoading: isAgencyLoading } = useAgency();
@@ -94,6 +97,11 @@ export default function AgencySettingsPage() {
   const [enabledIntegrations, setEnabledIntegrations] = useState<Record<string, boolean>>(
     currentAgency?.settings?.enabledIntegrations || {}
   );
+
+  // Department view configuration
+  const [deptConfigDialogOpen, setDeptConfigDialogOpen] = useState(false);
+  const [selectedDeptForConfig, setSelectedDeptForConfig] = useState<string>('');
+  const { configs: departmentConfigs, getConfigForDepartment } = useDepartmentConfigs();
 
   // Sync state when agency loads
   useEffect(() => {
@@ -536,24 +544,80 @@ export default function AgencySettingsPage() {
               {departments.length === 0 ? (
                 <p className="text-sm text-slate-400 italic text-center py-4">No hay departamentos definidos.</p>
               ) : (
-                departments.map((dept) => (
-                  <div key={dept} className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm">
-                    <span className="font-medium text-slate-700">{dept}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
-                      onClick={() => deleteDepartment(dept)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))
+                departments.map((dept) => {
+                  const config = getConfigForDepartment(dept);
+                  return (
+                    <div key={dept} className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span className="font-medium text-slate-700 truncate">{dept}</span>
+                        {config && (
+                          <div className="flex items-center gap-1">
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] px-1.5 py-0 h-5"
+                            >
+                              {config.defaultView === 'daily' ? 'Zen' : 'Semanal'}
+                            </Badge>
+                            {config.isViewStrict && (
+                              <TooltipProvider delayDuration={300}>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Lock className="h-3 w-3 text-amber-600" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">Vista estricta - Los empleados no pueden cambiarla</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <TooltipProvider delayDuration={300}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/10"
+                                onClick={() => {
+                                  setSelectedDeptForConfig(dept);
+                                  setDeptConfigDialogOpen(true);
+                                }}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs">Configurar vista por defecto</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                          onClick={() => deleteDepartment(dept)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Department View Config Dialog */}
+      <DepartmentViewConfigDialog
+        open={deptConfigDialogOpen}
+        onOpenChange={setDeptConfigDialogOpen}
+        departmentName={selectedDeptForConfig}
+      />
 
       {/* Módulos Habilitados */}
       <Card>

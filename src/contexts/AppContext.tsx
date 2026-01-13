@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Employee, Client, Project, Allocation, LoadStatus, Absence, TeamEvent, WeeklyFeedback, EmployeeRole, WorkSchedule } from '@/types';
+import { Employee, Client, Project, Allocation, LoadStatus, Absence, TeamEvent, WeeklyFeedback, EmployeeRole, WorkSchedule, UserRoutine } from '@/types';
 import { getWorkingDaysInRange, getMonthlyCapacity, getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange, getTeamEventDetailsInRange } from '@/utils/teamEventUtils';
@@ -32,6 +32,7 @@ interface SupabaseEmployee {
   deadlines_tour_completed?: boolean;
   planner_tour_completed?: boolean;
   permissions?: unknown;
+  preferred_view?: 'weekly' | 'daily' | null;
 }
 
 interface SupabaseClient {
@@ -74,6 +75,7 @@ interface SupabaseAllocation {
   parent_allocation_id?: string;
   original_transferred_task_name?: string;
   transfer_source_employee_id?: string;
+  user_priority?: number | null;
 }
 
 interface SupabaseAbsence {
@@ -103,6 +105,15 @@ interface SupabaseWeeklyFeedback {
   reason?: string;
   comments?: string;
   created_at: string;
+}
+
+interface SupabaseUserRoutine {
+  id: string;
+  employee_id: string;
+  title: string;
+  estimated_minutes: number;
+  project_id?: string;
+  is_active: boolean;
 }
 
 interface AppContextType {
@@ -145,6 +156,11 @@ interface AppContextType {
   getClientById: (id: string) => Client | undefined;
   loadDataForMonth: (month: Date) => Promise<boolean>;
   addWeeklyFeedback: (feedback: Omit<WeeklyFeedback, 'id' | 'createdAt'>) => void;
+  refreshData: (skipLoading?: boolean) => Promise<void>;
+  userRoutines: UserRoutine[];
+  addRoutine: (routine: Omit<UserRoutine, 'id'>) => Promise<void>;
+  deleteRoutine: (id: string) => Promise<void>;
+  toggleRoutine: (id: string) => Promise<void>;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -162,6 +178,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [absences, setAbsences] = useState<Absence[]>([]);
   const [teamEvents, setTeamEvents] = useState<TeamEvent[]>([]);
   const [weeklyFeedback, setWeeklyFeedback] = useState<WeeklyFeedback[]>([]);
+  const [userRoutines, setUserRoutines] = useState<UserRoutine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSecondaryLoading, setIsSecondaryLoading] = useState(true);
 
@@ -224,7 +241,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           welcomeTourCompleted: e.welcome_tour_completed === true,
           deadlinesTourCompleted: e.deadlines_tour_completed === true,
           plannerTourCompleted: e.planner_tour_completed === true,
-          permissions: e.permissions || undefined
+          permissions: e.permissions || undefined,
+          preferredView: e.preferred_view || null
         }));
         setEmployees(mappedEmployees);
         employeesRef.current = mappedEmployees; // Actualizar ref
@@ -265,7 +283,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // PHASE 2: Secondary data (background, non-blocking)
       // ============================================================
       setIsSecondaryLoading(true);
-      const [allocRes, absRes, evRes, feedbackRes] = await Promise.all([
+      const [allocRes, absRes, evRes, feedbackRes, routinesRes] = await Promise.all([
         // Allocations: filtrar por week_start_date y employee de la agencia
         supabase.from('allocations')
           .select('*, employees!allocations_employee_id_fkey!inner(agency_id)')
@@ -288,16 +306,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           .eq('employees.agency_id', agencyId)
           .gte('week_start_date', startStr)
           .lte('week_start_date', endStr),
+        // Cargar rutinas (solo si hay usuario logueado, idealmente filtrar por usuario pero por ahora cargamos y filtramos en UI o RLS filtra solo)
+        supabase.from('user_routines').select('*')
       ]);
 
       if (allocRes.error) console.error('Error fetching allocations:', allocRes.error);
       if (absRes.error) console.error('Error fetching absences:', absRes.error);
       if (evRes.error) console.error('Error fetching events:', evRes.error);
       if (feedbackRes.error) console.error('Error fetching feedback:', feedbackRes.error);
+      if (routinesRes.error) console.error('Error fetching user routines:', routinesRes.error);
 
       console.log('DEBUG: Allocations fetch result:', { count: allocRes.data?.length, error: allocRes.error });
       console.log('DEBUG: Feedback fetch result:', { count: feedbackRes.data?.length, error: feedbackRes.error });
 
+      if (feedbackRes.data) {
+        // Mapeo feedback...
+        // console.log('DEBUG: Feedback fetch result:', { count: feedbackRes.data.length, error: feedbackRes.error });
+      }
+
+      if (routinesRes.data) {
+        setUserRoutines(routinesRes.data.map((r: SupabaseUserRoutine) => ({
+          id: r.id,
+          employeeId: r.employee_id,
+          title: r.title,
+          estimatedMinutes: r.estimated_minutes,
+          projectId: r.project_id,
+          isActive: r.is_active
+        })));
+      }
       if (allocRes.data) {
         const mappedAllocations: Allocation[] = allocRes.data.map((a: SupabaseAllocation): Allocation => ({
           id: a.id,
@@ -315,7 +351,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           distributionSourceAllocationId: a.distribution_source_allocation_id,
           parentAllocationId: a.parent_allocation_id,
           originalTransferredTaskName: a.original_transferred_task_name,
-          transferSourceEmployeeId: a.transfer_source_employee_id
+          transferSourceEmployeeId: a.transfer_source_employee_id,
+          userPriority: a.user_priority ?? null
         }));
 
         // Si skipLoading es true, significa que estamos cargando datos adicionales (merge)
@@ -433,7 +470,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           distributionSourceAllocationId: a.distribution_source_allocation_id,
           parentAllocationId: a.parent_allocation_id,
           originalTransferredTaskName: a.original_transferred_task_name,
-          transferSourceEmployeeId: a.transfer_source_employee_id
+          transferSourceEmployeeId: a.transfer_source_employee_id,
+          userPriority: a.user_priority ?? null
         }));
 
         setAllocations(prev => {
@@ -587,7 +625,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             distributionSourceAllocationId: row.distribution_source_allocation_id,
             parentAllocationId: row.parent_allocation_id,
             originalTransferredTaskName: row.original_transferred_task_name,
-            transferSourceEmployeeId: row.transfer_source_employee_id
+            transferSourceEmployeeId: row.transfer_source_employee_id,
+            userPriority: row.user_priority ?? null
           });
 
           if (payload.eventType === 'INSERT') {
@@ -753,7 +792,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       crm_user_id: employee.crmUserId,
       welcome_tour_completed: employee.welcomeTourCompleted || false,
       deadlines_tour_completed: employee.deadlinesTourCompleted || false,
-      planner_tour_completed: employee.plannerTourCompleted || false
+      planner_tour_completed: employee.plannerTourCompleted || false,
+      preferred_view: employee.preferredView || null
     }).eq('id', employee.id);
 
     if (error) {
@@ -848,7 +888,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // --- ALLOCATIONS ---
   const addAllocation = useCallback(async (allocation: Omit<Allocation, 'id'>): Promise<Allocation | null> => {
-    const { data } = await supabase.from('allocations').insert({
+    const { data, error } = await supabase.from('allocations').insert({
       employee_id: allocation.employeeId,
       project_id: allocation.projectId,
       week_start_date: allocation.weekStartDate,
@@ -863,8 +903,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       distribution_source_allocation_id: allocation.distributionSourceAllocationId,
       parent_allocation_id: allocation.parentAllocationId,
       original_transferred_task_name: allocation.originalTransferredTaskName,
-      transfer_source_employee_id: allocation.transferSourceEmployeeId
+      transfer_source_employee_id: allocation.transferSourceEmployeeId,
+      user_priority: allocation.userPriority
     }).select().single();
+
+    if (error) {
+      console.error('SUPABASE ERROR DETAILED:', JSON.stringify(error, null, 2));
+      console.error('PAYLOAD WAS:', JSON.stringify(allocation, null, 2));
+      toast.error(`Error al guardar: ${error.message} (${error.code})`);
+      return null; // Stop execution
+    }
 
     if (data) {
       const mappedAllocation = {
@@ -881,7 +929,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         distributionSourceAllocationId: data.distribution_source_allocation_id,
         parentAllocationId: data.parent_allocation_id,
         originalTransferredTaskName: data.original_transferred_task_name,
-        transferSourceEmployeeId: data.transfer_source_employee_id
+        transferSourceEmployeeId: data.transfer_source_employee_id,
+        userPriority: data.user_priority
       };
       setAllocations(prev => [...prev, mappedAllocation]);
 
@@ -901,6 +950,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     setAllocations(prev => prev.map(a => a.id === allocation.id ? allocation : a));
     await supabase.from('allocations').update({
+      project_id: allocation.projectId, // IMPORTANTE: incluir project_id para permitir cambio de proyecto
       week_start_date: allocation.weekStartDate,
       hours_assigned: allocation.hoursAssigned,
       hours_actual: allocation.hoursActual,
@@ -913,7 +963,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       distribution_source_allocation_id: allocation.distributionSourceAllocationId,
       parent_allocation_id: allocation.parentAllocationId,
       original_transferred_task_name: allocation.originalTransferredTaskName,
-      transfer_source_employee_id: allocation.transferSourceEmployeeId
+      transfer_source_employee_id: allocation.transferSourceEmployeeId,
+      user_priority: allocation.userPriority
     }).eq('id', allocation.id);
 
     // Log audit for allocation update
@@ -1239,6 +1290,49 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return { used: totalUsed, budget: totalBudget, percentage };
   }, [projects, allocations]);
 
+
+  const addRoutine = async (routine: Omit<UserRoutine, 'id'>) => {
+    const { data, error } = await supabase.from('user_routines').insert({
+      employee_id: routine.employeeId,
+      title: routine.title,
+      estimated_minutes: routine.estimatedMinutes,
+      project_id: routine.projectId,
+      is_active: routine.isActive
+    }).select().single();
+
+    if (error) {
+      console.error(error);
+      toast.error("Error creando rutina");
+      return;
+    }
+
+    if (data) {
+      setUserRoutines(prev => [...prev, {
+        id: data.id,
+        employeeId: data.employee_id,
+        title: data.title,
+        estimatedMinutes: data.estimated_minutes,
+        projectId: data.project_id,
+        isActive: data.is_active
+      }]);
+      toast.success("Rutina creada");
+    }
+  };
+
+  const deleteRoutine = async (id: string) => {
+    setUserRoutines(prev => prev.filter(r => r.id !== id));
+    await supabase.from('user_routines').delete().eq('id', id);
+  };
+
+  const toggleRoutine = async (id: string) => {
+    const routine = userRoutines.find(r => r.id === id);
+    if (!routine) return;
+
+    const newValue = !routine.isActive;
+    setUserRoutines(prev => prev.map(r => r.id === id ? { ...r, isActive: newValue } : r));
+    await supabase.from('user_routines').update({ is_active: newValue }).eq('id', id);
+  };
+
   const getProjectById = useCallback((id: string) => projects.find(p => p.id === id), [projects]);
   const getClientById = useCallback((id: string) => clients.find(c => c.id === id), [clients]);
 
@@ -1256,7 +1350,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getEmployeeMonthlyLoad,
     getProjectHoursForMonth, getClientTotalHoursForMonth, getProjectById, getClientById,
     loadDataForMonth,
-    addWeeklyFeedback
+    addWeeklyFeedback,
+    refreshData: fetchData,
+    userRoutines, addRoutine, deleteRoutine, toggleRoutine
   }), [currentUser, employees, clients, projects, allocations, absences, teamEvents, weeklyFeedback, isLoading,
     isSecondaryLoading, fetchArchivedProjects,
     addEmployee, updateEmployee, deleteEmployee, toggleEmployeeActive,
@@ -1268,7 +1364,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getEmployeeMonthlyLoad,
     getProjectHoursForMonth, getClientTotalHoursForMonth, getProjectById, getClientById,
     loadDataForMonth,
-    addWeeklyFeedback]);
+    addWeeklyFeedback, fetchData, userRoutines]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

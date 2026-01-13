@@ -84,8 +84,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const [viewDate, setViewDate] = useState(() => getInitialViewDate());
   const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(new Set());
   const [isTourActive, setIsTourActive] = useState(false);
-  const [isLoadingTasks, setIsLoadingTasks] = useState(true);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(true); // State for internal task loading
   const loadedMonthsRef = useRef<Set<string>>(new Set());
+  const autoAddTriggeredRef = useRef(false);
 
   useEffect(() => {
     if (open) {
@@ -203,6 +204,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const [editDependencyId, setEditDependencyId] = useState<string>('none');
 
   const [openComboboxId, setOpenComboboxId] = useState<string | null>(null);
+  const [editProjectOpen, setEditProjectOpen] = useState(false);
   const [showAllWeeks, setShowAllWeeks] = useState(false);
 
   const isMobile = useIsMobile();
@@ -368,24 +370,23 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     localStorage.setItem('planner_sortOption', sortOption);
   }, [sortOption]);
 
+  const startAdd = (weekStartReal: Date) => {
+    // Usar la fecha PROPORCIONADA por weeks (puede ser Jueves 1 Enero)
+    const weekStartDate = format(weekStartReal, 'yyyy-MM-dd');
+    setEditingAllocation(null);
+    const safeId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `task-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    setNewTasks([{
+      id: safeId, projectId: '', taskName: '', hours: '', weekDate: weekStartDate, description: '', dependencyId: 'none'
+    }]);
+    setIsFormOpen(true);
+  };
+
+
   if (!employee) return null;
 
-  // Mostrar loading igual que DeadlinesPage (retorno temprano)
-  if (isLoadingTasks) {
-    return (
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="w-full sm:max-w-4xl overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>{employee.name} - Planificación</SheetTitle>
-            <SheetDescription className="sr-only">Cargando planificación del empleado...</SheetDescription>
-          </SheetHeader>
-          <div className="min-h-[400px] flex items-center justify-center">
-            <div className="text-slate-400">Cargando tareas...</div>
-          </div>
-        </SheetContent>
-      </Sheet>
-    );
-  }
+  // Mover el renderizado de loading dentro del return principal en lugar de retorno temprano
+  // if (isLoadingTasks) { ... } <- ELIMINADO
+
 
   const handlePrevMonth = () => setViewDate(prev => subMonths(prev, 1));
   const handleNextMonth = () => setViewDate(prev => addMonths(prev, 1));
@@ -402,15 +403,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     });
   };
 
-  const startAdd = (weekStartReal: Date) => {
-    // Usar la fecha PROPORCIONADA por weeks (puede ser Jueves 1 Enero)
-    const weekStartDate = format(weekStartReal, 'yyyy-MM-dd');
-    setEditingAllocation(null);
-    setNewTasks([{
-      id: crypto.randomUUID(), projectId: '', taskName: '', hours: '', weekDate: weekStartDate, description: '', dependencyId: 'none'
-    }]);
-    setIsFormOpen(true);
-  };
+
 
   const addTaskRow = () => {
     const lastTask = newTasks.length > 0 ? newTasks[newTasks.length - 1] : null;
@@ -936,1069 +929,1080 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
             </SheetHeader>
           </TooltipProvider>
 
-          <TooltipProvider delayDuration={300}>
-            <div className={cn(
-              "gap-4 pb-20",
-              showAllWeeks
-                ? "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5"
-                : "flex gap-6"
-            )}>
-              {/* Contenido principal de semanas */}
+          {isLoadingTasks ? (
+            <div className="min-h-[400px] flex items-center justify-center">
+              <div className="text-slate-400 flex flex-col items-center gap-2">
+                <div className="h-8 w-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+                <span>Cargando tareas...</span>
+              </div>
+            </div>
+          ) : (
+            <TooltipProvider delayDuration={300}>
               <div className={cn(
-                showAllWeeks ? "contents" : "flex-1 flex justify-center"
+                "gap-4 pb-20",
+                showAllWeeks
+                  ? "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5"
+                  : "flex gap-6"
               )}>
-                {visibleWeeks.map((week, idx) => {
-                  const index = showAllWeeks ? idx : activeWeekIndex;
-                  // Usar el weekStartDate real para buscar allocations (las allocations se guardan con el lunes completo)
-                  const weekStartDate = format(week.weekStart, 'yyyy-MM-dd');
-                  const weekStr = weekStartDate; // Alias para usar como key en JSX
+                {/* Contenido principal de semanas */}
+                <div className={cn(
+                  showAllWeeks ? "contents" : "flex-1 flex justify-center"
+                )}>
+                  {visibleWeeks.map((week, idx) => {
+                    const index = showAllWeeks ? idx : activeWeekIndex;
+                    // Usar el weekStartDate real para buscar allocations (las allocations se guardan con el lunes completo)
+                    const weekStartDate = format(week.weekStart, 'yyyy-MM-dd');
+                    const weekStr = weekStartDate; // Alias para usar como key en JSX
 
-                  // Buscar allocations por el weekStartDate real, pero filtrar por mes efectivo
-                  let weekAllocations = getEmployeeAllocationsForWeek(employeeId, weekStartDate);
+                    // Buscar allocations por el weekStartDate real, pero filtrar por mes efectivo
+                    let weekAllocations = getEmployeeAllocationsForWeek(employeeId, weekStartDate);
 
-                  // Filtrar por mes efectivo: solo mostrar allocations que tienen días en el mes visible
-                  weekAllocations = weekAllocations.filter(a => isAllocationInEffectiveMonth(a.weekStartDate, viewDate));
+                    // Filtrar por mes efectivo: solo mostrar allocations que tienen días en el mes visible
+                    weekAllocations = weekAllocations.filter(a => isAllocationInEffectiveMonth(a.weekStartDate, viewDate));
 
-                  // Eliminar duplicados por ID (por si acaso hay duplicados en la base de datos)
-                  const seenIds = new Set<string>();
-                  weekAllocations = weekAllocations.filter(a => {
-                    if (seenIds.has(a.id)) {
-                      return false;
-                    }
-                    seenIds.add(a.id);
-                    return true;
-                  });
-
-                  if (searchTerm) {
+                    // Eliminar duplicados por ID (por si acaso hay duplicados en la base de datos)
+                    const seenIds = new Set<string>();
                     weekAllocations = weekAllocations.filter(a => {
-                      const proj = getProjectById(a.projectId);
-                      const matchText = (a.taskName + (proj?.name || '')).toLowerCase();
-                      return matchText.includes(searchTerm.toLowerCase());
+                      if (seenIds.has(a.id)) {
+                        return false;
+                      }
+                      seenIds.add(a.id);
+                      return true;
                     });
-                  }
 
-                  const load = getEmployeeLoadForWeek(employeeId, weekStartDate, week.effectiveStart, week.effectiveEnd, viewDate);
-
-                  // Calcular Est, Real, Comp para el header
-                  const weekEst = round2(weekAllocations.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0));
-                  const completedTasks = weekAllocations.filter(a => a.status === 'completed');
-                  const weekReal = round2(completedTasks.reduce((sum, a) => sum + (a.hoursActual || 0), 0));
-                  const weekComp = round2(completedTasks.reduce((sum, a) => sum + (a.hoursComputed || 0), 0));
-                  const weekBalance = round2(weekComp - weekReal);
-
-                  // Fechas de la semana (solo días laborables efectivos del mes: lun-vie, excluyendo fines de semana)
-                  const effectiveStart = week.effectiveStart || week.weekStart;
-                  const effectiveEnd = week.effectiveEnd || addDays(week.weekStart, 4);
-
-                  // Calcular solo días laborables (lun-vie) en el rango efectivo
-                  const workingDays = [];
-                  let currentDay = new Date(effectiveStart);
-                  while (currentDay <= effectiveEnd) {
-                    const dayOfWeek = currentDay.getDay();
-                    // 1 = lunes, 5 = viernes (0 = domingo, 6 = sábado)
-                    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-                      workingDays.push(new Date(currentDay));
+                    if (searchTerm) {
+                      weekAllocations = weekAllocations.filter(a => {
+                        const proj = getProjectById(a.projectId);
+                        const matchText = (a.taskName + (proj?.name || '')).toLowerCase();
+                        return matchText.includes(searchTerm.toLowerCase());
+                      });
                     }
-                    currentDay = addDays(currentDay, 1);
-                  }
 
-                  // Formatear solo el primer y último día laborable
-                  const firstWorkingDay = workingDays[0];
-                  const lastWorkingDay = workingDays[workingDays.length - 1];
-                  const weekDateLabel = firstWorkingDay && lastWorkingDay
-                    ? `${format(firstWorkingDay, 'd', { locale: es })}-${format(lastWorkingDay, 'd MMM', { locale: es })}`
-                    : `${format(effectiveStart, 'd', { locale: es })}-${format(effectiveEnd, 'd MMM', { locale: es })}`;
+                    const load = getEmployeeLoadForWeek(employeeId, weekStartDate, week.effectiveStart, week.effectiveEnd, viewDate);
 
-                  // Agrupar y ordenar
-                  const grouped = weekAllocations.reduce((acc, a) => ({ ...acc, [a.projectId]: [...(acc[a.projectId] || []), a] }), {} as Record<string, Allocation[]>);
-                  const sortedGroups = sortProjectGroups(grouped);
+                    // Calcular Est, Real, Comp para el header
+                    const weekEst = round2(weekAllocations.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0));
+                    const completedTasks = weekAllocations.filter(a => a.status === 'completed');
+                    const weekReal = round2(completedTasks.reduce((sum, a) => sum + (a.hoursActual || 0), 0));
+                    const weekComp = round2(completedTasks.reduce((sum, a) => sum + (a.hoursComputed || 0), 0));
+                    const weekBalance = round2(weekComp - weekReal);
 
-                  // VISTA TABULAR para semana individual
-                  if (!effectiveShowAllWeeks) {
-                    return (
-                      <div key={weekStr} className="flex-1 min-w-0">
-                        {/* Header compacto de la semana */}
-                        <div className="flex flex-col gap-4 mb-4 pb-3 border-b">
-                          <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center gap-2 xs:gap-3">
-                              <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={goToPrevWeek} disabled={activeWeekIndex === 0}>
-                                <ChevronLeft className="h-4 w-4" />
-                              </Button>
-                              <div>
-                                <div className="font-bold text-base xs:text-lg text-foreground truncate max-w-[120px] xs:max-w-none">Semana {activeWeekIndex + 1}</div>
-                                <div className="text-[10px] xs:text-xs text-slate-500">{weekDateLabel}</div>
+                    // Fechas de la semana (solo días laborables efectivos del mes: lun-vie, excluyendo fines de semana)
+                    const effectiveStart = week.effectiveStart || week.weekStart;
+                    const effectiveEnd = week.effectiveEnd || addDays(week.weekStart, 4);
+
+                    // Calcular solo días laborables (lun-vie) en el rango efectivo
+                    const workingDays = [];
+                    let currentDay = new Date(effectiveStart);
+                    while (currentDay <= effectiveEnd) {
+                      const dayOfWeek = currentDay.getDay();
+                      // 1 = lunes, 5 = viernes (0 = domingo, 6 = sábado)
+                      if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                        workingDays.push(new Date(currentDay));
+                      }
+                      currentDay = addDays(currentDay, 1);
+                    }
+
+                    // Formatear solo el primer y último día laborable
+                    const firstWorkingDay = workingDays[0];
+                    const lastWorkingDay = workingDays[workingDays.length - 1];
+                    const weekDateLabel = firstWorkingDay && lastWorkingDay
+                      ? `${format(firstWorkingDay, 'd', { locale: es })}-${format(lastWorkingDay, 'd MMM', { locale: es })}`
+                      : `${format(effectiveStart, 'd', { locale: es })}-${format(effectiveEnd, 'd MMM', { locale: es })}`;
+
+                    // Agrupar y ordenar
+                    const grouped = weekAllocations.reduce((acc, a) => ({ ...acc, [a.projectId]: [...(acc[a.projectId] || []), a] }), {} as Record<string, Allocation[]>);
+                    const sortedGroups = sortProjectGroups(grouped);
+
+                    // VISTA TABULAR para semana individual
+                    if (!effectiveShowAllWeeks) {
+                      return (
+                        <div key={weekStr} className="flex-1 min-w-0">
+                          {/* Header compacto de la semana */}
+                          <div className="flex flex-col gap-4 mb-4 pb-3 border-b">
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center gap-2 xs:gap-3">
+                                <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={goToPrevWeek} disabled={activeWeekIndex === 0}>
+                                  <ChevronLeft className="h-4 w-4" />
+                                </Button>
+                                <div>
+                                  <div className="font-bold text-base xs:text-lg text-foreground truncate max-w-[120px] xs:max-w-none">Semana {activeWeekIndex + 1}</div>
+                                  <div className="text-[10px] xs:text-xs text-slate-500">{weekDateLabel}</div>
+                                </div>
+                                <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={goToNextWeek} disabled={activeWeekIndex === weeks.length - 1}>
+                                  <ChevronRight className="h-4 w-4" />
+                                </Button>
                               </div>
-                              <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={goToNextWeek} disabled={activeWeekIndex === weeks.length - 1}>
-                                <ChevronRight className="h-4 w-4" />
+
+                              <Button variant="outline" size="sm" className="gap-2 h-8" onClick={() => startAdd(week.weekStart)} data-tour="planner-add-task">
+                                <Plus className="h-4 w-4" /> <span className="hidden xs:inline">Añadir</span>
                               </Button>
                             </div>
 
-                            <Button variant="outline" size="sm" className="gap-2 h-8" onClick={() => startAdd(week.weekStart)} data-tour="planner-add-task">
-                              <Plus className="h-4 w-4" /> <span className="hidden xs:inline">Añadir</span>
-                            </Button>
+                            {/* Resumen de la semana - Stacking en móvil */}
+                            <div className="flex flex-wrap items-center gap-2 text-xs">
+                              <div className="flex items-center gap-1 px-2 py-1 bg-slate-100 rounded shrink-0">
+                                <span className="text-slate-500">Plan:</span>
+                                <span className="font-bold">{weekEst}h</span>
+                                <span className="text-slate-400">/</span>
+                                <span className="text-slate-500 font-medium">{load.capacity}h</span>
+                              </div>
+
+                              {completedTasks.length > 0 && (
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 rounded shrink-0">
+                                    <span className="text-blue-600">Real:</span>
+                                    <span className="font-bold text-blue-700">{weekReal}h</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 rounded shrink-0">
+                                    <span className="text-emerald-600">Comp:</span>
+                                    <span className="font-bold text-emerald-700">{weekComp}h</span>
+                                  </div>
+                                  {weekBalance !== 0 && (
+                                    <div className={cn(
+                                      "flex items-center gap-1 px-2 py-1 rounded font-bold shrink-0",
+                                      weekBalance >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                                    )}>
+                                      {weekBalance >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                                      {weekBalance >= 0 ? '+' : ''}{weekBalance}h
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
 
-                          {/* Resumen de la semana - Stacking en móvil */}
-                          <div className="flex flex-wrap items-center gap-2 text-xs">
-                            <div className="flex items-center gap-1 px-2 py-1 bg-slate-100 rounded shrink-0">
-                              <span className="text-slate-500">Plan:</span>
-                              <span className="font-bold">{weekEst}h</span>
-                              <span className="text-slate-400">/</span>
-                              <span className="text-slate-500 font-medium">{load.capacity}h</span>
-                            </div>
+                          {/* Tabla de proyectos y tareas */}
+                          <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2" data-tour="planner-projects">
+                            {sortedGroups.map(([projId, projAllocations]) => {
+                              const project = getProjectById(projId);
+                              const budgetStatus = getProjectBudgetStatus(projId);
+                              const allCompleted = projAllocations.every(a => a.status === 'completed') && !projAllocations.some(a => recentlyToggled.has(a.id));
+                              const isSelected = selectedProjectId === projId;
+                              const sortedTasks = sortTasks(projAllocations);
 
-                            {completedTasks.length > 0 && (
-                              <div className="flex flex-wrap items-center gap-2">
-                                <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 rounded shrink-0">
-                                  <span className="text-blue-600">Real:</span>
-                                  <span className="font-bold text-blue-700">{weekReal}h</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 rounded shrink-0">
-                                  <span className="text-emerald-600">Comp:</span>
-                                  <span className="font-bold text-emerald-700">{weekComp}h</span>
-                                </div>
-                                {weekBalance !== 0 && (
-                                  <div className={cn(
-                                    "flex items-center gap-1 px-2 py-1 rounded font-bold shrink-0",
-                                    weekBalance >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-                                  )}>
-                                    {weekBalance >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                                    {weekBalance >= 0 ? '+' : ''}{weekBalance}h
+                              // Totales del proyecto esta semana
+                              const projEst = round2(projAllocations.reduce((s, a) => s + (a.hoursAssigned || 0), 0));
+                              const projReal = round2(projAllocations.filter(a => a.status === 'completed').reduce((s, a) => s + (a.hoursActual || 0), 0));
+                              const projComp = round2(projAllocations.filter(a => a.status === 'completed').reduce((s, a) => s + (a.hoursComputed || 0), 0));
+
+                              return (
+                                <div
+                                  key={projId}
+                                  className={cn(
+                                    "bg-white rounded-lg border shadow-sm overflow-hidden transition-all",
+                                    isSelected && "ring-2 ring-indigo-400",
+                                    allCompleted && "opacity-80"
+                                  )}
+                                >
+                                  {/* Header del proyecto - clickeable para seleccionar */}
+                                  <div
+                                    className={cn(
+                                      "px-4 py-2.5 cursor-pointer flex items-center justify-between",
+                                      budgetStatus.status === 'overload' ? "bg-red-500 text-white" :
+                                        budgetStatus.status === 'warning' ? "bg-amber-500 text-white" :
+                                          allCompleted ? "bg-slate-200 text-slate-700" : "bg-primary/100 text-white"
+                                    )}
+                                    onClick={() => setSelectedProjectId(isSelected ? null : projId)}
+                                  >
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      {allCompleted && <CheckCircle2 className="w-4 h-4 shrink-0" />}
+                                      <span className="font-bold truncate">{formatProjectName(project?.name || 'Proyecto')}</span>
+                                      <span className="text-[10px] opacity-80 shrink-0">({projAllocations.length})</span>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-sm">
+                                      <span className="opacity-80">{projEst}h est</span>
+                                      {projReal > 0 && <span>{projReal}h real</span>}
+                                      {projComp > 0 && <span className="font-bold shrink-0">{projComp}h comp</span>}
+                                    </div>
                                   </div>
-                                )}
+
+                                  {/* Tabla de tareas */}
+                                  {isMobile ? (
+                                    <div className="flex flex-col divide-y divide-slate-100">
+                                      {sortedTasks.map((alloc) => {
+                                        const isCompleted = alloc.status === 'completed';
+                                        const taskBalance = isCompleted ? round2((alloc.hoursComputed || 0) - (alloc.hoursActual || 0)) : 0;
+
+                                        // Limpieza de nombre simplificada para móvil
+                                        let cleanName = alloc.taskName || 'Tarea';
+                                        cleanName = cleanName.replace(/\s*\(transferida de .+?(?:, original: .+?)?\)/g, '').trim();
+
+                                        return (
+                                          <div key={alloc.id} className={cn("flex flex-col gap-2 p-3 bg-white", isCompleted && "bg-slate-50/50")}>
+                                            <div className="flex items-start justify-between gap-3">
+                                              <div className="flex items-start gap-3 flex-1">
+                                                <Checkbox
+                                                  checked={isCompleted}
+                                                  onCheckedChange={() => toggleTaskCompletion(alloc)}
+                                                  className={cn("mt-1", isCompleted && "data-[state=checked]:bg-emerald-600")}
+                                                />
+                                                <div className="flex flex-col gap-1 min-w-0 flex-1">
+                                                  <span
+                                                    className={cn("font-medium text-sm leading-tight break-words", isCompleted && "line-through text-slate-400")}
+                                                    onClick={() => startEditFull(alloc)}
+                                                  >
+                                                    {formatProjectName(cleanName)}
+                                                  </span>
+                                                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                                                    <span className="shrink-0">{alloc.hoursAssigned}h est</span>
+                                                    {isCompleted && (
+                                                      <>
+                                                        <span className="shrink-0">· {alloc.hoursActual}h real</span>
+                                                        <span className={cn("font-bold shrink-0", taskBalance < 0 ? "text-red-600" : "text-emerald-600")}>
+                                                          {taskBalance > 0 ? '+' : ''}{taskBalance}h
+                                                        </span>
+                                                      </>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                              <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-slate-400 shrink-0"
+                                                onClick={() => startEditFull(alloc)}
+                                              >
+                                                <Pencil className="h-4 w-4" />
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                      {sortedTasks.length === 0 && (
+                                        <div className="p-4 text-center text-sm text-slate-500 italic">No hay tareas</div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <table className="w-full text-sm">
+                                      <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
+                                        <tr>
+                                          <th className="py-2 px-3 text-left font-medium w-8"></th>
+                                          <th className="py-2 px-3 text-left font-medium">Tarea</th>
+                                          <th className="py-2 px-3 text-center font-medium w-20">Horas</th>
+                                          <th className="py-2 px-3 text-center font-medium w-24">Real</th>
+                                          <th className="py-2 px-3 text-center font-medium w-24">Comp</th>
+                                          <th className="py-2 px-3 text-center font-medium w-20">Balance</th>
+                                          <th className="py-2 px-3 text-center font-medium w-12"></th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-slate-100">
+                                        {sortedTasks.map((alloc, taskIndex) => {
+                                          const isCompleted = alloc.status === 'completed';
+                                          const taskBalance = isCompleted ? round2((alloc.hoursComputed || 0) - (alloc.hoursActual || 0)) : 0;
+                                          const depTask = alloc.dependencyId ? allocations.find(a => a.id === alloc.dependencyId) : null;
+                                          const depOwner = depTask ? employees.find(e => e.id === depTask.employeeId) : null;
+                                          const isDepReady = depTask?.status === 'completed';
+                                          const blockingTasks = allocations.filter(a => a.dependencyId === alloc.id && a.status !== 'completed');
+                                          const isFirstTask = taskIndex === 0;
+
+                                          return (
+                                            <tr
+                                              key={alloc.id}
+                                              className={cn(
+                                                "hover:bg-slate-50 transition-colors",
+                                                isCompleted && "bg-slate-50/50",
+                                                !isCompleted && depTask && !isDepReady && "bg-amber-50/50"
+                                              )}
+                                              {...(isFirstTask && { 'data-tour': 'planner-task' })}
+                                            >
+                                              <td className="py-2 px-3" {...(isFirstTask && { 'data-tour': 'planner-checkbox' })}>
+                                                <Checkbox
+                                                  checked={isCompleted}
+                                                  onCheckedChange={() => toggleTaskCompletion(alloc)}
+                                                  className={cn(isCompleted && "data-[state=checked]:bg-emerald-600")}
+                                                />
+                                              </td>
+                                              <td className="py-2 px-3">
+                                                <div className="space-y-1">
+                                                  <div className="flex items-center gap-1.5">
+                                                    <div
+                                                      className={cn("font-medium cursor-pointer hover:bg-slate-100 rounded px-1 -mx-1", isCompleted && "line-through text-slate-400")}
+                                                      onDoubleClick={() => startInlineEdit(alloc)}
+                                                      {...(isFirstTask && { 'data-tour': 'planner-task-name' })}
+                                                    >
+                                                      {inlineEditingId === alloc.id ? (
+                                                        <input
+                                                          ref={inlineInputRef}
+                                                          autoFocus
+                                                          value={inlineNameValue}
+                                                          onChange={(e) => setInlineNameValue(e.target.value)}
+                                                          onBlur={() => saveInlineEdit(alloc)}
+                                                          onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') saveInlineEdit(alloc);
+                                                            if (e.key === 'Escape') setInlineEditingId(null);
+                                                          }}
+                                                          className="w-full px-1 py-0.5 text-sm border rounded bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                        />
+                                                      ) : (
+                                                        // Limpiar nombre de tarea removiendo información de transferencia
+                                                        <div className="flex items-center gap-2">
+                                                          <span>
+                                                            {(() => {
+                                                              let cleanName = alloc.taskName || 'Tarea';
+                                                              // Remover "(transferida de X, original: Y)" o "(transferida de X)"
+                                                              cleanName = cleanName.replace(/\s*\(transferida de .+?(?:, original: .+?)?\)/g, '').trim();
+                                                              return cleanName || 'Tarea';
+                                                            })()}
+                                                          </span>
+                                                        </div>
+                                                      )}
+                                                    </div>
+                                                    {/* Badge Weekly si la tarea fue ajustada vía Weekly (horas=0 o transferida) */}
+                                                    {(() => {
+                                                      const isTransferred = alloc.transferSourceEmployeeId || alloc.taskName?.includes('(transferida de') || alloc.transferredFromAllocationId;
+                                                      const isDistributed = alloc.distributionSourceAllocationId;
+                                                      const hasWeeklyFeedback = weeklyFeedback.some(fb => fb.allocationId === alloc.id);
+                                                      const wasAdjustedViaWeekly = hasWeeklyFeedback || isTransferred || isDistributed ||
+                                                        (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0 && alloc.status === 'completed');
+
+                                                      if (!wasAdjustedViaWeekly) return null;
+
+                                                      // Extraer información de transferencia/distribución para el tooltip
+                                                      let transferInfo: string | null = null;
+
+                                                      // Caso 0: Nuevas columnas (Tracking Robusto)
+                                                      if (alloc.transferSourceEmployeeId) {
+                                                        const sourceEmployee = employees.find(e => e.id === alloc.transferSourceEmployeeId);
+                                                        const originalName = alloc.originalTransferredTaskName || alloc.taskName || 'Tarea';
+                                                        if (isDistributed) {
+                                                          transferInfo = `Distribuida (origen genérico)\nFuente original: ${sourceEmployee?.name || 'compañero'}\nTarea original: ${originalName}`;
+                                                        } else {
+                                                          transferInfo = `Transferida de ${sourceEmployee?.name || 'compañero'}\nTarea original: ${originalName}`;
+                                                        }
+                                                      }
+                                                      // Caso 1: Tarea distribuida desde una transferencia (Legacy)
+                                                      else if (isDistributed && alloc.distributionSourceAllocationId) {
+                                                        const sourceTask = allocations.find(a => a.id === alloc.distributionSourceAllocationId);
+                                                        if (sourceTask) {
+                                                          const sourceEmployee = employees.find(e => e.id === sourceTask.employeeId);
+                                                          // Buscar la tarea original de la que proviene la transferencia
+                                                          if (sourceTask.transferredFromAllocationId) {
+                                                            const originalTask = allocations.find(a => a.id === sourceTask.transferredFromAllocationId);
+                                                            if (originalTask) {
+                                                              const originalEmployee = employees.find(e => e.id === originalTask.employeeId);
+                                                              // Limpiar el nombre original (sin el sufijo de transferencia)
+                                                              const cleanOriginalName = originalTask.taskName?.replace(/\(transferida de .+?\)/g, '').trim() || originalTask.taskName || 'Sin nombre';
+                                                              transferInfo = `Distribuida desde transferencia de ${sourceEmployee?.name || 'compañero'}\nTarea original: ${cleanOriginalName} (de ${originalEmployee?.name || 'compañero'})`;
+                                                            } else {
+                                                              transferInfo = `Distribuida desde transferencia de ${sourceEmployee?.name || 'compañero'}`;
+                                                            }
+                                                          } else {
+                                                            transferInfo = `Distribuida desde tarea de ${sourceEmployee?.name || 'compañero'}`;
+                                                          }
+                                                        }
+                                                      }
+                                                      // Caso 2: Tarea transferida directamente
+                                                      else if (isTransferred) {
+                                                        const transferMatch = alloc.taskName?.match(/\(transferida de (.+?)(?:, original: (.+?))?\)/);
+                                                        if (transferMatch) {
+                                                          const fromEmployee = transferMatch[1];
+                                                          const originalName = transferMatch[2];
+                                                          if (originalName) {
+                                                            transferInfo = `Transferida de ${fromEmployee}\nTarea original: ${originalName}`;
+                                                          } else {
+                                                            transferInfo = `Transferida de ${fromEmployee}`;
+                                                          }
+                                                        } else if (alloc.transferredFromAllocationId) {
+                                                          // Si tiene el campo de BD, buscar información
+                                                          const originalTask = allocations.find(a => a.id === alloc.transferredFromAllocationId);
+                                                          if (originalTask) {
+                                                            const fromEmployee = employees.find(e => e.id === originalTask.employeeId);
+                                                            // Limpiar el nombre original (sin el sufijo de transferencia)
+                                                            const cleanOriginalName = originalTask.taskName?.replace(/\(transferida de .+?\)/g, '').trim() || originalTask.taskName || 'Sin nombre';
+                                                            transferInfo = `Transferida de ${fromEmployee?.name || 'compañero'}\nTarea original: ${cleanOriginalName}`;
+                                                          }
+                                                        }
+                                                      }
+
+                                                      return (
+                                                        <Tooltip>
+                                                          <TooltipTrigger asChild>
+                                                            <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-primary/10 text-indigo-700 border-indigo-200 cursor-help">
+                                                              Weekly
+                                                            </Badge>
+                                                          </TooltipTrigger>
+                                                          <TooltipContent className="max-w-xs z-[9999]" side="top">
+                                                            <div className="space-y-1 text-xs">
+                                                              {transferInfo ? (
+                                                                <div className="whitespace-pre-line">{transferInfo}</div>
+                                                              ) : (
+                                                                <div>Tarea gestionada vía Weekly</div>
+                                                              )}
+                                                            </div>
+                                                          </TooltipContent>
+                                                        </Tooltip>
+                                                      );
+                                                    })()}
+                                                  </div>
+                                                  {depTask && !isCompleted && (
+                                                    <div
+                                                      className={cn(
+                                                        "flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded w-fit border",
+                                                        isDepReady
+                                                          ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                                                          : "text-amber-700 bg-amber-50 border-amber-200"
+                                                      )}
+                                                      {...(isFirstTask && { 'data-tour': 'planner-dependency' })}
+                                                    >
+                                                      {isDepReady ? <CheckCircle2 className="w-2.5 h-2.5" /> : <LinkIcon className="w-2.5 h-2.5" />}
+                                                      <span className="truncate max-w-[120px]">{isDepReady ? 'Listo:' : 'Dep:'} {depTask.taskName} <strong>({depOwner?.name})</strong></span>
+                                                    </div>
+                                                  )}
+                                                  {blockingTasks.length > 0 && !isCompleted && (
+                                                    <div className="flex flex-col gap-0.5">
+                                                      {blockingTasks.map(bt => {
+                                                        const blockedUser = employees.find(e => e.id === bt.employeeId);
+                                                        const firstName = blockedUser?.name?.split(' ')[0] || 'Compañero';
+                                                        return (
+                                                          <div key={bt.id} className="flex items-center gap-1 text-[9px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded w-fit border border-amber-200">
+                                                            <Users className="w-2.5 h-2.5" />
+                                                            <span>💡 <strong>{firstName}</strong> te espera</span>
+                                                          </div>
+                                                        );
+                                                      })}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </td>
+                                              <td className="py-2 px-3 text-center">
+                                                <div className="flex items-center justify-center gap-1">
+                                                  <span className="font-mono text-xs">{alloc.hoursAssigned || 0}</span>
+                                                  {/* Badge Weekly si horas=0 por ajuste de weekly */}
+                                                  {(() => {
+                                                    const isTransferred = alloc.taskName?.includes('(transferida de');
+                                                    const hasWeeklyFeedback = weeklyFeedback.some(fb => fb.allocationId === alloc.id);
+                                                    const wasAdjustedViaWeekly = hasWeeklyFeedback || isTransferred;
+                                                    const isZeroDueToWeekly = (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0) && wasAdjustedViaWeekly;
+
+                                                    return isZeroDueToWeekly ? (
+                                                      <Badge variant="outline" className="h-3.5 px-1 text-[8px] bg-primary/10 text-indigo-700 border-indigo-200">
+                                                        Weekly
+                                                      </Badge>
+                                                    ) : null;
+                                                  })()}
+                                                </div>
+                                              </td>
+                                              <td className="py-2 px-3 text-center">
+                                                {isCompleted ? (
+                                                  <input
+                                                    type="number"
+                                                    step="0.25"
+                                                    min="0"
+                                                    defaultValue={alloc.hoursActual || 0}
+                                                    onBlur={(e) => updateInlineHours(alloc, 'hoursActual', e.target.value)}
+                                                    className="w-12 px-1 py-0.5 text-[10px] text-center border rounded bg-blue-50 text-blue-700 font-mono"
+                                                  />
+                                                ) : (
+                                                  <span className="text-slate-300 text-xs">-</span>
+                                                )}
+                                              </td>
+                                              <td className="py-2 px-3 text-center" {...(isFirstTask && { 'data-tour': 'planner-hours' })}>
+                                                {isCompleted ? (
+                                                  <input
+                                                    type="number"
+                                                    step="0.25"
+                                                    min="0"
+                                                    defaultValue={alloc.hoursComputed || 0}
+                                                    onBlur={(e) => updateInlineHours(alloc, 'hoursComputed', e.target.value)}
+                                                    className="w-12 px-1 py-0.5 text-[10px] text-center border rounded bg-emerald-50 text-emerald-700 font-mono"
+                                                  />
+                                                ) : (
+                                                  <span className="text-slate-300 text-xs">-</span>
+                                                )}
+                                              </td>
+                                              <td className="py-2 px-3 text-center">
+                                                {isCompleted && taskBalance !== 0 ? (
+                                                  <span className={cn(
+                                                    "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold",
+                                                    taskBalance >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+                                                  )}>
+                                                    {taskBalance >= 0 ? '+' : ''}{taskBalance}
+                                                  </span>
+                                                ) : isCompleted ? (
+                                                  <span className="text-slate-400">0</span>
+                                                ) : (
+                                                  <span className="text-slate-300">-</span>
+                                                )}
+                                              </td>
+                                              <td className="py-2 px-3">
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-7 w-7 p-0"
+                                                  onClick={() => {
+                                                    // BLOQUEO: No permitir editar tareas de semanas pasadas (también en vista reducida)
+                                                    try {
+                                                      const taskWeekDate = parseISO(alloc.weekStartDate);
+                                                      const taskWeekEnd = addDays(taskWeekDate, 4);
+                                                      const today = new Date();
+
+                                                      if (taskWeekEnd < today) {
+                                                        toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
+                                                        return;
+                                                      }
+                                                    } catch {
+                                                      // Si hay error parseando la fecha, permitir editar (por seguridad)
+                                                    }
+                                                    startEditFull(alloc);
+                                                  }}
+                                                >
+                                                  <Pencil className="h-3.5 w-3.5" />
+                                                </Button>
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  )}
+                                </div>
+                              );
+                            })}
+
+                            {/* Estado de carga */}
+                            {(isGlobalLoading || isLoadingTasks) && (
+                              <div className="space-y-4" data-tour="planner-loading-state">
+                                <div className="text-center py-6 text-slate-400">
+                                  <Calendar className="w-10 h-10 mx-auto mb-2 opacity-50 animate-pulse" />
+                                  <p className="font-medium mb-1">Cargando tareas...</p>
+                                  <p className="text-xs">Por favor espera</p>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Estado vacío - solo mostrar si no está cargando */}
+                            {!isGlobalLoading && !isLoadingTasks && sortedGroups.length === 0 && (
+                              <div className="space-y-4" data-tour="planner-empty-state">
+                                {/* Mensaje principal */}
+                                <div className="text-center py-6 text-slate-400">
+                                  <Calendar className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                                  <p className="font-medium mb-1">No tienes tareas esta semana</p>
+                                  <p className="text-xs">Usa el botón "Añadir" para planificar tu trabajo</p>
+                                </div>
+
+                                {/* Ejemplo visual de cómo se vería */}
+                                <div className="border-t pt-4">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <span className="text-xs text-slate-400 uppercase tracking-wide">Vista previa de ejemplo</span>
+                                    <Badge variant="outline" className="text-[9px] bg-amber-50 border-amber-200 text-amber-700">Ejemplo</Badge>
+                                  </div>
+
+                                  <div className="bg-white rounded-lg border shadow-sm overflow-hidden opacity-60" data-tour="planner-projects">
+                                    <div className="bg-primary/100 text-white px-4 py-2.5 flex items-center justify-between">
+                                      <span className="font-bold text-sm">SEO Mensual [Cliente Ejemplo]</span>
+                                      <span className="text-xs opacity-80">(3 tareas)</span>
+                                    </div>
+                                    <table className="w-full text-sm">
+                                      <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
+                                        <tr>
+                                          <th className="py-2 px-3 text-left font-medium w-8"></th>
+                                          <th className="py-2 px-3 text-left font-medium">Tarea</th>
+                                          <th className="py-2 px-2 text-center font-medium w-12">Horas</th>
+                                          <th className="py-2 px-2 text-center font-medium w-12">Comp</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-slate-100">
+                                        <tr className="hover:bg-slate-50" data-tour="planner-task">
+                                          <td className="py-2 px-3" data-tour="planner-checkbox">
+                                            <Checkbox checked={false} />
+                                          </td>
+                                          <td className="py-2 px-3" data-tour="planner-task-name">
+                                            <span className="font-medium">Análisis de keywords</span>
+                                            <div className="mt-1" data-tour="planner-dependency">
+                                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-[10px]">
+                                                <Users className="h-3 w-3" />
+                                                💡 María te espera
+                                              </span>
+                                            </div>
+                                          </td>
+                                          <td className="py-2 px-3 text-center font-mono">4h</td>
+                                          <td className="py-2 px-3 text-center text-slate-300">-</td>
+                                        </tr>
+                                        <tr className="hover:bg-slate-50">
+                                          <td className="py-2 px-3">
+                                            <Checkbox checked={false} />
+                                          </td>
+                                          <td className="py-2 px-3">
+                                            <span className="font-medium">Optimización on-page</span>
+                                            <div className="mt-1">
+                                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px]">
+                                                <Clock className="h-3 w-3" />
+                                                Esperas a: Juan
+                                              </span>
+                                            </div>
+                                          </td>
+                                          <td className="py-2 px-3 text-center font-mono">2h</td>
+                                          <td className="py-2 px-3 text-center text-slate-300">-</td>
+                                        </tr>
+                                        <tr className="hover:bg-slate-50 bg-emerald-50/50">
+                                          <td className="py-2 px-3">
+                                            <Checkbox checked={true} className="data-[state=checked]:bg-emerald-600" />
+                                          </td>
+                                          <td className="py-2 px-3">
+                                            <span className="font-medium line-through text-slate-400">Informe mensual</span>
+                                          </td>
+                                          <td className="py-2 px-3 text-center font-mono line-through text-slate-400">2h</td>
+                                          <td className="py-2 px-3 text-center">
+                                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-mono" data-tour="planner-hours">2h</span>
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
                               </div>
                             )}
                           </div>
                         </div>
+                      );
+                    }
 
-                        {/* Tabla de proyectos y tareas */}
-                        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2" data-tour="planner-projects">
+                    // VISTA COMPACTA para vista mensual (múltiples semanas)
+                    // Mostrar loading si está cargando
+                    if (isGlobalLoading || isLoadingTasks) {
+                      return (
+                        <div key={weekStr} className="flex flex-col gap-3 p-4 rounded-xl border bg-card min-h-[300px]">
+                          <div className="text-center py-6 text-slate-400">
+                            <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50 animate-pulse" />
+                            <p className="text-sm font-medium mb-1">Cargando tareas...</p>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={weekStr} className="flex flex-col gap-3 p-4 rounded-xl border bg-card min-h-[300px]">
+                        {/* HEADER SEMANA MEJORADO */}
+                        <div className="flex flex-col gap-2 pb-2 border-b">
+                          <div className="flex items-center justify-between">
+                            {/* Navegación entre semanas (solo en vista de una semana) */}
+                            {!showAllWeeks ? (
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={goToPrevWeek}
+                                  disabled={activeWeekIndex === 0}
+                                >
+                                  <ChevronLeft className="h-4 w-4" />
+                                </Button>
+                                <div className="text-center min-w-[140px]">
+                                  <div className="font-bold text-sm text-foreground/80 uppercase tracking-wider">
+                                    Semana {activeWeekIndex + 1}
+                                  </div>
+                                  <div className="text-[10px] text-slate-400">
+                                    {weekDateLabel} · <span className="text-slate-500">{activeWeekIndex + 1} de {weeks.length}</span>
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={goToNextWeek}
+                                  disabled={activeWeekIndex === weeks.length - 1}
+                                >
+                                  <ChevronRight className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div>
+                                <span className="font-bold text-sm text-foreground/80 uppercase tracking-wider">Semana {index + 1}</span>
+                                <span className="text-[10px] text-slate-400 ml-2">{weekDateLabel}</span>
+                              </div>
+                            )}
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-indigo-100 hover:text-indigo-700 rounded-full transition-colors" onClick={() => startAdd(week.weekStart)}>
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          {/* Barra de carga con marca de capacidad */}
+                          <div className="relative">
+                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                              <div
+                                className={cn(
+                                  "h-full transition-all duration-500 ease-out",
+                                  load.percentage > 110 ? "bg-red-500" :
+                                    load.percentage > 100 ? "bg-amber-500" :
+                                      load.percentage >= 85 ? "bg-emerald-500" : "bg-emerald-400"
+                                )}
+                                style={{ width: `${Math.min(load.percentage, 150) * 0.67}%` }}
+                              />
+                            </div>
+                            {/* Marca del 100% (capacidad) */}
+                            <div
+                              className="absolute top-0 h-2 w-0.5 bg-slate-700"
+                              style={{ left: '67%' }}
+                              title="Capacidad máxima"
+                            />
+                            {/* Porcentaje - con fondo para mejor legibilidad */}
+                            <div className={cn(
+                              "absolute -top-0.5 text-[9px] font-bold px-1 rounded",
+                              load.percentage > 100
+                                ? "text-red-700 bg-red-100"
+                                : "text-slate-600 bg-slate-100"
+                            )} style={{ left: '72%' }}>
+                              {Math.round(load.percentage)}%
+                            </div>
+                          </div>
+
+                          {/* Planificación: Est vs Capacidad */}
+                          <div className="flex items-center justify-between text-[11px]">
+                            <div className="flex items-center gap-1">
+                              <span className="text-slate-500">Plan:</span>
+                              <span className="font-semibold tabular-nums">{weekEst}h</span>
+                              <span className="text-slate-400">/</span>
+                              <span className="tabular-nums text-slate-500">{load.capacity}h</span>
+                            </div>
+                            {weekEst !== load.capacity && (
+                              <div className={cn(
+                                "font-bold tabular-nums px-1.5 py-0.5 rounded text-[10px]",
+                                weekEst > load.capacity
+                                  ? "text-red-700 bg-red-50"
+                                  : "text-slate-500 bg-slate-50"
+                              )}>
+                                {weekEst > load.capacity ? '+' : ''}{round2(weekEst - load.capacity)}h
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Ejecución: Real → Comp (solo si hay completadas) */}
+                          {completedTasks.length > 0 && (
+                            <div className="flex items-center justify-between text-[11px] pt-1 border-t border-dashed">
+                              <div className="flex items-center gap-2">
+                                <span className="text-blue-600 tabular-nums">
+                                  <span className="text-slate-400 text-[10px]">Real</span> {weekReal}h
+                                </span>
+                                <span className="text-slate-300">→</span>
+                                <span className="text-emerald-600 tabular-nums">
+                                  <span className="text-slate-400 text-[10px]">Comp</span> {weekComp}h
+                                </span>
+                              </div>
+                              <div className={cn(
+                                "flex items-center gap-1 font-bold tabular-nums px-1.5 py-0.5 rounded text-[10px]",
+                                weekBalance >= 0 ? "text-emerald-700 bg-emerald-50" : "text-amber-700 bg-amber-50"
+                              )}>
+                                {weekBalance >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                                {weekBalance >= 0 ? '+' : ''}{weekBalance}h
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Ausencias/Eventos (si hay) */}
+                          {load.breakdown && load.breakdown.length > 0 && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center gap-1.5 text-[10px] text-orange-600 bg-orange-50 px-2 py-1 rounded cursor-help border border-orange-100">
+                                  {load.breakdown.some(b => b.type === 'absence') && <Palmtree className="w-3 h-3" />}
+                                  {load.breakdown.some(b => b.type === 'event') && <Zap className="w-3 h-3" />}
+                                  <span className="font-medium">-{round2(load.breakdown.reduce((s, b) => s + b.hours, 0))}h capacidad</span>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" className="text-xs">
+                                {load.breakdown.map((b, i) => (
+                                  <div key={i}>{b.reason}: -{b.hours}h</div>
+                                ))}
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+
+                        {/* LISTA TAREAS */}
+                        <div className="flex-1 overflow-y-auto max-h-[60vh] space-y-3 pr-1 custom-scrollbar">
                           {sortedGroups.map(([projId, projAllocations]) => {
                             const project = getProjectById(projId);
                             const budgetStatus = getProjectBudgetStatus(projId);
                             const allCompleted = projAllocations.every(a => a.status === 'completed') && !projAllocations.some(a => recentlyToggled.has(a.id));
-                            const isSelected = selectedProjectId === projId;
+                            // La lógica de colapso depende de autoExpand:
+                            // - autoExpand=true: expandido por defecto, collapsedProjects guarda los colapsados manualmente
+                            // - autoExpand=false: colapsado por defecto, collapsedProjects guarda los expandidos manualmente
+                            const isCollapsed = autoExpand ? collapsedProjects.has(projId) : !collapsedProjects.has(projId);
                             const sortedTasks = sortTasks(projAllocations);
 
-                            // Totales del proyecto esta semana
-                            const projEst = round2(projAllocations.reduce((s, a) => s + (a.hoursAssigned || 0), 0));
-                            const projReal = round2(projAllocations.filter(a => a.status === 'completed').reduce((s, a) => s + (a.hoursActual || 0), 0));
-                            const projComp = round2(projAllocations.filter(a => a.status === 'completed').reduce((s, a) => s + (a.hoursComputed || 0), 0));
+                            // Calcular horas del empleado actual en este proyecto
+                            const myHoursInProject = {
+                              estimated: round2(projAllocations.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0)),
+                              completed: projAllocations.filter(a => a.status === 'completed').length,
+                              computed: round2(projAllocations.filter(a => a.status === 'completed').reduce((sum, a) => sum + (a.hoursComputed || 0), 0))
+                            };
+
+                            const isSelected = selectedProjectId === projId;
 
                             return (
-                              <div
-                                key={projId}
-                                className={cn(
-                                  "bg-white rounded-lg border shadow-sm overflow-hidden transition-all",
-                                  isSelected && "ring-2 ring-indigo-400",
-                                  allCompleted && "opacity-80"
-                                )}
-                              >
-                                {/* Header del proyecto - clickeable para seleccionar */}
-                                <div
-                                  className={cn(
-                                    "px-4 py-2.5 cursor-pointer flex items-center justify-between",
-                                    budgetStatus.status === 'overload' ? "bg-red-500 text-white" :
-                                      budgetStatus.status === 'warning' ? "bg-amber-500 text-white" :
-                                        allCompleted ? "bg-slate-200 text-slate-700" : "bg-primary/100 text-white"
-                                  )}
-                                  onClick={() => setSelectedProjectId(isSelected ? null : projId)}
-                                >
-                                  <div className="flex items-center gap-3 min-w-0">
-                                    {allCompleted && <CheckCircle2 className="w-4 h-4 shrink-0" />}
-                                    <span className="font-bold truncate">{formatProjectName(project?.name || 'Proyecto')}</span>
-                                    <span className="text-[10px] opacity-80 shrink-0">({projAllocations.length})</span>
-                                  </div>
-                                  <div className="flex items-center gap-4 text-sm">
-                                    <span className="opacity-80">{projEst}h est</span>
-                                    {projReal > 0 && <span>{projReal}h real</span>}
-                                    {projComp > 0 && <span className="font-bold shrink-0">{projComp}h comp</span>}
-                                  </div>
+                              <Collapsible key={projId} open={!isCollapsed} onOpenChange={() => {
+                                toggleProjectCollapse(projId);
+                                // En vista semanal, al hacer click también selecciona el proyecto
+                                if (!showAllWeeks) {
+                                  setSelectedProjectId(projId);
+                                }
+                              }}>
+                                <div className={cn(
+                                  "bg-white border rounded-lg shadow-sm overflow-hidden transition-all",
+                                  allCompleted && "opacity-75 hover:opacity-100",
+                                  isSelected && !showAllWeeks && "ring-2 ring-indigo-400 border-indigo-300"
+                                )}>
+                                  <CollapsibleTrigger asChild>
+                                    <div className="cursor-pointer relative">
+                                      {renderProjectHeader(project, budgetStatus, allCompleted, projAllocations.length, myHoursInProject)}
+                                      <ChevronDown className={cn(
+                                        "w-4 h-4 text-slate-400 transition-transform absolute right-3 top-1/2 -translate-y-1/2",
+                                        !isCollapsed && "rotate-180"
+                                      )} />
+                                    </div>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent>
+                                    <div className="divide-y divide-slate-100">
+                                      {sortedTasks.map(alloc => renderTask(alloc, index))}
+                                    </div>
+                                  </CollapsibleContent>
                                 </div>
-
-                                {/* Tabla de tareas */}
-                                {isMobile ? (
-                                  <div className="flex flex-col divide-y divide-slate-100">
-                                    {sortedTasks.map((alloc) => {
-                                      const isCompleted = alloc.status === 'completed';
-                                      const taskBalance = isCompleted ? round2((alloc.hoursComputed || 0) - (alloc.hoursActual || 0)) : 0;
-
-                                      // Limpieza de nombre simplificada para móvil
-                                      let cleanName = alloc.taskName || 'Tarea';
-                                      cleanName = cleanName.replace(/\s*\(transferida de .+?(?:, original: .+?)?\)/g, '').trim();
-
-                                      return (
-                                        <div key={alloc.id} className={cn("flex flex-col gap-2 p-3 bg-white", isCompleted && "bg-slate-50/50")}>
-                                          <div className="flex items-start justify-between gap-3">
-                                            <div className="flex items-start gap-3 flex-1">
-                                              <Checkbox
-                                                checked={isCompleted}
-                                                onCheckedChange={() => toggleTaskCompletion(alloc)}
-                                                className={cn("mt-1", isCompleted && "data-[state=checked]:bg-emerald-600")}
-                                              />
-                                              <div className="flex flex-col gap-1 min-w-0 flex-1">
-                                                <span
-                                                  className={cn("font-medium text-sm leading-tight break-words", isCompleted && "line-through text-slate-400")}
-                                                  onClick={() => startEditFull(alloc)}
-                                                >
-                                                  {formatProjectName(cleanName)}
-                                                </span>
-                                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
-                                                  <span className="shrink-0">{alloc.hoursAssigned}h est</span>
-                                                  {isCompleted && (
-                                                    <>
-                                                      <span className="shrink-0">· {alloc.hoursActual}h real</span>
-                                                      <span className={cn("font-bold shrink-0", taskBalance < 0 ? "text-red-600" : "text-emerald-600")}>
-                                                        {taskBalance > 0 ? '+' : ''}{taskBalance}h
-                                                      </span>
-                                                    </>
-                                                  )}
-                                                </div>
-                                              </div>
-                                            </div>
-                                            <Button
-                                              variant="ghost"
-                                              size="icon"
-                                              className="h-8 w-8 text-slate-400 shrink-0"
-                                              onClick={() => startEditFull(alloc)}
-                                            >
-                                              <Pencil className="h-4 w-4" />
-                                            </Button>
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                    {sortedTasks.length === 0 && (
-                                      <div className="p-4 text-center text-sm text-slate-500 italic">No hay tareas</div>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <table className="w-full text-sm">
-                                    <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
-                                      <tr>
-                                        <th className="py-2 px-3 text-left font-medium w-8"></th>
-                                        <th className="py-2 px-3 text-left font-medium">Tarea</th>
-                                        <th className="py-2 px-3 text-center font-medium w-20">Horas</th>
-                                        <th className="py-2 px-3 text-center font-medium w-24">Real</th>
-                                        <th className="py-2 px-3 text-center font-medium w-24">Comp</th>
-                                        <th className="py-2 px-3 text-center font-medium w-20">Balance</th>
-                                        <th className="py-2 px-3 text-center font-medium w-12"></th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                      {sortedTasks.map((alloc, taskIndex) => {
-                                        const isCompleted = alloc.status === 'completed';
-                                        const taskBalance = isCompleted ? round2((alloc.hoursComputed || 0) - (alloc.hoursActual || 0)) : 0;
-                                        const depTask = alloc.dependencyId ? allocations.find(a => a.id === alloc.dependencyId) : null;
-                                        const depOwner = depTask ? employees.find(e => e.id === depTask.employeeId) : null;
-                                        const isDepReady = depTask?.status === 'completed';
-                                        const blockingTasks = allocations.filter(a => a.dependencyId === alloc.id && a.status !== 'completed');
-                                        const isFirstTask = taskIndex === 0;
-
-                                        return (
-                                          <tr
-                                            key={alloc.id}
-                                            className={cn(
-                                              "hover:bg-slate-50 transition-colors",
-                                              isCompleted && "bg-slate-50/50",
-                                              !isCompleted && depTask && !isDepReady && "bg-amber-50/50"
-                                            )}
-                                            {...(isFirstTask && { 'data-tour': 'planner-task' })}
-                                          >
-                                            <td className="py-2 px-3" {...(isFirstTask && { 'data-tour': 'planner-checkbox' })}>
-                                              <Checkbox
-                                                checked={isCompleted}
-                                                onCheckedChange={() => toggleTaskCompletion(alloc)}
-                                                className={cn(isCompleted && "data-[state=checked]:bg-emerald-600")}
-                                              />
-                                            </td>
-                                            <td className="py-2 px-3">
-                                              <div className="space-y-1">
-                                                <div className="flex items-center gap-1.5">
-                                                  <div
-                                                    className={cn("font-medium cursor-pointer hover:bg-slate-100 rounded px-1 -mx-1", isCompleted && "line-through text-slate-400")}
-                                                    onDoubleClick={() => startInlineEdit(alloc)}
-                                                    {...(isFirstTask && { 'data-tour': 'planner-task-name' })}
-                                                  >
-                                                    {inlineEditingId === alloc.id ? (
-                                                      <input
-                                                        ref={inlineInputRef}
-                                                        autoFocus
-                                                        value={inlineNameValue}
-                                                        onChange={(e) => setInlineNameValue(e.target.value)}
-                                                        onBlur={() => saveInlineEdit(alloc)}
-                                                        onKeyDown={(e) => {
-                                                          if (e.key === 'Enter') saveInlineEdit(alloc);
-                                                          if (e.key === 'Escape') setInlineEditingId(null);
-                                                        }}
-                                                        className="w-full px-1 py-0.5 text-sm border rounded bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                      />
-                                                    ) : (
-                                                      // Limpiar nombre de tarea removiendo información de transferencia
-                                                      <div className="flex items-center gap-2">
-                                                        <span>
-                                                          {(() => {
-                                                            let cleanName = alloc.taskName || 'Tarea';
-                                                            // Remover "(transferida de X, original: Y)" o "(transferida de X)"
-                                                            cleanName = cleanName.replace(/\s*\(transferida de .+?(?:, original: .+?)?\)/g, '').trim();
-                                                            return cleanName || 'Tarea';
-                                                          })()}
-                                                        </span>
-                                                      </div>
-                                                    )}
-                                                  </div>
-                                                  {/* Badge Weekly si la tarea fue ajustada vía Weekly (horas=0 o transferida) */}
-                                                  {(() => {
-                                                    const isTransferred = alloc.transferSourceEmployeeId || alloc.taskName?.includes('(transferida de') || alloc.transferredFromAllocationId;
-                                                    const isDistributed = alloc.distributionSourceAllocationId;
-                                                    const hasWeeklyFeedback = weeklyFeedback.some(fb => fb.allocationId === alloc.id);
-                                                    const wasAdjustedViaWeekly = hasWeeklyFeedback || isTransferred || isDistributed ||
-                                                      (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0 && alloc.status === 'completed');
-
-                                                    if (!wasAdjustedViaWeekly) return null;
-
-                                                    // Extraer información de transferencia/distribución para el tooltip
-                                                    let transferInfo: string | null = null;
-
-                                                    // Caso 0: Nuevas columnas (Tracking Robusto)
-                                                    if (alloc.transferSourceEmployeeId) {
-                                                      const sourceEmployee = employees.find(e => e.id === alloc.transferSourceEmployeeId);
-                                                      const originalName = alloc.originalTransferredTaskName || alloc.taskName || 'Tarea';
-                                                      if (isDistributed) {
-                                                        transferInfo = `Distribuida (origen genérico)\nFuente original: ${sourceEmployee?.name || 'compañero'}\nTarea original: ${originalName}`;
-                                                      } else {
-                                                        transferInfo = `Transferida de ${sourceEmployee?.name || 'compañero'}\nTarea original: ${originalName}`;
-                                                      }
-                                                    }
-                                                    // Caso 1: Tarea distribuida desde una transferencia (Legacy)
-                                                    else if (isDistributed && alloc.distributionSourceAllocationId) {
-                                                      const sourceTask = allocations.find(a => a.id === alloc.distributionSourceAllocationId);
-                                                      if (sourceTask) {
-                                                        const sourceEmployee = employees.find(e => e.id === sourceTask.employeeId);
-                                                        // Buscar la tarea original de la que proviene la transferencia
-                                                        if (sourceTask.transferredFromAllocationId) {
-                                                          const originalTask = allocations.find(a => a.id === sourceTask.transferredFromAllocationId);
-                                                          if (originalTask) {
-                                                            const originalEmployee = employees.find(e => e.id === originalTask.employeeId);
-                                                            // Limpiar el nombre original (sin el sufijo de transferencia)
-                                                            const cleanOriginalName = originalTask.taskName?.replace(/\(transferida de .+?\)/g, '').trim() || originalTask.taskName || 'Sin nombre';
-                                                            transferInfo = `Distribuida desde transferencia de ${sourceEmployee?.name || 'compañero'}\nTarea original: ${cleanOriginalName} (de ${originalEmployee?.name || 'compañero'})`;
-                                                          } else {
-                                                            transferInfo = `Distribuida desde transferencia de ${sourceEmployee?.name || 'compañero'}`;
-                                                          }
-                                                        } else {
-                                                          transferInfo = `Distribuida desde tarea de ${sourceEmployee?.name || 'compañero'}`;
-                                                        }
-                                                      }
-                                                    }
-                                                    // Caso 2: Tarea transferida directamente
-                                                    else if (isTransferred) {
-                                                      const transferMatch = alloc.taskName?.match(/\(transferida de (.+?)(?:, original: (.+?))?\)/);
-                                                      if (transferMatch) {
-                                                        const fromEmployee = transferMatch[1];
-                                                        const originalName = transferMatch[2];
-                                                        if (originalName) {
-                                                          transferInfo = `Transferida de ${fromEmployee}\nTarea original: ${originalName}`;
-                                                        } else {
-                                                          transferInfo = `Transferida de ${fromEmployee}`;
-                                                        }
-                                                      } else if (alloc.transferredFromAllocationId) {
-                                                        // Si tiene el campo de BD, buscar información
-                                                        const originalTask = allocations.find(a => a.id === alloc.transferredFromAllocationId);
-                                                        if (originalTask) {
-                                                          const fromEmployee = employees.find(e => e.id === originalTask.employeeId);
-                                                          // Limpiar el nombre original (sin el sufijo de transferencia)
-                                                          const cleanOriginalName = originalTask.taskName?.replace(/\(transferida de .+?\)/g, '').trim() || originalTask.taskName || 'Sin nombre';
-                                                          transferInfo = `Transferida de ${fromEmployee?.name || 'compañero'}\nTarea original: ${cleanOriginalName}`;
-                                                        }
-                                                      }
-                                                    }
-
-                                                    return (
-                                                      <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                          <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-primary/10 text-indigo-700 border-indigo-200 cursor-help">
-                                                            Weekly
-                                                          </Badge>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent className="max-w-xs z-[9999]" side="top">
-                                                          <div className="space-y-1 text-xs">
-                                                            {transferInfo ? (
-                                                              <div className="whitespace-pre-line">{transferInfo}</div>
-                                                            ) : (
-                                                              <div>Tarea gestionada vía Weekly</div>
-                                                            )}
-                                                          </div>
-                                                        </TooltipContent>
-                                                      </Tooltip>
-                                                    );
-                                                  })()}
-                                                </div>
-                                                {depTask && !isCompleted && (
-                                                  <div
-                                                    className={cn(
-                                                      "flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded w-fit border",
-                                                      isDepReady
-                                                        ? "text-emerald-700 bg-emerald-50 border-emerald-200"
-                                                        : "text-amber-700 bg-amber-50 border-amber-200"
-                                                    )}
-                                                    {...(isFirstTask && { 'data-tour': 'planner-dependency' })}
-                                                  >
-                                                    {isDepReady ? <CheckCircle2 className="w-2.5 h-2.5" /> : <LinkIcon className="w-2.5 h-2.5" />}
-                                                    <span className="truncate max-w-[120px]">{isDepReady ? 'Listo:' : 'Dep:'} {depTask.taskName} <strong>({depOwner?.name})</strong></span>
-                                                  </div>
-                                                )}
-                                                {blockingTasks.length > 0 && !isCompleted && (
-                                                  <div className="flex flex-col gap-0.5">
-                                                    {blockingTasks.map(bt => {
-                                                      const blockedUser = employees.find(e => e.id === bt.employeeId);
-                                                      const firstName = blockedUser?.name?.split(' ')[0] || 'Compañero';
-                                                      return (
-                                                        <div key={bt.id} className="flex items-center gap-1 text-[9px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded w-fit border border-amber-200">
-                                                          <Users className="w-2.5 h-2.5" />
-                                                          <span>💡 <strong>{firstName}</strong> te espera</span>
-                                                        </div>
-                                                      );
-                                                    })}
-                                                  </div>
-                                                )}
-                                              </div>
-                                            </td>
-                                            <td className="py-2 px-3 text-center">
-                                              <div className="flex items-center justify-center gap-1">
-                                                <span className="font-mono text-xs">{alloc.hoursAssigned || 0}</span>
-                                                {/* Badge Weekly si horas=0 por ajuste de weekly */}
-                                                {(() => {
-                                                  const isTransferred = alloc.taskName?.includes('(transferida de');
-                                                  const hasWeeklyFeedback = weeklyFeedback.some(fb => fb.allocationId === alloc.id);
-                                                  const wasAdjustedViaWeekly = hasWeeklyFeedback || isTransferred;
-                                                  const isZeroDueToWeekly = (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0) && wasAdjustedViaWeekly;
-
-                                                  return isZeroDueToWeekly ? (
-                                                    <Badge variant="outline" className="h-3.5 px-1 text-[8px] bg-primary/10 text-indigo-700 border-indigo-200">
-                                                      Weekly
-                                                    </Badge>
-                                                  ) : null;
-                                                })()}
-                                              </div>
-                                            </td>
-                                            <td className="py-2 px-3 text-center">
-                                              {isCompleted ? (
-                                                <input
-                                                  type="number"
-                                                  step="0.25"
-                                                  min="0"
-                                                  defaultValue={alloc.hoursActual || 0}
-                                                  onBlur={(e) => updateInlineHours(alloc, 'hoursActual', e.target.value)}
-                                                  className="w-12 px-1 py-0.5 text-[10px] text-center border rounded bg-blue-50 text-blue-700 font-mono"
-                                                />
-                                              ) : (
-                                                <span className="text-slate-300 text-xs">-</span>
-                                              )}
-                                            </td>
-                                            <td className="py-2 px-3 text-center" {...(isFirstTask && { 'data-tour': 'planner-hours' })}>
-                                              {isCompleted ? (
-                                                <input
-                                                  type="number"
-                                                  step="0.25"
-                                                  min="0"
-                                                  defaultValue={alloc.hoursComputed || 0}
-                                                  onBlur={(e) => updateInlineHours(alloc, 'hoursComputed', e.target.value)}
-                                                  className="w-12 px-1 py-0.5 text-[10px] text-center border rounded bg-emerald-50 text-emerald-700 font-mono"
-                                                />
-                                              ) : (
-                                                <span className="text-slate-300 text-xs">-</span>
-                                              )}
-                                            </td>
-                                            <td className="py-2 px-3 text-center">
-                                              {isCompleted && taskBalance !== 0 ? (
-                                                <span className={cn(
-                                                  "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold",
-                                                  taskBalance >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
-                                                )}>
-                                                  {taskBalance >= 0 ? '+' : ''}{taskBalance}
-                                                </span>
-                                              ) : isCompleted ? (
-                                                <span className="text-slate-400">0</span>
-                                              ) : (
-                                                <span className="text-slate-300">-</span>
-                                              )}
-                                            </td>
-                                            <td className="py-2 px-3">
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-7 w-7 p-0"
-                                                onClick={() => {
-                                                  // BLOQUEO: No permitir editar tareas de semanas pasadas (también en vista reducida)
-                                                  try {
-                                                    const taskWeekDate = parseISO(alloc.weekStartDate);
-                                                    const taskWeekEnd = addDays(taskWeekDate, 4);
-                                                    const today = new Date();
-
-                                                    if (taskWeekEnd < today) {
-                                                      toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
-                                                      return;
-                                                    }
-                                                  } catch {
-                                                    // Si hay error parseando la fecha, permitir editar (por seguridad)
-                                                  }
-                                                  startEditFull(alloc);
-                                                }}
-                                              >
-                                                <Pencil className="h-3.5 w-3.5" />
-                                              </Button>
-                                            </td>
-                                          </tr>
-                                        );
-                                      })}
-                                    </tbody>
-                                  </table>
-                                )}
-                              </div>
+                              </Collapsible>
                             );
                           })}
-
-                          {/* Estado de carga */}
-                          {(isGlobalLoading || isLoadingTasks) && (
-                            <div className="space-y-4" data-tour="planner-loading-state">
-                              <div className="text-center py-6 text-slate-400">
-                                <Calendar className="w-10 h-10 mx-auto mb-2 opacity-50 animate-pulse" />
-                                <p className="font-medium mb-1">Cargando tareas...</p>
-                                <p className="text-xs">Por favor espera</p>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Estado vacío - solo mostrar si no está cargando */}
-                          {!isGlobalLoading && !isLoadingTasks && sortedGroups.length === 0 && (
-                            <div className="space-y-4" data-tour="planner-empty-state">
-                              {/* Mensaje principal */}
-                              <div className="text-center py-6 text-slate-400">
-                                <Calendar className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                                <p className="font-medium mb-1">No tienes tareas esta semana</p>
-                                <p className="text-xs">Usa el botón "Añadir" para planificar tu trabajo</p>
-                              </div>
-
-                              {/* Ejemplo visual de cómo se vería */}
-                              <div className="border-t pt-4">
-                                <div className="flex items-center justify-between mb-3">
-                                  <span className="text-xs text-slate-400 uppercase tracking-wide">Vista previa de ejemplo</span>
-                                  <Badge variant="outline" className="text-[9px] bg-amber-50 border-amber-200 text-amber-700">Ejemplo</Badge>
-                                </div>
-
-                                <div className="bg-white rounded-lg border shadow-sm overflow-hidden opacity-60" data-tour="planner-projects">
-                                  <div className="bg-primary/100 text-white px-4 py-2.5 flex items-center justify-between">
-                                    <span className="font-bold text-sm">SEO Mensual [Cliente Ejemplo]</span>
-                                    <span className="text-xs opacity-80">(3 tareas)</span>
-                                  </div>
-                                  <table className="w-full text-sm">
-                                    <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
-                                      <tr>
-                                        <th className="py-2 px-3 text-left font-medium w-8"></th>
-                                        <th className="py-2 px-3 text-left font-medium">Tarea</th>
-                                        <th className="py-2 px-2 text-center font-medium w-12">Horas</th>
-                                        <th className="py-2 px-2 text-center font-medium w-12">Comp</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                      <tr className="hover:bg-slate-50" data-tour="planner-task">
-                                        <td className="py-2 px-3" data-tour="planner-checkbox">
-                                          <Checkbox checked={false} />
-                                        </td>
-                                        <td className="py-2 px-3" data-tour="planner-task-name">
-                                          <span className="font-medium">Análisis de keywords</span>
-                                          <div className="mt-1" data-tour="planner-dependency">
-                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-[10px]">
-                                              <Users className="h-3 w-3" />
-                                              💡 María te espera
-                                            </span>
-                                          </div>
-                                        </td>
-                                        <td className="py-2 px-3 text-center font-mono">4h</td>
-                                        <td className="py-2 px-3 text-center text-slate-300">-</td>
-                                      </tr>
-                                      <tr className="hover:bg-slate-50">
-                                        <td className="py-2 px-3">
-                                          <Checkbox checked={false} />
-                                        </td>
-                                        <td className="py-2 px-3">
-                                          <span className="font-medium">Optimización on-page</span>
-                                          <div className="mt-1">
-                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px]">
-                                              <Clock className="h-3 w-3" />
-                                              Esperas a: Juan
-                                            </span>
-                                          </div>
-                                        </td>
-                                        <td className="py-2 px-3 text-center font-mono">2h</td>
-                                        <td className="py-2 px-3 text-center text-slate-300">-</td>
-                                      </tr>
-                                      <tr className="hover:bg-slate-50 bg-emerald-50/50">
-                                        <td className="py-2 px-3">
-                                          <Checkbox checked={true} className="data-[state=checked]:bg-emerald-600" />
-                                        </td>
-                                        <td className="py-2 px-3">
-                                          <span className="font-medium line-through text-slate-400">Informe mensual</span>
-                                        </td>
-                                        <td className="py-2 px-3 text-center font-mono line-through text-slate-400">2h</td>
-                                        <td className="py-2 px-3 text-center">
-                                          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-xs font-mono" data-tour="planner-hours">2h</span>
-                                        </td>
-                                      </tr>
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-                            </div>
-                          )}
                         </div>
                       </div>
                     );
-                  }
-
-                  // VISTA COMPACTA para vista mensual (múltiples semanas)
-                  // Mostrar loading si está cargando
-                  if (isGlobalLoading || isLoadingTasks) {
-                    return (
-                      <div key={weekStr} className="flex flex-col gap-3 p-4 rounded-xl border bg-card min-h-[300px]">
-                        <div className="text-center py-6 text-slate-400">
-                          <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50 animate-pulse" />
-                          <p className="text-sm font-medium mb-1">Cargando tareas...</p>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div key={weekStr} className="flex flex-col gap-3 p-4 rounded-xl border bg-card min-h-[300px]">
-                      {/* HEADER SEMANA MEJORADO */}
-                      <div className="flex flex-col gap-2 pb-2 border-b">
-                        <div className="flex items-center justify-between">
-                          {/* Navegación entre semanas (solo en vista de una semana) */}
-                          {!showAllWeeks ? (
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={goToPrevWeek}
-                                disabled={activeWeekIndex === 0}
-                              >
-                                <ChevronLeft className="h-4 w-4" />
-                              </Button>
-                              <div className="text-center min-w-[140px]">
-                                <div className="font-bold text-sm text-foreground/80 uppercase tracking-wider">
-                                  Semana {activeWeekIndex + 1}
-                                </div>
-                                <div className="text-[10px] text-slate-400">
-                                  {weekDateLabel} · <span className="text-slate-500">{activeWeekIndex + 1} de {weeks.length}</span>
-                                </div>
-                              </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={goToNextWeek}
-                                disabled={activeWeekIndex === weeks.length - 1}
-                              >
-                                <ChevronRight className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <div>
-                              <span className="font-bold text-sm text-foreground/80 uppercase tracking-wider">Semana {index + 1}</span>
-                              <span className="text-[10px] text-slate-400 ml-2">{weekDateLabel}</span>
-                            </div>
-                          )}
-                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-indigo-100 hover:text-indigo-700 rounded-full transition-colors" onClick={() => startAdd(week.weekStart)}>
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-
-                        {/* Barra de carga con marca de capacidad */}
-                        <div className="relative">
-                          <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                            <div
-                              className={cn(
-                                "h-full transition-all duration-500 ease-out",
-                                load.percentage > 110 ? "bg-red-500" :
-                                  load.percentage > 100 ? "bg-amber-500" :
-                                    load.percentage >= 85 ? "bg-emerald-500" : "bg-emerald-400"
-                              )}
-                              style={{ width: `${Math.min(load.percentage, 150) * 0.67}%` }}
-                            />
-                          </div>
-                          {/* Marca del 100% (capacidad) */}
-                          <div
-                            className="absolute top-0 h-2 w-0.5 bg-slate-700"
-                            style={{ left: '67%' }}
-                            title="Capacidad máxima"
-                          />
-                          {/* Porcentaje - con fondo para mejor legibilidad */}
-                          <div className={cn(
-                            "absolute -top-0.5 text-[9px] font-bold px-1 rounded",
-                            load.percentage > 100
-                              ? "text-red-700 bg-red-100"
-                              : "text-slate-600 bg-slate-100"
-                          )} style={{ left: '72%' }}>
-                            {Math.round(load.percentage)}%
-                          </div>
-                        </div>
-
-                        {/* Planificación: Est vs Capacidad */}
-                        <div className="flex items-center justify-between text-[11px]">
-                          <div className="flex items-center gap-1">
-                            <span className="text-slate-500">Plan:</span>
-                            <span className="font-semibold tabular-nums">{weekEst}h</span>
-                            <span className="text-slate-400">/</span>
-                            <span className="tabular-nums text-slate-500">{load.capacity}h</span>
-                          </div>
-                          {weekEst !== load.capacity && (
-                            <div className={cn(
-                              "font-bold tabular-nums px-1.5 py-0.5 rounded text-[10px]",
-                              weekEst > load.capacity
-                                ? "text-red-700 bg-red-50"
-                                : "text-slate-500 bg-slate-50"
-                            )}>
-                              {weekEst > load.capacity ? '+' : ''}{round2(weekEst - load.capacity)}h
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Ejecución: Real → Comp (solo si hay completadas) */}
-                        {completedTasks.length > 0 && (
-                          <div className="flex items-center justify-between text-[11px] pt-1 border-t border-dashed">
-                            <div className="flex items-center gap-2">
-                              <span className="text-blue-600 tabular-nums">
-                                <span className="text-slate-400 text-[10px]">Real</span> {weekReal}h
-                              </span>
-                              <span className="text-slate-300">→</span>
-                              <span className="text-emerald-600 tabular-nums">
-                                <span className="text-slate-400 text-[10px]">Comp</span> {weekComp}h
-                              </span>
-                            </div>
-                            <div className={cn(
-                              "flex items-center gap-1 font-bold tabular-nums px-1.5 py-0.5 rounded text-[10px]",
-                              weekBalance >= 0 ? "text-emerald-700 bg-emerald-50" : "text-amber-700 bg-amber-50"
-                            )}>
-                              {weekBalance >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                              {weekBalance >= 0 ? '+' : ''}{weekBalance}h
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Ausencias/Eventos (si hay) */}
-                        {load.breakdown && load.breakdown.length > 0 && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex items-center gap-1.5 text-[10px] text-orange-600 bg-orange-50 px-2 py-1 rounded cursor-help border border-orange-100">
-                                {load.breakdown.some(b => b.type === 'absence') && <Palmtree className="w-3 h-3" />}
-                                {load.breakdown.some(b => b.type === 'event') && <Zap className="w-3 h-3" />}
-                                <span className="font-medium">-{round2(load.breakdown.reduce((s, b) => s + b.hours, 0))}h capacidad</span>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom" className="text-xs">
-                              {load.breakdown.map((b, i) => (
-                                <div key={i}>{b.reason}: -{b.hours}h</div>
-                              ))}
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
-                      </div>
-
-                      {/* LISTA TAREAS */}
-                      <div className="flex-1 overflow-y-auto max-h-[60vh] space-y-3 pr-1 custom-scrollbar">
-                        {sortedGroups.map(([projId, projAllocations]) => {
-                          const project = getProjectById(projId);
-                          const budgetStatus = getProjectBudgetStatus(projId);
-                          const allCompleted = projAllocations.every(a => a.status === 'completed') && !projAllocations.some(a => recentlyToggled.has(a.id));
-                          // La lógica de colapso depende de autoExpand:
-                          // - autoExpand=true: expandido por defecto, collapsedProjects guarda los colapsados manualmente
-                          // - autoExpand=false: colapsado por defecto, collapsedProjects guarda los expandidos manualmente
-                          const isCollapsed = autoExpand ? collapsedProjects.has(projId) : !collapsedProjects.has(projId);
-                          const sortedTasks = sortTasks(projAllocations);
-
-                          // Calcular horas del empleado actual en este proyecto
-                          const myHoursInProject = {
-                            estimated: round2(projAllocations.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0)),
-                            completed: projAllocations.filter(a => a.status === 'completed').length,
-                            computed: round2(projAllocations.filter(a => a.status === 'completed').reduce((sum, a) => sum + (a.hoursComputed || 0), 0))
-                          };
-
-                          const isSelected = selectedProjectId === projId;
-
-                          return (
-                            <Collapsible key={projId} open={!isCollapsed} onOpenChange={() => {
-                              toggleProjectCollapse(projId);
-                              // En vista semanal, al hacer click también selecciona el proyecto
-                              if (!showAllWeeks) {
-                                setSelectedProjectId(projId);
-                              }
-                            }}>
-                              <div className={cn(
-                                "bg-white border rounded-lg shadow-sm overflow-hidden transition-all",
-                                allCompleted && "opacity-75 hover:opacity-100",
-                                isSelected && !showAllWeeks && "ring-2 ring-indigo-400 border-indigo-300"
-                              )}>
-                                <CollapsibleTrigger asChild>
-                                  <div className="cursor-pointer relative">
-                                    {renderProjectHeader(project, budgetStatus, allCompleted, projAllocations.length, myHoursInProject)}
-                                    <ChevronDown className={cn(
-                                      "w-4 h-4 text-slate-400 transition-transform absolute right-3 top-1/2 -translate-y-1/2",
-                                      !isCollapsed && "rotate-180"
-                                    )} />
-                                  </div>
-                                </CollapsibleTrigger>
-                                <CollapsibleContent>
-                                  <div className="divide-y divide-slate-100">
-                                    {sortedTasks.map(alloc => renderTask(alloc, index))}
-                                  </div>
-                                </CollapsibleContent>
-                              </div>
-                            </Collapsible>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Panel lateral derecho - Detalles del proyecto seleccionado (solo en vista semanal) */}
-              {!showAllWeeks && (
-                <div className="w-80 flex-shrink-0">
-                  <div className="sticky top-4 space-y-3">
-                    {/* Contenido dinámico: proyecto seleccionado o resumen */}
-                    {selectedProjectId ? (
-                      // DETALLES DEL PROYECTO SELECCIONADO
-                      (() => {
-                        const project = getProjectById(selectedProjectId);
-                        const budgetStatus = getProjectBudgetStatus(selectedProjectId);
-                        const { totalComputed, totalPlanned, budgetMax, budgetMin, percentage, status, breakdown } = budgetStatus;
-
-                        // Buscar datos del empleado actual en breakdown
-                        const myData = breakdown.find(b => b.employeeId === employeeId);
-                        const myComputed = myData?.computed || 0;
-                        const myPlanned = myData?.planned || 0;
-
-                        const exceededBy = totalComputed > budgetMax ? totalComputed - budgetMax : 0;
-                        const isExact100 = budgetMax > 0 && Math.abs(totalComputed - budgetMax) < 0.1; // 100% exacto (con tolerancia de 0.1h)
-                        const isAtMinimum = budgetMin > 0 && totalComputed >= budgetMin && (budgetMax === 0 || totalComputed <= budgetMax);
-
-                        const statusConfig = {
-                          healthy: { color: 'bg-emerald-500', textColor: 'text-emerald-700', label: 'Saludable' },
-                          warning: { color: 'bg-amber-500', textColor: 'text-amber-700', label: 'Cerca del límite' },
-                          overload: { color: 'bg-red-500', textColor: 'text-red-700', label: 'Excedido' },
-                          under: { color: 'bg-blue-500', textColor: 'text-blue-700', label: 'Por debajo' }
-                        };
-                        const config = statusConfig[status];
-
-                        return (
-                          <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
-                            {/* Header con nombre y botón cerrar */}
-                            <div className="bg-primary/10 border-b px-4 py-3 flex items-center justify-between">
-                              <h3 className="font-bold text-sm text-slate-800 truncate flex-1" title={project?.name}>
-                                {formatProjectName(project?.name || 'Proyecto')}
-                              </h3>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0 hover:bg-indigo-100"
-                                onClick={() => setSelectedProjectId(null)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-
-                            <div className="p-4 space-y-4">
-                              {/* Total cliente */}
-                              {budgetMax > 0 && (
-                                <div className="space-y-2">
-                                  <div className="text-[10px] font-semibold text-slate-500 uppercase">Total cliente</div>
-                                  <div className="space-y-1.5 text-xs">
-                                    <div className="flex justify-between">
-                                      <span className="text-slate-500">Asignadas:</span>
-                                      <span className="font-medium">{budgetMin > 0 ? `${budgetMin}-` : ''}{budgetMax}h</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-slate-500">Planificado:</span>
-                                      <span className="text-blue-600">{totalPlanned.toFixed(1)}h</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-slate-500">Computado (todos):</span>
-                                      <span className={cn("font-bold", status === 'overload' ? 'text-red-600' : 'text-emerald-600')}>
-                                        {totalComputed.toFixed(1)}h
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  {/* Barra de progreso */}
-                                  <div className="mt-3">
-                                    <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                                      <div
-                                        className={cn(
-                                          "h-full",
-                                          isExact100 || isAtMinimum ? "bg-emerald-500" : config.color
-                                        )}
-                                        style={{ width: `${Math.min(percentage, 100)}%` }}
-                                      />
-                                    </div>
-                                    <div className="flex justify-between items-center mt-1">
-                                      <span className={cn(
-                                        "text-[10px] font-medium",
-                                        isExact100 || isAtMinimum ? "text-emerald-700" : config.textColor
-                                      )}>
-                                        {Math.round(percentage)}% usado
-                                      </span>
-                                      {exceededBy > 0 && (
-                                        <span className="text-[10px] font-bold text-red-600">+{exceededBy.toFixed(1)}h exceso</span>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Alertas de estado */}
-                                  {status === 'overload' && (
-                                    <div className="bg-red-50 text-red-700 text-[11px] p-2 rounded border border-red-200 flex items-center gap-2">
-                                      <AlertOctagon className="w-4 h-4 flex-shrink-0" />
-                                      <span>Se han excedido las horas contratadas máximas</span>
-                                    </div>
-                                  )}
-                                  {status === 'warning' && (
-                                    <div className="bg-amber-50 text-amber-700 text-[11px] p-2 rounded border border-amber-200 flex items-center gap-2">
-                                      <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                                      <span>Quedan {(budgetMax - totalComputed).toFixed(1)}h disponibles</span>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* Equipo */}
-                              {breakdown.length > 1 && (
-                                <div className="border-t pt-3">
-                                  <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 uppercase mb-2">
-                                    <Users className="w-3 h-3" /> Equipo ({breakdown.length})
-                                  </div>
-                                  <div className="space-y-1.5">
-                                    {breakdown.map(({ employeeId: empId, employeeName, computed, planned }) => {
-                                      const isMe = empId === employeeId;
-                                      const emp = employees.find(e => e.id === empId);
-                                      return (
-                                        <div key={empId} className={cn(
-                                          "text-xs px-2 py-1.5 rounded flex items-center gap-2",
-                                          isMe ? "bg-primary/10 border border-indigo-100" : "bg-slate-50"
-                                        )}>
-                                          <Avatar className="h-6 w-6 border border-slate-200">
-                                            <AvatarImage src={emp?.avatarUrl} />
-                                            <AvatarFallback className="text-[10px] bg-slate-100">
-                                              {employeeName.substring(0, 2).toUpperCase()}
-                                            </AvatarFallback>
-                                          </Avatar>
-                                          <div className="flex-1 min-w-0">
-                                            <div className={cn("font-medium truncate", isMe ? "text-indigo-700" : "text-slate-600")}>
-                                              {employeeName} {isMe && "(tú)"}
-                                            </div>
-                                            <div className="flex gap-3 text-[10px] mt-0.5">
-                                              <span className="text-blue-600">Plan: {planned.toFixed(1)}h</span>
-                                              <span className="text-emerald-600">Comp: {computed.toFixed(1)}h</span>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              )}
-
-                            </div>
-                          </div>
-                        );
-                      })()
-                    ) : (
-                      // RESUMEN DE LA SEMANA (por defecto)
-                      <div className="bg-white border rounded-xl shadow-sm p-4">
-                        <h3 className="font-bold text-sm text-slate-700 mb-3 flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-indigo-500" />
-                          Resumen de la semana
-                        </h3>
-                        <p className="text-xs text-slate-500 mb-4">
-                          Selecciona un proyecto para ver sus detalles
-                        </p>
-
-                        {/* Proyectos de esta semana */}
-                        {(() => {
-                          if (weeks.length === 0 || activeWeekIndex < 0 || activeWeekIndex >= weeks.length) {
-                            return <p className="text-sm text-slate-500">No hay semanas disponibles</p>;
-                          }
-                          // Usar el weekStartDate real para buscar allocations
-                          const weekStartDate = format(weeks[activeWeekIndex].weekStart, 'yyyy-MM-dd');
-                          const weekAllocs = getEmployeeAllocationsForWeek(employeeId, weekStartDate);
-
-                          // Filtrar por mes efectivo: solo mostrar allocations que tienen días en el mes visible
-                          const filteredWeekAllocs = weekAllocs.filter(a => isAllocationInEffectiveMonth(a.weekStartDate, viewDate));
-                          const projectIds = [...new Set(filteredWeekAllocs.map(a => a.projectId))];
-
-                          return (
-                            <div className="space-y-2">
-                              <div className="text-[10px] font-semibold text-slate-500 uppercase">
-                                Mis proyectos esta semana ({projectIds.length})
-                              </div>
-                              <div className="space-y-1.5 max-h-[40vh] overflow-y-auto">
-                                {projectIds.map(projId => {
-                                  const project = getProjectById(projId);
-                                  const projAllocs = filteredWeekAllocs.filter(a => a.projectId === projId);
-                                  const est = round2(projAllocs.reduce((s, a) => s + (a.hoursAssigned || 0), 0));
-                                  const completed = projAllocs.filter(a => a.status === 'completed').length;
-                                  const total = projAllocs.length;
-                                  const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-                                  return (
-                                    <button
-                                      key={projId}
-                                      onClick={() => setSelectedProjectId(projId)}
-                                      className="w-full text-left p-2.5 bg-slate-50 hover:bg-primary/10 rounded-lg border border-slate-100 hover:border-indigo-200 transition-colors"
-                                    >
-                                      <div className="flex items-center justify-between">
-                                        <span className="font-medium text-xs text-slate-700 truncate">
-                                          {formatProjectName(project?.name || '')}
-                                        </span>
-                                        <span className="text-[10px] text-slate-500 ml-2">{est}h</span>
-                                      </div>
-                                      <div className="text-[10px] text-slate-400 mt-0.5 mb-1.5">
-                                        {completed}/{total} tareas
-                                      </div>
-                                      {/* Barra de progreso */}
-                                      {total > 0 && (
-                                        <div className="mt-1.5">
-                                          <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-                                            <div
-                                              className={cn("h-full transition-all duration-300", progress === 100 ? "bg-emerald-500" : "bg-primary/100")}
-                                              style={{ width: `${progress}%` }}
-                                            />
-                                          </div>
-                                        </div>
-                                      )}
-                                    </button>
-                                  );
-                                })}
-                                {projectIds.length === 0 && (
-                                  <p className="text-xs text-slate-400 text-center py-4">
-                                    No tienes tareas esta semana
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
-                  </div>
+                  })}
                 </div>
-              )}
-            </div>
-          </TooltipProvider>
+
+                {/* Panel lateral derecho - Detalles del proyecto seleccionado (solo en vista semanal) */}
+                {!showAllWeeks && (
+                  <div className="w-80 flex-shrink-0">
+                    <div className="sticky top-4 space-y-3">
+                      {/* Contenido dinámico: proyecto seleccionado o resumen */}
+                      {selectedProjectId ? (
+                        // DETALLES DEL PROYECTO SELECCIONADO
+                        (() => {
+                          const project = getProjectById(selectedProjectId);
+                          const budgetStatus = getProjectBudgetStatus(selectedProjectId);
+                          const { totalComputed, totalPlanned, budgetMax, budgetMin, percentage, status, breakdown } = budgetStatus;
+
+                          // Buscar datos del empleado actual en breakdown
+                          const myData = breakdown.find(b => b.employeeId === employeeId);
+                          const myComputed = myData?.computed || 0;
+                          const myPlanned = myData?.planned || 0;
+
+                          const exceededBy = totalComputed > budgetMax ? totalComputed - budgetMax : 0;
+                          const isExact100 = budgetMax > 0 && Math.abs(totalComputed - budgetMax) < 0.1; // 100% exacto (con tolerancia de 0.1h)
+                          const isAtMinimum = budgetMin > 0 && totalComputed >= budgetMin && (budgetMax === 0 || totalComputed <= budgetMax);
+
+                          const statusConfig = {
+                            healthy: { color: 'bg-emerald-500', textColor: 'text-emerald-700', label: 'Saludable' },
+                            warning: { color: 'bg-amber-500', textColor: 'text-amber-700', label: 'Cerca del límite' },
+                            overload: { color: 'bg-red-500', textColor: 'text-red-700', label: 'Excedido' },
+                            under: { color: 'bg-blue-500', textColor: 'text-blue-700', label: 'Por debajo' }
+                          };
+                          const config = statusConfig[status];
+
+                          return (
+                            <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
+                              {/* Header con nombre y botón cerrar */}
+                              <div className="bg-primary/10 border-b px-4 py-3 flex items-center justify-between">
+                                <h3 className="font-bold text-sm text-slate-800 truncate flex-1" title={project?.name}>
+                                  {formatProjectName(project?.name || 'Proyecto')}
+                                </h3>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 hover:bg-indigo-100"
+                                  onClick={() => setSelectedProjectId(null)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+
+                              <div className="p-4 space-y-4">
+                                {/* Total cliente */}
+                                {budgetMax > 0 && (
+                                  <div className="space-y-2">
+                                    <div className="text-[10px] font-semibold text-slate-500 uppercase">Total cliente</div>
+                                    <div className="space-y-1.5 text-xs">
+                                      <div className="flex justify-between">
+                                        <span className="text-slate-500">Asignadas:</span>
+                                        <span className="font-medium">{budgetMin > 0 ? `${budgetMin}-` : ''}{budgetMax}h</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-slate-500">Planificado:</span>
+                                        <span className="text-blue-600">{totalPlanned.toFixed(1)}h</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-slate-500">Computado (todos):</span>
+                                        <span className={cn("font-bold", status === 'overload' ? 'text-red-600' : 'text-emerald-600')}>
+                                          {totalComputed.toFixed(1)}h
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    {/* Barra de progreso */}
+                                    <div className="mt-3">
+                                      <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                                        <div
+                                          className={cn(
+                                            "h-full",
+                                            isExact100 || isAtMinimum ? "bg-emerald-500" : config.color
+                                          )}
+                                          style={{ width: `${Math.min(percentage, 100)}%` }}
+                                        />
+                                      </div>
+                                      <div className="flex justify-between items-center mt-1">
+                                        <span className={cn(
+                                          "text-[10px] font-medium",
+                                          isExact100 || isAtMinimum ? "text-emerald-700" : config.textColor
+                                        )}>
+                                          {Math.round(percentage)}% usado
+                                        </span>
+                                        {exceededBy > 0 && (
+                                          <span className="text-[10px] font-bold text-red-600">+{exceededBy.toFixed(1)}h exceso</span>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Alertas de estado */}
+                                    {status === 'overload' && (
+                                      <div className="bg-red-50 text-red-700 text-[11px] p-2 rounded border border-red-200 flex items-center gap-2">
+                                        <AlertOctagon className="w-4 h-4 flex-shrink-0" />
+                                        <span>Se han excedido las horas contratadas máximas</span>
+                                      </div>
+                                    )}
+                                    {status === 'warning' && (
+                                      <div className="bg-amber-50 text-amber-700 text-[11px] p-2 rounded border border-amber-200 flex items-center gap-2">
+                                        <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                                        <span>Quedan {(budgetMax - totalComputed).toFixed(1)}h disponibles</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Equipo */}
+                                {breakdown.length > 1 && (
+                                  <div className="border-t pt-3">
+                                    <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 uppercase mb-2">
+                                      <Users className="w-3 h-3" /> Equipo ({breakdown.length})
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      {breakdown.map(({ employeeId: empId, employeeName, computed, planned }) => {
+                                        const isMe = empId === employeeId;
+                                        const emp = employees.find(e => e.id === empId);
+                                        return (
+                                          <div key={empId} className={cn(
+                                            "text-xs px-2 py-1.5 rounded flex items-center gap-2",
+                                            isMe ? "bg-primary/10 border border-indigo-100" : "bg-slate-50"
+                                          )}>
+                                            <Avatar className="h-6 w-6 border border-slate-200">
+                                              <AvatarImage src={emp?.avatarUrl} />
+                                              <AvatarFallback className="text-[10px] bg-slate-100">
+                                                {employeeName.substring(0, 2).toUpperCase()}
+                                              </AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex-1 min-w-0">
+                                              <div className={cn("font-medium truncate", isMe ? "text-indigo-700" : "text-slate-600")}>
+                                                {employeeName} {isMe && "(tú)"}
+                                              </div>
+                                              <div className="flex gap-3 text-[10px] mt-0.5">
+                                                <span className="text-blue-600">Plan: {planned.toFixed(1)}h</span>
+                                                <span className="text-emerald-600">Comp: {computed.toFixed(1)}h</span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+
+                              </div>
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        // RESUMEN DE LA SEMANA (por defecto)
+                        <div className="bg-white border rounded-xl shadow-sm p-4">
+                          <h3 className="font-bold text-sm text-slate-700 mb-3 flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-indigo-500" />
+                            Resumen de la semana
+                          </h3>
+                          <p className="text-xs text-slate-500 mb-4">
+                            Selecciona un proyecto para ver sus detalles
+                          </p>
+
+                          {/* Proyectos de esta semana */}
+                          {(() => {
+                            if (weeks.length === 0 || activeWeekIndex < 0 || activeWeekIndex >= weeks.length) {
+                              return <p className="text-sm text-slate-500">No hay semanas disponibles</p>;
+                            }
+                            // Usar el weekStartDate real para buscar allocations
+                            const weekStartDate = format(weeks[activeWeekIndex].weekStart, 'yyyy-MM-dd');
+                            const weekAllocs = getEmployeeAllocationsForWeek(employeeId, weekStartDate);
+
+                            // Filtrar por mes efectivo: solo mostrar allocations que tienen días en el mes visible
+                            const filteredWeekAllocs = weekAllocs.filter(a => isAllocationInEffectiveMonth(a.weekStartDate, viewDate));
+                            const projectIds = [...new Set(filteredWeekAllocs.map(a => a.projectId))];
+
+                            return (
+                              <div className="space-y-2">
+                                <div className="text-[10px] font-semibold text-slate-500 uppercase">
+                                  Mis proyectos esta semana ({projectIds.length})
+                                </div>
+                                <div className="space-y-1.5 max-h-[40vh] overflow-y-auto">
+                                  {projectIds.map(projId => {
+                                    const project = getProjectById(projId);
+                                    const projAllocs = filteredWeekAllocs.filter(a => a.projectId === projId);
+                                    const est = round2(projAllocs.reduce((s, a) => s + (a.hoursAssigned || 0), 0));
+                                    const completed = projAllocs.filter(a => a.status === 'completed').length;
+                                    const total = projAllocs.length;
+                                    const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+                                    return (
+                                      <button
+                                        key={projId}
+                                        onClick={() => setSelectedProjectId(projId)}
+                                        className="w-full text-left p-2.5 bg-slate-50 hover:bg-primary/10 rounded-lg border border-slate-100 hover:border-indigo-200 transition-colors"
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <span className="font-medium text-xs text-slate-700 truncate">
+                                            {formatProjectName(project?.name || '')}
+                                          </span>
+                                          <span className="text-[10px] text-slate-500 ml-2">{est}h</span>
+                                        </div>
+                                        <div className="text-[10px] text-slate-400 mt-0.5 mb-1.5">
+                                          {completed}/{total} tareas
+                                        </div>
+                                        {/* Barra de progreso */}
+                                        {total > 0 && (
+                                          <div className="mt-1.5">
+                                            <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                                              <div
+                                                className={cn("h-full transition-all duration-300", progress === 100 ? "bg-emerald-500" : "bg-primary/100")}
+                                                style={{ width: `${progress}%` }}
+                                              />
+                                            </div>
+                                          </div>
+                                        )}
+                                      </button>
+                                    );
+                                  })}
+                                  {projectIds.length === 0 && (
+                                    <p className="text-xs text-slate-400 text-center py-4">
+                                      No tienes tareas esta semana
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </TooltipProvider>
+          )}
+
+          {/* Cierre del bloque !isLoadingTasks */}
         </SheetContent>
-      </Sheet>
+      </Sheet >
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className={cn("overflow-hidden gap-0 p-0 transition-all duration-300",
@@ -2019,7 +2023,57 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 <div className="grid gap-4 mt-4">
                   <div className="space-y-2">
                     <Label>Proyecto</Label>
-                    <Select value={editProjectId} onValueChange={setEditProjectId}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{activeProjects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select>
+                    <Popover open={editProjectOpen} onOpenChange={setEditProjectOpen} modal={true}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className="w-full justify-between h-10 px-3 text-left font-normal"
+                        >
+                          <span className="truncate">
+                            {editProjectId
+                              ? formatProjectName(activeProjects.find(p => p.id === editProjectId)?.name || '')
+                              : "Seleccionar proyecto..."}
+                          </span>
+                          <Search className="h-4 w-4 opacity-50 shrink-0 ml-2" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[400px] p-0" align="start">
+                        <Command
+                          filter={(value, search) => {
+                            if (value.toLowerCase().includes(search.toLowerCase())) return 1;
+                            return 0;
+                          }}
+                        >
+                          <CommandInput placeholder="Buscar proyecto..." />
+                          <CommandList className="max-h-[280px] overflow-y-auto">
+                            <CommandEmpty>No se encontró proyecto.</CommandEmpty>
+                            <CommandGroup heading="Proyectos">
+                              {activeProjects.map((project) => {
+                                const client = clients.find(c => c.id === project.clientId);
+                                return (
+                                  <CommandItem
+                                    key={project.id}
+                                    value={`${project.name} ${client?.name || ''}`}
+                                    onSelect={() => {
+                                      setEditProjectId(project.id);
+                                      setEditProjectOpen(false);
+                                    }}
+                                  >
+                                    <Check className={cn("mr-2 h-4 w-4 shrink-0", editProjectId === project.id ? "opacity-100" : "opacity-0")} />
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: client?.color || '#6b7280' }} />
+                                      <span className="truncate font-medium">{formatProjectName(project.name)}</span>
+                                      {client?.name && <span className="text-xs text-slate-400 truncate">({client.name})</span>}
+                                    </div>
+                                  </CommandItem>
+                                );
+                              })}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="space-y-2"><Label>Tarea</Label><Input value={editTaskName} onChange={e => setEditTaskName(e.target.value)} /></div>
 

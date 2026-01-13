@@ -287,10 +287,113 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
                     details = `${getEmployeeName(oldVal?.employeeId)} → ${getEmployeeName(newVal?.employeeId)}`;
                 } else {
                     action = 'updated';
-                    const changes = [];
-                    if (oldVal?.hoursAssigned !== newVal?.hoursAssigned) changes.push(`${oldVal?.hoursAssigned}h → ${newVal?.hoursAssigned}h`);
-                    if (oldVal?.weekStartDate !== newVal?.weekStartDate) changes.push(`S${getWeekNumber(oldVal?.weekStartDate)} → S${getWeekNumber(newVal?.weekStartDate)}`);
-                    details = changes.length ? changes.join(', ') : 'Actualizada';
+                    const changes: string[] = [];
+
+                    // Cambio de horas asignadas
+                    if (oldVal?.hoursAssigned !== newVal?.hoursAssigned) {
+                        changes.push(`Horas: ${oldVal?.hoursAssigned ?? 0}h → ${newVal?.hoursAssigned}h`);
+                    }
+
+                    // Cambio de semana
+                    if (oldVal?.weekStartDate !== newVal?.weekStartDate) {
+                        changes.push(`Semana: S${getWeekNumber(oldVal?.weekStartDate)} → S${getWeekNumber(newVal?.weekStartDate)}`);
+                    }
+
+                    // Cambio de proyecto
+                    const projectChanged = oldVal?.projectId !== newVal?.projectId;
+                    if (projectChanged) {
+                        const oldProjectName = getProjectName(oldVal?.projectId);
+                        const newProjectName = getProjectName(newVal?.projectId);
+                        changes.push(`Proyecto: ${oldProjectName} → ${newProjectName}`);
+                    }
+
+                    // Cambio de nombre de tarea
+                    if (oldVal?.taskName !== newVal?.taskName && newVal?.taskName) {
+                        const oldName = String(oldVal?.taskName || 'Sin nombre');
+                        const newName = String(newVal?.taskName);
+                        changes.push(`Nombre: "${oldName}" → "${newName}"`);
+                    }
+
+                    // Cambio de descripción
+                    if (oldVal?.description !== newVal?.description) {
+                        if (newVal?.description && !oldVal?.description) {
+                            changes.push(`Descripción añadida`);
+                        } else if (!newVal?.description && oldVal?.description) {
+                            changes.push(`Descripción eliminada`);
+                        } else if (newVal?.description) {
+                            changes.push(`Descripción modificada`);
+                        }
+                    }
+
+                    // Cambio de dependencia/bloqueo - Solo mostrar si realmente cambió el bloqueo
+                    // y no es un efecto secundario de cambiar de proyecto (que resetea la dependencia)
+                    if (oldVal?.dependencyId !== newVal?.dependencyId && !projectChanged) {
+                        if (newVal?.dependencyId && !oldVal?.dependencyId) {
+                            changes.push(`Bloqueo añadido`);
+                        } else if (!newVal?.dependencyId && oldVal?.dependencyId) {
+                            changes.push(`Bloqueo eliminado`);
+                        } else if (newVal?.dependencyId && oldVal?.dependencyId) {
+                            changes.push(`Bloqueo cambiado`);
+                        }
+                    }
+
+                    // Cambio de prioridad
+                    if (oldVal?.userPriority !== newVal?.userPriority) {
+                        if (newVal?.userPriority !== null && newVal?.userPriority !== undefined) {
+                            changes.push(`Prioridad: ${oldVal?.userPriority ?? '–'} → ${newVal?.userPriority}`);
+                        } else if (oldVal?.userPriority !== null && oldVal?.userPriority !== undefined) {
+                            changes.push(`Prioridad eliminada`);
+                        }
+                    }
+
+                    // Cambio de estado (que no sea a completada, eso ya se detecta arriba)
+                    if (oldVal?.status !== newVal?.status && newVal?.status !== 'completed') {
+                        changes.push(`Estado: ${oldVal?.status || 'planned'} → ${newVal?.status}`);
+                    }
+
+                    // Cambio de horas actuales - SIEMPRE mostrar con valores
+                    if (oldVal?.hoursActual !== newVal?.hoursActual) {
+                        changes.push(`Horas reales: ${oldVal?.hoursActual ?? 0}h → ${newVal?.hoursActual ?? 0}h`);
+                    }
+
+                    // Cambio de horas computadas - SIEMPRE mostrar con valores
+                    if (oldVal?.hoursComputed !== newVal?.hoursComputed) {
+                        changes.push(`Horas computadas: ${oldVal?.hoursComputed ?? 0}h → ${newVal?.hoursComputed ?? 0}h`);
+                    }
+
+                    // Fallback mejorado: detectar otros campos y mostrar valores si es posible
+                    if (changes.length === 0) {
+                        const oldKeys = Object.keys(oldVal || {});
+                        const newKeys = Object.keys(newVal || {});
+                        const allKeys = [...new Set([...oldKeys, ...newKeys])];
+
+                        // Campos a ignorar en el fallback (ya procesados o internos)
+                        const ignoredFields = ['id', 'created_at', 'updated_at', 'hoursAssigned', 'hoursActual',
+                            'hoursComputed', 'weekStartDate', 'projectId', 'taskName', 'description',
+                            'dependencyId', 'userPriority', 'status', 'employeeId'];
+
+                        const changedFields = allKeys.filter(k =>
+                            JSON.stringify((oldVal as any)?.[k]) !== JSON.stringify((newVal as any)?.[k])
+                        ).filter(k => !ignoredFields.includes(k));
+
+                        if (changedFields.length > 0) {
+                            // Mostrar valores para campos conocidos
+                            const detailedChanges = changedFields.map(field => {
+                                const oldV = (oldVal as any)?.[field];
+                                const newV = (newVal as any)?.[field];
+                                // Si son valores simples (números, strings), mostrarlos
+                                if (typeof oldV !== 'object' && typeof newV !== 'object') {
+                                    return `${field}: ${oldV ?? '–'} → ${newV ?? '–'}`;
+                                }
+                                return field;
+                            });
+                            changes.push(`Otros: ${detailedChanges.slice(0, 3).join(', ')}${changedFields.length > 3 ? '...' : ''}`);
+                        } else {
+                            changes.push('Guardada sin cambios detectables');
+                        }
+                    }
+
+                    details = changes.join(' | ');
                 }
             }
 

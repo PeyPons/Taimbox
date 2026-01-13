@@ -128,7 +128,7 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
     return Array.from(collabMap.values())
       .sort((a, b) => b.sharedProjects - a.sharedProjects || b.totalHoursTogether - a.totalHoursTogether)
       .slice(0, 5);
-  }, [projectGroups, employeesMap, getEmployeeMonthlyLoad, viewDate]);
+  }, [projectGroups, employeesMap, getEmployeeMonthlyLoad, viewDate, allocations]);
 
   // Compañeros que pueden ayudar - Ahora incluye 80-90% como "esfuerzo extra"
   const { availableHelpers, busyButWillingHelpers } = useMemo(() => {
@@ -136,12 +136,12 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
       .filter(c => c.occupancy < 80)
       .sort((a, b) => a.occupancy - b.occupancy)
       .slice(0, 3);
-    
+
     const busyButWilling = frequentCollaborators
       .filter(c => c.occupancy >= 80 && c.occupancy < 90)
       .sort((a, b) => a.occupancy - b.occupancy)
       .slice(0, 2); // Máximo 2 para no saturar
-    
+
     return { availableHelpers: available, busyButWillingHelpers: busyButWilling };
   }, [frequentCollaborators]);
 
@@ -150,6 +150,20 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
     if (occupancy < 50) return "Muy disponible";
     if (occupancy < 70) return "Disponible";
     return "Algo ocupado";
+  };
+
+  // Función para mostrar nombre distintivo cuando hay nombres duplicados
+  const getDisplayName = (fullName: string, allCollaborators: typeof frequentCollaborators) => {
+    const firstName = fullName.split(' ')[0];
+    const duplicates = allCollaborators.filter(c => c.name.split(' ')[0] === firstName);
+    if (duplicates.length > 1) {
+      // Hay duplicados, mostrar inicial del apellido
+      const parts = fullName.split(' ');
+      if (parts.length > 1) {
+        return `${firstName} ${parts[1].charAt(0)}.`; // "Raúl R." o "Raúl A."
+      }
+    }
+    return firstName; // Sin duplicados, solo primer nombre
   };
 
   const hasAnyHelpers = availableHelpers.length > 0 || busyButWillingHelpers.length > 0;
@@ -276,28 +290,28 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
                 Compañeros con los que compartes proyectos este mes:
               </p>
               <div className="space-y-2">
-              {frequentCollaborators.map(collab => (
-                <div key={collab.id} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={collab.avatarUrl} />
-                    <AvatarFallback className="text-xs">{collab.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{collab.name.split(' ')[0]}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {collab.sharedProjects} {collab.sharedProjects === 1 ? 'proyecto' : 'proyectos'} · {round2(collab.totalHoursTogether)}h juntos
-                    </p>
+                {frequentCollaborators.map(collab => (
+                  <div key={collab.id} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={collab.avatarUrl} />
+                      <AvatarFallback className="text-xs">{collab.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{getDisplayName(collab.name, frequentCollaborators)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {collab.sharedProjects} {collab.sharedProjects === 1 ? 'proyecto' : 'proyectos'} · {round2(collab.totalHoursTogether)}h juntos
+                      </p>
+                    </div>
+                    <Badge variant="outline" className={cn(
+                      "text-[10px]",
+                      collab.occupancy >= 100 ? "text-red-600 border-red-200"  // Sobrecarga
+                        : collab.occupancy > 85 ? "text-amber-600 border-amber-200"  // Muy ocupado
+                          : "text-emerald-600 border-emerald-200"  // Disponible/Productivo
+                    )}>
+                      {collab.occupancy < 80 ? getAvailabilityText(collab.occupancy) : `${Math.round(collab.occupancy)}% carga`}
+                    </Badge>
                   </div>
-                  <Badge variant="outline" className={cn(
-                    "text-[10px]",
-                    collab.occupancy > 90 ? "text-red-600 border-red-200" 
-                      : collab.occupancy > 70 ? "text-amber-600 border-amber-200"
-                      : "text-emerald-600 border-emerald-200"
-                  )}>
-                    {collab.occupancy < 80 ? getAvailabilityText(collab.occupancy) : `${Math.round(collab.occupancy)}% carga`}
-                  </Badge>
-                </div>
-              ))}
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -316,7 +330,7 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
               <p className="text-xs text-emerald-600">
                 Estos compañeros comparten proyectos contigo y tienen margen para ayudarte:
               </p>
-              
+
               {/* Helpers disponibles (< 80%) */}
               {availableHelpers.length > 0 && (
                 <div className="space-y-2">
@@ -327,7 +341,7 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
                         <AvatarFallback className="text-xs">{helper.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{helper.name.split(' ')[0]}</p>
+                        <p className="text-sm font-medium truncate">{getDisplayName(helper.name, frequentCollaborators)}</p>
                         <p className="text-xs text-muted-foreground">
                           {getAvailabilityText(helper.occupancy)}
                         </p>
@@ -357,7 +371,7 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
                             <AvatarFallback className="text-xs">{helper.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate text-amber-900">{helper.name.split(' ')[0]}</p>
+                            <p className="text-sm font-medium truncate text-amber-900">{getDisplayName(helper.name, frequentCollaborators)}</p>
                             <p className="text-xs text-amber-600">
                               {Math.round(helper.occupancy)}% de carga
                             </p>
@@ -368,17 +382,17 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
                           </Badge>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent 
-                        side="top" 
+                      <TooltipContent
+                        side="top"
                         className="max-w-[220px] bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200 text-amber-900 p-3"
                       >
                         <div className="space-y-2">
                           <p className="font-semibold text-sm flex items-center gap-1.5">
                             <Heart className="h-3.5 w-3.5 text-amber-500" />
-                            {helper.name.split(' ')[0]} está bastante ocupado/a
+                            {getDisplayName(helper.name, frequentCollaborators)} está bastante ocupado/a
                           </p>
                           <p className="text-xs leading-relaxed text-amber-800">
-                            Aún así, podría echarte una mano si realmente lo necesitas. 
+                            Aún así, podría echarte una mano si realmente lo necesitas.
                             Si le pides ayuda, <strong>agradéceselo de corazón</strong> — ¡está haciendo un esfuerzo extra por ti! 💛
                           </p>
                         </div>

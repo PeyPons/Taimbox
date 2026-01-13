@@ -23,7 +23,7 @@ import {
 import { cn } from '@/lib/utils';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { getWorkingDaysInRange, getMonthlyCapacity } from '@/utils/dateUtils';
+import { getWorkingDaysInRange, getMonthlyCapacity, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
 
@@ -107,22 +107,30 @@ export default function TeamCapacityPage() {
             // 4. Capacidad efectiva
             const effectiveCapacity = Math.max(0, baseCapacity - absenceReduction - eventReduction);
 
-            // 5. Horas asignadas en el periodo (solo del mes actual)
+            // 5. Horas asignadas en el periodo (usando isAllocationInEffectiveMonth para consistencia)
             const currentMonth = startOfMonth(today);
             const periodAllocations = allocations.filter(a => {
-                const allocDate = new Date(a.weekStartDate);
-                // Para la vista semanal, filtramos por mes actual Y que la fecha esté en el rango
+                if (a.employeeId !== emp.id) return false;
+
+                // Usar isAllocationInEffectiveMonth para consistencia con el planificador
+                const isInMonth = isAllocationInEffectiveMonth(a.weekStartDate, currentMonth);
+                if (!isInMonth) return false;
+
+                // Para la vista semanal, también filtramos que la fecha esté en el rango
                 if (viewMode === 'week') {
-                    return a.employeeId === emp.id &&
-                        isSameMonth(allocDate, currentMonth) &&
-                        allocDate >= rangeStart &&
-                        allocDate <= rangeEnd;
+                    const allocDate = new Date(a.weekStartDate);
+                    return allocDate >= rangeStart && allocDate <= rangeEnd;
                 }
-                // Para vista mensual, solo filtramos por mes actual
-                return a.employeeId === emp.id && isSameMonth(allocDate, currentMonth);
+
+                return true;
             });
 
-            const hoursAssigned = periodAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
+            // Usar la misma lógica que el planificador: hoursActual para completadas, hoursAssigned para el resto
+            const hoursAssigned = periodAllocations.reduce((sum, a) => {
+                return sum + (a.status === 'completed' && (a.hoursActual || 0) > 0
+                    ? Number(a.hoursActual)
+                    : Number(a.hoursAssigned));
+            }, 0);
             const pendingTasks = periodAllocations.filter(a => a.status === 'planned').length;
 
             const availableHours = Math.max(0, effectiveCapacity - hoursAssigned);
@@ -138,8 +146,8 @@ export default function TeamCapacityPage() {
             let status: 'free' | 'busy' | 'overloaded' | 'away' = 'free';
             if (isCurrentlyAway && occupancyRate < 20) {
                 status = 'away';
-            } else if (occupancyRate > 105) {
-                status = 'overloaded';
+            } else if (occupancyRate >= 100) {
+                status = 'overloaded'; // >= 100% es sobrecarga
             } else if (occupancyRate > 85) {
                 status = 'busy';
             }
@@ -186,7 +194,7 @@ export default function TeamCapacityPage() {
 
     const getStatusStyles = (status: string, rate: number) => {
         if (status === 'away') return { bg: 'bg-slate-100', border: 'border-slate-200', text: 'text-slate-500', icon: Users, label: 'Ausente' };
-        if (rate > 105) return { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', icon: AlertTriangle, label: 'Sobrecarga' };
+        if (rate >= 100) return { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', icon: AlertTriangle, label: 'Sobrecarga' };
         if (rate > 85) return { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', icon: Clock, label: 'Ocupado' };
         if (rate > 50) return { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', icon: TrendingUp, label: 'Productivo' };
         return { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', icon: CheckCircle2, label: 'Disponible' };
@@ -196,7 +204,7 @@ export default function TeamCapacityPage() {
         const styles = getStatusStyles(emp.status, emp.occupancyRate);
         const Icon = styles.icon;
         const hasReductions = emp.absenceReduction > 0 || emp.eventReduction > 0;
-        
+
         // Obtener rol válido (nunca vacío)
         const availableRoles = currentAgency?.settings?.roles || [];
         const employeeData = employees.find(e => e.id === emp.id);
@@ -246,7 +254,7 @@ export default function TeamCapacityPage() {
                             <div className="flex items-center justify-between pt-1">
                                 <div className="flex flex-col gap-0.5">
                                     <span className="text-[11px] text-slate-600 font-medium">
-                                        {emp.hoursAssigned}h / {emp.effectiveCapacity}h
+                                        {Math.round(emp.hoursAssigned * 100) / 100}h / {Math.round(emp.effectiveCapacity)}h
                                     </span>
                                     {hasReductions && (
                                         <span className="text-[10px] text-amber-600 flex items-center gap-1">
@@ -433,7 +441,7 @@ export default function TeamCapacityPage() {
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between">
                                         <h4 className="text-xs font-bold text-red-600 uppercase tracking-widest flex items-center gap-2">
-                                            <AlertTriangle className="h-3 w-3" /> Sobrecarga (+105%)
+                                            <AlertTriangle className="h-3 w-3" /> Sobrecarga (≥100%)
                                         </h4>
                                     </div>
                                     <div className="grid grid-cols-1 gap-3">
@@ -447,7 +455,7 @@ export default function TeamCapacityPage() {
                             {busyTeam.length > 0 && (
                                 <div className="space-y-3">
                                     <h4 className="text-xs font-bold text-amber-600 uppercase tracking-widest flex items-center gap-2">
-                                        <Clock className="h-3 w-3" /> Capacidad Límite (85-105%)
+                                        <Clock className="h-3 w-3" /> Muy ocupado (85-99%)
                                     </h4>
                                     <div className="grid grid-cols-1 gap-3">
                                         {busyTeam.map(emp => (

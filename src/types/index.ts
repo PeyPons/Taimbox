@@ -1,3 +1,19 @@
+// ============================================
+// View Mode Types
+// ============================================
+
+export type ViewMode = 'weekly' | 'daily';
+
+export interface DepartmentConfig {
+  id: string;
+  agencyId: string;
+  departmentName: string;
+  defaultView: ViewMode;
+  isViewStrict: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface WorkSchedule {
   monday: number;
   tuesday: number;
@@ -101,6 +117,7 @@ export interface Employee {
   deadlinesTourCompleted?: boolean;  // Si el usuario completó el tour de deadlines
   plannerTourCompleted?: boolean;  // Si el usuario completó el tour del planificador
   permissions?: UserPermissions;  // Permisos de acceso a diferentes secciones
+  preferredView?: ViewMode | null;  // Vista preferida del usuario (solo usada si el departamento no es estricto)
 }
 
 export interface TeamEvent {
@@ -151,7 +168,7 @@ export interface Allocation {
   hoursAssigned: number;
   hoursActual?: number;
   hoursComputed?: number;
-  status: 'planned' | 'completed' | 'active';
+  status: 'planned' | 'completed' | 'active' | 'in_progress';
   description?: string;
   taskName?: string;
   dependencyId?: string;
@@ -160,6 +177,7 @@ export interface Allocation {
   parentAllocationId?: string | null; // ID de la tarea padre cuando se hace rollover
   originalTransferredTaskName?: string; // Nombre original de la tarea transferida (snapshot)
   transferSourceEmployeeId?: string; // ID del empleado origen de la transferencia
+  userPriority?: number | null; // Prioridad personal del usuario (menor = más prioritario)
 }
 
 export interface NewTaskRow {
@@ -234,4 +252,13 @@ export interface WeeklyFeedback {
   reason?: 'technical_issue' | 'client_blocker' | 'bad_estimation' | 'personal_absence' | 'other';
   comments?: string;
   createdAt: string;
+}
+
+export interface UserRoutine {
+  id: string;
+  employeeId: string;
+  title: string;
+  estimatedMinutes: number;
+  projectId?: string;
+  isActive: boolean;
 }

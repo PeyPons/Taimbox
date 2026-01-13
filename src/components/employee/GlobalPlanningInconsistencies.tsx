@@ -166,6 +166,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
         if (!deadline.employeeHours[empId] && (allocs.planned > 0 || allocs.computed > 0)) {
           const emp = employees.find(e => e.id === empId);
           const total = allocs.planned + allocs.computed;
+
           employeeInconsistencies.push({
             employeeId: empId,
             employeeName: emp?.name || 'Desconocido',
@@ -181,19 +182,20 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
         }
       });
 
-      if (employeeInconsistencies.length > 0) {
-        projectInconsistencies[projectId] = {
-          projectId,
-          projectName: project.name,
-          employees: employeeInconsistencies,
-          totalDeadlineHours: totalDeadline,
-          totalPlannedHours: round2(totalPlanned),
-          totalComputedHours: round2(totalComputed),
-          totalDifference: round2((totalPlanned + totalComputed) - totalDeadline),
-          budgetHours: project.budgetHours || 0,
-          minimumHours: project.minimumHours || 0
-        };
-      }
+      // SIEMPRE registrar el proyecto si tiene deadline, aunque no haya inconsistencias
+      // Esto evita que se procese después como "sin deadline"
+      // Solo mostramos la tarjeta si hay inconsistencias reales
+      projectInconsistencies[projectId] = {
+        projectId,
+        projectName: project.name,
+        employees: employeeInconsistencies, // Puede estar vacío si todo coincide
+        totalDeadlineHours: totalDeadline,
+        totalPlannedHours: round2(totalPlanned),
+        totalComputedHours: round2(totalComputed),
+        totalDifference: round2((totalPlanned + totalComputed) - totalDeadline),
+        budgetHours: project.budgetHours || 0,
+        minimumHours: project.minimumHours || 0
+      };
     });
 
     // Procesar proyectos sin deadline pero con horas
@@ -244,6 +246,10 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
 
     // Filtrar por empleado si está seleccionado
     let filtered = Object.values(projectInconsistencies);
+
+    // Excluir proyectos sin empleados con inconsistencias (proyectos "OK" que solo registramos para evitar duplicados)
+    filtered = filtered.filter(proj => proj.employees.length > 0);
+
     if (selectedEmployeeId !== 'all') {
       filtered = filtered.map(proj => ({
         ...proj,
@@ -479,7 +485,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                                         <span className="text-slate-400">→</span>
                                       </>
                                     ) : (
-                                      <span className="text-slate-500 italic">Sin deadline</span>
+                                      <span className="text-amber-600 italic font-medium">No incluido en deadline</span>
                                     )}
                                     <span className="text-blue-600">
                                       Plan: <span className="font-medium">{emp.plannedHours}h</span>

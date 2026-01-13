@@ -3,6 +3,9 @@ import { useApp } from '@/contexts/AppContext';
 import { EmployeeRow } from './EmployeeRow';
 import { AllocationSheet } from './AllocationSheet';
 import { GanttView } from './GanttView';
+
+
+
 import { getWeeksForMonth, getMonthName, isCurrentWeek, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, CalendarDays, Sparkles, User, Loader2, ChevronsUpDown, RefreshCw, LayoutGrid, Calendar } from 'lucide-react';
@@ -49,8 +52,11 @@ export function PlannerGrid() {
   const [showOnlyMe, setShowOnlyMe] = useState(() => localStorage.getItem('planner_only_me') === 'true');
   const [openEmployeeCombo, setOpenEmployeeCombo] = useState(false);
   const [openProjectCombo, setOpenProjectCombo] = useState(false);
-  const [selectedCell, setSelectedCell] = useState<{ employeeId: string; weekStart: Date } | null>(null);
+  const [selectedCell, setSelectedCell] = useState<{ employeeId: string; weekStart: Date; autoAdd?: boolean } | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+
+
   const [insights, setInsights] = useState<{ type: 'warning' | 'success' | 'info', text: string }[] | null>(null);
   const [lastProvider, setLastProvider] = useState<AIProvider | null>(null);
   const [activeView, setActiveView] = useState<'grid' | 'gantt'>('grid');
@@ -131,7 +137,7 @@ export function PlannerGrid() {
   const handleNextMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   const handleToday = () => setCurrentMonth(new Date());
 
-  const handleCellClick = (employeeId: string, weekStart: Date) => setSelectedCell({ employeeId, weekStart });
+  const handleCellClick = (employeeId: string, weekStart: Date, autoAdd?: boolean) => setSelectedCell({ employeeId, weekStart, autoAdd });
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
@@ -405,8 +411,10 @@ export function PlannerGrid() {
                         absences={absences}
                         teamEvents={teamEvents}
                         viewDate={currentMonth}
-                        onOpenSheet={(empId, date) => handleCellClick(empId, date)}
+                        onOpenSheet={(empId, date, autoAdd) => handleCellClick(empId, date, autoAdd)}
                       />
+
+
                       <div className="flex items-center justify-center border-l p-2 bg-slate-50/30">
                         <div className={cn("flex flex-col items-center justify-center w-16 h-12 rounded-lg border-2", monthlyLoad.status === 'overload' ? "bg-red-50 border-red-200 text-red-700" : monthlyLoad.status === 'warning' ? "bg-yellow-50 border-yellow-200 text-yellow-700" : monthlyLoad.status === 'healthy' ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-slate-50 border-slate-200 text-slate-400")}>
                           <span className="text-sm font-bold leading-none">{monthlyLoad.hours}h</span>
@@ -428,9 +436,11 @@ export function PlannerGrid() {
               employeeId={selectedCell.employeeId}
               weekStart={selectedCell.weekStart.toISOString()}
               viewDateContext={currentMonth}
+              initialAutoAdd={selectedCell.autoAdd}
             />
           )}
         </div>
+
       )}
     </div>
   );

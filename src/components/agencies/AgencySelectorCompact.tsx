@@ -121,7 +121,7 @@ export function AgencySelectorCompact() {
             <DropdownMenuContent align="start" className="w-64 bg-slate-800 border-slate-700">
               <DropdownMenuLabel className="text-slate-300 text-xs">Mis Agencias</DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-slate-700" />
-              
+
               {availableAgencies.map((agency) => (
                 <DropdownMenuItem
                   key={agency.agencyId}
@@ -146,7 +146,16 @@ export function AgencySelectorCompact() {
               ))}
 
               <DropdownMenuSeparator className="bg-slate-700" />
-              
+
+              {/* Link to Agencies page */}
+              <DropdownMenuItem
+                onClick={() => navigate('/agencies')}
+                className="cursor-pointer text-slate-200 hover:bg-slate-700 hover:text-white text-xs"
+              >
+                <Building2 className="h-3.5 w-3.5 mr-2" />
+                Mis Agencias
+              </DropdownMenuItem>
+
               {canManageAgency && (
                 <DropdownMenuItem
                   onClick={() => navigate('/team')}
@@ -156,7 +165,7 @@ export function AgencySelectorCompact() {
                   Gestionar miembros
                 </DropdownMenuItem>
               )}
-              
+
               <DropdownMenuItem
                 onClick={() => navigate('/agency')}
                 className="cursor-pointer text-slate-200 hover:bg-slate-700 hover:text-white text-xs"
@@ -164,7 +173,7 @@ export function AgencySelectorCompact() {
                 <Settings className="h-3.5 w-3.5 mr-2" />
                 Configuración
               </DropdownMenuItem>
-              
+
               {canManageAgency && (
                 <DropdownMenuItem
                   onClick={() => navigate('/agencies?action=create')}
@@ -176,13 +185,22 @@ export function AgencySelectorCompact() {
               )}
             </DropdownMenuContent>
           )}
-          
+
           {/* Si solo hay una agencia pero tiene permisos, mostrar opción de gestión al hacer click */}
           {!hasMultipleAgencies && canManageAgency && (
             <DropdownMenuContent align="start" className="w-64 bg-slate-800 border-slate-700">
               <DropdownMenuLabel className="text-slate-300 text-xs">{currentAgency.name}</DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-slate-700" />
-              
+
+              {/* Link to Agencies page */}
+              <DropdownMenuItem
+                onClick={() => navigate('/agencies')}
+                className="cursor-pointer text-slate-200 hover:bg-slate-700 hover:text-white text-xs"
+              >
+                <Building2 className="h-3.5 w-3.5 mr-2" />
+                Mis Agencias
+              </DropdownMenuItem>
+
               <DropdownMenuItem
                 onClick={() => navigate('/team')}
                 className="cursor-pointer text-slate-200 hover:bg-slate-700 hover:text-white text-xs"
@@ -190,7 +208,7 @@ export function AgencySelectorCompact() {
                 <Users className="h-3.5 w-3.5 mr-2" />
                 Gestionar miembros
               </DropdownMenuItem>
-              
+
               <DropdownMenuItem
                 onClick={() => navigate('/agency')}
                 className="cursor-pointer text-slate-200 hover:bg-slate-700 hover:text-white text-xs"
@@ -198,9 +216,9 @@ export function AgencySelectorCompact() {
                 <Settings className="h-3.5 w-3.5 mr-2" />
                 Configuración
               </DropdownMenuItem>
-              
+
               <DropdownMenuSeparator className="bg-slate-700" />
-              
+
               <DropdownMenuItem
                 onClick={() => navigate('/agencies?action=create')}
                 className="cursor-pointer text-slate-200 hover:bg-slate-700 hover:text-white text-xs"

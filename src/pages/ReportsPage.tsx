@@ -185,7 +185,23 @@ export default function ReportsPage() {
 
   const employeeData = useMemo(() => {
     return activeEmployees.map(e => {
-      const capacity = getMonthlyCapacity(year, month, e.workSchedule);
+      // Calcular capacidad neta (restando ausencias y eventos)
+      const baseCapacity = getMonthlyCapacity(year, month, e.workSchedule);
+      const empAbsences = (absences || []).filter(a => a.employeeId === e.id);
+      const absenceHours = getAbsenceHoursInRange(monthStart, monthEnd, empAbsences, e.workSchedule);
+
+      // Calcular eventos de equipo
+      const eventHours = getTeamEventHoursInRange(
+        monthStart,
+        monthEnd,
+        e.id,
+        teamEvents || [],
+        e.workSchedule,
+        empAbsences
+      );
+
+      const capacity = Math.max(0, baseCapacity - absenceHours - eventHours);
+
       const empAllocations = monthAllocations.filter(a => a.employeeId === e.id);
       const completedTasks = empAllocations.filter(a => a.status === 'completed');
 
@@ -209,7 +225,7 @@ export default function ReportsPage() {
 
       return { ...e, plannedHours, realHours, computedHours, capacity, percentage, efficiency, reliability };
     }).sort((a, b) => b.percentage - a.percentage);
-  }, [activeEmployees, monthAllocations, year, month, reliabilityByEmployee]);
+  }, [activeEmployees, monthAllocations, year, month, reliabilityByEmployee, absences, teamEvents, monthStart, monthEnd]);
 
   const projectData = useMemo(() => {
     const relevantProjectIds = new Set(monthAllocations.map(a => a.projectId));
@@ -1291,7 +1307,7 @@ export default function ReportsPage() {
             Dashboard
           </TabsTrigger>
           <TabsTrigger value="overview">Visión General</TabsTrigger>
-          <TabsTrigger value="team">Desglose Equipo</TabsTrigger>
+          <TabsTrigger value="team">Desglose equipo</TabsTrigger>
           <TabsTrigger value="projects">Proyectos</TabsTrigger>
           <TabsTrigger value="coherence">Coherencia</TabsTrigger>
         </TabsList>
@@ -1304,7 +1320,7 @@ export default function ReportsPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <AlertCircle className="h-5 w-5 text-amber-500" />
-                  Alertas del Equipo
+                  Alertas del equipo
                 </CardTitle>
                 <CardDescription>Situaciones que requieren atención</CardDescription>
               </CardHeader>
@@ -1402,7 +1418,7 @@ export default function ReportsPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Trophy className="h-5 w-5 text-amber-500" />
-                  Logros del Equipo
+                  Logros del equipo
                 </CardTitle>
                 <CardDescription>Reconocimientos y métricas positivas</CardDescription>
               </CardHeader>
@@ -1866,7 +1882,7 @@ export default function ReportsPage() {
 
             <Card className="col-span-4">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" /> Eficiencia & Rentabilidad</CardTitle>
+                <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" /> Eficiencia y rentabilidad</CardTitle>
                 <CardDescription>Análisis de ocupación y conversión de horas reales a computadas.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-8">

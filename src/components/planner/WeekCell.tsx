@@ -1,6 +1,7 @@
 import { Allocation, LoadStatus } from '@/types';
 import { cn } from '@/lib/utils';
-import { TrendingUp, TrendingDown, AlertCircle, AlertTriangle, Palmtree, CalendarOff, Clock, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { TrendingUp, TrendingDown, AlertCircle, AlertTriangle, Palmtree, CalendarOff, Clock, ArrowRight, CheckCircle2, Plus } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 interface WeekCellProps {
@@ -50,9 +51,9 @@ export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, 
         "h-full min-h-[140px] p-2 transition-all cursor-pointer border rounded-lg relative flex flex-col group tabular-nums",
         // HEATMAP DE FONDO
         isOverload ? "bg-red-50/80 border-red-200 hover:bg-red-50 hover:border-red-300" :
-        isWarning ? "bg-amber-50/50 border-amber-200 hover:bg-amber-50 hover:border-amber-300" :
-        isHealthy ? "bg-emerald-50/50 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300" :
-        isCurrentWeek ? "bg-white border-indigo-300 shadow-sm" : "bg-slate-50/50 border-slate-200 hover:bg-white hover:border-slate-300",
+          isWarning ? "bg-amber-50/50 border-amber-200 hover:bg-amber-50 hover:border-amber-300" :
+            isHealthy ? "bg-emerald-50/50 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300" :
+              isCurrentWeek ? "bg-white border-indigo-300 shadow-sm" : "bg-slate-50/50 border-slate-200 hover:bg-white hover:border-slate-300",
 
         !hasActivity && !hasReductions && "opacity-50 hover:opacity-100"
       )}>
@@ -70,7 +71,7 @@ export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, 
                       className={cn(
                         "h-full rounded-full transition-all",
                         executionPercent === 100 ? "bg-emerald-500" :
-                        executionPercent > 0 ? "bg-blue-500" : "bg-slate-300"
+                          executionPercent > 0 ? "bg-blue-500" : "bg-slate-300"
                       )}
                       style={{ width: `${executionPercent}%` }}
                     />
@@ -188,8 +189,9 @@ export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, 
           </div>
         )}
 
+
         {/* FOOTER - CARGA TOTAL */}
-        <div className="mt-auto pt-2 border-t border-slate-200/50">
+        <div className={cn("pt-2 border-t border-slate-200/50 mt-auto")}>
           {/* Alerta especial: tareas en semana de vacaciones */}
           {isZeroCapacityOverload && (
             <div className="flex items-center gap-1 text-[10px] text-red-700 bg-red-100 border border-red-300 rounded px-1.5 py-1 mb-1.5">
@@ -200,9 +202,9 @@ export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, 
           <div className={cn(
             "flex items-center justify-between text-[11px] font-bold",
             isOverload ? "text-red-600" :
-            isWarning ? "text-amber-600" :
-            isHealthy ? "text-emerald-600" :
-            "text-slate-400"
+              isWarning ? "text-amber-600" :
+                isHealthy ? "text-emerald-600" :
+                  "text-slate-400"
           )}>
             <span className="flex items-center gap-1">
               {isOverload && <AlertCircle className="h-3.5 w-3.5" />}
