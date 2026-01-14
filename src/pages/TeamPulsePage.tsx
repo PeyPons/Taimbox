@@ -30,13 +30,8 @@ export default function TeamPulsePage() {
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'allocations' },
                 (payload) => {
-                    console.log('Realtime change received:', payload);
-                    // Estrategia simple: Recargar todo para asegurar consistencia
-                    // Opcional: Actualizar el estado local quirúrgicamente para animaciones más suaves
+                    // Recargar todo para asegurar consistencia
                     refreshData(true);  // Skip loading to avoid full spinner overlap
-
-                    // Feedback visual sutil (opcional)
-                    // toast('Actualizando...', { duration: 1000, position: 'bottom-right' });
                 }
             )
             .subscribe();

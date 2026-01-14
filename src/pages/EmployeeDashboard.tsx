@@ -442,7 +442,7 @@ export default function EmployeeDashboard() {
     }
   }, [currentMonth, isGlobalLoading, isLoadingProfile, loadDataForMonth]);
 
-  if (isGlobalLoading || isLoadingProfile) {
+  if (isGlobalLoading || isLoadingProfile || isLoadingViewConfig) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">

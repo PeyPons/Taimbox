@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         // 1. Obtener sesión inicial al cargar
         const { data: { session: initialSession } } = await supabase.auth.getSession();
-        
+
         if (mounted) {
           setSession(initialSession);
           setUser(initialSession?.user ?? null);
@@ -46,7 +46,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 2. Suscribirse a cambios (Sin debounce manual)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (mounted) {
-        console.log('[AuthContext] Auth state changed:', _event);
         setSession(newSession);
         setUser(newSession?.user ?? null);
         setLoading(false);

@@ -100,13 +100,6 @@ export function PlannerGrid() {
 
   const employeesByProject = useMemo(() => {
     const index = new Map<string, Set<string>>();
-    // DEBUG: Log allocation dates
-    if (allocations?.length > 0) {
-      const dates = allocations.map(a => a.weekStartDate).slice(0, 5);
-      console.log('DEBUG: PlannerGrid allocations sample dates:', dates);
-      console.log('DEBUG: Current Month:', currentMonth);
-      console.log('DEBUG: Allocation 0 employee:', allocations[0].employeeId);
-    }
 
     (allocations || []).forEach(a => {
       if (isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)) {

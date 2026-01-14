@@ -316,12 +316,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (feedbackRes.error) console.error('Error fetching feedback:', feedbackRes.error);
       if (routinesRes.error) console.error('Error fetching user routines:', routinesRes.error);
 
-      console.log('DEBUG: Allocations fetch result:', { count: allocRes.data?.length, error: allocRes.error });
-      console.log('DEBUG: Feedback fetch result:', { count: feedbackRes.data?.length, error: feedbackRes.error });
-
       if (feedbackRes.data) {
         // Mapeo feedback...
-        // console.log('DEBUG: Feedback fetch result:', { count: feedbackRes.data.length, error: feedbackRes.error });
       }
 
       if (routinesRes.data) {
@@ -684,7 +680,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         // Si el empleado no tiene user_id pero el email coincide, vincular automáticamente
         if (!foundEmployee.user_id && authUser.id) {
-          console.log('[AppContext] Vinculando empleado existente con usuario Auth:', foundEmployee.email);
+          // Vinculando empleado existente con usuario Auth
 
           // Actualizar currentUser PRIMERO (optimistic update)
           const updatedEmployee = { ...foundEmployee, user_id: authUser.id };
@@ -703,7 +699,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               // NO llamar a setEmployees aquí para evitar re-trigger del useEffect
             });
         } else {
-          console.log('[AppContext] Empleado encontrado:', foundEmployee.email);
+          // Empleado encontrado para usuario autenticado
           setCurrentUser(foundEmployee);
         }
       } else {
@@ -850,7 +846,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     // 3. Borrar de Auth (si tiene user_id)
     if (employeeToDelete?.user_id) {
-      console.log('Intentando eliminar usuario Auth asociado:', employeeToDelete.user_id);
+      // Eliminar usuario Auth asociado
       try {
         const { error: fnError } = await supabase.functions.invoke('delete-user', {
           body: { userId: employeeToDelete.user_id }
@@ -860,7 +856,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           console.error('Error eliminando usuario Auth (invoke):', fnError);
           toast.warning('Empleado eliminado, pero el usuario de acceso podría seguir activo (error de sincronización).');
         } else {
-          console.log('Usuario Auth eliminado correctamente.');
+          // Usuario Auth eliminado correctamente
         }
       } catch (err) {
         console.error('Error invocando delete-user:', err);

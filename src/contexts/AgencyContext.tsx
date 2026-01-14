@@ -93,7 +93,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (Object.keys(enabledIntegrations).length > 0) {
-        console.log('[AgencyContext] Migración de integraciones completada:', enabledIntegrations);
+        // Migración de integraciones completada
       }
     } catch (err) {
       console.warn('[AgencyContext] Error guardando migración (continuando en memoria):', err);
@@ -107,18 +107,18 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
   // Mapear respuesta de Supabase a tipo Agency
   const mapSupabaseAgency = useCallback(async (data: SupabaseAgency): Promise<Agency> => {
     const settings = data.settings || {};
-    
+
     // Ejecutar migración si es necesario
     const migratedSettings = await migrateIntegrations(data.id, settings);
 
     return {
-    id: data.id,
-    name: data.name,
-    slug: data.slug,
+      id: data.id,
+      name: data.name,
+      slug: data.slug,
       settings: migratedSettings,
-    setupCompleted: data.setup_completed ?? true,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at
+      setupCompleted: data.setup_completed ?? true,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at
     };
   }, [migrateIntegrations]);
 
@@ -137,7 +137,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
     if (isInitialLoad) {
       setIsLoading(true);
     }
-    
+
     setError(null);
 
     try {
@@ -152,14 +152,14 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       if (employeeError) {
         console.debug('[AgencyContext] Error buscando por email:', employeeError);
       }
-      
+
       let selectedEmployee = employeesData?.[0];
       let allEmployees = employeesData || [];
 
       // Si no se encuentra por email, intentar con user_id
       if (employeeError || !selectedEmployee?.agency_id) {
         console.debug('[AgencyContext] No se encontró por email, intentando con user_id:', user.id);
-        
+
         // Intentar buscar por user_id (también puede haber múltiples)
         const { data: employeesByUserId, error: userIdError } = await supabase
           .from('employees')
@@ -170,7 +170,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
         if (userIdError) {
           console.debug('[AgencyContext] Error buscando por user_id:', userIdError);
         }
-        
+
         allEmployees = employeesByUserId || [];
         selectedEmployee = allEmployees[0];
 
@@ -198,18 +198,18 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
           .from('agencies')
           .select('id, name')
           .in('id', uniqueAgencyIds);
-        
+
         const agenciesList = (agenciesData || []).map(ag => ({
           agencyId: ag.id,
           agencyName: ag.name
         }));
-        
+
         setAvailableAgencies(agenciesList);
-        
+
         // Usar localStorage para recordar la preferencia
         const storageKey = `selected_agency_${user.id}`;
         const savedAgencyId = localStorage.getItem(storageKey);
-        
+
         if (savedAgencyId) {
           // Buscar el empleado con la agencia guardada
           const savedEmployee = allEmployees.find(emp => emp.agency_id === savedAgencyId);
@@ -246,17 +246,17 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       }
 
       const agency = await mapSupabaseAgency(agencyData);
-      
+
       // Solo actualizar si la agencia cambió para evitar loops infinitos
       setCurrentAgency(prev => {
         if (prev?.id === agency.id && JSON.stringify(prev.settings) === JSON.stringify(agency.settings)) {
           // La agencia no cambió, no actualizar para evitar re-renders innecesarios
           return prev;
         }
-        console.log('[AgencyContext] Agencia cargada:', agency.name);
+        // Agencia cargada exitosamente
         return agency;
       });
-      
+
       isInitialLoadRef.current = false;
 
     } catch (err) {
@@ -332,7 +332,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
     // Guardar la preferencia en localStorage
     const storageKey = `selected_agency_${user.id}`;
     localStorage.setItem(storageKey, agencyId);
-    
+
     // Recargar la agencia
     await fetchAgencyForUser();
   }, [user?.id, fetchAgencyForUser]);

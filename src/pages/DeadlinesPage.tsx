@@ -272,16 +272,12 @@ export default function DeadlinesPage() {
         }
       )
       .subscribe((status) => {
-        console.log('📡 Realtime subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Suscrito a cambios de deadlines');
-        } else if (status === 'CHANNEL_ERROR') {
+        if (status === 'CHANNEL_ERROR') {
           console.error('❌ Error en suscripción Realtime');
         }
       });
 
     return () => {
-      console.log('🔌 Desconectando canal Realtime');
       supabase.removeChannel(channel);
     };
   }, [selectedMonth]);
@@ -343,16 +339,12 @@ export default function DeadlinesPage() {
         }
       )
       .subscribe((status) => {
-        console.log('📡 Realtime global assignments subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Suscrito a cambios de global assignments');
-        } else if (status === 'CHANNEL_ERROR') {
+        if (status === 'CHANNEL_ERROR') {
           console.error('❌ Error en suscripción Realtime de global assignments');
         }
       });
 
     return () => {
-      console.log('🔌 Desconectando canal Realtime de global assignments');
       supabase.removeChannel(channel);
     };
   }, [selectedMonth]);
@@ -407,7 +399,6 @@ export default function DeadlinesPage() {
           filter: `month=eq.${selectedMonth}`
         },
         (payload) => {
-          console.log('🔔 Realtime editing lock change:', payload.eventType, payload);
 
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             const lock = payload.new as { employee_id: string; project_id: string; expires_at: string; locked_at: string };
@@ -431,7 +422,6 @@ export default function DeadlinesPage() {
         'broadcast',
         { event: 'lock-released' },
         (payload) => {
-          console.log('🔓 Broadcast: lock released', payload);
           const { projectIds, employeeId } = payload.payload as { projectIds: string[]; employeeId: string };
           // Solo procesar si no es nuestro propio broadcast
           if (employeeId !== currentUser?.id && projectIds?.length > 0) {
@@ -448,9 +438,7 @@ export default function DeadlinesPage() {
           }
         }
       )
-      .subscribe((status) => {
-        console.log('📡 Realtime editing locks subscription status:', status);
-      });
+      .subscribe();
 
     // Guardar referencia al canal para usarla en las funciones de release
     broadcastChannelRef.current = channel;
@@ -1598,15 +1586,15 @@ export default function DeadlinesPage() {
       const relaxedThreshold = 5;
       const aboveRelaxed = employeeLoads.filter(e => e.percentage > averageLoad + relaxedThreshold);
       const belowRelaxed = employeeLoads.filter(e => e.percentage < averageLoad - relaxedThreshold);
-      
+
       if (aboveRelaxed.length === 0 || belowRelaxed.length === 0) return [];
-      
+
       // Usar los grupos relajados
       aboveRelaxed.forEach(over => {
         belowRelaxed.forEach(avail => {
           // Buscar proyectos compartidos
           const sharedProjects = over.projects.filter(p => avail.projects.includes(p));
-          
+
           // Calcular impacto
           const currentGap = (over.percentage - averageLoad) + (averageLoad - avail.percentage);
           const impact = sharedProjects.length > 0 ? currentGap * 1.5 : currentGap; // Priorizar si comparten proyectos
@@ -1615,7 +1603,7 @@ export default function DeadlinesPage() {
             from: over.name,
             to: avail.name,
             reason: `${over.name} está al ${over.percentage}% (media: ${averageLoad}%), ${avail.name} al ${avail.percentage}%`,
-            projects: sharedProjects.length > 0 
+            projects: sharedProjects.length > 0
               ? sharedProjects.map(pid => projects.find(p => p.id === pid)?.name || '').filter(Boolean)
               : ['Considera redistribuir horas de proyectos comunes'],
             impact
@@ -1628,7 +1616,7 @@ export default function DeadlinesPage() {
         belowAverage.forEach(avail => {
           // Buscar proyectos compartidos
           const sharedProjects = over.projects.filter(p => avail.projects.includes(p));
-          
+
           // Calcular impacto: priorizar si comparten proyectos, pero también sugerir si no
           const currentGap = (over.percentage - averageLoad) + (averageLoad - avail.percentage);
           const impact = sharedProjects.length > 0 ? currentGap * 1.5 : currentGap * 0.8; // Priorizar si comparten proyectos
@@ -1637,7 +1625,7 @@ export default function DeadlinesPage() {
             from: over.name,
             to: avail.name,
             reason: `${over.name} está al ${over.percentage}% (media: ${averageLoad}%), ${avail.name} al ${avail.percentage}%`,
-            projects: sharedProjects.length > 0 
+            projects: sharedProjects.length > 0
               ? sharedProjects.map(pid => projects.find(p => p.id === pid)?.name || '').filter(Boolean)
               : ['Considera redistribuir horas de proyectos comunes'],
             impact
