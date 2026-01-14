@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { MyWeekView } from '@/components/employee/MyWeekView';
 import { WeeklyReportDialog } from '@/components/employee/WeeklyReportDialog';
@@ -54,7 +54,7 @@ const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 
 export default function EmployeeDashboard() {
-  const { employees, projects, clients, allocations, absences, teamEvents, getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading, loadDataForMonth, weeklyFeedback, getEmployeeMonthlyLoad, currentUser: appCurrentUser } = useApp();
+  const { employees, projects, clients, allocations, absences, teamEvents, getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading, ensureMonthLoaded, weeklyFeedback, getEmployeeMonthlyLoad, currentUser: appCurrentUser } = useApp();
 
   const myEmployeeProfile = appCurrentUser || null;
   const isLoadingProfile = isGlobalLoading;
@@ -63,7 +63,6 @@ export default function EmployeeDashboard() {
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isLoadingMonth, setIsLoadingMonth] = useState(false);
-  const loadedMonthsRef = useRef<Set<string>>(new Set());
   const [selectedCell, setSelectedCell] = useState<{ employeeId: string; weekStart: Date } | null>(null);
 
   const [showGoals, setShowGoals] = useState(false);
@@ -413,34 +412,14 @@ export default function EmployeeDashboard() {
     }
   }, [isAddingTasks, deadlines]);
 
+  // Load data for current month using centralized ensureMonthLoaded
   useEffect(() => {
     if (!isGlobalLoading && !isLoadingProfile) {
-      const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
-      if (loadedMonthsRef.current.has(monthKey)) {
-        setIsLoadingMonth(false);
-        return;
-      }
-      const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-      const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-      const hasDataInContext = allocations.some(a => {
-        try {
-          const allocDate = new Date(a.weekStartDate);
-          return allocDate >= monthStart && allocDate <= monthEnd;
-        } catch { return false; }
-      });
-
-      if (hasDataInContext) {
-        loadedMonthsRef.current.add(monthKey);
-        setIsLoadingMonth(false);
-        return;
-      }
-
       setIsLoadingMonth(true);
-      loadDataForMonth(currentMonth)
-        .then(() => loadedMonthsRef.current.add(monthKey))
+      ensureMonthLoaded(currentMonth)
         .finally(() => setIsLoadingMonth(false));
     }
-  }, [currentMonth, isGlobalLoading, isLoadingProfile, loadDataForMonth]);
+  }, [currentMonth, isGlobalLoading, isLoadingProfile, ensureMonthLoaded]);
 
   if (isGlobalLoading || isLoadingProfile || isLoadingViewConfig) {
     return (

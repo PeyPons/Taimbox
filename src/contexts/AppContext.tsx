@@ -155,6 +155,7 @@ interface AppContextType {
   getProjectById: (id: string) => Project | undefined;
   getClientById: (id: string) => Client | undefined;
   loadDataForMonth: (month: Date) => Promise<boolean>;
+  ensureMonthLoaded: (date: Date) => Promise<void>;
   addWeeklyFeedback: (feedback: Omit<WeeklyFeedback, 'id' | 'createdAt'>) => void;
   refreshData: (skipLoading?: boolean) => Promise<void>;
   userRoutines: UserRoutine[];
@@ -186,6 +187,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const hasLinkedUserRef = useRef<string | null>(null);
   // Ref para acceder a employees sin trigger re-renders
   const employeesRef = useRef<Employee[]>([]);
+  // Ref para trackear meses cargados globalmente (centralizado)
+  const loadedMonthsRef = useRef<Set<string>>(new Set());
 
   const fetchData = useCallback(async (skipLoading = false, dateRange?: { start: Date; end: Date }) => {
     // No cargar datos si no hay agencia seleccionada
@@ -351,13 +354,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           userPriority: a.user_priority ?? null
         }));
 
-        // Si skipLoading es true, significa que estamos cargando datos adicionales (merge)
+        // Si skipLoading es true, significa que estamos cargando datos adicionales (merge con upsert)
         // Si no, reemplazamos todos los datos
         if (skipLoading) {
           setAllocations(prev => {
-            const existingIds = new Set(prev.map(a => a.id));
-            const newAllocations = mappedAllocations.filter(a => !existingIds.has(a.id));
-            return [...prev, ...newAllocations];
+            // UPSERT: Actualizar existentes y añadir nuevos
+            const incomingMap = new Map(mappedAllocations.map(a => [a.id, a]));
+            const updatedPrev = prev.map(existing =>
+              incomingMap.has(existing.id) ? incomingMap.get(existing.id)! : existing
+            );
+            const prevIds = new Set(prev.map(a => a.id));
+            const newItems = mappedAllocations.filter(a => !prevIds.has(a.id));
+            return [...updatedPrev, ...newItems];
           });
         } else {
           setAllocations(mappedAllocations);
@@ -471,13 +479,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }));
 
         setAllocations(prev => {
-          const existingIds = new Set(prev.map(a => a.id));
-          // Filtrar por mes efectivo antes de añadir
-          const newAllocations = mappedAllocations.filter(a =>
-            !existingIds.has(a.id) &&
-            isAllocationInEffectiveMonth(a.weekStartDate, month)
+          // UPSERT: Actualizar existentes y añadir nuevos
+          const incomingMap = new Map(mappedAllocations.map(a => [a.id, a]));
+          const updatedPrev = prev.map(existing =>
+            incomingMap.has(existing.id) ? incomingMap.get(existing.id)! : existing
           );
-          return [...prev, ...newAllocations];
+          const prevIds = new Set(prev.map(a => a.id));
+          // Filtrar por mes efectivo antes de añadir nuevos
+          const newItems = mappedAllocations.filter(a =>
+            !prevIds.has(a.id) && isAllocationInEffectiveMonth(a.weekStartDate, month)
+          );
+          return [...updatedPrev, ...newItems];
         });
       }
 
@@ -493,9 +505,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }));
 
         setAbsences(prev => {
-          const existingIds = new Set(prev.map(a => a.id));
-          const newAbsences = mappedAbsences.filter(a => !existingIds.has(a.id));
-          return [...prev, ...newAbsences];
+          // UPSERT: Actualizar existentes y añadir nuevos
+          const incomingMap = new Map(mappedAbsences.map(a => [a.id, a]));
+          const updatedPrev = prev.map(existing =>
+            incomingMap.has(existing.id) ? incomingMap.get(existing.id)! : existing
+          );
+          const prevIds = new Set(prev.map(a => a.id));
+          const newItems = mappedAbsences.filter(a => !prevIds.has(a.id));
+          return [...updatedPrev, ...newItems];
         });
       }
 
@@ -509,9 +526,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }));
 
         setTeamEvents(prev => {
-          const existingIds = new Set(prev.map(e => e.id));
-          const newEvents = mappedEvents.filter(e => !existingIds.has(e.id));
-          return [...prev, ...newEvents];
+          // UPSERT: Actualizar existentes y añadir nuevos
+          const incomingMap = new Map(mappedEvents.map(e => [e.id, e]));
+          const updatedPrev = prev.map(existing =>
+            incomingMap.has(existing.id) ? incomingMap.get(existing.id)! : existing
+          );
+          const prevIds = new Set(prev.map(e => e.id));
+          const newItems = mappedEvents.filter(e => !prevIds.has(e.id));
+          return [...updatedPrev, ...newItems];
         });
       }
 
@@ -529,9 +551,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }));
 
         setWeeklyFeedback(prev => {
-          const existingIds = new Set(prev.map(f => f.id));
-          const newItems = mappedFeedback.filter(f => !existingIds.has(f.id));
-          return [...prev, ...newItems];
+          // UPSERT: Actualizar existentes y añadir nuevos
+          const incomingMap = new Map(mappedFeedback.map(f => [f.id, f]));
+          const updatedPrev = prev.map(existing =>
+            incomingMap.has(existing.id) ? incomingMap.get(existing.id)! : existing
+          );
+          const prevIds = new Set(prev.map(f => f.id));
+          const newItems = mappedFeedback.filter(f => !prevIds.has(f.id));
+          return [...updatedPrev, ...newItems];
         });
       }
     } catch (error) {
@@ -540,6 +567,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     return dataFound;
   }, [currentAgency?.id]);
+
+  // Función centralizada para asegurar que un mes está cargado (evita peticiones duplicadas)
+  const ensureMonthLoaded = useCallback(async (date: Date) => {
+    const monthKey = format(date, 'yyyy-MM');
+
+    if (loadedMonthsRef.current.has(monthKey)) {
+      return; // Ya lo tenemos, no hacemos nada (Caché hit!)
+    }
+
+    // Si no está, cargamos
+    const success = await loadDataForMonth(date);
+    if (success !== false) {
+      loadedMonthsRef.current.add(monthKey);
+    }
+  }, [loadDataForMonth]);
 
   // Función para cargar proyectos archivados/completados bajo demanda
   const fetchArchivedProjects = useCallback(async () => {
@@ -1346,6 +1388,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getEmployeeMonthlyLoad,
     getProjectHoursForMonth, getClientTotalHoursForMonth, getProjectById, getClientById,
     loadDataForMonth,
+    ensureMonthLoaded,
     addWeeklyFeedback,
     refreshData: fetchData,
     userRoutines, addRoutine, deleteRoutine, toggleRoutine
@@ -1359,7 +1402,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addTeamEvent, updateTeamEvent, deleteTeamEvent,
     getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getEmployeeMonthlyLoad,
     getProjectHoursForMonth, getClientTotalHoursForMonth, getProjectById, getClientById,
-    loadDataForMonth,
+    loadDataForMonth, ensureMonthLoaded,
     addWeeklyFeedback, fetchData, userRoutines]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

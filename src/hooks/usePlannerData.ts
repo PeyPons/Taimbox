@@ -5,7 +5,7 @@
  * from PlannerGrid component into a reusable hook.
  */
 
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { getWeeksForMonth, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { Employee } from '@/types';
@@ -32,7 +32,7 @@ export function usePlannerData(options: UsePlannerDataOptions = {}) {
         absences,
         teamEvents,
         currentUser,
-        loadDataForMonth,
+        ensureMonthLoaded,
         isLoading: isGlobalLoading,
         getEmployeeMonthlyLoad
     } = useApp();
@@ -46,45 +46,20 @@ export function usePlannerData(options: UsePlannerDataOptions = {}) {
     });
 
     const [isLoadingMonth, setIsLoadingMonth] = useState(false);
-    const loadedMonthsRef = useRef<Set<string>>(new Set());
 
     // Persist current month to localStorage
     useEffect(() => {
         localStorage.setItem('planner_date', currentMonth.toISOString());
     }, [currentMonth]);
 
-    // Load data for current month if needed
+    // Load data for current month using centralized ensureMonthLoaded
     useEffect(() => {
         if (!isGlobalLoading) {
-            const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
-            if (loadedMonthsRef.current.has(monthKey)) {
-                setIsLoadingMonth(false);
-                return;
-            }
-
-            const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-            const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-
-            // Check if we already have data for this month
-            const hasDataInContext = (allocations || []).some(a => {
-                try {
-                    const allocDate = new Date(a.weekStartDate);
-                    return allocDate >= monthStart && allocDate <= monthEnd;
-                } catch { return false; }
-            });
-
-            if (hasDataInContext) {
-                loadedMonthsRef.current.add(monthKey);
-                setIsLoadingMonth(false);
-                return;
-            }
-
             setIsLoadingMonth(true);
-            loadDataForMonth(currentMonth)
-                .then(() => { loadedMonthsRef.current.add(monthKey); })
-                .finally(() => { setIsLoadingMonth(false); });
+            ensureMonthLoaded(currentMonth)
+                .finally(() => setIsLoadingMonth(false));
         }
-    }, [currentMonth, isGlobalLoading, loadDataForMonth, allocations]);
+    }, [currentMonth, isGlobalLoading, ensureMonthLoaded]);
 
     // ============================================================
     // Navigation Handlers
