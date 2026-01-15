@@ -15,6 +15,7 @@ import { es } from 'date-fns/locale';
 import { Trash2, CalendarIcon, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { getAbsenceTypeLabel } from '@/utils/capacityUtils';
 
 interface AbsencesSheetProps {
   open: boolean;
@@ -227,7 +228,7 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
                       absence.type === 'vacation' ? "bg-green-100 text-green-700" :
                         absence.type === 'sick_leave' ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-700"
                     )}>
-                      {absence.type === 'sick_leave' ? 'Baja' : absence.type}
+                      {getAbsenceTypeLabel(absence.type)}
                     </span>
                     {/* ✅ INDICADOR DE HORAS */}
                     {absence.hours && absence.hours > 0 && (

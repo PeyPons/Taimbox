@@ -12,6 +12,19 @@ import { eachDayOfInterval, getDay, parseISO, startOfDay, endOfDay, isWithinInte
 const DAY_KEYS: (keyof WorkSchedule)[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
 /**
+ * Traduce el tipo de ausencia a un nombre legible en español
+ */
+export function getAbsenceTypeLabel(type: string): string {
+    const labels: Record<string, string> = {
+        vacation: 'Vacaciones',
+        sick_leave: 'Baja médica',
+        personal: 'Asuntos propios',
+        other: 'Otro'
+    };
+    return labels[type] || type;
+}
+
+/**
  * Get the scheduled working hours for a specific day
  */
 export function getScheduledHoursForDay(date: Date, workSchedule: WorkSchedule): number {
@@ -251,7 +264,7 @@ export function getCapacityReductionBreakdown(
 
             if (hoursForThisAbsence > 0) {
                 breakdown.push({
-                    reason: `Ausencia: ${absence.type}`,
+                    reason: getAbsenceTypeLabel(absence.type),
                     hours: hoursForThisAbsence,
                     type: 'absence'
                 });
