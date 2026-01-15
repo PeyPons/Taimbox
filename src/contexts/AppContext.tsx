@@ -201,10 +201,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
     }
     try {
-      // Calcular rango de fechas: 3 meses atrás y 6 meses adelante desde hoy (o rango proporcionado)
+      // Calcular rango de fechas: solo mes actual (otros meses se cargan bajo demanda via ensureMonthLoaded)
       const today = new Date();
-      const defaultStart = new Date(today.getFullYear(), today.getMonth() - 3, 1);
-      const defaultEnd = new Date(today.getFullYear(), today.getMonth() + 6, 0);
+      const defaultStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      const defaultEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
       const startDate = dateRange?.start || defaultStart;
       const endDate = dateRange?.end || defaultEnd;
 
