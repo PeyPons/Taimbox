@@ -705,14 +705,13 @@ export default function ReportsPage() {
       // Total del mes actual: allocations + deadlines + global assignments
       const currentMonthTotalHours = currentMonthAllocationsHours + currentMonthDeadlineHours + currentMonthGlobalHours;
 
-      // Si estamos a mitad del mes o más, proyectar al mes completo
-      // Si estamos al inicio del mes (< 30% del mes), usar el mes anterior como respaldo
+      // Para la inercia del mes siguiente, usamos las horas planificadas del mes actual
+      // Las allocations ya representan el mes completo, NO debemos proyectarlas
+      // Solo si no hay datos del mes actual, usamos el mes anterior como respaldo
       let inertiaHours: number;
-      if (monthProgress >= 0.3 && currentMonthTotalHours > 0) {
-        // Proyectar el mes actual al mes completo
-        inertiaHours = round2(currentMonthTotalHours / monthProgress);
-      } else if (currentMonthTotalHours > 0) {
-        // Usar el mes actual directamente si hay datos pero estamos al inicio
+      if (currentMonthTotalHours > 0) {
+        // Usar las horas planificadas del mes actual directamente
+        // No proyectar porque las allocations ya son para el mes completo
         inertiaHours = currentMonthTotalHours;
       } else {
         // Si no hay datos del mes actual, usar el mes anterior como respaldo
