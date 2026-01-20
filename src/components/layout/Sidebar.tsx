@@ -25,7 +25,8 @@ import {
   ChevronRight,
   ChevronDown,
   X,
-  User
+  User,
+  PiggyBank
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from '@/lib/utils';
@@ -227,10 +228,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
 
               {/* PPC */}
-              {modules.ppc && ((canAccess('/ads') || canAccess('/meta-ads'))) && (
+              {modules.ppc && ((canAccess('/ads') || canAccess('/meta-ads') || canAccess('/marketing'))) && (
                 <NavGroup
                   label="PPC & medios"
-                  isActive={['/ads', '/meta-ads'].includes(location.pathname)}
+                  isActive={['/ads', '/meta-ads', '/marketing'].includes(location.pathname)}
                 >
                   {canAccess('/ads') && (
                     <NavLink to="/ads" icon={Megaphone} active={location.pathname === '/ads'}>
@@ -240,6 +241,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   {canAccess('/meta-ads') && (
                     <NavLink to="/meta-ads" icon={Facebook} active={location.pathname === '/meta-ads'}>
                       Meta Ads
+                    </NavLink>
+                  )}
+                  {canAccess('/marketing') && (
+                    <NavLink to="/marketing" icon={PiggyBank} active={location.pathname === '/marketing'}>
+                      Control Presupuestario
                     </NavLink>
                   )}
                 </NavGroup>

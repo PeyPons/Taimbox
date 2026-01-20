@@ -19,6 +19,7 @@ export interface UserPermissions {
   can_access_settings?: boolean;
   can_access_agency_settings?: boolean;
   can_assign_tasks_to_others?: boolean;
+  can_access_marketing?: boolean;
 }
 
 /**
@@ -40,6 +41,7 @@ export const ROUTE_PERMISSIONS: Record<string, keyof UserPermissions> = {
   '/weekly-forecast': 'can_access_weekly_forecast',
   '/settings': 'can_access_settings',
   '/agency': 'can_access_agency_settings',
+  '/marketing': 'can_access_marketing',
 };
 
 /**
@@ -63,6 +65,7 @@ export const DEFAULT_PERMISSIONS: UserPermissions = {
   can_access_settings: true,
   can_access_agency_settings: true,
   can_assign_tasks_to_others: true,
+  can_access_marketing: true,
 };
 
 /**
@@ -86,5 +89,6 @@ export const PERMISSION_LABELS: Record<keyof UserPermissions, string> = {
   can_access_settings: 'Configuración',
   can_access_agency_settings: 'Configuración de Agencia',
   can_assign_tasks_to_others: 'Asignar tareas a otros',
+  can_access_marketing: 'Control Presupuestario',
 };
 
