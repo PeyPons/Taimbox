@@ -39,7 +39,6 @@ Deno.serve(async (req) => {
         const log = async (msg: string) => {
             console.log(msg)
             logMessages.push(msg)
-            // Si hay un job_id, reportar progreso a la BD (opcional en edge functions, pero útil para feedback UI)
             if (job_id) {
                 await supabase.from('ads_sync_logs').update({
                     logs: logMessages.slice(-50),
@@ -47,6 +46,10 @@ Deno.serve(async (req) => {
                 }).eq('id', job_id)
             }
         }
+
+        // Diagnóstico de variables de entorno (solo nombres de claves)
+        const envKeys = Object.keys(Deno.env.toObject());
+        console.log("VARS DISPONIBLES:", envKeys.filter(k => k.includes('GOOGLE') || k.includes('VITE')));
 
         await log(`🚀 Iniciando Google Ads Edge Function para ${agency_id ? `Agencia ${agency_id}` : 'Todas las agencias'}...`)
 

@@ -113,25 +113,32 @@ Deno.serve(async (req) => {
                 const metaAccounts = await fetchAdAccounts(accessToken);
                 await log(`  ✅ Meta API devolvió ${metaAccounts.length} cuentas.`);
 
-                // Update Ad Accounts Config
-                for (const acc of metaAccounts) {
-                    const apiId = `act_${acc.account_id}`;
-                    await supabase.from('ad_accounts_config').upsert({
-                        account_id: apiId,
+                // Update Ad Accounts Config in BULK
+                if (metaAccounts.length > 0) {
+                    const upsertConfigs = metaAccounts.map((acc: any) => ({
+                        account_id: `act_${acc.account_id}`,
                         account_name: acc.name || `Cuenta ${acc.account_id}`,
                         platform: 'meta',
                         is_active: true,
                         agency_id: agency.id
-                    }, { onConflict: 'account_id' });
+                    }));
+
+                    const { error: upsertErr } = await supabase.from('ad_accounts_config').upsert(upsertConfigs, { onConflict: 'account_id' });
+                    if (upsertErr) await log(`    ⚠️ Error actualizando configuración: ${upsertErr.message}`);
                 }
 
                 // 2. Process ACTIVE accounts from DB
-                const { data: configAccounts } = await supabase
+                const { data: configAccounts, error: selectErr } = await supabase
                     .from('ad_accounts_config')
                     .select('account_id, account_name')
                     .eq('agency_id', agency.id)
                     .eq('platform', 'meta')
                     .eq('is_active', true);
+
+                if (selectErr) {
+                    await log(`    ❌ Error consultando cuentas en BD: ${selectErr.message}`);
+                    return;
+                }
 
                 const accountsToProcess = configAccounts || [];
 
