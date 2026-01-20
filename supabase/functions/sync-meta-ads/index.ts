@@ -101,14 +101,17 @@ Deno.serve(async (req) => {
             const accessToken = integrations.metaAccessToken || Deno.env.get('META_ACCESS_TOKEN'); // Fallback to env
 
             if (!accessToken) {
-                // await log(`⚠️ Agencia ${agency.name} no tiene Access Token de Meta.`);
+                await log(`⚠️ Agencia ${agency.name} no tiene Access Token de Meta.`);
                 return;
             }
 
+            await log(`🏢 Procesando ${agency.name}...`);
+
             // 1. Discovery & Sync
             try {
-                // await log(`  🔎 Buscando cuentas en Meta...`);
+                await log(`  🔎 Buscando cuentas en Meta API...`);
                 const metaAccounts = await fetchAdAccounts(accessToken);
+                await log(`  ✅ Meta API devolvió ${metaAccounts.length} cuentas.`);
 
                 // Update Ad Accounts Config
                 for (const acc of metaAccounts) {

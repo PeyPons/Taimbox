@@ -241,33 +241,40 @@ Deno.serve(async (req) => {
             const mccId = integrations.googleAdsCustomerId || globalMccId;
 
             if (!refreshToken || !mccId || !clientId || !clientSecret || !developerToken) {
-                // await log(`ℹ️ Agencia ${agency.name} saltada: Faltan credenciales.`);
+                await log(`ℹ️ Agencia ${agency.name} saltada: Faltan credenciales.`);
+                if (!refreshToken) await log(`  - Falta refreshToken`);
+                if (!mccId) await log(`  - Falta mccId`);
                 return;
             }
 
-            // await log(`🏢 Procesando ${agency.name} (MCC: ${mccId})`);
+            await log(`🏢 Procesando ${agency.name} (MCC: ${mccId})...`);
 
             try {
+                await log(`  ⏳ Refrescando token de acceso...`);
                 const accessToken = await getAccessToken(clientId, clientSecret, refreshToken);
+                await log(`  ✅ Token obtenido.`);
 
-                // 1. AUTO-DISCOVERY Logic here could be added to fetch and update `ad_accounts_config`
-                // Simplified for brevity in this migration: Read accounts from DB
-
-                const { data: accountsRaw } = await supabase
+                const { data: accountsRaw, error: accError } = await supabase
                     .from('ad_accounts_config')
                     .select('account_id, account_name')
                     .eq('agency_id', agency.id)
                     .eq('platform', 'google')
                     .eq('is_active', true);
 
-                const clients = accountsRaw || [];
-
-                if (clients.length === 0) {
-                    await log(`    ℹ️ Sin cuentas activas configuradas para ${agency.name}.`);
+                if (accError) {
+                    await log(`    ❌ Error consultando cuentas en BD: ${accError.message}`);
                     return;
                 }
 
-                // await log(`    ⏳ Consultando ${clients.length} cuentas...`);
+                const clients = accountsRaw || [];
+                await log(`    🔍 Encontradas ${clients.length} cuentas ACTIVAS en configuración.`);
+
+                if (clients.length === 0) {
+                    await log(`    ℹ️ Sin cuentas activas en 'ad_accounts_config' para esta agencia.`);
+                    return;
+                }
+
+                await log(`    ⏳ Consultando métricas para ${clients.length} cuentas...`);
 
                 for (const client of clients) {
                     const campaigns = await fetchCampaigns(accessToken, client.account_id, clientSecret, clientId, developerToken, refreshToken, mccId);
