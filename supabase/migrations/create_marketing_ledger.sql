@@ -102,7 +102,7 @@ CREATE POLICY "Users can view marketing categories" ON marketing_categories
     AND (
       array_length(allowed_employees, 1) IS NULL
       OR allowed_employees = '{}'
-      OR (SELECT id FROM employees WHERE user_id = auth.uid()) = ANY(allowed_employees)
+      OR EXISTS (SELECT 1 FROM employees WHERE user_id = auth.uid() AND id = ANY(allowed_employees))
     )
   );
 
