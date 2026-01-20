@@ -141,8 +141,9 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
         const total = empAllocs.planned + empAllocs.computed;
         const diff = round2(total - deadlineHrs);
 
-        // Solo incluir si hay diferencia significativa (> 0.5h)
-        if (Math.abs(diff) > 0.5) {
+        // Incluir a todos los empleados con asignación o deadline para ver el equipo completo
+        // Se solicitó explícitamente ver a "toda el equipo" para detectar problemas
+        if (true) {
           const emp = employees.find(e => e.id === empId);
           employeeInconsistencies.push({
             employeeId: empId,

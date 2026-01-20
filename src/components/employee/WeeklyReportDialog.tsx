@@ -239,7 +239,12 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
     updateDistributionRow(taskId, rowId, 'hours', value);
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleCloseWeek = async () => {
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
     try {
       for (const task of allTasks) {
         const action = taskActions[task.id];
@@ -645,6 +650,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
     } catch (error) {
       console.error('Error actualizando weekly:', error);
       toast.error('Error al actualizar el weekly');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1468,10 +1475,17 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                   <Button
                     onClick={handleCloseWeek}
                     className="bg-primary hover:bg-primary/90"
-                    disabled={!canSubmit}
+                    disabled={!canSubmit || isSubmitting}
                     title={!canSubmit ? validationErrors.join('; ') : ''}
                   >
-                    Confirmar Weekly
+                    {isSubmitting ? (
+                      <>
+                        <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                        Confirmando...
+                      </>
+                    ) : (
+                      'Confirmar Weekly'
+                    )}
                   </Button>
                 );
               })()}

@@ -171,7 +171,7 @@ export interface Allocation {
   status: 'planned' | 'completed' | 'active' | 'in_progress';
   description?: string;
   taskName?: string;
-  dependencyId?: string;
+  dependencyId?: string | null;
   transferredFromAllocationId?: string; // ID de la tarea original de la que proviene esta transferencia
   distributionSourceAllocationId?: string; // ID de la tarea transferida de la que proviene esta distribución
   parentAllocationId?: string | null; // ID de la tarea padre cuando se hace rollover

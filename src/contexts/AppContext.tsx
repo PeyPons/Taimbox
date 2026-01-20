@@ -983,37 +983,53 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [currentAgency?.id]);
 
   const updateAllocation = useCallback(async (allocation: Allocation) => {
-    // Get previous value for audit log
+    // Get previous value for audit log and for revert on error
     const previousAllocation = allocations.find(a => a.id === allocation.id);
 
+    // 1. Optimistic update
     setAllocations(prev => prev.map(a => a.id === allocation.id ? allocation : a));
-    await supabase.from('allocations').update({
-      project_id: allocation.projectId, // IMPORTANTE: incluir project_id para permitir cambio de proyecto
-      week_start_date: allocation.weekStartDate,
-      hours_assigned: allocation.hoursAssigned,
-      hours_actual: allocation.hoursActual,
-      hours_computed: allocation.hoursComputed,
-      status: allocation.status,
-      description: allocation.description,
-      task_name: allocation.taskName,
-      dependency_id: allocation.dependencyId,
-      transferred_from_allocation_id: allocation.transferredFromAllocationId,
-      distribution_source_allocation_id: allocation.distributionSourceAllocationId,
-      parent_allocation_id: allocation.parentAllocationId,
-      original_transferred_task_name: allocation.originalTransferredTaskName,
-      transfer_source_employee_id: allocation.transferSourceEmployeeId,
-      user_priority: allocation.userPriority
-    }).eq('id', allocation.id);
 
-    // Log audit for allocation update
-    if (currentAgency?.id && previousAllocation) {
-      logUpdate(
-        currentAgency.id,
-        'ALLOCATION',
-        allocation.id,
-        previousAllocation as unknown as Record<string, unknown>,
-        allocation as unknown as Record<string, unknown>
-      );
+    try {
+      const { error } = await supabase.from('allocations').update({
+        project_id: allocation.projectId, // IMPORTANTE: incluir project_id para permitir cambio de proyecto
+        week_start_date: allocation.weekStartDate,
+        hours_assigned: allocation.hoursAssigned,
+        hours_actual: allocation.hoursActual,
+        hours_computed: allocation.hoursComputed,
+        status: allocation.status,
+        description: allocation.description,
+        task_name: allocation.taskName,
+        dependency_id: allocation.dependencyId,
+        transferred_from_allocation_id: allocation.transferredFromAllocationId,
+        distribution_source_allocation_id: allocation.distributionSourceAllocationId,
+        parent_allocation_id: allocation.parentAllocationId,
+        original_transferred_task_name: allocation.originalTransferredTaskName,
+        transfer_source_employee_id: allocation.transferSourceEmployeeId,
+        user_priority: allocation.userPriority
+      }).eq('id', allocation.id);
+
+      if (error) {
+        throw error;
+      }
+
+      // Log audit for allocation update
+      if (currentAgency?.id && previousAllocation) {
+        logUpdate(
+          currentAgency.id,
+          'ALLOCATION',
+          allocation.id,
+          previousAllocation as unknown as Record<string, unknown>,
+          allocation as unknown as Record<string, unknown>
+        );
+      }
+    } catch (error) {
+      console.error('Error updating allocation:', error);
+      toast.error('Error al guardar la tarea. Se han revertido los cambios.');
+
+      // Revert optimistic update
+      if (previousAllocation) {
+        setAllocations(prev => prev.map(a => a.id === allocation.id ? previousAllocation : a));
+      }
     }
   }, [allocations, currentAgency?.id]);
 

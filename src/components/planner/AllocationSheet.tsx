@@ -448,7 +448,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
           weekStartDate: editWeek,
           hoursAssigned: parseFloat(editHours),
           description: editDescription,
-          dependencyId: editDependencyId === 'none' ? undefined : editDependencyId
+          dependencyId: editDependencyId === 'none' ? null : editDependencyId
         });
       } else {
         // Procesar todas las tareas en paralelo para mejor rendimiento
@@ -464,7 +464,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
               hoursAssigned: parseFloat(task.hours),
               status: 'planned',
               description: task.description,
-              dependencyId: task.dependencyId === 'none' ? undefined : task.dependencyId
+              dependencyId: task.dependencyId === 'none' ? null : task.dependencyId
             });
           });
 
@@ -751,10 +751,14 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
             )}
             {status === 'warning' && (
               <div className="bg-amber-50 text-amber-700 text-[10px] p-2 rounded border border-amber-200 mt-2">
-                ⚡ Cerca del límite. Quedan {(budgetMax - totalComputed).toFixed(1)}h disponibles.
+                {projection > budgetMax ? (
+                  <span>⚠️ Cuidado: La proyección total ({projection.toFixed(1)}h) ya supera el límite de {budgetMax}h.</span>
+                ) : (
+                  <span>⚡ Cerca del límite. Quedan {(budgetMax - totalComputed).toFixed(1)}h disponibles.</span>
+                )}
               </div>
             )}
-            {projection > budgetMax && status !== 'overload' && (
+            {projection > budgetMax && status !== 'overload' && status !== 'warning' && (
               <div className="bg-orange-50 text-orange-700 text-[10px] p-2 rounded border border-orange-200 mt-2">
                 📊 La proyección ({projection.toFixed(1)}h) supera las horas contratadas.
               </div>
@@ -1859,58 +1863,75 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                     </div>
 
                                     {/* Alertas de estado */}
-                                    {status === 'overload' && (
-                                      <div className="bg-red-50 text-red-700 text-[11px] p-2 rounded border border-red-200 flex items-center gap-2">
-                                        <AlertOctagon className="w-4 h-4 flex-shrink-0" />
-                                        <span>Se han excedido las horas contratadas máximas</span>
-                                      </div>
-                                    )}
-                                    {status === 'warning' && (
-                                      <div className="bg-amber-50 text-amber-700 text-[11px] p-2 rounded border border-amber-200 flex items-center gap-2">
-                                        <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                                        <span>Quedan {(budgetMax - totalComputed).toFixed(1)}h disponibles</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                {/* Equipo */}
-                                {breakdown.length > 1 && (
-                                  <div className="border-t pt-3">
-                                    <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 uppercase mb-2">
-                                      <Users className="w-3 h-3" /> Equipo ({breakdown.length})
-                                    </div>
-                                    <div className="space-y-1.5">
-                                      {breakdown.map(({ employeeId: empId, employeeName, computed, planned }) => {
-                                        const isMe = empId === employeeId;
-                                        const emp = employees.find(e => e.id === empId);
-                                        return (
-                                          <div key={empId} className={cn(
-                                            "text-xs px-2 py-1.5 rounded flex items-center gap-2",
-                                            isMe ? "bg-primary/10 border border-indigo-100" : "bg-slate-50"
-                                          )}>
-                                            <Avatar className="h-6 w-6 border border-slate-200">
-                                              <AvatarImage src={emp?.avatarUrl} />
-                                              <AvatarFallback className="text-[10px] bg-slate-100">
-                                                {employeeName.substring(0, 2).toUpperCase()}
-                                              </AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-1 min-w-0">
-                                              <div className={cn("font-medium truncate", isMe ? "text-indigo-700" : "text-slate-600")}>
-                                                {employeeName} {isMe && "(tú)"}
-                                              </div>
-                                              <div className="flex gap-3 text-[10px] mt-0.5">
-                                                <span className="text-blue-600">Plan: {planned.toFixed(1)}h</span>
-                                                <span className="text-emerald-600">Comp: {computed.toFixed(1)}h</span>
-                                              </div>
+                                    {(() => {
+                                      const projection = totalPlanned + totalComputed;
+                                      return (
+                                        <>
+                                          {status === 'overload' && (
+                                            <div className="bg-red-50 text-red-700 text-[11px] p-2 rounded border border-red-200 flex items-center gap-2">
+                                              <AlertOctagon className="w-4 h-4 flex-shrink-0" />
+                                              <span>Se han excedido las horas contratadas máximas</span>
                                             </div>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
+                                          )}
+                                          {status === 'warning' && (
+                                            <div className="bg-amber-50 text-amber-700 text-[11px] p-2 rounded border border-amber-200 flex items-center gap-2">
+                                              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                                              {projection > budgetMax ? (
+                                                <span>Cuidado: La proyección total ({projection.toFixed(1)}h) ya supera el límite</span>
+                                              ) : (
+                                                <span>Quedan {(budgetMax - totalComputed).toFixed(1)}h disponibles</span>
+                                              )}
+                                            </div>
+                                          )}
+                                          {projection > budgetMax && status !== 'overload' && status !== 'warning' && (
+                                            <div className="bg-orange-50 text-orange-700 text-[11px] p-2 rounded border border-orange-200 flex items-center gap-2 mt-2">
+                                              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                                              <span>La proyección ({projection.toFixed(1)}h) supera contratadas</span>
+                                            </div>
+                                          )}
+                                        </>
+                                      );
+                                    })()}
+
+                                    {/* Equipo */}
+                                    {breakdown.length > 1 && (
+                                      <div className="border-t pt-3">
+                                        <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 uppercase mb-2">
+                                          <Users className="w-3 h-3" /> Equipo ({breakdown.length})
+                                        </div>
+                                        <div className="space-y-1.5">
+                                          {breakdown.map(({ employeeId: empId, employeeName, computed, planned }) => {
+                                            const isMe = empId === employeeId;
+                                            const emp = employees.find(e => e.id === empId);
+                                            return (
+                                              <div key={empId} className={cn(
+                                                "text-xs px-2 py-1.5 rounded flex items-center gap-2",
+                                                isMe ? "bg-primary/10 border border-indigo-100" : "bg-slate-50"
+                                              )}>
+                                                <Avatar className="h-6 w-6 border border-slate-200">
+                                                  <AvatarImage src={emp?.avatarUrl} />
+                                                  <AvatarFallback className="text-[10px] bg-slate-100">
+                                                    {employeeName.substring(0, 2).toUpperCase()}
+                                                  </AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1 min-w-0">
+                                                  <div className={cn("font-medium truncate", isMe ? "text-indigo-700" : "text-slate-600")}>
+                                                    {employeeName} {isMe && "(tú)"}
+                                                  </div>
+                                                  <div className="flex gap-3 text-[10px] mt-0.5">
+                                                    <span className="text-blue-600">Plan: {planned.toFixed(1)}h</span>
+                                                    <span className="text-emerald-600">Comp: {computed.toFixed(1)}h</span>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    )}
+
                                   </div>
                                 )}
-
                               </div>
                             </div>
                           );

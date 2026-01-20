@@ -124,7 +124,7 @@ export default function ClientsAndProjectsPage() {
   const [editingTask, setEditingTask] = useState<Allocation | null>(null);
 
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ type: 'client' | 'project', id: string, name: string } | null>(null);
-  
+
   // Estados para edición de tarea
   const [editTaskProjectId, setEditTaskProjectId] = useState('');
   const [editTaskName, setEditTaskName] = useState('');
@@ -210,6 +210,10 @@ export default function ClientsAndProjectsPage() {
       const hoursComputed = completedTasks.reduce((sum, t) => sum + (t.hoursComputed || 0), 0);
       const gain = hoursComputed - hoursReal;
 
+      // Calcular uso efectivo: Computadas (de completadas) + Planificadas (de pendientes)
+      // Esta es la métrica real de consumo del presupuesto que usa el reporte de coherencia
+      const effectiveUsage = hoursComputed + pendingTasks.reduce((sum, t) => sum + t.hoursAssigned, 0);
+
       const budget = project.budgetHours || 0;
       const minimum = project.minimumHours || 0;
 
@@ -220,21 +224,23 @@ export default function ClientsAndProjectsPage() {
       const targetHours = budget > 0 ? budget : minimum;
 
       // Cálculos de estado
-      const planningPct = targetHours > 0 ? (totalAssigned / targetHours) * 100 : 0;
+      // Cálculos de estado
+      // Planning % se basa en effectiveUsage para reflejar cuánto "hueco" hemos llenado
+      const planningPct = targetHours > 0 ? (effectiveUsage / targetHours) * 100 : 0;
       const executionPct = totalAssigned > 0 ? (hoursComputed / totalAssigned) * 100 : 0;
 
-      // Detección de problemas
-      // Falta planificar: si tiene horas objetivo y no se han planificado todas
-      // - Si tiene budgetHours: debe planificar todas las budgetHours
-      // - Si solo tiene minimumHours: debe planificar al menos las minimumHours
-      // Falta planificar:
-      // - Si tiene minimumHours > 0: solo falta si no llegamos al mínimo
-      // - Si NO tiene minimumHours: falta si no llegamos al budget
+      // Detección de problemas usando effectiveUsage para mayor precisión
+      // Falta planificar: si el uso efectivo (computado + pendiente) es menor al objetivo
       const needsPlanning = minimum > 0
-        ? totalAssigned < minimum
-        : (budget > 0 && totalAssigned < budget);
+        ? effectiveUsage < minimum
+        : (budget > 0 && effectiveUsage < budget);
+
       const behindSchedule = monthProgress > 30 && executionPct < (monthProgress - 20);
-      const overBudget = budget > 0 && totalAssigned > budget;
+
+      // Over budget: si el uso efectivo supera el presupuesto
+      // Usamos effectiveUsage para detectar si la proyección ya se pasa
+      const overBudget = budget > 0 && effectiveUsage > budget;
+
       const noActivity = targetHours > 0 && totalAssigned === 0;
       const hasIssue = needsPlanning || behindSchedule || overBudget || noActivity;
 
@@ -260,7 +266,8 @@ export default function ClientsAndProjectsPage() {
         overBudget,
         noActivity,
         hasIssue,
-        involvedEmployees
+        involvedEmployees,
+        effectiveUsage
       };
     });
   }, [projects, clients, allocations, currentMonth, monthProgress]);
@@ -712,7 +719,7 @@ export default function ClientsAndProjectsPage() {
 
   const handleSaveTask = async () => {
     if (!editingTask) return;
-    
+
     if (!editTaskProjectId || !editTaskName.trim() || !editTaskHours || !editTaskWeek || !editTaskEmployeeId) {
       toast.error('Completa todos los campos obligatorios');
       return;
@@ -1647,8 +1654,8 @@ export default function ClientsAndProjectsPage() {
                                               <TooltipContent>
                                                 <p className="text-xs">
                                                   {analysis.project.budgetHours > 0
-                                                    ? `Faltan ${round2(analysis.project.budgetHours - analysis.totalAssigned)}h por planificar (${analysis.project.budgetHours}h asignadas)`
-                                                    : `Faltan ${round2((analysis.project.minimumHours || 0) - analysis.totalAssigned)}h por planificar (${analysis.project.minimumHours || 0}h mínimas)`
+                                                    ? `Faltan ${round2(analysis.project.budgetHours - analysis.effectiveUsage)}h por consumir (${analysis.project.budgetHours}h asignadas)`
+                                                    : `Faltan ${round2((analysis.project.minimumHours || 0) - analysis.effectiveUsage)}h al mínimo (${analysis.project.minimumHours || 0}h)`
                                                   }
                                                 </p>
                                               </TooltipContent>
@@ -1670,11 +1677,13 @@ export default function ClientsAndProjectsPage() {
                                             <Tooltip>
                                               <TooltipTrigger>
                                                 <Badge variant="outline" className="text-[10px] bg-red-50 text-red-700 border-red-200 cursor-help">
-                                                  +{round2(analysis.totalAssigned - analysis.budget)}h exceso
+                                                  +{round2(analysis.effectiveUsage - analysis.budget)}h exceso
                                                 </Badge>
                                               </TooltipTrigger>
                                               <TooltipContent>
-                                                <p className="text-xs">Se han estimado {round2(analysis.totalAssigned)}h de {analysis.budget}h asignadas</p>
+                                                <p className="text-xs">
+                                                  Proyección total: {round2(analysis.effectiveUsage)}h (de {analysis.budget}h asignadas)
+                                                </p>
                                               </TooltipContent>
                                             </Tooltip>
                                           )}
@@ -1779,15 +1788,23 @@ export default function ClientsAndProjectsPage() {
                                     <div className="px-4 py-3 border-b bg-white">
                                       <div className="flex justify-between text-xs mb-2">
                                         <span className="text-slate-600">
-                                          <span className="font-semibold text-slate-800">{round2(analysis.totalAssigned)}h</span> estimadas
+                                          {analysis.effectiveUsage > analysis.totalAssigned ? (
+                                            <><span className="font-semibold text-slate-800">{round2(analysis.effectiveUsage)}h</span> proyección</>
+                                          ) : (
+                                            <><span className="font-semibold text-slate-800">{round2(analysis.totalAssigned)}h</span> estimadas</>
+                                          )}
                                           {(() => {
+
                                             const targetHours = analysis.project.budgetHours > 0
                                               ? analysis.project.budgetHours
                                               : (analysis.project.minimumHours || 0);
-                                            if (analysis.totalAssigned < targetHours) {
+
+                                            // Usar effectiveUsage para determinar si falta o sobra
+                                            // Esto alinea la lógica con el reporte de coherencia
+                                            if (analysis.effectiveUsage < targetHours) {
                                               return (
                                                 <span className="text-amber-600 ml-2">
-                                                  (Faltan {round2(targetHours - analysis.totalAssigned)}h
+                                                  (Faltan {round2(targetHours - analysis.effectiveUsage)}h
                                                   {analysis.project.budgetHours > 0
                                                     ? ` de ${analysis.project.budgetHours}h asignadas`
                                                     : ` de ${analysis.project.minimumHours || 0}h mínimas`
@@ -1795,10 +1812,10 @@ export default function ClientsAndProjectsPage() {
                                                 </span>
                                               );
                                             }
-                                            if (analysis.overBudget) {
+                                            if (analysis.overBudget || analysis.effectiveUsage > targetHours) {
                                               return (
                                                 <span className="text-red-600 ml-2">
-                                                  (+{round2(analysis.totalAssigned - analysis.budget)}h de exceso)
+                                                  (+{round2(analysis.effectiveUsage - targetHours)}h de exceso)
                                                 </span>
                                               );
                                             }
@@ -2127,12 +2144,12 @@ export default function ClientsAndProjectsPage() {
       {/* Diálogo de edición de tarea */}
       {editingTask && (() => {
         const weeks = getWeeksForMonth(currentMonth);
-        const availableDependencies = allocations.filter(a => 
-          a.projectId === editTaskProjectId && 
+        const availableDependencies = allocations.filter(a =>
+          a.projectId === editTaskProjectId &&
           a.id !== editingTask.id &&
           a.status !== 'completed'
         );
-        
+
         return (
           <Dialog open={!!editingTask} onOpenChange={(open) => !open && setEditingTask(null)}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -2188,8 +2205,8 @@ export default function ClientsAndProjectsPage() {
                   <Label className="flex items-center gap-2 text-xs text-slate-500">
                     <LinkIcon className="w-3 h-3" /> Depende de otra tarea
                   </Label>
-                  <Select 
-                    value={editTaskDependencyId} 
+                  <Select
+                    value={editTaskDependencyId}
                     onValueChange={setEditTaskDependencyId}
                     disabled={!editTaskProjectId}
                   >
