@@ -17,6 +17,17 @@ Deno.serve(async (req) => {
         const supabaseUrl = Deno.env.get('SUPABASE_URL') || Deno.env.get('VITE_SUPABASE_URL')
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
+        // Fallback para secrets locales en self-hosted
+        let localSecrets: any = {};
+        try {
+            const text = await Deno.readTextFile('/home/deno/functions/sync-google-ads/secrets.json');
+            localSecrets = JSON.parse(text);
+        } catch (e) {
+            // No hay archivo de secrets local, ignorar
+        }
+
+        const getSecret = (key: string) => Deno.env.get(key) || Deno.env.get(`VITE_${key}`) || localSecrets[key];
+
         if (!supabaseUrl || !supabaseKey) {
             throw new Error('Faltan variables de entorno SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY')
         }
@@ -234,11 +245,11 @@ Deno.serve(async (req) => {
             const integrations = agency.settings?.integrations || {};
 
             // Env vars fallback handled inside Deno.env (MUST be set in Function Secrets or Docker .env)
-            const clientId = Deno.env.get('GOOGLE_CLIENT_ID') || Deno.env.get('VITE_GOOGLE_CLIENT_ID');
-            const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET') || Deno.env.get('VITE_GOOGLE_CLIENT_SECRET');
-            const developerToken = Deno.env.get('GOOGLE_DEVELOPER_TOKEN') || Deno.env.get('VITE_GOOGLE_DEVELOPER_TOKEN') || integrations.googleAdsDevToken;
-            const globalRefreshToken = Deno.env.get('GOOGLE_REFRESH_TOKEN') || Deno.env.get('VITE_GOOGLE_REFRESH_TOKEN');
-            const globalMccId = Deno.env.get('GOOGLE_MCC_ID') || Deno.env.get('VITE_GOOGLE_MCC_ID');
+            const clientId = getSecret('GOOGLE_CLIENT_ID');
+            const clientSecret = getSecret('GOOGLE_CLIENT_SECRET');
+            const developerToken = getSecret('GOOGLE_DEVELOPER_TOKEN') || integrations.googleAdsDevToken;
+            const globalRefreshToken = getSecret('GOOGLE_REFRESH_TOKEN');
+            const globalMccId = getSecret('GOOGLE_MCC_ID');
 
             const refreshToken = integrations.googleRefreshToken || globalRefreshToken;
             const mccId = integrations.googleAdsCustomerId || globalMccId;

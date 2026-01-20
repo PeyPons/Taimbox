@@ -14,6 +14,17 @@ Deno.serve(async (req) => {
         const supabaseUrl = Deno.env.get('SUPABASE_URL') || Deno.env.get('VITE_SUPABASE_URL')
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
+        // Fallback para secrets locales en self-hosted
+        let localSecrets: any = {};
+        try {
+            const text = await Deno.readTextFile('/home/deno/functions/sync-meta-ads/secrets.json');
+            localSecrets = JSON.parse(text);
+        } catch (e) {
+            // No hay archivo de secrets local
+        }
+
+        const getSecret = (key: string) => Deno.env.get(key) || Deno.env.get(`VITE_${key}`) || localSecrets[key];
+
         if (!supabaseUrl || !supabaseKey) {
             throw new Error('Faltan variables de entorno SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY')
         }
@@ -98,7 +109,7 @@ Deno.serve(async (req) => {
 
         async function processAgency(agency: any) {
             const integrations = agency.settings?.integrations || {};
-            const accessToken = integrations.metaAccessToken || Deno.env.get('META_ACCESS_TOKEN'); // Fallback to env
+            const accessToken = integrations.metaAccessToken || getSecret('META_ACCESS_TOKEN'); // Fallback to env/secrets
 
             if (!accessToken) {
                 await log(`⚠️ Agencia ${agency.name} no tiene Access Token de Meta.`);
