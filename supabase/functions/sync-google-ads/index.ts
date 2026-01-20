@@ -230,20 +230,23 @@ Deno.serve(async (req) => {
         async function processAgency(agency: any) {
             const integrations = agency.settings?.integrations || {};
 
-            // Env vars fallback handled inside Deno.env (MUST be set in Function Secrets)
-            const clientId = Deno.env.get('GOOGLE_CLIENT_ID');
-            const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET');
-            const developerToken = Deno.env.get('GOOGLE_DEVELOPER_TOKEN') || integrations.googleAdsDevToken;
-            const globalRefreshToken = Deno.env.get('GOOGLE_REFRESH_TOKEN');
-            const globalMccId = Deno.env.get('GOOGLE_MCC_ID');
+            // Env vars fallback handled inside Deno.env (MUST be set in Function Secrets or Docker .env)
+            const clientId = Deno.env.get('GOOGLE_CLIENT_ID') || Deno.env.get('VITE_GOOGLE_CLIENT_ID');
+            const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET') || Deno.env.get('VITE_GOOGLE_CLIENT_SECRET');
+            const developerToken = Deno.env.get('GOOGLE_DEVELOPER_TOKEN') || Deno.env.get('VITE_GOOGLE_DEVELOPER_TOKEN') || integrations.googleAdsDevToken;
+            const globalRefreshToken = Deno.env.get('GOOGLE_REFRESH_TOKEN') || Deno.env.get('VITE_GOOGLE_REFRESH_TOKEN');
+            const globalMccId = Deno.env.get('GOOGLE_MCC_ID') || Deno.env.get('VITE_GOOGLE_MCC_ID');
 
             const refreshToken = integrations.googleRefreshToken || globalRefreshToken;
             const mccId = integrations.googleAdsCustomerId || globalMccId;
 
             if (!refreshToken || !mccId || !clientId || !clientSecret || !developerToken) {
                 await log(`ℹ️ Agencia ${agency.name} saltada: Faltan credenciales.`);
-                if (!refreshToken) await log(`  - Falta refreshToken`);
-                if (!mccId) await log(`  - Falta mccId`);
+                await log(`  - clientId: ${clientId ? '✅' : '❌'}`);
+                await log(`  - clientSecret: ${clientSecret ? '✅' : '❌'}`);
+                await log(`  - developerToken: ${developerToken ? '✅' : '❌'}`);
+                await log(`  - refreshToken: ${refreshToken ? '✅' : '❌'} (Integration: ${integrations.googleRefreshToken ? 'SÍ' : 'NO'}, Global: ${globalRefreshToken ? 'SÍ' : 'NO'})`);
+                await log(`  - mccId: ${mccId ? '✅' : '❌'}`);
                 return;
             }
 

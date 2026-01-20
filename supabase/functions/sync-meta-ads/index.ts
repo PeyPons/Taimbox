@@ -136,9 +136,11 @@ Deno.serve(async (req) => {
                 const accountsToProcess = configAccounts || [];
 
                 if (accountsToProcess.length === 0) {
-                    await log(`    ℹ️ Sin cuentas activas para ${agency.name}.`);
+                    await log(`    ℹ️ Sin cuentas activas en configuradas (ad_accounts_config) para ${agency.name}.`);
                     return;
                 }
+
+                await log(`    ⏳ Procesando ${accountsToProcess.length} cuentas configuradas...`);
 
                 const { start, end } = getDateRange();
 
@@ -199,7 +201,9 @@ Deno.serve(async (req) => {
 
                             const { error } = await supabase.from('meta_ads_campaigns').upsert(upsertData, { onConflict: 'campaign_id, date' });
                             if (error) await log(`    ❌ Error guardando ${account.account_name}: ${error.message}`);
-                            //  else await log(`    ✅ ${account.account_name}: ${upsertData.length} campañas.`);
+                            else await log(`    ✅ ${account.account_name}: ${upsertData.length} campañas procesadas.`);
+                        } else {
+                            await log(`    ℹ️ ${account.account_name}: 0 campañas con gasto este mes.`);
                         }
                     }
                 }
