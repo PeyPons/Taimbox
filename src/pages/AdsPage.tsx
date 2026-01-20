@@ -253,9 +253,17 @@ export default function AdsPage() {
 
       if (error) throw error;
       setCurrentJobId(data.id);
-    } catch (err) {
+
+      // Trigger Edge Function (Serverless)
+      const { error: funcError } = await supabase.functions.invoke('sync-google-ads', {
+        body: { job_id: data.id, agency_id: currentAgency?.id }
+      });
+
+      if (funcError) throw funcError;
+
+    } catch (err: any) {
       setSyncStatus('error');
-      setSyncLogs(prev => [...prev, '❌ Error al insertar job.']);
+      setSyncLogs(prev => [...prev, `❌ Error al iniciar sincronización: ${err.message}`]);
       setIsSyncing(false);
     }
   };

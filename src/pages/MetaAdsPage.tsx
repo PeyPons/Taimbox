@@ -112,7 +112,15 @@ export default function MetaAdsPage() {
       }).select().single();
       if (error) throw error;
       setCurrentJobId(data.id);
-    } catch (err) { setSyncStatus('error'); setSyncLogs(prev => [...prev, '❌ Error al conectar.']); setIsSyncing(false); }
+
+      // Trigger Edge Function
+      const { error: funcError } = await supabase.functions.invoke('sync-meta-ads', {
+        body: { job_id: data.id, agency_id: currentAgency?.id }
+      });
+
+      if (funcError) throw funcError;
+
+    } catch (err: any) { setSyncStatus('error'); setSyncLogs(prev => [...prev, `❌ Error al iniciar: ${err.message}`]); setIsSyncing(false); }
   };
 
   // Efecto para sincronización resiliente (Realtime + Polling fallback)
