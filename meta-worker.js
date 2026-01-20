@@ -361,10 +361,20 @@ setInterval(async () => {
 
 // Inicializar worker
 (async () => {
-    const connected = await testConnection();
-    if (!connected) {
-        console.error('❌ No se pudo conectar a Supabase. Verifica tu configuración.');
-        process.exit(1);
+    let connected = false;
+    let attempts = 0;
+
+    // Bucle de reconexión inicial
+    while (!connected) {
+        attempts++;
+        console.log(`🔄 Intento de conexión #${attempts}...`);
+        connected = await testConnection();
+
+        if (!connected) {
+            const waitTime = Math.min(30000, attempts * 2000); // Backoff hasta 30s
+            console.warn(`⚠️ Fallo al conectar con Supabase. Reintentando en ${waitTime / 1000}s...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
     }
 
     // Esperar un momento para que Realtime se conecte
