@@ -34,6 +34,9 @@ import {
   Receipt,
   Loader2,
   AlertTriangle,
+  Pencil,
+  Check,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -56,19 +59,29 @@ export function ExpensesModal({
     monthlyPlans,
     expenses,
     createExpense,
+    updateExpense,
     deleteExpense,
     getExpensesForPlan,
+    getRealSpentForPlan,
+    getEstimatedForPlan,
   } = useMarketing();
 
   const [isAdding, setIsAdding] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
 
   // Form state
   const [newAmount, setNewAmount] = useState('');
   const [newConcept, setNewConcept] = useState('');
   const [newDate, setNewDate] = useState('');
   const [newIsEstimated, setNewIsEstimated] = useState(false);
+  
+  // Edit form state
+  const [editAmount, setEditAmount] = useState('');
+  const [editConcept, setEditConcept] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const [editIsEstimated, setEditIsEstimated] = useState(false);
 
   const plan = useMemo(() => {
     return monthlyPlans.find(p => p.id === planId);
@@ -81,6 +94,19 @@ export function ExpensesModal({
 
   const totalExpenses = planExpenses.reduce((sum, e) => sum + e.amount, 0);
   const estimatedExpenses = planExpenses.filter(e => e.isEstimated);
+  
+  // Calculate real spent and projected using the context functions
+  const realSpent = useMemo(() => {
+    if (!planId) return 0;
+    return getRealSpentForPlan(planId);
+  }, [planId, getRealSpentForPlan]);
+  
+  const estimatedAmount = useMemo(() => {
+    if (!planId) return 0;
+    return getEstimatedForPlan(planId);
+  }, [planId, getEstimatedForPlan]);
+  
+  const projectedSpent = realSpent + estimatedAmount;
 
   const resetForm = () => {
     setNewAmount('');
@@ -88,6 +114,39 @@ export function ExpensesModal({
     setNewDate('');
     setNewIsEstimated(false);
     setIsAdding(false);
+  };
+
+  const startEditing = (expense: MarketingExpense) => {
+    setEditingExpenseId(expense.id);
+    setEditAmount(expense.amount.toString());
+    setEditConcept(expense.concept || '');
+    setEditDate(expense.date || '');
+    setEditIsEstimated(expense.isEstimated);
+  };
+
+  const cancelEditing = () => {
+    setEditingExpenseId(null);
+    setEditAmount('');
+    setEditConcept('');
+    setEditDate('');
+    setEditIsEstimated(false);
+  };
+
+  const handleUpdateExpense = async (expenseId: string) => {
+    if (!editAmount) return;
+
+    setIsSubmitting(true);
+    try {
+      await updateExpense(expenseId, {
+        amount: parseFloat(editAmount),
+        concept: editConcept.trim() || undefined,
+        date: editDate || undefined,
+        isEstimated: editIsEstimated,
+      });
+      cancelEditing();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleAddExpense = async () => {
@@ -140,15 +199,15 @@ export function ExpensesModal({
                   </Card>
                   <Card className={cn(
                     "border-l-4",
-                    plan.realSpent > plan.budgetAllocated ? "border-l-red-500" : "border-l-green-500"
+                    realSpent > plan.budgetAllocated ? "border-l-red-500" : "border-l-green-500"
                   )}>
                     <CardContent className="p-3">
                       <p className="text-xs text-muted-foreground">Invertido Real</p>
                       <p className={cn(
                         "font-bold text-lg",
-                        plan.realSpent > plan.budgetAllocated ? "text-red-600" : "text-green-600"
+                        realSpent > plan.budgetAllocated ? "text-red-600" : "text-green-600"
                       )}>
-                        {plan.realSpent.toLocaleString('es-ES')} €
+                        {realSpent.toLocaleString('es-ES')} €
                       </p>
                     </CardContent>
                   </Card>
@@ -157,19 +216,30 @@ export function ExpensesModal({
                 {/* Additional info row */}
                 <div className="flex justify-between text-sm px-1">
                   <div>
-                    <span className="text-muted-foreground">Disponible: </span>
+                    <span className="text-muted-foreground">Disponible Real: </span>
                     <span className={cn(
                       "font-medium",
-                      plan.budgetAllocated - plan.realSpent < 0 ? "text-red-600" : "text-green-600"
+                      plan.budgetAllocated - realSpent < 0 ? "text-red-600" : "text-green-600"
                     )}>
-                      {(plan.budgetAllocated - plan.realSpent).toLocaleString('es-ES')} €
+                      {(plan.budgetAllocated - realSpent).toLocaleString('es-ES')} €
                     </span>
                   </div>
-                  {estimatedExpenses.length > 0 && (
-                    <div className="text-amber-600">
-                      <span className="text-muted-foreground">Proyectado: </span>
-                      <span className="font-medium">
-                        +{estimatedExpenses.reduce((s, e) => s + e.amount, 0).toLocaleString('es-ES')} €
+                  {estimatedAmount > 0 && (
+                    <div className="space-x-3">
+                      <span className="text-amber-600">
+                        <span className="text-muted-foreground">Proyectado: </span>
+                        <span className="font-medium">
+                          {projectedSpent.toLocaleString('es-ES')} €
+                        </span>
+                      </span>
+                      <span className="text-blue-600">
+                        <span className="text-muted-foreground">Disp. Proy.: </span>
+                        <span className={cn(
+                          "font-medium",
+                          plan.budgetAllocated - projectedSpent < 0 ? "text-red-600" : "text-blue-600"
+                        )}>
+                          {(plan.budgetAllocated - projectedSpent).toLocaleString('es-ES')} €
+                        </span>
                       </span>
                     </div>
                   )}
@@ -205,40 +275,122 @@ export function ExpensesModal({
                     <div
                       key={expense.id}
                       className={cn(
-                        "flex items-center justify-between p-3 rounded-lg border",
+                        "p-3 rounded-lg border",
                         expense.isEstimated ? "bg-amber-50 border-amber-200" : "bg-white"
                       )}
                     >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">
-                            {expense.amount.toLocaleString('es-ES')} EUR
-                          </span>
-                          {expense.isEstimated && (
-                            <Badge variant="outline" className="text-xs text-amber-700 border-amber-300">
-                              Estimado
-                            </Badge>
-                          )}
+                      {editingExpenseId === expense.id ? (
+                        // Edit mode
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Importe (EUR) *</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={editAmount}
+                                onChange={(e) => setEditAmount(e.target.value)}
+                                className="h-8"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Fecha</Label>
+                              <Input
+                                type="date"
+                                value={editDate}
+                                onChange={(e) => setEditDate(e.target.value)}
+                                className="h-8"
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Concepto</Label>
+                            <Input
+                              value={editConcept}
+                              onChange={(e) => setEditConcept(e.target.value)}
+                              placeholder="Ej: Factura Google Ads #FV-2026-01"
+                              className="h-8"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              checked={editIsEstimated}
+                              onCheckedChange={(checked) => setEditIsEstimated(!!checked)}
+                            />
+                            <Label className="text-xs font-normal cursor-pointer">
+                              Gasto estimado
+                            </Label>
+                          </div>
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={cancelEditing}
+                              disabled={isSubmitting}
+                              className="h-8"
+                            >
+                              <X className="h-3.5 w-3.5 mr-1" />
+                              Cancelar
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleUpdateExpense(expense.id)}
+                              disabled={isSubmitting || !editAmount || parseFloat(editAmount) <= 0}
+                              className="h-8"
+                            >
+                              {isSubmitting && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
+                              <Check className="h-3.5 w-3.5 mr-1" />
+                              Guardar
+                            </Button>
+                          </div>
                         </div>
-                        {expense.concept && (
-                          <p className="text-sm text-muted-foreground truncate">
-                            {expense.concept}
-                          </p>
-                        )}
-                        {expense.date && (
-                          <p className="text-xs text-muted-foreground">
-                            {format(new Date(expense.date), 'd MMM yyyy', { locale: es })}
-                          </p>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeleteConfirm(expense.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      ) : (
+                        // View mode
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold">
+                                {expense.amount.toLocaleString('es-ES')} EUR
+                              </span>
+                              {expense.isEstimated && (
+                                <Badge variant="outline" className="text-xs text-amber-700 border-amber-300">
+                                  Estimado
+                                </Badge>
+                              )}
+                            </div>
+                            {expense.concept && (
+                              <p className="text-sm text-muted-foreground truncate">
+                                {expense.concept}
+                              </p>
+                            )}
+                            {expense.date && (
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(expense.date), 'd MMM yyyy', { locale: es })}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => startEditing(expense)}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-8 w-8 p-0"
+                              title="Editar gasto"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteConfirm(expense.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                              title="Eliminar gasto"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))
                 )}

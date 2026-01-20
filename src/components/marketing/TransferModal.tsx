@@ -64,12 +64,15 @@ export function TransferModal({
 
   // Flatten category tree with full path for dropdown
   const flatCategories = useMemo(() => {
-    const result: { id: string; name: string; level: number; displayName: string; fullPath: string }[] = [];
+    const result: { id: string; name: string; level: number; displayName: string; fullPath: string; isLeaf: boolean }[] = [];
     const categoryTree = getCategoryTree();
 
     const flatten = (cats: MarketingCategory[], level: number = 0, pathParts: string[] = []) => {
       cats.forEach(cat => {
         const currentPath = [...pathParts, cat.name];
+        const hasChildren = cat.children && cat.children.length > 0;
+        const isLeaf = !hasChildren;
+        
         // For display: show full path for level 2+, just name with indent for level 1
         let displayName: string;
         if (level === 0) {
@@ -86,10 +89,11 @@ export function TransferModal({
           name: cat.name,
           level,
           displayName,
-          fullPath: currentPath.join(' > ')
+          fullPath: currentPath.join(' > '),
+          isLeaf
         });
-        if (cat.children && cat.children.length > 0) {
-          flatten(cat.children, level + 1, currentPath);
+        if (hasChildren) {
+          flatten(cat.children!, level + 1, currentPath);
         }
       });
     };
@@ -97,6 +101,13 @@ export function TransferModal({
     flatten(categoryTree);
     return result;
   }, [getCategoryTree]);
+
+  // For monthly budget allocation (budgetAllocated), allow any category
+  // For annual budget assignment (assignedBudget), only leaf categories
+  // Since TransferModal is used for monthly allocations, we allow all categories
+  const leafCategories = useMemo(() => {
+    return flatCategories.filter(cat => cat.isLeaf);
+  }, [flatCategories]);
 
   // Generate months for the year
   const months = useMemo(() => {
@@ -348,7 +359,7 @@ export function TransferModal({
 
           {/* Summary Preview */}
           {toCategory && toMonth && amount && (
-            <div className="p-3 bg-slate-50 rounded-lg text-sm">
+            <div className="p-3 bg-slate-50 rounded-lg text-sm space-y-2">
               <p className="text-slate-700">
                 {movementType === 'initial_deposit' ? (
                   <>
@@ -362,6 +373,9 @@ export function TransferModal({
                     <strong>{getCategoryName(toCategory)}</strong>
                   </>
                 )}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                💡 Puedes asignar presupuesto mensual a cualquier categoría. El presupuesto anual solo se asigna a categorías finales.
               </p>
             </div>
           )}
