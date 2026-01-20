@@ -3,9 +3,13 @@
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
 
+// IGNORAR ERRORES SSL
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 // --- CONFIGURACIÓN ---
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const cleanEnv = (val) => val ? val.replace(/^"|"$/g, '').replace(/^'|'$/g, '').trim() : '';
+const SUPABASE_URL = cleanEnv(process.env.VITE_SUPABASE_URL);
+const SUPABASE_KEY = cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY);
 const API_VERSION = 'v22';
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
@@ -23,8 +27,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
     params: {
       eventsPerSecond: 10
     },
-    // Configuración adicional para autohosteado
-    transport: 'websocket',
+    // Eliminado transport: 'websocket'
     timeout: 20000, // 20 segundos de timeout
   },
   db: {
@@ -289,7 +292,7 @@ async function processSyncJob(jobId) {
       .update({ status: 'running' })
       .eq('id', jobId)
       .eq('status', 'pending'); // Solo actualizar si sigue siendo 'pending'
-    
+
     if (updateError) {
       console.log(`[Job ${jobId}] Ya está siendo procesado por otro worker`);
       return;
@@ -362,10 +365,10 @@ try {
       presence: { key: '' }
     }
   })
-    .on('postgres_changes', { 
-      event: 'INSERT', 
-      schema: 'public', 
-      table: 'ads_sync_logs' 
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'ads_sync_logs'
     }, (payload) => {
       console.log('📨 Evento Realtime recibido:', payload.new.id);
       if (payload.new.status === 'pending' && !processingJobs.has(payload.new.id)) {
@@ -392,14 +395,14 @@ try {
         console.warn('⚠️ Canal Realtime cerrado, usando solo polling');
       }
     });
-  
+
   // Timeout para detectar si no se conecta en 10 segundos
   setTimeout(() => {
     if (!realtimeConnected) {
       console.warn('⚠️ Realtime no se conectó en 10 segundos, usando solo polling');
     }
   }, 10000);
-  
+
 } catch (err) {
   console.warn('⚠️ Error configurando Realtime:', err.message);
   console.warn('⚠️ Usando solo polling');
@@ -415,12 +418,12 @@ setInterval(async () => {
       .eq('status', 'pending')
       .order('created_at', { ascending: true })
       .limit(1);
-    
+
     if (error) {
       console.error('❌ Error consultando jobs pendientes:', error.message);
       return;
     }
-    
+
     if (data?.length && !processingJobs.has(data[0].id)) {
       processingJobs.add(data[0].id);
       processSyncJob(data[0].id).finally(() => {
@@ -439,10 +442,10 @@ setInterval(async () => {
     console.error('❌ No se pudo conectar a Supabase. Verifica tu configuración.');
     process.exit(1);
   }
-  
+
   // Esperar un momento para que Realtime se conecte
   await new Promise(resolve => setTimeout(resolve, 2000));
-  
+
   const mode = realtimeConnected ? 'Realtime + Polling' : 'Solo Polling';
   console.log(`📡 Google Worker Multi-Tenant Listo. Modo: ${mode}`);
   console.log(`📊 Polling cada 3 segundos para jobs pendientes`);
