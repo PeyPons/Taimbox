@@ -268,7 +268,12 @@ async function processAgency(agency, log) {
 // --- MAIN LOOP ---
 async function processSyncJob(jobId) {
   // Verificar que el job no esté ya siendo procesado o ya completado
-  const { data: existingJob } = await supabase.from('ads_sync_logs').select('status').eq('id', jobId).single();
+  const { data: existingJob, error: fetchError } = await supabase.from('ads_sync_logs').select('status').eq('id', jobId).single();
+
+  if (fetchError) {
+    console.error(`[Job ${jobId}] Error buscando job:`, fetchError.message, fetchError.details, fetchError.hint);
+  }
+
   if (!existingJob || existingJob.status !== 'pending') {
     console.log(`[Job ${jobId}] Saltado: estado actual es '${existingJob?.status || 'no encontrado'}'`);
     return;
