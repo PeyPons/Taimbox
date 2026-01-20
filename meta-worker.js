@@ -4,47 +4,48 @@ import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
 
 const cleanEnv = (val) => val ? val.replace(/^"|"$/g, '').replace(/^'|'$/g, '').trim() : '';
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL = cleanEnv(process.env.VITE_SUPABASE_URL);
+const SUPABASE_KEY = cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY);
 const API_VERSION = 'v19.0';
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error("❌ Faltan claves de Supabase");
-  console.error("VITE_SUPABASE_URL:", SUPABASE_URL ? "✓" : "✗");
-  console.error("SUPABASE_SERVICE_ROLE_KEY:", SUPABASE_KEY ? "✓" : "✗");
-  process.exit(1);
+    console.error("❌ Faltan claves de Supabase");
+    console.error("VITE_SUPABASE_URL:", SUPABASE_URL ? "✓" : "✗");
+    console.error("SUPABASE_SERVICE_ROLE_KEY:", SUPABASE_KEY ? "✓" : "✗");
+    process.exit(1);
 }
 
 console.log(`🔗 Conectando a Supabase: ${SUPABASE_URL}`);
 
 // Configuración explícita para Supabase autohosteado
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
-  realtime: {
-    params: {
-      eventsPerSecond: 10
+    realtime: {
+        params: {
+            eventsPerSecond: 10
+        },
+        // Configuración adicional para autohosteado
+        transport: 'websocket',
+        timeout: 20000,
     },
-    // Configuración adicional para autohosteado
-    transport: 'websocket',
-    timeout: 20000, // 20 segundos de timeout
-  },
-  db: {
-    schema: 'public'
-  },
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false
-  }
+    db: {
+        schema: 'public'
+    },
+    auth: {
+        persistSession: false,
+        autoRefreshToken: false
+    }
 });
 
-async function getAccountName(id, accessToken) {
+// Helper para obtener todas las cuentas publicitarias (Auto-discovery)
+async function fetchAdAccounts(accessToken) {
+    const url = `https://graph.facebook.com/${API_VERSION}/me/adaccounts?fields=account_id,name,currency,account_status&limit=100&access_token=${accessToken}`;
     try {
-        const res = await fetch(`https://graph.facebook.com/${API_VERSION}/${id}?fields=name&access_token=${accessToken}`);
-        const data = await res.json();
-        if (data.error) console.error(`Error fetching name for ${id}:`, data.error.message);
-        return data.name || id;
+        const res = await fetch(url);
+        const json = await res.json();
+        if (json.error) throw new Error(json.error.message);
+        return json.data || [];
     } catch (e) {
-        console.error(`Error fetching name for ${id}:`, e);
-        return id;
+        throw new Error(`Error fetching ad accounts: ${e.message}`);
     }
 }
 
@@ -53,53 +54,81 @@ async function processAgency(agency, log) {
     const accessToken = integrations.metaAccessToken;
 
     if (!accessToken) {
-        // await log(`⚠️ Agencia ${agency.name} (${agency.slug}) no tiene Access Token configurado.`);
+        // await log(`⚠️ Agencia ${agency.name} no tiene Access Token de Meta.`);
         return;
     }
 
-    // NUEVO: Leer cuentas desde la tabla de configuración, NO desde el JSON antiguo
+    // 1. AUTO-DISCOVERY: Obtener cuentas de Meta y actualizar configuración
+    try {
+        const metaAccounts = await fetchAdAccounts(accessToken);
+
+        if (metaAccounts.length > 0) {
+            await log(`  🔎 Encontradas ${metaAccounts.length} cuentas en Meta. Actualizando configuración...`);
+
+            for (const acc of metaAccounts) {
+                // Guardar con prefijo 'act_' que es el identificador standard en API llamadas
+                // OJO: La respuesta de me/adaccounts devuelve "account_id" numérico (ej: "12345")
+                // Pero para insights necesitamos "act_12345". 
+                // Vamos a guardar el ID que usaremos para llamadas API: "act_" + account_id
+                const apiId = `act_${acc.account_id}`;
+
+                await supabase.from('ad_accounts_config').upsert({
+                    account_id: apiId,
+                    account_name: acc.name || `Cuenta ${acc.account_id}`,
+                    platform: 'meta',
+                    is_active: true, // Por defecto activas al descubrir
+                    agency_id: agency.id
+                }, { onConflict: 'account_id' });
+            }
+        } else {
+            await log(`  ⚠️ El token es válido pero no devolvió cuentas publicitarias.`);
+        }
+
+    } catch (e) {
+        await log(`  ❌ Error Auto-discovery Meta: ${e.message}`);
+        // Si falla el discovery, intentamos seguir con lo que haya en BD
+    }
+
+
+    // 2. LEER CUENTAS ACTIVAS DE CONFIG (Ahora incluyendo las recién descubiertas)
     const { data: configAccounts } = await supabase
         .from('ad_accounts_config')
-        .select('account_id')
+        .select('account_id, account_name')
         .eq('agency_id', agency.id)
         .eq('platform', 'meta')
         .eq('is_active', true);
 
-    const ids = configAccounts?.map(a => a.account_id) || [];
+    const accountsToProcess = configAccounts || [];
 
-    if (!ids.length) {
-        await log(`⚠️ Agencia ${agency.name}: Token presente pero sin cuentas configuradas en tabla.`);
+    if (!accountsToProcess.length) {
+        await log(`⚠️ Agencia ${agency.name}: Sin cuentas activas configuradas.`);
         return;
     }
 
-    await log(`🏢 Procesando Agencia: ${agency.name} (${ids.length} cuentas)`);
+    await log(`🏢 Procesando Agencia: ${agency.name} (${accountsToProcess.length} cuentas activas)`);
 
-    for (const id of ids) {
-        const name = await getAccountName(id, accessToken);
+    for (const acc of accountsToProcess) {
+        const id = acc.account_id;
+        const name = acc.account_name;
         await log(`  👉 Cuenta: ${name} (${id})`);
 
-        // Actualizar nombre en config
-        // Actualizar nombre en config (Forzamos UPDATE para asegurar cambio)
-        const { error: updateError } = await supabase
-            .from('ad_accounts_config')
-            .update({ account_name: name })
-            .eq('account_id', id)
-            .eq('agency_id', agency.id);
+        // Fetch Insights
+        // FIX: Usar rango de fechas correcto y JSON válido para time_range
+        // Rango: Principio de mes actual hasta hoy
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+        const end = now.toISOString().slice(0, 10);
 
-        if (updateError) await log(`    ⚠️ Error actualizando nombre DB: ${updateError.message}`);
-
-        // Fetch Insights (Resumido)
-        const range = { start: new Date().toISOString().slice(0, 8) + '01', end: new Date().toISOString().slice(0, 10) };
-        const url = `https://graph.facebook.com/${API_VERSION}/${id}/insights?level=campaign&fields=campaign_id,campaign_name,spend,actions,action_values&time_range={'since':'${range.start}','until':'${range.end}'}&access_token=${accessToken}`;
+        // Usamos comillas dobles para el JSON de time_range
+        const timeRangeJSON = JSON.stringify({ since: start, until: end });
+        const url = `https://graph.facebook.com/${API_VERSION}/${id}/insights?level=campaign&fields=campaign_id,campaign_name,spend,actions,action_values,impressions,clicks&time_range=${timeRangeJSON}&access_token=${accessToken}`;
 
         try {
-            // (Clean Sync movido dentro de la condición de datos encontrados)
-
             const res = await fetch(url);
             const json = await res.json();
 
             if (json.error) {
-                await log(`  ❌ Error API Meta (${name}): ${json.error.message}`);
+                await log(`    ❌ Error API Meta: ${json.error.message}`);
                 continue;
             }
 
@@ -110,43 +139,53 @@ async function processAgency(agency, log) {
                     row.action_values?.forEach(a => { if (a.action_type === 'purchase') val += parseFloat(a.value); });
 
                     return {
-                        client_id: id, client_name: name,
-                        campaign_id: row.campaign_id, campaign_name: row.campaign_name,
-                        status: 'ENABLED', date: range.start,
-                        cost: row.spend, conversions: conv, conversions_value: val,
+                        client_id: id,
+                        client_name: name,
+                        campaign_id: row.campaign_id,
+                        campaign_name: row.campaign_name,
+                        status: 'ENABLED',
+                        date: start, // Guardamos con fecha del primer día del mes (agregado mensual)
+                        cost: row.spend,
+                        conversions: conv,
+                        conversions_value: val,
+                        impressions: row.impressions || 0,
+                        clicks: row.clicks || 0,
                         agency_id: agency.id
                     };
                 });
 
                 if (upsertData.length > 0) {
-                    // CLEAN SYNC CONDICIONAL: Solo borramos si tenemos nuevos datos para reemplazar
+                    const totalCost = upsertData.reduce((acc, curr) => acc + parseFloat(curr.cost || 0), 0);
+
+                    // CLEAN SYNC: Borrar datos del mes actual para esta cuenta antes de insertar lo nuevo
                     await supabase.from('meta_ads_campaigns')
                         .delete()
                         .eq('client_id', id)
-                        .gte('date', range.start);
+                        .gte('date', start)
+                        .lte('date', end);
 
                     await supabase.from('meta_ads_campaigns').upsert(upsertData, { onConflict: 'campaign_id, date' });
-                    await log(`  ✅ ${upsertData.length} campañas actualizadas.`);
+                    await log(`    ✅ ${upsertData.length} campañas guardadas. Coste total: ${totalCost.toFixed(2)}`);
                 } else {
-                    await log(`  ℹ️ Sin datos de campañas.`);
+                    await log(`    ℹ️ Sin datos de campañas con gasto.`);
                 }
             }
         } catch (err) {
-            await log(`  ❌ Error fetch (${name}): ${err.message}`);
+            await log(`    ❌ Error fetch: ${err.message}`);
         }
     }
+
     // LIMPIEZA DE CUENTAS HUÉRFANAS
-    // Eliminar campañas de esta agencia asociadas a cuentas que NO están en la lista configurada (ids)
-    if (ids.length > 0) {
-        const idsString = ids.map(i => `"${i}"`).join(',');
+    if (accountsToProcess.length > 0) {
+        const activeIds = accountsToProcess.map(a => `"${a.account_id}"`).join(',');
         const { error: orphanError } = await supabase
             .from('meta_ads_campaigns')
             .delete()
             .eq('agency_id', agency.id)
-            .not('client_id', 'in', `(${idsString})`);
+            .not('client_id', 'in', `(${activeIds})`);
 
         if (orphanError) await log(`  ⚠️ Error limpiando huérfanos: ${orphanError.message}`);
-        else await log(`  🧹 Limpieza de cuentas no configuradas completada.`);
+        // else await log(`  🧹 Limpieza completada.`);
     }
 }
 
@@ -175,7 +214,7 @@ async function processSyncJob(jobId) {
             .update({ status: 'running' })
             .eq('id', jobId)
             .eq('status', 'pending'); // Solo actualizar si sigue siendo 'pending'
-        
+
         if (updateError) {
             console.log(`[Job ${jobId}] Ya está siendo procesado por otro worker`);
             return;
@@ -248,10 +287,10 @@ try {
             presence: { key: '' }
         }
     })
-        .on('postgres_changes', { 
-            event: 'INSERT', 
-            schema: 'public', 
-            table: 'meta_sync_logs' 
+        .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'meta_sync_logs'
         }, (p) => {
             console.log('📨 Evento Realtime recibido:', p.new.id);
             if (p.new.status === 'pending' && !processingJobs.has(p.new.id)) {
@@ -278,14 +317,14 @@ try {
                 console.warn('⚠️ Canal Realtime cerrado, usando solo polling');
             }
         });
-    
+
     // Timeout para detectar si no se conecta en 10 segundos
     setTimeout(() => {
         if (!realtimeConnected) {
             console.warn('⚠️ Realtime no se conectó en 10 segundos, usando solo polling');
         }
     }, 10000);
-    
+
 } catch (err) {
     console.warn('⚠️ Error configurando Realtime:', err.message);
     console.warn('⚠️ Usando solo polling');
@@ -301,12 +340,12 @@ setInterval(async () => {
             .eq('status', 'pending')
             .order('created_at', { ascending: true })
             .limit(1);
-        
+
         if (error) {
             console.error('❌ Error consultando jobs pendientes:', error.message);
             return;
         }
-        
+
         if (data?.length && !processingJobs.has(data[0].id)) {
             processingJobs.add(data[0].id);
             processSyncJob(data[0].id).finally(() => {
@@ -325,10 +364,10 @@ setInterval(async () => {
         console.error('❌ No se pudo conectar a Supabase. Verifica tu configuración.');
         process.exit(1);
     }
-    
+
     // Esperar un momento para que Realtime se conecte
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
+
     const mode = realtimeConnected ? 'Realtime + Polling' : 'Solo Polling';
     console.log(`Meta Worker Multi-Tenant Started... Modo: ${mode}`);
     console.log(`📊 Polling cada 3 segundos para jobs pendientes`);
