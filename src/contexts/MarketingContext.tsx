@@ -40,10 +40,15 @@ interface SupabaseMarketingCategory {
   kpi_name?: string;
   kpi_target_cost?: number;
   allowed_employees: string[];
+  notes?: string;
+  assigned_budget?: number; // Presupuesto por categoría (Top-Down)
+  is_active?: boolean;
   sort_order: number;
   created_at: string;
   updated_at?: string;
 }
+
+
 
 interface SupabaseMarketingMonthlyPlan {
   id: string;
@@ -53,6 +58,7 @@ interface SupabaseMarketingMonthlyPlan {
   real_spent: number;
   manual_result_value: number;
   manual_result_notes?: string;
+  status_note?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -118,6 +124,8 @@ interface MarketingContextType {
   updateExpense: (id: string, data: Partial<MarketingExpense>) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
   getExpensesForPlan: (planId: string) => MarketingExpense[];
+  getRealSpentForPlan: (planId: string) => number;
+  getEstimatedForPlan: (planId: string) => number;
 
   // Calculations
   getBudgetSummary: () => BudgetSummary;
@@ -157,6 +165,10 @@ const mapCategory = (c: SupabaseMarketingCategory): MarketingCategory => ({
   kpiName: c.kpi_name,
   kpiTargetCost: c.kpi_target_cost ? Number(c.kpi_target_cost) : undefined,
   allowedEmployees: c.allowed_employees || [],
+  notes: c.notes,
+  assignedBudget: c.assigned_budget ? Number(c.assigned_budget) : undefined,
+  isActive: c.is_active ?? true,
+  sortOrder: c.sort_order ?? 0,
   createdAt: c.created_at,
   updatedAt: c.updated_at,
 });
@@ -169,6 +181,7 @@ const mapMonthlyPlan = (p: SupabaseMarketingMonthlyPlan): MarketingMonthlyPlan =
   realSpent: Number(p.real_spent),
   manualResultValue: Number(p.manual_result_value),
   manualResultNotes: p.manual_result_notes,
+  statusNote: p.status_note,
   createdAt: p.created_at,
   updatedAt: p.updated_at,
 });
@@ -455,15 +468,23 @@ export function MarketingProvider({ children }: { children: React.ReactNode }) {
   }, [categories]);
 
   const updateCategory = useCallback(async (id: string, data: Partial<MarketingCategory>) => {
+    // Build update object dynamically to avoid sending undefined fields
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.kpiName !== undefined) updateData.kpi_name = data.kpiName;
+    if (data.kpiTargetCost !== undefined) updateData.kpi_target_cost = data.kpiTargetCost;
+    if (data.allowedEmployees !== undefined) updateData.allowed_employees = data.allowedEmployees;
+    // Note: ensure columns exist in DB
+    if (data.notes !== undefined) updateData.notes = data.notes;
+    if (data.isActive !== undefined) updateData.is_active = data.isActive;
+    if (data.assignedBudget !== undefined) updateData.assigned_budget = data.assignedBudget;
+
     const { error } = await supabase
       .from('marketing_categories')
-      .update({
-        name: data.name,
-        kpi_name: data.kpiName,
-        kpi_target_cost: data.kpiTargetCost,
-        allowed_employees: data.allowedEmployees,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', id);
 
     if (error) {
@@ -649,12 +670,14 @@ export function MarketingProvider({ children }: { children: React.ReactNode }) {
     const mapped = mapExpense(newExpense);
     setExpenses(prev => [mapped, ...prev]);
 
-    // Update the monthly plan's real_spent (trigger handles this in DB, but we update local state)
-    setMonthlyPlans(prev => prev.map(p =>
-      p.id === data.monthlyPlanId ? { ...p, realSpent: p.realSpent + data.amount } : p
-    ));
+    // Only update realSpent if NOT estimated (estimated gastos are just projections)
+    if (!data.isEstimated) {
+      setMonthlyPlans(prev => prev.map(p =>
+        p.id === data.monthlyPlanId ? { ...p, realSpent: p.realSpent + data.amount } : p
+      ));
+    }
 
-    toast.success('Gasto registrado');
+    toast.success(data.isEstimated ? 'Gasto estimado registrado' : 'Gasto registrado');
     return mapped;
   }, []);
 
@@ -679,13 +702,31 @@ export function MarketingProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    setExpenses(prev => prev.map(e => e.id === id ? { ...e, ...data } : e));
+    const updatedExpense = { ...oldExpense, ...data };
+    setExpenses(prev => prev.map(e => e.id === id ? updatedExpense : e));
 
-    // Update monthly plan's real_spent if amount changed
-    if (data.amount !== undefined && data.amount !== oldExpense.amount) {
-      const diff = data.amount - oldExpense.amount;
+    // Handle realSpent updates based on isEstimated changes
+    const wasEstimated = oldExpense.isEstimated;
+    const isNowEstimated = data.isEstimated ?? oldExpense.isEstimated;
+    const oldAmount = oldExpense.amount;
+    const newAmount = data.amount ?? oldExpense.amount;
+
+    let realSpentDiff = 0;
+    if (wasEstimated && !isNowEstimated) {
+      // Was estimated, now real -> add full amount
+      realSpentDiff = newAmount;
+    } else if (!wasEstimated && isNowEstimated) {
+      // Was real, now estimated -> remove full amount
+      realSpentDiff = -oldAmount;
+    } else if (!wasEstimated && !isNowEstimated) {
+      // Was real, still real -> add difference
+      realSpentDiff = newAmount - oldAmount;
+    }
+    // If was estimated and still estimated -> no change to realSpent
+
+    if (realSpentDiff !== 0) {
       setMonthlyPlans(prev => prev.map(p =>
-        p.id === oldExpense.monthlyPlanId ? { ...p, realSpent: p.realSpent + diff } : p
+        p.id === oldExpense.monthlyPlanId ? { ...p, realSpent: p.realSpent + realSpentDiff } : p
       ));
     }
 
@@ -709,16 +750,32 @@ export function MarketingProvider({ children }: { children: React.ReactNode }) {
 
     setExpenses(prev => prev.filter(e => e.id !== id));
 
-    // Update monthly plan's real_spent
-    setMonthlyPlans(prev => prev.map(p =>
-      p.id === expense.monthlyPlanId ? { ...p, realSpent: p.realSpent - expense.amount } : p
-    ));
+    // Only update realSpent if expense was NOT estimated
+    if (!expense.isEstimated) {
+      setMonthlyPlans(prev => prev.map(p =>
+        p.id === expense.monthlyPlanId ? { ...p, realSpent: p.realSpent - expense.amount } : p
+      ));
+    }
 
     toast.success('Gasto eliminado');
   }, [expenses]);
 
   const getExpensesForPlan = useCallback((planId: string): MarketingExpense[] => {
     return expenses.filter(e => e.monthlyPlanId === planId);
+  }, [expenses]);
+
+  // Calculate real spent (excluding estimated expenses) - fixes the 45+49=94 bug
+  const getRealSpentForPlan = useCallback((planId: string): number => {
+    return expenses
+      .filter(e => e.monthlyPlanId === planId && !e.isEstimated)
+      .reduce((sum, e) => sum + e.amount, 0);
+  }, [expenses]);
+
+  // Calculate estimated expenses only
+  const getEstimatedForPlan = useCallback((planId: string): number => {
+    return expenses
+      .filter(e => e.monthlyPlanId === planId && e.isEstimated)
+      .reduce((sum, e) => sum + e.amount, 0);
   }, [expenses]);
 
   // ============================================
@@ -739,7 +796,8 @@ export function MarketingProvider({ children }: { children: React.ReactNode }) {
     }
 
     const totalAllocated = monthlyPlans.reduce((sum, p) => sum + p.budgetAllocated, 0);
-    const totalSpent = monthlyPlans.reduce((sum, p) => sum + p.realSpent, 0);
+    // Use getRealSpentForPlan to calculate true spent, avoiding the Supabase trigger issue
+    const totalSpent = monthlyPlans.reduce((sum, p) => sum + getRealSpentForPlan(p.id), 0);
 
     return {
       totalBudget: currentBudget.totalBudget,
@@ -750,7 +808,7 @@ export function MarketingProvider({ children }: { children: React.ReactNode }) {
       utilizationRate: currentBudget.totalBudget > 0 ? (totalAllocated / currentBudget.totalBudget) * 100 : 0,
       executionRate: totalAllocated > 0 ? (totalSpent / totalAllocated) * 100 : 0,
     };
-  }, [currentBudget, monthlyPlans]);
+  }, [currentBudget, monthlyPlans, getRealSpentForPlan]);
 
   const getCategoryTree = useCallback((): MarketingCategory[] => {
     // Build tree structure from flat list
@@ -833,6 +891,8 @@ export function MarketingProvider({ children }: { children: React.ReactNode }) {
     updateExpense,
     deleteExpense,
     getExpensesForPlan,
+    getRealSpentForPlan,
+    getEstimatedForPlan,
 
     // Calculations
     getBudgetSummary,
@@ -849,6 +909,7 @@ export function MarketingProvider({ children }: { children: React.ReactNode }) {
     getOrCreateMonthlyPlan, updateResults,
     createMovement, getMovementsForPlan,
     createExpense, updateExpense, deleteExpense, getExpensesForPlan,
+    getRealSpentForPlan, getEstimatedForPlan,
     getBudgetSummary, getCategoryTree, getMonthlyPlanForCategory, hasRemainder,
     fetchData,
   ]);

@@ -36,6 +36,12 @@ export interface MarketingCategory {
   // Permisos: Quien puede ver/editar esta fila especifica
   allowedEmployees: string[]; // Array de employee IDs
 
+  // Campos de control Excel-style
+  notes?: string; // Notas libres de la categoria
+  assignedBudget?: number; // Presupuesto anual asignado a la categoria (Top-Down)
+  isActive?: boolean; // Si esta activa este periodo
+  sortOrder: number; // Orden personalizado para mostrar
+
   createdAt: string;
   updatedAt?: string;
 
@@ -59,6 +65,9 @@ export interface MarketingMonthlyPlan {
   // Resultados manuales
   manualResultValue: number; // Ej: 45 (Leads)
   manualResultNotes?: string; // Notas: "Datos sacados del CRM el dia 30"
+
+  // Nota de estado del mes (ej: "Pausado por...", "Puesto en X porque...")
+  statusNote?: string;
 
   createdAt?: string;
   updatedAt?: string;
@@ -170,6 +179,8 @@ export interface CreateCategoryForm {
   kpiName?: string;
   kpiTargetCost?: number;
   allowedEmployees?: string[];
+  notes?: string;
+  isActive?: boolean;
 }
 
 export interface CreateMovementForm {

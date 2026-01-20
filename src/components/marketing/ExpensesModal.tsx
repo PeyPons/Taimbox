@@ -128,45 +128,67 @@ export function ExpensesModal({
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Summary */}
+            {/* Summary - Clear separation of real vs estimated */}
             {plan && (
-              <div className="grid grid-cols-3 gap-3">
-                <Card>
-                  <CardContent className="p-3 text-center">
-                    <p className="text-xs text-muted-foreground">Presupuesto</p>
-                    <p className="font-bold">{plan.budgetAllocated.toLocaleString('es-ES')}</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-3 text-center">
-                    <p className="text-xs text-muted-foreground">Gasto Total</p>
-                    <p className={cn(
-                      "font-bold",
-                      totalExpenses > plan.budgetAllocated ? "text-red-600" : "text-green-600"
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <Card className="border-l-4 border-l-blue-500">
+                    <CardContent className="p-3">
+                      <p className="text-xs text-muted-foreground">Presupuesto</p>
+                      <p className="font-bold text-lg">{plan.budgetAllocated.toLocaleString('es-ES')} €</p>
+                    </CardContent>
+                  </Card>
+                  <Card className={cn(
+                    "border-l-4",
+                    plan.realSpent > plan.budgetAllocated ? "border-l-red-500" : "border-l-green-500"
+                  )}>
+                    <CardContent className="p-3">
+                      <p className="text-xs text-muted-foreground">Invertido Real</p>
+                      <p className={cn(
+                        "font-bold text-lg",
+                        plan.realSpent > plan.budgetAllocated ? "text-red-600" : "text-green-600"
+                      )}>
+                        {plan.realSpent.toLocaleString('es-ES')} €
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Additional info row */}
+                <div className="flex justify-between text-sm px-1">
+                  <div>
+                    <span className="text-muted-foreground">Disponible: </span>
+                    <span className={cn(
+                      "font-medium",
+                      plan.budgetAllocated - plan.realSpent < 0 ? "text-red-600" : "text-green-600"
                     )}>
-                      {totalExpenses.toLocaleString('es-ES')}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-3 text-center">
-                    <p className="text-xs text-muted-foreground">Disponible</p>
-                    <p className={cn(
-                      "font-bold",
-                      plan.budgetAllocated - totalExpenses < 0 ? "text-red-600" : "text-green-600"
-                    )}>
-                      {(plan.budgetAllocated - totalExpenses).toLocaleString('es-ES')}
-                    </p>
-                  </CardContent>
-                </Card>
+                      {(plan.budgetAllocated - plan.realSpent).toLocaleString('es-ES')} €
+                    </span>
+                  </div>
+                  {estimatedExpenses.length > 0 && (
+                    <div className="text-amber-600">
+                      <span className="text-muted-foreground">Proyectado: </span>
+                      <span className="font-medium">
+                        +{estimatedExpenses.reduce((s, e) => s + e.amount, 0).toLocaleString('es-ES')} €
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
-            {/* Estimated Warning */}
+            {/* Estimated Info Banner */}
             {estimatedExpenses.length > 0 && (
-              <div className="flex items-center gap-2 p-2 bg-amber-50 rounded-md text-sm text-amber-700">
-                <AlertTriangle className="h-4 w-4" />
-                <span>{estimatedExpenses.length} gasto(s) marcados como estimados</span>
+              <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg text-sm border border-amber-200">
+                <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-amber-800">
+                    {estimatedExpenses.length} gasto(s) estimado(s)
+                  </p>
+                  <p className="text-amber-700 text-xs">
+                    Los gastos estimados son proyecciones y NO cuentan en "Invertido Real"
+                  </p>
+                </div>
               </div>
             )}
 
