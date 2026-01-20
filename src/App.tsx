@@ -9,6 +9,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { AgencyProvider } from "@/contexts/AgencyContext";
 import { AppProvider } from "@/contexts/AppContext";
 import { GoalsProvider } from "@/contexts/GoalsContext";
+import { MarketingProvider } from "@/contexts/MarketingContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { NotificationProvider } from "@/contexts/NotificationContext";
@@ -77,6 +78,7 @@ const TeamCapacityPage = lazyWithRetry(() => import("./pages/TeamCapacityPage"))
 const OnboardingWizard = lazyWithRetry(() => import("./components/onboarding/OnboardingWizard"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 const TeamPulsePage = lazyWithRetry(() => import("./pages/TeamPulsePage"));
+const MarketingPage = lazyWithRetry(() => import("./pages/MarketingPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -95,8 +97,9 @@ const App = () => (
       <AuthProvider>
         <AgencyProvider>
           <AppProvider>
-            <GoalsProvider>
-              <NotificationProvider>
+            <MarketingProvider>
+              <GoalsProvider>
+                <NotificationProvider>
                 <TooltipProvider>
                   <Toaster />
                   <Sonner />
@@ -139,6 +142,7 @@ const App = () => (
                           <Route path="/ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/ads"><ModuleGuard module="ppc"><AdsPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
                           <Route path="/meta-ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/meta-ads"><ModuleGuard module="ppc"><MetaAdsPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
                           <Route path="/weekly-forecast" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/weekly-forecast"><ModuleGuard module="weeklyFeedback"><WeeklyForecastPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
+                          <Route path="/marketing" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/marketing"><MarketingPage /></PermissionProtectedRoute></Suspense>} />
                           <Route path="/dashboard-ai" element={<Suspense fallback={<PageLoader />}><DashboardAI /></Suspense>} />
                         </Route>
                       </Route>
@@ -149,8 +153,9 @@ const App = () => (
                     </Routes>
                   </BrowserRouter>
                 </TooltipProvider>
-              </NotificationProvider>
-            </GoalsProvider>
+                </NotificationProvider>
+              </GoalsProvider>
+            </MarketingProvider>
           </AppProvider>
         </AgencyProvider>
       </AuthProvider>
