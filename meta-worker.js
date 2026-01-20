@@ -4,6 +4,9 @@ import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
 
 const cleanEnv = (val) => val ? val.replace(/^"|"$/g, '').replace(/^'|'$/g, '').trim() : '';
+// IGNORAR ERRORES SSL (Para self-hosted con certificados auto-firmados o problemáticos)
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const SUPABASE_URL = cleanEnv(process.env.VITE_SUPABASE_URL);
 const SUPABASE_KEY = cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY);
 const API_VERSION = 'v19.0';
@@ -23,8 +26,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
         params: {
             eventsPerSecond: 10
         },
-        // Configuración adicional para autohosteado
-        transport: 'websocket',
+        // Eliminado transport: 'websocket' para evitar error crash en Node
         timeout: 20000,
     },
     db: {
