@@ -96,6 +96,8 @@ export default function MetaAdsPage() {
 
   useEffect(() => { fetchData(); }, []);
 
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
+
   const handleStartSync = async () => {
     if (!currentAgency) {
       toast.error("Error: No se ha identificado la agencia actual.");
@@ -109,15 +111,54 @@ export default function MetaAdsPage() {
         agency_id: currentAgency?.id
       }).select().single();
       if (error) throw error;
-      const jobId = data.id;
-      const channel = supabase.channel(`meta-sync-${jobId}`).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'meta_sync_logs', filter: `id=eq.${jobId}` }, (payload) => {
-        const newRow = payload.new;
-        if (newRow.logs) setSyncLogs(newRow.logs);
-        if (newRow.status === 'completed') { setSyncStatus('completed'); setSyncProgress(100); toast.success('Sincronización completada'); fetchData(); setTimeout(() => { supabase.removeChannel(channel); setIsSyncing(false); }, 2000); }
-        else if (newRow.status === 'error') { setSyncStatus('error'); toast.error('Error en el proceso'); }
-      }).subscribe();
-    } catch (err) { setSyncStatus('error'); setSyncLogs(prev => [...prev, '❌ Error al conectar.']); }
+      setCurrentJobId(data.id);
+    } catch (err) { setSyncStatus('error'); setSyncLogs(prev => [...prev, '❌ Error al conectar.']); setIsSyncing(false); }
   };
+
+  // Efecto para sincronización resiliente (Realtime + Polling fallback)
+  useEffect(() => {
+    if (!currentJobId || !isSyncing) return;
+
+    let intervalId: NodeJS.Timeout;
+    let channel = supabase.channel(`meta-sync-${currentJobId}`);
+
+    const checkStatus = async () => {
+      const { data } = await supabase.from('meta_sync_logs').select('*').eq('id', currentJobId).single();
+      if (data) handleUpdate(data);
+    };
+
+    const handleUpdate = (row: any) => {
+      if (row.logs) setSyncLogs(row.logs);
+
+      if (row.status === 'completed') {
+        setSyncStatus('completed');
+        setSyncProgress(100);
+        toast.success('Sincronización completada');
+        fetchData();
+        cleanup();
+        setTimeout(() => { setIsSyncing(false); setCurrentJobId(null); }, 2000);
+      } else if (row.status === 'error') {
+        setSyncStatus('error');
+        toast.error('Error en el proceso');
+        cleanup();
+      }
+    };
+
+    const cleanup = () => {
+      clearInterval(intervalId);
+      supabase.removeChannel(channel);
+    };
+
+    // 1. Suscripción Realtime
+    channel
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'meta_sync_logs', filter: `id=eq.${currentJobId}` }, (payload) => handleUpdate(payload.new))
+      .subscribe();
+
+    // 2. Polling Loop
+    intervalId = setInterval(checkStatus, 2000);
+
+    return () => cleanup();
+  }, [currentJobId, isSyncing]);
 
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [syncLogs, isSyncing]);
 
