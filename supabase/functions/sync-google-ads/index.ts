@@ -19,31 +19,11 @@ Deno.serve(async (req) => {
 
         // Fallback para secrets locales en self-hosted
         let localSecrets: any = {};
-        const possiblePaths = [
-            '/home/deno/functions/sync-google-ads/secrets.json',
-            './secrets.json',
-            'index.ts' // Para ver si al menos lee el propio archivo
-        ];
-
         try {
-            console.log("DEBUG: Current Dir:", Deno.cwd());
-            console.log("DEBUG: Listando archivos en . :");
-            for await (const entry of Deno.readDir(".")) {
-                console.log(` - ${entry.name}`);
-            }
-
-            for (const p of possiblePaths) {
-                try {
-                    const text = await Deno.readTextFile(p);
-                    if (p.endsWith('.json')) {
-                        localSecrets = JSON.parse(text);
-                        console.log("DEBUG: Secrets cargados desde", p);
-                        break;
-                    }
-                } catch (e) { }
-            }
-        } catch (e: any) {
-            console.log("DEBUG: Error explorando carpeta:", e.message);
+            const text = await Deno.readTextFile('/home/deno/functions/sync-google-ads/secrets.json');
+            localSecrets = JSON.parse(text);
+        } catch (e) {
+            // No hay archivo de secrets local
         }
 
         const getSecret = (key: string) => Deno.env.get(key) || Deno.env.get(`VITE_${key}`) || localSecrets[key];

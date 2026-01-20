@@ -14,12 +14,16 @@ Deno.serve(async (req) => {
         const supabaseUrl = Deno.env.get('SUPABASE_URL') || Deno.env.get('VITE_SUPABASE_URL')
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-        // Fallback robusto para self-hosted
-        const HARDCODED_SECRETS: any = {
-            "META_ACCESS_TOKEN": "EAAbD9UNMzzMBQGOSQKdbCI3SkQPG1A8nkaj5w7SDjDpRZCTCF3t2koq8iyhNsXbWNNgxcgulAsdhYBw54I3z2I7AJJXrJWv4ZAj4LQ4HDJfe8cyFqcILHenZBFdBT0KPuwSuA1nFIur9KBnqD0FVJlBlKzbMEuVCnwK2GtZBkNhNHQoXBuZCXThezgW8uKvb98bgZD"
-        };
+        // Fallback para secrets locales en self-hosted
+        let localSecrets: any = {};
+        try {
+            const text = await Deno.readTextFile('/home/deno/functions/sync-meta-ads/secrets.json');
+            localSecrets = JSON.parse(text);
+        } catch (e) {
+            // No hay archivo de secrets local
+        }
 
-        const getSecret = (key: string) => Deno.env.get(key) || Deno.env.get(`VITE_${key}`) || HARDCODED_SECRETS[key];
+        const getSecret = (key: string) => Deno.env.get(key) || Deno.env.get(`VITE_${key}`) || localSecrets[key];
 
         if (!supabaseUrl || !supabaseKey) {
             throw new Error('Faltan variables de entorno SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY')
