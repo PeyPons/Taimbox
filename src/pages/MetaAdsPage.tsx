@@ -198,7 +198,7 @@ export default function MetaAdsPage() {
 
   const reportData = useMemo(() => {
     if (!rawData.length) return [];
-    const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const stats = new Map<string, { name: string, spent: number, budget: number, total_conversions_val: number, is_group: boolean, isHidden: boolean, isSalesAccount: boolean, realIds: string[], realIdsNames: { id: string, name: string }[], campaigns: MetaCampaignData[], isManualGroupBudget: boolean, autoDailyBudgetSum: number }>();
 
     registeredAccounts.forEach(acc => {
@@ -210,10 +210,11 @@ export default function MetaAdsPage() {
     });
 
     rawData.forEach(row => {
-      if (row.date === currentMonthPrefix) {
+      // Filtrar por mes actual (compara YYYY-MM, no fecha exacta)
+      if (row.date && row.date.startsWith(currentMonthPrefix)) {
         // NOTA: Se removió filtro isRegistered - causaba ocultación de datos
 
-        let finalId = row.client_id, finalName = row.client_name;
+        let finalId = row.client_id, finalName = row.client_name || row.client_id; // Fallback: usar ID si no hay nombre
         const rulesForAccount = segmentationRules.filter(r => normalizeId(r.account_id) === normalizeId(row.client_id));
         if (rulesForAccount.length > 0) { const match = rulesForAccount.find(r => row.campaign_name.toLowerCase().includes(r.keyword.toLowerCase())); if (match) { finalId = `${row.client_id}_${match.keyword.toUpperCase()}`; finalName = match.virtual_name; } }
         const settings = clientSettings[finalId] || { budget: 0, group_name: '', is_hidden: false, is_sales_account: true };
