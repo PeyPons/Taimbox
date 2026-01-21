@@ -95,7 +95,7 @@ interface ClientPacing {
   cpa: number;
 }
 
-const formatProjectName = (name: string) => name.replace(/^(Cliente|Client)\s*[-:]?\s*/i, '');
+const formatProjectName = (name: string) => (name || '').replace(/^(Cliente|Client)\s*[-:]?\s*/i, '');
 const normalizeId = (id: string) => id ? id.trim() : '';
 
 const getRoasColor = (roas: number) => {
