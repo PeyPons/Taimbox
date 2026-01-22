@@ -189,6 +189,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const employeesRef = useRef<Employee[]>([]);
   // Ref para trackear meses cargados globalmente (centralizado)
   const loadedMonthsRef = useRef<Set<string>>(new Set());
+  // Ref para trackear la agencia anterior y detectar cambios
+  const prevAgencyIdRef = useRef<string | null>(null);
 
   const fetchData = useCallback(async (skipLoading = false, dateRange?: { start: Date; end: Date }) => {
     // No cargar datos si no hay agencia seleccionada
@@ -626,6 +628,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Cargar datos cuando la autenticación y la agencia estén listas
   useEffect(() => {
     if (isAuthInitialized && !isAgencyLoading && currentAgency?.id) {
+      // Detectar si cambió la agencia (no es la misma que antes)
+      const agencyChanged = prevAgencyIdRef.current !== null &&
+        prevAgencyIdRef.current !== currentAgency.id;
+
+      if (agencyChanged) {
+        // Limpiar todo el estado antes de cargar datos nuevos
+        console.debug('[AppContext] Agencia cambió, limpiando estado...');
+        setEmployees([]);
+        setClients([]);
+        setProjects([]);
+        setAllocations([]);
+        setAbsences([]);
+        setTeamEvents([]);
+        setWeeklyFeedback([]);
+        setUserRoutines([]);
+        setCurrentUser(undefined);
+        hasLinkedUserRef.current = null;
+        loadedMonthsRef.current.clear(); // Limpiar caché de meses cargados
+        employeesRef.current = [];
+      }
+
+      // Actualizar ref con la agencia actual
+      prevAgencyIdRef.current = currentAgency.id;
+
       fetchData();
     }
   }, [isAuthInitialized, isAgencyLoading, currentAgency?.id, fetchData]);

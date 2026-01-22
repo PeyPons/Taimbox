@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAgency } from '@/contexts/AgencyContext';
@@ -225,6 +225,9 @@ export function MarketingProvider({ children }: { children: React.ReactNode }) {
   const [expenses, setExpenses] = useState<MarketingExpense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Ref para trackear la agencia anterior y detectar cambios
+  const prevAgencyIdRef = useRef<string | null>(null);
+
   // ============================================
   // Data Fetching
   // ============================================
@@ -340,6 +343,21 @@ export function MarketingProvider({ children }: { children: React.ReactNode }) {
   // Initial data load
   useEffect(() => {
     if (isAuthInitialized && !isAgencyLoading && currentAgency?.id) {
+      // Detectar si cambió la agencia
+      const agencyChanged = prevAgencyIdRef.current !== null &&
+        prevAgencyIdRef.current !== currentAgency.id;
+
+      if (agencyChanged) {
+        console.debug('[MarketingContext] Agencia cambió, limpiando estado...');
+        setBudgets([]);
+        setCurrentBudget(null);
+        setCategories([]);
+        setMonthlyPlans([]);
+        setMovements([]);
+        setExpenses([]);
+      }
+
+      prevAgencyIdRef.current = currentAgency.id;
       fetchData();
     }
   }, [isAuthInitialized, isAgencyLoading, currentAgency?.id, fetchData]);

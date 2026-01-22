@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAgency } from '@/contexts/AgencyContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Settings, Loader2, Check, Users } from 'lucide-react';
+import { Building2, Settings, Loader2, Check, Users, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -83,7 +83,17 @@ export default function AgenciesPage() {
                   className="gap-2"
                 >
                   <Users className="h-4 w-4" />
-                  Gestionar miembros
+                  Equipo
+                </Button>
+              )}
+              {hasPermission('can_access_agency_settings') && (
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(`/agencies/${currentAgency?.id}/manage`)}
+                  className="gap-2"
+                >
+                  <Shield className="h-4 w-4" />
+                  Administradores
                 </Button>
               )}
               <Button
@@ -159,7 +169,17 @@ export default function AgenciesPage() {
                             onClick={() => navigate('/team')}
                           >
                             <Users className="h-4 w-4 mr-2" />
-                            Miembros
+                            Equipo
+                          </Button>
+                        )}
+                        {hasPermission('can_access_agency_settings') && (
+                          <Button
+                            variant="outline"
+                            className="flex-1 min-w-0"
+                            onClick={() => navigate(`/agencies/${agency.agencyId}/manage`)}
+                          >
+                            <Shield className="h-4 w-4 mr-2" />
+                            Admins
                           </Button>
                         )}
                         <Button
@@ -168,7 +188,7 @@ export default function AgenciesPage() {
                           onClick={() => navigate('/agency')}
                         >
                           <Settings className="h-4 w-4 mr-2" />
-                          Configuración
+                          Config
                         </Button>
                       </div>
                     )}

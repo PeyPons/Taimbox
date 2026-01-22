@@ -158,7 +158,7 @@ export function AgencySelectorCompact() {
 
               {canManageAgency && (
                 <DropdownMenuItem
-                  onClick={() => navigate('/team')}
+                  onClick={() => navigate(`/agencies/${currentAgency?.id}/manage`)}
                   className="cursor-pointer text-slate-200 hover:bg-slate-700 hover:text-white text-xs"
                 >
                   <Users className="h-3.5 w-3.5 mr-2" />
@@ -202,7 +202,7 @@ export function AgencySelectorCompact() {
               </DropdownMenuItem>
 
               <DropdownMenuItem
-                onClick={() => navigate('/team')}
+                onClick={() => navigate(`/agencies/${currentAgency?.id}/manage`)}
                 className="cursor-pointer text-slate-200 hover:bg-slate-700 hover:text-white text-xs"
               >
                 <Users className="h-3.5 w-3.5 mr-2" />

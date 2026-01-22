@@ -1,13 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAgency } from '@/contexts/AgencyContext';
+import { useAgency, AgencyMember } from '@/contexts/AgencyContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AgencyMembersList } from '@/components/agencies/AgencyMembersList';
-import { InviteUserDialog } from '@/components/agencies/InviteUserDialog';
-import { EditMemberDialog } from '@/components/agencies/EditMemberDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,118 +22,101 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Building2, UserPlus, Loader2, ArrowLeft, Users, Shield, Crown, AlertTriangle } from 'lucide-react';
+import { InviteUserDialog } from '@/components/agencies/InviteUserDialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { ArrowLeft, Loader2, Users, Shield, Crown, AlertTriangle, Trash2, UserCheck, UserX, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
-import { AgencyMember } from '@/contexts/AgencyContext';
-import { supabase } from '@/lib/supabase';
 
 export default function AgencyManagementPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { currentAgency, userAgencies, getAgencyMembers, removeUserFromAgency, transferAgencyOwnership } = useAgency();
-  const { hasPermission, permissions } = usePermissions();
-  
+  const {
+    currentAgency,
+    availableAgencies,
+    getAgencyMembers,
+    removeUserFromAgency,
+    transferAgencyOwnership
+  } = useAgency();
+  const { permissions } = usePermissions();
+
   const [members, setMembers] = useState<AgencyMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<AgencyMember | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<AgencyMember | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
   const [selectedNewOwnerId, setSelectedNewOwnerId] = useState<string>('');
   const [isTransferring, setIsTransferring] = useState(false);
-  const [memberInOtherAgencies, setMemberInOtherAgencies] = useState<boolean | null>(null);
-  
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+
   // Ref para evitar recargas múltiples
   const loadingRef = useRef(false);
   const lastAgencyIdRef = useRef<string | null>(null);
-  
-  // Calcular hasAccess de forma estable usando permissions directamente
-  const hasAccess = useMemo(() => {
-    return permissions.can_access_agency_settings !== false;
-  }, [permissions.can_access_agency_settings]);
 
-  // Determinar el ID real de la agencia (puede ser slug o UUID)
+  // Verificar si el usuario tiene permisos de admin de agencia
+  const hasAccess = permissions.can_access_agency_settings !== false;
+
+  // Determinar el ID de la agencia a gestionar
   const agencyId = useMemo(() => {
-    if (!id) return null;
-    
-    // Si es un UUID válido, usarlo directamente
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (uuidRegex.test(id)) {
-      return id;
-    }
-    
-    // Si no es UUID, buscar por slug en userAgencies
-    const userAgency = userAgencies.find(ua => ua.agency.slug === id || ua.agency.id === id);
-    return userAgency?.agency.id || null;
-  }, [id, userAgencies]); // Mantener userAgencies completo pero useMemo evitará cambios innecesarios
-
-  // Verificar acceso a la agencia
-  const hasAgencyAccess = useMemo(() => {
-    if (agencyId) {
-      const userAgency = userAgencies.find(ua => ua.agency.id === agencyId);
-      if (!userAgency && currentAgency?.id !== agencyId) {
-        return false;
+    // Si se proporciona un ID en la URL, usarlo; sino, usar la agencia actual
+    if (id) {
+      // Si es un UUID válido, usarlo directamente
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(id)) {
+        return id;
       }
-    } else if (id) {
-      return false;
+      // Si no es UUID, buscar en las agencias disponibles
+      const agency = availableAgencies?.find(a => a.agencyId === id);
+      return agency?.agencyId || null;
     }
-    return true;
-  }, [agencyId, id, currentAgency?.id, userAgencies.length]);
+    return currentAgency?.id || null;
+  }, [id, currentAgency?.id, availableAgencies]);
 
-  // Verificar permisos solo una vez al montar o cuando cambia agencyId
+  // Verificar si tiene acceso a esta agencia
+  const hasAgencyAccess = useMemo(() => {
+    if (!agencyId) return false;
+    // Tiene acceso si es la agencia actual o está en sus agencias disponibles
+    return currentAgency?.id === agencyId ||
+      availableAgencies?.some(a => a.agencyId === agencyId) ||
+      false;
+  }, [agencyId, currentAgency?.id, availableAgencies]);
+
+  // Verificar permisos y redirigir si es necesario
   useEffect(() => {
     if (!hasAccess) {
       toast.error('No tienes permisos para acceder a esta página');
       navigate('/agencies');
       return;
     }
-    
-    if (!hasAgencyAccess) {
-      if (id && !agencyId) {
-        toast.error('Agencia no encontrada');
-      } else {
-        toast.error('No tienes acceso a esta agencia');
-      }
+
+    if (agencyId && !hasAgencyAccess) {
+      toast.error('No tienes acceso a esta agencia');
       navigate('/agencies');
     }
-  }, [hasAccess, hasAgencyAccess, id, agencyId, navigate]);
+  }, [hasAccess, hasAgencyAccess, agencyId, navigate]);
 
-  // Cargar miembros - solo cuando cambia agencyId
+  // Cargar miembros cuando cambie agencyId
   useEffect(() => {
-    // Solo cargar si el agencyId realmente cambió
     if (agencyId === lastAgencyIdRef.current) {
-      return; // No hacer nada si el ID no cambió
-    }
-
-    if (!agencyId) {
-      setIsLoading(false);
-      loadingRef.current = false;
-      lastAgencyIdRef.current = null;
       return;
     }
 
-    // Verificar permisos antes de intentar cargar (sin incluir en dependencias)
-    const currentHasAccess = permissions.can_access_agency_settings !== false;
-    const currentHasAgencyAccess = (() => {
-      const userAgency = userAgencies.find(ua => ua.agency.id === agencyId);
-      return !!(userAgency || currentAgency?.id === agencyId);
-    })();
-
-    if (!currentHasAccess || !currentHasAgencyAccess) {
+    if (!agencyId || !hasAccess || !hasAgencyAccess) {
       setIsLoading(false);
-      loadingRef.current = false;
       return;
     }
 
-    // Evitar múltiples cargas simultáneas
     if (loadingRef.current) {
       return;
     }
 
-    // Marcar que estamos cargando este agencyId
     lastAgencyIdRef.current = agencyId;
     loadingRef.current = true;
     setIsLoading(true);
@@ -144,52 +124,24 @@ export default function AgencyManagementPage() {
     const loadMembers = async () => {
       try {
         const membersData = await getAgencyMembers(agencyId);
-        // Verificar que el agencyId no cambió durante la carga
         if (lastAgencyIdRef.current === agencyId) {
           setMembers(membersData);
-          setIsLoading(false);
-          loadingRef.current = false;
         }
       } catch (error: any) {
         console.error('[AgencyManagementPage] Error cargando miembros:', error);
-        if (lastAgencyIdRef.current === agencyId) {
-          toast.error(error.message || 'Error al cargar los miembros');
-          setMembers([]);
-          setIsLoading(false);
-          loadingRef.current = false;
-        }
+        toast.error(error.message || 'Error al cargar los miembros');
+        setMembers([]);
+      } finally {
+        setIsLoading(false);
+        loadingRef.current = false;
       }
     };
 
     loadMembers();
-  }, [agencyId]); // SOLO depender de agencyId - todo lo demás se verifica dentro
+  }, [agencyId, hasAccess, hasAgencyAccess, getAgencyMembers]);
 
-  const handleEdit = (member: AgencyMember) => {
-    setSelectedMember(member);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleDelete = async (member: AgencyMember) => {
+  const handleDelete = (member: AgencyMember) => {
     setMemberToDelete(member);
-    
-    // Verificar si el miembro está en otras agencias
-    if (member.userId && agencyId) {
-      try {
-        const { data: otherAgencies } = await supabase
-          .from('user_agencies')
-          .select('agency_id')
-          .eq('user_id', member.userId)
-          .neq('agency_id', agencyId);
-        
-        setMemberInOtherAgencies(otherAgencies && otherAgencies.length > 0);
-      } catch (error) {
-        console.error('Error verificando otras agencias:', error);
-        setMemberInOtherAgencies(null);
-      }
-    } else {
-      setMemberInOtherAgencies(null);
-    }
-    
     setIsDeleteDialogOpen(true);
   };
 
@@ -211,70 +163,21 @@ export default function AgencyManagementPage() {
       if (result.completelyRemoved) {
         toast.success('Usuario eliminado completamente del sistema');
       } else {
-        toast.success('Usuario desvinculado de esta agencia (permanece en otras agencias)');
+        toast.success('Usuario desvinculado de esta agencia');
       }
       setIsDeleteDialogOpen(false);
       setMemberToDelete(null);
-      
+
       // Recargar miembros
-      if (!loadingRef.current) {
-        loadingRef.current = true;
-        setIsLoading(true);
-        try {
-          const membersData = await getAgencyMembers(agencyId);
-          setMembers(membersData);
-        } catch (reloadError: any) {
-          console.error('Error recargando miembros:', reloadError);
-          toast.error(reloadError.message || 'Error al recargar los miembros');
-        } finally {
-          setIsLoading(false);
-          loadingRef.current = false;
-        }
-      }
+      lastAgencyIdRef.current = null;
+      loadingRef.current = false;
+      const membersData = await getAgencyMembers(agencyId);
+      setMembers(membersData);
     } catch (error: any) {
       console.error('Error eliminando miembro:', error);
       toast.error(error.message || 'Error al eliminar el miembro');
-      setIsRemoving(false);
     } finally {
       setIsRemoving(false);
-    }
-  };
-
-  const handleInviteSuccess = async () => {
-    if (!agencyId || loadingRef.current) return;
-    loadingRef.current = true;
-    setIsLoading(true);
-    try {
-      const membersData = await getAgencyMembers(agencyId);
-      setMembers(membersData);
-    } catch (error: any) {
-      console.error('Error recargando miembros:', error);
-      toast.error(error.message || 'Error al recargar los miembros');
-    } finally {
-      setIsLoading(false);
-      loadingRef.current = false;
-    }
-  };
-
-  const handleEditSuccess = async () => {
-    if (!agencyId) return;
-    
-    // Forzar recarga incluso si loadingRef está activo
-    lastAgencyIdRef.current = null; // Invalidar cache de agencyId para forzar recarga
-    loadingRef.current = false; // Permitir nueva carga
-    
-    setIsLoading(true);
-    try {
-      const membersData = await getAgencyMembers(agencyId);
-      setMembers(membersData);
-      setIsEditDialogOpen(false);
-      setSelectedMember(null);
-    } catch (error: any) {
-      console.error('Error recargando miembros:', error);
-      toast.error(error.message || 'Error al recargar los miembros');
-    } finally {
-      setIsLoading(false);
-      loadingRef.current = false;
     }
   };
 
@@ -287,27 +190,12 @@ export default function AgencyManagementPage() {
       toast.success('Propiedad de la agencia transferida correctamente');
       setIsTransferDialogOpen(false);
       setSelectedNewOwnerId('');
-      
-      // Recargar miembros y agencias
-      if (!loadingRef.current) {
-        loadingRef.current = true;
-        setIsLoading(true);
-        try {
-          const membersData = await getAgencyMembers(agencyId);
-          setMembers(membersData);
-        } catch (reloadError: any) {
-          console.error('Error recargando miembros:', reloadError);
-          toast.error(reloadError.message || 'Error al recargar los miembros');
-        } finally {
-          setIsLoading(false);
-          loadingRef.current = false;
-        }
-      }
-      
-      // Recargar agencias para actualizar isPrimary
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('agency-changed'));
-      }, 100);
+
+      // Recargar miembros
+      lastAgencyIdRef.current = null;
+      loadingRef.current = false;
+      const membersData = await getAgencyMembers(agencyId);
+      setMembers(membersData);
     } catch (error: any) {
       console.error('Error transfiriendo propiedad:', error);
       toast.error(error.message || 'Error al transferir la propiedad');
@@ -316,25 +204,35 @@ export default function AgencyManagementPage() {
     }
   };
 
+  const handleInviteSuccess = async () => {
+    if (!agencyId) return;
+
+    // Recargar miembros
+    lastAgencyIdRef.current = null;
+    loadingRef.current = false;
+
+    setIsLoading(true);
+    try {
+      const membersData = await getAgencyMembers(agencyId);
+      setMembers(membersData);
+    } catch (error: any) {
+      console.error('Error recargando miembros:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Estadísticas
   const stats = {
     total: members.length,
     active: members.filter(m => m.isActive).length,
-    inactive: members.filter(m => m.isActive === false).length,
+    inactive: members.filter(m => !m.isActive).length,
     admins: members.filter(m => m.isAdmin).length,
-    byRole: members.reduce((acc, m) => {
-      const role = m.role || 'Sin rol';
-      acc[role] = (acc[role] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>),
-    byDepartment: members.reduce((acc, m) => {
-      const dept = m.department || 'Sin departamento';
-      acc[dept] = (acc[dept] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>)
   };
 
-  const agency = userAgencies.find(ua => ua.agency.id === agencyId)?.agency || currentAgency;
+  const agencyName = currentAgency?.id === agencyId
+    ? currentAgency?.name
+    : availableAgencies?.find(a => a.agencyId === agencyId)?.agencyName || 'Agencia';
 
   if (!hasAccess) {
     return null;
@@ -356,9 +254,7 @@ export default function AgencyManagementPage() {
           </Button>
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Gestión de Agencia</h1>
-            <p className="text-slate-600 mt-1">
-              {agency?.name}
-            </p>
+            <p className="text-slate-600 mt-1">{agencyName}</p>
           </div>
         </div>
         <Button onClick={() => setIsInviteDialogOpen(true)}>
@@ -416,7 +312,7 @@ export default function AgencyManagementPage() {
                 Miembros de la agencia
               </CardTitle>
               <CardDescription>
-                Gestiona los miembros de la agencia, sus roles y permisos
+                Gestiona los miembros de la agencia y sus roles
               </CardDescription>
             </div>
             {/* Botón para transferir propiedad - solo si hay más de un miembro */}
@@ -434,63 +330,93 @@ export default function AgencyManagementPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <AgencyMembersList
-            members={members}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            isLoading={isLoading}
-          />
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : members.length === 0 ? (
+            <div className="text-center py-8 text-slate-500">
+              No hay miembros en esta agencia
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Rol</TableHead>
+                  <TableHead>Departamento</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {members.map((member) => (
+                  <TableRow key={member.id}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {member.name}
+                        {member.isPrimary && (
+                          <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                            <Crown className="h-3 w-3 mr-1" />
+                            Owner
+                          </Badge>
+                        )}
+                        {member.isAdmin && !member.isPrimary && (
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                            <Shield className="h-3 w-3 mr-1" />
+                            Admin
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{member.email}</TableCell>
+                    <TableCell>{member.role || '-'}</TableCell>
+                    <TableCell>{member.department || '-'}</TableCell>
+                    <TableCell>
+                      {member.isActive ? (
+                        <Badge className="bg-green-100 text-green-700">
+                          <UserCheck className="h-3 w-3 mr-1" />
+                          Activo
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="bg-slate-100 text-slate-500">
+                          <UserX className="h-3 w-3 mr-1" />
+                          Inactivo
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {member.userId && !member.isPrimary && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(member)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
-      {/* Diálogos */}
-      <InviteUserDialog
-        open={isInviteDialogOpen}
-        onOpenChange={setIsInviteDialogOpen}
-        onSuccess={handleInviteSuccess}
-      />
-
-      <EditMemberDialog
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        member={selectedMember}
-        onSuccess={handleEditSuccess}
-      />
-
+      {/* Diálogo de confirmación de eliminación */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar miembro de la agencia?</AlertDialogTitle>
             <AlertDialogDescription>
-              {memberInOtherAgencies === true ? (
-                <>
-                  Esta acción desvinculará a {memberToDelete?.name} de esta agencia.
-                  El usuario permanecerá en otras agencias y mantendrá su cuenta.
-                  {memberToDelete?.isAdmin && stats.admins === 1 && (
-                    <span className="block mt-2 text-red-600 font-medium">
-                      ⚠️ Este es el último administrador. No puedes eliminarlo.
-                    </span>
-                  )}
-                </>
-              ) : memberInOtherAgencies === false ? (
-                <>
-                  Esta acción eliminará completamente a {memberToDelete?.name} del sistema.
-                  Se eliminará de esta agencia y de todas las demás, y perderá acceso a su cuenta.
-                  {memberToDelete?.isAdmin && stats.admins === 1 && (
-                    <span className="block mt-2 text-red-600 font-medium">
-                      ⚠️ Este es el último administrador. No puedes eliminarlo.
-                    </span>
-                  )}
-                </>
-              ) : (
-                <>
-                  Esta acción eliminará a {memberToDelete?.name} de esta agencia.
-                  {memberToDelete?.isAdmin && stats.admins === 1 && (
-                    <span className="block mt-2 text-red-600 font-medium">
-                      ⚠️ Este es el último administrador. No puedes eliminarlo.
-                    </span>
-                  )}
-                </>
+              Esta acción desvinculará a {memberToDelete?.name} de esta agencia.
+              {memberToDelete?.isAdmin && stats.admins === 1 && (
+                <span className="block mt-2 text-red-600 font-medium">
+                  ⚠️ Este es el último administrador. No puedes eliminarlo.
+                </span>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -523,7 +449,7 @@ export default function AgencyManagementPage() {
               Transferir propiedad de la agencia
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Selecciona el nuevo propietario de la agencia. El propietario actual perderá sus privilegios de administrador.
+              Selecciona el nuevo propietario de la agencia. El propietario actual perderá sus privilegios de propietario.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
@@ -536,7 +462,7 @@ export default function AgencyManagementPage() {
               </SelectTrigger>
               <SelectContent>
                 {members
-                  .filter(m => m.isActive && m.userId) // Solo miembros activos con userId
+                  .filter(m => m.isActive && m.userId && !m.isPrimary)
                   .map(member => (
                     <SelectItem key={member.id} value={member.userId || ''}>
                       <div className="flex items-center gap-2">
@@ -557,7 +483,7 @@ export default function AgencyManagementPage() {
                   <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
                   <div className="text-sm text-amber-800">
                     <p className="font-medium mb-1">Advertencia</p>
-                    <p>Esta acción transferirá la propiedad de la agencia al miembro seleccionado. Asegúrate de que es la persona correcta.</p>
+                    <p>Esta acción transferirá la propiedad de la agencia al miembro seleccionado.</p>
                   </div>
                 </div>
               </div>
@@ -585,7 +511,14 @@ export default function AgencyManagementPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Diálogo de invitación */}
+      <InviteUserDialog
+        open={isInviteDialogOpen}
+        onOpenChange={setIsInviteDialogOpen}
+        onSuccess={handleInviteSuccess}
+        agencyId={agencyId || undefined}
+      />
     </div>
   );
 }
-
