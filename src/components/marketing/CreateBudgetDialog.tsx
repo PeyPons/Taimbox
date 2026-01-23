@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useMarketing } from '@/contexts/MarketingContext';
+import { MarketingBudget } from '@/types/marketing';
 
 import {
   Dialog,
@@ -39,10 +40,11 @@ type FormValues = z.infer<typeof formSchema>;
 interface CreateBudgetDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialData?: MarketingBudget;
 }
 
-export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogProps) {
-  const { createBudget, budgets } = useMarketing();
+export function CreateBudgetDialog({ open, onOpenChange, initialData }: CreateBudgetDialogProps) {
+  const { createBudget, updateBudget, budgets } = useMarketing();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const currentYear = new Date().getFullYear();
@@ -51,24 +53,46 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      year: currentYear,
-      totalBudget: 0,
+      year: initialData?.year || currentYear,
+      totalBudget: initialData?.totalBudget || 0,
     },
   });
 
+  // Reset form when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      form.reset({
+        year: initialData.year,
+        totalBudget: initialData.totalBudget
+      });
+    } else {
+      form.reset({
+        year: currentYear,
+        totalBudget: 0
+      });
+    }
+  }, [initialData, form, currentYear]);
+
   const onSubmit = async (values: FormValues) => {
-    if (existingYears.has(values.year)) {
-      form.setError('year', { message: 'Ya existe un presupuesto para este ano' });
-      return;
+    // Check for year duplication only if year changed or creating new
+    if (!initialData || initialData.year !== values.year) {
+      if (existingYears.has(values.year)) {
+        form.setError('year', { message: 'Ya existe un presupuesto para este año' });
+        return;
+      }
     }
 
     setIsSubmitting(true);
     try {
-      const budget = await createBudget(values);
-      if (budget) {
-        form.reset();
-        onOpenChange(false);
+      if (initialData) {
+        await updateBudget(initialData.id, values);
+      } else {
+        await createBudget(values);
       }
+      onOpenChange(false);
+      if (!initialData) form.reset();
+    } catch (error) {
+      console.error(error);
     } finally {
       setIsSubmitting(false);
     }
@@ -80,10 +104,10 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <PiggyBank className="h-5 w-5" />
-            Crear Presupuesto Anual
+            {initialData ? 'Editar Presupuesto' : 'Crear Presupuesto Anual'}
           </DialogTitle>
           <DialogDescription>
-            Define el presupuesto total de marketing para un ano fiscal.
+            {initialData ? 'Modifica el presupuesto y año fiscal.' : 'Define el presupuesto total de marketing para un año fiscal.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -94,17 +118,18 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
               name="year"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Ano</FormLabel>
+                  <FormLabel>Año</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       placeholder="2026"
                       {...field}
                       onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      disabled={!!initialData} // Optional: Disable changing year if not desired, but let's allow it for now
                     />
                   </FormControl>
                   <FormDescription>
-                    Ano fiscal para el presupuesto
+                    Año fiscal para el presupuesto
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -127,7 +152,7 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
                     />
                   </FormControl>
                   <FormDescription>
-                    Techo de gasto total para el ano
+                    Techo de gasto total para el año
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -145,7 +170,7 @@ export function CreateBudgetDialog({ open, onOpenChange }: CreateBudgetDialogPro
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Crear Presupuesto
+                {initialData ? 'Guardar Cambios' : 'Crear Presupuesto'}
               </Button>
             </DialogFooter>
           </form>

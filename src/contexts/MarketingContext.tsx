@@ -114,6 +114,7 @@ interface MarketingContextType {
   // Monthly Plans
   getOrCreateMonthlyPlan: (categoryId: string, month: string) => Promise<MarketingMonthlyPlan | null>;
   updateResults: (planId: string, data: UpdateResultsForm) => Promise<void>;
+  updatePlanBudget: (planId: string, newAmount: number) => Promise<void>;
 
   // Movements (Transfers)
   createMovement: (data: CreateMovementForm) => Promise<BudgetMovement | null>;
@@ -617,6 +618,45 @@ export function MarketingProvider({ children }: { children: React.ReactNode }) {
     toast.success('Resultados actualizados');
   }, []);
 
+  const updatePlanBudget = useCallback(async (planId: string, newAmount: number) => {
+    const plan = monthlyPlans.find(p => p.id === planId);
+    if (!plan || !currentUser?.id) return;
+
+    const diff = newAmount - plan.budgetAllocated;
+    if (diff === 0) return;
+
+    const isInitialAllocation = plan.budgetAllocated === 0;
+
+    // Create a movement to reflect this change
+    const { data: movement, error: movError } = await supabase
+      .from('budget_movements')
+      .insert({
+        created_by: currentUser.id,
+        amount: Math.abs(diff),
+        to_plan_id: diff > 0 ? planId : null,
+        from_plan_id: diff < 0 ? planId : null,
+        type: isInitialAllocation ? 'allocation' : 'correction',
+        description: isInitialAllocation ? 'Asignación inicial' : 'Ajuste directo desde planificación'
+      })
+      .select()
+      .single();
+
+    if (movError) {
+      console.error('Error creating movement for budget update:', movError);
+      toast.error('Error al actualizar presupuesto');
+      return;
+    }
+
+    // Update local state (optimistic or fetched)
+    // The trigger usually updates the plan, but we can update locally for speed
+    setMonthlyPlans(prev => prev.map(p =>
+      p.id === planId ? { ...p, budgetAllocated: newAmount } : p
+    ));
+    setMovements(prev => [mapMovement(movement), ...prev]);
+    toast.success('Presupuesto actualizado');
+
+  }, [monthlyPlans, currentUser?.id]);
+
   // ============================================
   // Movements (Transfers)
   // ============================================
@@ -899,6 +939,7 @@ export function MarketingProvider({ children }: { children: React.ReactNode }) {
     // Monthly Plans
     getOrCreateMonthlyPlan,
     updateResults,
+    updatePlanBudget,
 
     // Movements
     createMovement,
@@ -924,7 +965,7 @@ export function MarketingProvider({ children }: { children: React.ReactNode }) {
     budgets, currentBudget, categories, monthlyPlans, movements, expenses, isLoading,
     createBudget, updateBudget, deleteBudget, selectBudget,
     createCategory, updateCategory, deleteCategory, reorderCategories,
-    getOrCreateMonthlyPlan, updateResults,
+    getOrCreateMonthlyPlan, updateResults, updatePlanBudget,
     createMovement, getMovementsForPlan,
     createExpense, updateExpense, deleteExpense, getExpensesForPlan,
     getRealSpentForPlan, getEstimatedForPlan,
