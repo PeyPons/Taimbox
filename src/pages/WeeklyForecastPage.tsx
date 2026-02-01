@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+
 import { useApp } from '@/contexts/AppContext';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +21,8 @@ import { es } from 'date-fns/locale';
 import { AlertCircle, TrendingUp, TrendingDown, CheckCircle2, Users, Plus, ArrowRight, ChevronLeft, ChevronRight, CalendarDays, Check, ChevronDown, ArrowUpDown, Search, Activity } from 'lucide-react';
 import { cn, formatProjectName } from '@/lib/utils';
 import { toast } from 'sonner';
-import { getStorageKey, getWeeksForMonth, getMonthlyCapacity, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { getStorageKey, getWeeksForMonth, getMonthlyCapacity, isAllocationInEffectiveMonth, getWeekEndDate } from '@/utils/dateUtils';
+import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
 import { MonthlyEvolutionChart } from '@/components/employee/MonthlyEvolutionChart';
@@ -47,8 +50,39 @@ export default function WeeklyForecastPage() {
   const [filterProjectStatus, setFilterProjectStatus] = useState<string>('all'); // all, red, yellow, green
   const [filterClient, setFilterClient] = useState<string>('all');
   const { activeFilters, filterProject } = useProjectFilters();
+  const weeklyCloseDay = useWeeklyCloseDay();
   const [filterId, setFilterId] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'name' | 'status' | 'difference' | 'contracted'>('status');
+
+  const [dbTransfers, setDbTransfers] = useState<any[]>([]);
+
+  // Cargar transferencias de la nueva tabla (BD)
+  useEffect(() => {
+    const fetchDbTransfers = async () => {
+      if (!currentUser?.agencyId) return;
+
+      const start = startOfMonth(currentMonth).toISOString();
+      const end = endOfMonth(currentMonth).toISOString();
+
+      const { data, error } = await supabase
+        .from('task_transfers')
+        .select(`
+          *,
+          from_employee:employees!task_transfers_from_employee_id_fkey(name, avatar_url),
+          to_employee:employees!task_transfers_to_employee_id_fkey(name, avatar_url),
+          allocation:allocations!task_transfers_allocation_id_fkey(task_name, project_id)
+        `)
+        .eq('agency_id', currentUser.agencyId)
+        .gte('requested_at', start)
+        .lte('requested_at', end);
+
+      if (!error && data) {
+        setDbTransfers(data);
+      }
+    };
+
+    fetchDbTransfers();
+  }, [currentMonth, currentUser?.agencyId]);
 
   useEffect(() => {
     localStorage.setItem('forecast_date', currentMonth.toISOString());
@@ -216,16 +250,57 @@ export default function WeeklyForecastPage() {
       projectName: string;
       hours: number;
       taskName: string;
-      status: 'pending' | 'kept' | 'distributed';
+      status: 'pending' | 'kept' | 'distributed' | 'rejected';
       feedbackId?: string;
       allocationId?: string;
       createdAt: string;
       comments?: string;
       distributedTasks?: Array<{ name: string; hours: number; weekDate: string; employeeName?: string }>;
       notes?: string;
-      originalWeek?: string; // Nueva info: Semana origen
-      targetWeek?: string;   // Nueva info: Semana destino
+      originalWeek?: string;
+      targetWeek?: string;
+      acceptanceMode?: 'keep' | 'move' | 'distribute' | 'rollover';
+      resultAllocationIds?: string[];
+      uniqueId: string;
     }>();
+
+    // 1. INTEGRACIÓN NUEVO SISTEMA: Añadir transferencias de la tabla task_transfers
+    dbTransfers.forEach(t => {
+      const key = t.id;
+      // Determinar estado visual basado en status y acceptance_mode
+      let status: 'pending' | 'kept' | 'distributed' | 'rejected' = 'pending';
+      if (t.status === 'accepted') {
+        // Use acceptance_mode to determine final status
+        if (t.acceptance_mode === 'distribute') {
+          status = 'distributed';
+        } else {
+          status = 'kept'; // 'keep', 'move', 'rollover' all show as kept
+        }
+      }
+      if (t.status === 'rejected') status = 'rejected';
+
+      transferMap.set(key, {
+        fromEmployeeId: t.from_employee_id,
+        fromEmployeeName: t.from_employee?.name || 'Desconocido',
+        fromEmployeeAvatar: t.from_employee?.avatar_url,
+        toEmployeeId: t.to_employee_id,
+        toEmployeeName: t.to_employee?.name || 'Desconocido',
+        toEmployeeAvatar: t.to_employee?.avatar_url,
+        projectId: t.allocation?.project_id || '',
+        projectName: projects.find(p => p.id === t.allocation?.project_id)?.name || 'Sin proyecto',
+        hours: t.hours_transferred,
+        taskName: t.allocation?.task_name || 'Tarea',
+        status: status,
+        allocationId: t.allocation_id,
+        createdAt: t.requested_at,
+        comments: t.reason,
+        originalWeek: t.requested_at,
+        // Include child allocation IDs and acceptance mode for detailed display
+        acceptanceMode: t.acceptance_mode,
+        resultAllocationIds: t.result_allocation_ids || [],
+        uniqueId: key
+      });
+    });
 
     // Procesar feedback de transferencias
     transferFeedbacks.forEach(fb => {
@@ -241,7 +316,7 @@ export default function WeeklyForecastPage() {
         const transferredTask = transferredTasks.find(t => t.id === fb.allocationId || t.taskName?.includes(`(transferida de ${fromEmployee.name})`));
 
         // Verificar si el empleado destino ya procesó la tarea
-        let status: 'pending' | 'kept' | 'distributed' = 'pending';
+        let status: 'pending' | 'kept' | 'distributed' | 'rejected' = 'pending';
         let targetWeek: string | undefined;
 
         const taskFeedbackOriginal = weeklyFeedback.find(f => f.allocationId === fb.allocationId);
@@ -305,7 +380,8 @@ export default function WeeklyForecastPage() {
           comments: fb.comments,
           notes,
           originalWeek: fb.weekStartDate,
-          targetWeek
+          targetWeek,
+          uniqueId: key
         });
       }
     });
@@ -333,7 +409,7 @@ export default function WeeklyForecastPage() {
           const key = `${task.id}-${toEmployee.id}`;
           if (!transferMap.has(key)) {
             const taskFeedback = weeklyFeedback.find(f => f.allocationId === task.id);
-            let status: 'pending' | 'kept' | 'distributed' = 'pending';
+            let status: 'pending' | 'kept' | 'distributed' | 'rejected' = 'pending';
             let targetWeek: string | undefined;
 
             if (taskFeedback) {
@@ -372,7 +448,8 @@ export default function WeeklyForecastPage() {
               allocationId: task.id,
               createdAt: task.weekStartDate,
               originalWeek: task.weekStartDate, // Asumimos que la tarea transferida conserva la fecha o es la fecha de llegada
-              targetWeek
+              targetWeek,
+              uniqueId: key
             });
           }
         }
@@ -551,7 +628,8 @@ export default function WeeklyForecastPage() {
           distributedTasks: group.distributedTasks.map(t => ({ name: t.name, hours: t.hours, weekDate: t.weekDate, employeeName: t.employeeName })),
           notes,
           originalWeek: group.originalWeek, // Propagar semana origen
-          targetWeek: group.targetWeek // Semana destino
+          targetWeek: group.targetWeek, // Semana destino
+          uniqueId: `distributed-${key}`
         });
       }
     });
@@ -576,7 +654,7 @@ export default function WeeklyForecastPage() {
     }
 
     return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [weeklyFeedback, allocations, employees, projects, currentMonth, filterFeedbackEmployee, filterFeedbackProject, filterTransferStatus]);
+  }, [weeklyFeedback, allocations, employees, projects, currentMonth, filterFeedbackEmployee, filterFeedbackProject, filterTransferStatus, dbTransfers]);
 
   // Semanas futuras para el selector de redistribución
   const futureWeeks = useMemo(() => {
@@ -607,7 +685,7 @@ export default function WeeklyForecastPage() {
         const taskWeekDate = parseISO(a.weekStartDate);
         if (!isAllocationInEffectiveMonth(taskWeekDate.toISOString().split('T')[0], currentMonth)) return false;
 
-        const taskWeekEnd = addDays(taskWeekDate, 4);
+        const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
         // Solo tareas de semanas pasadas o actual
         return taskWeekEnd <= today;
       } catch {
@@ -1178,12 +1256,13 @@ export default function WeeklyForecastPage() {
                             <div className="space-y-2 pl-4">
                               {projectTransfers.map((transfer, idx) => (
                                 <div
-                                  key={transfer.allocationId || transfer.feedbackId || idx}
+                                  key={transfer.uniqueId || idx}
                                   className={cn(
                                     "p-3 rounded-lg border transition-all",
                                     transfer.status === 'pending' && "bg-amber-50/30 border-amber-100",
                                     transfer.status === 'kept' && "bg-blue-50/30 border-blue-100",
-                                    transfer.status === 'distributed' && "bg-purple-50/30 border-purple-100"
+                                    transfer.status === 'distributed' && "bg-purple-50/30 border-purple-100",
+                                    transfer.status === 'rejected' && "bg-red-50/30 border-red-100"
                                   )}
                                 >
                                   <div className="flex items-center gap-4">
@@ -1309,6 +1388,12 @@ export default function WeeklyForecastPage() {
                                           <Badge variant="outline" className="bg-purple-100 text-purple-700 border-purple-300 text-[10px]">
                                             <Users className="h-2.5 w-2.5 mr-1" />
                                             Redistribuida
+                                          </Badge>
+                                        )}
+                                        {transfer.status === 'rejected' && (
+                                          <Badge variant="outline" className="bg-red-100 text-red-700 border-red-300 text-[10px]">
+                                            <AlertCircle className="h-2.5 w-2.5 mr-1" />
+                                            Rechazada
                                           </Badge>
                                         )}
                                       </div>

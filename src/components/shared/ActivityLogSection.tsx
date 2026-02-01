@@ -433,12 +433,22 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
                 if (!nodes.has(parentId)) {
                     // Try to look up allocation for basic info
                     const pAlloc = allocations.find(a => a.id === parentId);
+
+                    // If parent allocation has no task name, try to get it from the child's original name
+                    const childAlloc = allocations.find(a => a.id === nodeId);
+                    const fallbackTaskName = childAlloc?.originalTransferredTaskName || pAlloc?.taskName || 'Tarea';
+
                     getNode(parentId, pAlloc ? {
-                        taskName: pAlloc.taskName,
+                        taskName: pAlloc.taskName || fallbackTaskName,
                         projectId: pAlloc.projectId,
                         projectName: getProjectName(pAlloc.projectId),
                         clientName: getClientName(pAlloc.projectId)
-                    } : undefined);
+                    } : {
+                        taskName: fallbackTaskName,
+                        projectId: childAlloc?.projectId || '',
+                        projectName: childAlloc ? getProjectName(childAlloc.projectId) : '',
+                        clientName: childAlloc ? getClientName(childAlloc.projectId) : ''
+                    });
                 }
             }
         });

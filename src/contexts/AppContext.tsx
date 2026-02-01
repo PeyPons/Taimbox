@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Employee, Client, Project, Allocation, LoadStatus, Absence, TeamEvent, WeeklyFeedback, EmployeeRole, WorkSchedule, UserRoutine } from '@/types';
+import { Employee, Client, Project, Allocation, LoadStatus, Absence, TeamEvent, WeeklyFeedback, EmployeeRole, WorkSchedule, UserRoutine, TaskTransfer } from '@/types';
 import { getWorkingDaysInRange, getMonthlyCapacity, getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange, getTeamEventDetailsInRange } from '@/utils/teamEventUtils';
@@ -162,6 +162,11 @@ interface AppContextType {
   addRoutine: (routine: Omit<UserRoutine, 'id'>) => Promise<void>;
   deleteRoutine: (id: string) => Promise<void>;
   toggleRoutine: (id: string) => Promise<void>;
+
+  // Transfers (Global State)
+  pendingTransfers: TaskTransfer[];
+  outgoingTransfers: TaskTransfer[];
+  fetchTransfers: () => Promise<void>;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -180,6 +185,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [teamEvents, setTeamEvents] = useState<TeamEvent[]>([]);
   const [weeklyFeedback, setWeeklyFeedback] = useState<WeeklyFeedback[]>([]);
   const [userRoutines, setUserRoutines] = useState<UserRoutine[]>([]);
+  // Transfers State
+  const [pendingTransfers, setPendingTransfers] = useState<TaskTransfer[]>([]);
+  const [outgoingTransfers, setOutgoingTransfers] = useState<TaskTransfer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSecondaryLoading, setIsSecondaryLoading] = useState(true);
 
@@ -1399,6 +1407,104 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+
+
+  // --- TRANSFERS ---
+  const fetchTransfers = useCallback(async () => {
+    if (!currentUser?.id || !currentUser.agencyId) return;
+
+    try {
+      // 1. Incoming: Transfers sent TO me (pending)
+      const { data: incoming, error: inError } = await supabase
+        .from('task_transfers')
+        .select(`
+          *,
+          from_employee:employees!task_transfers_from_employee_id_fkey(name),
+          allocation:allocations!task_transfers_allocation_id_fkey(task_name, project_id, week_start_date)
+        `)
+        .eq('to_employee_id', currentUser.id)
+        .eq('status', 'pending')
+        .order('requested_at', { ascending: false });
+
+      if (inError) throw inError;
+
+      // 2. Agency Pending: ALL pending transfers in the agency (for locking logic in Planner)
+      const { data: agencyPending, error: pendingError } = await supabase
+        .from('task_transfers')
+        .select(`
+          *,
+          to_employee:employees!task_transfers_to_employee_id_fkey(name),
+          allocation:allocations!task_transfers_allocation_id_fkey(task_name, project_id, week_start_date)
+        `)
+        .eq('agency_id', currentUser.agencyId)
+        .eq('status', 'pending');
+
+      if (pendingError) throw pendingError;
+
+      // 3. My History: Accepted/Rejected transfers where I was the sender (for history list)
+      const { data: myHistory, error: historyError } = await supabase
+        .from('task_transfers')
+        .select(`
+          *,
+          to_employee:employees!task_transfers_to_employee_id_fkey(name),
+          allocation:allocations!task_transfers_allocation_id_fkey(task_name, project_id, week_start_date)
+        `)
+        .eq('from_employee_id', currentUser.id)
+        .in('status', ['accepted', 'rejected'])
+        .order('requested_at', { ascending: false })
+        .limit(20);
+
+      if (historyError) throw historyError;
+
+      // Transform function
+      const transformTransfer = (t: any): TaskTransfer => {
+        const projectId = t.allocation?.project_id;
+        const project = projects.find(p => p.id === projectId);
+
+        return {
+          id: t.id,
+          allocationId: t.allocation_id,
+          fromEmployeeId: t.from_employee_id,
+          toEmployeeId: t.to_employee_id,
+          status: t.status,
+          reason: t.reason,
+          rejectionReason: t.rejection_reason,
+          hours: t.hours_transferred,
+          hoursTransferred: t.hours_transferred,
+          requestedAt: t.requested_at,
+          respondedAt: t.responded_at,
+          agencyId: t.agency_id,
+          fromEmployeeName: t.from_employee?.name,
+          toEmployeeName: t.to_employee?.name,
+          taskName: t.allocation?.task_name,
+          projectId: projectId,
+          projectName: project?.name || 'Proyecto desconocido',
+          originalWeek: t.allocation?.week_start_date
+        };
+      };
+
+      const pendingMapped = (agencyPending || []).map(transformTransfer);
+      const historyMapped = (myHistory || []).map(transformTransfer);
+
+      // Combine for outgoingTransfers state (Pending first, then History)
+      const combinedMap = new Map<string, TaskTransfer>();
+      pendingMapped.forEach(t => combinedMap.set(t.id, t));
+      historyMapped.forEach(t => combinedMap.set(t.id, t));
+
+      setPendingTransfers((incoming || []).map(transformTransfer));
+      setOutgoingTransfers(Array.from(combinedMap.values()));
+
+    } catch (error) {
+      console.error('Error fetching transfers:', error);
+    }
+  }, [currentUser?.id, currentUser?.agencyId, projects]);
+
+  useEffect(() => {
+    if (currentUser?.id) {
+      fetchTransfers();
+    }
+  }, [fetchTransfers, currentUser?.id]); // Also depends on fetchTransfers which depends on projects
+
   const deleteRoutine = async (id: string) => {
     setUserRoutines(prev => prev.filter(r => r.id !== id));
     await supabase.from('user_routines').delete().eq('id', id);
@@ -1433,7 +1539,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     ensureMonthLoaded,
     addWeeklyFeedback,
     refreshData: fetchData,
-    userRoutines, addRoutine, deleteRoutine, toggleRoutine
+    userRoutines, addRoutine, deleteRoutine, toggleRoutine,
+    pendingTransfers, outgoingTransfers, fetchTransfers
   }), [currentUser, employees, clients, projects, allocations, absences, teamEvents, weeklyFeedback, isLoading,
     isSecondaryLoading, fetchArchivedProjects,
     addEmployee, updateEmployee, deleteEmployee, toggleEmployeeActive,
@@ -1445,7 +1552,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getEmployeeMonthlyLoad,
     getProjectHoursForMonth, getClientTotalHoursForMonth, getProjectById, getClientById,
     loadDataForMonth, ensureMonthLoaded,
-    addWeeklyFeedback, fetchData, userRoutines]);
+    addWeeklyFeedback, fetchData, userRoutines,
+    pendingTransfers, outgoingTransfers]); // Added transfer deps
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

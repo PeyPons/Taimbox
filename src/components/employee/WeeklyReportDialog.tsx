@@ -15,7 +15,8 @@ import { es } from 'date-fns/locale';
 import { CheckCircle2, ArrowRight, AlertCircle, Plus, X, Users, Clock, Inbox, Trash2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { getStorageKey, getWeeksForMonth, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { getStorageKey, getWeeksForMonth, isAllocationInEffectiveMonth, getWeekEndDate } from '@/utils/dateUtils';
+import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { cn, formatProjectName } from '@/lib/utils';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
@@ -32,6 +33,7 @@ interface WeeklyReportDialogProps {
 
 export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }: WeeklyReportDialogProps) {
   const { allocations, projects, clients, employees, absences, teamEvents, weeklyFeedback, updateAllocation, addAllocation, deleteAllocation, addWeeklyFeedback, getEmployeeLoadForWeek, loadDataForMonth } = useApp();
+  const weeklyCloseDay = useWeeklyCloseDay();
   const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
   // Función helper para normalizar números (acepta tanto coma como punto como separador decimal)
@@ -122,7 +124,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
         if (!isAllocationInEffectiveMonth(a.weekStartDate, viewDate)) return;
 
         // El viernes de esa semana es el último día laboral
-        const taskWeekEnd = addDays(taskWeekDate, 4); // Viernes
+        const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay); // Configurable close day
 
         // Filtrado de semanas:
         // - Si targetWeek está definido (mes pasado completo), solo mostrar tareas de la última semana

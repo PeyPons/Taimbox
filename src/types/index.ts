@@ -10,6 +10,8 @@ export interface DepartmentConfig {
   departmentName: string;
   defaultView: ViewMode;
   isViewStrict: boolean;
+  closingDay?: number;    // 0=Monday, 6=Sunday
+  closingHour?: number;   // 0-23
   createdAt?: string;
   updatedAt?: string;
 }
@@ -56,6 +58,7 @@ export interface CustomProjectFilter {
 
 export interface RolePermissions {
   name: string;
+  is_system_role?: boolean;  // true = protected role (e.g., Administrador)
   permissions: import('./permissions').UserPermissions;
 }
 
@@ -79,6 +82,8 @@ export interface AgencySettings {
     crm_user_id?: boolean;           // Campo ID Usuario CRM en perfiles
     // Futuras integraciones: google_ads, meta_ads, etc.
   };
+  // Weekly system configuration
+  weeklyCloseDay?: number; // Days from week start for weekly close (0-6, default 4 = Friday)
 }
 
 export interface Agency {
@@ -106,7 +111,8 @@ export interface Employee {
   avatarUrl?: string;
   defaultWeeklyCapacity: number;
   workSchedule: WorkSchedule;
-  department?: string;
+  department?: string;         // Legacy field, use departmentId
+  departmentId?: string;       // FK to department_config
   hourlyRate?: number;
   isActive: boolean;
   user_id?: string;
@@ -178,6 +184,18 @@ export interface Allocation {
   originalTransferredTaskName?: string; // Nombre original de la tarea transferida (snapshot)
   transferSourceEmployeeId?: string; // ID del empleado origen de la transferencia
   userPriority?: number | null; // Prioridad personal del usuario (menor = más prioritario)
+  isLocked?: boolean; // When true, only admins can edit
+}
+
+export interface TimeEntry {
+  id: string;
+  allocationId: string;
+  employeeId: string;
+  date: string;       // YYYY-MM-DD
+  hours: number;      // 0-24
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface NewTaskRow {
@@ -261,4 +279,37 @@ export interface UserRoutine {
   estimatedMinutes: number;
   projectId?: string;
   isActive: boolean;
+}
+
+// ============================================
+// Transfer Types
+// ============================================
+
+export type TransferStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled';
+
+export interface TaskTransfer {
+  id: string;
+  allocationId: string;
+  fromEmployeeId: string;
+  toEmployeeId: string;
+  status: TransferStatus;
+  reason?: string;
+  rejectionReason?: string;
+  hours: number; // Mapped from hours_transferred for convenience
+  hoursTransferred: number;
+  requestedAt: string;
+  respondedAt?: string;
+  agencyId: string;
+
+  // Acceptance tracking
+  acceptanceMode?: 'keep' | 'move' | 'distribute' | 'rollover';
+  resultAllocationIds?: string[];
+
+  // Joined fields (from queries)
+  fromEmployeeName?: string;
+  toEmployeeName?: string;
+  taskName?: string;
+  projectId?: string;
+  projectName?: string; // We might need to fetch this or derive it
+  originalWeek?: string;
 }

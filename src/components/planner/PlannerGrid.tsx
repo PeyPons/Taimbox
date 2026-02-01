@@ -3,6 +3,7 @@ import { useApp } from '@/contexts/AppContext';
 import { EmployeeRow } from './EmployeeRow';
 import { AllocationSheet } from './AllocationSheet';
 import { GanttView } from './GanttView';
+import { PendingTransfersPanel, OutgoingTransfersList } from '@/components/transfers/TaskTransferComponents';
 
 
 
@@ -90,9 +91,14 @@ export function PlannerGrid() {
       setIsLoadingMonth(true);
       loadDataForMonth(currentMonth)
         .then(() => { loadedMonthsRef.current.add(monthKey); })
+        .catch((error) => {
+          console.error('[PlannerGrid] Error loading month data:', error);
+          // No mostrar pantalla blanca - simplemente marcar como cargado
+          loadedMonthsRef.current.add(monthKey);
+        })
         .finally(() => { setIsLoadingMonth(false); });
     }
-  }, [currentMonth, isGlobalLoading, loadDataForMonth]);
+  }, [currentMonth, isGlobalLoading, loadDataForMonth, allocations]);
 
   const weeks = getWeeksForMonth(currentMonth);
   const year = currentMonth.getFullYear();
@@ -217,10 +223,24 @@ export function PlannerGrid() {
   const sortedProjects = useMemo(() => [...(projects || [])].sort((a, b) => a.name.localeCompare(b.name)), [projects]);
   const sortedEmployees = useMemo(() => [...(employees || [])].filter(e => e.isActive).sort((a, b) => a.name.localeCompare(b.name)), [employees]);
 
+  // Añadir un timeout de seguridad para evitar estados de carga infinitos
+  useEffect(() => {
+    if (isLoadingMonth) {
+      const timeout = setTimeout(() => {
+        console.warn('[PlannerGrid] Loading timeout reached, forcing loading to false');
+        setIsLoadingMonth(false);
+      }, 10000); // 10 segundos máximo de carga
+      return () => clearTimeout(timeout);
+    }
+  }, [isLoadingMonth]);
+
   if (isLoadingMonth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-slate-400">Cargando tareas...</div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="text-slate-500 dark:text-slate-400">Cargando {getMonthName(currentMonth)}...</div>
+        </div>
       </div>
     );
   }
@@ -375,6 +395,11 @@ export function PlannerGrid() {
                 <div className="flex items-center gap-1.5"><div className="h-2.5 w-2.5 rounded-full bg-red-500" /> <span className="text-muted-foreground">&gt;110%</span></div>
               </div>
             </div>
+          </div>
+
+          {/* Panel de Transferencias Pendientes */}
+          <div className="px-4 py-2">
+            <PendingTransfersPanel />
           </div>
 
           {/* Grid Content */}

@@ -13,8 +13,9 @@ import {
   Building2, Settings, Users, Palette, Save, Loader2,
   Filter, Plus, Trash2, HelpCircle, Info, X,
   Rocket, Facebook, Megaphone, PlusCircle, ShieldCheck, GitBranch, Database, AlertTriangle,
-  Eye, Lock, Unlock
+  Eye, Lock, Unlock, Calendar
 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AVAILABLE_INTEGRATIONS } from '@/config/integrations';
 import { CustomProjectFilter, RolePermissions } from '@/types';
 import { DEFAULT_FILTERS } from '@/hooks/useProjectFilters';
@@ -97,6 +98,9 @@ export default function AgencySettingsPage() {
   const [enabledIntegrations, setEnabledIntegrations] = useState<Record<string, boolean>>(
     currentAgency?.settings?.enabledIntegrations || {}
   );
+  const [weeklyCloseDay, setWeeklyCloseDay] = useState(
+    currentAgency?.settings?.weeklyCloseDay ?? 4 // Default to Friday
+  );
 
   // Department view configuration
   const [deptConfigDialogOpen, setDeptConfigDialogOpen] = useState(false);
@@ -110,7 +114,6 @@ export default function AgencySettingsPage() {
       setModules(currentAgency.settings?.modules || {
         seo: true,
         ppc: true,
-        weeklyFeedback: true,
         professionalGoals: true,
         deadlines: true
       });
@@ -162,12 +165,22 @@ export default function AgencySettingsPage() {
   };
 
   // Role Management
+  const isSystemRole = (roleName: string) => {
+    const systemRoles = ['administrador', 'admin', 'administrator'];
+    return systemRoles.some(sr => sr === roleName.toLowerCase());
+  };
+
   const addNewRole = () => {
     setRoles([...roles, { name: 'Nuevo rol', permissions: { ...DEFAULT_PERMISSIONS, can_access_agency_settings: false } }]);
     setExpandedRoleIndex(roles.length); // Open the new role
   };
 
   const deleteRole = (index: number) => {
+    const role = roles[index];
+    if (role.is_system_role || isSystemRole(role.name)) {
+      toast.error('No puedes eliminar el rol de Administrador');
+      return;
+    }
     const newRoles = [...roles];
     newRoles.splice(index, 1);
     setRoles(newRoles);
@@ -223,7 +236,8 @@ export default function AgencySettingsPage() {
         },
         projectFilters,
         integrations,
-        enabledIntegrations
+        enabledIntegrations,
+        weeklyCloseDay
       });
 
       // Si el nombre ha cambiado, actualizarlo por separado
@@ -472,7 +486,8 @@ export default function AgencySettingsPage() {
                           <Label htmlFor={`role-${index}-${p}`} className="text-sm font-normal cursor-pointer flex-1">{PERMISSION_LABELS[p]}</Label>
                           <Switch
                             id={`role-${index}-${p}`}
-                            checked={role.permissions && role.permissions[p] !== false}
+                            checked={role.name === 'Administrador' ? true : (role.permissions && role.permissions[p] !== false)}
+                            disabled={role.name === 'Administrador'}
                             onCheckedChange={(checked) => toggleRolePermission(index, p, checked)}
                             className="scale-75"
                           />
@@ -487,7 +502,8 @@ export default function AgencySettingsPage() {
                           <Label htmlFor={`role-${index}-${p}`} className="text-sm font-normal cursor-pointer flex-1">{PERMISSION_LABELS[p]}</Label>
                           <Switch
                             id={`role-${index}-${p}`}
-                            checked={role.permissions && role.permissions[p] !== false}
+                            checked={role.name === 'Administrador' ? true : (role.permissions && role.permissions[p] !== false)}
+                            disabled={role.name === 'Administrador'}
                             onCheckedChange={(checked) => toggleRolePermission(index, p, checked)}
                             className="scale-75"
                           />
@@ -497,12 +513,13 @@ export default function AgencySettingsPage() {
                     <Separator />
                     <div className="space-y-2">
                       <Label className="text-xs font-semibold text-slate-500 uppercase">Otros</Label>
-                      {(['can_access_reports', 'can_access_client_reports', 'can_access_deadlines', 'can_access_okrs', 'can_assign_tasks_to_others'] as const).map(p => (
+                      {(['can_access_reports', 'can_access_client_reports', 'can_access_deadlines', 'can_access_okrs', 'can_assign_tasks_to_others', 'can_access_weekly_forecast'] as const).map(p => (
                         <div key={p} className="flex items-center justify-between py-1 px-2 rounded hover:bg-white">
                           <Label htmlFor={`role-${index}-${p}`} className="text-sm font-normal cursor-pointer flex-1">{PERMISSION_LABELS[p]}</Label>
                           <Switch
                             id={`role-${index}-${p}`}
-                            checked={role.permissions && role.permissions[p] !== false}
+                            checked={role.name === 'Administrador' ? true : (role.permissions && role.permissions[p] !== false)}
+                            disabled={role.name === 'Administrador'}
                             onCheckedChange={(checked) => toggleRolePermission(index, p, checked)}
                             className="scale-75"
                           />
@@ -654,16 +671,7 @@ export default function AgencySettingsPage() {
               />
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-lg border">
-              <div>
-                <Label className="font-medium">Weekly Feedback</Label>
-                <p className="text-xs text-slate-500">Sistema de feedback semanal</p>
-              </div>
-              <Switch
-                checked={modules.weeklyFeedback}
-                onCheckedChange={() => toggleModule('weeklyFeedback')}
-              />
-            </div>
+
 
             <div className="flex items-center justify-between p-3 rounded-lg border">
               <div>
@@ -690,141 +698,7 @@ export default function AgencySettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Integraciones Activables */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Rocket className="h-5 w-5 text-purple-600" />
-            Integraciones activables
-          </CardTitle>
-          <CardDescription>
-            Activa o desactiva integraciones específicas para tu agencia. Cada agencia puede tener configuraciones independientes.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Workflow */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 mb-3">
-              <GitBranch className="h-4 w-4 text-purple-600" />
-              <h3 className="font-semibold text-sm text-slate-700 uppercase">Workflow</h3>
-            </div>
-            {Object.values(AVAILABLE_INTEGRATIONS)
-              .filter(integration => integration.category === 'workflow')
-              .map(integration => {
-                const isEnabled = enabledIntegrations[integration.id] ?? false;
-                return (
-                  <div key={integration.id} className="flex items-start justify-between p-4 rounded-lg border bg-white">
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Label className="font-medium text-slate-900">{integration.name}</Label>
-                        <Badge variant="outline" className="text-xs">
-                          {integration.category}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-slate-600">{integration.description}</p>
-                    </div>
-                    <Switch
-                      checked={isEnabled}
-                      onCheckedChange={(checked) => {
-                        setEnabledIntegrations(prev => ({
-                          ...prev,
-                          [integration.id]: checked
-                        }));
-                      }}
-                      className="ml-4"
-                    />
-                  </div>
-                );
-              })}
-          </div>
 
-          <Separator />
-
-          {/* CRM */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 mb-3">
-              <Database className="h-4 w-4 text-blue-600" />
-              <h3 className="font-semibold text-sm text-slate-700 uppercase">CRM</h3>
-            </div>
-            {Object.values(AVAILABLE_INTEGRATIONS)
-              .filter(integration => integration.category === 'crm')
-              .map(integration => {
-                const isEnabled = enabledIntegrations[integration.id] ?? false;
-                const hasDependencyIssue = integration.dependencies?.some(
-                  depId => !(enabledIntegrations[depId] ?? false)
-                ) ?? false;
-
-                return (
-                  <div key={integration.id} className="flex items-start justify-between p-4 rounded-lg border bg-white">
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Label className="font-medium text-slate-900">{integration.name}</Label>
-                        <Badge variant="outline" className="text-xs">
-                          {integration.category}
-                        </Badge>
-                        {hasDependencyIssue && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <AlertTriangle className="h-4 w-4 text-amber-500" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Requiere que {integration.dependencies?.map(id => AVAILABLE_INTEGRATIONS[id]?.name).join(', ')} esté activo</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                      </div>
-                      <p className="text-sm text-slate-600">{integration.description}</p>
-                      {hasDependencyIssue && isEnabled && (
-                        <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
-                          <AlertTriangle className="h-3 w-3" />
-                          Esta integración requiere dependencias activas
-                        </p>
-                      )}
-                    </div>
-                    <Switch
-                      checked={isEnabled}
-                      onCheckedChange={(checked) => {
-                        // Validar dependencias antes de activar
-                        if (checked && integration.dependencies) {
-                          const missingDeps = integration.dependencies.filter(
-                            depId => !(enabledIntegrations[depId] ?? false)
-                          );
-                          if (missingDeps.length > 0) {
-                            const depNames = missingDeps.map(id => AVAILABLE_INTEGRATIONS[id]?.name).join(', ');
-                            toast.warning(`Para activar "${integration.name}", primero debes activar: ${depNames}`);
-                            return;
-                          }
-                        }
-
-                        // Si se desactiva una integración que tiene dependencias, advertir
-                        if (!checked && integration.id === 'crm_user_id') {
-                          const hasCrmExport = enabledIntegrations['crm_export'] ?? false;
-                          if (hasCrmExport) {
-                            toast.warning('Si desactivas "ID Usuario CRM", también se desactivará "Exportación de Tareas al CRM"');
-                            setEnabledIntegrations(prev => ({
-                              ...prev,
-                              [integration.id]: false,
-                              crm_export: false
-                            }));
-                            return;
-                          }
-                        }
-
-                        setEnabledIntegrations(prev => ({
-                          ...prev,
-                          [integration.id]: checked
-                        }));
-                      }}
-                      className="ml-4"
-                    />
-                  </div>
-                );
-              })}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Filtros de Proyectos */}
       <Card>
@@ -994,109 +868,274 @@ export default function AgencySettingsPage() {
             Integraciones
           </CardTitle>
           <CardDescription>
-            Configura las claves de API para conectar con plataformas externas
+            Conecta tu agencia con herramientas externas y configura funcionalidades avanzadas
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Meta Ads */}
-          <div className="space-y-4 border rounded-lg p-4 bg-slate-50/50">
-            <div className="flex items-center gap-2 mb-2">
-              <Facebook className="h-5 w-5 text-blue-600" />
-              <h3 className="font-semibold text-slate-900">Meta Ads</h3>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="meta-token">Access Token</Label>
-                <Input
-                  id="meta-token"
-                  type="password"
-                  value={integrations.metaAccessToken || ''}
-                  onChange={(e) => setIntegrations(prev => ({ ...prev, metaAccessToken: e.target.value }))}
-                  placeholder="EAAB..."
-                />
-              </div>
-            </div>
 
-            <div className="mt-4 pt-4 border-t">
-              <div className="space-y-4">
-                <h4 className="font-medium text-sm flex items-center gap-2">
-                  <PlusCircle className="w-4 h-4 text-emerald-600" />
-                  Añadir cuenta publicitaria
-                </h4>
-                <div className="flex flex-col md:flex-row gap-3 items-end">
-                  <div className="space-y-1.5 w-full">
-                    <Label className="text-xs">ID de cuenta (Meta Ads)</Label>
-                    <Input
-                      placeholder="Ej: act_123456789"
-                      value={newAccountId}
-                      onChange={(e) => setNewAccountId(e.target.value)}
-                      className="bg-white"
+          {/* Workflow Integrations */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-3">
+              <GitBranch className="h-4 w-4 text-purple-600" />
+              <h3 className="font-semibold text-sm text-slate-700 uppercase">Workflow</h3>
+            </div>
+            {Object.values(AVAILABLE_INTEGRATIONS)
+              .filter(integration => integration.category === 'workflow')
+              .map(integration => {
+                const isEnabled = enabledIntegrations[integration.id] ?? false;
+                return (
+                  <div key={integration.id} className="p-4 rounded-lg border bg-white">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Label className="font-medium text-slate-900">{integration.name}</Label>
+                          <Badge variant="outline" className="text-xs">
+                            {integration.category}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-slate-600">{integration.description}</p>
+                      </div>
+                      <Switch
+                        checked={isEnabled}
+                        onCheckedChange={(checked) => {
+                          setEnabledIntegrations(prev => ({
+                            ...prev,
+                            [integration.id]: checked
+                          }));
+                        }}
+                        className="ml-4"
+                      />
+                    </div>
+
+                    {/* Weekly System Config embedded in Workflow item */}
+                    {integration.id === 'weekly_feedback' && isEnabled && (
+                      <div className="mt-4 pt-4 border-t">
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="weekly-close-day" className="text-xs font-semibold text-slate-700">
+                              Día de cierre semanal
+                            </Label>
+                            <Select
+                              value={String(weeklyCloseDay)}
+                              onValueChange={(val) => setWeeklyCloseDay(Number(val))}
+                            >
+                              <SelectTrigger id="weekly-close-day" className="h-8 text-sm bg-slate-50">
+                                <SelectValue placeholder="Selecciona un día" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="0">Lunes</SelectItem>
+                                <SelectItem value="1">Martes</SelectItem>
+                                <SelectItem value="2">Miércoles</SelectItem>
+                                <SelectItem value="3">Jueves</SelectItem>
+                                <SelectItem value="4">Viernes (Recomendado)</SelectItem>
+                                <SelectItem value="5">Sábado</SelectItem>
+                                <SelectItem value="6">Domingo</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <p className="text-[10px] text-slate-500">
+                              Determina qué tareas se consideran "de esta semana".
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+          </div>
+          <Separator />
+
+          {/* CRM Integrations */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-3">
+              <Database className="h-4 w-4 text-blue-600" />
+              <h3 className="font-semibold text-sm text-slate-700 uppercase">CRM</h3>
+            </div>
+            {Object.values(AVAILABLE_INTEGRATIONS)
+              .filter(integration => integration.category === 'crm')
+              .map(integration => {
+                const isEnabled = enabledIntegrations[integration.id] ?? false;
+                const hasDependencyIssue = integration.dependencies?.some(
+                  depId => !(enabledIntegrations[depId] ?? false)
+                ) ?? false;
+
+                return (
+                  <div key={integration.id} className="flex items-start justify-between p-4 rounded-lg border bg-white">
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Label className="font-medium text-slate-900">{integration.name}</Label>
+                        <Badge variant="outline" className="text-xs">
+                          {integration.category}
+                        </Badge>
+                        {hasDependencyIssue && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Requiere que {integration.dependencies?.map(id => AVAILABLE_INTEGRATIONS[id]?.name).join(', ')} esté activo</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-600">{integration.description}</p>
+                      {hasDependencyIssue && isEnabled && (
+                        <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          Esta integración requiere dependencias activas
+                        </p>
+                      )}
+                    </div>
+                    <Switch
+                      checked={isEnabled}
+                      onCheckedChange={(checked) => {
+                        // Validate dependencies before enabling
+                        if (checked && integration.dependencies) {
+                          const missingDeps = integration.dependencies.filter(
+                            depId => !(enabledIntegrations[depId] ?? false)
+                          );
+                          if (missingDeps.length > 0) {
+                            const depNames = missingDeps.map(id => AVAILABLE_INTEGRATIONS[id]?.name).join(', ');
+                            toast.warning(`Para activar "${integration.name}", primero debes activar: ${depNames}`);
+                            return;
+                          }
+                        }
+
+                        // Warn if disabling a dependency
+                        if (!checked && integration.id === 'crm_user_id') {
+                          const hasCrmExport = enabledIntegrations['crm_export'] ?? false;
+                          if (hasCrmExport) {
+                            toast.warning('Si desactivas "ID Usuario CRM", también se desactivará "Exportación de Tareas al CRM"');
+                            setEnabledIntegrations(prev => ({
+                              ...prev,
+                              [integration.id]: false,
+                              crm_export: false
+                            }));
+                            return;
+                          }
+                        }
+
+                        setEnabledIntegrations(prev => ({
+                          ...prev,
+                          [integration.id]: checked
+                        }));
+                      }}
+                      className="ml-4"
                     />
                   </div>
-                  <Button onClick={handleAddAccount} disabled={isAddingAccount} size="sm" className="w-full md:w-auto shrink-0">
-                    {isAddingAccount ? '...' : 'Añadir'}
-                  </Button>
+                );
+              })}
+          </div>
+
+          <Separator />
+
+          <div className="space-y-6 mt-6 pt-6 ">
+            <div className="flex items-center gap-2 mb-4">
+              <Settings className="h-5 w-5 text-slate-700" />
+              <h3 className="font-semibold text-lg text-slate-900">Configuración de Plataformas de Anuncios</h3>
+            </div>
+
+            <div className="space-y-4 border rounded-lg p-4 bg-slate-50/50 mt-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Facebook className="h-5 w-5 text-blue-600" />
+                <h3 className="font-semibold text-slate-900">Meta Ads</h3>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="meta-token">Access Token</Label>
+                  <Input
+                    id="meta-token"
+                    type="password"
+                    value={integrations.metaAccessToken || ''}
+                    onChange={(e) => setIntegrations(prev => ({ ...prev, metaAccessToken: e.target.value }))}
+                    placeholder="EAAB..."
+                  />
                 </div>
               </div>
 
-              <div className="space-y-3 mt-4">
-                <h4 className="text-xs font-semibold text-slate-500 uppercase">Cuentas conectadas ({connectedAccounts.length})</h4>
-                {connectedAccounts.length === 0 ? (
-                  <p className="text-sm text-slate-400 italic">No hay cuentas conectadas.</p>
-                ) : (
-                  <div className="grid gap-2">
-                    {connectedAccounts.map(acc => (
-                      <div key={acc.id} className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                            <Facebook className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-slate-900">{acc.account_name || 'Cuenta de Anuncios'}</p>
-                            <p className="text-xs font-mono text-slate-500">{acc.account_id}</p>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-slate-400 hover:text-red-500 hover:bg-red-50"
-                          onClick={() => handleRemoveAccount(acc.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
+              <div className="mt-4 pt-4 border-t">
+                <div className="space-y-4">
+                  <h4 className="font-medium text-sm flex items-center gap-2">
+                    <PlusCircle className="w-4 h-4 text-emerald-600" />
+                    Añadir cuenta publicitaria
+                  </h4>
+                  <div className="flex flex-col md:flex-row gap-3 items-end">
+                    <div className="space-y-1.5 w-full">
+                      <Label className="text-xs">ID de cuenta (Meta Ads)</Label>
+                      <Input
+                        placeholder="Ej: act_123456789"
+                        value={newAccountId}
+                        onChange={(e) => setNewAccountId(e.target.value)}
+                        className="bg-white"
+                      />
+                    </div>
+                    <Button onClick={handleAddAccount} disabled={isAddingAccount} size="sm" className="w-full md:w-auto shrink-0">
+                      {isAddingAccount ? '...' : 'Añadir'}
+                    </Button>
                   </div>
-                )}
-              </div>
-            </div>
-          </div>
+                </div>
 
-          {/* Google Ads */}
-          <div className="space-y-4 border rounded-lg p-4 bg-slate-50/50">
-            <div className="flex items-center gap-2 mb-2">
-              <Megaphone className="h-5 w-5 text-amber-500" />
-              <h3 className="font-semibold text-slate-900">Google Ads</h3>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="google-customer-id">Customer ID</Label>
-                <Input
-                  id="google-customer-id"
-                  value={integrations.googleAdsCustomerId || ''}
-                  onChange={(e) => setIntegrations(prev => ({ ...prev, googleAdsCustomerId: e.target.value }))}
-                  placeholder="Ej: 9810132048"
-                />
+                <div className="space-y-3 mt-4">
+                  <h4 className="text-xs font-semibold text-slate-500 uppercase">Cuentas conectadas ({connectedAccounts.length})</h4>
+                  {connectedAccounts.length === 0 ? (
+                    <p className="text-sm text-slate-400 italic">No hay cuentas conectadas.</p>
+                  ) : (
+                    <div className="grid gap-2">
+                      {connectedAccounts.map(acc => (
+                        <div key={acc.id} className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                              <Facebook className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-slate-900">{acc.account_name || 'Cuenta de Anuncios'}</p>
+                              <p className="text-xs font-mono text-slate-500">{acc.account_id}</p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-slate-400 hover:text-red-500 hover:bg-red-50"
+                            onClick={() => handleRemoveAccount(acc.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="google-dev-token">Developer Token</Label>
-                <Input
-                  id="google-dev-token"
-                  type="password"
-                  value={integrations.googleAdsDevToken || ''}
-                  onChange={(e) => setIntegrations(prev => ({ ...prev, googleAdsDevToken: e.target.value }))}
-                  placeholder="Token de desarrollador"
-                />
+            </div>
+
+            {/* Google Ads */}
+            <div className="space-y-4 border rounded-lg p-4 bg-slate-50/50 mt-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Megaphone className="h-5 w-5 text-amber-500" />
+                <h3 className="font-semibold text-slate-900">Google Ads</h3>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="google-customer-id">Customer ID</Label>
+                  <Input
+                    id="google-customer-id"
+                    value={integrations.googleAdsCustomerId || ''}
+                    onChange={(e) => setIntegrations(prev => ({ ...prev, googleAdsCustomerId: e.target.value }))}
+                    placeholder="Ej: 9810132048"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="google-dev-token">Developer Token</Label>
+                  <Input
+                    id="google-dev-token"
+                    type="password"
+                    value={integrations.googleAdsDevToken || ''}
+                    onChange={(e) => setIntegrations(prev => ({ ...prev, googleAdsDevToken: e.target.value }))}
+                    placeholder="Token de desarrollador"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1146,28 +1185,7 @@ export default function AgencySettingsPage() {
         </CardContent>
       </Card>
 
-      <Separator />
 
-      {/* Botón Guardar (mantener al final para usuarios que prefieren scroll) */}
-      <div className="flex justify-end">
-        <Button
-          onClick={handleSave}
-          disabled={saving}
-          className="bg-primary hover:bg-primary/90"
-        >
-          {saving ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Guardando...
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4 mr-2" />
-              Guardar Cambios
-            </>
-          )}
-        </Button>
-      </div>
 
       {/* Botón Flotante de Guardar - Siempre visible */}
       <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 lg:left-auto lg:right-6 lg:transform-none">

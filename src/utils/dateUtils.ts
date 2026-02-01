@@ -134,3 +134,18 @@ export const isAllocationInEffectiveMonth = (weekStartDate: string | Date, viewM
     return false;
   }
 };
+
+/**
+ * Get the end date of a week based on configurable close day.
+ * @param weekStartDate - The start date of the week (Monday)
+ * @param closeDay - Days from week start (0-6, default 4 = Friday)
+ * @returns Date representing the week close date
+ */
+export const getWeekEndDate = (weekStartDate: Date, closeDay: number = 4): Date => {
+  return addDays(weekStartDate, closeDay);
+};
+
+/**
+ * Default week close day (Friday = 4 days from Monday)
+ */
+export const DEFAULT_WEEKLY_CLOSE_DAY = 4;

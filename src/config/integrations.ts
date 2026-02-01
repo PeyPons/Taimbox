@@ -10,8 +10,8 @@ export interface IntegrationDefinition {
 export const AVAILABLE_INTEGRATIONS: Record<string, IntegrationDefinition> = {
   weekly_feedback: {
     id: 'weekly_feedback',
-    name: 'Sistema Weekly (Cierre Semanal)',
-    description: 'Permite a los empleados gestionar tareas abiertas y transferidas mediante el sistema de cierre semanal',
+    name: 'Weekly',
+    description: 'Gestiona tareas abiertas y transferencias semanales',
     category: 'workflow',
     requiresConfig: false,
   },

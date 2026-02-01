@@ -20,7 +20,8 @@ import { useAllocationSheet, ProjectBudgetStatus } from '@/hooks/useAllocationSh
 import { useTasksImpact } from '@/hooks/useTasksImpact';
 import { AbsencesSheet } from '@/components/team/AbsencesSheet';
 import { ProfessionalGoalsSheet } from '@/components/team/ProfessionalGoalsSheet';
-import { getWeeksForMonth, getMonthName, isAllocationInEffectiveMonth, normalizeWeekStart } from '@/utils/dateUtils';
+import { getWeeksForMonth, getMonthName, isAllocationInEffectiveMonth, normalizeWeekStart, getWeekEndDate } from '@/utils/dateUtils';
+import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -46,6 +47,7 @@ import { useIntegration } from '@/hooks/useIntegration';
 import { useDashboardView } from '@/hooks/useDashboardView';
 import { ViewToggle, ViewModeIndicator } from '@/components/employee/ViewToggle';
 import { DailyZenDashboard } from '@/components/employee/DailyZenDashboard';
+import { PendingTransfersPanel } from '@/components/transfers/TaskTransferComponents';
 
 const INTERNAL_CLIENT_NAME = 'Interno';
 const INTERNAL_PROJECT_NAME = 'Gestiones internas';
@@ -95,6 +97,9 @@ export default function EmployeeDashboard() {
   // View mode hook for weekly vs daily zen view
   const { activeView, showToggle, setView, isStrict, departmentDefaultView, isLoading: isLoadingViewConfig } = useDashboardView();
 
+  // Get configurable weekly close day from agency settings
+  const weeklyCloseDay = useWeeklyCloseDay();
+
   const hasPendingWeeklyTasks = useMemo(() => {
     if (!myEmployeeProfile) return false;
     const today = new Date();
@@ -116,30 +121,43 @@ export default function EmployeeDashboard() {
         .map(fb => fb.allocationId!)
     );
 
-    const hasOpenTasks = allocations.some(a => {
+    // Find open tasks (past week tasks not processed)
+    const openTasks = allocations.filter(a => {
       if (a.employeeId !== myEmployeeProfile.id) return false;
       if (a.status === 'completed') return false;
       if (processedTaskIds.has(a.id)) return false;
       if (distributedFromTransferIds.has(a.id)) return false;
 
+      // IMPORTANT: Exclude distribution child tasks - they are the result of transfer acceptance
+      // and don't need Weekly review (they're new tasks, not past tasks needing action)
+      if (a.transferredFromAllocationId) return false;
+
       try {
         const taskWeekDate = parseISO(a.weekStartDate);
-        const taskWeekEnd = addDays(taskWeekDate, 4);
+        const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
         return taskWeekEnd <= today && isSameMonth(taskWeekDate, currentMonth);
       } catch {
         return false;
       }
     });
 
-    const hasTransferredTasks = allocations.some(a => {
+    // Find transferred tasks not yet processed
+    // NOTE: Tasks with `transferredFromAllocationId` are the RESULT of a distribution/transfer acceptance
+    // and should NOT trigger the weekly badge. They are new tasks, not pending actions.
+    // Only legacy transfers with '(transferida de' in the name need processing.
+    const transferredTasks = allocations.filter(a => {
       if (a.employeeId !== myEmployeeProfile.id) return false;
       if (a.status === 'completed') return false;
       if (processedTaskIds.has(a.id)) return false;
       if (distributedFromTransferIds.has(a.id)) return false;
 
-      const isTransferred = a.transferredFromAllocationId !== undefined && a.transferredFromAllocationId !== null
-        || a.taskName?.includes('(transferida de');
-      if (!isTransferred) return false;
+      // IMPORTANT: Exclude tasks that are the result of distribution (these are already "processed")
+      // They have transferredFromAllocationId set because they came from a distribution
+      if (a.transferredFromAllocationId) return false;
+
+      // Only legacy transfers with '(transferida de' in name need Weekly review
+      const isLegacyTransfer = a.taskName?.includes('(transferida de');
+      if (!isLegacyTransfer) return false;
 
       try {
         const taskWeekDate = parseISO(a.weekStartDate);
@@ -148,6 +166,9 @@ export default function EmployeeDashboard() {
         return false;
       }
     });
+
+    const hasOpenTasks = openTasks.length > 0;
+    const hasTransferredTasks = transferredTasks.length > 0;
 
     return hasOpenTasks || hasTransferredTasks;
   }, [allocations, myEmployeeProfile, currentMonth, weeklyFeedback]);
@@ -459,6 +480,9 @@ export default function EmployeeDashboard() {
       <div className="fixed inset-0 -z-10 bg-gradient-to-br from-primary/5 via-white to-primary/5 opacity-50" />
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_20%_50%,rgba(var(--primary-rgb),0.1),transparent_50%)]" />
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_80%_80%,rgba(var(--primary-rgb),0.1),transparent_50%)]" />
+
+      {/* 0. PANEL DE TRANSFERENCIAS PENDIENTES */}
+      <PendingTransfersPanel />
 
       {/* 1. CABECERA UNIFICADA DE ACCIONES */}
       <div className="flex flex-wrap items-center gap-2 justify-between">

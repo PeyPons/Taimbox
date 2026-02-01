@@ -18,9 +18,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useApp } from '@/contexts/AppContext';
 import { Allocation, Project } from '@/types';
-import { Plus, Pencil, CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, Check, TrendingUp, TrendingDown, Trash2, Link as LinkIcon, AlertOctagon, CheckCircle2, AlertTriangle, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc, GanttChart, ArrowLeft, ArrowRight, Filter, SlidersHorizontal } from 'lucide-react';
+import { Plus, Pencil, CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, Check, TrendingUp, TrendingDown, Trash2, Link as LinkIcon, AlertOctagon, CheckCircle2, AlertTriangle, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc, GanttChart, ArrowLeft, ArrowRight, Filter, SlidersHorizontal, ArrowRightLeft, Lock } from 'lucide-react';
 import { cn, formatProjectName } from '@/lib/utils';
-import { getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth, getWeekEndDate } from '@/utils/dateUtils';
+import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { format, addMonths, subMonths, isSameMonth, parseISO, addDays, isBefore, startOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -34,6 +35,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NewTaskRow, Deadline } from '@/types';
 import { supabase } from '@/lib/supabase';
+import { TransferRequestDialog } from '@/components/transfers/TaskTransferComponents';
+import { useTaskTransfers } from '@/hooks/useTaskTransfers';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -43,6 +46,7 @@ interface AllocationSheetProps {
   employeeId: string;
   weekStart: string;
   viewDateContext?: Date;
+  initialAutoAdd?: boolean;
 }
 
 type SortOption = 'budget_desc' | 'budget_asc' | 'my_hours_desc' | 'my_hours_asc' | 'name_asc' | 'name_desc';
@@ -55,8 +59,11 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     currentUser
   } = useApp();
 
+  const { outgoingTransfers } = useTaskTransfers();
+
   const { hasPermission } = usePermissions();
   const canAssignToOthers = hasPermission('can_assign_tasks_to_others');
+  const weeklyCloseDay = useWeeklyCloseDay();
 
   // Estados para los sheets de Timeline y Weekly
   const [timelineOpen, setTimelineOpen] = useState(false);
@@ -208,6 +215,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const [editProjectOpen, setEditProjectOpen] = useState(false);
   const [showAllWeeks, setShowAllWeeks] = useState(false);
 
+  // Estado para el dialog de transferencia
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [transferTask, setTransferTask] = useState<Allocation | null>(null);
+
   const isMobile = useIsMobile();
   const effectiveShowAllWeeks = showAllWeeks; // Permitir vista mensual en móvil si el usuario lo activa
 
@@ -314,6 +325,13 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
       }
     }
   }, [open, weekStart, weeks, selectedWeekIndex]);
+
+  // FIX: Ajustar índice de semana si el mes cambia y tiene menos semanas (ej. de Enero sem 5 a Febrero sem 4)
+  useEffect(() => {
+    if (weeks.length > 0 && selectedWeekIndex !== null && selectedWeekIndex >= weeks.length) {
+      setSelectedWeekIndex(weeks.length - 1);
+    }
+  }, [weeks.length, selectedWeekIndex]);
 
   // Índice de semana activo (seleccionado por usuario o actual)
   // Usar useMemo para asegurar que el cálculo se haga después de que todo esté inicializado
@@ -516,7 +534,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     // BLOQUEO: No permitir editar tareas de semanas pasadas
     try {
       const taskWeekDate = parseISO(allocation.weekStartDate);
-      const taskWeekEnd = addDays(taskWeekDate, 4); // Viernes de esa semana
+      const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay); // Configurable close day
       const today = new Date();
 
       if (taskWeekEnd < today) {
@@ -541,7 +559,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     // BLOQUEO: No permitir editar inline tareas de semanas pasadas
     try {
       const taskWeekDate = parseISO(allocation.weekStartDate);
-      const taskWeekEnd = addDays(taskWeekDate, 4);
+      const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
       const today = new Date();
 
       if (taskWeekEnd < today) {
@@ -1191,14 +1209,32 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                     </div>
                                                   </div>
                                                 </div>
-                                                <Button
-                                                  variant="ghost"
-                                                  size="icon"
-                                                  className="h-8 w-8 text-slate-400 shrink-0"
-                                                  onClick={() => startEditFull(alloc)}
-                                                >
-                                                  <Pencil className="h-4 w-4" />
-                                                </Button>
+                                                <div className="flex items-center gap-1 shrink-0">
+                                                  <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-indigo-400 hover:text-indigo-600"
+                                                        onClick={() => {
+                                                          setTransferTask(alloc);
+                                                          setTransferDialogOpen(true);
+                                                        }}
+                                                      >
+                                                        <ArrowRightLeft className="h-4 w-4" />
+                                                      </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent side="top">Transferir tarea</TooltipContent>
+                                                  </Tooltip>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-slate-400 shrink-0"
+                                                    onClick={() => startEditFull(alloc)}
+                                                  >
+                                                    <Pencil className="h-4 w-4" />
+                                                  </Button>
+                                                </div>
                                               </div>
                                             </div>
                                           );
@@ -1230,6 +1266,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                             const blockingTasks = allocations.filter(a => a.dependencyId === alloc.id && a.status !== 'completed');
                                             const isFirstTask = taskIndex === 0;
 
+                                            // Verificar si hay transferencia pendiente (Bloqueo de edición)
+                                            const pendingTransfer = outgoingTransfers.find(t => t.allocationId === alloc.id && t.status === 'pending');
+
                                             return (
                                               <tr
                                                 key={alloc.id}
@@ -1244,15 +1283,23 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                   <Checkbox
                                                     checked={isCompleted}
                                                     onCheckedChange={() => toggleTaskCompletion(alloc)}
-                                                    className={cn(isCompleted && "data-[state=checked]:bg-emerald-600")}
+                                                    disabled={!!pendingTransfer}
+                                                    className={cn(
+                                                      isCompleted && "data-[state=checked]:bg-emerald-600",
+                                                      pendingTransfer && "opacity-50 cursor-not-allowed"
+                                                    )}
                                                   />
                                                 </td>
                                                 <td className="py-2 px-3">
                                                   <div className="space-y-1">
                                                     <div className="flex items-center gap-1.5">
                                                       <div
-                                                        className={cn("font-medium cursor-pointer hover:bg-slate-100 rounded px-1 -mx-1", isCompleted && "line-through text-slate-400")}
-                                                        onDoubleClick={() => startInlineEdit(alloc)}
+                                                        className={cn(
+                                                          "font-medium rounded px-1 -mx-1",
+                                                          isCompleted && "line-through text-slate-400",
+                                                          pendingTransfer ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:bg-slate-100"
+                                                        )}
+                                                        onDoubleClick={() => !pendingTransfer && startInlineEdit(alloc)}
                                                         {...(isFirstTask && { 'data-tour': 'planner-task-name' })}
                                                       >
                                                         {inlineEditingId === alloc.id ? (
@@ -1423,9 +1470,13 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                       type="number"
                                                       step="0.25"
                                                       min="0"
+                                                      disabled={!!pendingTransfer}
                                                       defaultValue={alloc.hoursActual || 0}
                                                       onBlur={(e) => updateInlineHours(alloc, 'hoursActual', e.target.value)}
-                                                      className="w-12 px-1 py-0.5 text-[10px] text-center border rounded bg-blue-50 text-blue-700 font-mono"
+                                                      className={cn(
+                                                        "w-12 px-1 py-0.5 text-[10px] text-center border rounded font-mono",
+                                                        pendingTransfer ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-blue-50 text-blue-700"
+                                                      )}
                                                     />
                                                   ) : (
                                                     <span className="text-slate-300 text-xs">-</span>
@@ -1437,9 +1488,13 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                       type="number"
                                                       step="0.25"
                                                       min="0"
+                                                      disabled={!!pendingTransfer}
                                                       defaultValue={alloc.hoursComputed || 0}
                                                       onBlur={(e) => updateInlineHours(alloc, 'hoursComputed', e.target.value)}
-                                                      className="w-12 px-1 py-0.5 text-[10px] text-center border rounded bg-emerald-50 text-emerald-700 font-mono"
+                                                      className={cn(
+                                                        "w-12 px-1 py-0.5 text-[10px] text-center border rounded font-mono",
+                                                        pendingTransfer ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-emerald-50 text-emerald-700"
+                                                      )}
                                                     />
                                                   ) : (
                                                     <span className="text-slate-300 text-xs">-</span>
@@ -1465,29 +1520,52 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                   )}
                                                 </td>
                                                 <td className="py-2 px-3">
-                                                  <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-7 w-7 p-0"
-                                                    onClick={() => {
-                                                      // BLOQUEO: No permitir editar tareas de semanas pasadas (también en vista reducida)
-                                                      try {
-                                                        const taskWeekDate = parseISO(alloc.weekStartDate);
-                                                        const taskWeekEnd = addDays(taskWeekDate, 4);
-                                                        const today = new Date();
+                                                  <div className="flex items-center gap-1">
+                                                    {/* Botón Transferir */}
+                                                    <Tooltip>
+                                                      <TooltipTrigger asChild>
+                                                        <Button
+                                                          variant="ghost"
+                                                          size="sm"
+                                                          disabled={!!pendingTransfer}
+                                                          className="h-7 w-7 p-0 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 disabled:opacity-30"
+                                                          onClick={() => {
+                                                            setTransferTask(alloc);
+                                                            setTransferDialogOpen(true);
+                                                          }}
+                                                        >
+                                                          {pendingTransfer ? <ArrowRightLeft className="h-3.5 w-3.5 animate-pulse text-amber-500" /> : <ArrowRightLeft className="h-3.5 w-3.5" />}
+                                                        </Button>
+                                                      </TooltipTrigger>
+                                                      <TooltipContent side="top">Transferir a otro compañero</TooltipContent>
+                                                    </Tooltip>
+                                                    {/* Botón Editar */}
+                                                    <Button
+                                                      variant="ghost"
+                                                      size="sm"
+                                                      disabled={!!pendingTransfer}
+                                                      className="h-7 w-7 p-0 disabled:opacity-30"
+                                                      onClick={() => {
+                                                        if (pendingTransfer) return;
+                                                        // BLOQUEO: No permitir editar tareas de semanas pasadas (también en vista reducida)
+                                                        try {
+                                                          const taskWeekDate = parseISO(alloc.weekStartDate);
+                                                          const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
+                                                          const today = new Date();
 
-                                                        if (taskWeekEnd < today) {
-                                                          toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
-                                                          return;
+                                                          if (taskWeekEnd < today) {
+                                                            toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
+                                                            return;
+                                                          }
+                                                        } catch {
+                                                          // Si hay error parseando la fecha, permitir editar (por seguridad)
                                                         }
-                                                      } catch {
-                                                        // Si hay error parseando la fecha, permitir editar (por seguridad)
-                                                      }
-                                                      startEditFull(alloc);
-                                                    }}
-                                                  >
-                                                    <Pencil className="h-3.5 w-3.5" />
-                                                  </Button>
+                                                        startEditFull(alloc);
+                                                      }}
+                                                    >
+                                                      <Pencil className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                  </div>
                                                 </td>
                                               </tr>
                                             );
@@ -2341,12 +2419,24 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
         employeeId={employeeId}
         viewDate={viewDate}
       />
+
+      {/* Dialog de Transferencia de Tareas */}
+      {transferTask && (
+        <TransferRequestDialog
+          open={transferDialogOpen}
+          onOpenChange={setTransferDialogOpen}
+          allocationId={transferTask.id}
+          taskName={transferTask.taskName || ''}
+          currentHours={transferTask.hoursAssigned}
+        />
+      )}
     </>
   );
 
   // Función auxiliar para renderizar una tarea
   function renderTask(alloc: Allocation, weekIndex: number) {
     const isCompleted = alloc.status === 'completed';
+    const pendingTransfer = outgoingTransfers.find(t => t.allocationId === alloc.id && t.status === 'pending');
     const depTask = alloc.dependencyId ? allocations.find(a => a.id === alloc.dependencyId) : null;
     const depOwner = depTask ? employees.find(e => e.id === depTask.employeeId) : null;
     const isDepReady = depTask?.status === 'completed';
@@ -2454,21 +2544,33 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                     <DropdownMenuItem
                       onClick={() => startEditFull(alloc)}
                       disabled={(() => {
+                        if (pendingTransfer) return true;
                         try {
                           const taskWeekDate = parseISO(alloc.weekStartDate);
-                          const taskWeekEnd = addDays(taskWeekDate, 4);
+                          const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
                           return taskWeekEnd < new Date();
                         } catch {
                           return false;
                         }
                       })()}
                     >
-                      <Pencil className="mr-2 h-3.5 w-3.5" /> Editar
+                      {pendingTransfer ? <Lock className="mr-2 h-3.5 w-3.5" /> : <Pencil className="mr-2 h-3.5 w-3.5" />}
+                      {pendingTransfer ? 'Transferencia pendiente' : 'Editar'}
                     </DropdownMenuItem>
+                    {!pendingTransfer && (
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setTransferTask(alloc);
+                          setTransferDialogOpen(true);
+                        }}
+                      >
+                        <ArrowRightLeft className="mr-2 h-3.5 w-3.5" /> Transferir
+                      </DropdownMenuItem>
+                    )}
                     {(() => {
                       try {
                         const taskWeekDate = parseISO(alloc.weekStartDate);
-                        const taskWeekEnd = addDays(taskWeekDate, 4);
+                        const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
                         const isPastWeek = taskWeekEnd < new Date();
                         if (isPastWeek) {
                           return (

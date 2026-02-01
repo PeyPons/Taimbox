@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useProjectMetrics } from '@/hooks/useProjectMetrics';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -117,6 +118,12 @@ async function callAI(prompt: string): Promise<{ text: string; provider: 'gemini
 
 export default function DashboardAI() {
   const { employees, allocations, projects, clients, absences, teamEvents, getEmployeeMonthlyLoad, isLoading: dataLoading } = useApp();
+
+  // Métricas centralizadas (Single Source of Truth)
+  const { projectMetrics, employeeMetrics, totals, isLoading: metricsLoading } = useProjectMetrics({
+    month: new Date()
+  });
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -145,9 +152,14 @@ export default function DashboardAI() {
     return {
       month: format(now, "MMMM yyyy", { locale: es }),
       employeesCount: employees.length,
-      projectsCount: projects.length
+      projectsCount: projects.length,
+      // Métricas centralizadas inyectadas
+      totalPlanned: totals.totalPlanned,
+      totalComputed: totals.totalComputed,
+      totalBudget: totals.totalBudget,
+      avgProgress: totals.avgProgress
     };
-  }, [employees, projects]);
+  }, [employees, projects, totals]);
 
   // ============================================================
   // GENERACIÓN DE CONTEXTO DE NEGOCIO (LA CLAVE)

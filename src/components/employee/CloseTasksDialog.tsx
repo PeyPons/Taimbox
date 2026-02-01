@@ -6,6 +6,8 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { format, parseISO, startOfWeek, subWeeks, addDays, isBefore } from 'date-fns';
+import { getWeekEndDate } from '@/utils/dateUtils';
+import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { es } from 'date-fns/locale';
 import { CheckCircle2, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -19,64 +21,65 @@ interface CloseTasksDialogProps {
 
 export function CloseTasksDialog({ open, onOpenChange, employeeId }: CloseTasksDialogProps) {
   const { allocations, projects, clients, updateAllocation } = useApp();
-  
+  const weeklyCloseDay = useWeeklyCloseDay();
+
   const [taskHours, setTaskHours] = useState<Record<string, { actual: string; computed: string }>>({});
-  
+
   // Obtener semana anterior (lunes a viernes)
   const lastWeekStart = startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 });
-  const lastWeekEnd = addDays(lastWeekStart, 4); // Viernes
+  const lastWeekEnd = getWeekEndDate(lastWeekStart, weeklyCloseDay); // Configurable close day
   const lastWeekStr = format(lastWeekStart, 'yyyy-MM-dd');
-  
+
   // Tareas de la semana anterior que no están completadas
   const openTasks = useMemo(() => {
     const today = new Date();
-    
+
     return allocations.filter(a => {
       if (a.employeeId !== employeeId) return false;
       if (a.status === 'completed') return false;
-      
+
       try {
         const taskWeekDate = parseISO(a.weekStartDate);
-        const taskWeekEnd = addDays(taskWeekDate, 4);
-        
+        const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
+
         // Solo tareas de la semana anterior (que ya pasó)
         if (taskWeekDate.getTime() === lastWeekStart.getTime() && isBefore(taskWeekEnd, today)) {
           return true;
         }
-        
+
         return false;
       } catch {
         return false;
       }
     });
   }, [allocations, employeeId, lastWeekStart]);
-  
+
   const handleClose = async () => {
     try {
       let closedCount = 0;
-      
+
       for (const task of openTasks) {
         const hours = taskHours[task.id];
         if (!hours) continue;
-        
+
         const actual = parseFloat(hours.actual) || 0;
         const computed = parseFloat(hours.computed) || actual; // Si no se especifica, usar actual
-        
+
         if (actual <= 0) {
           toast.error(`"${task.taskName}" necesita horas reales mayores a 0`);
           continue;
         }
-        
+
         await updateAllocation({
           ...task,
           hoursActual: actual,
           hoursComputed: computed,
           status: 'completed'
         });
-        
+
         closedCount++;
       }
-      
+
       if (closedCount > 0) {
         toast.success(`${closedCount} tarea(s) cerrada(s) correctamente`);
         setTaskHours({});
@@ -89,7 +92,7 @@ export function CloseTasksDialog({ open, onOpenChange, employeeId }: CloseTasksD
       toast.error('Error al cerrar las tareas');
     }
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" aria-describedby="close-tasks-description">
@@ -103,7 +106,7 @@ export function CloseTasksDialog({ open, onOpenChange, employeeId }: CloseTasksD
             Indica las horas reales y computadas para cada tarea.
           </DialogDescription>
         </DialogHeader>
-        
+
         {openTasks.length === 0 ? (
           <div className="py-8 text-center text-muted-foreground">
             <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-emerald-500" />
@@ -115,7 +118,7 @@ export function CloseTasksDialog({ open, onOpenChange, employeeId }: CloseTasksD
               const project = projects.find(p => p.id === task.projectId);
               const client = clients.find(c => c.id === project?.clientId);
               const hours = taskHours[task.id] || { actual: '', computed: '' };
-              
+
               return (
                 <Card key={task.id} className="p-4">
                   <div className="space-y-3">
@@ -132,7 +135,7 @@ export function CloseTasksDialog({ open, onOpenChange, employeeId }: CloseTasksD
                         )}
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label htmlFor={`${task.id}-actual`} className="text-xs font-medium">
@@ -180,7 +183,7 @@ export function CloseTasksDialog({ open, onOpenChange, employeeId }: CloseTasksD
             })}
           </div>
         )}
-        
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar

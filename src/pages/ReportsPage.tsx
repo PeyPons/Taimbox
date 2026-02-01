@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useProjectMetrics } from '@/hooks/useProjectMetrics';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -91,6 +92,16 @@ export default function ReportsPage() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('all');
   const [isLoadingMonth, setIsLoadingMonth] = useState(false);
   const loadedMonthsRef = useRef<Set<string>>(new Set());
+
+  // Métricas centralizadas (Single Source of Truth)
+  const {
+    projectMetrics,
+    employeeMetrics,
+    totals: centralizedTotals
+  } = useProjectMetrics({
+    month: currentMonth,
+    employeeId: selectedEmployeeId === 'all' ? undefined : selectedEmployeeId
+  });
 
   const handlePrevMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
   const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
