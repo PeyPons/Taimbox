@@ -1,38 +1,275 @@
-# Timeboxing
+# ⏳ Timeboxing - Plataforma de Gestión de Agencia
 
-Sistema avanzado de gestión de recursos, planificación de agencias y seguimiento de presupuestos de marketing.
+![React](https://img.shields.io/badge/React-18-blue?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)
+![Supabase](https://img.shields.io/badge/Supabase-Database-green?logo=supabase)
+![Vite](https://img.shields.io/badge/Vite-Build-yellow?logo=vite)
 
-## 📚 Documentación Técnica (Exhaustiva)
-
-Para una comprensión profunda de la arquitectura, variables, lógica de negocio y estructura del código, consulte el documento principal:
-
-👉 **[DOCUMENTACION.md](./DOCUMENTACION.md)** (Versión en Español)
-
-### Contenidos destacados en la documentación:
-- **Glosario de Entidades**: Detalle de variables y tipos de datos.
-- **Algoritmos Críticos**: Gestión de capacidad, ausencias y semanas partidas.
-- **Integraciones**: Funcionamiento de los workers de Google y Meta Ads.
-- **Estado Global**: Guía sobre Context API y patrones de carga.
+**Timeboxing** es un sistema integral para la gestión de recursos, planificación de proyectos y control financiero de agencias de marketing. Esta documentación sirve como bitácora técnica completa y mapa de dependencias.
 
 ---
 
-## 🚀 Inicio Rápido
+## 🗺️ Mapa del Territorio
 
-### Requisitos
-- Node.js 18+
-- Proyecto Supabase configurado
+El proyecto se divide en **Módulos Funcionales**. Haz clic en cada sección para desplegar el análisis detallado **Archivo por Archivo**.
 
-### Instalación
-```bash
-npm install
+<details open>
+<summary><h2>🏗️ Fase 1: Fundamentos & Tipos</h2></summary>
+
+### 1.1 `src/types/index.ts` - Contratos de Datos
+**Ubicación**: `src/types/index.ts` | **Interfaces**: 22+
+
+El archivo más importante para contratos de datos.
+
+#### Tipos Principales
+
+| Interface | Campos Clave | Descripción |
+|-----------|--------------|-------------|
+| **`Allocation`** | `id`, `employeeId`, `projectId`, `hoursAssigned`, `hoursActual`, `status` | **CORE**: Tarea asignada. Unidad atómica del calendario. |
+| **`Employee`** | `id`, `defaultWeeklyCapacity`, `workSchedule`, `role` | Define capacidad y horario base. |
+| **`Project`** | `id`, `budgetHours`, `monthlyFee`, `status` (`active/paused`) | Contenedor de asignaciones. |
+| **`AgencySettings`** | `roles`, `modules`, `integrations` | Configuración multi-tenant. |
+| **`WorkSchedule`** | `monday`...`sunday` | Horas laborables por día (0-24). |
+| **`UserPermissions`** | `can_access_planner`, `can_edit_tasks`, etc. | 18 flags de permisos granulares. |
+
+#### Relaciones
+- `Allocation` -> pertenece a `Employee` y `Project`.
+- `Project` -> pertenece a `Client`.
+- Todos pertenecen a `Agency`.
+
+### 1.2 `src/App.tsx` - Entry Point
+**Ubicación**: `src/App.tsx`
+
+Configura la jerarquía de **7 Context Providers** y el Router con **20+ rutas**.
+- **Jerarquía**: `Auth` > `Agency` > `App` > `Marketing` > `Goals` > `Notification`.
+- **Protección**: Usa `ProtectedRoute` (Auth) y `PermissionProtectedRoute` (RBAC).
+
+### 1.3 `src/lib/supabase.ts`
+Cliente singleton de Supabase. Requiere `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`.
+
+</details>
+
+<details>
+<summary><h2>🧠 Fase 2: Gestión de Estado (Contexts)</h2></summary>
+
+### 2.1 `AppContext.tsx` (Core Data)
+**Líneas**: ~1500 | **Estado**: Crítico
+
+Gestiona la carga de la base de datos principal (`employees`, `projects`, `allocations`).
+
+#### Lógica de Carga y UPSERT (Anti-Stale)
+Cuando se cargan nuevos datos (ej. navegar a otro mes), NO reemplazamos todo. Hacemos un **merge inteligente**:
+```typescript
+// Ejemplo simplificado de lógica de mergew
+setAllocations(prev => {
+  const incomingMap = new Map(newAllocations.map(a => [a.id, a]));
+  // 1. Actualizar existentes
+  const updated = prev.map(p => incomingMap.has(p.id) ? incomingMap.get(p.id) : p);
+  // 2. Añadir nuevos
+  const newItems = newAllocations.filter(a => !prevMap.has(a.id));
+  return [...updated, ...newItems];
+});
 ```
 
-### Ejecución
-```bash
-# Frontend
-npm run dev
+#### Lazy Loading de Meses
+Para optimizar rendimiento, usamos `loadedMonthsRef`.
+- `ensureMonthLoaded(date)`: Verifica si el mes ya está en memoria.
+- Si ya existe en `loadedMonthsRef` -> **Retorno inmediato** (0 latencia).
+- Si no -> Fetch a Supabase -> Merge -> Añadir a Ref.
 
-# Sincronizadores de Ads (Node.js)
-node ads-worker.js
-node meta-worker.js
+#### Realtime
+- Suscripción activa a `postgres_changes` en tabla `allocations`.
+- Permite ver cambios de otros usuarios en tiempo real sin recargar.
+
+### 2.2 `AgencyContext.tsx` (Multi-Tenant)
+- **Propósito**: Aisla datos por agencia.
+- **Key Function**: `switchAgency(id)` limpia todo el estado y recarga.
+
+### 2.3 `MarketingContext.tsx` (Finanzas)
+- **Propósito**: Presupuestos jerárquicos y gastos.
+- **Estructura**: `AgencyBudget` -> `BudgetCategory` -> `MarketingPlan` -> `PlanMovement`.
+
+### 2.4 Otros Contextos
+- **`GoalsContext`**: OKRs y Objetivos Profesionales.
+- **`NotificationContext`**: Centro de notificaciones.
+- **`AuthContext`**: Sesión de usuario Supabase.
+- **`DemoContext`**: Datos mock para modo demostración.
+
+</details>
+
+<details>
+<summary><h2>�️ Fase 3: Utilidades Críticas</h2></summary>
+
+Archivos de lógica pura que son dependencias de todo el sistema.
+
+### 3.1 `src/utils/dateUtils.ts` (Split Weeks)
+**CRÍTICO**: Implementa la lógica de "Semanas Partidas".
+
+Timeboxing fuerza una separación estricta de meses.
+- **Problema**: La semana del 29 Dic (Lun) al 4 Ene (Dom) pertenece a dos meses fiscales diferentes.
+- **Solución (`getWeeksForMonth`)**:
+    1. Genera la semana visual normal.
+    2. Calcula `effectiveStart` y `effectiveEnd` recortando los días que no son del mes actual.
+    3. **Resultado**: La misma semana física aparece visualmente en Diciembre (29-31) y en Enero (1-4).
+
+### 3.2 `src/utils/capacityUtils.ts` (Anti-Double-Counting)
+**CRÍTICO**: Cálculo exacto de disponibilidad.
+
+Evita restar horas dos veces cuando coinciden eventos.
+**Fórmula**:
+```typescript
+function getDailyReduction(date, employee, absences, teamEvents) {
+  const scheduled = getScheduledHours(date, employee); // Ej. 8h
+  const absHours = getAbsenceHours(date, absences);    // Ej. 8h (Baja)
+  const evtHours = getEventHours(date, teamEvents);    // Ej. 8h (Festivo)
+  
+  // NO sumar (8+8=16). Tomar el MAYOR impacto.
+  return Math.min(scheduled, Math.max(absHours, evtHours));
+}
 ```
+
+### 3.3 `src/utils/taskPermissions.ts` (Reglas de Editabilidad)
+Centraliza la lógica de quién puede tocar qué.
+- `canEditTask(allocation, user, agencySettings)`:
+    - Retorna `false` si la tarea tiene `isLocked: true`.
+    - Retorna `false` si el departamento cerró (ej. Viernes 14:00) y no es admin.
+    - Retorna `true` si es el propio usuario o tiene permiso `can_assign_tasks_to_others`.
+
+### 3.4 `src/utils/aiReportUtils.ts` (IA & Reporting)
+- Generación de textos con IA para reportes de Ads. Integra `AIService`.
+
+### 3.5 `src/utils/logger.ts` (Logging)
+- Sistema centralizado de logs (`info`, `warn`, `error`) con soporte para entornos dev/prod.
+
+</details>
+
+<details>
+<summary><h2>🎣 Fase 4: Custom Hooks</h2></summary>
+
+Lógica reutilizable de UI.
+
+### 4.1 `src/hooks/useAllocationSheet.ts`
+**Lógica de Negocio de Allocations**.
+- **Input**: `employeeId`, `viewDate`.
+- **Output**:
+    - `projects`: Lista filtrada y ordenada.
+    - `getProjectBudgetStatus(projectId)`: Retorna `{ totalPlanned, totalComputed, budgetMax, isPacing }`.
+    - `updateInlineHours`: Función optimista para editar horas en la grilla.
+
+### 4.2 `src/hooks/usePermissions.ts` (RBAC)
+**Sistema Central de Seguridad**.
+- `canAccess(route)`: Valida contra `ROUTE_PERMISSIONS`.
+- `hasPermission(flag)`: Valida contra `UserPermissions`.
+- **Fallbacks**: Si `agencySettings.roles` está vacío, usa `RESTRICTED_PERMISSIONS`.
+
+### 4.3 `src/hooks/useTasksImpact.ts` (Simulación)
+**Pre-Cálculo de Presupuesto**.
+- Antes de guardar, simula:
+    - ¿El proyecto X se pasará de presupuesto?
+    - ¿El empleado Y tendrá carga > 100%?
+- Retorna `tasksImpact` con arrays de `projects` y `weeks` afectados.
+
+### 4.4 Otros Hooks
+- **`usePlannerData`**: Controla `currentMonth` y `loadedMonths`.
+- **`useProjectMetrics`**: Centraliza fórmulas de rentabilidad (`hoursValue`, `progressOperational`).
+- **`useTaskTransfers`**: Máquina de estados para transferencias (`pending` -> `accepted/rejected`).
+- **`useMobile`**: Detecta viewport (mobile vs desktop) para Layouts adaptativos.
+
+</details>
+
+<details>
+<summary><h2>🧩 Fase 5: Componentes Complejos</h2></summary>
+
+### 5.1 Planificación (`src/components/planner`)
+- **`PlannerGrid.tsx`**:
+    - Grilla virtualizada (renderiza solo lo visible).
+    - Gestiona selección de celdas (`selectedCell`) y navegación con teclado.
+- **`AllocationSheet.tsx`** (~2700 líneas):
+    - **Modo Batch**: Permite editar múltiples semanas a la vez.
+    - **Validación Visua**l: Muestra barras de progreso de presupuesto en tiempo real.
+    - **Integración**: Consume `useAllocationSheet` y `useTasksImpact`.
+
+### 5.2 Marketing (`src/components/marketing`)
+- **`MarketingMatrix.tsx`**:
+    - **Pivote Dinámico**: Filas (Categorías) vs Columnas (Meses).
+    - **Celdas Interactivas**: Click abre `ExpensesModal` o `BudgetDialog`.
+- **`CategoryDetailPanel.tsx`**:
+    - Panel lateral para gestión granular de una categoría.
+    - Muestra gráfico de "Evolución de Gasto".
+
+### 5.3 Equipo (`src/components/team`)
+- **`EmployeeDialog.tsx`**:
+    - **Dual Write**: Crea registro en `public.employees` Y usuario en `auth.users` (vía Edge Function).
+- **`AbsencesSheet.tsx`**:
+    - Calendario visual para marcar rangos de fechas.
+    - Valida que la fecha fin > fecha inicio.
+    - Calcula días hábiles afectados usando `capacityUtils`.
+
+</details>
+
+---
+
+## 🔗 Mapa de Dependencias (Análisis de Impacto)
+
+**⚠️ CRÍTICO**: Consulta esta sección antes de modificar código para evitar efectos secundarios.
+
+### 8.1 Dependencias de Tipos de Datos
+
+| Si modificas (Type) | Revisa estos archivos (Consumidores) |
+|-------------------|--------------------------------------|
+| **`Allocation`** | `AppContext`, `AllocationSheet`, `useAllocationSheet`, `PlannerGrid`, `useProjectMetrics` |
+| **`Employee`** | `AppContext`, `AgencyContext`, `EmployeeRow`, `TeamPage`, `capacityUtils` |
+| **`Project`** | `AppContext`, `ProjectsPage`, `useProjectMetrics`, `ClientProjectPage` |
+| **`AgencySettings`** | `AgencyContext`, `usePermissions`, `AgencySettingsPage` |
+| **`MarketingBudget`** | `MarketingContext`, `MarketingMatrix`, `BudgetPlanner` |
+
+### 8.2 Dependencias de Lógica Core (Contexts & Utils)
+
+| Si modificas (Logic) | Revisa estos efectos |
+|--------------------|----------------------|
+| **`dateUtils.getWeeksForMonth`** | Afecta visualización de TODO el calendario y cálculo de reportes mensuales. |
+| **`capacityUtils.getDailyReduction`** | Afecta métricas de capacidad de equipo. Un error aquí falsea la disponibilidad. |
+| **`AppContext.fetchData`** | Afecta la carga inicial. Verifica el manejo de caché (`ensureMonthLoaded`). |
+| **`AgencyContext.switchAgency`** | Afecta el limpiado de datos. Verifica que no queden datos de la agencia anterior. |
+
+### 8.3 Dependencias de Componentes UI
+
+| Si modificas (UI) | Revisa... |
+|-----------------|-----------|
+| **`AllocationSheet`** | `useAllocationSheet`, `useTasksImpact`, `useTaskTransfers`. Es muy sensible a cambios de estado. |
+| **`MarketingMatrix`** | Depende fuertemente de la estructura de árbol de `MarketingContext`. |
+| **`EmployeeDialog`** | Interactúa con `Supabase Auth` y tabla `employees` simultáneamente. |
+
+---
+
+## � Flujos de Datos Críticos
+
+### Flujo: Cambio de Agencia
+```
+1. Usuario cambia agencia -> AgencyContext.switchAgency()
+2. AppContext detecta cambio de ID
+3. LIMPIEZA TOTAL: Allocations, Employees, Projects y CACHÉ (loadedMonths)
+4. Nueva carga de datos (Fetch)
+```
+
+### Flujo: Carga de Mes (Planner)
+```
+1. Usuario navega a "Febrero" -> usePlannerData
+2. AppContext.ensureMonthLoaded('2026-02')
+3. ¿Está en caché? -> SÍ: Usar memoria | NO: Fetch Supabase + UPSERT
+```
+
+---
+
+## ✅ Checklist de Mantenimiento
+
+Antes de deployar cambios críticos:
+
+- [ ] **Types**: Si cambiaste un Type, ¿actualizaste los mappers en `AppContext`?
+- **Permisos**: Si añadiste una funcionalidad, ¿requiere un nuevo flag en `UserPermissions`?
+- **Split Weeks**: Si tocaste fechas, ¿probaste el cambio de año (Dic-Ene)?
+- **Mobile**: ¿Verificaste que el cambio se ve bien en `useMobile`?
+
+---
+
+> *Documentación Generada: Febrero 2026 - Proyecto Timeboxing*

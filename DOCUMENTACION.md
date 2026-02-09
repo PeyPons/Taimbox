@@ -1,6 +1,6 @@
 # Documentación Técnica Detallada - Timeboxing
 
-Esta documentación ofrece una visión profunda y técnica de la plataforma Timeboxing, diseñada para la gestión de recursos, presupuestos de marketing y planificación de agencias.
+Esta documentación ofrece una visión profunda y técnica de la plataforma Timeboxing. Incluye un **Mapa de Dependencias** (Sección 8) exhaustivo para analizar el impacto de cualquier cambio en el código.
 
 ---
 
@@ -129,3 +129,146 @@ El sistema sincroniza datos de Google Ads y Meta Ads mediante procesos externos.
     - Editar `src/hooks/usePermissions.ts` y añadir la nueva clave de permiso al objeto `RESTRICTED_PERMISSIONS`.
 - **Actualizar Workers**:
     - Los workers consumen tokens de `ad_accounts_config`. Si falla el refresco de token, el worker registrará el error en `ads_sync_logs`.
+
+---
+
+## 8. Mapa de Dependencias (Análisis de Impacto)
+
+**⚠️ CRÍTICO**: Usa esta sección cuando modifiques algo para saber TODOS los archivos afectados.
+
+### 8.1 Dependencias de Types (`src/types/index.ts`)
+
+Si modificas una interface, revisa estos consumidores:
+
+| Interface Modificada | Archivos a Revisar |
+|---------------------|-------------------|
+| `Allocation` | `AppContext.tsx`, `useAllocationSheet.ts`, `AllocationSheet.tsx`, `PlannerGrid.tsx`, `WeekCell.tsx`, `useProjectMetrics.ts`, `useTaskTransfers.ts` |
+| `Employee` | `AppContext.tsx`, `AgencyContext.tsx`, `EmployeeRow.tsx`, `TeamPage.tsx`, `usePermissions.ts`, `capacityUtils.ts` |
+| `Project` | `AppContext.tsx`, `ProjectsPage.tsx`, `ClientsAndProjectsPage.tsx`, `useAllocationSheet.ts`, `useProjectMetrics.ts` |
+| `Agency` / `AgencySettings` | `AgencyContext.tsx`, `AgencySettingsPage.tsx`, `usePermissions.ts` |
+| `WorkSchedule` | `capacityUtils.ts`, `dateUtils.ts`, `AppContext.tsx` |
+| `Absence` / `TeamEvent` | `capacityUtils.ts`, `AppContext.tsx`, `AbsencesSheet.tsx` |
+| `TaskTransfer` | `useTaskTransfers.ts`, `TaskTransferComponents.tsx`, `AppContext.tsx` |
+| `UserPermissions` | `usePermissions.ts`, `src/types/permissions.ts`, `PermissionProtectedRoute` en `App.tsx` |
+| `MarketingBudget` | `MarketingContext.tsx`, `MarketingMatrix.tsx`, `BudgetPlanner.tsx`, `CategoryDetailPanel.tsx` |
+| `OKR` / `ProfessionalGoal` | `GoalsContext.tsx`, `OkrsPage.tsx`, `ProfessionalGoalsSheet.tsx`, `EmployeeDashboard.tsx` |
+
+### 8.2 Dependencias de Contexts
+
+| Si modificas... | Revisa también... |
+|-----------------|-------------------|
+| `AppContext.tsx` (fetchData) | Todos los componentes que usan `useApp()` - especialmente `AllocationSheet`, `PlannerGrid`, `EmployeeDashboard` |
+| `AppContext.tsx` (getEmployeeLoadForWeek) | `WeekCell.tsx`, `EmployeeRow.tsx`, `usePlannerData.ts` |
+| `AppContext.tsx` (ensureMonthLoaded) | `usePlannerData.ts`, `AllocationSheet.tsx` |
+| `AgencyContext.tsx` (currentAgency) | `AppContext.tsx`, `usePermissions.ts`, `AgencySettingsPage.tsx` |
+| `MarketingContext.tsx` | `MarketingPage.tsx`, `BudgetPlanner.tsx`, `MarketingMatrix.tsx`, `CategoryDetailPanel.tsx` |
+| `GoalsContext.tsx` | `OkrsPage.tsx`, `ProfessionalGoalsSheet.tsx` |
+
+### 8.3 Dependencias de Utilities
+
+| Si modificas... | Revisa también... |
+|-----------------|-------------------|
+| `dateUtils.ts` → `getWeeksForMonth()` | `AppContext.tsx`, `usePlannerData.ts`, `useAllocationSheet.ts`, `AllocationSheet.tsx`, `MarketingMatrix.tsx` |
+| `dateUtils.ts` → `isAllocationInEffectiveMonth()` | `AppContext.tsx`, `usePlannerData.ts`, `useProjectMetrics.ts` |
+| `capacityUtils.ts` → `getDailyReduction()` | `getCapacityReductionInRange()`, `getCapacityReductionBreakdown()`, `AppContext.tsx` |
+| `capacityUtils.ts` → `getScheduledHoursForDay()` | Todas las funciones de capacidad, `WeekCell.tsx` |
+| `taskPermissions.ts` → `canEditTask()` | `AllocationSheet.tsx`, cualquier UI de edición de tareas |
+| `permissions.ts` → `ROUTE_PERMISSIONS` | `App.tsx` (guards), `PermissionProtectedRoute.tsx`, `Sidebar.tsx` |
+
+### 8.4 Dependencias de Hooks
+
+| Si modificas... | Revisa también... |
+|-----------------|-------------------|
+| `usePermissions.ts` | `AllocationSheet.tsx`, `PlannerGrid.tsx`, `AgencySettingsPage.tsx`, cualquier componente con lógica condicional por permisos |
+| `useAllocationSheet.ts` | `AllocationSheet.tsx`, `EmployeeDashboard.tsx` |
+| `usePlannerData.ts` | `PlannerGrid.tsx` |
+| `useProjectMetrics.ts` | `ReportsPage.tsx`, `ProjectImpactSummary.tsx` |
+| `useTaskTransfers.ts` | `AllocationSheet.tsx`, `TaskTransferComponents.tsx` |
+
+### 8.5 Dependencias de Componentes Complejos (Marketing & Team)
+
+Estos componentes son muy grandes y tienen lógica interna compleja:
+
+| Componente | Archivo | Dependencias Clave |
+|------------|---------|--------------------|
+| **MarketingMatrix** | `src/components/marketing/MarketingMatrix.tsx` | `MarketingContext`, `dateUtils` (meses), `CategoryDetailPanel` |
+| **CategoryDetailPanel** | `src/components/marketing/CategoryDetailPanel.tsx` | `MarketingContext`, `ExpensesModal`, `TransferModal` |
+| **EmployeeDialog** | `src/components/team/EmployeeDialog.tsx` | `AppContext` (UPSERT employee), `Supabase` (auth user creation) |
+| **AbsencesSheet** | `src/components/team/AbsencesSheet.tsx` | `AppContext`, `capacityUtils` (validación de fechas) |
+| **ProfessionalGoalsSheet** | `src/components/team/ProfessionalGoalsSheet.tsx` | `GoalsContext`, `AppContext` (empleado asociado) |
+
+### 8.6 Flujo de Cambio de Agencia
+
+Cuando `AgencyContext.currentAgency` cambia, se desencadena:
+```
+AgencyContext.switchAgency()
+    ↓
+AppContext useEffect detecta cambio de agency_id
+    ↓
+Limpia: employees, clients, projects, allocations, absences, teamEvents
+    ↓
+Limpia: loadedMonthsRef (caché de meses)
+    ↓
+fetchData() con nuevo agency_id
+    ↓
+Todos los componentes re-renderizan
+```
+
+### 8.7 Otras Utilidades y Hooks (Nuevos Hallazgos)
+
+| Archivo | Propósito | Dependencias Clave |
+|---------|-----------|--------------------|
+| `src/utils/aiReportUtils.ts` | Generación de resúmenes IA para Ads | `AIService`, `logger`, `CONSTANTS` |
+| `src/utils/logger.ts` | Sistema de logging estructurado | Usado en `aiReportUtils`, `PlannerGrid` |
+| `src/hooks/useTasksImpact.ts` | Pre-cálculo de impacto de nuevas tareas | `useAllocationSheet`, `ProjectBudgetStatus` |
+| `src/hooks/useMobile.tsx` | Detección de dispositivo móvil | UI responsiva en `AllocationSheet`, `Sidebar` |
+
+---
+
+### 8.6 Flujo de Carga de Mes
+
+```
+Usuario navega a otro mes
+    ↓
+usePlannerData.setCurrentMonth()
+    ↓
+ensureMonthLoaded(date) en AppContext
+    ↓
+¿loadedMonthsRef.has(monthKey)? → SÍ → Return (Cache hit)
+                                 ↓ NO
+loadDataForMonth(date)
+    ↓
+Fetch: allocations, absences, team_events, weekly_feedback
+    ↓
+UPSERT merge con estado existente
+    ↓
+loadedMonthsRef.add(monthKey)
+```
+
+---
+
+## 9. Checklist de Modificación
+
+Antes de modificar cualquier archivo crítico, usa este checklist:
+
+### Al modificar `src/types/index.ts`:
+- [ ] ¿Actualicé todos los mappers en Context? (snake_case → camelCase)
+- [ ] ¿Los nuevos campos son opcionales si la DB puede no tenerlos?
+- [ ] ¿Revisé la sección 8.1 de dependencias?
+
+### Al modificar `AppContext.tsx`:
+- [ ] ¿Mantuve la lógica de UPSERT si es datos incrementales?
+- [ ] ¿Actualicé `loadedMonthsRef` si es necesario?
+- [ ] ¿Los componentes que usan `useApp()` siguen funcionando?
+
+### Al modificar `capacityUtils.ts` o `dateUtils.ts`:
+- [ ] ¿Las funciones mantienen la firma anterior?
+- [ ] ¿El algoritmo de Split Weeks sigue funcionando en cambios de año?
+- [ ] ¿Probé con fechas edge (31 dic, 1 ene)?
+
+### Al añadir nuevo permiso:
+- [ ] Añadido a `UserPermissions` en `src/types/permissions.ts`
+- [ ] Añadido a `ROUTE_PERMISSIONS` si protege una ruta
+- [ ] Añadido a `DEFAULT_PERMISSIONS` y `RESTRICTED_PERMISSIONS` en `usePermissions.ts`
+- [ ] Añadido label en `PERMISSION_LABELS`
+
