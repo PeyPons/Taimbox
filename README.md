@@ -207,6 +207,108 @@ Lógica reutilizable de UI.
 
 </details>
 
+<details>
+<summary><h2>📄 Fase 6: Páginas (24 archivos)</h2></summary>
+
+Todas las páginas principales de la aplicación.
+
+### Planificación y Operaciones
+| Página | Tamaño | Descripción |
+|--------|--------|-------------|
+| `EmployeeDashboard.tsx` | 40KB | Vista personal del empleado ("Mi Semana") |
+| `DeadlinesPage.tsx` | 106KB | Gestión de fechas límite mensuales |
+| `WeeklyForecastPage.tsx` | 94KB | Previsión y confirmación semanal |
+| `TeamCapacityPage.tsx` | 26KB | Vista de carga del equipo completo |
+| `TeamPage.tsx` | 4KB | Listado de empleados |
+| `TeamPulsePage.tsx` | 14KB | Métricas de salud del equipo |
+
+### Clientes y Proyectos
+| Página | Tamaño | Descripción |
+|--------|--------|-------------|
+| `ClientsAndProjectsPage.tsx` | **116KB** | Página más grande. Gestión dual cliente/proyecto |
+| `ProjectsPage.tsx` | 58KB | Gestión de proyectos con OKRs |
+| `ClientsPage.tsx` | 38KB | CRUD de clientes |
+| `OkrsPage.tsx` | 41KB | Objetivos y resultados clave |
+
+### Reportes y Analytics
+| Página | Tamaño | Descripción |
+|--------|--------|-------------|
+| `ReportsPage.tsx` | 105KB | Dashboard de métricas de rentabilidad |
+| `ClientReportsPage.tsx` | 10KB | Reportes orientados al cliente |
+| `DashboardAI.tsx` | 26KB | Análisis con IA de rendimiento |
+
+### Publicidad (Ads)
+| Página | Tamaño | Descripción |
+|--------|--------|-------------|
+| `AdsPage.tsx` | 67KB | Integración Google Ads |
+| `MetaAdsPage.tsx` | 46KB | Integración Meta/Facebook Ads |
+
+### Configuración
+| Página | Tamaño | Descripción |
+|--------|--------|-------------|
+| `AgencySettingsPage.tsx` | 53KB | Configuración completa de agencia (roles, módulos) |
+| `SettingsPage.tsx` | 6KB | Preferencias de usuario |
+| `AgenciesPage.tsx` | 8KB | Selector de agencias |
+| `AgencyManagementPage.tsx` | 19KB | Administración avanzada de agencia |
+
+### Otros
+| Página | Tamaño | Descripción |
+|--------|--------|-------------|
+| `LandingPage.tsx` | 78KB | Página pública de marketing |
+| `Login.tsx` | 16KB | Autenticación con Supabase |
+| `MarketingPage.tsx` | 4KB | Wrapper del módulo Marketing |
+| `Index.tsx` | <1KB | Redirección inicial |
+| `NotFound.tsx` | <1KB | Error 404 |
+
+</details>
+
+<details>
+<summary><h2>⚙️ Fase 7: Servicios Core</h2></summary>
+
+### `src/services/aiService.ts`
+Sistema centralizado de IA con fallback.
+- **Providers**: Gemini (primario) → OpenRouter (secundario) → Coco (fallback local).
+- **Función Principal**: `callWithFallback(prompt, context)`.
+- **Uso**: Generación de reportes en `AdsPage` y `DashboardAI`.
+
+### `src/services/errorService.ts`
+Manejo centralizado de errores.
+- **`handle(error, context, options)`**: Loggea, muestra toast, y opcionalmente reporta a servicio externo.
+- **Integración**: Preparado para Sentry/LogRocket (comentado).
+
+### `src/services/auditService.ts`
+Sistema de auditoría para cambios críticos.
+- **Registra**: Quién hizo qué, cuándo, en qué entidad.
+- **Uso**: Cambios en presupuestos de marketing (`MarketingContext`).
+
+</details>
+
+<details>
+<summary><h2>🔧 Fase 8: Configuración y UI Library</h2></summary>
+
+### `src/config/constants.ts`
+Centraliza TODOS los valores mágicos del sistema.
+- **`TIMEOUTS`**: Delays de autosave, locks, sync (ej. `AUTO_SAVE_DEBOUNCE: 800`).
+- **`LIMITS`**: Máximos para paginación/cache (ej. `MAX_LOGS: 50`, `TOP_CAMPAIGNS: 10`).
+- **`UI`**: Dimensiones de modales, impresión, charts.
+- **`COLORS`**: Semáforos de carga (`HEALTHY`, `WARNING`, `CRITICAL`).
+- **`AI`**: Configuración de prompts (temperatura, reintentos).
+- **`SYNC`**: Timeouts de sincronización con APIs externas.
+
+### `src/config/integrations.ts`
+Define las integraciones disponibles para activar por agencia.
+- **`weekly_feedback`**: Sistema Weekly de confirmación.
+- **`crm_export`**: Exportación de tareas a CRM.
+- **`crm_user_id`**: Campo de ID de usuario CRM para empleados.
+
+### `src/components/ui/` (49 archivos)
+**Biblioteca UI**: Componentes de Shadcn UI.
+- No contienen lógica de negocio.
+- Incluyen: `Button`, `Dialog`, `Sheet`, `Table`, `Card`, `Tabs`, etc.
+- **`Sidebar.tsx`** (23KB) es el más complejo (navegación principal).
+
+</details>
+
 ---
 
 ## 🔗 Mapa de Dependencias (Análisis de Impacto)
