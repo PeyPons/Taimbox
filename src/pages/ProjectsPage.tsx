@@ -28,7 +28,8 @@ import {
   AlertOctagon, CircleDashed, Ban, Link as LinkIcon
 } from 'lucide-react';
 import { Project, OKR } from '@/types';
-import { cn, formatProjectName } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { toast } from 'sonner';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
@@ -39,6 +40,7 @@ export default function ProjectsPage() {
   const { projects, clients, allocations, employees, deleteProject, updateProject, addProject } = useApp();
   const { currentAgency } = useAgency();
   const isCrmExportEnabled = useIntegration('crm_export');
+  const { formatName: formatProjectName } = useProjectAliasing();
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState('');

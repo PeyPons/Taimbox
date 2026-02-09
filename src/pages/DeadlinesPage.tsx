@@ -33,7 +33,8 @@ import { DeadlinesTour, useDeadlinesTour } from '@/components/deadlines/Deadline
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Deadline, GlobalAssignment } from '@/types';
-import { cn, isKitDigitalProject } from '@/lib/utils';
+import { cn, matchesAliasingRule } from '@/lib/utils';
+import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { format, addMonths, subMonths, getDaysInMonth, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
@@ -49,6 +50,7 @@ export default function DeadlinesPage() {
   const { currentAgency } = useAgency();
   const { showTour } = useDeadlinesTour();
   const isMobile = useIsMobile();
+  const { formatName: formatProjectName } = useProjectAliasing();
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [globalAssignments, setGlobalAssignments] = useState<GlobalAssignment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -204,35 +206,35 @@ export default function DeadlinesPage() {
     cleanupMyLocks();
   }, [selectedMonth, currentUser]);
 
-  // Suscripción en tiempo real para deadlines
+  // Suscripción unificada en tiempo real (Deadlines, Global Assignments, Locks & Presence)
   useEffect(() => {
-    const channelName = `deadlines-changes-${selectedMonth}-${Date.now()}`;
-    const channel = supabase
-      .channel(channelName)
+    if (!selectedMonth || !currentAgency) return;
+
+    // Usar un canal COMPARTIDO para todos los usuarios en este mes (sin Date.now())
+    // Esto es crucial para que funcionen los eventos de broadcast (Presence) entre usuarios
+    const channelName = `deadlines-room-${selectedMonth}`;
+
+    const channel = supabase.channel(channelName)
+      // 1. Listeners para Deadlines
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'deadlines',
-          // No podemos filtrar por join en realtime, filtrado en cliente
           filter: `month=eq.${selectedMonth}`
         },
         (payload) => {
-          // Filtrar eventos que no pertenecen a nuestra agencia (si es posible verificar)
-          // Nota: lo ideal sería RLS, pero por ahora en cliente verificamos si el proyecto existe en nuestra lista
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             const newDeadline = payload.new as any;
-            // Solo procesar si el proyecto pertenece a nuestra agencia (está en la lista de projects cargados)
+            // Verificar si pertenece a un proyecto de la agencia actual
             if (!projects.find(p => p.id === newDeadline.project_id)) return;
 
-            // Cast typed variable
-            const newDeadlineTyped = newDeadline as { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean };
             setDeadlines(prev => {
-              const existing = prev.find(d => d.id === newDeadlineTyped.id);
+              const existing = prev.find(d => d.id === newDeadline.id);
               if (existing) {
                 return prev.map(d =>
-                  d.id === newDeadlineTyped.id
+                  d.id === newDeadline.id
                     ? {
                       id: newDeadline.id,
                       projectId: newDeadline.project_id,
@@ -271,22 +273,7 @@ export default function DeadlinesPage() {
           }
         }
       )
-      .subscribe((status) => {
-        if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Error en suscripción Realtime');
-        }
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [selectedMonth]);
-
-  // Suscripción en tiempo real para global assignments
-  useEffect(() => {
-    const channelName = `global-assignments-changes-${selectedMonth}-${Date.now()}`;
-    const channel = supabase
-      .channel(channelName)
+      // 2. Listeners para Global Assignments
       .on(
         'postgres_changes',
         {
@@ -294,14 +281,12 @@ export default function DeadlinesPage() {
           schema: 'public',
           table: 'global_assignments',
           filter: `month=eq.${selectedMonth}`
-          // Nota: Deberíamos filtrar por agency_id pero Supabase Realtime filter syntax es limitado para columnas nuevas sin reiniciar
         },
         (payload) => {
-
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             const payloadNew = payload.new as any;
             // Filtrar por agencia
-            if (payloadNew.agency_id && payloadNew.agency_id !== currentAgency?.id) return;
+            if (payloadNew.agency_id && payloadNew.agency_id !== currentAgency.id) return;
 
             const newAssignment = payload.new as { id: string; name: string; hours: number; affects_all: boolean; affected_employee_ids?: string[]; month: string; employee_id?: string; created_by?: string };
             setGlobalAssignments(prev => {
@@ -338,16 +323,72 @@ export default function DeadlinesPage() {
           }
         }
       )
+      // 3. Listeners para Editing Locks
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'project_editing_locks',
+          filter: `month=eq.${selectedMonth}`
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const lock = payload.new as { employee_id: string; project_id: string; expires_at: string; locked_at: string };
+            // Solo mostrar si no es nuestro propio lock y no ha expirado
+            if (lock.employee_id !== currentUser?.id && lock.expires_at > new Date().toISOString()) {
+              const employee = employees.find(e => e.id === lock.employee_id);
+              setEditingLocks(prev => ({
+                ...prev,
+                [lock.project_id]: {
+                  employeeId: lock.employee_id,
+                  employeeName: employee?.first_name || employee?.name || 'Alguien',
+                  lockedAt: lock.locked_at
+                }
+              }));
+            }
+          }
+          // DELETE se maneja mejor via broadcast para inmediatez, pero podríamos añadirlo aquí tb
+        }
+      )
+      // 4. Listeners para Broadcast (Locks liberados)
+      .on(
+        'broadcast',
+        { event: 'lock-released' },
+        (payload) => {
+          const { projectIds, employeeId } = payload.payload as { projectIds: string[]; employeeId: string };
+          // Solo procesar si no es nuestro propio broadcast
+          if (employeeId !== currentUser?.id && projectIds?.length > 0) {
+            setEditingLocks(prev => {
+              const newLocks = { ...prev };
+              projectIds.forEach(projectId => {
+                if (newLocks[projectId]?.employeeId === employeeId) {
+                  delete newLocks[projectId];
+                }
+              });
+              return newLocks;
+            });
+          }
+        }
+      )
       .subscribe((status) => {
         if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Error en suscripción Realtime de global assignments');
+          console.error(`❌ Error en suscripción Realtime unificada (${channelName})`);
+        } else if (status === 'SUBSCRIBED') {
+          // console.log(`✅ Suscrito a ${channelName}`);
         }
       });
 
+    // Guardar referencia para enviar broadcasts
+    broadcastChannelRef.current = channel;
+
     return () => {
+      broadcastChannelRef.current = null;
       supabase.removeChannel(channel);
     };
-  }, [selectedMonth]);
+  }, [selectedMonth, currentAgency, projects, currentUser, employees]);
+
+
 
   // Cargar locks de edición existentes
   useEffect(() => {
@@ -384,70 +425,7 @@ export default function DeadlinesPage() {
     loadEditingLocks();
   }, [selectedMonth, employees, currentUser]);
 
-  // Suscripción en tiempo real para locks de edición
-  useEffect(() => {
-    // Canal compartido para todos los usuarios del mismo mes
-    const channelName = `editing-locks-${selectedMonth}`;
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'project_editing_locks',
-          filter: `month=eq.${selectedMonth}`
-        },
-        (payload) => {
 
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const lock = payload.new as { employee_id: string; project_id: string; expires_at: string; locked_at: string };
-            // Solo mostrar si no es nuestro propio lock
-            if (lock.employee_id !== currentUser?.id && lock.expires_at > new Date().toISOString()) {
-              const employee = employees.find(e => e.id === lock.employee_id);
-              setEditingLocks(prev => ({
-                ...prev,
-                [lock.project_id]: {
-                  employeeId: lock.employee_id,
-                  employeeName: employee?.first_name || employee?.name || 'Alguien',
-                  lockedAt: lock.locked_at
-                }
-              }));
-            }
-          }
-          // DELETE events no incluyen project_id, usamos broadcast en su lugar
-        }
-      )
-      .on(
-        'broadcast',
-        { event: 'lock-released' },
-        (payload) => {
-          const { projectIds, employeeId } = payload.payload as { projectIds: string[]; employeeId: string };
-          // Solo procesar si no es nuestro propio broadcast
-          if (employeeId !== currentUser?.id && projectIds?.length > 0) {
-            setEditingLocks(prev => {
-              const newLocks = { ...prev };
-              projectIds.forEach(projectId => {
-                // Solo eliminar si el lock pertenece al empleado que lo liberó
-                if (newLocks[projectId]?.employeeId === employeeId) {
-                  delete newLocks[projectId];
-                }
-              });
-              return newLocks;
-            });
-          }
-        }
-      )
-      .subscribe();
-
-    // Guardar referencia al canal para usarla en las funciones de release
-    broadcastChannelRef.current = channel;
-
-    return () => {
-      broadcastChannelRef.current = null;
-      supabase.removeChannel(channel);
-    };
-  }, [selectedMonth, currentUser, employees]);
 
   // Limpiar locks al desmontar o cambiar de mes
   useEffect(() => {
@@ -661,16 +639,20 @@ export default function DeadlinesPage() {
     return filtered;
   }, [projects, clients, searchTerm, filterId, showHidden, showUnassignedOnly, hiddenProjects, filterByEmployee, deadlines, selectedMonth, sortBy, filterProject]);
 
-  // Agrupar proyectos por cliente (unificando Kit Digital)
+  // Agrupar proyectos por cliente (unificando según reglas de aliasing)
   const projectsByClient = useMemo(() => {
     const grouped: Record<string, typeof filteredProjects> = {};
+    const aliasingRules = currentAgency?.settings?.projectAliasingRules || [];
 
     filteredProjects.forEach(project => {
-      // Unificar todos los proyectos "Kit Digital" bajo un solo cliente virtual
-      // Usa la función helper que detecta todas las variantes: (KD), KD , KD:, kit digital, etc.
-      const isKitDigital = isKitDigitalProject(project.name);
+      // Verificar si el proyecto coincide con alguna regla de aliasing
+      const matchedRule = matchesAliasingRule(project.name, aliasingRules);
 
-      const clientId = isKitDigital ? 'kit-digital' : (project.clientId || 'sin-cliente');
+      // Si coincide y la regla agrupa como cliente virtual, usar ese cliente
+      const clientId = (matchedRule && matchedRule.groupAsVirtualClient)
+        ? matchedRule.id
+        : (project.clientId || 'sin-cliente');
+
       if (!grouped[clientId]) {
         grouped[clientId] = [];
       }
@@ -678,7 +660,7 @@ export default function DeadlinesPage() {
     });
 
     return grouped;
-  }, [filteredProjects]);
+  }, [filteredProjects, currentAgency?.settings?.projectAliasingRules]);
 
   // Expandir todos los clientes por defecto
   useEffect(() => {
@@ -1897,7 +1879,7 @@ export default function DeadlinesPage() {
                               {/* Info del proyecto */}
                               <div className="min-w-[180px]">
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-sm font-medium text-slate-800">{project.name}</span>
+                                  <span className="text-sm font-medium text-slate-800">{formatProjectName(project.name)}</span>
                                   {isHidden && <EyeOff className="h-3 w-3 text-slate-400 flex-shrink-0" />}
                                   {/* Indicador de edición concurrente */}
                                   {!isEditing && editingLocks[project.id] && editingLocks[project.id].employeeId !== currentUser?.id && (

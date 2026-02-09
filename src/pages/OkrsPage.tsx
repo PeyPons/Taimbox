@@ -14,7 +14,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ExternalLink } from 'lucide-react';
 import { Label } from '@/components/ui/label';
-import { cn, formatProjectName } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -37,6 +38,7 @@ export default function OkrsPage() {
     const { projects, clients, updateProject, currentUser, employees, allocations } = useApp();
     const { professionalGoals, addProfessionalGoal, updateProfessionalGoal, deleteProfessionalGoal } = useGoals();
     const { hasPermission } = usePermissions();
+    const { formatName: formatProjectName } = useProjectAliasing();
 
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState('projects');

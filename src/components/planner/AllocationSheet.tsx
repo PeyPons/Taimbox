@@ -2,24 +2,19 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { TimelineSheet } from '@/components/shared/TimelineSheet';
 import { WeeklyReportDialog } from '@/components/employee/WeeklyReportDialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useApp } from '@/contexts/AppContext';
 import { Allocation, Project } from '@/types';
-import { Plus, Pencil, CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, Check, TrendingUp, TrendingDown, Trash2, Link as LinkIcon, AlertOctagon, CheckCircle2, AlertTriangle, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc, GanttChart, ArrowLeft, ArrowRight, Filter, SlidersHorizontal, ArrowRightLeft, Lock } from 'lucide-react';
-import { cn, formatProjectName } from '@/lib/utils';
+import { CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, TrendingUp, TrendingDown, CheckCircle2, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc, GanttChart, ArrowLeft, ArrowRight, Filter, SlidersHorizontal, ArrowRightLeft, Lock, Check, Plus, Pencil, Link as LinkIcon, AlertTriangle, AlertOctagon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth, getWeekEndDate } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { format, addMonths, subMonths, isSameMonth, parseISO, addDays, isBefore, startOfWeek, startOfMonth, endOfMonth } from 'date-fns';
@@ -28,8 +23,12 @@ import { toast } from 'sonner';
 import { PlannerTour } from './PlannerTour';
 import { WeekNavigation } from './WeekNavigation';
 import { ProjectImpactSummary } from './ProjectImpactSummary';
-import { BatchTaskRow } from './BatchTaskRow';
 import { useAllocationSheet, ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
+import { useAllocationActions } from '@/hooks/useAllocationActions';
+import { AllocationProjectHeader } from '@/components/planner/allocation/AllocationProjectHeader';
+import { AllocationTaskRow } from '@/components/planner/allocation/AllocationTaskRow';
+import { BatchTaskRow } from '@/components/planner/BatchTaskRow';
+import { AllocationFormDialog } from '@/components/planner/allocation/AllocationFormDialog';
 import { useTasksImpact } from '@/hooks/useTasksImpact';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -37,6 +36,7 @@ import { NewTaskRow, Deadline } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { TransferRequestDialog } from '@/components/transfers/TaskTransferComponents';
 import { useTaskTransfers } from '@/hooks/useTaskTransfers';
+import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -64,6 +64,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const { hasPermission } = usePermissions();
   const canAssignToOthers = hasPermission('can_assign_tasks_to_others');
   const weeklyCloseDay = useWeeklyCloseDay();
+  const { formatName: formatProjectName } = useProjectAliasing();
 
   // Estados para los sheets de Timeline y Weekly
   const [timelineOpen, setTimelineOpen] = useState(false);
@@ -191,25 +192,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     }
   }, [viewDate, open, isGlobalLoading, loadDataForMonth]); // REMOVIDO allocations para evitar loops
 
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [editingAllocation, setEditingAllocation] = useState<Allocation | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [recentlyToggled, setRecentlyToggled] = useState<Set<string>>(new Set());
-
-  const [newTasks, setNewTasks] = useState<NewTaskRow[]>([]);
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
-  const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
-  const [inlineNameValue, setInlineNameValue] = useState('');
   const inlineInputRef = useRef<HTMLInputElement>(null);
-
-  const [editProjectId, setEditProjectId] = useState('');
-  const [editTaskName, setEditTaskName] = useState('');
-  const [editHours, setEditHours] = useState('');
-  const [editDescription, setEditDescription] = useState('');
-  const [editWeek, setEditWeek] = useState('');
-  const [editDependencyId, setEditDependencyId] = useState<string>('none');
 
   const [openComboboxId, setOpenComboboxId] = useState<string | null>(null);
   const [editProjectOpen, setEditProjectOpen] = useState(false);
@@ -252,6 +237,16 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     monthlyProjectSummary,
     getProjectBudgetStatus,
   } = useAllocationSheet(employeeId, viewDate);
+
+  const {
+    newTasks, inlineEditingId, inlineNameValue, setInlineNameValue,
+    editingAllocation, isFormOpen, setIsFormOpen, isSaving, showDeleteConfirm, setShowDeleteConfirm,
+    editProjectId, setEditProjectId, editTaskName, setEditTaskName, editHours, setEditHours,
+    editDescription, setEditDescription, editWeek, setEditWeek, editDependencyId, setEditDependencyId,
+    addTaskRow, removeTaskRow, updateTaskRow, handleSave, startEditFull, handleDeleteClick,
+    confirmDelete, toggleTaskCompletion, startInlineEdit, saveInlineEdit, updateInlineHours, moveTaskToWeek,
+    closeForm, recentlyToggled, cancelInlineEdit, clearNewTasks
+  } = useAllocationActions(employeeId, weeks, canAssignToOthers);
 
   const { getWeekExceedStatus } = useTasksImpact({
     newTasks,
@@ -392,12 +387,12 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const startAdd = (weekStartReal: Date) => {
     // Usar la fecha PROPORCIONADA por weeks (puede ser Jueves 1 Enero)
     const weekStartDate = format(weekStartReal, 'yyyy-MM-dd');
-    setEditingAllocation(null);
-    const safeId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `task-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    setNewTasks([{
-      id: safeId, projectId: '', taskName: '', hours: '', weekDate: weekStartDate, description: '', dependencyId: 'none'
-    }]);
-    setIsFormOpen(true);
+    closeForm();
+    clearNewTasks();
+    setTimeout(() => {
+      addTaskRow(weekStartDate);
+      setIsFormOpen(true);
+    }, 0);
   };
 
 
@@ -424,161 +419,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
 
 
-  const addTaskRow = () => {
-    const lastTask = newTasks.length > 0 ? newTasks[newTasks.length - 1] : null;
-    // Usar la fecha calculada en weeks (split week aware)
-    const defaultKey = weeks.length > 0 ? format(weeks[0].weekStart, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
-    setNewTasks(prev => [...prev, {
-      id: crypto.randomUUID(),
-      projectId: lastTask ? lastTask.projectId : '',
-      taskName: '',
-      hours: '',
-      weekDate: lastTask ? lastTask.weekDate : defaultKey,
-      description: '',
-      dependencyId: 'none',
-      employeeId: canAssignToOthers ? undefined : employeeId // Si no puede asignar a otros, usar el employeeId del sheet
-    }]);
-  };
 
-  const removeTaskRow = (id: string) => {
-    if (newTasks.length === 1) return;
-    setNewTasks(prev => prev.filter(t => t.id !== id));
-  };
-
-  const updateTaskRow = (id: string, field: keyof NewTaskRow, value: string) => {
-    setNewTasks(prev => prev.map(t => t.id === id ? { ...t, [field]: value } : t));
-  };
-
-  const handleSave = async () => {
-    // Prevenir múltiples ejecuciones simultáneas
-    if (isSaving) return;
-
-    setIsSaving(true);
-    try {
-      if (editingAllocation) {
-        if (!editProjectId || !editHours) {
-          setIsSaving(false);
-          return;
-        }
-        await updateAllocation({
-          ...editingAllocation,
-          projectId: editProjectId,
-          taskName: editTaskName,
-          weekStartDate: editWeek,
-          hoursAssigned: parseFloat(editHours),
-          description: editDescription,
-          dependencyId: editDependencyId === 'none' ? null : editDependencyId
-        });
-      } else {
-        // Procesar todas las tareas en paralelo para mejor rendimiento
-        const savePromises = newTasks
-          .filter(task => task.projectId && task.hours)
-          .map(task => {
-            const targetEmployeeId = task.employeeId || employeeId;
-            return addAllocation({
-              employeeId: targetEmployeeId,
-              projectId: task.projectId,
-              taskName: task.taskName,
-              weekStartDate: task.weekDate,
-              hoursAssigned: parseFloat(task.hours),
-              status: 'planned',
-              description: task.description,
-              dependencyId: task.dependencyId === 'none' ? null : task.dependencyId
-            });
-          });
-
-        await Promise.all(savePromises);
-      }
-      setIsFormOpen(false);
-    } catch (error) {
-      console.error('Error guardando tareas:', error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-
-
-  const handleDeleteClick = () => {
-    if (!editingAllocation) return;
-    setShowDeleteConfirm(true);
-  };
-
-  const confirmDelete = () => {
-    if (!editingAllocation) return;
-    deleteAllocation(editingAllocation.id);
-    setShowDeleteConfirm(false);
-    setIsFormOpen(false);
-  };
-
-  const toggleTaskCompletion = (allocation: Allocation) => {
-    const isCompleting = allocation.status !== 'completed';
-    setRecentlyToggled(prev => { const newSet = new Set(prev); newSet.add(allocation.id); return newSet; });
-    updateAllocation({
-      ...allocation,
-      status: isCompleting ? 'completed' : 'planned',
-      hoursActual: isCompleting ? allocation.hoursAssigned : 0,
-      hoursComputed: isCompleting ? allocation.hoursAssigned : 0
-    });
-    setTimeout(() => { setRecentlyToggled(prev => { const newSet = new Set(prev); newSet.delete(allocation.id); return newSet; }); }, 120000); // 2 minutos para dar tiempo a poner horas reales y computadas
-  };
-
-  const updateInlineHours = (allocation: Allocation, field: 'hoursActual' | 'hoursComputed', value: string) => {
-    const numValue = parseFloat(value) || 0;
-    if (allocation[field] !== numValue) {
-      updateAllocation({ ...allocation, [field]: numValue });
-    }
-  };
-
-  const startEditFull = (allocation: Allocation) => {
-    // BLOQUEO: No permitir editar tareas de semanas pasadas
-    try {
-      const taskWeekDate = parseISO(allocation.weekStartDate);
-      const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay); // Configurable close day
-      const today = new Date();
-
-      if (taskWeekEnd < today) {
-        toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
-        return;
-      }
-    } catch {
-      // Si hay error parseando la fecha, permitir editar (por seguridad)
-    }
-
-    setEditingAllocation(allocation);
-    setEditProjectId(allocation.projectId);
-    setEditTaskName(allocation.taskName || '');
-    setEditHours(allocation.hoursAssigned.toString());
-    setEditDescription(allocation.description || '');
-    setEditWeek(allocation.weekStartDate);
-    setEditDependencyId(allocation.dependencyId || 'none');
-    setIsFormOpen(true);
-  };
-
-  const startInlineEdit = (allocation: Allocation) => {
-    // BLOQUEO: No permitir editar inline tareas de semanas pasadas
-    try {
-      const taskWeekDate = parseISO(allocation.weekStartDate);
-      const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
-      const today = new Date();
-
-      if (taskWeekEnd < today) {
-        toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
-        return;
-      }
-    } catch {
-      // Si hay error parseando la fecha, permitir editar (por seguridad)
-    }
-
-    setInlineEditingId(allocation.id);
-    setInlineNameValue(allocation.taskName || '');
-  };
-  const saveInlineEdit = (allocation: Allocation) => { if (inlineNameValue.trim() !== allocation.taskName) { updateAllocation({ ...allocation, taskName: inlineNameValue }); } setInlineEditingId(null); };
-  const moveTaskToWeek = (allocation: Allocation, targetWeekStartReal: Date) => {
-    // Usar siempre la fecha real de la semana (lunes) para guardar tareas
-    const targetKey = format(targetWeekStartReal, 'yyyy-MM-dd');
-    updateAllocation({ ...allocation, weekStartDate: targetKey });
-  };
 
   // Ordenar proyectos según la opción seleccionada
   const sortProjectGroups = (groups: Record<string, Allocation[]>) => {
@@ -629,164 +470,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     });
   };
 
-  const renderProjectHeader = (project: Project | undefined, budgetStatus: ProjectBudgetStatus, allCompleted: boolean, taskCount: number, myHoursInProject: { estimated: number; completed: number; computed: number }) => {
-    if (!project) return <span className="font-bold text-xs truncate">Desc.</span>;
 
-    const { totalComputed, totalPlanned, budgetMax, budgetMin, percentage, status, breakdown } = budgetStatus;
-
-    const statusConfig = {
-      healthy: { color: 'bg-emerald-500', bgLight: 'bg-emerald-50', textColor: 'text-emerald-700', icon: null },
-      warning: { color: 'bg-amber-500', bgLight: 'bg-amber-50', textColor: 'text-amber-700', icon: <AlertTriangle className="w-3 h-3" /> },
-      overload: { color: 'bg-red-500', bgLight: 'bg-red-50', textColor: 'text-red-700', icon: <AlertOctagon className="w-3 h-3" /> },
-      under: { color: 'bg-blue-500', bgLight: 'bg-blue-50', textColor: 'text-blue-700', icon: null }
-    };
-
-    const config = statusConfig[status];
-    const exceededBy = totalComputed > budgetMax ? totalComputed - budgetMax : 0;
-    const projection = totalComputed + totalPlanned;
-
-    // Calcular progreso del empleado
-    const myProgress = myHoursInProject.estimated > 0
-      ? Math.round((myHoursInProject.computed / myHoursInProject.estimated) * 100)
-      : 0;
-
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className={cn(
-            "px-3 py-2 border-b cursor-help transition-colors",
-            allCompleted ? "bg-slate-100" : config.bgLight
-          )}>
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                {allCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
-                <span className={cn("font-bold text-xs truncate", allCompleted && "text-slate-500")}>{formatProjectName(project.name)}</span>
-                {allCompleted && <span className="text-[9px] text-slate-400">({taskCount})</span>}
-              </div>
-              {/* Mostrar horas del empleado en lugar del % global */}
-              <div className={cn("flex items-center gap-1.5 text-[10px]", allCompleted ? "text-slate-400" : "text-slate-600")}>
-                <span className="font-medium">{myHoursInProject.estimated}h</span>
-                {myHoursInProject.computed > 0 && (
-                  <>
-                    <span className="text-slate-300">·</span>
-                    <span className="text-emerald-600 font-semibold">{myHoursInProject.computed}h comp</span>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Barra de progreso del empleado */}
-            {!allCompleted && myHoursInProject.estimated > 0 && (
-              <div className="mt-1.5">
-                <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-                  <div
-                    className={cn("h-full transition-all duration-300", myProgress >= 100 ? "bg-emerald-500" : "bg-primary/100")}
-                    style={{ width: `${Math.min(myProgress, 100)}%` }}
-                  />
-                </div>
-                <div className="flex justify-between items-center mt-1">
-                  <span className="text-[9px] text-slate-500">
-                    {myHoursInProject.completed}/{taskCount} tareas
-                  </span>
-                  <span className={cn("text-[9px] font-medium", myProgress >= 100 ? "text-emerald-600" : "text-primary")}>
-                    {myProgress}%
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="right" className="max-w-xs p-0 z-50">
-          <div className="p-3 space-y-2">
-            <div className="font-bold text-sm border-b pb-2">{project.name}</div>
-
-            {/* Horas del empleado actual */}
-            <div className="bg-primary/10 rounded p-2 border border-indigo-100">
-              <div className="text-[10px] font-semibold text-primary uppercase mb-1">Tus horas</div>
-              <div className="flex gap-3 text-xs">
-                <span className="text-blue-600">Plan: <strong>{myHoursInProject.estimated}h</strong></span>
-                <span className="text-emerald-600">Comp: <strong>{myHoursInProject.computed}h</strong></span>
-              </div>
-            </div>
-
-            {/* Horas globales del cliente */}
-            {budgetMax > 0 && (
-              <div className="text-xs space-y-1 border-t pt-2">
-                <div className="text-[10px] font-semibold text-slate-500 uppercase mb-1">Total cliente</div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Asignadas:</span>
-                  <span className="font-medium">{budgetMin > 0 ? `${budgetMin}-` : ''}{budgetMax}h</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Planificado:</span>
-                  <span className="text-blue-600">{totalPlanned.toFixed(1)}h</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Computado (todos):</span>
-                  <span className={cn("font-bold", status === 'overload' ? 'text-red-600' : 'text-emerald-600')}>{totalComputed.toFixed(1)}h</span>
-                </div>
-
-                {/* Barra de progreso global */}
-                <div className="mt-2">
-                  <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-                    <div className={cn("h-full", config.color)} style={{ width: `${Math.min(percentage, 100)}%` }} />
-                  </div>
-                  <div className="flex justify-between items-center mt-0.5">
-                    <span className="text-[9px] text-slate-400">{Math.round(percentage)}% usado</span>
-                    {exceededBy > 0 && <span className="text-[9px] font-bold text-red-600">+{exceededBy.toFixed(1)}h exceso</span>}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {breakdown.length > 1 && (
-              <div className="border-t pt-2 mt-2">
-                <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 uppercase mb-1">
-                  <Users className="w-3 h-3" /> Equipo
-                </div>
-                <div className="space-y-1">
-                  {breakdown.map(({ employeeId: empId, employeeName, computed, planned }) => {
-                    const isCurrentEmployee = empId === employeeId;
-                    return (
-                      <div key={empId} className={cn("text-xs px-1.5 py-1 rounded", isCurrentEmployee ? "bg-primary/10" : "")}>
-                        <div className={cn("font-medium", isCurrentEmployee ? "text-indigo-700" : "text-slate-600")}>
-                          {employeeName} {isCurrentEmployee && "(tú)"}
-                        </div>
-                        <div className="flex gap-3 text-[10px] mt-0.5">
-                          <span className="text-blue-600">Plan: {planned.toFixed(1)}h</span>
-                          <span className="text-emerald-600">Comp: {computed.toFixed(1)}h</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {status === 'overload' && (
-              <div className="bg-red-50 text-red-700 text-[10px] p-2 rounded border border-red-200 mt-2">
-                ⚠️ Se han excedido las horas contratadas máximas. Revisar horas computadas.
-              </div>
-            )}
-            {status === 'warning' && (
-              <div className="bg-amber-50 text-amber-700 text-[10px] p-2 rounded border border-amber-200 mt-2">
-                {projection > budgetMax ? (
-                  <span>⚠️ Cuidado: La proyección total ({projection.toFixed(1)}h) ya supera el límite de {budgetMax}h.</span>
-                ) : (
-                  <span>⚡ Cerca del límite. Quedan {(budgetMax - totalComputed).toFixed(1)}h disponibles.</span>
-                )}
-              </div>
-            )}
-            {projection > budgetMax && status !== 'overload' && status !== 'warning' && (
-              <div className="bg-orange-50 text-orange-700 text-[10px] p-2 rounded border border-orange-200 mt-2">
-                📊 La proyección ({projection.toFixed(1)}h) supera las horas contratadas.
-              </div>
-            )}
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    );
-  };
 
   return (
     <>
@@ -1311,7 +995,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                             onBlur={() => saveInlineEdit(alloc)}
                                                             onKeyDown={(e) => {
                                                               if (e.key === 'Enter') saveInlineEdit(alloc);
-                                                              if (e.key === 'Escape') setInlineEditingId(null);
+                                                              if (e.key === 'Escape') cancelInlineEdit();
                                                             }}
                                                             className="w-full px-1 py-0.5 text-sm border rounded bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                                           />
@@ -1915,7 +1599,14 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                           </div>
                                         ) : (
                                           <>
-                                            {renderProjectHeader(project, budgetStatus, allCompleted, projAllocations.length, myHoursInProject)}
+                                            <AllocationProjectHeader
+                                              project={project}
+                                              budgetStatus={budgetStatus}
+                                              allCompleted={allCompleted}
+                                              taskCount={projAllocations.length}
+                                              myHoursInProject={myHoursInProject}
+                                              currentEmployeeId={employeeId}
+                                            />
                                             <ChevronDown className={cn(
                                               "w-4 h-4 text-slate-400 transition-transform absolute right-3 top-1/2 -translate-y-1/2",
                                               !isCollapsed && "rotate-180"
@@ -1926,7 +1617,30 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                     </CollapsibleTrigger>
                                     <CollapsibleContent>
                                       <div className="divide-y divide-slate-100 border-t">
-                                        {sortedTasks.map(alloc => renderTask(alloc, index))}
+                                        {sortedTasks.map(alloc => (
+                                          <AllocationTaskRow
+                                            key={alloc.id}
+                                            alloc={alloc}
+                                            weekIndex={index}
+                                            isInlineEditing={inlineEditingId === alloc.id}
+                                            inlineNameValue={inlineNameValue}
+                                            onInlineNameChange={setInlineNameValue}
+                                            onSaveInline={() => saveInlineEdit(alloc)}
+                                            onStartInlineEdit={() => startInlineEdit(alloc)}
+                                            onToggleCompletion={() => toggleTaskCompletion(alloc)}
+                                            onUpdateInlineHours={(field, value) => updateInlineHours(alloc, field, value)}
+                                            onStartEditFull={() => startEditFull(alloc)}
+                                            onMoveTask={(targetWeekStart) => moveTaskToWeek(alloc, targetWeekStart)}
+                                            nextWeekStart={weeks[(index + 1) % weeks.length].weekStart}
+                                            employees={employees}
+                                            allocations={allocations}
+                                            outgoingTransfers={outgoingTransfers}
+                                            weeklyFeedback={weeklyFeedback}
+                                            showAllWeeks={showAllWeeks}
+                                            setTransferTask={setTransferTask}
+                                            setTransferDialogOpen={setTransferDialogOpen}
+                                          />
+                                        ))}
                                       </div>
                                     </CollapsibleContent>
                                   </div>
@@ -2195,197 +1909,46 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
         </SheetContent>
       </Sheet >
 
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className={cn("overflow-hidden gap-0 p-0 transition-all duration-300",
-          editingAllocation ? "max-w-[650px] overflow-visible" : "max-w-[1100px] h-[80vh] flex flex-col"
-        )}>
-          <DialogHeader className={cn("p-6 pb-4 border-b shrink-0", !editingAllocation && "bg-white z-10")}>
-            <DialogTitle className="flex items-center gap-2">
-              {editingAllocation ? 'Editar tarea' : <><LayoutGrid className="h-5 w-5 text-primary" /> Planificar tareas</>}
-            </DialogTitle>
-            <DialogDescription>
-              {editingAllocation ? 'Modifica detalles y dependencias.' : `Planifica múltiples tareas para ${monthName}.`}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className={cn("flex-1", !editingAllocation && "flex overflow-hidden")}>
-            {editingAllocation ? (
-              <div className="p-6 pt-2">
-                <div className="grid gap-4 mt-4">
-                  <div className="space-y-2">
-                    <Label>Proyecto</Label>
-                    <Popover open={editProjectOpen} onOpenChange={setEditProjectOpen} modal={true}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className="w-full justify-between h-10 px-3 text-left font-normal"
-                        >
-                          <span className="truncate">
-                            {editProjectId
-                              ? formatProjectName(activeProjects.find(p => p.id === editProjectId)?.name || '')
-                              : "Seleccionar proyecto..."}
-                          </span>
-                          <Search className="h-4 w-4 opacity-50 shrink-0 ml-2" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[400px] p-0" align="start">
-                        <Command
-                          filter={(value, search) => {
-                            if (value.toLowerCase().includes(search.toLowerCase())) return 1;
-                            return 0;
-                          }}
-                        >
-                          <CommandInput placeholder="Buscar proyecto..." />
-                          <CommandList className="max-h-[280px] overflow-y-auto">
-                            <CommandEmpty>No se encontró proyecto.</CommandEmpty>
-                            <CommandGroup heading="Proyectos">
-                              {activeProjects.map((project) => {
-                                const client = clients.find(c => c.id === project.clientId);
-                                return (
-                                  <CommandItem
-                                    key={project.id}
-                                    value={`${project.name} ${client?.name || ''}`}
-                                    onSelect={() => {
-                                      setEditProjectId(project.id);
-                                      setEditProjectOpen(false);
-                                    }}
-                                  >
-                                    <Check className={cn("mr-2 h-4 w-4 shrink-0", editProjectId === project.id ? "opacity-100" : "opacity-0")} />
-                                    <div className="flex items-center gap-2 min-w-0">
-                                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: client?.color || '#6b7280' }} />
-                                      <span className="truncate font-medium">{formatProjectName(project.name)}</span>
-                                      {client?.name && <span className="text-xs text-slate-400 truncate">({client.name})</span>}
-                                    </div>
-                                  </CommandItem>
-                                );
-                              })}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div className="space-y-2"><Label>Tarea</Label><Input value={editTaskName} onChange={e => setEditTaskName(e.target.value)} /></div>
-
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2 text-xs text-slate-500"><LinkIcon className="w-3 h-3" /> Depende de otra tarea</Label>
-                    <Select value={editDependencyId} onValueChange={setEditDependencyId} disabled={!editProjectId}>
-                      <SelectTrigger className="h-9"><SelectValue placeholder="Sin dependencia" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">-- Ninguna --</SelectItem>
-                        {getAvailableDependencies(editProjectId, editingAllocation.id).map(dep => {
-                          const owner = employees.find(e => e.id === dep.employeeId);
-                          return <SelectItem key={dep.id} value={dep.id} className="text-xs">{dep.taskName} ({owner?.name})</SelectItem>;
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2"><Label>Horas</Label><Input type="number" value={editHours} onChange={e => setEditHours(e.target.value)} step="0.5" /></div>
-                    <div className="space-y-2"><Label>Semana</Label><Select value={editWeek} onValueChange={setEditWeek}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{weeks.map((w, i) => <SelectItem key={w.weekStart.toISOString()} value={format(w.weekStart, 'yyyy-MM-dd')}>Sem {i + 1}</SelectItem>)}</SelectContent></Select></div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <>
-                {/* Left Column: Task Inputs */}
-                <div className="flex-1 flex flex-col p-6 overflow-hidden border-r bg-white w-2/3">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-semibold text-sm text-slate-700">Listado de tareas</h3>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar relative">
-                    <div className="space-y-3 pb-2">
-                      {newTasks.map(task => (
-                        <BatchTaskRow
-                          key={task.id}
-                          task={task}
-                          otherTasks={newTasks}
-                          updateTaskRow={updateTaskRow}
-                          removeTaskRow={removeTaskRow}
-                          canRemove={newTasks.length > 1}
-                          activeProjects={activeProjects}
-                          weeks={weeks}
-                          employees={employees}
-                          clients={clients}
-                          getProjectBudgetStatus={getProjectBudgetStatus}
-                          getAvailableDependencies={getAvailableDependencies}
-                          getWeekExceedStatus={getWeekExceedStatus}
-                          canAssignToOthers={canAssignToOthers}
-                          currentEmployeeId={employeeId}
-                          deadlines={deadlines}
-                          allocations={allocations}
-                          viewDate={viewDate}
-                        />
-                      ))}
-
-                      <div id="task-list-end" />
-                    </div>
-                  </div>
-
-                  {/* New Row Button at Bottom */}
-                  <div className="pt-3 mt-auto border-t">
-                    <Button variant="outline" size="sm" onClick={() => {
-                      addTaskRow();
-                      setTimeout(() => {
-                        const el = document.getElementById('task-list-end');
-                        el?.scrollIntoView({ behavior: 'smooth' });
-                      }, 100);
-                    }} className="w-full border-dashed h-9 text-slate-500 hover:text-primary hover:border-primary/50">
-                      <Plus className="h-4 w-4 mr-2" /> Añadir otra fila
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Right Column: Impact Summary */}
-                <div className="w-1/3 bg-slate-50 border-l p-6 overflow-y-auto custom-scrollbar">
-                  <ProjectImpactSummary
-                    variant="vertical"
-                    newTasks={newTasks}
-                    projects={projects}
-                    allocations={allocations}
-                    viewDate={viewDate}
-                    getProjectBudgetStatus={getProjectBudgetStatus}
-                    getEmployeeLoadForWeek={getEmployeeLoadForWeek}
-                    employeeId={employeeId}
-                    weeks={weeks}
-                    deadlines={deadlines}
-                    employees={employees}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-
-          <DialogFooter className={cn("p-6 py-4 border-t bg-slate-50/50 shrink-0 flex items-center gap-2 w-full", editingAllocation && "bg-transparent border-t-0 p-6 pt-0")}>
-            {!editingAllocation && (
-              <div className="flex items-center gap-2 text-xs text-slate-500 mr-auto">
-                {newTasks.some(t => !t.projectId || !t.taskName || !t.hours || !t.weekDate) && (
-                  <span className="text-amber-600 flex items-center gap-1">
-                    <AlertTriangle className="h-3.5 w-3.5" /> Completa los campos obligatorios
-                  </span>
-                )}
-              </div>
-            )}
-            <div className="flex gap-2 ml-auto">
-              {editingAllocation && <Button variant="ghost" size="sm" onClick={handleDeleteClick} className="text-red-500 mr-auto" disabled={isSaving}><Trash2 className="w-4 h-4 mr-2" /> Eliminar</Button>}
-              <Button variant="ghost" onClick={() => setIsFormOpen(false)} disabled={isSaving}>Cancelar</Button>
-              <Button onClick={handleSave} disabled={isSaving}>
-                {isSaving ? (
-                  <>
-                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                    Guardando...
-                  </>
-                ) : (
-                  'Guardar'
-                )}
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog >
+      <AllocationFormDialog
+        isOpen={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        editingAllocation={editingAllocation}
+        newTasks={newTasks}
+        editProjectId={editProjectId}
+        editTaskName={editTaskName}
+        editHours={editHours}
+        editWeek={editWeek}
+        editDependencyId={editDependencyId}
+        isSaving={isSaving}
+        showDeleteConfirm={showDeleteConfirm}
+        onClose={closeForm}
+        onSave={handleSave}
+        onDelete={handleDeleteClick}
+        onConfirmDelete={confirmDelete}
+        setEditProjectId={setEditProjectId}
+        setEditTaskName={setEditTaskName}
+        setEditHours={setEditHours}
+        setEditWeek={setEditWeek}
+        setEditDependencyId={setEditDependencyId}
+        setShowDeleteConfirm={setShowDeleteConfirm}
+        addTaskRow={addTaskRow}
+        updateTaskRow={updateTaskRow}
+        removeTaskRow={removeTaskRow}
+        activeProjects={activeProjects}
+        clients={clients}
+        employees={employees}
+        weeks={weeks}
+        allocations={allocations}
+        deadlines={deadlines}
+        currentEmployeeId={employeeId}
+        canAssignToOthers={canAssignToOthers}
+        viewDate={viewDate}
+        getProjectBudgetStatus={getProjectBudgetStatus}
+        getAvailableDependencies={getAvailableDependencies}
+        getWeekExceedStatus={getWeekExceedStatus}
+        getEmployeeLoadForWeek={getEmployeeLoadForWeek}
+        formatProjectName={formatProjectName}
+      />
 
       {/* Tour interactivo del planificador */}
       {open && <PlannerTour onVisibilityChange={setIsTourActive} />}
@@ -2434,252 +1997,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   );
 
   // Función auxiliar para renderizar una tarea
-  function renderTask(alloc: Allocation, weekIndex: number) {
-    const isCompleted = alloc.status === 'completed';
-    const pendingTransfer = outgoingTransfers.find(t => t.allocationId === alloc.id && t.status === 'pending');
-    const depTask = alloc.dependencyId ? allocations.find(a => a.id === alloc.dependencyId) : null;
-    const depOwner = depTask ? employees.find(e => e.id === depTask.employeeId) : null;
-    const isDepReady = depTask?.status === 'completed';
-    const blockingTasks = allocations.filter(a => a.dependencyId === alloc.id && a.status !== 'completed');
 
-    // Calcular balance individual de la tarea
-    const taskBalance = isCompleted ? round2((alloc.hoursComputed || 0) - (alloc.hoursActual || 0)) : 0;
-
-    return (
-      <div key={alloc.id} className={cn(
-        "group flex items-start gap-2 p-2.5 transition-all",
-        isCompleted
-          ? "bg-slate-50/50 hover:bg-slate-100/50"
-          : "hover:bg-primary/10/30"
-      )}>
-        <Checkbox
-          checked={isCompleted}
-          onCheckedChange={() => toggleTaskCompletion(alloc)}
-          className={cn("mt-1", isCompleted && "data-[state=checked]:bg-emerald-600")}
-        />
-        <div className="flex-1 min-w-0">
-          <div onDoubleClick={() => startInlineEdit(alloc)}>
-            {inlineEditingId === alloc.id ? (
-              <Input autoFocus value={inlineNameValue} onChange={e => setInlineNameValue(e.target.value)} onBlur={() => saveInlineEdit(alloc)} className="h-6 text-xs" />
-            ) : (
-              <div className="flex justify-between items-start">
-                <div className="flex flex-col w-full">
-                  <div className="flex items-center gap-1.5">
-                    <span className={cn(
-                      "text-xs font-medium leading-tight",
-                      isCompleted && "line-through text-slate-400"
-                    )}>{alloc.taskName || 'Tarea'}</span>
-                    {/* Badge Weekly si la tarea fue actualizada vía Weekly */}
-                    {(() => {
-                      const isTransferred = alloc.taskName?.includes('(transferida de');
-                      const hasWeeklyFeedback = weeklyFeedback.some(fb => fb.allocationId === alloc.id);
-                      const wasAdjustedViaWeekly = hasWeeklyFeedback || isTransferred ||
-                        (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0 && alloc.status === 'completed');
-
-                      return wasAdjustedViaWeekly ? (
-                        <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-primary/10 text-indigo-700 border-indigo-200">
-                          Weekly
-                        </Badge>
-                      ) : null;
-                    })()}
-                  </div>
-
-                  {depTask && !isCompleted && (
-                    <div className={cn(
-                      "flex items-center gap-1 mt-1.5 text-[9px] px-1.5 py-0.5 rounded border",
-                      isDepReady
-                        ? "text-emerald-700 bg-emerald-50 border-emerald-200"
-                        : "text-amber-700 bg-amber-50 border-amber-200",
-                      !showAllWeeks ? "w-fit" : "w-fit"
-                    )}>
-                      {isDepReady ? <CheckCircle2 className="w-2.5 h-2.5 shrink-0" /> : <LinkIcon className="w-2.5 h-2.5 shrink-0" />}
-                      <span className="text-slate-600 shrink-0">{isDepReady ? 'Listo:' : 'Dep:'}</span>
-                      {!showAllWeeks ? (
-                        // Vista semanal: mostrar todo completo
-                        <>
-                          <span className={cn("font-medium", isDepReady ? "text-slate-700" : "text-slate-600")}>{depTask.taskName}</span>
-                          {depOwner && (
-                            <>
-                              <Avatar className="h-3 w-3 border border-slate-300 shrink-0">
-                                <AvatarImage src={depOwner.avatarUrl} alt={depOwner.name} />
-                                <AvatarFallback className="bg-primary/100 text-white text-[6px] font-bold">
-                                  {depOwner.name.substring(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="font-semibold text-slate-800">{depOwner.name}</span>
-                            </>
-                          )}
-                        </>
-                      ) : (
-                        // Vista mensual: layout compacto sin avatar
-                        <>
-                          <span className={cn("font-medium truncate max-w-[80px]", isDepReady ? "text-slate-700" : "text-slate-600")} title={depTask.taskName}>{depTask.taskName}</span>
-                          {depOwner && (
-                            <span className="font-semibold text-slate-800 truncate max-w-[60px]" title={depOwner.name}>{depOwner.name.split(' ')[0]}</span>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {blockingTasks.length > 0 && !isCompleted && (
-                    <div className="flex flex-col gap-0.5 mt-1.5">
-                      {blockingTasks.map(bt => {
-                        const blockedUser = employees.find(e => e.id === bt.employeeId);
-                        const firstName = blockedUser?.name?.split(' ')[0] || 'Compañero';
-                        return (
-                          <div key={bt.id} className="flex items-center gap-1 text-[9px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded w-fit border border-amber-200">
-                            <Users className="w-2.5 h-2.5" />
-                            <span>💡 <strong>{firstName}</strong> te espera</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"><MoreHorizontal className="h-3 w-3" /></Button></DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() => startEditFull(alloc)}
-                      disabled={(() => {
-                        if (pendingTransfer) return true;
-                        try {
-                          const taskWeekDate = parseISO(alloc.weekStartDate);
-                          const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
-                          return taskWeekEnd < new Date();
-                        } catch {
-                          return false;
-                        }
-                      })()}
-                    >
-                      {pendingTransfer ? <Lock className="mr-2 h-3.5 w-3.5" /> : <Pencil className="mr-2 h-3.5 w-3.5" />}
-                      {pendingTransfer ? 'Transferencia pendiente' : 'Editar'}
-                    </DropdownMenuItem>
-                    {!pendingTransfer && (
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setTransferTask(alloc);
-                          setTransferDialogOpen(true);
-                        }}
-                      >
-                        <ArrowRightLeft className="mr-2 h-3.5 w-3.5" /> Transferir
-                      </DropdownMenuItem>
-                    )}
-                    {(() => {
-                      try {
-                        const taskWeekDate = parseISO(alloc.weekStartDate);
-                        const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
-                        const isPastWeek = taskWeekEnd < new Date();
-                        if (isPastWeek) {
-                          return (
-                            <DropdownMenuItem disabled className="text-xs text-amber-600">
-                              <AlertTriangle className="mr-2 h-3.5 w-3.5" /> Usa Weekly para gestionar
-                            </DropdownMenuItem>
-                          );
-                        }
-                        return null;
-                      } catch {
-                        return null;
-                      }
-                    })()}
-                    <DropdownMenuItem onClick={() => moveTaskToWeek(alloc, weeks[(weekIndex + 1) % weeks.length].weekStart)}><ArrowRightCircle className="mr-2 h-3.5 w-3.5" /> Mover sem.</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            )}
-          </div>
-
-          {/* MÉTRICAS REDISEÑADAS */}
-          <div className="mt-2 space-y-1.5">
-            {/* TAREA PENDIENTE: Solo muestra EST */}
-            {!isCompleted && (
-              <div className="flex items-center">
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-600 bg-slate-100 px-2 py-1 rounded-md">
-                  <Clock className="w-3 h-3 text-slate-400" />
-                  <span className="font-medium">Estimado:</span>
-                  <span className="font-bold font-mono">{alloc.hoursAssigned}h</span>
-                </div>
-              </div>
-            )}
-
-            {/* TAREA COMPLETADA: Flujo visual Est → Real → Comp */}
-            {isCompleted && (
-              <div className="space-y-1.5">
-                {/* Fila de métricas: EST → REAL → COMP */}
-                <div className="flex items-center gap-1 flex-wrap">
-                  {/* EST (atenuado) */}
-                  <div className="flex items-center gap-1 text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
-                    <span>Est:</span>
-                    <span className="font-mono">{alloc.hoursAssigned}h</span>
-                  </div>
-
-                  <span className="text-slate-300 text-[10px]">→</span>
-
-                  {/* REAL (editable) */}
-                  <div className="flex items-center bg-blue-100 text-blue-800 rounded px-1.5 py-0.5 border border-blue-200">
-                    <span className="text-[10px] font-medium mr-1">Real:</span>
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="0"
-                      defaultValue={alloc.hoursActual || 0}
-                      onBlur={(e) => updateInlineHours(alloc, 'hoursActual', e.target.value)}
-                      className="w-10 text-[11px] text-center bg-transparent border-0 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-400 rounded font-bold font-mono"
-                    />
-                  </div>
-
-                  <span className="text-slate-300 text-[10px]">→</span>
-
-                  {/* COMP (editable) */}
-                  <div className="flex items-center bg-emerald-100 text-emerald-800 rounded px-1.5 py-0.5 border border-emerald-200">
-                    <span className="text-[10px] font-medium mr-1">Comp:</span>
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="0"
-                      defaultValue={alloc.hoursComputed || 0}
-                      onBlur={(e) => updateInlineHours(alloc, 'hoursComputed', e.target.value)}
-                      className="w-10 text-[11px] text-center bg-transparent border-0 focus:outline-none focus:bg-white focus:ring-1 focus:ring-emerald-400 rounded font-bold font-mono"
-                    />
-                  </div>
-                </div>
-
-                {/* BALANCE de la tarea (solo si hay diferencia) */}
-                {Math.abs(taskBalance) > 0.01 && (
-                  <div className={cn(
-                    "inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium",
-                    taskBalance >= 0
-                      ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                      : "bg-red-100 text-red-700 border border-red-200"
-                  )}>
-                    {taskBalance >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                    <span>{taskBalance >= 0 ? 'Ganancia' : 'Pérdida'}:</span>
-                    <span className="font-bold font-mono">{taskBalance > 0 ? '+' : ''}{taskBalance}h</span>
-                  </div>
-                )}
-
-                {/* Badge Weekly si horas=0 por ajuste de weekly */}
-                {(() => {
-                  const isTransferred = alloc.taskName?.includes('(transferida de');
-                  const hasWeeklyFeedback = weeklyFeedback.some(fb => fb.allocationId === alloc.id);
-                  const wasAdjustedViaWeekly = hasWeeklyFeedback || isTransferred;
-                  const isZeroDueToWeekly = (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0) && wasAdjustedViaWeekly;
-
-                  return isZeroDueToWeekly ? (
-                    <Badge variant="outline" className="h-3.5 px-1.5 text-[9px] bg-primary/10 text-indigo-700 border-indigo-200 mt-1">
-                      Weekly
-                    </Badge>
-                  ) : null;
-                })()}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
 }
 
 // Componente ProjectImpactSummary movido a archivo separado: ProjectImpactSummary.tsx

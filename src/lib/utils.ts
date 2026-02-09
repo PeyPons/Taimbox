@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { ProjectAliasingRule } from "@/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -13,95 +14,118 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+// Default Kit Digital rule for backward compatibility
+const DEFAULT_KIT_DIGITAL_RULE: ProjectAliasingRule = {
+  id: 'kit-digital-default',
+  name: 'kit-digital',
+  displayPrefix: 'KD:',
+  enabled: true,
+  matchPatterns: ['(KD)', '[KD]', 'KD ', 'KD:', 'kit digital', 'kitdigital'],
+  groupAsVirtualClient: true,
+  virtualClientName: 'Kit Digital',
+  virtualClientColor: '#8B5CF6'
+};
+
 /**
- * Detecta si un proyecto es Kit Digital basándose en patrones comunes
- * Detecta: (KD), [KD], KD , KD:, kit digital, kitdigital
+ * Verifica si un proyecto coincide con alguna regla de aliasing
+ * @param projectName Nombre del proyecto
+ * @param rules Reglas de aliasing de la agencia
+ * @returns La regla que coincide o null
  */
-export function isKitDigitalProject(projectName: string): boolean {
-  if (!projectName) return false;
+export function matchesAliasingRule(
+  projectName: string,
+  rules: ProjectAliasingRule[] = [DEFAULT_KIT_DIGITAL_RULE]
+): ProjectAliasingRule | null {
+  if (!projectName) return null;
 
   const nameLower = projectName.toLowerCase();
   const nameUpper = projectName.toUpperCase();
 
-  // Patrones de detección (denominador común: contiene KD o kit digital)
-  return (
-    nameLower.includes('kit digital') ||
-    nameLower.includes('kitdigital') ||
-    nameUpper.includes('(KD)') ||
-    nameUpper.includes('[KD]') ||
-    /KD\s/.test(projectName) ||  // KD seguido de espacio
-    /KD:/.test(projectName) ||   // KD seguido de dos puntos
-    /^KD\s/.test(projectName)     // Empieza con KD seguido de espacio
-  );
+  for (const rule of rules) {
+    if (!rule.enabled) continue;
+
+    for (const pattern of rule.matchPatterns) {
+      const patternLower = pattern.toLowerCase();
+      const patternUpper = pattern.toUpperCase();
+
+      // Check various matching strategies
+      if (
+        nameLower.includes(patternLower) ||
+        nameUpper.includes(patternUpper) ||
+        new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(projectName)
+      ) {
+        return rule;
+      }
+    }
+  }
+
+  return null;
 }
 
 /**
- * Limpia los nombres largos de Kit Digital para visualización
- * Detecta múltiples variantes: (KD), [KD], KD , KD:, etc.
- * De: (KD) [2000€] Proyecto SEO avanzado - [Cliente]
- * De: KD (2000€) Posicionamiento SEO Avanzad
- * De: KD: Wavefulness
- * A:  KD: Cliente (si se puede extraer) o KD: [nombre simplificado]
+ * Detecta si un proyecto es Kit Digital basándose en patrones comunes
+ * @deprecated Usar matchesAliasingRule con reglas configurables
  */
-export function formatProjectName(name: string): string {
+export function isKitDigitalProject(projectName: string): boolean {
+  return matchesAliasingRule(projectName, [DEFAULT_KIT_DIGITAL_RULE]) !== null;
+}
+
+/**
+ * Formatea el nombre del proyecto según las reglas de aliasing
+ * @param name Nombre original del proyecto
+ * @param rules Reglas de aliasing de la agencia (opcional, usa default Kit Digital)
+ * @returns Nombre formateado
+ */
+export function formatProjectName(
+  name: string,
+  rules: ProjectAliasingRule[] = []
+): string {
   if (!name) return '';
 
-  // Si detectamos que es Kit Digital
-  if (isKitDigitalProject(name)) {
-    // Intentar extraer el cliente del patrón con guión
-    // Ejemplo: "(KD) [2000€] Proyecto SEO avanzado - [Furgomera]"
-    if (name.includes('-')) {
-      const parts = name.split('-');
-      if (parts.length > 1) {
-        const lastPart = parts[parts.length - 1].trim();
-        // Limpiamos los corchetes [ ] si los tiene
-        const clientName = lastPart.replace(/^\[|\]$/g, '').trim();
-        if (clientName) {
-          return `KD: ${clientName}`;
-        }
-      }
-    }
+  const matchedRule = matchesAliasingRule(name, rules);
 
-    // Si tiene el patrón "KD: Cliente" ya está formateado
-    if (/^KD:\s/.test(name)) {
-      return name;
-    }
-
-    // Si empieza con "KD " seguido de algo, intentar extraer nombre
-    const kdMatch = name.match(/^KD\s+(.+)/i);
-    if (kdMatch && kdMatch[1]) {
-      // Limpiar paréntesis, corchetes y números al inicio
-      const cleaned = kdMatch[1]
-        .replace(/^\([^)]*\)\s*/, '')  // Eliminar (2000€)
-        .replace(/^\[[^\]]*\]\s*/, '')  // Eliminar [2000€]
-        .trim();
-      if (cleaned) {
-        return `KD: ${cleaned}`;
-      }
-    }
-
-    // Si tiene (KD) o [KD], intentar extraer el resto
-    const kdPatternMatch = name.match(/[[(]KD[\])]\s*(.+)/i);
-    if (kdPatternMatch && kdPatternMatch[1]) {
-      const cleaned = kdPatternMatch[1]
-        .replace(/^\[[^\]]*\]\s*/, '')
-        .replace(/^\([^)]*\)\s*/, '')
-        .trim();
-      if (cleaned) {
-        // Si tiene guión, tomar la última parte
-        if (cleaned.includes('-')) {
-          const parts = cleaned.split('-');
-          const lastPart = parts[parts.length - 1].trim().replace(/^\[|\]$/g, '');
-          return `KD: ${lastPart}`;
-        }
-        return `KD: ${cleaned}`;
-      }
-    }
-
-    // Si no se puede extraer, devolver versión simplificada
-    return `KD: ${name.replace(/[[(]KD[\])]/gi, '').trim()}`;
+  if (!matchedRule) {
+    // No matching rule, return original name
+    return name;
   }
 
-  // Si no es KD, devolvemos el nombre original
-  return name;
+  const prefix = matchedRule.displayPrefix;
+
+  // If already formatted with this prefix, return as-is
+  if (name.startsWith(prefix)) {
+    return name;
+  }
+
+  // Try to extract client name from patterns like "- [ClientName]"
+  if (name.includes('-')) {
+    const parts = name.split('-');
+    if (parts.length > 1) {
+      const lastPart = parts[parts.length - 1].trim();
+      const clientName = lastPart.replace(/^[\[({]|[\])}]$/g, '').trim();
+      if (clientName) {
+        return `${prefix} ${clientName}`;
+      }
+    }
+  }
+
+  // Remove the pattern markers and clean up the name
+  let cleanedName = name;
+  for (const pattern of matchedRule.matchPatterns) {
+    const regex = new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    cleanedName = cleanedName.replace(regex, '');
+  }
+
+  // Remove common extra patterns like [2000€], (2000€)
+  cleanedName = cleanedName
+    .replace(/\[[^\]]*€[^\]]*\]/g, '')
+    .replace(/\([^)]*€[^)]*\)/g, '')
+    .trim();
+
+  if (cleanedName) {
+    return `${prefix} ${cleanedName}`;
+  }
+
+  // Fallback: use original name without patterns
+  return `${prefix} ${name.replace(/[\[\]()]/g, '').trim()}`;
 }
+

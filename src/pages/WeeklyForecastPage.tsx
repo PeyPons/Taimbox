@@ -19,7 +19,7 @@ import { Switch } from '@/components/ui/switch';
 import { format, startOfMonth, endOfMonth, isSameMonth, parseISO, addDays, startOfWeek, subMonths, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { AlertCircle, TrendingUp, TrendingDown, CheckCircle2, Users, Plus, ArrowRight, ChevronLeft, ChevronRight, CalendarDays, Check, ChevronDown, ArrowUpDown, Search, Activity } from 'lucide-react';
-import { cn, formatProjectName } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { getStorageKey, getWeeksForMonth, getMonthlyCapacity, isAllocationInEffectiveMonth, getWeekEndDate } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
@@ -27,6 +27,7 @@ import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
 import { MonthlyEvolutionChart } from '@/components/employee/MonthlyEvolutionChart';
 import { ActivityLogSection } from '@/components/shared/ActivityLogSection';
+import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -53,6 +54,7 @@ export default function WeeklyForecastPage() {
   const weeklyCloseDay = useWeeklyCloseDay();
   const [filterId, setFilterId] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'name' | 'status' | 'difference' | 'contracted'>('status');
+  const { formatName: formatProjectName } = useProjectAliasing();
 
   const [dbTransfers, setDbTransfers] = useState<any[]>([]);
 

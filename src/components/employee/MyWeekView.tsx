@@ -14,7 +14,8 @@ import {
   Sparkles, TrendingUp, TrendingDown, Users, Target,
   CheckCircle2, Clock, Award, Filter
 } from 'lucide-react';
-import { cn, formatProjectName } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 
 interface MyWeekViewProps {
   employeeId: string;
@@ -25,6 +26,7 @@ const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyWeekViewProps) {
   const { allocations, projects, clients, employees, getEmployeeMonthlyLoad } = useApp();
+  const { formatName: formatProjectName } = useProjectAliasing();
 
   const [filterProject, setFilterProject] = useState<string>('all');
   const [filterTeammate, setFilterTeammate] = useState<string>('all');

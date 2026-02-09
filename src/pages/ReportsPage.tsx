@@ -34,6 +34,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { getMonthlyCapacity, getWeeksForMonth, isAllocationInEffectiveMonth, getWorkingDaysInRange } from '@/utils/dateUtils';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
@@ -92,6 +93,7 @@ export default function ReportsPage() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('all');
   const [isLoadingMonth, setIsLoadingMonth] = useState(false);
   const loadedMonthsRef = useRef<Set<string>>(new Set());
+  const { formatName: formatProjectName } = useProjectAliasing();
 
   // Métricas centralizadas (Single Source of Truth)
   const {
@@ -1506,7 +1508,7 @@ export default function ReportsPage() {
                         </div>
                       </div>
                       <div className="flex justify-between items-center mt-2">
-                        <span className="text-xs text-muted-foreground">{dep.projectName}</span>
+                        <span className="text-xs text-muted-foreground">{formatProjectName(dep.projectName)}</span>
                         {dep.weeksSinceBlocked > 0 && (
                           <Badge
                             variant={dep.weeksSinceBlocked >= 2 ? 'destructive' : 'secondary'}
@@ -1942,7 +1944,7 @@ export default function ReportsPage() {
                           <FolderOpen className="h-4 w-4 text-slate-500" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium leading-none truncate w-32 md:w-40" title={p.name}>{p.name}</p>
+                          <p className="text-sm font-medium leading-none truncate w-32 md:w-40" title={formatProjectName(p.name)}>{formatProjectName(p.name)}</p>
                           <p className="text-xs text-muted-foreground truncate">{p.clientName}</p>
                         </div>
                       </div>

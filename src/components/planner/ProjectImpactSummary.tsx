@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
-import { cn, formatProjectName } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Project, Allocation, NewTaskRow, Deadline, Employee } from '@/types';
 import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { format, startOfMonth } from 'date-fns';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -36,9 +37,12 @@ export function ProjectImpactSummary({
   employees = [],
   variant = 'horizontal'
 }: ProjectImpactSummaryProps) {
+  // Hook para formatear nombres de proyectos
+  const { formatName: formatProjectName } = useProjectAliasing();
+
   // Obtener deadlines del mes actual
   const monthKey = format(startOfMonth(viewDate), 'yyyy-MM');
-  
+
   const monthDeadlines = useMemo(() => {
     return deadlines.filter(d => d.month === monthKey && !d.isHidden);
   }, [deadlines, monthKey]);
@@ -46,7 +50,7 @@ export function ProjectImpactSummary({
   // Calcular horas asignadas del empleado por proyecto (para deadlines)
   const employeeProjectHours = useMemo(() => {
     const hoursByProject: Record<string, { planned: number; computed: number }> = {};
-    
+
     allocations
       .filter(a => a.employeeId === employeeId && isAllocationInEffectiveMonth(a.weekStartDate, viewDate))
       .forEach(a => {
@@ -59,27 +63,27 @@ export function ProjectImpactSummary({
           hoursByProject[a.projectId].planned += a.hoursAssigned || 0;
         }
       });
-    
+
     return hoursByProject;
   }, [allocations, employeeId, viewDate]);
 
   // Calcular horas asignadas por empleado y proyecto (para deadlines de otros empleados)
   const allEmployeeProjectHours = useMemo(() => {
     const hoursByEmployeeAndProject: Record<string, Record<string, { planned: number; computed: number }>> = {};
-    
+
     // Obtener todos los employeeIds únicos de las nuevas tareas
     const taskEmployeeIds = new Set<string>();
     newTasks.forEach(task => {
       const taskEmpId = task.employeeId || employeeId;
       if (taskEmpId) taskEmployeeIds.add(taskEmpId);
     });
-    
+
     // Calcular horas para cada empleado
     taskEmployeeIds.forEach(empId => {
       if (!hoursByEmployeeAndProject[empId]) {
         hoursByEmployeeAndProject[empId] = {};
       }
-      
+
       allocations
         .filter(a => a.employeeId === empId && isAllocationInEffectiveMonth(a.weekStartDate, viewDate))
         .forEach(a => {
@@ -93,7 +97,7 @@ export function ProjectImpactSummary({
           }
         });
     });
-    
+
     return hoursByEmployeeAndProject;
   }, [allocations, employeeId, viewDate, newTasks]);
 
@@ -121,7 +125,7 @@ export function ProjectImpactSummary({
     return Object.entries(impact).map(([id, data]) => {
       // Buscar deadline para este proyecto
       const deadline = monthDeadlines.find(d => d.projectId === id);
-      
+
       // Calcular deadlines por empleado que tiene tareas en este proyecto
       const employeeDeadlines: Array<{
         employeeId: string;
@@ -130,7 +134,7 @@ export function ProjectImpactSummary({
         totalEmployeeHours: number;
         employeeHoursAssigned: number;
       }> = [];
-      
+
       // Obtener empleados únicos que tienen tareas en este proyecto
       const employeesInProject = new Set<string>();
       newTasks.forEach(task => {
@@ -139,7 +143,7 @@ export function ProjectImpactSummary({
           if (taskEmpId) employeesInProject.add(taskEmpId);
         }
       });
-      
+
       employeesInProject.forEach(empId => {
         const deadlineHours = deadline?.employeeHours?.[empId] || 0;
         if (deadlineHours > 0) {
@@ -149,7 +153,7 @@ export function ProjectImpactSummary({
             .reduce((sum, t) => sum + (parseFloat(t.hours) || 0), 0);
           const totalEmployeeHours = round2(employeeHours.planned + employeeHours.computed + employeeAdding);
           const employee = employees.find(e => e.id === empId);
-          
+
           employeeDeadlines.push({
             employeeId: empId,
             employeeName: employee?.name || 'Empleado',
@@ -159,7 +163,7 @@ export function ProjectImpactSummary({
           });
         }
       });
-      
+
       return {
         id,
         ...data,
@@ -175,9 +179,9 @@ export function ProjectImpactSummary({
 
   // Agrupar horas por semana para verificar capacidad
   const weekImpact = useMemo(() => {
-    const impact: Record<string, { 
-      weekIndex: number; 
-      adding: number; 
+    const impact: Record<string, {
+      weekIndex: number;
+      adding: number;
       weekData: { weekStart: Date; effectiveStart?: Date; effectiveEnd?: Date };
       employeeTasks: Record<string, number>; // employeeId -> hours
     }> = {};
@@ -221,7 +225,7 @@ export function ProjectImpactSummary({
         exceeds: boolean;
         excessAmount: number;
       }> = [];
-      
+
       Object.entries(data.employeeTasks).forEach(([empId, adding]) => {
         const currentLoad = getEmployeeLoadForWeek(
           empId,
@@ -233,7 +237,7 @@ export function ProjectImpactSummary({
         const newTotal = round2(currentLoad.hours + adding);
         const exceeds = newTotal > currentLoad.capacity;
         const employee = employees.find(e => e.id === empId);
-        
+
         employeeLoads.push({
           employeeId: empId,
           employeeName: employee?.name || 'Empleado',
@@ -245,7 +249,7 @@ export function ProjectImpactSummary({
           excessAmount: exceeds ? round2(newTotal - currentLoad.capacity) : 0
         });
       });
-      
+
       // Mantener compatibilidad con el formato anterior para el empleado actual
       const currentLoad = getEmployeeLoadForWeek(
         employeeId,
@@ -310,7 +314,7 @@ export function ProjectImpactSummary({
                       +{p.adding.toFixed(1)}h
                     </Badge>
                   </div>
-                  
+
                   {/* Presupuesto del proyecto */}
                   <div className="flex justify-between items-center mt-2">
                     <span className="text-slate-400 text-[10px]">Presupuesto</span>
@@ -331,7 +335,7 @@ export function ProjectImpactSummary({
                       />
                     </div>
                   )}
-                  
+
                   {/* Indicadores de horas del deadline por empleado */}
                   {p.employeeDeadlines && p.employeeDeadlines.length > 0 && (
                     <div className="mt-2 pt-2 border-t border-slate-200 space-y-2">
@@ -349,8 +353,8 @@ export function ProjectImpactSummary({
                               <span className={cn(
                                 "font-medium text-[10px]",
                                 empDeadline.totalEmployeeHours > empDeadline.deadlineHours ? "text-red-600" :
-                                empDeadline.totalEmployeeHours >= empDeadline.deadlineHours * 0.9 ? "text-amber-600" :
-                                isCurrentEmployee ? "text-blue-600" : "text-indigo-600"
+                                  empDeadline.totalEmployeeHours >= empDeadline.deadlineHours * 0.9 ? "text-amber-600" :
+                                    isCurrentEmployee ? "text-blue-600" : "text-indigo-600"
                               )}>
                                 {empDeadline.totalEmployeeHours.toFixed(1)} / {empDeadline.deadlineHours}h
                                 {empDeadline.totalEmployeeHours > empDeadline.deadlineHours && (
@@ -368,8 +372,8 @@ export function ProjectImpactSummary({
                                 className={cn(
                                   "h-full rounded-full",
                                   empDeadline.totalEmployeeHours > empDeadline.deadlineHours ? "bg-red-500" :
-                                  empDeadline.totalEmployeeHours >= empDeadline.deadlineHours * 0.9 ? "bg-amber-500" :
-                                  isCurrentEmployee ? "bg-blue-500" : "bg-indigo-500"
+                                    empDeadline.totalEmployeeHours >= empDeadline.deadlineHours * 0.9 ? "bg-amber-500" :
+                                      isCurrentEmployee ? "bg-blue-500" : "bg-indigo-500"
                                 )}
                                 style={{ width: `${Math.min((empDeadline.totalEmployeeHours / empDeadline.deadlineHours) * 100, 100)}%` }}
                               />
@@ -411,7 +415,7 @@ export function ProjectImpactSummary({
                         <span className="text-[10px] text-slate-400 font-medium">(+{w.adding.toFixed(1)}h)</span>
                       </div>
                     </div>
-                    
+
                     {/* Información de otros empleados si hay tareas asignadas */}
                     {w.employeeLoads && w.employeeLoads.length > 0 && (
                       <div className="mt-2 pt-2 border-t border-slate-200 space-y-2">

@@ -25,9 +25,54 @@ A continuación se detallan las entidades principales del sistema, sus variables
 El núcleo del modelo **multi-tenant**. Cada usuario pertenece a una o más agencias.
 - `id`: UUID único.
 - `settings`: Objeto JSON que define la configuración de la agencia.
-    - `roles`: Definición de permisos RBAC específicos para la agencia.
+    - `roles`: Array de `RolePermissions` definidos por cada agencia. Sin roles hardcodeados excepto "Administrador" como rol protegido del sistema.
     - `modules`: Módulos habilitados (Marketing, Ads, etc.).
     - `branding`: Colores y logotipos personalizados.
+    - `projectAliasingRules`: Reglas para renombrado automático de proyectos.
+
+#### Sistema de Roles Dinámicos
+Cada agencia define sus propios roles con permisos granulares:
+- Los roles se definen como `RolePermissions[]` en `AgencySettings.roles`.
+- La verificación de admin (`isAdmin`) se basa en el permiso `can_access_agency_settings`, no en nombres de rol hardcodeados.
+- El rol "Administrador" está protegido y no puede ser eliminado.
+
+#### Sistema de Aliasing de Proyectos
+Permite renombrar proyectos automáticamente según patrones configurables:
+- `ProjectAliasingRule.matchPatterns`: Patrones de detección (ej: `["(KD)", "kit digital"]`).
+- `ProjectAliasingRule.displayPrefix`: Prefijo a mostrar (ej: `"KD:"`).
+- Default: Regla de Kit Digital preconfigurada.
+
+**Implementación (Hook centralizado)**:
+- **Hook**: `src/hooks/useProjectAliasing.ts` → expone `formatName(projectName)`
+- **Uso**:
+  ```typescript
+  const { formatName: formatProjectName } = useProjectAliasing();
+  // Luego: formatProjectName(project.name)
+  ```
+- **Función auxiliar**: `matchesAliasingRule(name, rules)` en `src/lib/utils.ts`
+
+**Componentes que usan aliasing** (actualizar si añades más):
+| Componente | Archivo | Línea aprox. |
+|------------|---------|--------------|
+| AllocationSheet | `src/components/planner/AllocationSheet.tsx` | ~180 |
+| AllocationProjectHeader | `src/components/planner/allocation/AllocationProjectHeader.tsx` | ~45 |
+| AllocationTaskRow | `src/components/planner/allocation/AllocationTaskRow.tsx` | ~50 |
+| AllocationFormDialog | `src/components/planner/allocation/AllocationFormDialog.tsx` | ~100 |
+| GanttView | `src/components/planner/GanttView.tsx` | ~95 |
+| BatchTaskRow | `src/components/planner/BatchTaskRow.tsx` | ~65 |
+| ProjectImpactSummary | `src/components/planner/ProjectImpactSummary.tsx` | ~45 |
+| DashboardWidgets | `src/components/employee/DashboardWidgets.tsx` | ~120 |
+| WeeklyReportDialog | `src/components/employee/WeeklyReportDialog.tsx` | ~85 |
+| PlanningInconsistenciesCard | `src/components/employee/PlanningInconsistenciesCard.tsx` | ~60 |
+| GlobalPlanningInconsistencies | `src/components/employee/GlobalPlanningInconsistencies.tsx` | ~380 |
+| MyWeekView | `src/components/employee/MyWeekView.tsx` | ~150 |
+| DeadlinesPage | `src/pages/DeadlinesPage.tsx` | ~1905 |
+| ReportsPage | `src/pages/ReportsPage.tsx` | ~1510, 1948 |
+| ClientReportsPage | `src/pages/ClientReportsPage.tsx` | ~160 |
+| WeeklyForecastPage | `src/pages/WeeklyForecastPage.tsx` | ~380 |
+| EmployeeDashboard | `src/pages/EmployeeDashboard.tsx` | ~220 |
+
+> **⚠️ IMPORTANTE**: Si creas un nuevo componente que muestra nombres de proyectos, DEBES usar `useProjectAliasing().formatName()` para mantener consistencia.
 
 ### 2.2. Empleado (`Employee`)
 Representa a los miembros del equipo.
@@ -89,6 +134,33 @@ Maneja una estructura jerárquica de presupuestos.
     - Si hay gastos reales (`realSpent`), se usan esos.
     - Si no, se usa el último "Gasto Estimado" (`isEstimated: true`).
 - **Trasvases (`Movements`)**: Registra el movimiento de dinero entre planes mensuales para auditoría.
+
+### 4.3. Estrategia de Realtime y Colaboración
+Para soportar múltiples usuarios concurrentes sin saturar conexiones WebSocket, utilizamos una estrategia de **Canales Unificados**.
+
+#### Arquitectura de Canales (`DeadlinesPage`)
+En lugar de abrir una conexión por entidad, abrimos **un solo canal por sala** (mes/contexto) que transporta todos los tipos de eventos.
+- **Antes (Ineficiente)**: 3 canales por usuario (`deadlines`, `assignments`, `locks`).
+- **Ahora (Optimizado)**: 1 canal compartido: `deadlines-room-{YYYY-MM}`.
+
+```typescript
+// Patrón de suscripción unificada
+const channel = supabase.channel(`deadlines-room-${selectedMonth}`)
+  .on('postgres_changes', { table: 'deadlines' }, handleDeadlines)
+  .on('postgres_changes', { table: 'global_assignments' }, handleAssignments)
+  .on('postgres_changes', { table: 'project_editing_locks' }, handleLocks)
+  .on('broadcast', { event: 'lock-released' }, handleBroadcasts)
+  .subscribe();
+```
+
+#### Sistema de Bloqueos (Locking)
+Previene conflictos de edición simultánea en el mismo proyecto.
+1. **Adquisición**: Al editar, se inserta una fila en `project_editing_locks` con fecha de expiración.
+2. **Validación**: Si ya existe un lock válido de otro usuario, la UI bloquea la edición.
+3. **Liberación**:
+   - **Explícita**: Al guardar o cancelar.
+   - **Broadcast**: Se envía evento `lock-released` para notificar inmediatamente a otros clientes.
+   - **Limpieza**: Al desmontar componente o cerrar pestaña, se intenta liberar locks propios.
 
 ---
 
@@ -184,6 +256,7 @@ Si modificas una interface, revisa estos consumidores:
 | `usePlannerData.ts` | `PlannerGrid.tsx` |
 | `useProjectMetrics.ts` | `ReportsPage.tsx`, `ProjectImpactSummary.tsx` |
 | `useTaskTransfers.ts` | `AllocationSheet.tsx`, `TaskTransferComponents.tsx` |
+| `useAllocationActions.ts` | `AllocationSheet.tsx`, `AllocationFormDialog.tsx` |
 
 ### 8.5 Dependencias de Componentes Complejos (Marketing & Team)
 
@@ -222,6 +295,7 @@ Todos los componentes re-renderizan
 | `src/utils/logger.ts` | Sistema de logging estructurado | Usado en `aiReportUtils`, `PlannerGrid` |
 | `src/hooks/useTasksImpact.ts` | Pre-cálculo de impacto de nuevas tareas | `useAllocationSheet`, `ProjectBudgetStatus` |
 | `src/hooks/useMobile.tsx` | Detección de dispositivo móvil | UI responsiva en `AllocationSheet`, `Sidebar` |
+| `src/hooks/useProjectAliasing.ts` | Formateo de nombres de proyectos según reglas de agencia | `AgencyContext`, `formatProjectName`, usado en 15+ componentes |
 
 ---
 
@@ -272,3 +346,36 @@ Antes de modificar cualquier archivo crítico, usa este checklist:
 - [ ] Añadido a `DEFAULT_PERMISSIONS` y `RESTRICTED_PERMISSIONS` en `usePermissions.ts`
 - [ ] Añadido label en `PERMISSION_LABELS`
 
+### Al modificar lógica de Realtime:
+- [ ] ¿Usé un canal unificado `room-{id}` en lugar de múltiples canales?
+- [ ] ¿Limpié el canal al desmontar (`removeChannel`)?
+- [ ] ¿Filtré eventos por `agency_id` o contexto para evitar fugas de datos?
+
+### Al crear componente que muestra nombres de proyectos:
+- [ ] Importar `useProjectAliasing` de `@/hooks/useProjectAliasing`
+- [ ] Llamar `const { formatName: formatProjectName } = useProjectAliasing()`
+- [ ] Usar `formatProjectName(project.name)` en el renderizado
+- [ ] Actualizar la tabla en Sección 2.1 "Componentes que usan aliasing"
+
+---
+
+## 10. Gotchas y Patrones Problemáticos Conocidos
+
+### 10.1 Keys duplicadas en listas con datos potencialmente duplicados
+**Archivo afectado**: `GlobalPlanningInconsistencies.tsx`
+
+Si iteras sobre arrays que pueden tener entradas duplicadas (ej. empleados en múltiples deadlines), usa índice en la key:
+```tsx
+// ❌ MAL - puede generar warning si hay duplicados
+{items.map(item => <div key={item.id}>...</div>)}
+
+// ✅ BIEN - el índice garantiza unicidad
+{items.map((item, index) => <div key={`${item.id}-${index}`}>...</div>)}
+```
+
+### 10.2 Prefijos en keys para evitar colisiones entre entidades
+Si un mismo UUID puede aparecer como `projectId` Y como `employeeId` en diferentes niveles del árbol DOM:
+```tsx
+key={`proj-${inc.projectId}`}  // Para proyectos
+key={`emp-${emp.employeeId}`}  // Para empleados
+```

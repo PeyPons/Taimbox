@@ -70,7 +70,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
   // Obtener roles y departamentos dinámicos de la agencia
   // Helper to extract role names safely handling both new object structure and legacy strings
   const getRoleNames = (roles: (string | import('@/types').RolePermissions)[] | undefined): string[] => {
-    if (!roles) return ['Responsable', 'Coordinador', 'Especialista'];
+    if (!roles || roles.length === 0) return []; // Sin fallbacks hardcodeados
     return roles.map(r => typeof r === 'string' ? r : r.name);
   };
 
@@ -88,8 +88,8 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
       name: '',
       email: '',
       password: '',
-      role: availableRoles[0] || 'Responsable',
-      department: availableDepartments[0] || 'SEO',
+      role: availableRoles[0] || '',
+      department: availableDepartments[0] || '',
       capacity: 40,
       hourlyRate: 0,
       crmUserId: '',
@@ -106,8 +106,8 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
           name: employeeToEdit.name,
           email: employeeToEdit.email || '',
           password: '',
-          role: employeeToEdit.role || availableRoles[0] || 'Responsable',
-          department: employeeToEdit.department || availableDepartments[0] || 'SEO',
+          role: employeeToEdit.role || availableRoles[0] || '',
+          department: employeeToEdit.department || availableDepartments[0] || '',
           capacity: employeeToEdit.defaultWeeklyCapacity,
           hourlyRate: employeeToEdit.hourlyRate || 0,
           crmUserId: employeeToEdit.crmUserId || '',
@@ -118,8 +118,8 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
           name: '',
           email: '',
           password: '',
-          role: availableRoles[0] || 'Responsable',
-          department: availableDepartments[0] || 'SEO',
+          role: availableRoles[0] || '',
+          department: availableDepartments[0] || '',
           capacity: 40,
           hourlyRate: 0,
           crmUserId: '',

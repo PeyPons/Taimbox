@@ -56,6 +56,18 @@ export interface CustomProjectFilter {
   description?: string;   // Explanation of what the filter does
 }
 
+// Project aliasing rule for renaming/grouping projects (e.g., Kit Digital)
+export interface ProjectAliasingRule {
+  id: string;
+  name: string;                    // Internal name (e.g., "kit-digital")
+  displayPrefix: string;           // Prefix to show (e.g., "KD:")
+  enabled: boolean;
+  matchPatterns: string[];         // Detection patterns: ["(KD)", "[KD]", "kit digital"]
+  groupAsVirtualClient: boolean;   // Create virtual client grouping these projects
+  virtualClientName?: string;      // Virtual client name (e.g., "Kit Digital")
+  virtualClientColor?: string;     // Virtual client color
+}
+
 export interface RolePermissions {
   name: string;
   is_system_role?: boolean;  // true = protected role (e.g., Administrador)
@@ -69,6 +81,7 @@ export interface AgencySettings {
   branding?: AgencyBranding;
   features?: Record<string, boolean>;
   projectFilters?: CustomProjectFilter[];  // Custom project filters
+  projectAliasingRules?: ProjectAliasingRule[];  // Project aliasing/renaming rules
   integrations?: {
     metaAccessToken?: string;
     metaAdAccountIds?: string;

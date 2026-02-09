@@ -1522,9 +1522,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const getProjectById = useCallback((id: string) => projects.find(p => p.id === id), [projects]);
   const getClientById = useCallback((id: string) => clients.find(c => c.id === id), [clients]);
 
+  // Determinar si el usuario es admin basándose en permisos del rol (no en nombre hardcodeado)
+  const isUserAdmin = useMemo(() => {
+    if (!currentUser?.role || !currentAgency?.settings?.roles) return false;
+    const userRole = currentAgency.settings.roles.find(r => r.name === currentUser.role);
+    return userRole?.permissions?.can_access_agency_settings === true;
+  }, [currentUser?.role, currentAgency?.settings?.roles]);
+
   const value = useMemo(() => ({
     currentUser,
-    isAdmin: currentUser?.role === 'Responsable' || currentUser?.role === 'Coordinador',
+    isAdmin: isUserAdmin,
     employees, clients, projects, allocations, absences, teamEvents, weeklyFeedback, isLoading,
     isSecondaryLoading, fetchArchivedProjects,
     addEmployee, updateEmployee, deleteEmployee, toggleEmployeeActive,

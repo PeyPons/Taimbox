@@ -2,13 +2,14 @@ import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { format, addDays, startOfMonth, endOfMonth, eachWeekOfInterval, differenceInDays, startOfWeek, endOfWeek, isSameMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { cn, formatProjectName } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ChevronLeft, ChevronRight, CalendarDays, User, Clock, ChevronDown, ChevronUp, CheckCircle2, Check, ChevronDown as ChevronDownIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
+import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 
 type ZoomLevel = 'week' | 'month';
 
@@ -31,6 +32,7 @@ interface GanttViewProps {
 
 export function GanttView({ initialViewDate }: GanttViewProps) {
     const { projects, allocations, employees, clients } = useApp();
+    const { formatName: formatProjectName } = useProjectAliasing();
 
     const [viewDate, setViewDate] = useState(initialViewDate || new Date());
     const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('week');
@@ -241,8 +243,8 @@ export function GanttView({ initialViewDate }: GanttViewProps) {
                                     className="w-[220px] h-9 bg-white shadow-sm justify-between"
                                 >
                                     <span className="truncate">
-                                        {selectedProject === 'all' 
-                                            ? 'Todos los proyectos' 
+                                        {selectedProject === 'all'
+                                            ? 'Todos los proyectos'
                                             : formatProjectName(projects.find(p => p.id === selectedProject)?.name || 'Proyecto')
                                         }
                                     </span>

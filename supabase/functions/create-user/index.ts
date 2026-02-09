@@ -84,10 +84,10 @@ serve(async (req) => {
       )
     }
 
-    // Verify the caller has admin role (Director or Responsable)
+    // Verify the caller has admin permissions (based on agency role settings)
     const { data: callerEmployee, error: callerEmployeeError } = await supabaseAdmin
       .from('employees')
-      .select('id, role, name')
+      .select('id, role, name, agency_id')
       .eq('user_id', callerUser.id)
       .single()
 
@@ -99,11 +99,30 @@ serve(async (req) => {
       )
     }
 
-    const ADMIN_ROLES = ['Director', 'Responsable']
-    if (!ADMIN_ROLES.includes(callerEmployee.role || '')) {
+    // Fetch agency settings to check role permissions
+    const { data: agency, error: agencyError } = await supabaseAdmin
+      .from('agencies')
+      .select('settings')
+      .eq('id', callerEmployee.agency_id)
+      .single()
+
+    if (agencyError || !agency) {
+      console.error('Error obteniendo agencia:', agencyError)
+      return new Response(
+        JSON.stringify({ error: 'Error al verificar permisos. Agencia no encontrada.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      )
+    }
+
+    // Check if caller's role has can_access_agency_settings permission
+    const roles = agency.settings?.roles || []
+    const callerRole = roles.find((r: { name: string }) => r.name === callerEmployee.role)
+    const hasAdminPermission = callerRole?.permissions?.can_access_agency_settings === true
+
+    if (!hasAdminPermission) {
       console.warn(`Usuario ${callerEmployee.name} (${callerEmployee.role}) intentó crear usuario sin permisos`)
       return new Response(
-        JSON.stringify({ error: 'Solo los usuarios con rol Director o Responsable pueden crear nuevos usuarios.' }),
+        JSON.stringify({ error: 'No tienes permisos para crear nuevos usuarios. Contacta a un administrador.' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
       )
     }

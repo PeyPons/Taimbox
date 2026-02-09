@@ -1,5 +1,5 @@
 import { format, startOfMonth } from 'date-fns';
-import { cn, formatProjectName } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,6 +10,7 @@ import { Project, Employee, Allocation, NewTaskRow, Client, Deadline } from '@/t
 import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { useState, useMemo } from 'react';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 
 interface BatchTaskRowProps {
     task: NewTaskRow;
@@ -54,6 +55,7 @@ export function BatchTaskRow({
 }: BatchTaskRowProps) {
     const [openCombobox, setOpenCombobox] = useState(false);
     const [openEmployeeCombobox, setOpenEmployeeCombobox] = useState(false);
+    const { formatName: formatProjectName } = useProjectAliasing();
 
     // Calcular si esta tarea excede las horas contratadas
     const taskProject = task.projectId ? activeProjects.find(p => p.id === task.projectId) : null;
@@ -64,7 +66,7 @@ export function BatchTaskRow({
     const taskEmployeeId = task.employeeId || currentEmployeeId;
     const deadlineInfo = useMemo(() => {
         if (!task.projectId || !taskEmployeeId || !viewDate) return null;
-        
+
         const monthKey = format(startOfMonth(viewDate), 'yyyy-MM');
         const deadline = deadlines.find(d => d.projectId === task.projectId && d.month === monthKey && !d.isHidden);
         if (!deadline) return null;
@@ -73,8 +75,8 @@ export function BatchTaskRow({
         if (deadlineHours === 0) return null;
 
         // Calcular horas ya asignadas del empleado en este proyecto
-        const employeeAllocations = allocations.filter(a => 
-            a.employeeId === taskEmployeeId && 
+        const employeeAllocations = allocations.filter(a =>
+            a.employeeId === taskEmployeeId &&
             a.projectId === task.projectId &&
             isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
         );
@@ -82,7 +84,7 @@ export function BatchTaskRow({
         const planned = employeeAllocations
             .filter(a => a.status !== 'completed')
             .reduce((sum, a) => sum + (a.hoursAssigned || 0), 0);
-        
+
         const computed = employeeAllocations
             .filter(a => a.status === 'completed')
             .reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
@@ -154,155 +156,155 @@ export function BatchTaskRow({
                                 </div>
                             </Button>
                         </PopoverTrigger>
-                    <PopoverContent className="w-[450px] p-0" align="start">
-                        <Command
-                            filter={(value, search) => {
-                                if (value.toLowerCase().includes(search.toLowerCase())) return 1;
-                                return 0;
-                            }}
-                        >
-                            <CommandInput placeholder="Buscar proyecto..." />
-                            <CommandList className="max-h-[280px] overflow-y-auto overscroll-contain">
-                                <CommandEmpty>No hay.</CommandEmpty>
-                                <CommandGroup heading="Proyectos asignados">
-                                    {activeProjects.map((project) => {
-                                        const client = clients.find(c => c.id === project.clientId);
-                                        const budgetStatus = getProjectBudgetStatus(project.id);
-                                        const totalUsed = budgetStatus.totalComputed + budgetStatus.totalPlanned;
-                                        const remaining = budgetStatus.budgetMax > 0 ? budgetStatus.budgetMax - totalUsed : null;
+                        <PopoverContent className="w-[450px] p-0" align="start">
+                            <Command
+                                filter={(value, search) => {
+                                    if (value.toLowerCase().includes(search.toLowerCase())) return 1;
+                                    return 0;
+                                }}
+                            >
+                                <CommandInput placeholder="Buscar proyecto..." />
+                                <CommandList className="max-h-[280px] overflow-y-auto overscroll-contain">
+                                    <CommandEmpty>No hay.</CommandEmpty>
+                                    <CommandGroup heading="Proyectos asignados">
+                                        {activeProjects.map((project) => {
+                                            const client = clients.find(c => c.id === project.clientId);
+                                            const budgetStatus = getProjectBudgetStatus(project.id);
+                                            const totalUsed = budgetStatus.totalComputed + budgetStatus.totalPlanned;
+                                            const remaining = budgetStatus.budgetMax > 0 ? budgetStatus.budgetMax - totalUsed : null;
 
-                                        const computedPct = budgetStatus.budgetMax > 0
-                                            ? Math.round((budgetStatus.totalComputed / budgetStatus.budgetMax) * 100)
-                                            : 0;
+                                            const computedPct = budgetStatus.budgetMax > 0
+                                                ? Math.round((budgetStatus.totalComputed / budgetStatus.budgetMax) * 100)
+                                                : 0;
 
-                                        const plannedPct = budgetStatus.budgetMax > 0
-                                            ? Math.round((budgetStatus.totalPlanned / budgetStatus.budgetMax) * 100)
-                                            : 0;
+                                            const plannedPct = budgetStatus.budgetMax > 0
+                                                ? Math.round((budgetStatus.totalPlanned / budgetStatus.budgetMax) * 100)
+                                                : 0;
 
-                                        // Calcular deadline del empleado para este proyecto
-                                        // En el selector, mostrar el deadline del empleado asignado en la tarea (si existe) o del empleado actual
-                                        const taskEmployeeId = task.employeeId || currentEmployeeId;
-                                        let projectDeadlineInfo: { deadlineHours: number; totalAssigned: number; employeeName?: string } | null = null;
-                                        if (taskEmployeeId && viewDate) {
-                                            const monthKey = format(startOfMonth(viewDate), 'yyyy-MM');
-                                            const deadline = deadlines.find(d => d.projectId === project.id && d.month === monthKey && !d.isHidden);
-                                            if (deadline) {
-                                                const deadlineHours = deadline.employeeHours[taskEmployeeId] || 0;
-                                                if (deadlineHours > 0) {
-                                                    const employeeAllocations = allocations.filter(a => 
-                                                        a.employeeId === taskEmployeeId && 
-                                                        a.projectId === project.id &&
-                                                        isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
-                                                    );
+                                            // Calcular deadline del empleado para este proyecto
+                                            // En el selector, mostrar el deadline del empleado asignado en la tarea (si existe) o del empleado actual
+                                            const taskEmployeeId = task.employeeId || currentEmployeeId;
+                                            let projectDeadlineInfo: { deadlineHours: number; totalAssigned: number; employeeName?: string } | null = null;
+                                            if (taskEmployeeId && viewDate) {
+                                                const monthKey = format(startOfMonth(viewDate), 'yyyy-MM');
+                                                const deadline = deadlines.find(d => d.projectId === project.id && d.month === monthKey && !d.isHidden);
+                                                if (deadline) {
+                                                    const deadlineHours = deadline.employeeHours[taskEmployeeId] || 0;
+                                                    if (deadlineHours > 0) {
+                                                        const employeeAllocations = allocations.filter(a =>
+                                                            a.employeeId === taskEmployeeId &&
+                                                            a.projectId === project.id &&
+                                                            isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
+                                                        );
 
-                                                    const planned = employeeAllocations
-                                                        .filter(a => a.status !== 'completed')
-                                                        .reduce((sum, a) => sum + (a.hoursAssigned || 0), 0);
-                                                    
-                                                    const computed = employeeAllocations
-                                                        .filter(a => a.status === 'completed')
-                                                        .reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
+                                                        const planned = employeeAllocations
+                                                            .filter(a => a.status !== 'completed')
+                                                            .reduce((sum, a) => sum + (a.hoursAssigned || 0), 0);
 
-                                                    // Sumar horas de otras tareas del mismo proyecto y empleado en este formulario
-                                                    const otherTasksSameProjectAndEmployee = otherTasks
-                                                        .filter(t => t.id !== task.id && t.projectId === project.id && (t.employeeId || currentEmployeeId) === taskEmployeeId)
-                                                        .reduce((sum, t) => sum + (parseFloat(t.hours) || 0), 0);
-                                                    
-                                                    // Si esta es la tarea actual y el proyecto coincide, sumar sus horas también
-                                                    const currentTaskHours = (task.projectId === project.id && (task.employeeId || currentEmployeeId) === taskEmployeeId) 
-                                                        ? (parseFloat(task.hours) || 0) 
-                                                        : 0;
+                                                        const computed = employeeAllocations
+                                                            .filter(a => a.status === 'completed')
+                                                            .reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
 
-                                                    const totalAssigned = round2(planned + computed + otherTasksSameProjectAndEmployee + currentTaskHours);
-                                                    const employee = employees.find(e => e.id === taskEmployeeId);
-                                                    projectDeadlineInfo = { 
-                                                        deadlineHours, 
-                                                        totalAssigned,
-                                                        employeeName: employee?.name
-                                                    };
+                                                        // Sumar horas de otras tareas del mismo proyecto y empleado en este formulario
+                                                        const otherTasksSameProjectAndEmployee = otherTasks
+                                                            .filter(t => t.id !== task.id && t.projectId === project.id && (t.employeeId || currentEmployeeId) === taskEmployeeId)
+                                                            .reduce((sum, t) => sum + (parseFloat(t.hours) || 0), 0);
+
+                                                        // Si esta es la tarea actual y el proyecto coincide, sumar sus horas también
+                                                        const currentTaskHours = (task.projectId === project.id && (task.employeeId || currentEmployeeId) === taskEmployeeId)
+                                                            ? (parseFloat(task.hours) || 0)
+                                                            : 0;
+
+                                                        const totalAssigned = round2(planned + computed + otherTasksSameProjectAndEmployee + currentTaskHours);
+                                                        const employee = employees.find(e => e.id === taskEmployeeId);
+                                                        projectDeadlineInfo = {
+                                                            deadlineHours,
+                                                            totalAssigned,
+                                                            employeeName: employee?.name
+                                                        };
+                                                    }
                                                 }
                                             }
-                                        }
 
-                                        // Search value includes client name for better filtering
-                                        const searchValue = `${project.name} ${client?.name || ''}`;
+                                            // Search value includes client name for better filtering
+                                            const searchValue = `${project.name} ${client?.name || ''}`;
 
-                                        return (
-                                            <CommandItem key={project.id} value={searchValue} onSelect={() => { updateTaskRow(task.id, 'projectId', project.id); setOpenCombobox(false); }}>
-                                                <Check className={cn("mr-2 h-4 w-4 shrink-0", task.projectId === project.id ? "opacity-100" : "opacity-0")} />
-                                                <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: client?.color || '#6b7280' }} />
-                                                        <span className="truncate font-medium">
-                                                            {formatProjectName(project.name)}
-                                                            {client?.name && <span className="ml-1 text-[10px] text-slate-400 font-normal">({client.name})</span>}
-                                                        </span>
-                                                        {budgetStatus.budgetMax > 0 && (
-                                                            <div className="ml-auto flex items-center gap-1 shrink-0">
-                                                                <span className={cn(
-                                                                    "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-                                                                    computedPct > 100 ? "bg-red-100 text-red-700" :
-                                                                        computedPct > 85 ? "bg-amber-100 text-amber-700" :
-                                                                            "bg-emerald-100 text-emerald-700"
-                                                                )}>
-                                                                    {computedPct}%
-                                                                </span>
-                                                                {plannedPct > 0 && (
-                                                                    <span className="text-[10px] text-slate-400 font-medium">
-                                                                        (+{plannedPct}% plan.)
+                                            return (
+                                                <CommandItem key={project.id} value={searchValue} onSelect={() => { updateTaskRow(task.id, 'projectId', project.id); setOpenCombobox(false); }}>
+                                                    <Check className={cn("mr-2 h-4 w-4 shrink-0", task.projectId === project.id ? "opacity-100" : "opacity-0")} />
+                                                    <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: client?.color || '#6b7280' }} />
+                                                            <span className="truncate font-medium">
+                                                                {formatProjectName(project.name)}
+                                                                {client?.name && <span className="ml-1 text-[10px] text-slate-400 font-normal">({client.name})</span>}
+                                                            </span>
+                                                            {budgetStatus.budgetMax > 0 && (
+                                                                <div className="ml-auto flex items-center gap-1 shrink-0">
+                                                                    <span className={cn(
+                                                                        "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
+                                                                        computedPct > 100 ? "bg-red-100 text-red-700" :
+                                                                            computedPct > 85 ? "bg-amber-100 text-amber-700" :
+                                                                                "bg-emerald-100 text-emerald-700"
+                                                                    )}>
+                                                                        {computedPct}%
                                                                     </span>
-                                                                )}
+                                                                    {plannedPct > 0 && (
+                                                                        <span className="text-[10px] text-slate-400 font-medium">
+                                                                            (+{plannedPct}% plan.)
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-[10px] pl-4 text-slate-500 flex justify-between items-center gap-2">
+                                                            <span className="truncate">
+                                                                {budgetStatus.budgetMax > 0
+                                                                    ? (
+                                                                        <span>
+                                                                            <span className="font-medium text-slate-700">{budgetStatus.totalComputed.toFixed(1)}h</span>
+                                                                            {budgetStatus.totalPlanned > 0 && <span className="text-slate-400"> +{budgetStatus.totalPlanned.toFixed(1)}h</span>}
+                                                                            <span className="text-slate-400"> / {budgetStatus.budgetMax}h</span>
+                                                                        </span>
+                                                                    )
+                                                                    : 'Sin límite'}
+                                                            </span>
+                                                            {remaining !== null && (
+                                                                <span className={cn("shrink-0", remaining < 0 ? "text-red-600 font-bold" : "text-slate-400")}>
+                                                                    {remaining > 0 ? `${remaining.toFixed(1)}h rest.` : `${Math.abs(remaining).toFixed(1)}h ex.`}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {/* Indicador de deadline del empleado */}
+                                                        {projectDeadlineInfo && (
+                                                            <div className="text-[10px] pl-4 flex items-center gap-1.5 mt-0.5">
+                                                                <span className={cn(
+                                                                    "font-medium",
+                                                                    taskEmployeeId === currentEmployeeId ? "text-blue-600" : "text-indigo-600"
+                                                                )}>
+                                                                    {taskEmployeeId === currentEmployeeId ? "Tu deadline:" : `${projectDeadlineInfo.employeeName || 'Su'} deadline:`}
+                                                                </span>
+                                                                <span className={cn(
+                                                                    "font-bold",
+                                                                    projectDeadlineInfo.totalAssigned > projectDeadlineInfo.deadlineHours ? "text-red-600" :
+                                                                        projectDeadlineInfo.totalAssigned >= projectDeadlineInfo.deadlineHours * 0.9 ? "text-amber-600" :
+                                                                            taskEmployeeId === currentEmployeeId ? "text-blue-600" : "text-indigo-600"
+                                                                )}>
+                                                                    {projectDeadlineInfo.totalAssigned.toFixed(1)} / {projectDeadlineInfo.deadlineHours}h
+                                                                </span>
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <div className="text-[10px] pl-4 text-slate-500 flex justify-between items-center gap-2">
-                                                        <span className="truncate">
-                                                            {budgetStatus.budgetMax > 0
-                                                                ? (
-                                                                    <span>
-                                                                        <span className="font-medium text-slate-700">{budgetStatus.totalComputed.toFixed(1)}h</span>
-                                                                        {budgetStatus.totalPlanned > 0 && <span className="text-slate-400"> +{budgetStatus.totalPlanned.toFixed(1)}h</span>}
-                                                                        <span className="text-slate-400"> / {budgetStatus.budgetMax}h</span>
-                                                                    </span>
-                                                                )
-                                                                : 'Sin límite'}
-                                                        </span>
-                                                        {remaining !== null && (
-                                                            <span className={cn("shrink-0", remaining < 0 ? "text-red-600 font-bold" : "text-slate-400")}>
-                                                                {remaining > 0 ? `${remaining.toFixed(1)}h rest.` : `${Math.abs(remaining).toFixed(1)}h ex.`}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    {/* Indicador de deadline del empleado */}
-                                                    {projectDeadlineInfo && (
-                                                        <div className="text-[10px] pl-4 flex items-center gap-1.5 mt-0.5">
-                                                            <span className={cn(
-                                                                "font-medium",
-                                                                taskEmployeeId === currentEmployeeId ? "text-blue-600" : "text-indigo-600"
-                                                            )}>
-                                                                {taskEmployeeId === currentEmployeeId ? "Tu deadline:" : `${projectDeadlineInfo.employeeName || 'Su'} deadline:`}
-                                                            </span>
-                                                            <span className={cn(
-                                                                "font-bold",
-                                                                projectDeadlineInfo.totalAssigned > projectDeadlineInfo.deadlineHours ? "text-red-600" :
-                                                                projectDeadlineInfo.totalAssigned >= projectDeadlineInfo.deadlineHours * 0.9 ? "text-amber-600" :
-                                                                taskEmployeeId === currentEmployeeId ? "text-blue-600" : "text-indigo-600"
-                                                            )}>
-                                                                {projectDeadlineInfo.totalAssigned.toFixed(1)} / {projectDeadlineInfo.deadlineHours}h
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </CommandItem>
-                                        );
-                                    })}
-                                </CommandGroup>
-                            </CommandList>
-                        </Command>
-                    </PopoverContent>
-                </Popover>
+                                                </CommandItem>
+                                            );
+                                        })}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
                 </div>
-                
+
                 {/* Nombre de la tarea (más espacio ahora) */}
                 <Input
                     className="flex-1 h-9 text-sm min-w-0"
@@ -328,9 +330,9 @@ export function BatchTaskRow({
                                     )}>
                                     <span className="truncate text-xs flex items-center gap-1.5">
                                         <User className="h-3 w-3" />
-                                        {task.employeeId 
+                                        {task.employeeId
                                             ? employees.find((e) => e.id === task.employeeId)?.name || 'Empleado...'
-                                            : currentEmployeeId 
+                                            : currentEmployeeId
                                                 ? employees.find((e) => e.id === currentEmployeeId)?.name || 'Yo'
                                                 : 'Asignar a...'}
                                     </span>
@@ -438,8 +440,8 @@ export function BatchTaskRow({
                             <span className={cn(
                                 "text-[11px] font-bold",
                                 deadlineInfo.exceeds ? "text-red-600" :
-                                deadlineInfo.totalAssigned >= deadlineInfo.deadlineHours * 0.9 ? "text-amber-600" :
-                                isCurrentEmployee ? "text-blue-600" : "text-indigo-600"
+                                    deadlineInfo.totalAssigned >= deadlineInfo.deadlineHours * 0.9 ? "text-amber-600" :
+                                        isCurrentEmployee ? "text-blue-600" : "text-indigo-600"
                             )}>
                                 {deadlineInfo.totalAssigned.toFixed(1)} / {deadlineInfo.deadlineHours}h
                                 {deadlineInfo.exceeds && (
@@ -457,8 +459,8 @@ export function BatchTaskRow({
                                 className={cn(
                                     "h-full rounded-full",
                                     deadlineInfo.exceeds ? "bg-red-500" :
-                                    deadlineInfo.totalAssigned >= deadlineInfo.deadlineHours * 0.9 ? "bg-amber-500" :
-                                    "bg-blue-500"
+                                        deadlineInfo.totalAssigned >= deadlineInfo.deadlineHours * 0.9 ? "bg-amber-500" :
+                                            "bg-blue-500"
                                 )}
                                 style={{ width: `${Math.min((deadlineInfo.totalAssigned / deadlineInfo.deadlineHours) * 100, 100)}%` }}
                             />

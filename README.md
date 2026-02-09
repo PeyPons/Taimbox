@@ -9,6 +9,11 @@
 
 ---
 
+> [!IMPORTANT]
+> **Para Agentes de IA y Desarrolladores**: Este archivo es un resumen de alto nivel. Para detalles técnicos profundos, flujos de datos complejos y guías de implementación, **consultar obligatoriamente** [`DOCUMENTACION.md`](./DOCUMENTACION.md).
+
+---
+
 ## 🗺️ Mapa del Territorio
 
 El proyecto se divide en **Módulos Funcionales**. Haz clic en cada sección para desplegar el análisis detallado **Archivo por Archivo**.
@@ -28,7 +33,9 @@ El archivo más importante para contratos de datos.
 | **`Allocation`** | `id`, `employeeId`, `projectId`, `hoursAssigned`, `hoursActual`, `status` | **CORE**: Tarea asignada. Unidad atómica del calendario. |
 | **`Employee`** | `id`, `defaultWeeklyCapacity`, `workSchedule`, `role` | Define capacidad y horario base. |
 | **`Project`** | `id`, `budgetHours`, `monthlyFee`, `status` (`active/paused`) | Contenedor de asignaciones. |
-| **`AgencySettings`** | `roles`, `modules`, `integrations` | Configuración multi-tenant. |
+| **`AgencySettings`** | `roles`, `modules`, `integrations`, `projectAliasingRules` | Configuración multi-tenant. |
+| **`RolePermissions`** | `name`, `is_system_role`, `permissions` | Rol con permisos configurables por agencia. |
+| **`ProjectAliasingRule`** | `displayPrefix`, `matchPatterns`, `virtualClientName` | Regla para renombrar proyectos (ej: Kit Digital → KD:). |
 | **`WorkSchedule`** | `monday`...`sunday` | Horas laborables por día (0-24). |
 | **`UserPermissions`** | `can_access_planner`, `can_edit_tasks`, etc. | 18 flags de permisos granulares. |
 
@@ -77,9 +84,10 @@ Para optimizar rendimiento, usamos `loadedMonthsRef`.
 - Si ya existe en `loadedMonthsRef` -> **Retorno inmediato** (0 latencia).
 - Si no -> Fetch a Supabase -> Merge -> Añadir a Ref.
 
-#### Realtime
-- Suscripción activa a `postgres_changes` en tabla `allocations`.
-- Permite ver cambios de otros usuarios en tiempo real sin recargar.
+#### Realtime Optimizado
+- Estrategia de **Canales Unificados** por sala (mes/contexto) para reducir conexiones.
+- Sistema de **Locking** para evitar conflictos de edición.
+- Ver detalle técnico en `DOCUMENTACION.md` Sección 4.3.
 
 ### 2.2 `AgencyContext.tsx` (Multi-Tenant)
 - **Propósito**: Aisla datos por agencia.
@@ -156,7 +164,10 @@ Lógica reutilizable de UI.
     - `getProjectBudgetStatus(projectId)`: Retorna `{ totalPlanned, totalComputed, budgetMax, isPacing }`.
     - `updateInlineHours`: Función optimista para editar horas en la grilla.
 
-### 4.2 `src/hooks/usePermissions.ts` (RBAC)
+### 4.2 `src/hooks/useAllocationActions.ts` (Nuevo)
+**Lógica CRUD de Asignaciones**.
+- Centraliza operaciones: `addTask`, `updateTask`, `deleteTask`, `inlineEditing`.
+- Gestiona el estado del formulario modal y ediciones en línea.
 **Sistema Central de Seguridad**.
 - `canAccess(route)`: Valida contra `ROUTE_PERMISSIONS`.
 - `hasPermission(flag)`: Valida contra `UserPermissions`.
@@ -175,6 +186,18 @@ Lógica reutilizable de UI.
 - **`useTaskTransfers`**: Máquina de estados para transferencias (`pending` -> `accepted/rejected`).
 - **`useMobile`**: Detecta viewport (mobile vs desktop) para Layouts adaptativos.
 
+### 4.5 `src/hooks/useProjectAliasing.ts` (Formateo de Nombres)
+**Sistema de Aliasing de Proyectos**.
+- **Propósito**: Formatea nombres de proyectos según reglas configurables por agencia.
+- **Uso**: Centraliza la lógica de `formatProjectName` usando las reglas de `currentAgency.settings.projectAliasingRules`.
+- **Ejemplo**: Proyectos "Kit Digital" → "KD: [Cliente]"
+- **Hook**:
+```typescript
+const { formatName: formatProjectName } = useProjectAliasing();
+// Usar: formatProjectName(project.name)
+```
+- **Consumidores**: `DeadlinesPage`, `ReportsPage`, `ClientReportsPage`, `EmployeeDashboard`, `AllocationSheet`, `WeeklyForecastPage`, y todos los componentes que muestran nombres de proyectos.
+
 </details>
 
 <details>
@@ -184,10 +207,10 @@ Lógica reutilizable de UI.
 - **`PlannerGrid.tsx`**:
     - Grilla virtualizada (renderiza solo lo visible).
     - Gestiona selección de celdas (`selectedCell`) y navegación con teclado.
-- **`AllocationSheet.tsx`** (~2700 líneas):
+- **`AllocationSheet.tsx`**:
     - **Modo Batch**: Permite editar múltiples semanas a la vez.
-    - **Validación Visua**l: Muestra barras de progreso de presupuesto en tiempo real.
-    - **Integración**: Consume `useAllocationSheet` y `useTasksImpact`.
+    - **Validación Visual**: Muestra barras de progreso de presupuesto en tiempo real.
+    - **Refactorizado**: Dividido en subcomponentes (`AllocationProjectHeader`, `AllocationTaskRow`, `AllocationFormDialog`) y hook lógico (`useAllocationActions`) para mejorar mantenibilidad.
 
 ### 5.2 Marketing (`src/components/marketing`)
 - **`MarketingMatrix.tsx`**:

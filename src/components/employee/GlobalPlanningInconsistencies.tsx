@@ -9,7 +9,8 @@ import {
   AlertTriangle, CheckCircle2, Users, TrendingUp, TrendingDown,
   Info, ChevronDown, ChevronUp, Filter
 } from 'lucide-react';
-import { cn, formatProjectName } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { supabase } from '@/lib/supabase';
 import { Deadline } from '@/types';
 import { format, isSameMonth, parseISO, startOfMonth, endOfMonth } from 'date-fns';
@@ -51,6 +52,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
   const [isLoading, setIsLoading] = useState(true);
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all');
+  const { formatName: formatProjectName } = useProjectAliasing();
 
   const monthKey = format(viewDate, 'yyyy-MM');
 
@@ -364,7 +366,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
 
               return (
                 <div
-                  key={inc.projectId}
+                  key={`proj-${inc.projectId}`}
                   className={cn(
                     "border rounded-lg p-3 transition-colors",
                     isPositive ? "bg-amber-50 border-amber-200" : "bg-blue-50 border-blue-200"
@@ -461,11 +463,11 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                         Empleados afectados ({inc.employees.length})
                       </div>
                       <div className="space-y-1.5">
-                        {inc.employees.map(emp => {
+                        {inc.employees.map((emp, empIndex) => {
                           const empIsPositive = emp.difference > 0;
                           return (
                             <div
-                              key={emp.employeeId}
+                              key={`emp-${emp.employeeId}-${empIndex}`}
                               className="text-xs bg-white rounded p-2 border border-slate-200 flex items-center gap-2"
                             >
                               <Avatar className="h-6 w-6 border border-slate-200">

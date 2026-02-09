@@ -16,7 +16,7 @@ import {
   FolderOpen, Clock, CalendarDays, Building2, ArrowUpRight, ArrowDownRight,
   Minus, Eye, X, ChevronDown
 } from 'lucide-react';
-import { cn, isKitDigitalProject } from '@/lib/utils';
+import { cn, matchesAliasingRule } from '@/lib/utils';
 import { toast } from 'sonner';
 import { format, subMonths, addMonths, isSameMonth, parseISO } from 'date-fns';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
@@ -151,20 +151,35 @@ export default function ClientsPage() {
 
   // Calcular estadísticas para cada cliente
   const clientsWithStats = useMemo(() => {
-    // Primero identificamos proyectos Kit Digital usando la función helper
-    // Detecta todas las variantes: (KD), KD , KD:, kit digital, etc.
-    const kitDigitalProjects = projects.filter(p =>
-      p.status === 'active' && isKitDigitalProject(p.name)
+    // Identificar proyectos que coinciden con reglas de aliasing
+    const aliasingRules = currentAgency?.settings?.projectAliasingRules || [];
+
+    // Agrupar proyectos por regla de aliasing
+    const projectsByAliasRule = new Map<string, typeof projects>();
+    const regularProjects = [] as typeof projects;
+
+    projects.filter(p => p.status === 'active').forEach(project => {
+      const matchedRule = matchesAliasingRule(project.name, aliasingRules);
+      if (matchedRule && matchedRule.groupAsVirtualClient) {
+        const existing = projectsByAliasRule.get(matchedRule.id) || [];
+        existing.push(project);
+        projectsByAliasRule.set(matchedRule.id, existing);
+      } else {
+        regularProjects.push(project);
+      }
+    });
+
+    const aliasedProjectIds = new Set(
+      [...projectsByAliasRule.values()].flat().map(p => p.id)
     );
-    const kitDigitalProjectIds = new Set(kitDigitalProjects.map(p => p.id));
 
     const regularClients = clients.map(client => {
       const { used, budget, percentage } = getClientTotalHoursForMonth(client.id, currentMonth);
       const prevStats = getClientTotalHoursForMonth(client.id, prevMonth);
 
-      // Proyectos del cliente (excluyendo Kit Digital)
-      const clientProjects = projects
-        .filter(p => p.clientId === client.id && p.status === 'active' && !kitDigitalProjectIds.has(p.id))
+      // Proyectos del cliente (excluyendo aliased projects)
+      const clientProjects = regularProjects
+        .filter(p => p.clientId === client.id && !aliasedProjectIds.has(p.id))
         .map(p => {
           const hours = getProjectHoursForMonth(p.id, currentMonth);
           return {
@@ -194,39 +209,47 @@ export default function ClientsPage() {
       };
     });
 
-    // Agregar cliente virtual "Kit Digital" si hay proyectos
-    if (kitDigitalProjects.length > 0) {
-      const kitDigitalProjectsWithStats = kitDigitalProjects.map(p => {
-        const hours = getProjectHoursForMonth(p.id, currentMonth);
-        return {
-          id: p.id,
-          name: p.name,
-          used: hours.used,
-          budget: hours.budget,
-          percentage: hours.percentage
-        };
-      });
+    // Agregar clientes virtuales para cada regla de aliasing con proyectos
+    projectsByAliasRule.forEach((aliasProjects, ruleId) => {
+      if (aliasProjects.length > 0) {
+        const rule = aliasingRules.find(r => r.id === ruleId);
+        const aliasProjectsWithStats = aliasProjects.map(p => {
+          const hours = getProjectHoursForMonth(p.id, currentMonth);
+          return {
+            id: p.id,
+            name: p.name,
+            used: hours.used,
+            budget: hours.budget,
+            percentage: hours.percentage
+          };
+        });
 
-      const totalUsed = kitDigitalProjectsWithStats.reduce((sum, p) => sum + p.used, 0);
-      const totalBudget = kitDigitalProjectsWithStats.reduce((sum, p) => sum + p.budget, 0);
-      const percentage = totalBudget > 0 ? (totalUsed / totalBudget) * 100 : 0;
+        const totalUsed = aliasProjectsWithStats.reduce((sum, p) => sum + p.used, 0);
+        const totalBudget = aliasProjectsWithStats.reduce((sum, p) => sum + p.budget, 0);
+        const percentage = totalBudget > 0 ? (totalUsed / totalBudget) * 100 : 0;
 
-      const monthAllocations = allocations.filter(a =>
-        isAllocationInEffectiveMonth(a.weekStartDate, currentMonth) &&
-        kitDigitalProjectIds.has(a.projectId)
-      );
-      const assignedEmployeeIds = [...new Set(monthAllocations.map(a => a.employeeId))];
-      const assignedEmployees = assignedEmployeeIds
-        .map(id => employees.find(e => e.id === id)?.name || '')
-        .filter(Boolean);
+        const aliasProjectIds = new Set(aliasProjects.map(p => p.id));
+        const monthAllocations = allocations.filter(a =>
+          isAllocationInEffectiveMonth(a.weekStartDate, currentMonth) &&
+          aliasProjectIds.has(a.projectId)
+        );
+        const assignedEmployeeIds = [...new Set(monthAllocations.map(a => a.employeeId))];
+        const assignedEmployees = assignedEmployeeIds
+          .map(id => employees.find(e => e.id === id)?.name || '')
+          .filter(Boolean);
 
-      regularClients.push({
-        client: { id: 'kit-digital', name: 'Kit Digital', color: '#10b981' } as Client,
-        stats: { used: totalUsed, budget: totalBudget, percentage, projects: kitDigitalProjectsWithStats },
-        prevStats: { used: 0, budget: 0 },
-        employees: assignedEmployees
-      });
-    }
+        regularClients.push({
+          client: {
+            id: ruleId,
+            name: rule?.virtualClientName || ruleId,
+            color: rule?.virtualClientColor || '#10b981'
+          } as Client,
+          stats: { used: totalUsed, budget: totalBudget, percentage, projects: aliasProjectsWithStats },
+          prevStats: { used: 0, budget: 0 },
+          employees: assignedEmployees
+        });
+      }
+    });
 
     return regularClients;
   }, [clients, projects, allocations, employees, currentMonth, prevMonth, getClientTotalHoursForMonth, getProjectHoursForMonth]);

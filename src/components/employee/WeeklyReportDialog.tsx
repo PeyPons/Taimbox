@@ -17,7 +17,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { getStorageKey, getWeeksForMonth, isAllocationInEffectiveMonth, getWeekEndDate } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
-import { cn, formatProjectName } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -34,6 +35,7 @@ interface WeeklyReportDialogProps {
 export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }: WeeklyReportDialogProps) {
   const { allocations, projects, clients, employees, absences, teamEvents, weeklyFeedback, updateAllocation, addAllocation, deleteAllocation, addWeeklyFeedback, getEmployeeLoadForWeek, loadDataForMonth } = useApp();
   const weeklyCloseDay = useWeeklyCloseDay();
+  const { formatName: formatProjectName } = useProjectAliasing();
   const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
   // Función helper para normalizar números (acepta tanto coma como punto como separador decimal)

@@ -8,7 +8,8 @@ import {
   AlertTriangle, CheckCircle2, Users, TrendingUp, TrendingDown,
   Info, ChevronDown, ChevronUp, User
 } from 'lucide-react';
-import { cn, formatProjectName } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { supabase } from '@/lib/supabase';
 import { Deadline } from '@/types';
 import { format, isSameMonth, parseISO, startOfMonth, endOfMonth } from 'date-fns';
@@ -33,6 +34,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
+  const { formatName: formatProjectName } = useProjectAliasing();
 
   const monthKey = format(viewDate, 'yyyy-MM');
 
@@ -135,7 +137,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
       const deadlineHours = deadline.employeeHours[employeeId] || 0;
       const projectAllocs = allocationsByProject[deadline.projectId] || { planned: 0, computed: 0 };
       const project = projects.find(p => p.id === deadline.projectId);
-      
+
       // FILTRAR: Para empleados no-managers, solo mostrar proyectos donde están asignados
       // (tienen deadline asignado O tienen allocations en ese proyecto)
       if (!isManager) {
@@ -144,7 +146,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
           return; // Saltar si el empleado no está asignado a este proyecto
         }
       }
-      
+
       // El deadline planifica según lo que se estima computar, así que comparamos con lo computado + planificado
       // (porque lo planificado aún no computado también cuenta)
       const totalPlanned = projectAllocs.planned + projectAllocs.computed;
@@ -152,10 +154,10 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
 
       // Solo mostrar si hay diferencia significativa (> 0.5h)
       // Para empleados no-managers, solo mostrar proyectos donde están asignados Y hay diferencia
-      const shouldShow = isManager 
-        ? Math.abs(difference) > 0.5 
+      const shouldShow = isManager
+        ? Math.abs(difference) > 0.5
         : ((deadlineHours > 0 || projectAllocs.planned > 0 || projectAllocs.computed > 0) && Math.abs(difference) > 0.5);
-      
+
       if (shouldShow) {
 
         // Obtener allocations del proyecto de todos los empleados
@@ -205,14 +207,14 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         // Esto corrige el bug de "Empleado Fantasma" donde las horas suman pero no aparecen
         // Y también el caso donde un compañero tiene deadline pero aún no tiene horas
         const allEmployeeIdsForTeammates = new Set<string>();
-        
+
         // Añadir empleados con allocations
         Object.keys(allocationsByEmployee).forEach(empId => {
           if (empId !== employeeId) {
             allEmployeeIdsForTeammates.add(empId);
           }
         });
-        
+
         // Añadir empleados con deadline asignado (aunque no tengan horas todavía)
         if (deadline.employeeHours) {
           Object.keys(deadline.employeeHours).forEach(empId => {
@@ -221,21 +223,21 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
             }
           });
         }
-        
+
         allEmployeeIdsForTeammates.forEach((empId) => {
           const empAllocs = allocationsByEmployee[empId] || { planned: 0, computed: 0 };
           const empTotal = empAllocs.planned + empAllocs.computed;
-          
+
           // Mostrar si tiene horas imputadas (planificadas o computadas) > 0
           // O si tiene deadline asignado
           const deadlineHrs = deadline.employeeHours[empId] || 0;
           const hasHours = empTotal > 0;
           const hasDeadline = deadlineHrs > 0;
-          
+
           if (hasHours || hasDeadline) {
             const empDiff = round2(empTotal - deadlineHrs);
             const emp = employees.find(e => e.id === empId);
-            
+
             if (emp) {
               teammates.push({
                 employeeId: empId,
@@ -270,15 +272,15 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
     // Iterar sobre todos los proyectos que tienen allocations para este empleado
     // IMPORTANTE: Verificar que el proyecto no esté ya en results (evitar duplicados)
     const processedProjectIds = new Set(results.map(r => r.projectId));
-    
+
     Object.entries(allocationsByProject).forEach(([projectId, projectAllocs]) => {
       // Si el proyecto ya está en results, saltarlo (evitar duplicados)
       if (processedProjectIds.has(projectId)) return;
-      
+
       // Verificar si el usuario tiene deadline asignado en este proyecto
       const userDeadline = deadlines.find(d => d.projectId === projectId);
       const userDeadlineHours = userDeadline?.employeeHours[employeeId] || 0;
-      
+
       // Si el usuario NO tiene deadline asignado pero tiene horas, mostrar el proyecto
       if (userDeadlineHours === 0 && (projectAllocs.planned > 0 || projectAllocs.computed > 0)) {
         const project = projects.find(p => p.id === projectId);
@@ -333,14 +335,14 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         // Incluir todos los empleados con horas > 0 O con deadline asignado (excepto el usuario logueado)
         // IMPORTANTE: Incluir TODOS los empleados que tienen deadline en este proyecto, incluso si no tienen horas todavía
         const allEmployeeIds = new Set<string>();
-        
+
         // Añadir empleados con allocations
         Object.keys(allocationsByEmployeeNoDeadline).forEach(empId => {
           if (empId !== employeeId) {
             allEmployeeIds.add(empId);
           }
         });
-        
+
         // Añadir empleados con deadline asignado (aunque no tengan horas todavía)
         // Esto es crítico: si el proyecto tiene deadline para otros empleados, deben aparecer
         if (projectDeadline && projectDeadline.employeeHours) {
@@ -355,13 +357,13 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
           const empAllocs = allocationsByEmployeeNoDeadline[empId] || { planned: 0, computed: 0 };
           const empTotal = empAllocs.planned + empAllocs.computed;
           const empDeadlineHours = projectDeadline?.employeeHours?.[empId] || 0;
-          
+
           // Mostrar si tiene horas imputadas O si tiene deadline asignado
           // Esto asegura que aparezcan compañeros con deadline aunque no tengan horas todavía
           if (empTotal > 0 || empDeadlineHours > 0) {
             const empDiff = round2(empTotal - empDeadlineHours);
             const emp = employees.find(e => e.id === empId);
-            
+
             if (emp) { // Solo añadir si el empleado existe
               teammatesWithoutDeadline.push({
                 employeeId: empId,
@@ -487,7 +489,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                   )}
                 >
                   {/* HEADER - Siempre visible (colapsado) */}
-                  <div 
+                  <div
                     className="flex items-center justify-between gap-2 p-2.5 cursor-pointer hover:bg-white/50 transition-colors"
                     onClick={() => toggleProject(inc.projectId)}
                   >
@@ -502,12 +504,12 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                       >
                         {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                       </button>
-                      
+
                       {/* Nombre del proyecto */}
                       <div className="font-semibold text-sm text-slate-800 truncate">
                         {formatProjectName(inc.projectName)}
                       </div>
-                      
+
                       {/* Resumen compacto cuando está colapsado */}
                       {!isExpanded && (
                         <div className="flex items-center gap-2 text-xs text-slate-600">
@@ -529,11 +531,11 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                           {/* DIFERENCIA - Compacta pero destacada */}
                           <div className={cn(
                             "flex items-center gap-1 px-2 py-0.5 rounded font-bold text-sm",
-                            inc.difference < 0 
-                              ? "bg-red-100 text-red-700 border border-red-300" 
-                              : isPositive 
-                              ? "bg-amber-100 text-amber-700 border border-amber-300"
-                              : "bg-blue-100 text-blue-700 border border-blue-300"
+                            inc.difference < 0
+                              ? "bg-red-100 text-red-700 border border-red-300"
+                              : isPositive
+                                ? "bg-amber-100 text-amber-700 border border-amber-300"
+                                : "bg-blue-100 text-blue-700 border border-blue-300"
                           )}>
                             {inc.difference < 0 ? (
                               <>
@@ -567,7 +569,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                           )}
                         </div>
                       )}
-                      
+
                       {/* Tu estado - Estilo similar a compañeros pero destacado */}
                       <div className="bg-gradient-to-br from-indigo-50 via-indigo-100/30 to-white rounded-lg px-3 py-2.5 border-2 border-indigo-400 shadow-lg ring-2 ring-indigo-200/50">
                         <div className="flex items-center gap-3">
@@ -610,15 +612,15 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                               {inc.deadlineHours > 0 && (
                                 <>
                                   <span className="text-slate-300">→</span>
-                                  <Badge 
-                                    variant="outline" 
+                                  <Badge
+                                    variant="outline"
                                     className={cn(
                                       "text-[10px] h-5 px-1.5 font-semibold",
                                       inc.difference < 0
-                                        ? "bg-red-50 text-red-700 border-red-300" 
+                                        ? "bg-red-50 text-red-700 border-red-300"
                                         : inc.difference > 0
-                                        ? "bg-amber-50 text-amber-700 border-amber-300"
-                                        : "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                          ? "bg-amber-50 text-amber-700 border-amber-300"
+                                          : "bg-emerald-50 text-emerald-700 border-emerald-300"
                                     )}
                                   >
                                     {inc.difference < 0 ? '' : inc.difference > 0 ? '+' : ''}{inc.difference}h
@@ -629,11 +631,11 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                             {/* Feedback Directo integrado */}
                             <div className={cn(
                               "mt-2 flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold",
-                              inc.difference < 0 
-                                ? "bg-red-50 text-red-700 border border-red-200" 
+                              inc.difference < 0
+                                ? "bg-red-50 text-red-700 border border-red-200"
                                 : inc.difference > 0
-                                ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                  : "bg-emerald-50 text-emerald-700 border border-emerald-200"
                             )}>
                               {inc.difference < 0 ? (
                                 <>
@@ -655,7 +657,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                           </div>
                         </div>
                       </div>
-                      
+
 
                       {isExpanded && hasMore && (
                         <div className="pt-3 border-t-2 border-slate-300">
@@ -710,15 +712,15 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                                         {tm.deadlineHours > 0 && (
                                           <>
                                             <span className="text-slate-300">→</span>
-                                            <Badge 
-                                              variant="outline" 
+                                            <Badge
+                                              variant="outline"
                                               className={cn(
                                                 "text-[10px] h-5 px-1.5 font-semibold",
-                                                tmIsPositive 
-                                                  ? "bg-amber-50 text-amber-700 border-amber-300" 
+                                                tmIsPositive
+                                                  ? "bg-amber-50 text-amber-700 border-amber-300"
                                                   : tm.difference < 0
-                                                  ? "bg-red-50 text-red-700 border-red-300"
-                                                  : "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                                    ? "bg-red-50 text-red-700 border-red-300"
+                                                    : "bg-emerald-50 text-emerald-700 border-emerald-300"
                                               )}
                                             >
                                               {tmIsPositive ? '+' : ''}{tm.difference}h

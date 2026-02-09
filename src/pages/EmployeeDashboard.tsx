@@ -40,7 +40,7 @@ import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, C
 import { startOfMonth, endOfMonth, format, isSameMonth, parseISO, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { cn, formatProjectName } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useIntegration } from '@/hooks/useIntegration';
@@ -48,6 +48,7 @@ import { useDashboardView } from '@/hooks/useDashboardView';
 import { ViewToggle, ViewModeIndicator } from '@/components/employee/ViewToggle';
 import { DailyZenDashboard } from '@/components/employee/DailyZenDashboard';
 import { PendingTransfersPanel } from '@/components/transfers/TaskTransferComponents';
+import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 
 const INTERNAL_CLIENT_NAME = 'Interno';
 const INTERNAL_PROJECT_NAME = 'Gestiones internas';

@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AVAILABLE_INTEGRATIONS } from '@/config/integrations';
-import { CustomProjectFilter, RolePermissions } from '@/types';
+import { CustomProjectFilter, RolePermissions, ProjectAliasingRule } from '@/types';
 import { DEFAULT_FILTERS } from '@/hooks/useProjectFilters';
 import { UserPermissions, PERMISSION_LABELS, DEFAULT_PERMISSIONS } from '@/types/permissions';
 import {
@@ -58,6 +58,20 @@ export default function AgencySettingsPage() {
   const [projectFilters, setProjectFilters] = useState<CustomProjectFilter[]>(
     currentAgency?.settings?.projectFilters || DEFAULT_FILTERS
   );
+  // Project aliasing rules (e.g., Kit Digital renaming)
+  const DEFAULT_ALIASING_RULE: ProjectAliasingRule = {
+    id: 'kit-digital',
+    name: 'kit-digital',
+    displayPrefix: 'KD:',
+    enabled: true,
+    matchPatterns: ['(KD)', '[KD]', 'KD ', 'KD:', 'kit digital', 'kitdigital'],
+    groupAsVirtualClient: true,
+    virtualClientName: 'Kit Digital',
+    virtualClientColor: '#8B5CF6'
+  };
+  const [projectAliasingRules, setProjectAliasingRules] = useState<ProjectAliasingRule[]>(
+    currentAgency?.settings?.projectAliasingRules || [DEFAULT_ALIASING_RULE]
+  );
   const [integrations, setIntegrations] = useState(currentAgency?.settings?.integrations || {
     metaAccessToken: '',
     googleAdsCustomerId: '',
@@ -72,19 +86,15 @@ export default function AgencySettingsPage() {
   // Safely initialize roles handling legacy string[] data
   const [roles, setRoles] = useState<RolePermissions[]>(() => {
     const existingRoles = currentAgency?.settings?.roles;
-    if (!existingRoles) {
-      return [
-        { name: 'Responsable', permissions: DEFAULT_PERMISSIONS },
-        { name: 'Especialista', permissions: { ...DEFAULT_PERMISSIONS, can_access_team: false, can_access_agency_settings: false } }
-      ];
+    if (!existingRoles || existingRoles.length === 0) {
+      // Sin roles predefinidos - cada agencia crea los suyos
+      return [];
     }
     // Migration check: if elements are strings, convert them
     if (existingRoles.length > 0 && typeof existingRoles[0] === 'string') {
       return (existingRoles as unknown as string[]).map(r => ({
         name: r,
-        permissions: r.toLowerCase().includes('responsable') || r.toLowerCase().includes('ceo')
-          ? DEFAULT_PERMISSIONS
-          : { ...DEFAULT_PERMISSIONS, can_access_team: false, can_access_agency_settings: false }
+        permissions: DEFAULT_PERMISSIONS
       }));
     }
     return existingRoles as RolePermissions[];
@@ -135,16 +145,11 @@ export default function AgencySettingsPage() {
       if (existingRoles && existingRoles.length > 0 && typeof existingRoles[0] === 'string') {
         const migratedRoles = (existingRoles as unknown as string[]).map(r => ({
           name: r,
-          permissions: r.toLowerCase().includes('responsable') || r.toLowerCase().includes('ceo')
-            ? DEFAULT_PERMISSIONS
-            : { ...DEFAULT_PERMISSIONS, can_access_team: false, can_access_agency_settings: false }
+          permissions: DEFAULT_PERMISSIONS
         }));
         setRoles(migratedRoles);
       } else {
-        setRoles(currentAgency.settings?.roles || [
-          { name: 'Responsable', permissions: DEFAULT_PERMISSIONS },
-          { name: 'Especialista', permissions: { ...DEFAULT_PERMISSIONS, can_access_team: false, can_access_agency_settings: false } }
-        ]);
+        setRoles(currentAgency.settings?.roles || []);
       }
 
       setDepartments(currentAgency.settings?.departments || ['SEO', 'PPC']);
@@ -235,6 +240,7 @@ export default function AgencySettingsPage() {
           primaryColor
         },
         projectFilters,
+        projectAliasingRules,
         integrations,
         enabledIntegrations,
         weeklyCloseDay
@@ -357,6 +363,48 @@ export default function AgencySettingsPage() {
   const resetToDefaults = () => {
     setProjectFilters(DEFAULT_FILTERS);
     toast.info('Filtros restablecidos a valores por defecto');
+  };
+
+  // Aliasing rules management functions
+  const toggleAliasingRule = (ruleId: string) => {
+    setProjectAliasingRules(prev => prev.map(r =>
+      r.id === ruleId ? { ...r, enabled: !r.enabled } : r
+    ));
+  };
+
+  const updateAliasingRulePatterns = (ruleId: string, value: string) => {
+    const patterns = value.split(',').map(p => p.trim()).filter(Boolean);
+    setProjectAliasingRules(prev => prev.map(r =>
+      r.id === ruleId ? { ...r, matchPatterns: patterns } : r
+    ));
+  };
+
+  const updateAliasingRulePrefix = (ruleId: string, displayPrefix: string) => {
+    setProjectAliasingRules(prev => prev.map(r =>
+      r.id === ruleId ? { ...r, displayPrefix } : r
+    ));
+  };
+
+  const updateAliasingRuleName = (ruleId: string, virtualClientName: string) => {
+    setProjectAliasingRules(prev => prev.map(r =>
+      r.id === ruleId ? { ...r, virtualClientName } : r
+    ));
+  };
+
+  const addNewAliasingRule = () => {
+    const newRule: ProjectAliasingRule = {
+      id: `alias-${Date.now()}`,
+      name: `custom-alias-${projectAliasingRules.length + 1}`,
+      displayPrefix: 'NUEVO:',
+      enabled: true,
+      matchPatterns: [],
+      groupAsVirtualClient: false
+    };
+    setProjectAliasingRules(prev => [...prev, newRule]);
+  };
+
+  const removeAliasingRule = (ruleId: string) => {
+    setProjectAliasingRules(prev => prev.filter(r => r.id !== ruleId));
   };
 
   if (isAgencyLoading) {
@@ -853,6 +901,127 @@ export default function AgencySettingsPage() {
                 <p>No hay filtros configurados</p>
                 <Button variant="link" onClick={addNewFilter}>
                   Añadir el primer filtro
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Project Aliasing Rules */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <GitBranch className="h-5 w-5 text-purple-600" />
+            Aliasing de proyectos
+          </CardTitle>
+          <CardDescription>
+            Configura reglas para renombrar proyectos automáticamente (ej: Kit Digital → KD:)
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-slate-600">
+              Define patrones para detectar y renombrar proyectos especiales
+            </p>
+            <Button variant="outline" size="sm" onClick={addNewAliasingRule}>
+              <Plus className="h-4 w-4 mr-1" />
+              Nueva regla
+            </Button>
+          </div>
+
+          <div className="space-y-4">
+            {projectAliasingRules.map((rule) => (
+              <div
+                key={rule.id}
+                className={`p-4 rounded-lg border space-y-3 ${rule.enabled ? 'bg-white border-slate-200' : 'bg-slate-50 border-slate-200 opacity-60'
+                  }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      checked={rule.enabled}
+                      onCheckedChange={() => toggleAliasingRule(rule.id)}
+                    />
+                    <div>
+                      <span className="font-medium text-slate-900">{rule.virtualClientName || rule.name}</span>
+                      {rule.displayPrefix && (
+                        <Badge variant="outline" className="ml-2 text-xs bg-purple-50 text-purple-700">
+                          {rule.displayPrefix}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeAliasingRule(rule.id)}
+                    className="text-slate-400 hover:text-red-600"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-sm">Prefijo a mostrar</Label>
+                    <Input
+                      value={rule.displayPrefix}
+                      onChange={(e) => updateAliasingRulePrefix(rule.id, e.target.value)}
+                      placeholder="Ej: KD:"
+                      className="text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Nombre del cliente virtual</Label>
+                    <Input
+                      value={rule.virtualClientName || ''}
+                      onChange={(e) => updateAliasingRuleName(rule.id, e.target.value)}
+                      placeholder="Ej: Kit Digital"
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm">Patrones de detección</Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <HelpCircle className="h-3.5 w-3.5 text-slate-400" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Términos separados por coma. Si el proyecto contiene alguno, se aplicará esta regla.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <Input
+                    value={rule.matchPatterns.join(', ')}
+                    onChange={(e) => updateAliasingRulePatterns(rule.id, e.target.value)}
+                    placeholder="Ej: (KD), [KD], kit digital, KD:"
+                    className="text-sm"
+                  />
+                  {rule.matchPatterns.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {rule.matchPatterns.map((p, i) => (
+                        <Badge key={i} variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                          {p}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {projectAliasingRules.length === 0 && (
+              <div className="text-center py-8 text-slate-500">
+                <GitBranch className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                <p>No hay reglas de aliasing configuradas</p>
+                <Button variant="link" onClick={addNewAliasingRule}>
+                  Añadir la primera regla
                 </Button>
               </div>
             )}
