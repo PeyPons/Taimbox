@@ -6,7 +6,7 @@ import { getWeekEndDate } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { toast } from 'sonner';
 
-export function useAllocationActions(employeeId: string, weeks: { weekStart: Date }[], canAssignToOthers: boolean) {
+export function useAllocationActions(employeeId: string, weeks: { weekStart: Date }[], canAssignToOthers: boolean, isWeeklyEnabled: boolean = true) {
     const { addAllocation, updateAllocation, deleteAllocation } = useApp();
     const weeklyCloseDay = useWeeklyCloseDay();
 
@@ -115,17 +115,19 @@ export function useAllocationActions(employeeId: string, weeks: { weekStart: Dat
     };
 
     const startEditFull = (allocation: Allocation) => {
-        try {
-            const taskWeekDate = parseISO(allocation.weekStartDate);
-            const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
-            const today = new Date();
+        if (isWeeklyEnabled) {
+            try {
+                const taskWeekDate = parseISO(allocation.weekStartDate);
+                const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
+                const today = new Date();
 
-            if (taskWeekEnd < today) {
-                toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
-                return;
+                if (taskWeekEnd < today) {
+                    toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
+                    return;
+                }
+            } catch {
+                // Si hay error parseando, permitir editar
             }
-        } catch {
-            // Si hay error parseando, permitir editar
         }
 
         setEditingAllocation(allocation);
@@ -166,17 +168,19 @@ export function useAllocationActions(employeeId: string, weeks: { weekStart: Dat
     };
 
     const startInlineEdit = (allocation: Allocation) => {
-        try {
-            const taskWeekDate = parseISO(allocation.weekStartDate);
-            const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
-            const today = new Date();
+        if (isWeeklyEnabled) {
+            try {
+                const taskWeekDate = parseISO(allocation.weekStartDate);
+                const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
+                const today = new Date();
 
-            if (taskWeekEnd < today) {
-                toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
-                return;
+                if (taskWeekEnd < today) {
+                    toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
+                    return;
+                }
+            } catch {
+                // Ignorar error
             }
-        } catch {
-            // Ignorar error
         }
 
         setInlineEditingId(allocation.id);

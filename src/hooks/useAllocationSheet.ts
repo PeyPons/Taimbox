@@ -4,6 +4,8 @@ import { Allocation, Project } from '@/types';
 import { getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { format, isSameMonth, parseISO, addDays, startOfWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Deadline } from '@/types';
+import { getEffectiveBudget } from '@/utils/budgetUtils';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -19,10 +21,10 @@ export interface ProjectBudgetStatus {
 
 export type SortOption = 'budget_desc' | 'budget_asc' | 'my_hours_desc' | 'my_hours_asc' | 'name_asc' | 'name_desc';
 
-export function useAllocationSheet(employeeId: string, viewDate: Date) {
-  const { 
-    employees, projects, allocations, getEmployeeAllocationsForWeek, 
-    getEmployeeLoadForWeek, getProjectById 
+export function useAllocationSheet(employeeId: string, viewDate: Date, deadlines: Deadline[] = []) {
+  const {
+    employees, projects, allocations, getEmployeeAllocationsForWeek,
+    getEmployeeLoadForWeek, getProjectById
   } = useApp();
 
   const employee = employees.find(e => e.id === employeeId);
@@ -57,7 +59,7 @@ export function useAllocationSheet(employeeId: string, viewDate: Date) {
 
   const activeProjects = useMemo(() =>
     projects.filter(p => p.status === 'active').sort((a, b) => a.name.localeCompare(b.name)),
-  [projects]);
+    [projects]);
 
   // Resumen mensual de proyectos del empleado
   const monthlyProjectSummary = useMemo(() => {
@@ -125,8 +127,8 @@ export function useAllocationSheet(employeeId: string, viewDate: Date) {
         };
       }
 
-      const monthAllocations = allocations.filter(a => 
-        a.projectId === projectId && 
+      const monthAllocations = allocations.filter(a =>
+        a.projectId === projectId &&
         isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
       );
 
@@ -139,7 +141,7 @@ export function useAllocationSheet(employeeId: string, viewDate: Date) {
         const planned = a.status !== 'completed' ? (a.hoursAssigned || 0) : 0;
         totalComputed += computed;
         totalPlanned += planned;
-        
+
         if (!breakdownMap[a.employeeId]) {
           breakdownMap[a.employeeId] = { computed: 0, planned: 0 };
         }
@@ -152,8 +154,11 @@ export function useAllocationSheet(employeeId: string, viewDate: Date) {
         return { employeeId: empId, employeeName: emp?.name || 'Desconocido', ...data };
       }).sort((a, b) => (b.computed + b.planned) - (a.computed + a.planned));
 
-      const budgetMax = project.budgetHours || 0;
+      const deadline = deadlines.find(d => d.projectId === projectId);
+      const budgetMax = getEffectiveBudget(project, deadline);
       const budgetMin = project.minimumHours || 0;
+      // TODO: If we ever implement minimum override, use getEffectiveMinimum here
+
       const percentage = budgetMax > 0 ? round2((totalComputed / budgetMax) * 100) : 0;
       const isExact100 = budgetMax > 0 && Math.abs(totalComputed - budgetMax) < 0.1;
       const isAtMinimum = budgetMin > 0 && totalComputed >= budgetMin && (budgetMax === 0 || totalComputed <= budgetMax);
@@ -169,17 +174,17 @@ export function useAllocationSheet(employeeId: string, viewDate: Date) {
         status = 'under';
       }
 
-      return { 
-        totalComputed: round2(totalComputed), 
-        totalPlanned: round2(totalPlanned), 
-        budgetMax, 
-        budgetMin, 
-        percentage, 
-        status, 
-        breakdown 
+      return {
+        totalComputed: round2(totalComputed),
+        totalPlanned: round2(totalPlanned),
+        budgetMax,
+        budgetMin,
+        percentage,
+        status,
+        breakdown
       };
     };
-  }, [projects, allocations, employees, viewDate]);
+  }, [projects, allocations, employees, viewDate, deadlines]);
 
   // Filtrar y ordenar proyectos
   const getFilteredAndSortedProjects = (
@@ -193,7 +198,7 @@ export function useAllocationSheet(employeeId: string, viewDate: Date) {
     // Filtro de búsqueda
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(p => 
+      filtered = filtered.filter(p =>
         p.name.toLowerCase().includes(term)
       );
     }

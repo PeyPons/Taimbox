@@ -22,7 +22,7 @@ El proyecto se divide en **Módulos Funcionales**. Haz clic en cada sección par
 <summary><h2>🏗️ Fase 1: Fundamentos & Tipos</h2></summary>
 
 ### 1.1 `src/types/index.ts` - Contratos de Datos
-**Ubicación**: `src/types/index.ts` | **Interfaces**: 22+
+**Ubicación**: `src/types/index.ts` | **Interfaces**: 35+
 
 El archivo más importante para contratos de datos.
 
@@ -31,8 +31,9 @@ El archivo más importante para contratos de datos.
 | Interface | Campos Clave | Descripción |
 |-----------|--------------|-------------|
 | **`Allocation`** | `id`, `employeeId`, `projectId`, `hoursAssigned`, `hoursActual`, `status` | **CORE**: Tarea asignada. Unidad atómica del calendario. |
+| **`Deadline`** | `projectId`, `month`, `employeeHours`, `budgetOverride` | Configuración mensual por proyecto (distribución y ajuste de budget). |
 | **`Employee`** | `id`, `defaultWeeklyCapacity`, `workSchedule`, `role` | Define capacidad y horario base. |
-| **`Project`** | `id`, `budgetHours`, `monthlyFee`, `status` (`active/paused`) | Contenedor de asignaciones. |
+| **`Project`** | `id`, `budgetHours`, `monthlyFee`, `status` (`active/archived/completed`) | Contenedor de asignaciones. |
 | **`AgencySettings`** | `roles`, `modules`, `integrations`, `projectAliasingRules` | Configuración multi-tenant. |
 | **`RolePermissions`** | `name`, `is_system_role`, `permissions` | Rol con permisos configurables por agencia. |
 | **`ProjectAliasingRule`** | `displayPrefix`, `matchPatterns`, `virtualClientName` | Regla para renombrar proyectos (ej: Kit Digital → KD:). |
@@ -47,8 +48,8 @@ El archivo más importante para contratos de datos.
 ### 1.2 `src/App.tsx` - Entry Point
 **Ubicación**: `src/App.tsx`
 
-Configura la jerarquía de **7 Context Providers** y el Router con **20+ rutas**.
-- **Jerarquía**: `Auth` > `Agency` > `App` > `Marketing` > `Goals` > `Notification`.
+Configura la jerarquía de **9 Providers** y el Router con **24+ rutas**.
+- **Jerarquía**: `Helmet` > `QueryClient` > `Auth` > `Agency` > `App` > `Marketing` > `Goals` > `Notification` > `Tooltip`.
 - **Protección**: Usa `ProtectedRoute` (Auth) y `PermissionProtectedRoute` (RBAC).
 
 ### 1.3 `src/lib/supabase.ts`
@@ -106,7 +107,7 @@ Para optimizar rendimiento, usamos `loadedMonthsRef`.
 </details>
 
 <details>
-<summary><h2>�️ Fase 3: Utilidades Críticas</h2></summary>
+<summary><h2>🛠️ Fase 3: Utilidades Críticas</h2></summary>
 
 Archivos de lógica pura que son dependencias de todo el sistema.
 
@@ -140,8 +141,9 @@ function getDailyReduction(date, employee, absences, teamEvents) {
 Centraliza la lógica de quién puede tocar qué.
 - `canEditTask(allocation, user, agencySettings)`:
     - Retorna `false` si la tarea tiene `isLocked: true`.
-    - Retorna `false` si el departamento cerró (ej. Viernes 14:00) y no es admin.
+    - Retorna `false` si el departamento cerró (ej. Viernes 14:00), no es admin, **y `weeklyEnabled !== false`**.
     - Retorna `true` si es el propio usuario o tiene permiso `can_assign_tasks_to_others`.
+- `isWeekEditable(weekStartDate, config, now, weeklyEnabled)`: Si `weeklyEnabled` es `false`, siempre retorna `true`.
 
 ### 3.4 `src/utils/aiReportUtils.ts` (IA & Reporting)
 - Generación de textos con IA para reportes de Ads. Integra `AIService`.
@@ -168,6 +170,8 @@ Lógica reutilizable de UI.
 **Lógica CRUD de Asignaciones**.
 - Centraliza operaciones: `addTask`, `updateTask`, `deleteTask`, `inlineEditing`.
 - Gestiona el estado del formulario modal y ediciones en línea.
+
+### 4.2b `src/hooks/usePermissions.ts` (Seguridad)
 **Sistema Central de Seguridad**.
 - `canAccess(route)`: Valida contra `ROUTE_PERMISSIONS`.
 - `hasPermission(flag)`: Valida contra `UserPermissions`.
@@ -184,7 +188,13 @@ Lógica reutilizable de UI.
 - **`usePlannerData`**: Controla `currentMonth` y `loadedMonths`.
 - **`useProjectMetrics`**: Centraliza fórmulas de rentabilidad (`hoursValue`, `progressOperational`).
 - **`useTaskTransfers`**: Máquina de estados para transferencias (`pending` -> `accepted/rejected`).
-- **`useMobile`**: Detecta viewport (mobile vs desktop) para Layouts adaptativos.
+- **`use-mobile.tsx`**: Detecta viewport (mobile vs desktop) para Layouts adaptativos.
+- **`useAppOrDemo`**: Selecciona contexto real o demo automáticamente.
+- **`useDashboardView`**: Controla la vista del dashboard del empleado.
+- **`useDeadlines`**: Lógica de carga y gestión de deadlines.
+- **`useIntegration`**: Detecta integraciones habilitadas por agencia.
+- **`useProjectFilters`**: Filtros personalizados de proyectos por agencia.
+- **`useWeeklyCloseDay`**: Calcula el día de cierre semanal configurable.
 
 ### 4.5 `src/hooks/useProjectAliasing.ts` (Formateo de Nombres)
 **Sistema de Aliasing de Proyectos**.
@@ -257,7 +267,7 @@ Todas las páginas principales de la aplicación.
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
 | `ReportsPage.tsx` | 105KB | Dashboard de métricas de rentabilidad |
-| `ClientReportsPage.tsx` | 10KB | Reportes orientados al cliente |
+| `ClientReportsPage.tsx` | 11KB | Reportes orientados al cliente |
 | `DashboardAI.tsx` | 26KB | Análisis con IA de rendimiento |
 
 ### Publicidad (Ads)
@@ -269,7 +279,7 @@ Todas las páginas principales de la aplicación.
 ### Configuración
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
-| `AgencySettingsPage.tsx` | 53KB | Configuración completa de agencia (roles, módulos) |
+| `AgencySettingsPage.tsx` | 60KB | Configuración completa de agencia (roles, módulos) |
 | `SettingsPage.tsx` | 6KB | Preferencias de usuario |
 | `AgenciesPage.tsx` | 8KB | Selector de agencias |
 | `AgencyManagementPage.tsx` | 19KB | Administración avanzada de agencia |
@@ -367,7 +377,7 @@ Define las integraciones disponibles para activar por agencia.
 
 ---
 
-## � Flujos de Datos Críticos
+## 🔄 Flujos de Datos Críticos
 
 ### Flujo: Cambio de Agencia
 ```
@@ -391,9 +401,9 @@ Define las integraciones disponibles para activar por agencia.
 Antes de deployar cambios críticos:
 
 - [ ] **Types**: Si cambiaste un Type, ¿actualizaste los mappers en `AppContext`?
-- **Permisos**: Si añadiste una funcionalidad, ¿requiere un nuevo flag en `UserPermissions`?
-- **Split Weeks**: Si tocaste fechas, ¿probaste el cambio de año (Dic-Ene)?
-- **Mobile**: ¿Verificaste que el cambio se ve bien en `useMobile`?
+- [ ] **Permisos**: Si añadiste una funcionalidad, ¿requiere un nuevo flag en `UserPermissions`?
+- [ ] **Split Weeks**: Si tocaste fechas, ¿probaste el cambio de año (Dic-Ene)?
+- [ ] **Mobile**: ¿Verificaste que el cambio se ve bien en `use-mobile`?
 
 ---
 

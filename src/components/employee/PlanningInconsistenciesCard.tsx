@@ -61,13 +61,14 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         if (error) throw error;
 
         if (data) {
-          setDeadlines(data.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean }) => ({
+          setDeadlines(data.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean; budget_override?: number }) => ({
             id: d.id,
             projectId: d.project_id,
             month: d.month,
             notes: d.notes,
             employeeHours: d.employee_hours || {},
-            isHidden: d.is_hidden || false
+            isHidden: d.is_hidden || false,
+            budgetOverride: d.budget_override
           })));
         }
       } catch (error) {
@@ -252,6 +253,10 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
           }
         });
 
+        const effectiveBudget = deadline.budgetOverride !== undefined && deadline.budgetOverride !== null
+          ? deadline.budgetOverride
+          : (project?.budgetHours || 0);
+
         results.push({
           projectId: deadline.projectId,
           projectName: project?.name || 'Proyecto desconocido',
@@ -259,7 +264,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
           plannedHours: round2(projectAllocs.planned),
           computedHours: round2(projectAllocs.computed),
           difference,
-          budgetHours: project?.budgetHours || 0,
+          budgetHours: effectiveBudget,
           minimumHours: project?.minimumHours || 0,
           totalProjectComputed: round2(totalProjectComputed),
           totalProjectPlanned: round2(totalProjectPlanned),
@@ -379,6 +384,12 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         });
 
         // No hay deadline, así que la diferencia es el total de horas
+
+        // Si hay budget override en el deadline del proyecto (aunque el usuario no tenga horas asignadas), usarlo
+        const effectiveBudget = projectDeadline?.budgetOverride !== undefined && projectDeadline?.budgetOverride !== null
+          ? projectDeadline.budgetOverride
+          : (project?.budgetHours || 0);
+
         results.push({
           projectId,
           projectName: project?.name || 'Proyecto desconocido',
@@ -386,7 +397,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
           plannedHours: round2(projectAllocs.planned),
           computedHours: round2(projectAllocs.computed),
           difference: round2(totalPlanned), // Diferencia positiva porque hay horas sin deadline
-          budgetHours: project?.budgetHours || 0,
+          budgetHours: effectiveBudget,
           minimumHours: project?.minimumHours || 0,
           totalProjectComputed: round2(totalProjectComputed),
           totalProjectPlanned: round2(totalProjectPlanned),

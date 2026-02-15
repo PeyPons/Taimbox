@@ -262,6 +262,7 @@ export interface Deadline {
   notes?: string;
   employeeHours: Record<string, number>; // employeeId -> hours
   isHidden?: boolean; // Si el proyecto está oculto este mes
+  budgetOverride?: number; // Override del budget mensual para regularización (null = usar project.budgetHours)
 }
 
 export interface GlobalAssignment {

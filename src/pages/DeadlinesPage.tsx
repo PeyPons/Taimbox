@@ -33,6 +33,7 @@ import { DeadlinesTour, useDeadlinesTour } from '@/components/deadlines/Deadline
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Deadline, GlobalAssignment } from '@/types';
+import { getEffectiveBudget } from '@/utils/budgetUtils';
 import { cn, matchesAliasingRule } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { format, addMonths, subMonths, getDaysInMonth, startOfMonth, endOfMonth, parseISO } from 'date-fns';
@@ -78,6 +79,7 @@ export default function DeadlinesPage() {
     employeeHours: Record<string, number>;
     notes: string;
     isHidden: boolean;
+    budgetOverride?: number;
   }>({ employeeHours: {}, notes: '', isHidden: false });
   const [isSaving, setIsSaving] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -93,7 +95,8 @@ export default function DeadlinesPage() {
     projectId: '',
     notes: '',
     employeeHours: {} as Record<string, number>,
-    isHidden: false
+    isHidden: false,
+    budgetOverride: undefined as number | undefined
   });
 
   const [confirmAction, setConfirmAction] = useState<{ type: 'delete_deadline' | 'delete_allocation' | 'copy_month', id?: string, data?: any } | null>(null);
@@ -131,13 +134,14 @@ export default function DeadlinesPage() {
       if (error) throw error;
 
       if (data) {
-        setDeadlines(data.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean }) => ({
+        setDeadlines(data.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean; budget_override?: number }) => ({
           id: d.id,
           projectId: d.project_id,
           month: d.month,
           notes: d.notes,
           employeeHours: d.employee_hours || {},
-          isHidden: d.is_hidden || false
+          isHidden: d.is_hidden || false,
+          budgetOverride: d.budget_override ?? undefined
         })));
 
         // Cargar proyectos ocultos
@@ -241,7 +245,8 @@ export default function DeadlinesPage() {
                       month: newDeadline.month,
                       notes: newDeadline.notes,
                       employeeHours: newDeadline.employee_hours || {},
-                      isHidden: newDeadline.is_hidden || false
+                      isHidden: newDeadline.is_hidden || false,
+                      budgetOverride: newDeadline.budget_override ?? undefined
                     }
                     : d
                 );
@@ -252,7 +257,8 @@ export default function DeadlinesPage() {
                   month: newDeadline.month,
                   notes: newDeadline.notes,
                   employeeHours: newDeadline.employee_hours || {},
-                  isHidden: newDeadline.is_hidden || false
+                  isHidden: newDeadline.is_hidden || false,
+                  budgetOverride: newDeadline.budget_override ?? undefined
                 }];
               }
             });
@@ -630,8 +636,8 @@ export default function DeadlinesPage() {
         const deadlineB = deadlines.find(d => d.projectId === b.id && d.month === selectedMonth);
         const assignedA = deadlineA ? (Object.values(deadlineA.employeeHours) as number[]).reduce((s, h) => s + (h || 0), 0) : 0;
         const assignedB = deadlineB ? (Object.values(deadlineB.employeeHours) as number[]).reduce((s, h) => s + (h || 0), 0) : 0;
-        const remainingA = (a.budgetHours || 0) - assignedA;
-        const remainingB = (b.budgetHours || 0) - assignedB;
+        const remainingA = getEffectiveBudget(a, deadlineA) - assignedA;
+        const remainingB = getEffectiveBudget(b, deadlineB) - assignedB;
         return remainingB - remainingA;
       }
     });
@@ -675,7 +681,8 @@ export default function DeadlinesPage() {
         projectId: deadline.projectId,
         notes: deadline.notes || '',
         employeeHours: { ...deadline.employeeHours },
-        isHidden: deadline.isHidden || false
+        isHidden: deadline.isHidden || false,
+        budgetOverride: deadline.budgetOverride
       });
     } else {
       setEditingDeadline(null);
@@ -683,7 +690,8 @@ export default function DeadlinesPage() {
         projectId: '',
         notes: '',
         employeeHours: {},
-        isHidden: false
+        isHidden: false,
+        budgetOverride: undefined
       });
     }
     setIsDialogOpen(true);
@@ -722,7 +730,8 @@ export default function DeadlinesPage() {
         month: selectedMonth,
         notes: formData.notes || null,
         employee_hours: formData.employeeHours,
-        is_hidden: formData.isHidden
+        is_hidden: formData.isHidden,
+        budget_override: formData.budgetOverride ?? null
       };
 
       if (editingDeadline) {
@@ -920,8 +929,42 @@ export default function DeadlinesPage() {
       }
     } else if (confirmAction.type === 'copy_month') {
       await executeCopyFromPreviousMonth();
+    } else if (confirmAction.type === 'delete_month') {
+      await executeDeleteMonth();
     }
     setConfirmAction(null);
+  };
+
+  const handleDeleteMonth = () => {
+    if (deadlines.length === 0) {
+      toast.info('No hay deadlines para eliminar en este mes');
+      return;
+    }
+    setConfirmAction({
+      type: 'delete_month',
+      data: { count: deadlines.length }
+    });
+  };
+
+  const executeDeleteMonth = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('deadlines')
+        .delete()
+        .eq('month', selectedMonth);
+
+      if (error) throw error;
+
+      setDeadlines([]);
+      setHiddenProjects(new Set());
+      toast.success('Mes reseteado correctamente');
+    } catch (error) {
+      console.error('Error reseteando mes:', error);
+      toast.error('Error al resetear el mes');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Funciones para gestionar locks de edición
@@ -1143,7 +1186,8 @@ export default function DeadlinesPage() {
     setInlineFormData({
       employeeHours: deadline?.employeeHours ? { ...deadline.employeeHours } : {},
       notes: deadline?.notes || '',
-      isHidden: deadline?.isHidden || hiddenProjects.has(projectId)
+      isHidden: deadline?.isHidden || hiddenProjects.has(projectId),
+      budgetOverride: deadline?.budgetOverride
     });
     setExpandedProjects(prev => new Set([...prev, projectId]));
 
@@ -1192,7 +1236,7 @@ export default function DeadlinesPage() {
     }
 
     setEditingProjectId(null);
-    setInlineFormData({ employeeHours: {}, notes: '', isHidden: false });
+    setInlineFormData({ employeeHours: {}, notes: '', isHidden: false, budgetOverride: undefined });
   };
 
   const toggleProjectExpanded = async (projectId: string) => {
@@ -1249,7 +1293,8 @@ export default function DeadlinesPage() {
         month: selectedMonth,
         notes: formData.notes || null,
         employee_hours: formData.employeeHours,
-        is_hidden: formData.isHidden
+        is_hidden: formData.isHidden,
+        budget_override: formData.budgetOverride ?? null
       };
 
       if (existingDeadline) {
@@ -1300,7 +1345,8 @@ export default function DeadlinesPage() {
         month: selectedMonth,
         notes: inlineFormData.notes || null,
         employee_hours: inlineFormData.employeeHours,
-        is_hidden: inlineFormData.isHidden
+        is_hidden: inlineFormData.isHidden,
+        budget_override: inlineFormData.budgetOverride ?? null
       };
 
       if (existingDeadline) {
@@ -1313,7 +1359,7 @@ export default function DeadlinesPage() {
 
         setDeadlines(prev => prev.map(d =>
           d.id === existingDeadline.id
-            ? { ...d, projectId, month: selectedMonth, notes: inlineFormData.notes, employeeHours: inlineFormData.employeeHours, isHidden: inlineFormData.isHidden }
+            ? { ...d, projectId, month: selectedMonth, notes: inlineFormData.notes, employeeHours: inlineFormData.employeeHours, isHidden: inlineFormData.isHidden, budgetOverride: inlineFormData.budgetOverride }
             : d
         ));
       } else {
@@ -1331,7 +1377,8 @@ export default function DeadlinesPage() {
           month: data.month,
           notes: data.notes,
           employeeHours: data.employee_hours || {},
-          isHidden: data.is_hidden || false
+          isHidden: data.is_hidden || false,
+          budgetOverride: data.budget_override ?? undefined
         }]);
       }
 
@@ -1396,7 +1443,8 @@ export default function DeadlinesPage() {
         month: selectedMonth,
         notes: d.notes,
         employee_hours: d.employee_hours,
-        is_hidden: d.is_hidden
+        is_hidden: d.is_hidden,
+        budget_override: d.budget_override ?? null
       }));
 
       const { data: insertedData, error: insertError } = await supabase
@@ -1416,7 +1464,8 @@ export default function DeadlinesPage() {
             month: d.month,
             notes: d.notes,
             employeeHours: d.employee_hours || {},
-            isHidden: d.is_hidden || false
+            isHidden: d.is_hidden || false,
+            budgetOverride: d.budget_override ?? undefined
           }))
         ]);
 
@@ -1659,16 +1708,36 @@ export default function DeadlinesPage() {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            {canEditDeadlines && <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="sm" onClick={copyFromPreviousMonth} className="h-8 w-8 p-0">
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Copiar del mes anterior</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>}
+            {canEditDeadlines && (
+              <div className="flex items-center gap-1">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" size="sm" onClick={copyFromPreviousMonth} className="h-8 w-8 p-0">
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Copiar del mes anterior</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteMonth()}
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Resetear mes completo (Eliminar todo)</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
             {/* Botón para ver equipo en móvil */}
             {isMobile && (
               <Sheet>
@@ -1893,7 +1962,17 @@ export default function DeadlinesPage() {
                                   {project.minimumHours != null && project.minimumHours > 0 && (
                                     <span className="text-orange-500 mr-1">mín {project.minimumHours}h ·</span>
                                   )}
-                                  <span>máx {project.budgetHours}h</span>
+                                  <span>
+                                    máx {deadline?.budgetOverride != null ? deadline.budgetOverride : project.budgetHours}h
+                                    {deadline?.budgetOverride != null && (deadline.budgetOverride - (project.budgetHours || 0)) !== 0 && (
+                                      <span className={cn(
+                                        "ml-1 font-bold",
+                                        (deadline.budgetOverride - (project.budgetHours || 0)) > 0 ? "text-emerald-600" : "text-red-500"
+                                      )}>
+                                        ({(deadline.budgetOverride - (project.budgetHours || 0)) > 0 ? '+' : ''}{deadline.budgetOverride - (project.budgetHours || 0)}h)
+                                      </span>
+                                    )}
+                                  </span>
                                 </div>
                                 {/* Notas visibles si existen */}
                                 {projectNotes && !isEditing && (
@@ -1983,6 +2062,47 @@ export default function DeadlinesPage() {
                                   ))}
                                 </div>
                                 <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-200">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs text-slate-500">Ajuste:</span>
+                                    <Input
+                                      type="number"
+                                      placeholder="0"
+                                      value={inlineFormData.budgetOverride !== undefined ? (inlineFormData.budgetOverride - (project.budgetHours || 0)) : ''}
+                                      onChange={(e) => {
+                                        const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                                        // Si el campo está vacío (e.target.value === ''), queremos que budgetOverride sea undefined para volver al original
+                                        // PERO el usuario quiere "Ajuste", así que si borra, es ajuste 0 => budgetOverride = original.
+                                        // Mejor: si escribe 0, ajuste 0. Si borra, undefined?
+                                        // Si borra, asumimos 0 ajuste. 
+                                        // Logic: budgetOverride = base + ajuste.
+                                        // Si el input está vacío, asumimos ajuste 0? O mantenemos el anterior?
+                                        // UX standard: vacío = 0.
+
+                                        const adjustment = e.target.value === '' ? undefined : parseFloat(e.target.value);
+                                        const base = project.budgetHours || 0;
+                                        const newBudget = adjustment !== undefined ? base + adjustment : undefined;
+
+                                        const newFormData = { ...inlineFormData, budgetOverride: newBudget };
+                                        setInlineFormData(newFormData);
+                                        // Autoguardar budget
+                                        if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
+                                        autoSaveTimeoutRef.current = setTimeout(() => {
+                                          autoSaveDeadline(project.id, newFormData);
+                                        }, 800);
+                                      }}
+                                      className={cn(
+                                        "h-7 w-16 text-center font-mono text-xs px-1",
+                                        (inlineFormData.budgetOverride !== undefined && (inlineFormData.budgetOverride - (project.budgetHours || 0)) !== 0)
+                                          ? "bg-amber-50 border-amber-200 text-amber-700 font-bold"
+                                          : ""
+                                      )}
+                                    />
+                                    {inlineFormData.budgetOverride !== undefined && (inlineFormData.budgetOverride - (project.budgetHours || 0)) !== 0 && (
+                                      <span className="text-[10px] text-slate-400 font-mono">
+                                        = {inlineFormData.budgetOverride}h
+                                      </span>
+                                    )}
+                                  </div>
                                   <Input
                                     placeholder="Notas..."
                                     value={inlineFormData.notes}
@@ -2049,6 +2169,28 @@ export default function DeadlinesPage() {
                                       }}
                                     >
                                       Cerrar
+                                    </Button>
+                                    <div className="h-4 w-px bg-slate-200 mx-1"></div>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-7 w-7 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                                      title="Eliminar deadline (Resetear mes)"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        // Configurar el deadline a eliminar. 
+                                        // Necesitamos el objeto deadline completo o al menos su ID si existe.
+                                        // Buscamos el deadline correspondiente a este proyecto en la lista 'deadlines'
+                                        const deadline = deadlines.find(d => d.projectId === project.id && d.month === selectedMonth);
+                                        if (deadline) {
+                                          setEditingDeadline(deadline);
+                                          setConfirmAction({ type: 'delete_deadline', id: deadline.id });
+                                        } else {
+                                          toast.info("No hay configuración guardada para eliminar");
+                                        }
+                                      }}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
                                     </Button>
                                   </div>
                                 </div>
@@ -2398,18 +2540,22 @@ export default function DeadlinesPage() {
               {confirmAction?.type === 'delete_deadline' && '¿Eliminar deadline?'}
               {confirmAction?.type === 'delete_allocation' && '¿Eliminar asignación?'}
               {confirmAction?.type === 'copy_month' && '¿Copiar deadlines?'}
+              {confirmAction?.type === 'delete_month' && '¿Resetear mes completo?'}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirmAction?.type === 'delete_deadline' && 'Esta acción eliminará la planificación de este proyecto para este mes.'}
               {confirmAction?.type === 'delete_allocation' && 'Esta acción eliminará la asignación global.'}
               {confirmAction?.type === 'copy_month' && `Se copiarán ${confirmAction.data?.count} deadlines del mes anterior a este mes.`}
+              {confirmAction?.type === 'delete_month' && `¿Estás seguro? Se eliminarán TODAS las asignaciones (${confirmAction.data?.count} proyectos) de este mes. Esta acción no se puede deshacer.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmAction}
-              className={cn(confirmAction?.type === 'copy_month' ? "" : "bg-red-600 hover:bg-red-700")}
+              className={cn(
+                confirmAction?.type === 'copy_month' ? "" : "bg-red-600 hover:bg-red-700"
+              )}
             >
               {confirmAction?.type === 'copy_month' ? 'Copiar' : 'Eliminar'}
             </AlertDialogAction>

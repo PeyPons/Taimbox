@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -35,6 +35,9 @@ import { isAllocationInEffectiveMonth, getWeeksForMonth } from '@/utils/dateUtil
 import { es } from 'date-fns/locale';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { useIntegration } from '@/hooks/useIntegration';
+import { Deadline } from '@/types';
+import { getEffectiveBudget } from '@/utils/budgetUtils';
+import { supabase } from '@/lib/supabase';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -144,6 +147,7 @@ export default function ClientsAndProjectsPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all'); // Por defecto mostrar todos los proyectos
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active'); // Por defecto solo activos
   const [projectTypeFilter, setProjectTypeFilter] = useState<string>('all');
+  const [monthDeadlines, setMonthDeadlines] = useState<Deadline[]>([]);
 
   // Custom project filters from agency settings
   const { activeFilters, filterProject, getFilterDisplayName } = useProjectFilters();
@@ -164,6 +168,33 @@ export default function ClientsAndProjectsPage() {
   });
 
   type ProjectFormValues = z.infer<typeof projectFormSchema>;
+
+  // Cargar deadlines del mes
+  useEffect(() => {
+    const fetchDeadlines = async () => {
+      if (!currentAgency?.id) return;
+
+      const selectedMonthStr = format(currentMonth, 'yyyy-MM');
+      const { data, error } = await supabase
+        .from('deadlines')
+        .select('*')
+        .eq('month', selectedMonthStr);
+
+      if (!error && data) {
+        setMonthDeadlines(data.map((d: any) => ({
+          id: d.id,
+          projectId: d.project_id,
+          month: d.month,
+          notes: d.notes,
+          employeeHours: d.employee_hours || {},
+          isHidden: d.is_hidden || false,
+          budgetOverride: d.budget_override ?? undefined
+        })));
+      }
+    };
+
+    fetchDeadlines();
+  }, [currentMonth, currentAgency?.id]);
 
   const projectForm = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
@@ -216,7 +247,8 @@ export default function ClientsAndProjectsPage() {
       // Esta es la métrica real de consumo del presupuesto que usa el reporte de coherencia
       const effectiveUsage = hoursComputed + pendingTasks.reduce((sum, t) => sum + t.hoursAssigned, 0);
 
-      const budget = project.budgetHours || 0;
+      const deadline = monthDeadlines.find(d => d.projectId === project.id);
+      const budget = getEffectiveBudget(project, deadline);
       const minimum = project.minimumHours || 0;
 
       // Lógica de horas objetivo según el usuario:
@@ -1677,8 +1709,8 @@ export default function ClientsAndProjectsPage() {
                                               </TooltipTrigger>
                                               <TooltipContent>
                                                 <p className="text-xs">
-                                                  {analysis.project.budgetHours > 0
-                                                    ? `Faltan ${round2(analysis.project.budgetHours - analysis.effectiveUsage)}h por consumir (${analysis.project.budgetHours}h asignadas)`
+                                                  {analysis.budget > 0
+                                                    ? `Faltan ${round2(analysis.budget - analysis.effectiveUsage)}h por consumir (${analysis.budget}h asignadas)`
                                                     : `Faltan ${round2((analysis.project.minimumHours || 0) - analysis.effectiveUsage)}h al mínimo (${analysis.project.minimumHours || 0}h)`
                                                   }
                                                 </p>

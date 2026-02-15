@@ -88,13 +88,21 @@ Contenedores de trabajo facturable o interno.
 - `monthlyFee`: Fee recurrente en euros para cálculos de rentabilidad.
 - `status`: `active`, `paused` o `completed`.
 
+### 2.3b. Deadline (`Deadline`)
+Define la foto mensual de un proyecto.
+- `projectId`: Proyecto asociado.
+- `month`: Mes en formato `YYYY-MM`.
+- `employeeHours`: Distribución de horas por empleado.
+- `budgetOverride`: **NUEVO**. Sobrescribe `project.budgetHours` solo para este mes (Regularización).
+- `isHidden`: Si el proyecto se oculta en la planificación de este mes.
+
 ### 2.4. Asignación (`Allocation`)
 La unidad fundamental de planificación semanal.
 - `hoursAssigned`: Horas planificadas por el manager.
 - `hoursActual`: Horas reportadas por el empleado.
 - `hoursComputed`: Horas validadas o calculadas (usadas en métricas finales).
 - `weekStartDate`: Fecha (Lunes) o primer día laborable del mes (en semanas partidas).
-- `status`: `planned`, `completed`, `pending_transfer`.
+- `status`: `planned`, `completed`, `active`, `in_progress`.
 
 ---
 
@@ -111,6 +119,11 @@ Para que los reportes de fin de mes sean exactos, las semanas que cruzan meses s
     - Se crea una entrada de calendario para Diciembre (29-31).
     - Se crea otra para Enero (1-4).
 - **Variable `isAllocationInEffectiveMonth`**: Filtra si una tarea pertenece al mes visible basándose en el inicio de la semana normalizada.
+
+### 3.3. Cálculo de Budget Efectivo (`budgetUtils.ts`)
+Para permitir regularizaciones mensuales (ej. restar horas porque el mes pasado nos pasamos), el sistema usa `getEffectiveBudget`.
+- **Lógica**: Si el `Deadline` del mes tiene `budgetOverride >= 0`, usa ese valor. Si no, usa el `Project.budgetHours` general.
+- **Uso**: Todos los semáforos de planificación (`DeadlinesPage`, `WeeklyForecastPage`, `ClientsAndProjectsPage`) deben usar este helper en lugar de leer `project.budgetHours` directamente.
 
 ### 3.3. Métricas de Rentabilidad (`useProjectMetrics.ts`)
 Calcula el rendimiento financiero en tiempo real.
@@ -242,6 +255,7 @@ Si modificas una interface, revisa estos consumidores:
 |-----------------|-------------------|
 | `dateUtils.ts` → `getWeeksForMonth()` | `AppContext.tsx`, `usePlannerData.ts`, `useAllocationSheet.ts`, `AllocationSheet.tsx`, `MarketingMatrix.tsx` |
 | `dateUtils.ts` → `isAllocationInEffectiveMonth()` | `AppContext.tsx`, `usePlannerData.ts`, `useProjectMetrics.ts` |
+| `budgetUtils.ts` → `getEffectiveBudget()` | **NUEVO**. `DeadlinesPage`, `WeeklyForecastPage`, `ClientsAndProjectsPage`, `useAllocationSheet` |
 | `capacityUtils.ts` → `getDailyReduction()` | `getCapacityReductionInRange()`, `getCapacityReductionBreakdown()`, `AppContext.tsx` |
 | `capacityUtils.ts` → `getScheduledHoursForDay()` | Todas las funciones de capacidad, `WeekCell.tsx` |
 | `taskPermissions.ts` → `canEditTask()` | `AllocationSheet.tsx`, cualquier UI de edición de tareas |
@@ -294,12 +308,12 @@ Todos los componentes re-renderizan
 | `src/utils/aiReportUtils.ts` | Generación de resúmenes IA para Ads | `AIService`, `logger`, `CONSTANTS` |
 | `src/utils/logger.ts` | Sistema de logging estructurado | Usado en `aiReportUtils`, `PlannerGrid` |
 | `src/hooks/useTasksImpact.ts` | Pre-cálculo de impacto de nuevas tareas | `useAllocationSheet`, `ProjectBudgetStatus` |
-| `src/hooks/useMobile.tsx` | Detección de dispositivo móvil | UI responsiva en `AllocationSheet`, `Sidebar` |
+| `src/hooks/use-mobile.tsx` | Detección de dispositivo móvil | UI responsiva en `AllocationSheet`, `Sidebar` |
 | `src/hooks/useProjectAliasing.ts` | Formateo de nombres de proyectos según reglas de agencia | `AgencyContext`, `formatProjectName`, usado en 15+ componentes |
 
 ---
 
-### 8.6 Flujo de Carga de Mes
+### 8.8 Flujo de Carga de Mes
 
 ```
 Usuario navega a otro mes

@@ -70,13 +70,14 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
         if (error) throw error;
 
         if (data) {
-          setDeadlines(data.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean }) => ({
+          setDeadlines(data.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean; budget_override?: number }) => ({
             id: d.id,
             projectId: d.project_id,
             month: d.month,
             notes: d.notes,
             employeeHours: d.employee_hours || {},
-            isHidden: d.is_hidden || false
+            isHidden: d.is_hidden || false,
+            budgetOverride: d.budget_override
           })));
         }
       } catch (error) {
@@ -188,6 +189,10 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
       // SIEMPRE registrar el proyecto si tiene deadline, aunque no haya inconsistencias
       // Esto evita que se procese después como "sin deadline"
       // Solo mostramos la tarjeta si hay inconsistencias reales
+      const effectiveBudget = deadline.budgetOverride !== undefined && deadline.budgetOverride !== null
+        ? deadline.budgetOverride
+        : (project.budgetHours || 0);
+
       projectInconsistencies[projectId] = {
         projectId,
         projectName: project.name,
@@ -196,7 +201,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
         totalPlannedHours: round2(totalPlanned),
         totalComputedHours: round2(totalComputed),
         totalDifference: round2((totalPlanned + totalComputed) - totalDeadline),
-        budgetHours: project.budgetHours || 0,
+        budgetHours: effectiveBudget,
         minimumHours: project.minimumHours || 0
       };
     });
@@ -241,7 +246,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
           totalPlannedHours: round2(totalPlanned),
           totalComputedHours: round2(totalComputed),
           totalDifference: round2(totalPlanned + totalComputed),
-          budgetHours: project.budgetHours || 0,
+          budgetHours: project.budgetHours || 0, // No hay deadline, usamos el budget base
           minimumHours: project.minimumHours || 0
         };
       }

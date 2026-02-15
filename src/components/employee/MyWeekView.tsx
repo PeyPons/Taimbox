@@ -1,4 +1,4 @@
-import { useMemo, useState, memo } from 'react';
+import { useMemo, useState, memo, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
+import { supabase } from '@/lib/supabase';
+import { Deadline } from '@/types';
 
 interface MyWeekViewProps {
   employeeId: string;
@@ -30,6 +32,39 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
 
   const [filterProject, setFilterProject] = useState<string>('all');
   const [filterTeammate, setFilterTeammate] = useState<string>('all');
+  const [deadlines, setDeadlines] = useState<Deadline[]>([]);
+
+  const monthKey = format(viewDate, 'yyyy-MM');
+
+  // Cargar deadlines del mes para tener los oberrides
+  // Actually, I should just replace useMemo with useEffect.
+  useEffect(() => {
+    const loadDeadlines = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('deadlines')
+          .select('*')
+          .eq('month', monthKey);
+
+        if (error) throw error;
+
+        if (data) {
+          setDeadlines(data.map((d: any) => ({
+            id: d.id,
+            projectId: d.project_id,
+            month: d.month,
+            notes: d.notes,
+            employeeHours: d.employee_hours || {},
+            isHidden: d.is_hidden || false,
+            budgetOverride: d.budget_override
+          })));
+        }
+      } catch (error) {
+        console.error('Error cargando deadlines en MyWeekView:', error);
+      }
+    };
+    loadDeadlines();
+  }, [monthKey]);
 
   const monthLabel = format(viewDate, 'MMMM yyyy', { locale: es });
 
@@ -102,6 +137,11 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
       if (!groups[alloc.projectId]) {
         const proj = projects.find(p => p.id === alloc.projectId);
         const cli = clients.find(c => c.id === proj?.clientId);
+        const deadline = deadlines.find(d => d.projectId === alloc.projectId);
+        const effectiveBudget = deadline?.budgetOverride !== undefined && deadline.budgetOverride !== null
+          ? deadline.budgetOverride
+          : (proj?.budgetHours || 0);
+
         groups[alloc.projectId] = {
           projectId: alloc.projectId,
           projectName: proj?.name || 'Sin proyecto',
@@ -113,7 +153,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
           myTasks: 0,
           myCompletedTasks: 0,
           projectTotalComputed: 0,
-          projectBudget: proj?.budgetHours || 0,
+          projectBudget: effectiveBudget,
           projectMinimum: proj?.minimumHours || 0,
           projectTotalAssigned: 0,
           projectTotalPlanned: 0,

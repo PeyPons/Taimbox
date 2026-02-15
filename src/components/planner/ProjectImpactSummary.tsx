@@ -326,6 +326,17 @@ export function ProjectImpactSummary({
                     ) : (
                       <span className="text-slate-400 italic">Sin límite</span>
                     )}
+                    {(() => {
+                      const deadline = monthDeadlines.find(d => d.projectId === p.id);
+                      if (deadline?.budgetOverride != null && deadline.budgetOverride >= 0) {
+                        return (
+                          <Badge variant="outline" className="ml-2 h-4 px-1 text-[9px] border-amber-200 text-amber-700 bg-amber-50 font-normal shrink-0">
+                            Override
+                          </Badge>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                   {p.current.budgetMax > 0 && (
                     <div className="mt-1 h-1 w-full bg-slate-100 rounded-full overflow-hidden">

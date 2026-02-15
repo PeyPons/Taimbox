@@ -49,6 +49,7 @@ interface AllocationTaskRowProps {
     showAllWeeks: boolean;
     setTransferTask: (alloc: Allocation) => void;
     setTransferDialogOpen: (open: boolean) => void;
+    isWeeklyEnabled: boolean;
 }
 
 export function AllocationTaskRow({
@@ -70,7 +71,8 @@ export function AllocationTaskRow({
     weeklyFeedback,
     showAllWeeks,
     setTransferTask,
-    setTransferDialogOpen
+    setTransferDialogOpen,
+    isWeeklyEnabled
 }: AllocationTaskRowProps) {
     const weeklyCloseDay = useWeeklyCloseDay();
 
@@ -193,6 +195,7 @@ export function AllocationTaskRow({
                                         onClick={() => onStartEditFull()}
                                         disabled={(() => {
                                             if (pendingTransfer) return true;
+                                            if (!isWeeklyEnabled) return false;
                                             try {
                                                 const taskWeekDate = parseISO(alloc.weekStartDate);
                                                 const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
@@ -215,7 +218,7 @@ export function AllocationTaskRow({
                                             <ArrowRightLeft className="mr-2 h-3.5 w-3.5" /> Transferir
                                         </DropdownMenuItem>
                                     )}
-                                    {(() => {
+                                    {isWeeklyEnabled && (() => {
                                         try {
                                             const taskWeekDate = parseISO(alloc.weekStartDate);
                                             const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);

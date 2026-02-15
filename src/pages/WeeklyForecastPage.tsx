@@ -28,6 +28,8 @@ import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
 import { MonthlyEvolutionChart } from '@/components/employee/MonthlyEvolutionChart';
 import { ActivityLogSection } from '@/components/shared/ActivityLogSection';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
+import { Deadline } from '@/types';
+import { getEffectiveBudget } from '@/utils/budgetUtils';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -57,6 +59,7 @@ export default function WeeklyForecastPage() {
   const { formatName: formatProjectName } = useProjectAliasing();
 
   const [dbTransfers, setDbTransfers] = useState<any[]>([]);
+  const [monthDeadlines, setMonthDeadlines] = useState<Deadline[]>([]);
 
   // Cargar transferencias de la nueva tabla (BD)
   useEffect(() => {
@@ -111,6 +114,31 @@ export default function WeeklyForecastPage() {
   const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
   const handleToday = () => setCurrentMonth(new Date());
 
+  // Cargar deadlines del mes
+  useEffect(() => {
+    const fetchDeadlines = async () => {
+      const selectedMonthStr = format(currentMonth, 'yyyy-MM');
+      const { data, error } = await supabase
+        .from('deadlines')
+        .select('*')
+        .eq('month', selectedMonthStr);
+
+      if (!error && data) {
+        setMonthDeadlines(data.map((d: any) => ({
+          id: d.id,
+          projectId: d.project_id,
+          month: d.month,
+          notes: d.notes,
+          employeeHours: d.employee_hours || {},
+          isHidden: d.is_hidden || false,
+          budgetOverride: d.budget_override ?? undefined
+        })));
+      }
+    };
+
+    fetchDeadlines();
+  }, [currentMonth]);
+
   // Sección A: Semáforo de proyectos (Month-End Forecast) con filtros
   const projectForecast = useMemo(() => {
     if (!projects || !Array.isArray(projects)) return [];
@@ -129,8 +157,8 @@ export default function WeeklyForecastPage() {
     const today = new Date();
 
     const forecastData = filteredProjects.map(project => {
-      // Total Contratado (Budget/Fee mensual)
-      const contracted = project.budgetHours || 0;
+      const deadline = monthDeadlines.find(d => d.projectId === project.id);
+      const contracted = getEffectiveBudget(project, deadline);
 
       // Realizado: Suma de hours_actual de allocations pasadas + hours_assigned de allocations futuras en este mes
       const monthAllocations = (allocations || []).filter(a => {

@@ -37,6 +37,7 @@ import { supabase } from '@/lib/supabase';
 import { TransferRequestDialog } from '@/components/transfers/TaskTransferComponents';
 import { useTaskTransfers } from '@/hooks/useTaskTransfers';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
+import { useIntegration } from '@/hooks/useIntegration';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -65,6 +66,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const canAssignToOthers = hasPermission('can_assign_tasks_to_others');
   const weeklyCloseDay = useWeeklyCloseDay();
   const { formatName: formatProjectName } = useProjectAliasing();
+  const isWeeklyEnabled = useIntegration('weekly_feedback');
 
   // Estados para los sheets de Timeline y Weekly
   const [timelineOpen, setTimelineOpen] = useState(false);
@@ -236,7 +238,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     activeProjects,
     monthlyProjectSummary,
     getProjectBudgetStatus,
-  } = useAllocationSheet(employeeId, viewDate);
+  } = useAllocationSheet(employeeId, viewDate, deadlines);
 
   const {
     newTasks, inlineEditingId, inlineNameValue, setInlineNameValue,
@@ -246,7 +248,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     addTaskRow, removeTaskRow, updateTaskRow, handleSave, startEditFull, handleDeleteClick,
     confirmDelete, toggleTaskCompletion, startInlineEdit, saveInlineEdit, updateInlineHours, moveTaskToWeek,
     closeForm, recentlyToggled, cancelInlineEdit, clearNewTasks
-  } = useAllocationActions(employeeId, weeks, canAssignToOthers);
+  } = useAllocationActions(employeeId, weeks, canAssignToOthers, isWeeklyEnabled);
 
   const { getWeekExceedStatus } = useTasksImpact({
     newTasks,
@@ -271,13 +273,14 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
       if (error) throw error;
 
       if (data) {
-        const mappedDeadlines = data.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean }) => ({
+        const mappedDeadlines = data.map((d: any) => ({
           id: d.id,
           projectId: d.project_id,
           month: d.month,
           notes: d.notes,
           employeeHours: d.employee_hours || {},
-          isHidden: d.is_hidden || false
+          isHidden: d.is_hidden || false,
+          budgetOverride: d.budget_override ?? undefined
         }));
         setDeadlines(mappedDeadlines);
       } else {
@@ -1231,18 +1234,20 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                       className="h-7 w-7 p-0 disabled:opacity-30"
                                                       onClick={() => {
                                                         if (pendingTransfer) return;
-                                                        // BLOQUEO: No permitir editar tareas de semanas pasadas (también en vista reducida)
-                                                        try {
-                                                          const taskWeekDate = parseISO(alloc.weekStartDate);
-                                                          const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
-                                                          const today = new Date();
+                                                        // BLOQUEO: No permitir editar tareas de semanas pasadas (solo si Weekly está activo)
+                                                        if (isWeeklyEnabled) {
+                                                          try {
+                                                            const taskWeekDate = parseISO(alloc.weekStartDate);
+                                                            const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
+                                                            const today = new Date();
 
-                                                          if (taskWeekEnd < today) {
-                                                            toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
-                                                            return;
+                                                            if (taskWeekEnd < today) {
+                                                              toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
+                                                              return;
+                                                            }
+                                                          } catch {
+                                                            // Si hay error parseando la fecha, permitir editar (por seguridad)
                                                           }
-                                                        } catch {
-                                                          // Si hay error parseando la fecha, permitir editar (por seguridad)
                                                         }
                                                         startEditFull(alloc);
                                                       }}
@@ -1639,6 +1644,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                             showAllWeeks={showAllWeeks}
                                             setTransferTask={setTransferTask}
                                             setTransferDialogOpen={setTransferDialogOpen}
+                                            isWeeklyEnabled={isWeeklyEnabled}
                                           />
                                         ))}
                                       </div>

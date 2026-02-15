@@ -10,6 +10,7 @@ export interface CanEditTaskOptions {
     allocation: Allocation;
     currentUser: Employee;
     departmentConfig?: DepartmentConfig;
+    weeklyEnabled?: boolean;
     now?: Date;
 }
 
@@ -41,8 +42,8 @@ export function canEditTask(options: CanEditTaskOptions): CanEditTaskResult {
         return { canEdit: false, reason: 'Esta tarea está bloqueada. Solo administradores pueden editarla.' };
     }
 
-    // Rule 2: Past closing day/hour for non-admins
-    if (!isAdmin) {
+    // Rule 2: Past closing day/hour for non-admins (only when weekly is enabled)
+    if (!isAdmin && options.weeklyEnabled !== false) {
         const weekStart = parseISO(allocation.weekStartDate);
         const closingDay = departmentConfig?.closingDay ?? 3; // Default: Wednesday (3)
         const closingHour = departmentConfig?.closingHour ?? 10; // Default: 10:00
@@ -75,8 +76,11 @@ export function canEditTask(options: CanEditTaskOptions): CanEditTaskResult {
 export function isWeekEditable(
     weekStartDate: string | Date,
     departmentConfig?: DepartmentConfig,
-    now: Date = new Date()
+    now: Date = new Date(),
+    weeklyEnabled: boolean = true
 ): boolean {
+    if (!weeklyEnabled) return true;
+
     const weekStart = typeof weekStartDate === 'string' ? parseISO(weekStartDate) : weekStartDate;
     const closingDay = departmentConfig?.closingDay ?? 3;
     const closingHour = departmentConfig?.closingHour ?? 10;
