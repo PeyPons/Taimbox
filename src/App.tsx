@@ -22,6 +22,7 @@ import { PermissionProtectedRoute } from "./components/auth/PermissionProtectedR
 // Página principal (carga inmediata para mejor UX)
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import LandingPage from "./pages/LandingPage";
+import GuiaPage from "./pages/GuiaPage";
 import { ModuleGuard } from "./components/auth/ModuleGuard";
 import { BrandingEffect } from "./components/layout/BrandingEffect";
 
@@ -106,11 +107,12 @@ const App = () => (
                   <BrandingEffect />
                   <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                     <Routes>
-                      {/* Redirección de landing al dashboard (temporalmente oculta) */}
-                      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                      {/* Página de inicio (Landing) */}
+                      <Route path="/" element={<LandingPage />} />
 
-                      {/* Ruta pública Landing (comentada temporalmente) */}
-                      {/* <Route path="/landing" element={<LandingPage />} /> */}
+                      {/* Guía de funcionalidades (páginas públicas detalladas) */}
+                      <Route path="/guia" element={<GuiaPage />} />
+                      <Route path="/guia/:section" element={<GuiaPage />} />
 
                       {/* Ruta pública Login */}
                       <Route path="/login" element={<Login />} />

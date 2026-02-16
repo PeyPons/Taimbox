@@ -50,6 +50,8 @@ interface AllocationTaskRowProps {
     setTransferTask: (alloc: Allocation) => void;
     setTransferDialogOpen: (open: boolean) => void;
     isWeeklyEnabled: boolean;
+    /** En móvil: fila más alta y táctil */
+    isMobile?: boolean;
 }
 
 export function AllocationTaskRow({
@@ -72,7 +74,8 @@ export function AllocationTaskRow({
     showAllWeeks,
     setTransferTask,
     setTransferDialogOpen,
-    isWeeklyEnabled
+    isWeeklyEnabled,
+    isMobile = false
 }: AllocationTaskRowProps) {
     const weeklyCloseDay = useWeeklyCloseDay();
 
@@ -88,7 +91,8 @@ export function AllocationTaskRow({
 
     return (
         <div className={cn(
-            "group flex items-start gap-2 p-2.5 transition-all",
+            "group flex items-start gap-2 transition-all touch-manipulation",
+            isMobile ? "p-3 min-h-[44px]" : "p-2.5",
             isCompleted
                 ? "bg-slate-50/50 hover:bg-slate-100/50"
                 : "hover:bg-primary/10/30"
@@ -96,7 +100,7 @@ export function AllocationTaskRow({
             <Checkbox
                 checked={isCompleted}
                 onCheckedChange={() => onToggleCompletion()}
-                className={cn("mt-1", isCompleted && "data-[state=checked]:bg-emerald-600")}
+                className={cn("mt-1 shrink-0", isMobile && "scale-110", isCompleted && "data-[state=checked]:bg-emerald-600")}
             />
             <div className="flex-1 min-w-0">
                 <div onDoubleClick={() => onStartInlineEdit()}>
@@ -116,7 +120,8 @@ export function AllocationTaskRow({
                             <div className="flex flex-col w-full">
                                 <div className="flex items-center gap-1.5">
                                     <span className={cn(
-                                        "text-xs font-medium leading-tight",
+                                        "font-medium leading-tight",
+                                        isMobile ? "text-sm" : "text-xs",
                                         isCompleted && "line-through text-slate-400"
                                     )}>{alloc.taskName || 'Tarea'}</span>
                                     {/* Badge Weekly si la tarea fue actualizada vía Weekly */}
@@ -189,7 +194,7 @@ export function AllocationTaskRow({
                             </div>
 
                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"><MoreHorizontal className="h-3 w-3" /></Button></DropdownMenuTrigger>
+                                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className={cn("opacity-0 group-hover:opacity-100 transition-opacity shrink-0", isMobile ? "h-11 w-11 min-h-[44px] min-w-[44px]" : "h-5 w-5")}><MoreHorizontal className={isMobile ? "h-4 w-4" : "h-3 w-3"} /></Button></DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem
                                         onClick={() => onStartEditFull()}
@@ -249,10 +254,10 @@ export function AllocationTaskRow({
                     {/* TAREA PENDIENTE: Solo muestra EST */}
                     {!isCompleted && (
                         <div className="flex items-center">
-                            <div className="flex items-center gap-1.5 text-[11px] text-slate-600 bg-slate-100 px-2 py-1 rounded-md">
-                                <Clock className="w-3 h-3 text-slate-400" />
+                            <div className={cn("flex items-center gap-1.5 text-slate-600 bg-slate-100 px-2 py-1 rounded-md", isMobile ? "text-sm" : "text-[11px]")}>
+                                <Clock className={cn("text-slate-400", isMobile ? "w-4 h-4" : "w-3 h-3")} />
                                 <span className="font-medium">Estimado:</span>
-                                <span className="font-bold font-mono">{alloc.hoursAssigned}h</span>
+                                <span className={cn("font-bold font-mono", isMobile && "text-base")}>{alloc.hoursAssigned}h</span>
                             </div>
                         </div>
                     )}
@@ -261,40 +266,40 @@ export function AllocationTaskRow({
                     {isCompleted && (
                         <div className="space-y-1.5">
                             {/* Fila de métricas: EST → REAL → COMP */}
-                            <div className="flex items-center gap-1 flex-wrap">
+                            <div className={cn("flex items-center gap-1 flex-wrap", isMobile && "gap-2")}>
                                 {/* EST (atenuado) */}
-                                <div className="flex items-center gap-1 text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                                <div className={cn("flex items-center gap-1 text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded", isMobile ? "text-sm" : "text-[10px]")}>
                                     <span>Est:</span>
-                                    <span className="font-mono">{alloc.hoursAssigned}h</span>
+                                    <span className={cn("font-mono", isMobile && "text-base")}>{alloc.hoursAssigned}h</span>
                                 </div>
 
-                                <span className="text-slate-300 text-[10px]">→</span>
+                                <span className={cn("text-slate-300", isMobile ? "text-sm" : "text-[10px]")}>→</span>
 
                                 {/* REAL (editable) */}
-                                <div className="flex items-center bg-blue-100 text-blue-800 rounded px-1.5 py-0.5 border border-blue-200">
-                                    <span className="text-[10px] font-medium mr-1">Real:</span>
+                                <div className={cn("flex items-center bg-blue-100 text-blue-800 rounded px-1.5 py-0.5 border border-blue-200", isMobile && "px-2 py-1")}>
+                                    <span className={cn("font-medium mr-1", isMobile ? "text-sm" : "text-[10px]")}>Real:</span>
                                     <input
                                         type="number"
                                         step="0.5"
                                         min="0"
                                         defaultValue={alloc.hoursActual || 0}
                                         onBlur={(e) => onUpdateInlineHours('hoursActual', e.target.value)}
-                                        className="w-10 text-[11px] text-center bg-transparent border-0 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-400 rounded font-bold font-mono"
+                                        className={cn("text-center bg-transparent border-0 focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-400 rounded font-bold font-mono", isMobile ? "w-12 text-base min-h-[36px]" : "w-10 text-[11px]")}
                                     />
                                 </div>
 
-                                <span className="text-slate-300 text-[10px]">→</span>
+                                <span className={cn("text-slate-300", isMobile ? "text-sm" : "text-[10px]")}>→</span>
 
                                 {/* COMP (editable) */}
-                                <div className="flex items-center bg-emerald-100 text-emerald-800 rounded px-1.5 py-0.5 border border-emerald-200">
-                                    <span className="text-[10px] font-medium mr-1">Comp:</span>
+                                <div className={cn("flex items-center bg-emerald-100 text-emerald-800 rounded border border-emerald-200", isMobile ? "px-2 py-1" : "px-1.5 py-0.5")}>
+                                    <span className={cn("font-medium mr-1", isMobile ? "text-sm" : "text-[10px]")}>Comp:</span>
                                     <input
                                         type="number"
                                         step="0.5"
                                         min="0"
                                         defaultValue={alloc.hoursComputed || 0}
                                         onBlur={(e) => onUpdateInlineHours('hoursComputed', e.target.value)}
-                                        className="w-10 text-[11px] text-center bg-transparent border-0 focus:outline-none focus:bg-white focus:ring-1 focus:ring-emerald-400 rounded font-bold font-mono"
+                                        className={cn("text-center bg-transparent border-0 focus:outline-none focus:bg-white focus:ring-1 focus:ring-emerald-400 rounded font-bold font-mono", isMobile ? "w-12 text-base min-h-[36px]" : "w-10 text-[11px]")}
                                     />
                                 </div>
                             </div>
@@ -302,14 +307,15 @@ export function AllocationTaskRow({
                             {/* BALANCE de la tarea (solo si hay diferencia) */}
                             {Math.abs(taskBalance) > 0.01 && (
                                 <div className={cn(
-                                    "inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium",
+                                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium",
+                                    isMobile ? "text-sm" : "text-[10px]",
                                     taskBalance >= 0
                                         ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
                                         : "bg-red-100 text-red-700 border border-red-200"
                                 )}>
-                                    {taskBalance >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                                    {taskBalance >= 0 ? <TrendingUp className={cn("shrink-0", isMobile ? "w-4 h-4" : "w-3 h-3")} /> : <TrendingDown className={cn("shrink-0", isMobile ? "w-4 h-4" : "w-3 h-3")} />}
                                     <span>{taskBalance >= 0 ? 'Ganancia' : 'Pérdida'}:</span>
-                                    <span className="font-bold font-mono">{taskBalance > 0 ? '+' : ''}{taskBalance}h</span>
+                                    <span className={cn("font-bold font-mono", isMobile && "text-base")}>{taskBalance > 0 ? '+' : ''}{taskBalance}h</span>
                                 </div>
                             )}
 

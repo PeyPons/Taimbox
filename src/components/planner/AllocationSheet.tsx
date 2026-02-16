@@ -457,13 +457,144 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     });
   };
 
-
+  // Contenido reutilizable: desglose del proyecto (panel lateral y Sheet móvil)
+  const renderProjectDetail = (projectId: string, onClose: () => void) => {
+    const project = getProjectById(projectId);
+    const budgetStatus = getProjectBudgetStatus(projectId);
+    const { totalComputed, totalPlanned, budgetMax, budgetMin, percentage, status, breakdown } = budgetStatus;
+    const myData = breakdown.find(b => b.employeeId === employeeId);
+    const exceededBy = totalComputed > budgetMax ? totalComputed - budgetMax : 0;
+    const isExact100 = budgetMax > 0 && Math.abs(totalComputed - budgetMax) < 0.1;
+    const isAtMinimum = budgetMin > 0 && totalComputed >= budgetMin && (budgetMax === 0 || totalComputed <= budgetMax);
+    const statusConfig = {
+      healthy: { color: 'bg-emerald-500', textColor: 'text-emerald-700', label: 'Saludable' },
+      warning: { color: 'bg-amber-500', textColor: 'text-amber-700', label: 'Cerca del límite' },
+      overload: { color: 'bg-red-500', textColor: 'text-red-700', label: 'Excedido' },
+      under: { color: 'bg-blue-500', textColor: 'text-blue-700', label: 'Por debajo' }
+    };
+    const config = statusConfig[status];
+    return (
+      <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-primary/10 border-b px-4 py-3 flex items-center justify-between">
+          <h3 className="font-bold text-sm text-slate-800 truncate flex-1" title={project?.name}>
+            {formatProjectName(project?.name || 'Proyecto')}
+          </h3>
+          <Button variant="ghost" size="sm" className="h-9 w-9 min-h-[44px] min-w-[44px] p-0 hover:bg-indigo-100 shrink-0" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="p-4 space-y-4 overflow-y-auto max-h-[70vh]">
+          {budgetMax > 0 && (
+            <div className="space-y-2">
+              <div className="text-[10px] font-semibold text-slate-500 uppercase">Total cliente</div>
+              <div className="space-y-1.5 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Asignadas:</span>
+                  <span className="font-medium">{budgetMin > 0 ? `${budgetMin}-` : ''}{budgetMax}h</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Planificado:</span>
+                  <span className="text-blue-600">{totalPlanned.toFixed(1)}h</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Computado (todos):</span>
+                  <span className={cn("font-bold", status === 'overload' ? 'text-red-600' : 'text-emerald-600')}>
+                    {totalComputed.toFixed(1)}h
+                  </span>
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                  <div
+                    className={cn("h-full", isExact100 || isAtMinimum ? "bg-emerald-500" : config.color)}
+                    style={{ width: `${Math.min(percentage, 100)}%` }}
+                  />
+                </div>
+                <div className="flex justify-between items-center mt-1">
+                  <span className={cn("text-[10px] font-medium", isExact100 || isAtMinimum ? "text-emerald-700" : config.textColor)}>
+                    {Math.round(percentage)}% usado
+                  </span>
+                  {exceededBy > 0 && (
+                    <span className="text-[10px] font-bold text-red-600">+{exceededBy.toFixed(1)}h exceso</span>
+                  )}
+                </div>
+              </div>
+              {(() => {
+                const projection = totalPlanned + totalComputed;
+                return (
+                  <>
+                    {status === 'overload' && (
+                      <div className="bg-red-50 text-red-700 text-[11px] p-2 rounded border border-red-200 flex items-center gap-2">
+                        <AlertOctagon className="w-4 h-4 flex-shrink-0" />
+                        <span>Se han excedido las horas contratadas máximas</span>
+                      </div>
+                    )}
+                    {status === 'warning' && (
+                      <div className="bg-amber-50 text-amber-700 text-[11px] p-2 rounded border border-amber-200 flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                        {projection > budgetMax ? (
+                          <span>Cuidado: La proyección total ({projection.toFixed(1)}h) ya supera el límite</span>
+                        ) : (
+                          <span>Quedan {(budgetMax - totalComputed).toFixed(1)}h disponibles</span>
+                        )}
+                      </div>
+                    )}
+                    {projection > budgetMax && status !== 'overload' && status !== 'warning' && (
+                      <div className="bg-orange-50 text-orange-700 text-[11px] p-2 rounded border border-orange-200 flex items-center gap-2 mt-2">
+                        <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                        <span>La proyección ({projection.toFixed(1)}h) supera contratadas</span>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+              {breakdown.length > 1 && (
+                <div className="border-t pt-3">
+                  <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 uppercase mb-2">
+                    <Users className="w-3 h-3" /> Equipo ({breakdown.length})
+                  </div>
+                  <div className="space-y-1.5">
+                    {breakdown.map(({ employeeId: empId, employeeName, computed, planned }) => {
+                      const isMe = empId === employeeId;
+                      const emp = employees.find(e => e.id === empId);
+                      return (
+                        <div key={empId} className={cn(
+                          "text-xs px-2 py-1.5 rounded flex items-center gap-2",
+                          isMe ? "bg-primary/10 border border-indigo-100" : "bg-slate-50"
+                        )}>
+                          <Avatar className="h-6 w-6 border border-slate-200">
+                            <AvatarImage src={emp?.avatarUrl} />
+                            <AvatarFallback className="text-[10px] bg-slate-100">
+                              {employeeName.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className={cn("font-medium truncate", isMe ? "text-indigo-700" : "text-slate-600")}>
+                              {employeeName} {isMe && "(tú)"}
+                            </div>
+                            <div className="flex gap-3 text-[10px] mt-0.5">
+                              <span className="text-blue-600">Plan: {planned.toFixed(1)}h</span>
+                              <span className="text-emerald-600">Comp: {computed.toFixed(1)}h</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
-          className="w-full sm:max-w-[95vw] overflow-y-auto px-3 sm:px-6 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-xl border-l shadow-2xl pt-10"
+          className="w-full sm:max-w-[95vw] overflow-y-auto overflow-x-hidden px-3 sm:px-6 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-xl border-l shadow-2xl pt-10"
           onInteractOutside={(e) => {
             // Prevenir cierre del Sheet cuando el tour está activo
             if (isTourActive) {
@@ -562,17 +693,18 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
                   <div className="h-6 w-px bg-slate-200 mx-1" />
 
-                  {/* Vistas: ToggleGroup Visual */}
+                  {/* Vistas: Semanal / Mensual - botones táctiles en móvil */}
                   <div className="flex bg-slate-100/80 p-1 rounded-lg gap-1">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className={cn("h-7 px-2", effectiveShowAllWeeks && "bg-white shadow-sm text-indigo-600")}
+                          className={cn("h-7 px-2", isMobile && "h-11 min-h-[44px] px-3", effectiveShowAllWeeks && "bg-white shadow-sm text-indigo-600")}
                           onClick={() => setShowAllWeeks(!showAllWeeks)}
                         >
                           {effectiveShowAllWeeks ? <LayoutGrid className="h-3.5 w-3.5" /> : <Calendar className="h-3.5 w-3.5" />}
+                          {isMobile && <span className="ml-1.5 text-xs">{effectiveShowAllWeeks ? 'Mes' : 'Semana'}</span>}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom">Vista: {effectiveShowAllWeeks ? "Mes Completo" : "Semana Actual"}</TooltipContent>
@@ -583,7 +715,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-7 px-2 text-slate-500 hover:text-indigo-600"
+                          className={cn("h-7 px-2 text-slate-500 hover:text-indigo-600", isMobile && "h-11 min-h-[44px] px-3")}
                           onClick={() => setTimelineOpen(true)}
                         >
                           <GanttChart className="h-3.5 w-3.5" />
@@ -597,7 +729,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-7 px-2 text-slate-500 hover:text-indigo-600"
+                          className={cn("h-7 px-2 text-slate-500 hover:text-indigo-600", isMobile && "h-11 min-h-[44px] px-3")}
                           onClick={() => setWeeklyOpen(true)}
                         >
                           <TrendingUp className="h-3.5 w-3.5" />
@@ -663,13 +795,13 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                   className={cn(
                     "gap-4 pb-20",
                     showAllWeeks
-                      ? "flex overflow-x-auto gap-5 pb-8 snap-x snap-mandatory scroll-smooth px-2 sm:px-4 no-scrollbar pr-[250px]"
-                      : "flex gap-6"
+                      ? "flex overflow-x-auto gap-5 pb-8 snap-x snap-mandatory scroll-smooth px-2 sm:px-4 no-scrollbar pr-4 sm:pr-[250px]"
+                      : "flex gap-6 min-w-0 overflow-x-hidden"
                   )}
                 >
                   {/* Contenido principal de semanas */}
                   <div className={cn(
-                    showAllWeeks ? "contents" : "flex-1 flex justify-center"
+                    showAllWeeks ? "contents" : "flex-1 flex justify-center min-w-0 w-full"
                   )}>
                     {visibleWeeks.map((week, idx) => {
                       const index = showAllWeeks ? idx : activeWeekIndex;
@@ -740,7 +872,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                       // VISTA TABULAR para semana individual
                       if (!effectiveShowAllWeeks) {
                         return (
-                          <div key={weekStr} className="flex-1 min-w-0">
+                          <div key={weekStr} className="flex-1 min-w-0 overflow-x-hidden w-full max-w-full">
                             {/* Header compacto de la semana */}
                             <div className="flex flex-col gap-4 mb-4 pb-3 border-b">
                               <div className="flex items-center justify-between w-full">
@@ -796,7 +928,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                             </div>
 
                             {/* Tabla de proyectos y tareas */}
-                            <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2" data-tour="planner-projects">
+                            <div className="space-y-4 max-h-[70vh] overflow-y-auto overflow-x-hidden min-w-0 pr-2" data-tour="planner-projects">
                               {sortedGroups.map(([projId, projAllocations]) => {
                                 const project = getProjectById(projId);
                                 const budgetStatus = getProjectBudgetStatus(projId);
@@ -813,7 +945,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                   <div
                                     key={projId}
                                     className={cn(
-                                      "bg-white rounded-lg border shadow-sm overflow-hidden transition-all",
+                                      "bg-white rounded-lg border shadow-sm overflow-hidden transition-all min-w-0",
                                       isSelected && "ring-2 ring-indigo-400",
                                       allCompleted && "opacity-80"
                                     )}
@@ -821,28 +953,28 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                     {/* Header del proyecto - clickeable para seleccionar */}
                                     <div
                                       className={cn(
-                                        "px-4 py-2.5 cursor-pointer flex items-center justify-between",
+                                        "px-3 sm:px-4 py-2.5 cursor-pointer flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-4 min-w-0",
                                         budgetStatus.status === 'overload' ? "bg-red-500 text-white" :
                                           budgetStatus.status === 'warning' ? "bg-amber-500 text-white" :
                                             allCompleted ? "bg-slate-200 text-slate-700" : "bg-primary/100 text-white"
                                       )}
                                       onClick={() => setSelectedProjectId(isSelected ? null : projId)}
                                     >
-                                      <div className="flex items-center gap-3 min-w-0">
+                                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                                         {allCompleted && <CheckCircle2 className="w-4 h-4 shrink-0" />}
                                         <span className="font-bold truncate">{formatProjectName(project?.name || 'Proyecto')}</span>
                                         <span className="text-[10px] opacity-80 shrink-0">({projAllocations.length})</span>
                                       </div>
-                                      <div className="flex items-center gap-4 text-sm">
+                                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs sm:text-sm shrink-0 min-w-0">
                                         <span className="opacity-80">{projEst}h est</span>
                                         {projReal > 0 && <span>{projReal}h real</span>}
-                                        {projComp > 0 && <span className="font-bold shrink-0">{projComp}h comp</span>}
+                                        {projComp > 0 && <span className="font-bold">{projComp}h comp</span>}
                                       </div>
                                     </div>
 
                                     {/* Tabla de tareas */}
                                     {isMobile ? (
-                                      <div className="flex flex-col divide-y divide-slate-100">
+                                      <div className="flex flex-col divide-y divide-slate-100 min-w-0">
                                         {sortedTasks.map((alloc) => {
                                           const isCompleted = alloc.status === 'completed';
                                           const taskBalance = isCompleted ? round2((alloc.hoursComputed || 0) - (alloc.hoursActual || 0)) : 0;
@@ -852,27 +984,29 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                           cleanName = cleanName.replace(/\s*\(transferida de .+?(?:, original: .+?)?\)/g, '').trim();
 
                                           return (
-                                            <div key={alloc.id} className={cn("flex flex-col gap-2 p-3 bg-white", isCompleted && "bg-slate-50/50")}>
+                                            <div key={alloc.id} className={cn("flex flex-col gap-2 p-3 bg-white touch-manipulation", isCompleted && "bg-slate-50/50")}>
                                               <div className="flex items-start justify-between gap-3">
-                                                <div className="flex items-start gap-3 flex-1">
+                                                <div className="flex items-start gap-3 flex-1 min-w-0">
                                                   <Checkbox
                                                     checked={isCompleted}
                                                     onCheckedChange={() => toggleTaskCompletion(alloc)}
-                                                    className={cn("mt-1", isCompleted && "data-[state=checked]:bg-emerald-600")}
+                                                    className={cn("mt-1 shrink-0", isCompleted && "data-[state=checked]:bg-emerald-600")}
                                                   />
                                                   <div className="flex flex-col gap-1 min-w-0 flex-1">
                                                     <span
-                                                      className={cn("font-medium text-sm leading-tight break-words", isCompleted && "line-through text-slate-400")}
+                                                      className={cn("font-medium text-sm leading-tight break-words cursor-pointer", isCompleted && "line-through text-slate-400")}
                                                       onClick={() => startEditFull(alloc)}
                                                     >
                                                       {formatProjectName(cleanName)}
                                                     </span>
-                                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
-                                                      <span className="shrink-0">{alloc.hoursAssigned}h est</span>
+                                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
+                                                      <span className="shrink-0 font-mono text-base">{alloc.hoursAssigned}h</span>
+                                                      <span className="shrink-0 text-slate-400">est</span>
                                                       {isCompleted && (
                                                         <>
-                                                          <span className="shrink-0">· {alloc.hoursActual}h real</span>
-                                                          <span className={cn("font-bold shrink-0", taskBalance < 0 ? "text-red-600" : "text-emerald-600")}>
+                                                          <span className="shrink-0">·</span>
+                                                          <span className="shrink-0 font-mono text-base">{alloc.hoursActual}h real</span>
+                                                          <span className={cn("font-mono text-base font-bold shrink-0", taskBalance < 0 ? "text-red-600" : "text-emerald-600")}>
                                                             {taskBalance > 0 ? '+' : ''}{taskBalance}h
                                                           </span>
                                                         </>
@@ -915,7 +1049,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                         )}
                                       </div>
                                     ) : (
-                                      <table className="w-full text-sm">
+                                      <div className="min-w-0 overflow-x-auto overflow-y-visible">
+                                      <table className="w-full text-sm min-w-[320px]">
                                         <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
                                           <tr>
                                             <th className="py-2 px-3 text-left font-medium w-8"></th>
@@ -1245,6 +1380,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                           })}
                                         </tbody>
                                       </table>
+                                      </div>
                                     )}
                                   </div>
                                 );
@@ -1500,7 +1636,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                           </div>
 
                           {/* LISTA TAREAS */}
-                          <div className="flex-1 overflow-y-auto max-h-[50vh] space-y-2 pr-1 custom-scrollbar">
+                          <div className={cn("flex-1 overflow-y-auto max-h-[50vh] space-y-2 custom-scrollbar", isMobile ? "pr-3" : "pr-1")}>
                             {sortedGroups.length === 0 ? (
                               <div className="text-center py-8 text-slate-400">
                                 <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -1529,15 +1665,13 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                               return (
                                 <Collapsible key={projId} open={!isCollapsed} onOpenChange={() => {
                                   toggleProjectCollapse(projId);
-                                  // En vista semanal, al hacer click también selecciona el proyecto
-                                  if (!showAllWeeks) {
-                                    setSelectedProjectId(projId);
-                                  }
+                                  // Al hacer clic en el proyecto, seleccionar para mostrar desglose (semanal y mensual)
+                                  setSelectedProjectId(projId);
                                 }}>
                                   <div className={cn(
                                     "bg-white border rounded-xl shadow-sm overflow-hidden transition-all duration-200",
                                     allCompleted && "opacity-70 hover:opacity-100",
-                                    isSelected && !showAllWeeks && "ring-2 ring-indigo-400 border-indigo-300",
+                                    isSelected && "ring-2 ring-indigo-400 border-indigo-300",
                                     !isCollapsed && "shadow-md"
                                   )}>
                                     <CollapsibleTrigger asChild>
@@ -1629,6 +1763,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                             setTransferTask={setTransferTask}
                                             setTransferDialogOpen={setTransferDialogOpen}
                                             isWeeklyEnabled={isWeeklyEnabled}
+                                            isMobile={isMobile}
                                           />
                                         ))}
                                       </div>
@@ -1643,172 +1778,13 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                     })}
                   </div>
 
-                  {/* Panel lateral derecho - Detalles del proyecto seleccionado (solo en vista semanal) */}
-                  {!showAllWeeks && !isMobile && (
+                  {/* Panel lateral derecho - Detalles del proyecto seleccionado (vista semanal y mensual, solo desktop) */}
+                  {selectedProjectId && !isMobile && (
                     <div className="w-80 flex-shrink-0">
                       <div className="sticky top-4 space-y-3">
                         {/* Contenido dinámico: proyecto seleccionado o resumen */}
                         {selectedProjectId ? (
-                          // DETALLES DEL PROYECTO SELECCIONADO
-                          (() => {
-                            const project = getProjectById(selectedProjectId);
-                            const budgetStatus = getProjectBudgetStatus(selectedProjectId);
-                            const { totalComputed, totalPlanned, budgetMax, budgetMin, percentage, status, breakdown } = budgetStatus;
-
-                            // Buscar datos del empleado actual en breakdown
-                            const myData = breakdown.find(b => b.employeeId === employeeId);
-                            const myComputed = myData?.computed || 0;
-                            const myPlanned = myData?.planned || 0;
-
-                            const exceededBy = totalComputed > budgetMax ? totalComputed - budgetMax : 0;
-                            const isExact100 = budgetMax > 0 && Math.abs(totalComputed - budgetMax) < 0.1; // 100% exacto (con tolerancia de 0.1h)
-                            const isAtMinimum = budgetMin > 0 && totalComputed >= budgetMin && (budgetMax === 0 || totalComputed <= budgetMax);
-
-                            const statusConfig = {
-                              healthy: { color: 'bg-emerald-500', textColor: 'text-emerald-700', label: 'Saludable' },
-                              warning: { color: 'bg-amber-500', textColor: 'text-amber-700', label: 'Cerca del límite' },
-                              overload: { color: 'bg-red-500', textColor: 'text-red-700', label: 'Excedido' },
-                              under: { color: 'bg-blue-500', textColor: 'text-blue-700', label: 'Por debajo' }
-                            };
-                            const config = statusConfig[status];
-
-                            return (
-                              <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
-                                {/* Header con nombre y botón cerrar */}
-                                <div className="bg-primary/10 border-b px-4 py-3 flex items-center justify-between">
-                                  <h3 className="font-bold text-sm text-slate-800 truncate flex-1" title={project?.name}>
-                                    {formatProjectName(project?.name || 'Proyecto')}
-                                  </h3>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 w-6 p-0 hover:bg-indigo-100"
-                                    onClick={() => setSelectedProjectId(null)}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-
-                                <div className="p-4 space-y-4">
-                                  {/* Total cliente */}
-                                  {budgetMax > 0 && (
-                                    <div className="space-y-2">
-                                      <div className="text-[10px] font-semibold text-slate-500 uppercase">Total cliente</div>
-                                      <div className="space-y-1.5 text-xs">
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-500">Asignadas:</span>
-                                          <span className="font-medium">{budgetMin > 0 ? `${budgetMin}-` : ''}{budgetMax}h</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-500">Planificado:</span>
-                                          <span className="text-blue-600">{totalPlanned.toFixed(1)}h</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                          <span className="text-slate-500">Computado (todos):</span>
-                                          <span className={cn("font-bold", status === 'overload' ? 'text-red-600' : 'text-emerald-600')}>
-                                            {totalComputed.toFixed(1)}h
-                                          </span>
-                                        </div>
-                                      </div>
-
-                                      {/* Barra de progreso */}
-                                      <div className="mt-3">
-                                        <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                                          <div
-                                            className={cn(
-                                              "h-full",
-                                              isExact100 || isAtMinimum ? "bg-emerald-500" : config.color
-                                            )}
-                                            style={{ width: `${Math.min(percentage, 100)}%` }}
-                                          />
-                                        </div>
-                                        <div className="flex justify-between items-center mt-1">
-                                          <span className={cn(
-                                            "text-[10px] font-medium",
-                                            isExact100 || isAtMinimum ? "text-emerald-700" : config.textColor
-                                          )}>
-                                            {Math.round(percentage)}% usado
-                                          </span>
-                                          {exceededBy > 0 && (
-                                            <span className="text-[10px] font-bold text-red-600">+{exceededBy.toFixed(1)}h exceso</span>
-                                          )}
-                                        </div>
-                                      </div>
-
-                                      {/* Alertas de estado */}
-                                      {(() => {
-                                        const projection = totalPlanned + totalComputed;
-                                        return (
-                                          <>
-                                            {status === 'overload' && (
-                                              <div className="bg-red-50 text-red-700 text-[11px] p-2 rounded border border-red-200 flex items-center gap-2">
-                                                <AlertOctagon className="w-4 h-4 flex-shrink-0" />
-                                                <span>Se han excedido las horas contratadas máximas</span>
-                                              </div>
-                                            )}
-                                            {status === 'warning' && (
-                                              <div className="bg-amber-50 text-amber-700 text-[11px] p-2 rounded border border-amber-200 flex items-center gap-2">
-                                                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                                                {projection > budgetMax ? (
-                                                  <span>Cuidado: La proyección total ({projection.toFixed(1)}h) ya supera el límite</span>
-                                                ) : (
-                                                  <span>Quedan {(budgetMax - totalComputed).toFixed(1)}h disponibles</span>
-                                                )}
-                                              </div>
-                                            )}
-                                            {projection > budgetMax && status !== 'overload' && status !== 'warning' && (
-                                              <div className="bg-orange-50 text-orange-700 text-[11px] p-2 rounded border border-orange-200 flex items-center gap-2 mt-2">
-                                                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                                                <span>La proyección ({projection.toFixed(1)}h) supera contratadas</span>
-                                              </div>
-                                            )}
-                                          </>
-                                        );
-                                      })()}
-
-                                      {/* Equipo */}
-                                      {breakdown.length > 1 && (
-                                        <div className="border-t pt-3">
-                                          <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 uppercase mb-2">
-                                            <Users className="w-3 h-3" /> Equipo ({breakdown.length})
-                                          </div>
-                                          <div className="space-y-1.5">
-                                            {breakdown.map(({ employeeId: empId, employeeName, computed, planned }) => {
-                                              const isMe = empId === employeeId;
-                                              const emp = employees.find(e => e.id === empId);
-                                              return (
-                                                <div key={empId} className={cn(
-                                                  "text-xs px-2 py-1.5 rounded flex items-center gap-2",
-                                                  isMe ? "bg-primary/10 border border-indigo-100" : "bg-slate-50"
-                                                )}>
-                                                  <Avatar className="h-6 w-6 border border-slate-200">
-                                                    <AvatarImage src={emp?.avatarUrl} />
-                                                    <AvatarFallback className="text-[10px] bg-slate-100">
-                                                      {employeeName.substring(0, 2).toUpperCase()}
-                                                    </AvatarFallback>
-                                                  </Avatar>
-                                                  <div className="flex-1 min-w-0">
-                                                    <div className={cn("font-medium truncate", isMe ? "text-indigo-700" : "text-slate-600")}>
-                                                      {employeeName} {isMe && "(tú)"}
-                                                    </div>
-                                                    <div className="flex gap-3 text-[10px] mt-0.5">
-                                                      <span className="text-blue-600">Plan: {planned.toFixed(1)}h</span>
-                                                      <span className="text-emerald-600">Comp: {computed.toFixed(1)}h</span>
-                                                    </div>
-                                                  </div>
-                                                </div>
-                                              );
-                                            })}
-                                          </div>
-                                        </div>
-                                      )}
-
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })()
+                          renderProjectDetail(selectedProjectId, () => setSelectedProjectId(null))
                         ) : (
                           // RESUMEN DE LA SEMANA (por defecto)
                           <div className="bg-white border rounded-xl shadow-sm p-4">
@@ -1897,7 +1873,16 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
           {/* Cierre del bloque !isLoadingTasks */}
         </SheetContent>
-      </Sheet >
+      </Sheet>
+
+      {/* Sheet móvil: desglose del proyecto al hacer clic (vista semanal o mensual) */}
+      {isMobile && (
+        <Sheet open={!!selectedProjectId} onOpenChange={(open) => !open && setSelectedProjectId(null)}>
+          <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl pt-6 pb-8 px-4">
+            {selectedProjectId && renderProjectDetail(selectedProjectId, () => setSelectedProjectId(null))}
+          </SheetContent>
+        </Sheet>
+      )}
 
       <AllocationFormDialog
         isOpen={isFormOpen}

@@ -14,6 +14,7 @@ import { LoadIndicator } from '@/components/shared/LoadIndicator';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmployeeRow } from '@/components/planner/EmployeeRow';
+import { MobilePlannerView } from '@/components/planner/MobilePlannerView';
 import { AllocationSheet } from '@/components/planner/AllocationSheet';
 import { ProjectImpactSummary } from '@/components/planner/ProjectImpactSummary';
 import { BatchTaskRow } from '@/components/planner/BatchTaskRow';
@@ -570,72 +571,85 @@ export default function EmployeeDashboard() {
             </div>
           </div>
 
-          {/* 3. CALENDARIO - VISUAL RESUMEN */}
-          <Card className="border-indigo-100 shadow-sm overflow-hidden" data-tour="calendar">
-            <div className="overflow-x-auto custom-scrollbar w-full">
-              <div className="grid bg-slate-50/50 border-b" style={{ gridTemplateColumns: gridTemplate }}>
-                <div className="px-4 py-3 font-bold text-sm text-slate-700 flex items-center border-r sticky left-0 z-20 bg-slate-50">Calendario</div>
-                {weeks.map((week, index) => {
-                  const effectiveStart = week.effectiveStart || week.weekStart;
-                  const effectiveEnd = week.effectiveEnd || addDays(week.weekStart, 6);
-                  const workingDays = [];
-                  let currentDay = new Date(effectiveStart);
-                  while (currentDay <= effectiveEnd) {
-                    const dayOfWeek = currentDay.getDay();
-                    if (dayOfWeek >= 1 && dayOfWeek <= 5) workingDays.push(new Date(currentDay));
-                    currentDay = addDays(currentDay, 1);
-                  }
-                  const firstWorkingDay = workingDays[0];
-                  const lastWorkingDay = workingDays[workingDays.length - 1];
-                  const weekDateLabel = firstWorkingDay && lastWorkingDay
-                    ? `${format(firstWorkingDay, 'd', { locale: es })}-${format(lastWorkingDay, 'd MMM', { locale: es })}`
-                    : `${format(effectiveStart, 'd', { locale: es })}-${format(effectiveEnd, 'd MMM', { locale: es })}`;
+          {/* 3. CALENDARIO - En móvil: tarjetas (MobilePlannerView); en desktop: tabla */}
+          {isMobile && myEmployeeProfile ? (
+            <div className="space-y-3" data-tour="calendar">
+              <MobilePlannerView
+                filteredEmployees={[myEmployeeProfile]}
+                weeks={weeks}
+                allocations={allocations || []}
+                viewDate={currentMonth}
+                getEmployeeMonthlyLoad={getEmployeeMonthlyLoad}
+                onOpenSheet={(empId, date) => setSelectedCell({ employeeId: empId, weekStart: date })}
+              />
+            </div>
+          ) : (
+            <Card className="border-indigo-100 shadow-sm overflow-hidden" data-tour="calendar">
+              <div className="overflow-x-auto custom-scrollbar w-full">
+                <div className="grid bg-slate-50/50 border-b" style={{ gridTemplateColumns: gridTemplate }}>
+                  <div className="px-4 py-3 font-bold text-sm text-slate-700 flex items-center border-r sticky left-0 z-20 bg-slate-50">Calendario</div>
+                  {weeks.map((week, index) => {
+                    const effectiveStart = week.effectiveStart || week.weekStart;
+                    const effectiveEnd = week.effectiveEnd || addDays(week.weekStart, 6);
+                    const workingDays = [];
+                    let currentDay = new Date(effectiveStart);
+                    while (currentDay <= effectiveEnd) {
+                      const dayOfWeek = currentDay.getDay();
+                      if (dayOfWeek >= 1 && dayOfWeek <= 5) workingDays.push(new Date(currentDay));
+                      currentDay = addDays(currentDay, 1);
+                    }
+                    const firstWorkingDay = workingDays[0];
+                    const lastWorkingDay = workingDays[workingDays.length - 1];
+                    const weekDateLabel = firstWorkingDay && lastWorkingDay
+                      ? `${format(firstWorkingDay, 'd', { locale: es })}-${format(lastWorkingDay, 'd MMM', { locale: es })}`
+                      : `${format(effectiveStart, 'd', { locale: es })}-${format(effectiveEnd, 'd MMM', { locale: es })}`;
 
-                  return (
-                    <div key={week.weekStart.toISOString()} className="text-center px-1 py-2 border-r flex flex-col justify-center">
-                      <span className="text-xs font-bold uppercase text-slate-500">S{index + 1}</span>
-                      <span className="text-[10px] text-slate-400 font-medium">{weekDateLabel}</span>
+                    return (
+                      <div key={week.weekStart.toISOString()} className="text-center px-1 py-2 border-r flex flex-col justify-center">
+                        <span className="text-xs font-bold uppercase text-slate-500">S{index + 1}</span>
+                        <span className="text-[10px] text-slate-400 font-medium">{weekDateLabel}</span>
+                      </div>
+                    );
+                  })}
+                  <div className="px-2 py-3 font-bold text-xs text-center flex items-center justify-center">TOTAL</div>
+                </div>
+
+                <div className="grid bg-white" style={{ gridTemplateColumns: gridTemplate }}>
+                  <EmployeeRow employee={myEmployeeProfile} weeks={weeks} projects={projects} allocations={allocations} absences={absences} teamEvents={teamEvents} viewDate={currentMonth} onOpenSheet={(empId, date) => setSelectedCell({ employeeId: empId, weekStart: date })} />
+                  <div className="flex items-center justify-center border-l p-2 bg-white">
+                    <div className="flex flex-col items-center">
+                      <span className="text-lg font-bold text-slate-800">{monthlyLoad.hours}h</span>
+                      <span className="text-[10px] text-slate-400 font-medium">/ {monthlyLoad.capacity}h</span>
+                      <span className={cn(
+                        "text-[10px] font-bold mt-1 px-1.5 rounded-full",
+                        monthlyLoad.status === 'overload' ? "text-red-600 bg-red-50" :
+                          monthlyLoad.status === 'warning' ? "text-amber-600 bg-amber-50" :
+                            monthlyLoad.status === 'healthy' ? "text-emerald-600 bg-emerald-50" :
+                              "text-slate-400 bg-slate-50"
+                      )}>{monthlyLoad.percentage.toFixed(1)}%</span>
                     </div>
-                  );
-                })}
-                <div className="px-2 py-3 font-bold text-xs text-center flex items-center justify-center">TOTAL</div>
-              </div>
-
-              <div className="grid bg-white" style={{ gridTemplateColumns: gridTemplate }}>
-                <EmployeeRow employee={myEmployeeProfile} weeks={weeks} projects={projects} allocations={allocations} absences={absences} teamEvents={teamEvents} viewDate={currentMonth} onOpenSheet={(empId, date) => setSelectedCell({ employeeId: empId, weekStart: date })} />
-                <div className="flex items-center justify-center border-l p-2 bg-white">
-                  <div className="flex flex-col items-center">
-                    <span className="text-lg font-bold text-slate-800">{monthlyLoad.hours}h</span>
-                    <span className="text-[10px] text-slate-400 font-medium">/ {monthlyLoad.capacity}h</span>
-                    <span className={cn(
-                      "text-[10px] font-bold mt-1 px-1.5 rounded-full",
-                      monthlyLoad.status === 'overload' ? "text-red-600 bg-red-50" :
-                        monthlyLoad.status === 'warning' ? "text-amber-600 bg-amber-50" :
-                          monthlyLoad.status === 'healthy' ? "text-emerald-600 bg-emerald-50" :
-                            "text-slate-400 bg-slate-50"
-                    )}>{monthlyLoad.percentage.toFixed(1)}%</span>
                   </div>
                 </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+          )}
 
           {/* 4. VISTA DETALLADA POR PESTAÑAS */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full justify-start h-auto p-1 bg-white border border-slate-200 flex-nowrap overflow-x-auto custom-scrollbar gap-2">
-              <TabsTrigger value="dependencies" className="px-4 py-2 data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700">
+            <TabsList className="w-full justify-start h-auto p-1 bg-white border border-slate-200 flex-nowrap overflow-x-auto custom-scrollbar gap-2 min-w-0">
+              <TabsTrigger value="dependencies" className="px-4 py-2 min-h-[44px] data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700 shrink-0">
                 <AlertCircle className="h-4 w-4 mr-2" /> Prioridades
               </TabsTrigger>
-              <TabsTrigger value="projects" className="px-4 py-2 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700">
+              <TabsTrigger value="projects" className="px-4 py-2 min-h-[44px] data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 shrink-0">
                 <ListPlus className="h-4 w-4 mr-2" /> Mis proyectos
               </TabsTrigger>
-              <TabsTrigger value="coherence" className="px-4 py-2 data-[state=active]:bg-red-50 data-[state=active]:text-red-700">
+              <TabsTrigger value="coherence" className="px-4 py-2 min-h-[44px] data-[state=active]:bg-red-50 data-[state=active]:text-red-700 shrink-0">
                 <CheckCircle2 className="h-4 w-4 mr-2" /> Control de planificación
               </TabsTrigger>
-              <TabsTrigger value="teammates" className="px-4 py-2">
+              <TabsTrigger value="teammates" className="px-4 py-2 min-h-[44px] shrink-0">
                 <div className="flex items-center gap-2">Compañeros</div>
               </TabsTrigger>
-              <TabsTrigger value="metrics" className="px-4 py-2">
+              <TabsTrigger value="metrics" className="px-4 py-2 min-h-[44px] shrink-0">
                 <div className="flex items-center gap-2">Mis métricas</div>
               </TabsTrigger>
             </TabsList>
@@ -652,7 +666,7 @@ export default function EmployeeDashboard() {
                 <MyWeekView employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
               </TabsContent>
 
-              <TabsContent value="coherence" className="focus-visible:outline-none">
+              <TabsContent value="coherence" className="focus-visible:outline-none min-w-0">
                 <PlanningInconsistenciesCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} isManager={isManager} />
               </TabsContent>
 

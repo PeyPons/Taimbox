@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Deadline } from '@/types';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { format, isSameMonth, parseISO, startOfMonth, endOfMonth } from 'date-fns';
@@ -38,6 +39,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
   const [isLoading, setIsLoading] = useState(true);
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const { formatName: formatProjectName } = useProjectAliasing();
+  const isMobile = useIsMobile();
 
   const monthKey = format(viewDate, 'yyyy-MM');
 
@@ -446,16 +448,16 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
 
   return (
     <TooltipProvider>
-      <Card className="border-l-4 border-l-amber-500" data-tour="planning-inconsistencies">
+      <Card className="border-l-4 border-l-amber-500 overflow-hidden min-w-0" data-tour="planning-inconsistencies">
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-600" />
             <span>Alertas de planificación</span>
             <Tooltip>
-              <TooltipTrigger>
-                <Info className="h-4 w-4 text-slate-400" />
+              <TooltipTrigger className={cn("shrink-0", isMobile && "p-2 -m-2 touch-manipulation")}>
+                <Info className={cn("text-slate-400", isMobile ? "h-5 w-5" : "h-4 w-4")} />
               </TooltipTrigger>
-              <TooltipContent className="max-w-[300px]">
+              <TooltipContent className="max-w-[min(300px,calc(100vw-2rem))]">
                 <p className="text-xs">
                   Detecta diferencias entre lo planificado en el deadline y lo realmente planificado en tus tareas.
                   Útil para detectar intercambios con compañeros o cambios de planificación.
@@ -487,29 +489,33 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                 >
                   {/* HEADER - Siempre visible (colapsado) */}
                   <div
-                    className="flex items-center justify-between gap-2 p-2.5 cursor-pointer hover:bg-white/50 transition-colors"
+                    className={cn(
+                      "flex items-center justify-between gap-2 cursor-pointer hover:bg-white/50 transition-colors touch-manipulation",
+                      isMobile ? "p-3 min-h-[44px]" : "p-2.5"
+                    )}
                     onClick={() => toggleProject(inc.projectId)}
                   >
-                    <div className="flex-1 min-w-0 flex items-center gap-3">
-                      {/* Botón de expandir/colapsar */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleProject(inc.projectId);
-                        }}
-                        className="text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0"
-                      >
-                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </button>
-
-                      {/* Nombre del proyecto */}
-                      <div className="font-semibold text-sm text-slate-800 truncate">
-                        {formatProjectName(inc.projectName)}
+                    <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        {/* Botón de expandir/colapsar */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleProject(inc.projectId);
+                          }}
+                          className={cn("text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0", isMobile && "p-2 -m-2 min-h-[44px] min-w-[44px] flex items-center justify-center")}
+                        >
+                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </button>
+                        {/* Nombre del proyecto */}
+                        <div className="font-semibold text-sm text-slate-800 truncate min-w-0">
+                          {formatProjectName(inc.projectName)}
+                        </div>
                       </div>
 
-                      {/* Resumen compacto cuando está colapsado */}
+                      {/* Resumen compacto cuando está colapsado (wrap en móvil) */}
                       {!isExpanded && (
-                        <div className="flex items-center gap-2 text-xs text-slate-600">
+                        <div className="flex items-center gap-2 text-xs text-slate-600 flex-wrap gap-y-1">
                           <div className="flex items-center gap-1 text-slate-700 font-semibold">
                             <User className="h-3 w-3" />
                             <span>Mis Horas:</span>
@@ -553,7 +559,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
 
                   {/* CONTENIDO EXPANDIDO */}
                   {isExpanded && (
-                    <div className="px-2.5 pb-2.5 space-y-2">
+                    <div className={cn("space-y-2", isMobile ? "px-3 pb-3" : "px-2.5 pb-2.5")}>
                       {/* Información del proyecto */}
                       {(inc.budgetHours > 0 || inc.minimumHours > 0) && (
                         <div className="text-[10px] text-slate-500">
@@ -568,9 +574,9 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                       )}
 
                       {/* Tu estado - Estilo similar a compañeros pero destacado */}
-                      <div className="bg-gradient-to-br from-indigo-50 via-indigo-100/30 to-white rounded-lg px-3 py-2.5 border-2 border-indigo-400 shadow-lg ring-2 ring-indigo-200/50">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8 border-2 border-indigo-400 shadow-md ring-2 ring-indigo-200">
+                      <div className="bg-gradient-to-br from-indigo-50 via-indigo-100/30 to-white rounded-lg border-2 border-indigo-400 shadow-lg ring-2 ring-indigo-200/50 min-w-0 overflow-hidden">
+                        <div className={cn("flex gap-3", isMobile ? "flex-col sm:flex-row p-3" : "items-center px-3 py-2.5")}>
+                          <Avatar className={cn("border-2 border-indigo-400 shadow-md ring-2 ring-indigo-200 shrink-0", isMobile ? "h-10 w-10" : "h-8 w-8")}>
                             <AvatarImage src={currentEmployee?.avatarUrl} />
                             <AvatarFallback className="text-xs bg-gradient-to-br from-indigo-500 to-indigo-600 text-white font-bold">
                               {currentEmployee?.name.substring(0, 2).toUpperCase() || 'TU'}
@@ -583,7 +589,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                                 TUS DATOS
                               </Badge>
                             </div>
-                            <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-2 flex-wrap gap-y-1">
                               {inc.deadlineHours > 0 ? (
                                 <>
                                   <span className="text-xs text-slate-500">
@@ -627,7 +633,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                             </div>
                             {/* Feedback Directo integrado */}
                             <div className={cn(
-                              "mt-2 flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold",
+                              "mt-2 flex items-center gap-1.5 px-2 py-1.5 sm:py-1 rounded-md text-xs font-semibold min-h-[44px] sm:min-h-0 flex-wrap",
                               inc.difference < 0
                                 ? "bg-red-50 text-red-700 border border-red-200"
                                 : inc.difference > 0
@@ -658,10 +664,10 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
 
                       {isExpanded && hasMore && (
                         <div className="pt-3 border-t-2 border-slate-300">
-                          <div className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase mb-3">
-                            <Users className="h-4 w-4 text-indigo-600" />
+                          <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-700 uppercase mb-3">
+                            <Users className="h-4 w-4 text-indigo-600 shrink-0" />
                             <span>Estado del resto del equipo</span>
-                            <Badge variant="outline" className="ml-auto text-[10px] h-5 px-1.5">
+                            <Badge variant="outline" className="sm:ml-auto text-[10px] h-5 px-1.5">
                               {inc.teammates.length} {inc.teammates.length === 1 ? 'persona' : 'personas'}
                             </Badge>
                           </div>
@@ -672,10 +678,10 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                               return (
                                 <div
                                   key={tm.employeeId}
-                                  className="bg-white rounded-lg px-3 py-2.5 border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
+                                  className="bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow min-w-0 overflow-hidden"
                                 >
-                                  <div className="flex items-center gap-3">
-                                    <Avatar className="h-8 w-8 border-2 border-slate-200 shadow-sm">
+                                  <div className={cn("flex gap-3", isMobile ? "flex-col sm:flex-row p-3" : "items-center px-3 py-2.5")}>
+                                    <Avatar className={cn("border-2 border-slate-200 shadow-sm shrink-0", isMobile ? "h-10 w-10" : "h-8 w-8")}>
                                       <AvatarImage src={tm.avatarUrl} />
                                       <AvatarFallback className="text-xs bg-gradient-to-br from-indigo-100 to-slate-100 text-indigo-700 font-semibold">
                                         {tm.employeeName.substring(0, 2).toUpperCase()}
@@ -683,7 +689,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                                     </Avatar>
                                     <div className="flex-1 min-w-0">
                                       <div className="font-semibold text-slate-800 truncate text-sm mb-1">{tm.employeeName}</div>
-                                      <div className="flex items-center gap-2 flex-wrap">
+                                      <div className="flex items-center gap-2 flex-wrap gap-y-1">
                                         {tm.deadlineHours > 0 ? (
                                           <>
                                             <span className="text-xs text-slate-500">

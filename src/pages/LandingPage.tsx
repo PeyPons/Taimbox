@@ -79,7 +79,7 @@ export default function LandingPage() {
 
         {/* Hero Section */}
         <div className="relative z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 md:pt-28 pb-16 sm:pb-20 md:pb-28">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 md:pt-20 pb-10 sm:pb-12 md:pb-16">
             <div className="text-center relative">
               {/* Badge animado mejorado */}
               <div className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-indigo-500/40 via-purple-500/40 to-pink-500/40 backdrop-blur-md rounded-full text-white text-sm sm:text-base font-bold mb-8 sm:mb-12 border border-white/20 shadow-2xl shadow-indigo-500/30 animate-fade-in relative overflow-hidden group">
@@ -103,7 +103,7 @@ export default function LandingPage() {
               </div>
 
               {/* Descripción más impactante */}
-              <div className="mb-10 sm:mb-14 max-w-4xl mx-auto px-4">
+              <div className="mb-6 sm:mb-8 max-w-4xl mx-auto px-4">
                 <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-indigo-100/90 leading-relaxed font-light mb-2">
                   No más hojas de cálculo. No más adivinanzas.
                 </p>
@@ -113,7 +113,7 @@ export default function LandingPage() {
               </div>
 
               {/* CTA mejorado */}
-              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center px-4 mb-12 sm:mb-16">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center px-4 mb-8 sm:mb-10">
                 <Link to="/login" className="group relative">
                   <div className="absolute -inset-1 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300" />
                   <Button size="lg" className="relative w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-semibold shadow-2xl hover:shadow-indigo-500/50 transition-all transform hover:scale-105">
@@ -124,7 +124,7 @@ export default function LandingPage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-semibold border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50 bg-white/5 backdrop-blur-md shadow-xl"
+                  className="w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-semibold border-2 border-white/30 text-white hover:text-white hover:bg-white/10 hover:border-white/50 bg-white/5 backdrop-blur-md shadow-xl"
                   onClick={() => {
                     const demoSection = document.getElementById('demo');
                     demoSection?.scrollIntoView({ behavior: 'smooth' });
@@ -132,10 +132,19 @@ export default function LandingPage() {
                 >
                   Explorar demo
                 </Button>
+                <Link to="/guia">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-semibold border-2 border-white/30 text-white hover:text-white hover:bg-white/10 hover:border-white/50 bg-white/5 backdrop-blur-md shadow-xl"
+                  >
+                    Guía completa de funcionalidades
+                  </Button>
+                </Link>
               </div>
 
               {/* Preview visual - Calendario completo */}
-              <div className="relative mt-8 sm:mt-12 md:mt-16 max-w-5xl mx-auto px-2 sm:px-0">
+              <div className="relative mt-6 sm:mt-8 md:mt-10 max-w-5xl mx-auto px-2 sm:px-0">
                 <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/50 to-transparent -z-10" />
                 <div className="relative transform hover:scale-[1.01] transition-all duration-500">
                   <CalendarPreview />
@@ -143,7 +152,7 @@ export default function LandingPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="bg-white/10 backdrop-blur-md border-white/30 text-white hover:bg-white/20 hover:border-white/50 text-xs sm:text-sm"
+                      className="bg-white/10 backdrop-blur-md border-white/30 text-white hover:text-white hover:bg-white/20 hover:border-white/50 text-xs sm:text-sm"
                       onClick={() => {
                         const demoSection = document.getElementById('demo');
                         demoSection?.scrollIntoView({ behavior: 'smooth' });
@@ -160,8 +169,8 @@ export default function LandingPage() {
         </div>
 
         {/* Interactive Feature Carousel - Futuristic Design */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-          <div className="text-center mb-10 sm:mb-14">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+          <div className="text-center mb-6 sm:mb-8">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-3 px-4">
               <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
                 Funcionalidades que transforman
@@ -170,6 +179,9 @@ export default function LandingPage() {
             <p className="text-lg sm:text-xl text-white/70 max-w-2xl mx-auto">
               Explora cada herramienta. Haz clic para ver detalles y ejemplos.
             </p>
+            <Link to="/guia" className="inline-block mt-3 text-sm font-medium text-indigo-200 hover:text-white underline underline-offset-2 transition-colors">
+              Ver guía completa de todas las funcionalidades →
+            </Link>
           </div>
 
           {/* Feature Bubbles Row */}
@@ -189,7 +201,7 @@ export default function LandingPage() {
             return (
               <>
                 {/* Mobile: Horizontal scroll carousel */}
-                <div className="md:hidden mb-6">
+                <div className="md:hidden mb-4">
                   <div className="flex gap-2 overflow-x-auto pb-3 px-1 snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                     {features.map((feature, index) => {
                       const Icon = feature.icon;
@@ -236,7 +248,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Desktop: Grid layout */}
-                <div className="hidden md:flex flex-wrap justify-center gap-3 sm:gap-4 mb-8 sm:mb-12">
+                <div className="hidden md:flex flex-wrap justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
                   {features.map((feature, index) => {
                     const Icon = feature.icon;
                     return (
@@ -314,7 +326,7 @@ export default function LandingPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="bg-white/5 border-white/20 text-white hover:bg-white/10"
+                            className="bg-white/5 border-white/20 text-white hover:text-white hover:bg-white/10"
                             onClick={() => setActiveFeature(prev => prev === 0 ? 6 : prev - 1)}
                           >
                             <ChevronLeft className="h-4 w-4 mr-1" />
@@ -324,7 +336,7 @@ export default function LandingPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="bg-white/5 border-white/20 text-white hover:bg-white/10"
+                            className="bg-white/5 border-white/20 text-white hover:text-white hover:bg-white/10"
                             onClick={() => setActiveFeature(prev => prev === 6 ? 0 : prev + 1)}
                           >
                             Siguiente
@@ -371,7 +383,7 @@ export default function LandingPage() {
                             <Button
                               variant="outline"
                               size="lg"
-                              className="bg-white/5 border-white/20 text-white hover:bg-white/10"
+                              className="bg-white/5 border-white/20 text-white hover:text-white hover:bg-white/10"
                               onClick={() => setActiveFeature(prev => prev === 0 ? 6 : prev - 1)}
                             >
                               <ChevronLeft className="h-5 w-5" />
@@ -379,7 +391,7 @@ export default function LandingPage() {
                             <Button
                               variant="outline"
                               size="lg"
-                              className="bg-white/5 border-white/20 text-white hover:bg-white/10"
+                              className="bg-white/5 border-white/20 text-white hover:text-white hover:bg-white/10"
                               onClick={() => setActiveFeature(prev => prev === 6 ? 0 : prev + 1)}
                             >
                               <ChevronRight className="h-5 w-5" />
@@ -703,7 +715,7 @@ export default function LandingPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="bg-emerald-500/10 border-2 border-emerald-400/40 text-white hover:bg-emerald-500/20 hover:border-emerald-400/60 px-8 py-6 text-lg font-semibold backdrop-blur-md"
+                className="bg-emerald-500/10 border-2 border-emerald-400/40 text-white hover:text-white hover:bg-emerald-500/20 hover:border-emerald-400/60 px-8 py-6 text-lg font-semibold backdrop-blur-md"
                 onClick={() => {
                   const demoSection = document.getElementById('demo');
                   demoSection?.scrollIntoView({ behavior: 'smooth' });
@@ -1178,7 +1190,7 @@ export default function LandingPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-semibold border-2 border-white/40 text-white hover:bg-white/20 hover:border-white/60 bg-white/10 backdrop-blur-md shadow-xl"
+                className="w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-semibold border-2 border-white/40 text-white hover:text-white hover:bg-white/20 hover:border-white/60 bg-white/10 backdrop-blur-md shadow-xl"
                 onClick={() => {
                   const demoSection = document.getElementById('demo');
                   demoSection?.scrollIntoView({ behavior: 'smooth' });

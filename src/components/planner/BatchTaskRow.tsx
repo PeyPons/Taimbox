@@ -133,17 +133,17 @@ export function BatchTaskRow({
             isIncomplete ? "border-slate-200" : "border-slate-200",
             isIncomplete && (otherTasks.length > 0) && "border-l-4 border-l-amber-300 left-border-fix"
         )}>
-            {/* Fila 1: Proyecto + Nombre de tarea */}
-            <div className="flex gap-3 items-center">
-                {/* Selector de Proyecto (ancho fijo más compacto) */}
-                <div className="w-[280px] shrink-0">
+            {/* Fila 1: Proyecto + Nombre de tarea (apilado en móvil) */}
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                {/* Selector de Proyecto */}
+                <div className="w-full sm:w-[280px] sm:shrink-0 min-w-0">
                     <Popover open={openCombobox} onOpenChange={setOpenCombobox} modal={true}>
                         <PopoverTrigger asChild>
                             <Button
                                 variant="outline"
                                 role="combobox"
                                 className={cn(
-                                    "w-full justify-between h-9 px-3 text-left font-normal text-sm",
+                                    "w-full justify-between h-11 sm:h-9 min-h-[44px] sm:min-h-0 px-3 text-left font-normal text-sm",
                                     !task.projectId && "text-muted-foreground",
                                     willExceed && "border-amber-300 bg-amber-50 text-amber-900"
                                 )}>
@@ -156,7 +156,7 @@ export function BatchTaskRow({
                                 </div>
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[450px] p-0" align="start">
+                        <PopoverContent className="w-[calc(100vw-2rem)] max-w-[450px] p-0" align="start">
                             <Command
                                 filter={(value, search) => {
                                     if (value.toLowerCase().includes(search.toLowerCase())) return 1;
@@ -305,27 +305,27 @@ export function BatchTaskRow({
                     </Popover>
                 </div>
 
-                {/* Nombre de la tarea (más espacio ahora) */}
+                {/* Nombre de la tarea */}
                 <Input
-                    className="flex-1 h-9 text-sm min-w-0"
+                    className="flex-1 min-w-0 h-11 sm:h-9 min-h-[44px] sm:min-h-0 text-sm"
                     placeholder="Nombre de la tarea"
                     value={task.taskName}
                     onChange={(e) => updateTaskRow(task.id, 'taskName', e.target.value)}
                 />
             </div>
 
-            {/* Fila 2: Detalles adicionales */}
-            <div className="flex gap-3 items-center">
+            {/* Fila 2: Detalles adicionales (apilado en móvil para evitar scroll horizontal) */}
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
                 {/* Selector de empleado (solo si tiene permiso) */}
                 {canAssignToOthers && (
-                    <div className="w-[160px] shrink-0">
+                    <div className="w-full sm:w-[160px] sm:shrink-0 min-w-0">
                         <Popover open={openEmployeeCombobox} onOpenChange={setOpenEmployeeCombobox} modal={true}>
                             <PopoverTrigger asChild>
                                 <Button
                                     variant="outline"
                                     role="combobox"
                                     className={cn(
-                                        "w-full justify-between h-9 px-3 text-left font-normal text-xs",
+                                        "w-full justify-between h-11 sm:h-9 min-h-[44px] sm:min-h-0 px-3 text-left font-normal text-xs",
                                         !task.employeeId && "text-muted-foreground"
                                     )}>
                                     <span className="truncate text-xs flex items-center gap-1.5">
@@ -339,7 +339,7 @@ export function BatchTaskRow({
                                     <Plus className="h-3 w-3 opacity-50" />
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-[300px] p-0" align="start">
+                            <PopoverContent className="w-[calc(100vw-2rem)] max-w-[300px] p-0" align="start">
                                 <Command>
                                     <CommandInput placeholder="Buscar empleado..." />
                                     <CommandList>
@@ -371,9 +371,9 @@ export function BatchTaskRow({
                     </div>
                 )}
 
-                <div className="w-[140px]">
+                <div className="w-full sm:w-[140px] min-w-0">
                     <Select value={task.dependencyId || 'none'} onValueChange={(v) => updateTaskRow(task.id, 'dependencyId', v)} disabled={!task.projectId}>
-                        <SelectTrigger className="h-9 text-xs px-2"><SelectValue placeholder="Sin dep." /></SelectTrigger>
+                        <SelectTrigger className="w-full h-11 sm:h-9 min-h-[44px] sm:min-h-0 text-xs px-2"><SelectValue placeholder="Sin dep." /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="none">-- Sin dependencia --</SelectItem>
                             {getAvailableDependencies(task.projectId).map(dep => {
@@ -384,28 +384,29 @@ export function BatchTaskRow({
                     </Select>
                 </div>
 
-                <Input
-                    type="number"
-                    className={cn("w-20 h-9 text-center text-sm font-medium", willExceed && "border-amber-300 bg-amber-50 text-amber-700")}
-                    placeholder="h"
-                    value={task.hours}
-                    onChange={(e) => updateTaskRow(task.id, 'hours', e.target.value)}
-                    step="0.5"
-                />
-
-                <div className="w-32">
-                    <Select value={task.weekDate} onValueChange={(v) => updateTaskRow(task.id, 'weekDate', v)}>
-                        <SelectTrigger className={cn("h-9 text-xs pl-2 pr-1", isWeekOverloaded && "border-red-300 text-red-700 bg-red-50")}>
-                            <SelectValue placeholder="Semana" />
-                        </SelectTrigger>
-                        <SelectContent>{weeks.map((w, i) => (<SelectItem key={w.weekStart.toISOString()} value={format(w.weekStart, 'yyyy-MM-dd')}>Sem {i + 1}</SelectItem>))}</SelectContent>
-                    </Select>
+                <div className="grid grid-cols-2 sm:flex sm:flex-nowrap gap-2 sm:gap-3 items-center">
+                    <Input
+                        type="number"
+                        className={cn("w-full min-w-0 h-11 sm:h-9 min-h-[44px] sm:min-h-0 text-center text-sm font-medium font-mono", willExceed && "border-amber-300 bg-amber-50 text-amber-700", "sm:w-20")}
+                        placeholder="h"
+                        value={task.hours}
+                        onChange={(e) => updateTaskRow(task.id, 'hours', e.target.value)}
+                        step="0.5"
+                    />
+                    <div className="min-w-0 sm:w-32">
+                        <Select value={task.weekDate} onValueChange={(v) => updateTaskRow(task.id, 'weekDate', v)}>
+                            <SelectTrigger className={cn("w-full h-11 sm:h-9 min-h-[44px] sm:min-h-0 text-xs pl-2 pr-1", isWeekOverloaded && "border-red-300 text-red-700 bg-red-50")}>
+                                <SelectValue placeholder="Semana" />
+                            </SelectTrigger>
+                            <SelectContent>{weeks.map((w, i) => (<SelectItem key={w.weekStart.toISOString()} value={format(w.weekStart, 'yyyy-MM-dd')}>Sem {i + 1}</SelectItem>))}</SelectContent>
+                        </Select>
+                    </div>
                 </div>
 
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="h-9 w-9 text-slate-400 hover:text-red-600 shrink-0 hover:bg-red-50"
+                    className="h-11 w-11 sm:h-9 sm:w-9 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 text-slate-400 hover:text-red-600 shrink-0 hover:bg-red-50"
                     onClick={() => removeTaskRow(task.id)}
                     disabled={!canRemove}
                 >

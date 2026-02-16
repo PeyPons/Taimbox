@@ -2,6 +2,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +16,7 @@ import { NewTaskRow } from '@/types';
 import { BatchTaskRow } from '../BatchTaskRow';
 import { ProjectImpactSummary } from '../ProjectImpactSummary';
 import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AllocationFormDialogProps {
     isOpen: boolean;
@@ -108,27 +110,26 @@ export function AllocationFormDialog({
     formatProjectName
 }: AllocationFormDialogProps) {
     const [editProjectOpen, setEditProjectOpen] = React.useState(false);
+    const isMobile = useIsMobile();
 
     // Derive month name for title
     const monthName = viewDate.toLocaleString('es-ES', { month: 'long' });
 
-    return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className={cn("overflow-hidden gap-0 p-0 transition-all duration-300",
-                editingAllocation ? "max-w-[650px] overflow-visible" : "max-w-[1100px] h-[80vh] flex flex-col"
-            )}>
-                <DialogHeader className={cn("p-6 pb-4 border-b shrink-0", !editingAllocation && "bg-white z-10")}>
-                    <DialogTitle className="flex items-center gap-2">
-                        {editingAllocation ? 'Editar tarea' : <><LayoutGrid className="h-5 w-5 text-primary" /> Planificar tareas</>}
-                    </DialogTitle>
-                    <DialogDescription>
-                        {editingAllocation ? 'Modifica detalles y dependencias.' : `Planifica múltiples tareas para ${monthName}.`}
-                    </DialogDescription>
-                </DialogHeader>
+    const headerBlock = (
+        <div className={cn("border-b shrink-0", "p-4 sm:p-6 pb-4", !editingAllocation && "bg-white z-10")}>
+            <h2 className="flex items-center gap-2 text-lg font-semibold leading-none tracking-tight">
+                {editingAllocation ? 'Editar tarea' : <><LayoutGrid className="h-5 w-5 text-primary" /> Planificar tareas</>}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+                {editingAllocation ? 'Modifica detalles y dependencias.' : `Planifica múltiples tareas para ${monthName}.`}
+            </p>
+        </div>
+    );
 
-                <div className={cn("flex-1", !editingAllocation && "flex overflow-hidden")}>
+    const bodyContent = (
+        <div className={cn("flex-1 min-w-0 overflow-hidden", !editingAllocation && "flex flex-col sm:flex-row")}>
                     {editingAllocation ? (
-                        <div className="p-6 pt-2">
+                        <div className="p-4 sm:p-6 pt-2">
                             <div className="grid gap-4 mt-4">
                                 <div className="space-y-2">
                                     <Label>Proyecto</Label>
@@ -137,7 +138,7 @@ export function AllocationFormDialog({
                                             <Button
                                                 variant="outline"
                                                 role="combobox"
-                                                className="w-full justify-between h-10 px-3 text-left font-normal"
+                                                className={cn("w-full justify-between px-3 text-left font-normal", isMobile ? "h-11 min-h-[44px]" : "h-10")}
                                             >
                                                 <span className="truncate">
                                                     {editProjectId
@@ -147,7 +148,7 @@ export function AllocationFormDialog({
                                                 <Search className="h-4 w-4 opacity-50 shrink-0 ml-2" />
                                             </Button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-[400px] p-0" align="start">
+                                        <PopoverContent className={cn("p-0", isMobile ? "w-[calc(100vw-2rem)] max-w-[400px]" : "w-[400px]")} align="start">
                                             <Command
                                                 filter={(value, search) => {
                                                     if (value.toLowerCase().includes(search.toLowerCase())) return 1;
@@ -184,12 +185,12 @@ export function AllocationFormDialog({
                                         </PopoverContent>
                                     </Popover>
                                 </div>
-                                <div className="space-y-2"><Label>Tarea</Label><Input value={editTaskName} onChange={e => setEditTaskName(e.target.value)} /></div>
+                                <div className="space-y-2"><Label>Tarea</Label><Input value={editTaskName} onChange={e => setEditTaskName(e.target.value)} className={cn(isMobile && "h-11 min-h-[44px]")} /></div>
 
                                 <div className="space-y-2">
                                     <Label className="flex items-center gap-2 text-xs text-slate-500"><LinkIcon className="w-3 h-3" /> Depende de otra tarea</Label>
                                     <Select value={editDependencyId} onValueChange={setEditDependencyId} disabled={!editProjectId}>
-                                        <SelectTrigger className="h-9"><SelectValue placeholder="Sin dependencia" /></SelectTrigger>
+                                        <SelectTrigger className={cn(isMobile ? "h-11 min-h-[44px]" : "h-9")}><SelectValue placeholder="Sin dependencia" /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="none">-- Ninguna --</SelectItem>
                                             {getAvailableDependencies(editProjectId, editingAllocation.id).map(dep => {
@@ -201,15 +202,15 @@ export function AllocationFormDialog({
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2"><Label>Horas</Label><Input type="number" value={editHours} onChange={e => setEditHours(e.target.value)} step="0.5" /></div>
-                                    <div className="space-y-2"><Label>Semana</Label><Select value={editWeek} onValueChange={setEditWeek}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{weeks.map((w, i) => <SelectItem key={w.weekStart.toISOString()} value={format(w.weekStart, 'yyyy-MM-dd')}>Sem {i + 1}</SelectItem>)}</SelectContent></Select></div>
+                                    <div className="space-y-2"><Label>Horas</Label><Input type="number" value={editHours} onChange={e => setEditHours(e.target.value)} step="0.5" className={cn(isMobile && "h-11 min-h-[44px]")} /></div>
+                                    <div className="space-y-2"><Label>Semana</Label><Select value={editWeek} onValueChange={setEditWeek}><SelectTrigger className={cn(isMobile && "h-11 min-h-[44px]")}><SelectValue /></SelectTrigger><SelectContent>{weeks.map((w, i) => <SelectItem key={w.weekStart.toISOString()} value={format(w.weekStart, 'yyyy-MM-dd')}>Sem {i + 1}</SelectItem>)}</SelectContent></Select></div>
                                 </div>
                             </div>
                         </div>
                     ) : (
                         <>
                             {/* Left Column: Task Inputs */}
-                            <div className="flex-1 flex flex-col p-6 overflow-hidden border-r bg-white w-2/3">
+                            <div className="flex-1 flex flex-col min-w-0 overflow-hidden border-r border-slate-200 bg-white w-full sm:w-2/3 p-4 sm:p-6">
                                 <div className="flex justify-between items-center mb-4">
                                     <h3 className="font-semibold text-sm text-slate-700">Listado de tareas</h3>
                                 </div>
@@ -251,14 +252,14 @@ export function AllocationFormDialog({
                                             const el = document.getElementById('task-list-end');
                                             el?.scrollIntoView({ behavior: 'smooth' });
                                         }, 100);
-                                    }} className="w-full border-dashed h-9 text-slate-500 hover:text-primary hover:border-primary/50">
+                                    }} className={cn("w-full border-dashed text-slate-500 hover:text-primary hover:border-primary/50", isMobile ? "h-11 min-h-[44px]" : "h-9")}>
                                         <Plus className="h-4 w-4 mr-2" /> Añadir otra fila
                                     </Button>
                                 </div>
                             </div>
 
                             {/* Right Column: Impact Summary */}
-                            <div className="w-1/3 bg-slate-50 border-l p-6 overflow-y-auto custom-scrollbar">
+                            <div className="w-full sm:w-1/3 bg-slate-50 border-t sm:border-t-0 sm:border-l border-slate-200 p-4 sm:p-6 overflow-y-auto custom-scrollbar min-h-0">
                                 <ProjectImpactSummary
                                     variant="vertical"
                                     newTasks={newTasks}
@@ -276,32 +277,58 @@ export function AllocationFormDialog({
                         </>
                     )}
                 </div>
+    );
 
-                <DialogFooter className={cn("p-6 py-4 border-t bg-slate-50/50 shrink-0 flex items-center gap-2 w-full", editingAllocation && "bg-transparent border-t-0 p-6 pt-0")}>
-                    {!editingAllocation && (
-                        <div className="flex items-center gap-2 text-xs text-slate-500 mr-auto">
-                            {newTasks.some(t => !t.projectId || !t.taskName || !t.hours || !t.weekDate) && (
-                                <span className="text-amber-600 flex items-center gap-1">
-                                    <AlertTriangle className="h-3.5 w-3.5" /> Completa los campos obligatorios
-                                </span>
-                            )}
-                        </div>
+    const footerBlock = (
+        <div className={cn("p-4 sm:p-6 py-4 border-t bg-slate-50/50 shrink-0 flex flex-wrap items-center gap-2 w-full", editingAllocation && "bg-transparent border-t-0 pt-0")}>
+            {!editingAllocation && (
+                <div className="flex items-center gap-2 text-xs text-slate-500 mr-auto w-full sm:w-auto">
+                    {newTasks.some(t => !t.projectId || !t.taskName || !t.hours || !t.weekDate) && (
+                        <span className="text-amber-600 flex items-center gap-1">
+                            <AlertTriangle className="h-3.5 w-3.5" /> Completa los campos obligatorios
+                        </span>
                     )}
-                    <div className="flex gap-2 ml-auto">
-                        {editingAllocation && <Button variant="ghost" size="sm" onClick={onDelete} className="text-red-500 mr-auto" disabled={isSaving}><Trash2 className="w-4 h-4 mr-2" /> Eliminar</Button>}
-                        <Button variant="ghost" onClick={onClose} disabled={isSaving}>Cancelar</Button>
-                        <Button onClick={onSave} disabled={isSaving}>
-                            {isSaving ? (
-                                <>
-                                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                                    Guardando...
-                                </>
-                            ) : (
-                                'Guardar'
-                            )}
-                        </Button>
-                    </div>
-                </DialogFooter>
+                </div>
+            )}
+            <div className="flex gap-2 ml-auto flex-1 sm:flex-initial justify-end">
+                {editingAllocation && <Button variant="ghost" size="sm" onClick={onDelete} className={cn("text-red-500 mr-auto", isMobile && "h-11 min-h-[44px]")} disabled={isSaving}><Trash2 className="w-4 h-4 mr-2" /> Eliminar</Button>}
+                <Button variant="ghost" onClick={onClose} disabled={isSaving} className={cn(isMobile && "h-11 min-h-[44px]")}>Cancelar</Button>
+                <Button onClick={onSave} disabled={isSaving} className={cn(isMobile && "h-11 min-h-[44px]")}>
+                    {isSaving ? (
+                        <>
+                            <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                            Guardando...
+                        </>
+                    ) : (
+                        'Guardar'
+                    )}
+                </Button>
+            </div>
+        </div>
+    );
+
+    const modalContent = (
+        <>
+            {headerBlock}
+            {bodyContent}
+            {footerBlock}
+        </>
+    );
+
+    if (isMobile) {
+        return (
+            <Sheet open={isOpen} onOpenChange={onOpenChange}>
+                <SheetContent side="bottom" className="h-[90vh] rounded-t-2xl p-0 gap-0 flex flex-col overflow-hidden">
+                    {modalContent}
+                </SheetContent>
+            </Sheet>
+        );
+    }
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className={cn("overflow-hidden gap-0 p-0 transition-all duration-300 max-w-[95vw] sm:max-w-[650px]", editingAllocation && "overflow-visible", !editingAllocation && "sm:max-w-[1100px] h-[85vh] sm:h-[80vh] flex flex-col")}>
+                {modalContent}
             </DialogContent>
         </Dialog>
     );

@@ -223,6 +223,7 @@ const { formatName: formatProjectName } = useProjectAliasing();
 - **`WeekCell.tsx`**:
     - Prop opcional `touchTarget`: en móvil aplica `min-h-[44px] min-w-[44px]` y refuerzo visual de overload (AlertTriangle + AlertCircle). Horas en `text-base font-mono`.
 - **`AllocationSheet.tsx`** (detalles móvil: padding `px-3`, botones ≥44px, sidebar oculto, cards semana `w-[85vw]`):
+    - **Vista semanal/mensual en móvil**: Lista de tareas como cards (no tabla); texto base `text-sm`, horas en `text-base font-mono`; área táctil y `touch-manipulation`. Carrusel mensual con `pr-4` en móvil; toggles Semana/Mes con etiqueta y altura ≥44px.
     - **Modo Batch**: Permite editar múltiples semanas a la vez.
     - **Validación Visual**: Muestra barras de progreso de presupuesto en tiempo real.
     - **Refactorizado**: Dividido en subcomponentes (`AllocationProjectHeader`, `AllocationTaskRow`, `AllocationFormDialog`) y hook lógico (`useAllocationActions`) para mejorar mantenibilidad.
@@ -293,6 +294,7 @@ Todas las páginas principales de la aplicación.
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
 | `LandingPage.tsx` | 78KB | Página pública de marketing |
+| `GuiaPage.tsx` | ~18KB | Guía de funcionalidades pública (`/guia`, `/guia/:section`). Contiene 6 componentes de contenido reutilizables (FeatureCard, ExampleBox, TipBox, WarningBox, StepList, InfoGrid), navegación prev/next entre secciones y contenido detallado para las 9 secciones del producto. |
 | `Login.tsx` | 16KB | Autenticación con Supabase |
 | `MarketingPage.tsx` | 4KB | Wrapper del módulo Marketing |
 | `Index.tsx` | <1KB | Redirección inicial |

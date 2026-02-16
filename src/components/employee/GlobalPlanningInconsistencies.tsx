@@ -307,17 +307,17 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
 
   return (
     <TooltipProvider>
-      <Card className="border-l-4 border-l-amber-500">
+      <Card className="border-l-4 border-l-amber-500 overflow-hidden min-w-0">
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-600" />
-              <span>Coherencia de planificación global</span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <CardTitle className="text-base flex items-center gap-2 min-w-0">
+              <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+              <span className="truncate">Coherencia de planificación global</span>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger className="shrink-0">
                   <Info className="h-4 w-4 text-slate-400" />
                 </TooltipTrigger>
-                <TooltipContent className="max-w-[300px]">
+                <TooltipContent className="max-w-[min(300px,calc(100vw-2rem))]">
                   <p className="text-xs">
                     Vista global de diferencias entre lo planificado en deadlines y lo realmente ejecutado.
                     Agrupado por proyecto para evitar duplicidades.
@@ -325,10 +325,10 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                 </TooltipContent>
               </Tooltip>
             </CardTitle>
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-slate-400" />
+            <div className="flex items-center gap-2 w-full sm:w-auto min-w-0">
+              <Filter className="h-4 w-4 text-slate-400 shrink-0" />
               <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                <SelectTrigger className="w-[180px] h-8 text-xs">
+                <SelectTrigger className="w-full sm:w-[180px] h-9 sm:h-8 min-h-[44px] sm:min-h-0 text-xs">
                   <SelectValue placeholder="Filtrar empleado" />
                 </SelectTrigger>
                 <SelectContent>
@@ -357,7 +357,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                 <div
                   key={`proj-${inc.projectId}`}
                   className={cn(
-                    "border rounded-lg p-3 transition-colors",
+                    "border rounded-lg p-3 transition-colors min-w-0 overflow-hidden",
                     isPositive ? "bg-amber-50 border-amber-200" : "bg-blue-50 border-blue-200"
                   )}
                 >
@@ -392,7 +392,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 mt-1.5 text-xs">
+                      <div className="flex items-center gap-3 mt-1.5 text-xs flex-wrap gap-y-1">
                         {inc.totalDeadlineHours === 0 ? (
                           <>
                             <div className="text-slate-500 italic">Sin deadline</div>
