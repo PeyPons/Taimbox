@@ -1,5 +1,6 @@
 import { useMemo, memo, useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -10,8 +11,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
-import { supabase } from '@/lib/supabase';
 import { Deadline } from '@/types';
+import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { format, isSameMonth, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
@@ -29,8 +30,10 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
   viewDate,
   isManager = false
 }: PlanningInconsistenciesCardProps) {
-  const { allocations, projects, employees } = useApp();
-  const appContext = useApp() as { deadlines?: Deadline[] };
+  const app = useApp();
+  const { allocations, projects, employees } = app;
+  const deadlinesFromContext = (app as { deadlines?: Deadline[] }).deadlines;
+  const { currentAgency } = useAgency();
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
@@ -41,45 +44,28 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
   // Cargar deadlines del mes (o usar del contexto si está en modo demo)
   useEffect(() => {
     // Si hay deadlines en el contexto (modo demo), usarlos directamente
-    if (appContext.deadlines && Array.isArray(appContext.deadlines)) {
-      const monthDeadlines = appContext.deadlines.filter((d: Deadline) => d.month === monthKey);
+    if (deadlinesFromContext && Array.isArray(deadlinesFromContext)) {
+      const monthDeadlines = deadlinesFromContext.filter((d: Deadline) => d.month === monthKey);
       setDeadlines(monthDeadlines);
       setIsLoading(false);
       return;
     }
 
-    // Si no, cargar desde Supabase (modo normal)
+    // Cargar desde Supabase filtrados por agencia (multi-tenant)
     const loadDeadlines = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('deadlines')
-          .select('*')
-          .eq('month', monthKey)
-          .order('created_at', { ascending: false });
-
+        const { data, error } = await fetchDeadlinesForMonth(monthKey, currentAgency?.id);
         if (error) throw error;
-
-        if (data) {
-          setDeadlines(data.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean; budget_override?: number }) => ({
-            id: d.id,
-            projectId: d.project_id,
-            month: d.month,
-            notes: d.notes,
-            employeeHours: d.employee_hours || {},
-            isHidden: d.is_hidden || false,
-            budgetOverride: d.budget_override
-          })));
-        }
+        setDeadlines(data ?? []);
       } catch (error) {
         console.error('Error cargando deadlines:', error);
       } finally {
         setIsLoading(false);
       }
     };
-
     loadDeadlines();
-  }, [monthKey, appContext.deadlines]);
+  }, [monthKey, deadlinesFromContext, currentAgency?.id]);
 
   // Calcular incoherencias
   const inconsistencies = useMemo(() => {

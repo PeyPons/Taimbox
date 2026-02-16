@@ -1,7 +1,12 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
 import { Deadline } from '@/types';
 import { format, startOfMonth } from 'date-fns';
+import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
+
+interface UseDeadlinesOptions {
+    /** ID de la agencia; si se pasa, solo se cargan deadlines de proyectos de esa agencia (evita mezclar datos entre agencias). */
+    agencyId?: string;
+}
 
 interface UseDeadlinesReturn {
     deadlines: Deadline[];
@@ -14,8 +19,10 @@ interface UseDeadlinesReturn {
 /**
  * Hook centralizado para cargar y gestionar deadlines.
  * Reemplaza la lógica duplicada en EmployeeDashboard y AllocationSheet.
+ * Con multi-tenant (varias agencias en el mismo Supabase), pasar agencyId para filtrar por agencia.
  */
-export function useDeadlines(): UseDeadlinesReturn {
+export function useDeadlines(options: UseDeadlinesOptions = {}): UseDeadlinesReturn {
+    const { agencyId } = options;
     const [deadlines, setDeadlines] = useState<Deadline[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -26,34 +33,9 @@ export function useDeadlines(): UseDeadlinesReturn {
         setError(null);
 
         try {
-            const { data, error: supabaseError } = await supabase
-                .from('deadlines')
-                .select('*')
-                .eq('month', monthKey)
-                .order('created_at', { ascending: false });
-
-            if (supabaseError) throw supabaseError;
-
-            if (data) {
-                const mappedDeadlines: Deadline[] = data.map((d: {
-                    id: string;
-                    project_id: string;
-                    month: string;
-                    notes?: string;
-                    employee_hours?: Record<string, number>;
-                    is_hidden?: boolean
-                }) => ({
-                    id: d.id,
-                    projectId: d.project_id,
-                    month: d.month,
-                    notes: d.notes,
-                    employeeHours: d.employee_hours || {},
-                    isHidden: d.is_hidden || false
-                }));
-                setDeadlines(mappedDeadlines);
-            } else {
-                setDeadlines([]);
-            }
+            const { data, error: fetchErr } = await fetchDeadlinesForMonth(monthKey, agencyId);
+            if (fetchErr) throw fetchErr;
+            setDeadlines(data ?? []);
         } catch (err) {
             console.error('Error cargando deadlines:', err);
             setError('Error al cargar deadlines');
@@ -61,7 +43,7 @@ export function useDeadlines(): UseDeadlinesReturn {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [agencyId]);
 
     return {
         deadlines,

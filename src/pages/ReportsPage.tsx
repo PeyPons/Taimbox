@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
 import { useProjectMetrics } from '@/hooks/useProjectMetrics';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -41,6 +42,7 @@ import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
 import { format, subMonths, addMonths, startOfMonth, endOfMonth, parseISO, isSameMonth, differenceInWeeks, startOfWeek, addWeeks, getWeek, getDate, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { supabase } from '@/lib/supabase';
+import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { Deadline, GlobalAssignment, WorkSchedule } from '@/types';
 import { GlobalPlanningInconsistencies } from '@/components/employee/GlobalPlanningInconsistencies';
 
@@ -88,6 +90,7 @@ const getReliabilityLabel = (data: ReliabilityData): string => {
 
 export default function ReportsPage() {
   const { employees, clients, projects, allocations, absences, teamEvents, loadDataForMonth, isLoading: isGlobalLoading } = useApp();
+  const { currentAgency } = useAgency();
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('all');
@@ -1030,21 +1033,10 @@ export default function ReportsPage() {
       const nextMonth = addMonths(thisMonth, 1);
       const nextMonthStr = format(nextMonth, 'yyyy-MM');
 
-      // Cargar deadlines del mes actual
-      const { data: currentDeadlinesData, error: currentDeadlinesError } = await supabase
-        .from('deadlines')
-        .select('*')
-        .eq('month', thisMonthStr);
-
+      // Cargar deadlines del mes actual (filtrados por agencia)
+      const { data: currentDeadlinesData, error: currentDeadlinesError } = await fetchDeadlinesForMonth(thisMonthStr, currentAgency?.id);
       if (!currentDeadlinesError && currentDeadlinesData) {
-        setCurrentMonthDeadlines(currentDeadlinesData.map((d: any) => ({
-          id: d.id,
-          projectId: d.project_id,
-          month: d.month,
-          notes: d.notes,
-          employeeHours: d.employee_hours || {},
-          isHidden: d.is_hidden || false
-        })));
+        setCurrentMonthDeadlines(currentDeadlinesData);
       }
 
       // Cargar global assignments del mes actual
@@ -1065,21 +1057,10 @@ export default function ReportsPage() {
         })));
       }
 
-      // Cargar deadlines del mes siguiente
-      const { data: deadlinesData, error: deadlinesError } = await supabase
-        .from('deadlines')
-        .select('*')
-        .eq('month', nextMonthStr);
-
+      // Cargar deadlines del mes siguiente (filtrados por agencia)
+      const { data: deadlinesData, error: deadlinesError } = await fetchDeadlinesForMonth(nextMonthStr, currentAgency?.id);
       if (!deadlinesError && deadlinesData) {
-        setNextMonthDeadlines(deadlinesData.map((d: any) => ({
-          id: d.id,
-          projectId: d.project_id,
-          month: d.month,
-          notes: d.notes,
-          employeeHours: d.employee_hours || {},
-          isHidden: d.is_hidden || false
-        })));
+        setNextMonthDeadlines(deadlinesData);
       }
 
       // Cargar global assignments del mes siguiente
@@ -1108,21 +1089,10 @@ export default function ReportsPage() {
         const pastMonth = subMonths(thisMonth, i);
         const pastMonthStr = format(pastMonth, 'yyyy-MM');
 
-        // Cargar deadlines del mes histórico
-        const { data: histDeadlinesData } = await supabase
-          .from('deadlines')
-          .select('*')
-          .eq('month', pastMonthStr);
-
-        if (histDeadlinesData) {
-          historicalDeadlinesMap[pastMonthStr] = histDeadlinesData.map((d: any) => ({
-            id: d.id,
-            projectId: d.project_id,
-            month: d.month,
-            notes: d.notes,
-            employeeHours: d.employee_hours || {},
-            isHidden: d.is_hidden || false
-          }));
+        // Cargar deadlines del mes histórico (filtrados por agencia)
+        const { data: histDeadlinesData } = await fetchDeadlinesForMonth(pastMonthStr, currentAgency?.id);
+        if (histDeadlinesData && histDeadlinesData.length > 0) {
+          historicalDeadlinesMap[pastMonthStr] = histDeadlinesData;
         }
 
         // Cargar global assignments del mes histórico
@@ -1149,7 +1119,7 @@ export default function ReportsPage() {
     };
 
     loadData();
-  }, [currentMonth]); // Recargar cuando cambie el mes actual
+  }, [currentMonth, currentAgency?.id]); // Recargar cuando cambie el mes o la agencia
 
   // Cargar datos del mes cuando cambia el mes visible (igual que EmployeeDashboard y PlannerGrid)
   useEffect(() => {

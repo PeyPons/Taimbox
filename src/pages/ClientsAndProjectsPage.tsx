@@ -37,6 +37,7 @@ import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { useIntegration } from '@/hooks/useIntegration';
 import { Deadline } from '@/types';
 import { getEffectiveBudget } from '@/utils/budgetUtils';
+import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { supabase } from '@/lib/supabase';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
@@ -169,31 +170,15 @@ export default function ClientsAndProjectsPage() {
 
   type ProjectFormValues = z.infer<typeof projectFormSchema>;
 
-  // Cargar deadlines del mes
+  // Cargar deadlines del mes (filtrados por agencia)
   useEffect(() => {
-    const fetchDeadlines = async () => {
-      if (!currentAgency?.id) return;
-
+    if (!currentAgency?.id) return;
+    const load = async () => {
       const selectedMonthStr = format(currentMonth, 'yyyy-MM');
-      const { data, error } = await supabase
-        .from('deadlines')
-        .select('*')
-        .eq('month', selectedMonthStr);
-
-      if (!error && data) {
-        setMonthDeadlines(data.map((d: any) => ({
-          id: d.id,
-          projectId: d.project_id,
-          month: d.month,
-          notes: d.notes,
-          employeeHours: d.employee_hours || {},
-          isHidden: d.is_hidden || false,
-          budgetOverride: d.budget_override ?? undefined
-        })));
-      }
+      const { data, error } = await fetchDeadlinesForMonth(selectedMonthStr, currentAgency?.id);
+      if (!error && data) setMonthDeadlines(data);
     };
-
-    fetchDeadlines();
+    load();
   }, [currentMonth, currentAgency?.id]);
 
   const projectForm = useForm<ProjectFormValues>({

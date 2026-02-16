@@ -34,6 +34,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Deadline, GlobalAssignment } from '@/types';
 import { getEffectiveBudget } from '@/utils/budgetUtils';
+import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { cn, matchesAliasingRule } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { format, addMonths, subMonths, getDaysInMonth, startOfMonth, endOfMonth, parseISO } from 'date-fns';
@@ -120,36 +121,21 @@ export default function DeadlinesPage() {
     },
   });
 
-  // Cargar deadlines desde Supabase
+  // Cargar deadlines desde Supabase (filtrados por agencia para multi-tenant)
   const loadDeadlines = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('deadlines')
-        .select('*, projects!inner(agency_id)') // Join para filtrar por agencia
-        .eq('month', selectedMonth)
-        .eq('projects.agency_id', currentAgency?.id) // Filtro de agencia
-        .order('created_at', { ascending: false });
-
+      const { data, error } = await fetchDeadlinesForMonth(selectedMonth, currentAgency?.id);
       if (error) throw error;
 
-      if (data) {
-        setDeadlines(data.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean; budget_override?: number }) => ({
-          id: d.id,
-          projectId: d.project_id,
-          month: d.month,
-          notes: d.notes,
-          employeeHours: d.employee_hours || {},
-          isHidden: d.is_hidden || false,
-          budgetOverride: d.budget_override ?? undefined
-        })));
-
-        // Cargar proyectos ocultos
+      if (data && data.length > 0) {
+        setDeadlines(data);
         const hidden = new Set<string>();
-        data.forEach((d: { project_id: string; is_hidden?: boolean }) => {
-          if (d.is_hidden) hidden.add(d.project_id);
-        });
+        data.forEach(d => { if (d.isHidden) hidden.add(d.projectId); });
         setHiddenProjects(hidden);
+      } else {
+        setDeadlines([]);
+        setHiddenProjects(new Set());
       }
     } catch (error) {
       console.error('Error cargando deadlines:', error);
@@ -214,9 +200,8 @@ export default function DeadlinesPage() {
   useEffect(() => {
     if (!selectedMonth || !currentAgency) return;
 
-    // Usar un canal COMPARTIDO para todos los usuarios en este mes (sin Date.now())
-    // Esto es crucial para que funcionen los eventos de broadcast (Presence) entre usuarios
-    const channelName = `deadlines-room-${selectedMonth}`;
+    // Canal por agencia y mes (defensa en profundidad: cada agencia tiene su propio canal)
+    const channelName = `deadlines-room-${currentAgency?.id}-${selectedMonth}`;
 
     const channel = supabase.channel(channelName)
       // 1. Listeners para Deadlines
@@ -947,12 +932,22 @@ export default function DeadlinesPage() {
   };
 
   const executeDeleteMonth = async () => {
+    if (!currentAgency?.id) return;
     setIsLoading(true);
     try {
+      // Solo borrar deadlines de proyectos de esta agencia (evitar borrar otras agencias en mismo Supabase)
+      const agencyProjectIds = projects.map(p => p.id);
+      if (agencyProjectIds.length === 0) {
+        setDeadlines([]);
+        setHiddenProjects(new Set());
+        setIsLoading(false);
+        return;
+      }
       const { error } = await supabase
         .from('deadlines')
         .delete()
-        .eq('month', selectedMonth);
+        .eq('month', selectedMonth)
+        .in('project_id', agencyProjectIds);
 
       if (error) throw error;
 
@@ -1423,13 +1418,9 @@ export default function DeadlinesPage() {
   const executeCopyFromPreviousMonth = async () => {
     setIsLoading(true);
     try {
-      // 1. Obtener deadlines del mes anterior
       const previousMonth = format(subMonths(parseISO(`${selectedMonth}-01`), 1), 'yyyy-MM');
-      const { data: previousDeadlines, error: fetchError } = await supabase
-        .from('deadlines')
-        .select('*')
-        .eq('month', previousMonth);
-
+      // 1. Obtener solo deadlines de esta agencia (mes anterior)
+      const { data: previousDeadlines, error: fetchError } = await fetchDeadlinesForMonth(previousMonth, currentAgency?.id);
       if (fetchError) throw fetchError;
 
       if (!previousDeadlines || previousDeadlines.length === 0) {
@@ -1438,13 +1429,13 @@ export default function DeadlinesPage() {
       }
 
       // 2. Insertarlos en el mes actual
-      const newDeadlines = previousDeadlines.map((d: any) => ({
-        project_id: d.project_id,
+      const newDeadlines = previousDeadlines.map(d => ({
+        project_id: d.projectId,
         month: selectedMonth,
-        notes: d.notes,
-        employee_hours: d.employee_hours,
-        is_hidden: d.is_hidden,
-        budget_override: d.budget_override ?? null
+        notes: d.notes ?? null,
+        employee_hours: d.employeeHours,
+        is_hidden: d.isHidden ?? false,
+        budget_override: d.budgetOverride ?? null
       }));
 
       const { data: insertedData, error: insertError } = await supabase
@@ -1456,24 +1447,20 @@ export default function DeadlinesPage() {
 
       // 3. Actualizar estado local
       if (insertedData) {
-        setDeadlines(prev => [
-          ...prev,
-          ...insertedData.map((d: any) => ({
-            id: d.id,
-            projectId: d.project_id,
-            month: d.month,
-            notes: d.notes,
-            employeeHours: d.employee_hours || {},
-            isHidden: d.is_hidden || false,
-            budgetOverride: d.budget_override ?? undefined
-          }))
-        ]);
-
-        // Actualizar hidden projects
-        insertedData.forEach((d: any) => {
-          if (d.is_hidden) {
-            setHiddenProjects(prev => new Set([...prev, d.project_id]));
-          }
+        const mapped = insertedData.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean; budget_override?: number }) => ({
+          id: d.id,
+          projectId: d.project_id,
+          month: d.month,
+          notes: d.notes,
+          employeeHours: d.employee_hours || {},
+          isHidden: d.is_hidden || false,
+          budgetOverride: d.budget_override ?? undefined
+        }));
+        setDeadlines(prev => [...prev, ...mapped]);
+        setHiddenProjects(prev => {
+          const next = new Set(prev);
+          mapped.forEach(d => { if (d.isHidden) next.add(d.projectId); });
+          return next;
         });
       }
 
@@ -1490,11 +1477,7 @@ export default function DeadlinesPage() {
     setIsLoading(true);
     try {
       const previousMonth = format(subMonths(parseISO(`${selectedMonth}-01`), 1), 'yyyy-MM');
-      const { data: previousDeadlines, error: fetchError } = await supabase
-        .from('deadlines')
-        .select('id') // Only need count
-        .eq('month', previousMonth);
-
+      const { data: previousDeadlines, error: fetchError } = await fetchDeadlinesForMonth(previousMonth, currentAgency?.id);
       if (fetchError) throw fetchError;
 
       if (!previousDeadlines || previousDeadlines.length === 0) {
@@ -1506,7 +1489,6 @@ export default function DeadlinesPage() {
         type: 'copy_month',
         data: { count: previousDeadlines.length }
       });
-
     } catch (error) {
       console.error('Error checking previous deadlines:', error);
       toast.error('Error al verificar deadlines anteriores');

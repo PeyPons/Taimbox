@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ import { ActivityLogSection } from '@/components/shared/ActivityLogSection';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { Deadline } from '@/types';
 import { getEffectiveBudget } from '@/utils/budgetUtils';
+import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -38,6 +40,7 @@ export default function WeeklyForecastPage() {
     projects, allocations, employees, clients, weeklyFeedback,
     addAllocation, updateAllocation, currentUser, absences, teamEvents, getEmployeeLoadForWeek
   } = useApp();
+  const { currentAgency } = useAgency();
 
   const [currentMonth, setCurrentMonth] = useState(() => {
     const saved = localStorage.getItem('forecast_date');
@@ -114,30 +117,15 @@ export default function WeeklyForecastPage() {
   const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
   const handleToday = () => setCurrentMonth(new Date());
 
-  // Cargar deadlines del mes
+  // Cargar deadlines del mes (filtrados por agencia)
   useEffect(() => {
-    const fetchDeadlines = async () => {
+    const load = async () => {
       const selectedMonthStr = format(currentMonth, 'yyyy-MM');
-      const { data, error } = await supabase
-        .from('deadlines')
-        .select('*')
-        .eq('month', selectedMonthStr);
-
-      if (!error && data) {
-        setMonthDeadlines(data.map((d: any) => ({
-          id: d.id,
-          projectId: d.project_id,
-          month: d.month,
-          notes: d.notes,
-          employeeHours: d.employee_hours || {},
-          isHidden: d.is_hidden || false,
-          budgetOverride: d.budget_override ?? undefined
-        })));
-      }
+      const { data, error } = await fetchDeadlinesForMonth(selectedMonthStr, currentAgency?.id);
+      if (!error && data) setMonthDeadlines(data);
     };
-
-    fetchDeadlines();
-  }, [currentMonth]);
+    load();
+  }, [currentMonth, currentAgency?.id]);
 
   // Sección A: Semáforo de proyectos (Month-End Forecast) con filtros
   const projectForecast = useMemo(() => {

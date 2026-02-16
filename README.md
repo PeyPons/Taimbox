@@ -31,7 +31,7 @@ El archivo más importante para contratos de datos.
 | Interface | Campos Clave | Descripción |
 |-----------|--------------|-------------|
 | **`Allocation`** | `id`, `employeeId`, `projectId`, `hoursAssigned`, `hoursActual`, `status` | **CORE**: Tarea asignada. Unidad atómica del calendario. |
-| **`Deadline`** | `projectId`, `month`, `employeeHours`, `budgetOverride` | Configuración mensual por proyecto (distribución y ajuste de budget). |
+| **`Deadline`** | `projectId`, `month`, `employeeHours`, `budgetOverride` | Configuración mensual por proyecto (distribución y ajuste de budget). En multi-tenant se cargan filtrando por agencia vía join con `projects`. |
 | **`Employee`** | `id`, `defaultWeeklyCapacity`, `workSchedule`, `role` | Define capacidad y horario base. |
 | **`Project`** | `id`, `budgetHours`, `monthlyFee`, `status` (`active/archived/completed`) | Contenedor de asignaciones. |
 | **`AgencySettings`** | `roles`, `modules`, `integrations`, `projectAliasingRules` | Configuración multi-tenant. |
@@ -191,7 +191,7 @@ Lógica reutilizable de UI.
 - **`use-mobile.tsx`**: Detecta viewport (mobile vs desktop) para Layouts adaptativos.
 - **`useAppOrDemo`**: Selecciona contexto real o demo automáticamente.
 - **`useDashboardView`**: Controla la vista del dashboard del empleado.
-- **`useDeadlines`**: Lógica de carga y gestión de deadlines.
+- **`useDeadlines`**: Lógica de carga y gestión de deadlines. Acepta `{ agencyId }` para multi-tenant; usa `fetchDeadlinesForMonth()` de `utils/deadlineUtils.ts` para filtrar por agencia cuando varias comparten el mismo Supabase.
 - **`useIntegration`**: Detecta integraciones habilitadas por agencia.
 - **`useProjectFilters`**: Filtros personalizados de proyectos por agencia.
 - **`useWeeklyCloseDay`**: Calcula el día de cierre semanal configurable.
@@ -404,6 +404,7 @@ Antes de deployar cambios críticos:
 - [ ] **Permisos**: Si añadiste una funcionalidad, ¿requiere un nuevo flag en `UserPermissions`?
 - [ ] **Split Weeks**: Si tocaste fechas, ¿probaste el cambio de año (Dic-Ene)?
 - [ ] **Mobile**: ¿Verificaste que el cambio se ve bien en `use-mobile`?
+- [ ] **Deadlines multi-tenant**: Si tocaste carga de deadlines, ¿usan `fetchDeadlinesForMonth(monthKey, currentAgency?.id)` o `useDeadlines({ agencyId })` para no mezclar datos entre agencias?
 
 ---
 

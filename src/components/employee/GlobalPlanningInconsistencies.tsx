@@ -1,5 +1,6 @@
 import { useMemo, memo, useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -11,8 +12,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
-import { supabase } from '@/lib/supabase';
 import { Deadline } from '@/types';
+import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { format, isSameMonth, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
@@ -48,6 +49,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
   viewDate
 }: GlobalPlanningInconsistenciesProps) {
   const { allocations, projects, employees } = useApp();
+  const { currentAgency } = useAgency();
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
@@ -56,39 +58,21 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
 
   const monthKey = format(viewDate, 'yyyy-MM');
 
-  // Cargar deadlines del mes
   useEffect(() => {
     const loadDeadlines = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('deadlines')
-          .select('*')
-          .eq('month', monthKey)
-          .order('created_at', { ascending: false });
-
+        const { data, error } = await fetchDeadlinesForMonth(monthKey, currentAgency?.id);
         if (error) throw error;
-
-        if (data) {
-          setDeadlines(data.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean; budget_override?: number }) => ({
-            id: d.id,
-            projectId: d.project_id,
-            month: d.month,
-            notes: d.notes,
-            employeeHours: d.employee_hours || {},
-            isHidden: d.is_hidden || false,
-            budgetOverride: d.budget_override
-          })));
-        }
+        setDeadlines(data ?? []);
       } catch (error) {
         console.error('Error cargando deadlines:', error);
       } finally {
         setIsLoading(false);
       }
     };
-
     loadDeadlines();
-  }, [monthKey]);
+  }, [monthKey, currentAgency?.id]);
 
   // Calcular incoherencias globales agrupadas por proyecto
   const inconsistencies = useMemo(() => {

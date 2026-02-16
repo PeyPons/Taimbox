@@ -93,8 +93,10 @@ Define la foto mensual de un proyecto.
 - `projectId`: Proyecto asociado.
 - `month`: Mes en formato `YYYY-MM`.
 - `employeeHours`: Distribución de horas por empleado.
-- `budgetOverride`: **NUEVO**. Sobrescribe `project.budgetHours` solo para este mes (Regularización).
+- `budgetOverride`: Sobrescribe `project.budgetHours` solo para este mes (Regularización).
 - `isHidden`: Si el proyecto se oculta en la planificación de este mes.
+
+**Multi-tenant**: La tabla `deadlines` no tiene `agency_id`; la agencia se deduce por `project_id` (proyectos son por agencia). Cuando varias agencias comparten el mismo Supabase, **todas** las lecturas de deadlines deben filtrar por agencia usando join con `projects` y `projects.agency_id`. La utilidad centralizada es `fetchDeadlinesForMonth(monthKey, agencyId)` en `src/utils/deadlineUtils.ts`. El hook `useDeadlines({ agencyId })` y todos los componentes que cargan deadlines usan esta función para no mezclar datos entre agencias. "Resetear mes" y "Copiar del mes anterior" en DeadlinesPage también están acotados a la agencia actual.
 
 ### 2.4. Asignación (`Allocation`)
 La unidad fundamental de planificación semanal.
@@ -166,6 +168,9 @@ const channel = supabase.channel(`deadlines-room-${selectedMonth}`)
   .subscribe();
 ```
 
+#### Filtro por agencia en Realtime (Deadlines)
+En `DeadlinesPage`, los eventos de la tabla `deadlines` se filtran por agencia: solo se aplican INSERT/UPDATE si el `project_id` del payload pertenece a un proyecto de la agencia actual (`projects.find(p => p.id === newDeadline.project_id)`). Así se evita que una agencia reciba en su estado deadlines de otra cuando comparten el mismo canal Realtime.
+
 #### Sistema de Bloqueos (Locking)
 Previene conflictos de edición simultánea en el mismo proyecto.
 1. **Adquisición**: Al editar, se inserta una fila en `project_editing_locks` con fecha de expiración.
@@ -207,9 +212,9 @@ El sistema sincroniza datos de Google Ads y Meta Ads mediante procesos externos.
 
 - **Añadir una nueva tabla**: 
     1. Crear en Supabase.
-    2. Habilitar RLS con `agency_id`.
+    2. Habilitar RLS con `agency_id` (o filtrar por relación, ej. vía `project_id` → `projects.agency_id` como en `deadlines`).
     3. Actualizar `src/types/index.ts`.
-    4. Añadir lógica de carga en `AppContext.tsx`.
+    4. Añadir lógica de carga en `AppContext.tsx` (o utilidad específica como `deadlineUtils.ts` si la carga es por entidad y por agencia).
 - **Modificar permisos**:
     - Editar `src/hooks/usePermissions.ts` y añadir la nueva clave de permiso al objeto `RESTRICTED_PERMISSIONS`.
 - **Actualizar Workers**:
@@ -255,7 +260,8 @@ Si modificas una interface, revisa estos consumidores:
 |-----------------|-------------------|
 | `dateUtils.ts` → `getWeeksForMonth()` | `AppContext.tsx`, `usePlannerData.ts`, `useAllocationSheet.ts`, `AllocationSheet.tsx`, `MarketingMatrix.tsx` |
 | `dateUtils.ts` → `isAllocationInEffectiveMonth()` | `AppContext.tsx`, `usePlannerData.ts`, `useProjectMetrics.ts` |
-| `budgetUtils.ts` → `getEffectiveBudget()` | **NUEVO**. `DeadlinesPage`, `WeeklyForecastPage`, `ClientsAndProjectsPage`, `useAllocationSheet` |
+| `budgetUtils.ts` → `getEffectiveBudget()` | `DeadlinesPage`, `WeeklyForecastPage`, `ClientsAndProjectsPage`, `useAllocationSheet` |
+| `deadlineUtils.ts` → `fetchDeadlinesForMonth(monthKey, agencyId)` | `useDeadlines`, `DeadlinesPage`, `AllocationSheet`, `EmployeeDashboard`, `ReportsPage`, `WeeklyForecastPage`, `ClientsAndProjectsPage`, `PlanningInconsistenciesCard`, `MyWeekView`, `GlobalPlanningInconsistencies` |
 | `capacityUtils.ts` → `getDailyReduction()` | `getCapacityReductionInRange()`, `getCapacityReductionBreakdown()`, `AppContext.tsx` |
 | `capacityUtils.ts` → `getScheduledHoursForDay()` | Todas las funciones de capacidad, `WeekCell.tsx` |
 | `taskPermissions.ts` → `canEditTask()` | `AllocationSheet.tsx`, cualquier UI de edición de tareas |
@@ -271,6 +277,7 @@ Si modificas una interface, revisa estos consumidores:
 | `useProjectMetrics.ts` | `ReportsPage.tsx`, `ProjectImpactSummary.tsx` |
 | `useTaskTransfers.ts` | `AllocationSheet.tsx`, `TaskTransferComponents.tsx` |
 | `useAllocationActions.ts` | `AllocationSheet.tsx`, `AllocationFormDialog.tsx` |
+| `useDeadlines.ts` | Acepta `{ agencyId }`; usado donde se cargan deadlines. Componentes que cargan deadlines usan `fetchDeadlinesForMonth(monthKey, currentAgency?.id)` directamente o vía hook. |
 
 ### 8.5 Dependencias de Componentes Complejos (Marketing & Team)
 
@@ -310,6 +317,8 @@ Todos los componentes re-renderizan
 | `src/hooks/useTasksImpact.ts` | Pre-cálculo de impacto de nuevas tareas | `useAllocationSheet`, `ProjectBudgetStatus` |
 | `src/hooks/use-mobile.tsx` | Detección de dispositivo móvil | UI responsiva en `AllocationSheet`, `Sidebar` |
 | `src/hooks/useProjectAliasing.ts` | Formateo de nombres de proyectos según reglas de agencia | `AgencyContext`, `formatProjectName`, usado en 15+ componentes |
+| `src/utils/deadlineUtils.ts` | Carga de deadlines por mes filtrando por agencia (multi-tenant) | `fetchDeadlinesForMonth(monthKey, agencyId)`; join con `projects.agency_id`. Usado por `useDeadlines`, DeadlinesPage, AllocationSheet, EmployeeDashboard, ReportsPage, WeeklyForecastPage, ClientsAndProjectsPage, PlanningInconsistenciesCard, MyWeekView, GlobalPlanningInconsistencies |
+| `src/hooks/useDeadlines.ts` | Carga y estado de deadlines; opción `agencyId` para filtrar por agencia | `deadlineUtils.fetchDeadlinesForMonth` |
 
 ---
 
@@ -363,7 +372,11 @@ Antes de modificar cualquier archivo crítico, usa este checklist:
 ### Al modificar lógica de Realtime:
 - [ ] ¿Usé un canal unificado `room-{id}` en lugar de múltiples canales?
 - [ ] ¿Limpié el canal al desmontar (`removeChannel`)?
-- [ ] ¿Filtré eventos por `agency_id` o contexto para evitar fugas de datos?
+- [ ] ¿Filtré eventos por `agency_id` o contexto (ej. `project_id` en lista de proyectos de la agencia) para evitar fugas de datos?
+
+### Al cargar o modificar deadlines:
+- [ ] ¿Uso `fetchDeadlinesForMonth(monthKey, currentAgency?.id)` o `useDeadlines({ agencyId: currentAgency?.id })` para no mezclar datos entre agencias en el mismo Supabase?
+- [ ] ¿Las operaciones de borrado masivo (ej. "Resetear mes") filtran por proyectos de la agencia?
 
 ### Al crear componente que muestra nombres de proyectos:
 - [ ] Importar `useProjectAliasing` de `@/hooks/useProjectAliasing`

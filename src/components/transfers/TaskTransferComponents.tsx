@@ -201,6 +201,7 @@ export function PendingTransfersPanel() {
 // ================================================================
 export function OutgoingTransfersList() {
     const { outgoingTransfers, cancelTransfer, isLoading } = useTaskTransfers();
+    const { currentUser } = useApp();
     const [cancelling, setCancelling] = useState<string | null>(null);
 
     if (isLoading || outgoingTransfers.length === 0) return null;
@@ -236,7 +237,7 @@ export function OutgoingTransfersList() {
                 <ScrollArea className="max-h-[200px]">
                     <div className="space-y-2">
                         {outgoingTransfers
-                            .filter(t => t.fromEmployeeId === useApp().currentUser?.id) // Filter only my transfers
+                            .filter(t => t.fromEmployeeId === currentUser?.id) // Filter only my transfers
                             .map((transfer) => (
                                 <div
                                     key={transfer.id}

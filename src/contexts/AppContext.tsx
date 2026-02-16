@@ -140,7 +140,7 @@ interface AppContextType {
   updateProject: (project: Project) => void;
   deleteProject: (id: string) => void;
   addAllocation: (allocation: Omit<Allocation, 'id'>) => Promise<Allocation | null>;
-  updateAllocation: (allocation: Allocation) => void;
+  updateAllocation: (patch: Partial<Allocation> & Pick<Allocation, 'id'>) => void;
   deleteAllocation: (id: string) => void;
   addAbsence: (absence: Omit<Absence, 'id'>) => void;
   deleteAbsence: (id: string) => void;
@@ -665,22 +665,51 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [isAuthInitialized, isAgencyLoading, currentAgency?.id, fetchData]);
 
   // ============================================================
-  // REALTIME: Subscribe to allocation changes for live updates
+  // REALTIME: Subscribe to allocations, projects, absences, team_events for live updates
   // ============================================================
   useEffect(() => {
     if (!currentAgency?.id) return;
 
+    const mapProject = (row: SupabaseProject): Project => ({
+      id: row.id,
+      agencyId: row.agency_id,
+      clientId: row.client_id,
+      name: row.name,
+      status: (row.status || 'active') as 'active' | 'archived' | 'completed',
+      budgetHours: round2(row.budget_hours),
+      minimumHours: round2(row.minimum_hours || 0),
+      monthlyFee: row.monthly_fee,
+      externalId: row.external_id ? Number(row.external_id) : undefined,
+      projectType: row.project_type,
+      isHidden: row.is_hidden || false,
+      okrs: row.okrs,
+      deliverables_log: row.deliverables_log
+    });
+
+    const mapAbsence = (row: SupabaseAbsence): Absence => ({
+      id: row.id,
+      employeeId: row.employee_id,
+      startDate: row.start_date,
+      endDate: row.end_date,
+      type: row.type as Absence['type'],
+      hours: row.hours,
+      description: row.description
+    });
+
+    const mapTeamEvent = (row: SupabaseTeamEvent): TeamEvent => ({
+      id: row.id,
+      name: row.name,
+      date: row.date,
+      hoursReduction: row.hours_reduction,
+      affectedEmployeeIds: row.affected_employee_ids
+    });
+
     const channel = supabase
-      .channel(`allocations-realtime-${currentAgency.id}`)
+      .channel(`app-realtime-${currentAgency.id}`)
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'allocations'
-        },
+        { event: '*', schema: 'public', table: 'allocations' },
         (payload) => {
-          // Helper to map Supabase row to Allocation type
           const mapAllocation = (row: SupabaseAllocation): Allocation => ({
             id: row.id,
             employeeId: row.employee_id,
@@ -700,31 +729,73 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             transferSourceEmployeeId: row.transfer_source_employee_id,
             userPriority: row.user_priority ?? null
           });
-
           if (payload.eventType === 'INSERT') {
             const newAllocation = mapAllocation(payload.new as SupabaseAllocation);
-            setAllocations(prev => {
-              // Only add if not already present (avoid duplicates from local updates)
-              if (prev.some(a => a.id === newAllocation.id)) return prev;
-              return [...prev, newAllocation];
-            });
+            setAllocations(prev => (prev.some(a => a.id === newAllocation.id) ? prev : [...prev, newAllocation]));
           } else if (payload.eventType === 'UPDATE') {
-            const updatedAllocation = mapAllocation(payload.new as SupabaseAllocation);
-            setAllocations(prev =>
-              prev.map(a => a.id === updatedAllocation.id ? updatedAllocation : a)
-            );
+            const updated = mapAllocation(payload.new as SupabaseAllocation);
+            setAllocations(prev => prev.map(a => (a.id === updated.id ? updated : a)));
           } else if (payload.eventType === 'DELETE') {
-            const deletedId = (payload.old as { id: string }).id;
-            setAllocations(prev => prev.filter(a => a.id !== deletedId));
+            const id = (payload.old as { id: string }).id;
+            setAllocations(prev => prev.filter(a => a.id !== id));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'projects', filter: `agency_id=eq.${currentAgency.id}` },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setProjects(prev => (prev.some(p => p.id === (payload.new as SupabaseProject).id) ? prev : [...prev, mapProject(payload.new as SupabaseProject)]));
+          } else if (payload.eventType === 'UPDATE') {
+            const updated = mapProject(payload.new as SupabaseProject);
+            setProjects(prev => prev.map(p => (p.id === updated.id ? updated : p)));
+          } else if (payload.eventType === 'DELETE') {
+            const id = (payload.old as { id: string }).id;
+            setProjects(prev => prev.filter(p => p.id !== id));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'absences' },
+        (payload) => {
+          const employeeIds = new Set(employeesRef.current.map(e => e.id));
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const row = payload.new as SupabaseAbsence;
+            if (!employeeIds.has(row.employee_id)) return;
+            const mapped = mapAbsence(row);
+            setAbsences(prev => {
+              const existing = prev.find(a => a.id === mapped.id);
+              if (payload.eventType === 'INSERT' && existing) return prev;
+              if (payload.eventType === 'INSERT') return [...prev, mapped];
+              return prev.map(a => (a.id === mapped.id ? mapped : a));
+            });
+          } else if (payload.eventType === 'DELETE') {
+            const id = (payload.old as { id: string }).id;
+            setAbsences(prev => prev.filter(a => a.id !== id));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'team_events' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const mapped = mapTeamEvent(payload.new as SupabaseTeamEvent);
+            setTeamEvents(prev => (prev.some(e => e.id === mapped.id) ? prev : [...prev, mapped]));
+          } else if (payload.eventType === 'UPDATE') {
+            const updated = mapTeamEvent(payload.new as SupabaseTeamEvent);
+            setTeamEvents(prev => prev.map(e => (e.id === updated.id ? updated : e)));
+          } else if (payload.eventType === 'DELETE') {
+            const id = (payload.old as { id: string }).id;
+            setTeamEvents(prev => prev.filter(e => e.id !== id));
           }
         }
       )
       .subscribe();
 
-    // Cleanup subscription on unmount or agency change
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [currentAgency?.id]);
 
   // Reaccionar a cambios de usuario (login/logout) - SOLO cuando employees esté cargado
@@ -1016,54 +1087,61 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return null;
   }, [currentAgency?.id]);
 
-  const updateAllocation = useCallback(async (allocation: Allocation) => {
-    // Get previous value for audit log and for revert on error
-    const previousAllocation = allocations.find(a => a.id === allocation.id);
+  const updateAllocation = useCallback(async (patch: Partial<Allocation> & Pick<Allocation, 'id'>) => {
+    const previousAllocation = allocations.find(a => a.id === patch.id);
+    if (!previousAllocation) return;
 
-    // 1. Optimistic update
-    setAllocations(prev => prev.map(a => a.id === allocation.id ? allocation : a));
+    const mergedAllocation: Allocation = { ...previousAllocation, ...patch };
+
+    const snakeMap: Record<string, string> = {
+      projectId: 'project_id',
+      weekStartDate: 'week_start_date',
+      hoursAssigned: 'hours_assigned',
+      hoursActual: 'hours_actual',
+      hoursComputed: 'hours_computed',
+      status: 'status',
+      description: 'description',
+      taskName: 'task_name',
+      dependencyId: 'dependency_id',
+      transferredFromAllocationId: 'transferred_from_allocation_id',
+      distributionSourceAllocationId: 'distribution_source_allocation_id',
+      parentAllocationId: 'parent_allocation_id',
+      originalTransferredTaskName: 'original_transferred_task_name',
+      transferSourceEmployeeId: 'transfer_source_employee_id',
+      userPriority: 'user_priority'
+    };
+
+    const updatePayload: Record<string, unknown> = {};
+    (Object.keys(patch) as (keyof Allocation)[]).forEach(key => {
+      if (key === 'id') return;
+      const snake = snakeMap[key];
+      if (snake && key in patch) {
+        const v = patch[key];
+        if (v !== undefined) updatePayload[snake] = v;
+      }
+    });
+
+    setAllocations(prev => prev.map(a => a.id === patch.id ? mergedAllocation : a));
 
     try {
-      const { error } = await supabase.from('allocations').update({
-        project_id: allocation.projectId, // IMPORTANTE: incluir project_id para permitir cambio de proyecto
-        week_start_date: allocation.weekStartDate,
-        hours_assigned: allocation.hoursAssigned,
-        hours_actual: allocation.hoursActual,
-        hours_computed: allocation.hoursComputed,
-        status: allocation.status,
-        description: allocation.description,
-        task_name: allocation.taskName,
-        dependency_id: allocation.dependencyId,
-        transferred_from_allocation_id: allocation.transferredFromAllocationId,
-        distribution_source_allocation_id: allocation.distributionSourceAllocationId,
-        parent_allocation_id: allocation.parentAllocationId,
-        original_transferred_task_name: allocation.originalTransferredTaskName,
-        transfer_source_employee_id: allocation.transferSourceEmployeeId,
-        user_priority: allocation.userPriority
-      }).eq('id', allocation.id);
-
-      if (error) {
-        throw error;
+      if (Object.keys(updatePayload).length > 0) {
+        const { error } = await supabase.from('allocations').update(updatePayload).eq('id', patch.id);
+        if (error) throw error;
       }
 
-      // Log audit for allocation update
-      if (currentAgency?.id && previousAllocation) {
+      if (currentAgency?.id) {
         logUpdate(
           currentAgency.id,
           'ALLOCATION',
-          allocation.id,
+          patch.id,
           previousAllocation as unknown as Record<string, unknown>,
-          allocation as unknown as Record<string, unknown>
+          mergedAllocation as unknown as Record<string, unknown>
         );
       }
     } catch (error) {
       console.error('Error updating allocation:', error);
       toast.error('Error al guardar la tarea. Se han revertido los cambios.');
-
-      // Revert optimistic update
-      if (previousAllocation) {
-        setAllocations(prev => prev.map(a => a.id === allocation.id ? previousAllocation : a));
-      }
+      setAllocations(prev => prev.map(a => a.id === patch.id ? previousAllocation : a));
     }
   }, [allocations, currentAgency?.id]);
 

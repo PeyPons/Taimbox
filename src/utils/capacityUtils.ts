@@ -43,7 +43,8 @@ export function isDateCoveredByAbsence(date: Date, absences: Absence[]): boolean
             const endDate = endOfDay(parseISO(absence.endDate));
             const checkDate = startOfDay(date);
             return checkDate >= startDate && checkDate <= endDate;
-        } catch {
+        } catch (err) {
+            console.warn('[capacityUtils.isDateCoveredByAbsence] Invalid absence dates:', { absenceId: absence.id, date: format(date, 'yyyy-MM-dd'), startDate: absence.startDate, endDate: absence.endDate }, err);
             return false;
         }
     });
@@ -85,8 +86,8 @@ export function getAbsenceHoursForDay(
                 // Track maximum (if multiple absences overlap, take the highest)
                 maxAbsenceHours = Math.max(maxAbsenceHours, hoursForDay);
             }
-        } catch {
-            // Skip invalid absences
+        } catch (err) {
+            console.warn('[capacityUtils.getAbsenceHoursForDay] Invalid absence skipped:', { absenceId: absence.id, date: format(date, 'yyyy-MM-dd'), startDate: absence.startDate, endDate: absence.endDate }, err);
         }
     });
 
@@ -188,7 +189,8 @@ export function getCapacityReductionInRange(
             const absStart = startOfDay(parseISO(absence.startDate));
             const absEnd = endOfDay(parseISO(absence.endDate));
             return absStart <= rangeEnd && absEnd >= rangeStart;
-        } catch {
+        } catch (err) {
+            console.warn('[capacityUtils.getCapacityReductionInRange] Invalid absence dates:', { absenceId: absence.id, employeeId, rangeStart: format(rangeStart, 'yyyy-MM-dd'), rangeEnd: format(rangeEnd, 'yyyy-MM-dd') }, err);
             return false;
         }
     });
@@ -269,8 +271,8 @@ export function getCapacityReductionBreakdown(
                     type: 'absence'
                 });
             }
-        } catch {
-            // Skip invalid absences
+        } catch (err) {
+            console.warn('[capacityUtils.getCapacityReductionBreakdown] Invalid absence skipped:', { absenceId: absence.id, employeeId, rangeStart: format(rangeStart, 'yyyy-MM-dd'), rangeEnd: format(rangeEnd, 'yyyy-MM-dd') }, err);
         }
     });
 

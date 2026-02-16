@@ -12,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
 import { Allocation, Project } from '@/types';
 import { CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, TrendingUp, TrendingDown, CheckCircle2, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc, GanttChart, ArrowLeft, ArrowRight, Filter, SlidersHorizontal, ArrowRightLeft, Lock, Check, Plus, Pencil, Link as LinkIcon, AlertTriangle, AlertOctagon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -34,6 +35,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { usePermissions } from '@/hooks/usePermissions';
 import { NewTaskRow, Deadline } from '@/types';
 import { supabase } from '@/lib/supabase';
+import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { TransferRequestDialog } from '@/components/transfers/TaskTransferComponents';
 import { useTaskTransfers } from '@/hooks/useTaskTransfers';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
@@ -60,6 +62,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     currentUser
   } = useApp();
 
+  const { currentAgency } = useAgency();
   const { outgoingTransfers } = useTaskTransfers();
 
   const { hasPermission } = usePermissions();
@@ -260,37 +263,18 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     viewMonth: viewDate
   });
 
-  // Cargar deadlines del mes
+  // Cargar deadlines del mes (filtrados por agencia)
   const loadDeadlinesForMonth = useCallback(async (month: Date) => {
     const monthKey = format(startOfMonth(month), 'yyyy-MM');
     try {
-      const { data, error } = await supabase
-        .from('deadlines')
-        .select('*')
-        .eq('month', monthKey)
-        .order('created_at', { ascending: false });
-
+      const { data, error } = await fetchDeadlinesForMonth(monthKey, currentAgency?.id);
       if (error) throw error;
-
-      if (data) {
-        const mappedDeadlines = data.map((d: any) => ({
-          id: d.id,
-          projectId: d.project_id,
-          month: d.month,
-          notes: d.notes,
-          employeeHours: d.employee_hours || {},
-          isHidden: d.is_hidden || false,
-          budgetOverride: d.budget_override ?? undefined
-        }));
-        setDeadlines(mappedDeadlines);
-      } else {
-        setDeadlines([]);
-      }
+      setDeadlines(data ?? []);
     } catch (error) {
       console.error('Error cargando deadlines:', error);
       setDeadlines([]);
     }
-  }, []);
+  }, [currentAgency?.id]);
 
   useEffect(() => {
     if (open) {

@@ -1,5 +1,6 @@
 import { useMemo, useState, memo, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -16,8 +17,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
-import { supabase } from '@/lib/supabase';
 import { Deadline } from '@/types';
+import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 
 interface MyWeekViewProps {
   employeeId: string;
@@ -28,6 +29,7 @@ const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyWeekViewProps) {
   const { allocations, projects, clients, employees, getEmployeeMonthlyLoad } = useApp();
+  const { currentAgency } = useAgency();
   const { formatName: formatProjectName } = useProjectAliasing();
 
   const [filterProject, setFilterProject] = useState<string>('all');
@@ -36,35 +38,18 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
 
   const monthKey = format(viewDate, 'yyyy-MM');
 
-  // Cargar deadlines del mes para tener los oberrides
-  // Actually, I should just replace useMemo with useEffect.
   useEffect(() => {
     const loadDeadlines = async () => {
       try {
-        const { data, error } = await supabase
-          .from('deadlines')
-          .select('*')
-          .eq('month', monthKey);
-
+        const { data, error } = await fetchDeadlinesForMonth(monthKey, currentAgency?.id);
         if (error) throw error;
-
-        if (data) {
-          setDeadlines(data.map((d: any) => ({
-            id: d.id,
-            projectId: d.project_id,
-            month: d.month,
-            notes: d.notes,
-            employeeHours: d.employee_hours || {},
-            isHidden: d.is_hidden || false,
-            budgetOverride: d.budget_override
-          })));
-        }
+        setDeadlines(data ?? []);
       } catch (error) {
         console.error('Error cargando deadlines en MyWeekView:', error);
       }
     };
     loadDeadlines();
-  }, [monthKey]);
+  }, [monthKey, currentAgency?.id]);
 
   const monthLabel = format(viewDate, 'MMMM yyyy', { locale: es });
 

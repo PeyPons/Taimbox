@@ -1,13 +1,10 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
-import { useApp } from '@/contexts/AppContext';
+import { useState, useEffect } from 'react';
 import { EmployeeRow } from './EmployeeRow';
 import { AllocationSheet } from './AllocationSheet';
 import { GanttView } from './GanttView';
-import { PendingTransfersPanel, OutgoingTransfersList } from '@/components/transfers/TaskTransferComponents';
-
-
-
-import { getWeeksForMonth, getMonthName, isCurrentWeek, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { PendingTransfersPanel } from '@/components/transfers/TaskTransferComponents';
+import { usePlannerData } from '@/hooks/usePlannerData';
+import { getMonthName, isCurrentWeek, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, CalendarDays, Sparkles, User, Loader2, ChevronsUpDown, RefreshCw, LayoutGrid, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -39,15 +36,6 @@ async function callAI(prompt: string): Promise<AIResponse> {
 }
 
 export function PlannerGrid() {
-  const { employees, getEmployeeMonthlyLoad, projects, allocations, absences, teamEvents, currentUser, loadDataForMonth, isLoading: isGlobalLoading } = useApp();
-
-  const [currentMonth, setCurrentMonth] = useState(() => {
-    const saved = localStorage.getItem('planner_date');
-    return saved ? new Date(saved) : new Date();
-  });
-  const [isLoadingMonth, setIsLoadingMonth] = useState(false);
-  const loadedMonthsRef = useRef<Set<string>>(new Set());
-
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
   const [showOnlyMe, setShowOnlyMe] = useState(() => localStorage.getItem('planner_only_me') === 'true');
@@ -55,86 +43,34 @@ export function PlannerGrid() {
   const [openProjectCombo, setOpenProjectCombo] = useState(false);
   const [selectedCell, setSelectedCell] = useState<{ employeeId: string; weekStart: Date; autoAdd?: boolean } | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-
-
   const [insights, setInsights] = useState<{ type: 'warning' | 'success' | 'info', text: string }[] | null>(null);
   const [lastProvider, setLastProvider] = useState<AIProvider | null>(null);
   const [activeView, setActiveView] = useState<'grid' | 'gantt'>('grid');
 
-  useEffect(() => { localStorage.setItem('planner_date', currentMonth.toISOString()); }, [currentMonth]);
+  const {
+    currentMonth,
+    setCurrentMonth,
+    weeks,
+    year,
+    month,
+    isLoadingMonth,
+    goToPrevMonth,
+    goToNextMonth,
+    goToToday,
+    filteredEmployees,
+    sortedProjects,
+    sortedEmployees,
+    monthAllocations,
+    employees,
+    projects,
+    allocations,
+    absences,
+    teamEvents,
+    currentUser,
+    getEmployeeMonthlyLoad
+  } = usePlannerData({ showOnlyMe, selectedEmployeeId, selectedProjectId });
+
   useEffect(() => { localStorage.setItem('planner_only_me', String(showOnlyMe)); }, [showOnlyMe]);
-
-  useEffect(() => {
-    if (!isGlobalLoading) {
-      const monthKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth()}`;
-      if (loadedMonthsRef.current.has(monthKey)) {
-        setIsLoadingMonth(false);
-        return;
-      }
-      const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-      const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-
-      const hasDataInContext = (allocations || []).some(a => {
-        try {
-          const allocDate = new Date(a.weekStartDate);
-          return allocDate >= monthStart && allocDate <= monthEnd;
-        } catch { return false; }
-      });
-
-      if (hasDataInContext) {
-        loadedMonthsRef.current.add(monthKey);
-        setIsLoadingMonth(false);
-        return;
-      }
-
-      setIsLoadingMonth(true);
-      loadDataForMonth(currentMonth)
-        .then(() => { loadedMonthsRef.current.add(monthKey); })
-        .catch((error) => {
-          console.error('[PlannerGrid] Error loading month data:', error);
-          // No mostrar pantalla blanca - simplemente marcar como cargado
-          loadedMonthsRef.current.add(monthKey);
-        })
-        .finally(() => { setIsLoadingMonth(false); });
-    }
-  }, [currentMonth, isGlobalLoading, loadDataForMonth, allocations]);
-
-  const weeks = getWeeksForMonth(currentMonth);
-  const year = currentMonth.getFullYear();
-  const month = currentMonth.getMonth();
-
-  const employeesByProject = useMemo(() => {
-    const index = new Map<string, Set<string>>();
-
-    (allocations || []).forEach(a => {
-      if (isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)) {
-        if (!index.has(a.projectId)) index.set(a.projectId, new Set());
-        index.get(a.projectId)!.add(a.employeeId);
-      }
-    });
-    return index;
-  }, [allocations, currentMonth]);
-
-  const filteredEmployees = useMemo(() => {
-    return (employees || []).filter(e => {
-      if (!e.isActive) return false;
-      if (showOnlyMe) {
-        if (!currentUser) return false;
-        if (e.id !== currentUser.id) return false;
-      }
-      if (selectedEmployeeId !== 'all' && e.id !== selectedEmployeeId) return false;
-      if (selectedProjectId !== 'all') {
-        const employeesInProject = employeesByProject.get(selectedProjectId);
-        if (!employeesInProject || !employeesInProject.has(e.id)) return false;
-      }
-      return true;
-    });
-  }, [employees, showOnlyMe, selectedEmployeeId, selectedProjectId, employeesByProject, currentUser]);
-
-  const handlePrevMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
-  const handleNextMonth = () => setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
-  const handleToday = () => setCurrentMonth(new Date());
 
   const handleCellClick = (employeeId: string, weekStart: Date, autoAdd?: boolean) => setSelectedCell({ employeeId, weekStart, autoAdd });
 
@@ -145,7 +81,6 @@ export function PlannerGrid() {
     try {
       const safeAllocations = allocations || [];
       const safeProjects = projects || [];
-      const monthAllocations = safeAllocations.filter(a => isAllocationInEffectiveMonth(a.weekStartDate, currentMonth));
       const completedTasks = monthAllocations.filter(a => a.status === 'completed');
       const pendingTasks = monthAllocations.filter(a => a.status !== 'completed');
 
@@ -220,19 +155,6 @@ export function PlannerGrid() {
   };
 
   const gridTemplate = `250px repeat(${weeks.length}, minmax(0, 1fr)) 100px`;
-  const sortedProjects = useMemo(() => [...(projects || [])].sort((a, b) => a.name.localeCompare(b.name)), [projects]);
-  const sortedEmployees = useMemo(() => [...(employees || [])].filter(e => e.isActive).sort((a, b) => a.name.localeCompare(b.name)), [employees]);
-
-  // Añadir un timeout de seguridad para evitar estados de carga infinitos
-  useEffect(() => {
-    if (isLoadingMonth) {
-      const timeout = setTimeout(() => {
-        console.warn('[PlannerGrid] Loading timeout reached, forcing loading to false');
-        setIsLoadingMonth(false);
-      }, 10000); // 10 segundos máximo de carga
-      return () => clearTimeout(timeout);
-    }
-  }, [isLoadingMonth]);
 
   if (isLoadingMonth) {
     return (
@@ -294,9 +216,9 @@ export function PlannerGrid() {
                   {getMonthName(currentMonth)} <Badge variant="outline" className="text-xs font-normal hidden sm:flex">{year}</Badge>
                 </h2>
                 <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-md p-0.5">
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handlePrevMonth}><ChevronLeft className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="sm" onClick={handleToday} className="h-7 text-xs px-2"><CalendarDays className="h-3.5 w-3.5 mr-1.5" />Mes</Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleNextMonth}><ChevronRight className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goToPrevMonth}><ChevronLeft className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="sm" onClick={goToToday} className="h-7 text-xs px-2"><CalendarDays className="h-3.5 w-3.5 mr-1.5" />Mes</Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goToNextMonth}><ChevronRight className="h-4 w-4" /></Button>
                 </div>
               </div>
 

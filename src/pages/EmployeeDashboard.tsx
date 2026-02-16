@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
 import { MyWeekView } from '@/components/employee/MyWeekView';
 import { WeeklyReportDialog } from '@/components/employee/WeeklyReportDialog';
 import { PriorityInsights, ProjectTeamPulse } from '@/components/employee/DashboardWidgets';
@@ -30,6 +31,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { supabase } from '@/lib/supabase';
+import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter }
   from "@/components/ui/dialog";
 import { NewTaskRow, Deadline } from '@/types';
@@ -59,6 +61,7 @@ const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 export default function EmployeeDashboard() {
   const { employees, projects, clients, allocations, absences, teamEvents, getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading, ensureMonthLoaded, weeklyFeedback, getEmployeeMonthlyLoad, currentUser: appCurrentUser } = useApp();
 
+  const { currentAgency } = useAgency();
   const myEmployeeProfile = appCurrentUser || null;
   const isLoadingProfile = isGlobalLoading;
   const { canAccess } = usePermissions();
@@ -383,36 +386,18 @@ export default function EmployeeDashboard() {
     viewMonth: currentMonth
   });
 
-  // Cargar deadlines del mes
+  // Cargar deadlines del mes (filtrados por agencia)
   const loadDeadlinesForMonth = useCallback(async (month: Date) => {
     const monthKey = format(startOfMonth(month), 'yyyy-MM');
     try {
-      const { data, error } = await supabase
-        .from('deadlines')
-        .select('*')
-        .eq('month', monthKey)
-        .order('created_at', { ascending: false });
-
+      const { data, error } = await fetchDeadlinesForMonth(monthKey, currentAgency?.id);
       if (error) throw error;
-
-      if (data) {
-        const mappedDeadlines = data.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean }) => ({
-          id: d.id,
-          projectId: d.project_id,
-          month: d.month,
-          notes: d.notes,
-          employeeHours: d.employee_hours || {},
-          isHidden: d.is_hidden || false
-        }));
-        setDeadlines(mappedDeadlines);
-      } else {
-        setDeadlines([]);
-      }
+      setDeadlines(data ?? []);
     } catch (error) {
       console.error('Error cargando deadlines:', error);
       setDeadlines([]);
     }
-  }, []);
+  }, [currentAgency?.id]);
 
   useEffect(() => {
     loadDeadlinesForMonth(currentMonth);
