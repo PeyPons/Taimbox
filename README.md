@@ -217,7 +217,12 @@ const { formatName: formatProjectName } = useProjectAliasing();
 - **`PlannerGrid.tsx`**:
     - Grilla virtualizada (renderiza solo lo visible).
     - Gestiona selección de celdas (`selectedCell`) y navegación con teclado.
-- **`AllocationSheet.tsx`**:
+    - **Móvil**: Si `useIsMobile()` es true, renderiza `MobilePlannerView` (tarjetas por empleado, selector de semana anterior/siguiente, celdas táctiles ≥44px). No se reutiliza la tabla desktop.
+- **`MobilePlannerView.tsx`** (vista móvil del planner):
+    - Una Card por empleado con cabecera (avatar, nombre, carga mensual). Selector de semana con Anterior/Siguiente. Una `WeekCell` por semana seleccionada con `touchTarget` (área mínima 44×44px).
+- **`WeekCell.tsx`**:
+    - Prop opcional `touchTarget`: en móvil aplica `min-h-[44px] min-w-[44px]` y refuerzo visual de overload (AlertTriangle + AlertCircle). Horas en `text-base font-mono`.
+- **`AllocationSheet.tsx`** (detalles móvil: padding `px-3`, botones ≥44px, sidebar oculto, cards semana `w-[85vw]`):
     - **Modo Batch**: Permite editar múltiples semanas a la vez.
     - **Validación Visual**: Muestra barras de progreso de presupuesto en tiempo real.
     - **Refactorizado**: Dividido en subcomponentes (`AllocationProjectHeader`, `AllocationTaskRow`, `AllocationFormDialog`) y hook lógico (`useAllocationActions`) para mejorar mantenibilidad.
@@ -248,8 +253,8 @@ Todas las páginas principales de la aplicación.
 ### Planificación y Operaciones
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
-| `EmployeeDashboard.tsx` | 40KB | Vista personal del empleado ("Mi Semana") |
-| `DeadlinesPage.tsx` | 106KB | Gestión de fechas límite mensuales |
+| `EmployeeDashboard.tsx` | 40KB | Vista personal del empleado ("Mi Semana"). **Móvil**: Dialog→Sheet para "Gestión interna" y "Añadir tareas"; navegación mes con botones ≥44px. |
+| `DeadlinesPage.tsx` | 106KB | Gestión de fechas límite mensuales. **Móvil**: filtros en Sheet "Filtros", edición de proyecto en Sheet desde abajo; selector de mes sticky con botones grandes. |
 | `WeeklyForecastPage.tsx` | 94KB | Previsión y confirmación semanal |
 | `TeamCapacityPage.tsx` | 26KB | Vista de carga del equipo completo |
 | `TeamPage.tsx` | 4KB | Listado de empleados |
@@ -403,7 +408,7 @@ Antes de deployar cambios críticos:
 - [ ] **Types**: Si cambiaste un Type, ¿actualizaste los mappers en `AppContext`?
 - [ ] **Permisos**: Si añadiste una funcionalidad, ¿requiere un nuevo flag en `UserPermissions`?
 - [ ] **Split Weeks**: Si tocaste fechas, ¿probaste el cambio de año (Dic-Ene)?
-- [ ] **Mobile**: ¿Verificaste que el cambio se ve bien en `use-mobile`?
+- [ ] **Mobile**: ¿Verificaste que el cambio se ve bien en `use-mobile`? El panel ya no bloquea acceso en móvil; PlannerGrid y DeadlinesPage tienen vistas específicas (Cards, Sheets). EmployeeDashboard usa Sheet en vez de Dialog en móvil. AllocationSheet tiene padding, botones ≥44px y sidebar oculto en móvil. WeeklyForecast y Reports usan widths responsive.
 - [ ] **Deadlines multi-tenant**: Si tocaste carga de deadlines, ¿usan `fetchDeadlinesForMonth(monthKey, currentAgency?.id)` o `useDeadlines({ agencyId })` para no mezclar datos entre agencias?
 
 ---

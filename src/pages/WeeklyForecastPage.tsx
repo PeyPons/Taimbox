@@ -880,7 +880,7 @@ export default function WeeklyForecastPage() {
         <TabsContent value="traffic" className="space-y-4">
           {/* Filtros estilo Deadlines/Planner */}
           <div className="flex flex-wrap items-center gap-3 bg-white rounded-xl border shadow-sm p-3">
-            <div className="flex-1 min-w-[200px]">
+            <div className="flex-1 min-w-0 sm:min-w-[200px]">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" role="combobox" className="w-full h-8 text-xs justify-between bg-white">
@@ -890,7 +890,7 @@ export default function WeeklyForecastPage() {
                     <ChevronDown className="ml-2 h-3 w-3 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[250px] p-0">
+                <PopoverContent className="w-[250px] max-w-[calc(100vw-2rem)] p-0">
                   <Command>
                     <CommandInput placeholder="Buscar cliente..." />
                     <CommandList>
@@ -914,7 +914,7 @@ export default function WeeklyForecastPage() {
             </div>
             <div className="flex items-center gap-4 text-sm">
               <Select value={filterId} onValueChange={setFilterId}>
-                <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectTrigger className="w-full sm:w-[140px] h-8 text-xs">
                   <SelectValue placeholder="Tipo de proyecto" />
                 </SelectTrigger>
                 <SelectContent>
@@ -968,7 +968,7 @@ export default function WeeklyForecastPage() {
                   Ordenar
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0">
+              <PopoverContent className="w-[200px] max-w-[calc(100vw-2rem)] p-0">
                 <Command>
                   <CommandList>
                     <CommandGroup>
@@ -1140,7 +1140,7 @@ export default function WeeklyForecastPage() {
               </Button>
             </div>
             <div className="w-full border-t my-2"></div>
-            <div className="flex-1 min-w-[200px]">
+            <div className="flex-1 min-w-0 sm:min-w-[200px]">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" role="combobox" className="w-full h-8 text-xs justify-between bg-white">
@@ -1150,7 +1150,7 @@ export default function WeeklyForecastPage() {
                     <ChevronDown className="ml-2 h-3 w-3 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[250px] p-0">
+                <PopoverContent className="w-[250px] max-w-[calc(100vw-2rem)] p-0">
                   <Command>
                     <CommandInput placeholder="Buscar compañero..." />
                     <CommandList>
@@ -1174,7 +1174,7 @@ export default function WeeklyForecastPage() {
                 </PopoverContent>
               </Popover>
             </div>
-            <div className="flex-1 min-w-[200px]">
+            <div className="flex-1 min-w-0 sm:min-w-[200px]">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" role="combobox" className="w-full h-8 text-xs justify-between bg-white">
@@ -1186,7 +1186,7 @@ export default function WeeklyForecastPage() {
                     <ChevronDown className="ml-2 h-3 w-3 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[300px] p-0">
+                <PopoverContent className="w-[300px] max-w-[calc(100vw-2rem)] p-0">
                   <Command>
                     <CommandInput placeholder="Buscar proyecto..." />
                     <CommandList>
@@ -1602,7 +1602,7 @@ export default function WeeklyForecastPage() {
                       <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[400px] p-0">
+                  <PopoverContent className="w-[400px] max-w-[calc(100vw-2rem)] p-0">
                     <Command>
                       <CommandInput placeholder="Buscar proyecto..." />
                       <CommandList>

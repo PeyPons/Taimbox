@@ -1231,7 +1231,7 @@ export default function ReportsPage() {
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-slate-400" />
               <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                <SelectTrigger className="w-[180px] bg-white">
+                <SelectTrigger className="w-full sm:w-[180px] bg-white">
                   <SelectValue placeholder="Filtrar empleado" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1248,7 +1248,7 @@ export default function ReportsPage() {
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handlePrevMonth}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <div className="flex items-center gap-1.5 px-2 min-w-[140px] justify-center">
+              <div className="flex items-center gap-1.5 px-2 min-w-0 sm:min-w-[140px] justify-center">
                 <CalendarDays className="h-4 w-4 text-primary" />
                 <span className="font-medium text-sm capitalize">
                   {format(currentMonth, 'MMMM yyyy', { locale: es })}
@@ -1528,9 +1528,9 @@ export default function ReportsPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left py-2 px-3 font-medium text-muted-foreground w-40">Empleado</th>
+                        <th className="text-left py-2 px-3 font-medium text-muted-foreground w-28 sm:w-40">Empleado</th>
                         {heatmapData[0]?.weeklyLoad.map(week => (
-                          <th key={week.week} className="text-center py-2 px-2 font-medium text-muted-foreground min-w-[90px]">
+                          <th key={week.week} className="text-center py-2 px-2 font-medium text-muted-foreground min-w-[70px] sm:min-w-[90px]">
                             {week.weekLabel}
                           </th>
                         ))}

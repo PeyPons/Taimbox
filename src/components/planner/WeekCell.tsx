@@ -14,11 +14,13 @@ interface WeekCellProps {
   baseCapacity: number;
   breakdown: { reason: string; hours: number; type: 'absence' | 'event' }[];
   onClick: () => void;
+  /** En móvil: área mínima 44x44px para tacto */
+  touchTarget?: boolean;
 }
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
-export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, breakdown, onClick }: WeekCellProps) {
+export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, breakdown, onClick, touchTarget }: WeekCellProps) {
 
   const totalEst = round2(allocations.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0));
 
@@ -48,7 +50,8 @@ export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, 
   return (
     <TooltipProvider>
       <div onClick={onClick} className={cn(
-        "h-full min-h-[140px] p-2 transition-all cursor-pointer border rounded-lg relative flex flex-col group tabular-nums",
+        "h-full p-2 transition-all cursor-pointer border rounded-lg relative flex flex-col group tabular-nums touch-manipulation",
+        touchTarget ? "min-h-[44px] min-w-[44px]" : "min-h-[140px]",
         // HEATMAP DE FONDO
         isOverload ? "bg-red-50/80 border-red-200 hover:bg-red-50 hover:border-red-300" :
           isWarning ? "bg-amber-50/50 border-amber-200 hover:bg-amber-50 hover:border-amber-300" :
@@ -200,18 +203,20 @@ export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, 
             </div>
           )}
           <div className={cn(
-            "flex items-center justify-between text-[11px] font-bold",
+            "flex items-center justify-between font-bold",
+            "text-[11px]",
+            touchTarget && "text-base",
             isOverload ? "text-red-600" :
               isWarning ? "text-amber-600" :
                 isHealthy ? "text-emerald-600" :
                   "text-slate-400"
           )}>
             <span className="flex items-center gap-1">
-              {isOverload && <AlertCircle className="h-3.5 w-3.5" />}
+              {isOverload && <><AlertTriangle className="h-4 w-4 flex-shrink-0" /><AlertCircle className="h-3.5 w-3.5 flex-shrink-0" /></>}
               {isWarning && <AlertTriangle className="h-3.5 w-3.5" />}
               {isHealthy && <CheckCircle2 className="h-3.5 w-3.5" />}
             </span>
-            <span className="font-mono">{hours}/{capacity}h</span>
+            <span className="font-mono text-base">{hours}/{capacity}h</span>
           </div>
         </div>
       </div>

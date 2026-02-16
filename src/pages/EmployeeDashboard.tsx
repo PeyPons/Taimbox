@@ -34,6 +34,7 @@ import { supabase } from '@/lib/supabase';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter }
   from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { NewTaskRow, Deadline } from '@/types';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
@@ -563,9 +564,9 @@ export default function EmployeeDashboard() {
               </h2>
             </div>
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-md">
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handlePrevMonth}><ChevronLeft className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="sm" onClick={handleToday} className="h-7 text-xs px-2">Hoy</Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleNextMonth}><ChevronRight className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" className={cn("h-7 w-7", isMobile && "h-11 w-11 min-h-[44px]")} onClick={handlePrevMonth}><ChevronLeft className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="sm" onClick={handleToday} className={cn("h-7 text-xs px-2", isMobile && "h-11 min-h-[44px] text-sm px-3")}>Hoy</Button>
+              <Button variant="ghost" size="icon" className={cn("h-7 w-7", isMobile && "h-11 w-11 min-h-[44px]")} onClick={handleNextMonth}><ChevronRight className="h-4 w-4" /></Button>
             </div>
           </div>
 
@@ -679,40 +680,115 @@ export default function EmployeeDashboard() {
         />
       )}
 
-      {/* Dialogo Gestión Interna */}
-      <Dialog open={isAddingExtra} onOpenChange={setIsAddingExtra}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Clock className="h-5 w-5 text-slate-600" />Registrar gestión interna</DialogTitle>
-            <DialogDescription>Reuniones, formaciones, deadlines u otras tareas.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Nombre</Label>
-              <Input placeholder="Ej: Reunión de equipo" value={extraTaskName} onChange={e => setExtraTaskName(e.target.value)} />
+      {/* Gestión Interna: Sheet en móvil, Dialog en desktop */}
+      {isMobile ? (
+        <Sheet open={isAddingExtra} onOpenChange={setIsAddingExtra}>
+          <SheetContent side="bottom" className="rounded-t-2xl p-4">
+            <SheetHeader className="mb-4">
+              <SheetTitle className="flex items-center gap-2 text-base"><Clock className="h-5 w-5 text-slate-600" />Registrar gestión interna</SheetTitle>
+            </SheetHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Nombre</Label>
+                <Input placeholder="Ej: Reunión de equipo" value={extraTaskName} onChange={e => setExtraTaskName(e.target.value)} className="h-11" />
+              </div>
+              <div className="space-y-2">
+                <Label>Horas</Label>
+                <Input type="number" min="0.5" step="0.5" value={extraHours} onChange={e => setExtraHours(e.target.value)} className="h-11" />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" onClick={() => setIsAddingExtra(false)} className="flex-1 h-11">Cancelar</Button>
+                <Button onClick={handleAddExtraTask} disabled={isCreatingProject || isSavingExtraTask} className="flex-1 h-11">
+                  {(isCreatingProject || isSavingExtraTask) ? 'Guardando...' : 'Registrar'}
+                </Button>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Horas</Label>
-              <Input type="number" min="0.5" step="0.5" value={extraHours} onChange={e => setExtraHours(e.target.value)} />
+          </SheetContent>
+        </Sheet>
+      ) : (
+        <Dialog open={isAddingExtra} onOpenChange={setIsAddingExtra}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2"><Clock className="h-5 w-5 text-slate-600" />Registrar gestión interna</DialogTitle>
+              <DialogDescription>Reuniones, formaciones, deadlines u otras tareas.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Nombre</Label>
+                <Input placeholder="Ej: Reunión de equipo" value={extraTaskName} onChange={e => setExtraTaskName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Horas</Label>
+                <Input type="number" min="0.5" step="0.5" value={extraHours} onChange={e => setExtraHours(e.target.value)} />
+              </div>
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddingExtra(false)}>Cancelar</Button>
-            <Button onClick={handleAddExtraTask} disabled={isCreatingProject || isSavingExtraTask}>
-              {(isCreatingProject || isSavingExtraTask) ? (
-                <>
-                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                  Guardando...
-                </>
-              ) : (
-                'Registrar'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAddingExtra(false)}>Cancelar</Button>
+              <Button onClick={handleAddExtraTask} disabled={isCreatingProject || isSavingExtraTask}>
+                {(isCreatingProject || isSavingExtraTask) ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                    Guardando...
+                  </>
+                ) : (
+                  'Registrar'
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
-      {/* Dialogo Añadir Tareas (Bulk) */}
+      {/* Dialogo Añadir Tareas (Bulk): Sheet en móvil, Dialog en desktop */}
+      {isMobile ? (
+        <Sheet open={isAddingTasks} onOpenChange={setIsAddingTasks}>
+          <SheetContent side="bottom" className="h-[92vh] rounded-t-2xl p-0 flex flex-col">
+            <SheetHeader className="px-4 py-3 border-b shrink-0">
+              <SheetTitle className="flex items-center gap-2 text-base"><ListPlus className="h-5 w-5 text-primary" />Añadir tareas</SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {newTasks.map((task, idx) => (
+                <BatchTaskRow
+                  key={task.id}
+                  task={task}
+                  otherTasks={newTasks}
+                  updateTaskRow={updateTaskRow}
+                  removeTaskRow={removeTaskRow}
+                  canRemove={newTasks.length > 1}
+                  activeProjects={activeProjects}
+                  weeks={weeks}
+                  employees={employees}
+                  clients={clients}
+                  getProjectBudgetStatus={getProjectBudgetStatus}
+                  getAvailableDependencies={getAvailableDependencies}
+                  getWeekExceedStatus={getWeekExceedStatus}
+                  canAssignToOthers={canAssignToOthers}
+                  currentEmployeeId={myEmployeeProfile?.id}
+                  deadlines={deadlines}
+                  allocations={allocations}
+                  viewDate={currentMonth}
+                />
+              ))}
+              <Button variant="outline" size="sm" onClick={() => {
+                addTaskRow();
+                setTimeout(() => {
+                  const el = document.getElementById('task-list-end-mobile');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }} className="w-full border-dashed h-11 text-slate-500">
+                <Plus className="h-4 w-4 mr-2" /> Añadir otra fila
+              </Button>
+              <div id="task-list-end-mobile" />
+            </div>
+            <div className="border-t p-4 flex gap-2 shrink-0 bg-slate-50">
+              <Button variant="outline" onClick={() => setIsAddingTasks(false)} disabled={isSavingTasks} className="flex-1 h-11">Cancelar</Button>
+              <Button onClick={handleSaveTasks} disabled={isSavingTasks} className="flex-1 h-11">
+                {isSavingTasks ? 'Guardando...' : 'Guardar tareas'}
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
+      ) : (
       <Dialog open={isAddingTasks} onOpenChange={setIsAddingTasks}>
         <DialogContent className="sm:max-w-[1100px] h-[80vh] flex flex-col p-0 gap-0 overflow-hidden">
           <DialogHeader className="px-6 py-4 border-b shrink-0">
@@ -805,6 +881,7 @@ export default function EmployeeDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      )}
 
       {showGoals && <ProfessionalGoalsSheet open={showGoals} onOpenChange={setShowGoals} employeeId={myEmployeeProfile.id} />}
       {showAbsences && <AbsencesSheet open={showAbsences} onOpenChange={setShowAbsences} employeeId={myEmployeeProfile.id} />}

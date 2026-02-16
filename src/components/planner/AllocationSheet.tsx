@@ -463,7 +463,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
-          className="w-full sm:max-w-[95vw] overflow-y-auto px-6 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-xl border-l shadow-2xl pt-10"
+          className="w-full sm:max-w-[95vw] overflow-y-auto px-3 sm:px-6 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-xl border-l shadow-2xl pt-10"
           onInteractOutside={(e) => {
             // Prevenir cierre del Sheet cuando el tour está activo
             if (isTourActive) {
@@ -511,10 +511,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 {/* 2. SECCIÓN CENTRAL: NAVEGACIÓN (Absoluta en desktop para centrado perfecto) */}
                 <div className="flex flex-col items-center gap-2 w-full xl:w-auto xl:absolute xl:left-1/2 xl:top-1 xl:-translate-x-1/2 z-0 order-3 xl:order-2">
                   {/* Navegación Mes */}
-                  <div className="flex items-center gap-1 bg-white/50 backdrop-blur-sm p-1 rounded-full border shadow-sm">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={handlePrevMonth}><ChevronLeft className="h-4 w-4" /></Button>
-                    <span className="text-base font-bold capitalize w-36 text-center select-none text-slate-700">{monthLabel}</span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={handleNextMonth}><ChevronRight className="h-4 w-4" /></Button>
+                  <div className="flex items-center gap-1 sm:gap-1 bg-white/50 backdrop-blur-sm p-1 rounded-full border shadow-sm">
+                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 rounded-full", isMobile && "h-11 w-11 min-h-[44px]")} onClick={handlePrevMonth}><ChevronLeft className="h-4 w-4" /></Button>
+                    <span className={cn("text-base font-bold capitalize text-center select-none text-slate-700", isMobile ? "w-28 min-w-0 truncate" : "w-36")}>{monthLabel}</span>
+                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 rounded-full", isMobile && "h-11 w-11 min-h-[44px]")} onClick={handleNextMonth}><ChevronRight className="h-4 w-4" /></Button>
                   </div>
 
                   {/* Navegación Semanas (Solo visible en showAllWeeks) */}
@@ -745,19 +745,19 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                             <div className="flex flex-col gap-4 mb-4 pb-3 border-b">
                               <div className="flex items-center justify-between w-full">
                                 <div className="flex items-center gap-2 xs:gap-3">
-                                  <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={goToPrevWeek} disabled={activeWeekIndex === 0}>
+                                  <Button variant="outline" size="sm" className={cn("h-8 w-8 p-0", isMobile && "h-11 w-11 min-h-[44px]")} onClick={goToPrevWeek} disabled={activeWeekIndex === 0}>
                                     <ChevronLeft className="h-4 w-4" />
                                   </Button>
                                   <div>
-                                    <div className="font-bold text-base xs:text-lg text-foreground truncate max-w-[120px] xs:max-w-none">Semana {activeWeekIndex + 1}</div>
-                                    <div className="text-[10px] xs:text-xs text-slate-500">{weekDateLabel}</div>
+                                    <div className="font-bold text-base xs:text-lg text-foreground truncate max-w-[140px] xs:max-w-none">Semana {activeWeekIndex + 1}</div>
+                                    <div className="text-xs text-slate-500">{weekDateLabel}</div>
                                   </div>
-                                  <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={goToNextWeek} disabled={activeWeekIndex === weeks.length - 1}>
+                                  <Button variant="outline" size="sm" className={cn("h-8 w-8 p-0", isMobile && "h-11 w-11 min-h-[44px]")} onClick={goToNextWeek} disabled={activeWeekIndex === weeks.length - 1}>
                                     <ChevronRight className="h-4 w-4" />
                                   </Button>
                                 </div>
 
-                                <Button variant="outline" size="sm" className="gap-2 h-8" onClick={() => startAdd(week.weekStart)} data-tour="planner-add-task">
+                                <Button variant="outline" size="sm" className={cn("gap-2 h-8", isMobile && "h-11 min-h-[44px]")} onClick={() => startAdd(week.weekStart)} data-tour="planner-add-task">
                                   <Plus className="h-4 w-4" /> <span className="hidden xs:inline">Añadir</span>
                                 </Button>
                               </div>
@@ -886,7 +886,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                       <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="h-8 w-8 text-indigo-400 hover:text-indigo-600"
+                                                        className="h-11 w-11 min-h-[44px] text-indigo-400 hover:text-indigo-600"
                                                         onClick={() => {
                                                           setTransferTask(alloc);
                                                           setTransferDialogOpen(true);
@@ -900,7 +900,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                   <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-8 w-8 text-slate-400 shrink-0"
+                                                    className="h-11 w-11 min-h-[44px] text-slate-400 shrink-0"
                                                     onClick={() => startEditFull(alloc)}
                                                   >
                                                     <Pencil className="h-4 w-4" />
@@ -1352,7 +1352,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                       // Mostrar loading si está cargando
                       if (isGlobalLoading || isLoadingTasks) {
                         return (
-                          <div key={weekStr} className="flex flex-col gap-3 p-5 rounded-2xl border bg-gradient-to-br from-white to-slate-50/80 min-h-[400px] min-w-[340px] max-w-[380px] flex-shrink-0 snap-center shadow-sm">
+                          <div key={weekStr} className="flex flex-col gap-3 p-5 rounded-2xl border bg-gradient-to-br from-white to-slate-50/80 min-h-[400px] min-w-0 sm:min-w-[340px] max-w-full sm:max-w-[380px] w-[85vw] sm:w-auto flex-shrink-0 snap-center shadow-sm">
                             <div className="text-center py-12 text-slate-400">
                               <Calendar className="w-10 h-10 mx-auto mb-3 opacity-50 animate-pulse" />
                               <p className="text-sm font-medium mb-1">Cargando tareas...</p>
@@ -1362,7 +1362,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                       }
 
                       return (
-                        <div key={weekStr} className="flex flex-col gap-3 p-5 rounded-2xl border bg-gradient-to-br from-white to-slate-50/80 min-h-[400px] min-w-[340px] max-w-[380px] flex-shrink-0 snap-center shadow-sm hover:shadow-md transition-shadow duration-300">
+                        <div key={weekStr} className="flex flex-col gap-3 p-3 sm:p-5 rounded-2xl border bg-gradient-to-br from-white to-slate-50/80 min-h-[400px] min-w-0 sm:min-w-[340px] max-w-full sm:max-w-[380px] w-[85vw] sm:w-auto flex-shrink-0 snap-center shadow-sm hover:shadow-md transition-shadow duration-300">
                           {/* HEADER SEMANA MEJORADO */}
                           <div className="flex flex-col gap-3 pb-3 border-b border-slate-100">
                             <div className="flex items-center justify-between">
@@ -1644,7 +1644,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                   </div>
 
                   {/* Panel lateral derecho - Detalles del proyecto seleccionado (solo en vista semanal) */}
-                  {!showAllWeeks && (
+                  {!showAllWeeks && !isMobile && (
                     <div className="w-80 flex-shrink-0">
                       <div className="sticky top-4 space-y-3">
                         {/* Contenido dinámico: proyecto seleccionado o resumen */}

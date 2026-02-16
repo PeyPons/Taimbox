@@ -1,22 +1,27 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useMarketing } from '@/contexts/MarketingContext';
-import { MarketingBudget } from '@/types/marketing';
-import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
-import { usePermissions } from '@/hooks/usePermissions';
+import { MarketingBudget } from '@/types/marketing';
 
-import { MarketingHeader } from '@/components/marketing/layout/MarketingHeader';
-import { MarketingDashboard } from '@/components/marketing/dashboard/MarketingDashboard';
+import { BudgetOverview } from '@/components/marketing/BudgetOverview';
 import { BudgetPlanner } from '@/components/marketing/planning/BudgetPlanner';
 import { MarketingAudit } from '@/components/marketing/MarketingAudit';
 import { CreateBudgetDialog } from '@/components/marketing/CreateBudgetDialog';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PiggyBank, Plus } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { PiggyBank, Plus, Settings, LayoutDashboard, Calendar, History } from 'lucide-react';
 
 export default function MarketingPage() {
   const { currentAgency } = useAgency();
-  const { canAccess } = usePermissions();
   const {
     budgets,
     currentBudget,
@@ -24,7 +29,7 @@ export default function MarketingPage() {
     isLoading,
   } = useMarketing();
 
-  const [activeView, setActiveView] = useState<'dashboard' | 'planner' | 'history'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'resumen' | 'planificacion' | 'movimientos'>('resumen');
   const [showCreateBudget, setShowCreateBudget] = useState(false);
   const [budgetToEdit, setBudgetToEdit] = useState<MarketingBudget | undefined>(undefined);
 
@@ -42,63 +47,125 @@ export default function MarketingPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-[400px] flex items-center justify-center">
-        <div className="h-8 w-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <div className="h-9 w-9 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
 
-  // No budget exists - show onboarding
+  // Sin presupuesto: onboarding claro
   if (!currentBudget && budgets.length === 0) {
     return (
-      <div className="container mx-auto py-12 px-4">
-        <Card className="max-w-lg mx-auto shadow-lg border-2 border-dashed">
+      <div className="max-w-2xl mx-auto py-16 px-4">
+        <Card className="border-2 border-dashed border-slate-200 bg-slate-50/30 overflow-hidden">
           <CardHeader className="text-center pb-2">
-            <div className="mx-auto w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mb-6">
-              <PiggyBank className="h-10 w-10 text-primary" />
+            <div className="mx-auto w-16 h-16 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mb-4">
+              <PiggyBank className="h-8 w-8" />
             </div>
-            <CardTitle className="text-3xl font-bold">Marketing Ledger</CardTitle>
-            <CardDescription className="text-lg mt-2">
-              Sistema integral de control presupuestario
+            <CardTitle className="text-2xl font-bold text-slate-900">
+              Control Presupuestario
+            </CardTitle>
+            <CardDescription className="text-base mt-1">
+              Gestiona el presupuesto de marketing de {currentAgency?.name ?? 'tu agencia'}: asigna partidas, registra gastos y revisa la ejecución en un solo sitio.
             </CardDescription>
           </CardHeader>
-          <CardContent className="text-center space-y-6">
-            <p className="text-muted-foreground">
-              Gestiona presupuestos, controla el gasto en tiempo real y analiza el rendimiento de tus inversiones de forma centralizada.
+          <CardContent className="text-center space-y-6 pt-2">
+            <p className="text-sm text-slate-600 max-w-md mx-auto">
+              Crea tu primer presupuesto anual para empezar. Luego podrás añadir partidas (SEM, Social, etc.), planificar por meses y registrar facturas y movimientos.
             </p>
-            <Button size="lg" onClick={handleCreateBudget} className="w-full sm:w-auto gap-2">
+            <Button size="lg" onClick={handleCreateBudget} className="gap-2 bg-amber-600 hover:bg-amber-700">
               <Plus className="h-5 w-5" />
-              Comenzar Setup
+              Crear primer presupuesto
             </Button>
           </CardContent>
         </Card>
 
-        <CreateBudgetDialog
-          open={showCreateBudget}
-          onOpenChange={setShowCreateBudget}
-        />
+        <CreateBudgetDialog open={showCreateBudget} onOpenChange={setShowCreateBudget} />
       </div>
     );
   }
 
+  // Con presupuesto: página principal con pestañas
   return (
-    <div className="container mx-auto py-8 px-4 max-w-7xl">
-      <MarketingHeader
-        currentBudget={currentBudget}
-        budgets={budgets}
-        onSelectBudget={selectBudget}
-        onNewBudget={handleCreateBudget}
-        onSettingsClick={handleEditBudget}
-        activeView={activeView}
-        onViewChange={setActiveView}
-        agencyName={currentAgency?.name}
-      />
+    <div className="space-y-6 pb-10">
+      {/* Cabecera */}
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+            Control Presupuestario
+          </h1>
+          <p className="text-sm text-slate-500 mt-0.5">
+            {currentAgency?.name && <span>{currentAgency.name} · </span>}
+            Presupuesto anual de marketing
+          </p>
+        </div>
 
-      <div className="animate-in fade-in-50 slide-in-from-bottom-2 duration-500">
-        {activeView === 'dashboard' && <MarketingDashboard />}
-        {activeView === 'planner' && <BudgetPlanner />}
-        {activeView === 'history' && <MarketingAudit />}
-      </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Select
+            value={currentBudget?.id ?? ''}
+            onValueChange={(id) => {
+              const budget = budgets.find((b) => b.id === id);
+              selectBudget(budget ?? null);
+            }}
+          >
+            <SelectTrigger className="w-[180px] bg-white border-slate-200">
+              <SelectValue placeholder="Elegir año" />
+            </SelectTrigger>
+            <SelectContent>
+              {budgets.map((b) => (
+                <SelectItem key={b.id} value={b.id}>
+                  Año {b.year} — {b.totalBudget.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Button variant="outline" size="sm" onClick={handleEditBudget} className="gap-2" disabled={!currentBudget}>
+            <Settings className="h-4 w-4" />
+            Configuración
+          </Button>
+          <Button size="sm" onClick={handleCreateBudget} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Nuevo presupuesto
+          </Button>
+        </div>
+      </header>
+
+      {/* Pestañas */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="space-y-4">
+        <TabsList className="bg-slate-100 p-1 rounded-lg border border-slate-200/80 w-full sm:w-auto">
+          <TabsTrigger value="resumen" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <LayoutDashboard className="h-4 w-4" />
+            Resumen
+          </TabsTrigger>
+          <TabsTrigger value="planificacion" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <Calendar className="h-4 w-4" />
+            Planificación
+          </TabsTrigger>
+          <TabsTrigger value="movimientos" className="gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <History className="h-4 w-4" />
+            Movimientos
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="resumen" className="mt-4">
+          {currentBudget ? <BudgetOverview /> : (
+            <p className="text-slate-500 py-8">Selecciona un presupuesto en el desplegable superior.</p>
+          )}
+        </TabsContent>
+
+        <TabsContent value="planificacion" className="mt-4">
+          {currentBudget ? <BudgetPlanner /> : (
+            <p className="text-slate-500 py-8">Selecciona un presupuesto para ver y editar la planificación.</p>
+          )}
+        </TabsContent>
+
+        <TabsContent value="movimientos" className="mt-4">
+          {currentBudget ? <MarketingAudit /> : (
+            <p className="text-slate-500 py-8">Selecciona un presupuesto para ver el historial de movimientos.</p>
+          )}
+        </TabsContent>
+      </Tabs>
 
       <CreateBudgetDialog
         open={showCreateBudget}

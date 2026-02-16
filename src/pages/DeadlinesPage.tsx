@@ -101,6 +101,7 @@ export default function DeadlinesPage() {
   });
 
   const [confirmAction, setConfirmAction] = useState<{ type: 'delete_deadline' | 'delete_allocation' | 'copy_month', id?: string, data?: any } | null>(null);
+  const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
 
   const globalAssignmentFormSchema = z.object({
     name: z.string().min(1, 'El nombre es obligatorio'),
@@ -1661,22 +1662,26 @@ export default function DeadlinesPage() {
       <DeadlinesTour forceShow={showTour} />
       {/* Columna principal - Proyectos */}
       <div className="flex-1 min-w-0 space-y-4">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* Header: sticky en móvil para navegación temporal */}
+        <div className={cn(
+          "flex flex-col sm:flex-row sm:items-center justify-between gap-3 z-20",
+          isMobile && "sticky top-0 bg-slate-50 pt-2 pb-2 -mx-4 px-4 md:mx-0 md:px-0 border-b border-slate-200"
+        )}>
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-slate-900">Deadline</h1>
             <p className="text-xs md:text-sm text-slate-500">Asignación mensual de horas</p>
           </div>
           <div className="flex items-center gap-2">
-            {/* Selector de mes con flechas */}
+            {/* Selector de mes: botones grandes en móvil */}
             <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1" data-tour="month-selector">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 md:h-8 md:w-8"
+                className={cn("h-7 w-7 md:h-8 md:w-8", isMobile && "h-11 w-11")}
                 onClick={handlePrevMonth}
+                aria-label="Mes anterior"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className={cn("h-4 w-4", isMobile && "h-5 w-5")} />
               </Button>
               <span className="text-xs md:text-sm font-medium px-1 md:px-2 min-w-[90px] md:min-w-[140px] text-center capitalize">
                 {format(currentMonthDate, isMobile ? 'MMM yy' : 'MMMM yyyy', { locale: es })}
@@ -1684,10 +1689,11 @@ export default function DeadlinesPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 md:h-8 md:w-8"
+                className={cn("h-7 w-7 md:h-8 md:w-8", isMobile && "h-11 w-11")}
                 onClick={handleNextMonth}
+                aria-label="Mes siguiente"
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className={cn("h-4 w-4", isMobile && "h-5 w-5")} />
               </Button>
             </div>
             {canEditDeadlines && (
@@ -1776,91 +1782,161 @@ export default function DeadlinesPage() {
           </div>
         </div>
 
-        {/* Filtros */}
-        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 bg-white rounded-xl border shadow-sm p-2 sm:p-3" data-tour="filters">
-          <div className="flex-1 min-w-0">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                placeholder="Buscar proyecto..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-9 border-slate-200 text-sm"
-              />
-            </div>
-          </div>
-
-
-          <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
-            <Select value={filterId} onValueChange={setFilterId}>
-              <SelectTrigger className="w-[120px] sm:w-[140px] h-8 sm:h-9 text-xs sm:text-sm">
-                <SelectValue placeholder="Tipo de proyecto" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {activeFilters.map(filter => (
-                  <SelectItem key={filter.id} value={filter.id}>
-                    {filter.displayName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
-              <span className="text-slate-600 whitespace-nowrap">Ocultos</span>
-              <Switch
-                id="show-hidden"
-                checked={showHidden}
-                onCheckedChange={setShowHidden}
-                className="scale-75 sm:scale-90"
-              />
-            </label>
-            <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
-              <span className="text-orange-600 font-medium whitespace-nowrap">Sin asig.</span>
-              <Switch
-                id="show-unassigned"
-                checked={showUnassignedOnly}
-                onCheckedChange={setShowUnassignedOnly}
-                className="scale-75 sm:scale-90"
-              />
-            </label>
-          </div>
-          <div className="flex items-center gap-2">
-            <Select value={filterByEmployee} onValueChange={setFilterByEmployee}>
-              <SelectTrigger className="w-[100px] sm:w-[140px] h-8 sm:h-9 text-xs sm:text-sm">
-                <SelectValue placeholder="Empleado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {activeEmployees.map(emp => (
-                  <SelectItem key={emp.id} value={emp.id}>
-                    {emp.first_name || emp.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'client' | 'assigned' | 'remaining')}>
-              <SelectTrigger className="w-[100px] sm:w-[140px] h-8 sm:h-9 text-xs sm:text-sm">
-                <SelectValue placeholder="ordenar" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="client">Por cliente</SelectItem>
-                <SelectItem value="assigned">Más asignado</SelectItem>
-                <SelectItem value="remaining">Más disponible</SelectItem>
-              </SelectContent>
-            </Select>
-            {/* Botón para añadir asignación global (visible en móvil) */}
-            {isMobile && canEditDeadlines && (
+        {/* Filtros: en móvil dentro de Sheet; en desktop inline */}
+        {isMobile ? (
+          <>
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 px-2 gap-1"
-                onClick={() => openGlobalDialog()}
+                className="h-11 px-4 gap-2 text-sm touch-manipulation"
+                onClick={() => setFiltersSheetOpen(true)}
               >
-                <Plus className="h-4 w-4" />
+                <Filter className="h-4 w-4" />
+                Filtros
               </Button>
-            )}
+              {canEditDeadlines && (
+                <Button variant="outline" size="sm" className="h-11 px-4 gap-1" onClick={() => openGlobalDialog()}>
+                  <Plus className="h-4 w-4" />
+                  Global
+                </Button>
+              )}
+            </div>
+            <Sheet open={filtersSheetOpen} onOpenChange={setFiltersSheetOpen}>
+              <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl p-4 overflow-y-auto">
+                <SheetHeader className="mb-4">
+                  <SheetTitle className="text-base">Filtros</SheetTitle>
+                </SheetHeader>
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <Label className="text-slate-600 mb-1.5 block">Buscar proyecto</Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        placeholder="Buscar..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 h-11 border-slate-200"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-slate-600 mb-1.5 block">Tipo de proyecto</Label>
+                    <Select value={filterId} onValueChange={setFilterId}>
+                      <SelectTrigger className="h-11 w-full">
+                        <SelectValue placeholder="Tipo de proyecto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        {activeFilters.map(filter => (
+                          <SelectItem key={filter.id} value={filter.id}>{filter.displayName}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-slate-600 mb-1.5 block">Empleado</Label>
+                    <Select value={filterByEmployee} onValueChange={setFilterByEmployee}>
+                      <SelectTrigger className="h-11 w-full">
+                        <SelectValue placeholder="Empleado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        {activeEmployees.map(emp => (
+                          <SelectItem key={emp.id} value={emp.id}>{emp.first_name || emp.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-slate-600 mb-1.5 block">Ordenar por</Label>
+                    <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'client' | 'assigned' | 'remaining')}>
+                      <SelectTrigger className="h-11 w-full">
+                        <SelectValue placeholder="Ordenar" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="client">Por cliente</SelectItem>
+                        <SelectItem value="assigned">Más asignado</SelectItem>
+                        <SelectItem value="remaining">Más disponible</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-slate-600">Mostrar ocultos</span>
+                    <Switch id="show-hidden-mobile" checked={showHidden} onCheckedChange={setShowHidden} />
+                  </div>
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-orange-600 font-medium">Solo sin asignar</span>
+                    <Switch id="show-unassigned-mobile" checked={showUnassignedOnly} onCheckedChange={setShowUnassignedOnly} />
+                  </div>
+                  <Button className="w-full h-11" onClick={() => setFiltersSheetOpen(false)}>
+                    Aplicar
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </>
+        ) : (
+          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 bg-white rounded-xl border shadow-sm p-2 sm:p-3" data-tour="filters">
+            <div className="flex-1 min-w-0">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="Buscar proyecto..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 h-9 border-slate-200 text-sm"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
+              <Select value={filterId} onValueChange={setFilterId}>
+                <SelectTrigger className="w-[120px] sm:w-[140px] h-8 sm:h-9 text-xs sm:text-sm">
+                  <SelectValue placeholder="Tipo de proyecto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {activeFilters.map(filter => (
+                    <SelectItem key={filter.id} value={filter.id}>
+                      {filter.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
+                <span className="text-slate-600 whitespace-nowrap">Ocultos</span>
+                <Switch id="show-hidden" checked={showHidden} onCheckedChange={setShowHidden} className="scale-75 sm:scale-90" />
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
+                <span className="text-orange-600 font-medium whitespace-nowrap">Sin asig.</span>
+                <Switch id="show-unassigned" checked={showUnassignedOnly} onCheckedChange={setShowUnassignedOnly} className="scale-75 sm:scale-90" />
+              </label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Select value={filterByEmployee} onValueChange={setFilterByEmployee}>
+                <SelectTrigger className="w-[100px] sm:w-[140px] h-8 sm:h-9 text-xs sm:text-sm">
+                  <SelectValue placeholder="Empleado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {activeEmployees.map(emp => (
+                    <SelectItem key={emp.id} value={emp.id}>{emp.first_name || emp.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'client' | 'assigned' | 'remaining')}>
+                <SelectTrigger className="w-[100px] sm:w-[140px] h-8 sm:h-9 text-xs sm:text-sm">
+                  <SelectValue placeholder="ordenar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="client">Por cliente</SelectItem>
+                  <SelectItem value="assigned">Más asignado</SelectItem>
+                  <SelectItem value="remaining">Más disponible</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Proyectos por cliente */}
         <div className="space-y-3" data-tour="project-list">
@@ -1919,11 +1995,11 @@ export default function DeadlinesPage() {
                               isOverBudget && !isEditing && "bg-red-50/40"
                             )}
                           >
-                            {/* Fila del proyecto - clickeable para editar */}
+                            {/* Fila del proyecto - clickeable para editar (en móvil abre Sheet) */}
                             <div
                               className={cn(
                                 "flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-slate-50 transition-colors",
-                                isEditing && "hover:bg-primary/10/40"
+                                isEditing && !isMobile && "hover:bg-primary/10/40"
                               )}
                               onClick={() => !isEditing && startEditingProject(project.id)}
                             >
@@ -2006,8 +2082,8 @@ export default function DeadlinesPage() {
                               </div>
                             </div>
 
-                            {/* Panel de edición */}
-                            {isEditing && (
+                            {/* Panel de edición inline (solo desktop; en móvil se usa Sheet) */}
+                            {isEditing && !isMobile && (
                               <div className="px-4 py-3 bg-slate-50 border-t" data-tour="inline-editing">
                                 <div className="flex flex-wrap gap-2 mb-3">
                                   {activeEmployees.map(emp => (
@@ -2189,6 +2265,106 @@ export default function DeadlinesPage() {
           )}
         </div>
       </div>
+
+      {/* Sheet de edición de proyecto (solo móvil) */}
+      {isMobile && editingProjectId && (() => {
+        const project = projects.find(p => p.id === editingProjectId);
+        const deadline = getProjectDeadline(editingProjectId);
+        if (!project) return null;
+        const currentHours = inlineFormData.employeeHours;
+        const totalAssigned = (Object.values(currentHours) as number[]).reduce((sum, h) => sum + (h || 0), 0);
+        const isOverBudget = totalAssigned > (project.budgetHours || 0);
+        return (
+          <Sheet open={true} onOpenChange={(open) => !open && cancelEditingProject()}>
+            <SheetContent side="bottom" className="h-[88vh] rounded-t-2xl p-4 overflow-y-auto">
+              <SheetHeader className="mb-4">
+                <SheetTitle className="text-base">{formatProjectName(project.name)}</SheetTitle>
+                <p className="text-xs text-slate-500 font-mono">
+                  {totalAssigned}h / {deadline?.budgetOverride ?? project.budgetHours}h
+                  {isOverBudget && <span className="text-red-600 ml-1"> · Overload</span>}
+                </p>
+              </SheetHeader>
+              <div className="space-y-4 text-sm">
+                <div className="space-y-3">
+                  <Label className="text-slate-600">Horas por empleado</Label>
+                  {activeEmployees.map(emp => (
+                    <div key={emp.id} className="flex items-center gap-3 bg-slate-50 rounded-lg px-3 py-2.5">
+                      <Avatar className="h-8 w-8 shrink-0">
+                        <AvatarImage src={emp.avatarUrl} alt={emp.name} />
+                        <AvatarFallback className="bg-primary/100 text-white text-xs">{(emp.first_name || emp.name)[0]}</AvatarFallback>
+                      </Avatar>
+                      <span className="flex-1 text-slate-700 font-medium truncate">{emp.first_name || emp.name}</span>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        value={inlineFormData.employeeHours[emp.id] ?? ''}
+                        onChange={(e) => updateInlineEmployeeHours(emp.id, parseFloat(e.target.value) || 0, project.id)}
+                        onBlur={() => {
+                          const h = inlineFormData.employeeHours[emp.id] || 0;
+                          updateInlineEmployeeHours(emp.id, h, project.id, true);
+                        }}
+                        className="h-11 w-24 text-center font-mono text-base"
+                        placeholder="0"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <Label className="text-slate-600 mb-1.5 block">Ajuste presupuesto (h)</Label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={inlineFormData.budgetOverride !== undefined ? (inlineFormData.budgetOverride - (project.budgetHours || 0)) : ''}
+                    onChange={(e) => {
+                      const adjustment = e.target.value === '' ? undefined : parseFloat(e.target.value);
+                      const base = project.budgetHours || 0;
+                      const newBudget = adjustment !== undefined ? base + adjustment : undefined;
+                      const newFormData = { ...inlineFormData, budgetOverride: newBudget };
+                      setInlineFormData(newFormData);
+                      if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
+                      autoSaveTimeoutRef.current = setTimeout(() => autoSaveDeadline(project.id, newFormData), 800);
+                    }}
+                    className="h-11 font-mono"
+                  />
+                </div>
+                <div>
+                  <Label className="text-slate-600 mb-1.5 block">Notas</Label>
+                  <Textarea
+                    placeholder="Notas..."
+                    value={inlineFormData.notes}
+                    onChange={(e) => {
+                      const newFormData = { ...inlineFormData, notes: e.target.value };
+                      setInlineFormData(newFormData);
+                      if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
+                      autoSaveTimeoutRef.current = setTimeout(() => autoSaveDeadline(project.id, newFormData), 800);
+                    }}
+                    className="min-h-[80px] text-sm"
+                  />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-slate-600">Ocultar proyecto</span>
+                  <Switch
+                    checked={inlineFormData.isHidden}
+                    onCheckedChange={(checked) => {
+                      const newFormData = { ...inlineFormData, isHidden: checked };
+                      setInlineFormData(newFormData);
+                      autoSaveDeadline(project.id, newFormData);
+                    }}
+                  />
+                </div>
+                <div className="flex gap-2 pt-2">
+                  {autoSaveStatus === 'saving' && <span className="text-slate-400 text-sm">Guardando...</span>}
+                  {autoSaveStatus === 'saved' && <span className="text-emerald-600 text-sm flex items-center gap-1"><CheckCircle2 className="h-4 w-4" /> Guardado</span>}
+                  <Button className="flex-1 h-11" variant="secondary" onClick={cancelEditingProject}>
+                    Cerrar
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        );
+      })()}
 
       {/* Panel lateral sticky - Disponibilidad del equipo (solo desktop) */}
       {
