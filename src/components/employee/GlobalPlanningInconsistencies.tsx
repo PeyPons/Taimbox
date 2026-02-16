@@ -117,48 +117,47 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
       const project = projects.find(p => p.id === projectId);
       if (!project) return;
 
-      const employeeInconsistencies: Inconsistency['employees'] = [];
+      // Un Map por employeeId evita duplicados (un empleado solo aparece una vez por proyecto)
+      const employeeMap = new Map<string, Inconsistency['employees'][0]>();
       let totalDeadline = 0;
       let totalPlanned = 0;
       let totalComputed = 0;
 
-      // Procesar cada empleado en el deadline
+      // Procesar cada empleado en el deadline (solo si sigue existiendo en la agencia)
       Object.entries(deadline.employeeHours).forEach(([empId, deadlineHrs]) => {
+        const emp = employees.find(e => e.id === empId);
+        if (!emp) return; // Omitir empleados eliminados para no mostrar "Desconocido"
         const empAllocs = allocationsByProjectAndEmployee[projectId]?.[empId] || { planned: 0, computed: 0 };
         const total = empAllocs.planned + empAllocs.computed;
         const diff = round2(total - deadlineHrs);
 
-        // Incluir a todos los empleados con asignación o deadline para ver el equipo completo
-        // Se solicitó explícitamente ver a "toda el equipo" para detectar problemas
-        if (true) {
-          const emp = employees.find(e => e.id === empId);
-          employeeInconsistencies.push({
-            employeeId: empId,
-            employeeName: emp?.name || 'Desconocido',
-            avatarUrl: emp?.avatarUrl,
-            deadlineHours: deadlineHrs,
-            plannedHours: round2(empAllocs.planned),
-            computedHours: round2(empAllocs.computed),
-            difference: diff,
-            hasDeadline: true
-          });
-        }
-
+        employeeMap.set(empId, {
+          employeeId: empId,
+          employeeName: emp.name,
+          avatarUrl: emp.avatarUrl,
+          deadlineHours: deadlineHrs,
+          plannedHours: round2(empAllocs.planned),
+          computedHours: round2(empAllocs.computed),
+          difference: diff,
+          hasDeadline: true
+        });
         totalDeadline += deadlineHrs;
         totalPlanned += empAllocs.planned;
         totalComputed += empAllocs.computed;
       });
 
-      // También incluir empleados con horas pero sin deadline en este proyecto
+      // También incluir empleados con horas pero sin deadline en este proyecto (sin duplicar)
       Object.entries(allocationsByProjectAndEmployee[projectId] || {}).forEach(([empId, allocs]) => {
+        if (employeeMap.has(empId)) return; // Ya está por el deadline
         if (!deadline.employeeHours[empId] && (allocs.planned > 0 || allocs.computed > 0)) {
           const emp = employees.find(e => e.id === empId);
+          if (!emp) return; // Omitir empleados eliminados
           const total = allocs.planned + allocs.computed;
 
-          employeeInconsistencies.push({
+          employeeMap.set(empId, {
             employeeId: empId,
-            employeeName: emp?.name || 'Desconocido',
-            avatarUrl: emp?.avatarUrl,
+            employeeName: emp.name,
+            avatarUrl: emp.avatarUrl,
             deadlineHours: 0,
             plannedHours: round2(allocs.planned),
             computedHours: round2(allocs.computed),
@@ -169,6 +168,8 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
           totalComputed += allocs.computed;
         }
       });
+
+      const employeeInconsistencies = Array.from(employeeMap.values());
 
       // SIEMPRE registrar el proyecto si tiene deadline, aunque no haya inconsistencias
       // Esto evita que se procese después como "sin deadline"
@@ -206,10 +207,11 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
         const total = allocs.planned + allocs.computed;
         if (total > 0) {
           const emp = employees.find(e => e.id === empId);
+          if (!emp) return; // Omitir empleados eliminados (no mostrar "Desconocido")
           employeeInconsistencies.push({
             employeeId: empId,
-            employeeName: emp?.name || 'Desconocido',
-            avatarUrl: emp?.avatarUrl,
+            employeeName: emp.name,
+            avatarUrl: emp.avatarUrl,
             deadlineHours: 0,
             plannedHours: round2(allocs.planned),
             computedHours: round2(allocs.computed),

@@ -43,7 +43,6 @@ interface PlannerHeaderProps {
     onEmployeeComboChange: (open: boolean) => void;
     onProjectComboChange: (open: boolean) => void;
 
-    // AI Insights slot (rendered as children)
     children?: React.ReactNode;
 }
 
@@ -71,7 +70,7 @@ export function PlannerHeader({
 }: PlannerHeaderProps) {
     return (
         <div className="flex flex-col gap-4 border-b bg-card px-4 py-3 z-20 relative">
-            {/* Top row: Month navigation + AI Insights */}
+            {/* Top row: Month navigation */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <h2 className="text-xl font-bold capitalize text-foreground flex items-center gap-2">
@@ -91,7 +90,6 @@ export function PlannerHeader({
                     </div>
                 </div>
 
-                {/* AI Insights slot */}
                 {children}
             </div>
 

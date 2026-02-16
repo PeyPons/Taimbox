@@ -621,7 +621,7 @@ export default function AgencySettingsPage() {
                               variant="outline"
                               className="text-[10px] px-1.5 py-0 h-5"
                             >
-                              {config.defaultView === 'daily' ? 'Zen' : 'Semanal'}
+                              Semanal
                             </Badge>
                             {config.isViewStrict && (
                               <TooltipProvider delayDuration={300}>

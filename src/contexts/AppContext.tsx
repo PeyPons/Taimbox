@@ -969,29 +969,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const deleteEmployee = useCallback(async (id: string) => {
-    // Buscar empleado antes de borrarlo para obtener su user_id
-    // Usamos el estado actual 'employees' (closure) o el ref si queremos ser muy seguros, 
-    // pero useEffect dependencies aseguran 'employees' actualizado? 
-    // No, deleteEmployee dependencies es [], así que 'employees' dentro podría ser stale si no usamos callback en setState
-    // MEJOR: Buscar en el ref que mantenemos actualizado
     const employeeToDelete = employeesRef.current.find(e => e.id === id);
 
-    // 1. Actualización optimista UI
+    // 1. Limpiar en BD todo rastro del empleado (allocations, absences, deadlines.employee_hours, etc.)
+    const { error: cleanupError } = await supabase.rpc('cleanup_employee_data', { p_employee_id: id });
+    if (cleanupError) {
+      console.error('Error limpiando datos del empleado:', cleanupError);
+      toast.error('Error al eliminar datos asociados al empleado. ¿Está aplicada la migración cleanup_employee_on_delete?');
+      return;
+    }
+
+    // 2. Actualización optimista UI (alineada con lo que borra cleanup_employee_data)
     setEmployees(prev => prev.filter(e => e.id !== id));
     setAllocations(prev => prev.filter(a => a.employeeId !== id));
     setAbsences(prev => prev.filter(a => a.employeeId !== id));
+    setWeeklyFeedback(prev => prev.filter(f => f.employeeId !== id));
+    setUserRoutines(prev => prev.filter(r => r.employeeId !== id));
+    setTeamEvents(prev => prev.map(te => ({
+      ...te,
+      affectedEmployeeIds: (te.affectedEmployeeIds || []).filter(eid => eid !== id)
+    })));
 
-    // 2. Borrar de la tabla employees
+    // 3. Borrar de la tabla employees
     const { error } = await supabase.from('employees').delete().eq('id', id);
 
     if (error) {
       console.error('Error eliminando empleado de BD:', error);
       toast.error('Error eliminando empleado');
-      // Podríamos revertir el estado aquí si fuera crítico
       return;
     }
 
-    // 3. Borrar de Auth (si tiene user_id)
+    // 4. Borrar de Auth (si tiene user_id)
     if (employeeToDelete?.user_id) {
       // Eliminar usuario Auth asociado
       try {

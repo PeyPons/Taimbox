@@ -26,7 +26,7 @@ El núcleo del modelo **multi-tenant**. Cada usuario pertenece a una o más agen
 - `id`: UUID único.
 - `settings`: Objeto JSON que define la configuración de la agencia.
     - `roles`: Array de `RolePermissions` definidos por cada agencia. Sin roles hardcodeados excepto "Administrador" como rol protegido del sistema.
-    - `modules`: Módulos habilitados (Marketing, Ads, etc.).
+    - `modules`: Módulos habilitados (Ads/PPC, etc.).
     - `branding`: Colores y logotipos personalizados.
     - `projectAliasingRules`: Reglas para renombrado automático de proyectos.
 
@@ -59,7 +59,7 @@ Permite renombrar proyectos automáticamente según patrones configurables:
 | AllocationTaskRow | `src/components/planner/allocation/AllocationTaskRow.tsx` | ~50. En móvil recibe `isMobile` para filas táctiles (min-h 44px), texto `text-sm`, horas `font-mono text-base` y botón menú ≥44px. |
 | AllocationFormDialog | `src/components/planner/allocation/AllocationFormDialog.tsx` | ~100 |
 | GanttView | `src/components/planner/GanttView.tsx` | ~95 |
-| BatchTaskRow | `src/components/planner/BatchTaskRow.tsx` | ~65 |
+| BatchTaskRow | `src/components/planner/BatchTaskRow.tsx` | ~65. Selector de proyecto en "Añadir tareas": lista ordenada con primero los proyectos que tienen deadline asignado al empleado de la tarea (o actual), luego el resto. |
 | ProjectImpactSummary | `src/components/planner/ProjectImpactSummary.tsx` | ~45 |
 | DashboardWidgets | `src/components/employee/DashboardWidgets.tsx` | ~120 |
 | WeeklyReportDialog | `src/components/employee/WeeklyReportDialog.tsx` | ~85 |
@@ -142,15 +142,7 @@ Gestiona la carga de la base de datos principal (`employees`, `projects`, `alloc
 - **Patrón Upsert**: En lugar de recargar todo, utiliza funciones que mezclan los datos nuevos con los existentes, manteniendo la integridad de la UI.
 - **`loadedMonthsRef`**: Un Set que registra qué meses ya están en memoria para evitar llamadas redundantes a la base de datos.
 
-### 4.2. MarketingContext: Finanzas de Marketing
-Maneja una estructura jerárquica de presupuestos.
-- **Árbol de Categorías**: Permite agrupar gastos (ej. "Social Media" -> "Instagram Ads").
-- **Proyecciones Inteligentes**: 
-    - Si hay gastos reales (`realSpent`), se usan esos.
-    - Si no, se usa el último "Gasto Estimado" (`isEstimated: true`).
-- **Trasvases (`Movements`)**: Registra el movimiento de dinero entre planes mensuales para auditoría.
-
-### 4.3. Estrategia de Realtime y Colaboración
+### 4.2. Estrategia de Realtime y Colaboración
 Para soportar múltiples usuarios concurrentes sin saturar conexiones WebSocket, utilizamos una estrategia de **Canales Unificados**.
 
 #### Arquitectura de Canales (`DeadlinesPage`)
@@ -203,7 +195,6 @@ El sistema sincroniza datos de Google Ads y Meta Ads mediante procesos externos.
 | `micros` | `ads-worker.js` | Formato monetario de Google (1€ = 1,000,000 micros). |
 | `slug` | `agencies` | Nombre único en la URL para identificar una agencia. |
 | `weekStartsOn: 1` | `dateUtils.ts` | Configura el Lunes como primer día de la semana. |
-| `budgetAllocated` | `MarketingContext` | Dinero asignado a un concepto para un mes específico. |
 | `hoursComputed` | `AppContext` | Horas finales validadas que impactan en la rentabilidad. |
 
 ---
@@ -240,7 +231,6 @@ Si modificas una interface, revisa estos consumidores:
 | `Absence` / `TeamEvent` | `capacityUtils.ts`, `AppContext.tsx`, `AbsencesSheet.tsx` |
 | `TaskTransfer` | `useTaskTransfers.ts`, `TaskTransferComponents.tsx`, `AppContext.tsx` |
 | `UserPermissions` | `usePermissions.ts`, `src/types/permissions.ts`, `PermissionProtectedRoute` en `App.tsx` |
-| `MarketingBudget` | `MarketingContext.tsx`, `MarketingMatrix.tsx`, `BudgetPlanner.tsx`, `CategoryDetailPanel.tsx` |
 | `OKR` / `ProfessionalGoal` | `GoalsContext.tsx`, `OkrsPage.tsx`, `ProfessionalGoalsSheet.tsx`, `EmployeeDashboard.tsx` |
 
 ### 8.2 Dependencias de Contexts
@@ -251,14 +241,13 @@ Si modificas una interface, revisa estos consumidores:
 | `AppContext.tsx` (getEmployeeLoadForWeek) | `WeekCell.tsx`, `EmployeeRow.tsx`, `usePlannerData.ts` |
 | `AppContext.tsx` (ensureMonthLoaded) | `usePlannerData.ts`, `AllocationSheet.tsx` |
 | `AgencyContext.tsx` (currentAgency) | `AppContext.tsx`, `usePermissions.ts`, `AgencySettingsPage.tsx` |
-| `MarketingContext.tsx` | `MarketingPage.tsx`, `BudgetPlanner.tsx`, `MarketingMatrix.tsx`, `CategoryDetailPanel.tsx` |
 | `GoalsContext.tsx` | `OkrsPage.tsx`, `ProfessionalGoalsSheet.tsx` |
 
 ### 8.3 Dependencias de Utilities
 
 | Si modificas... | Revisa también... |
 |-----------------|-------------------|
-| `dateUtils.ts` → `getWeeksForMonth()` | `AppContext.tsx`, `usePlannerData.ts`, `useAllocationSheet.ts`, `AllocationSheet.tsx`, `MarketingMatrix.tsx` |
+| `dateUtils.ts` → `getWeeksForMonth()` | `AppContext.tsx`, `usePlannerData.ts`, `useAllocationSheet.ts`, `AllocationSheet.tsx` |
 | `dateUtils.ts` → `isAllocationInEffectiveMonth()` | `AppContext.tsx`, `usePlannerData.ts`, `useProjectMetrics.ts` |
 | `budgetUtils.ts` → `getEffectiveBudget()` | `DeadlinesPage`, `WeeklyForecastPage`, `ClientsAndProjectsPage`, `useAllocationSheet` |
 | `deadlineUtils.ts` → `fetchDeadlinesForMonth(monthKey, agencyId)` | `useDeadlines`, `DeadlinesPage`, `AllocationSheet`, `EmployeeDashboard`, `ReportsPage`, `WeeklyForecastPage`, `ClientsAndProjectsPage`, `PlanningInconsistenciesCard`, `MyWeekView`, `GlobalPlanningInconsistencies` |
@@ -279,14 +268,12 @@ Si modificas una interface, revisa estos consumidores:
 | `useAllocationActions.ts` | `AllocationSheet.tsx`, `AllocationFormDialog.tsx` |
 | `useDeadlines.ts` | Acepta `{ agencyId }`; usado donde se cargan deadlines. Componentes que cargan deadlines usan `fetchDeadlinesForMonth(monthKey, currentAgency?.id)` directamente o vía hook. |
 
-### 8.5 Dependencias de Componentes Complejos (Marketing & Team)
+### 8.5 Dependencias de Componentes Complejos (Team)
 
 Estos componentes son muy grandes y tienen lógica interna compleja:
 
 | Componente | Archivo | Dependencias Clave |
 |------------|---------|--------------------|
-| **MarketingMatrix** | `src/components/marketing/MarketingMatrix.tsx` | `MarketingContext`, `dateUtils` (meses), `CategoryDetailPanel` |
-| **CategoryDetailPanel** | `src/components/marketing/CategoryDetailPanel.tsx` | `MarketingContext`, `ExpensesModal`, `TransferModal` |
 | **EmployeeDialog** | `src/components/team/EmployeeDialog.tsx` | `AppContext` (UPSERT employee), `Supabase` (auth user creation) |
 | **AbsencesSheet** | `src/components/team/AbsencesSheet.tsx` | `AppContext`, `capacityUtils` (validación de fechas) |
 | **ProfessionalGoalsSheet** | `src/components/team/ProfessionalGoalsSheet.tsx` | `GoalsContext`, `AppContext` (empleado asociado) |
@@ -406,3 +393,13 @@ Si un mismo UUID puede aparecer como `projectId` Y como `employeeId` en diferent
 key={`proj-${inc.projectId}`}  // Para proyectos
 key={`emp-${emp.employeeId}`}  // Para empleados
 ```
+
+### 10.3 Eliminación de empleados (limpieza en BD)
+Al eliminar un empleado **debe borrarse todo rastro en la base de datos**. No se debe solo ocultar en UI.
+- **Migración**: `supabase/migrations/20260216100000_cleanup_employee_on_delete.sql` define la función `cleanup_employee_data(p_employee_id uuid)`, que elimina o actualiza: `allocations`, `absences`, `weekly_feedback`, `user_routines`, `task_transfers`, quita la clave del empleado en `deadlines.employee_hours` y lo elimina de `team_events.affected_employee_ids`.
+- **Flujo**: En `AppContext.deleteEmployee` se llama primero a `supabase.rpc('cleanup_employee_data', { p_employee_id: id })` y después al `DELETE` en `employees`. Si la migración no está aplicada, el usuario verá un toast indicándolo.
+- **Estado local**: Tras el cleanup se actualizan también `weeklyFeedback`, `userRoutines` y `teamEvents` en el estado para que la UI no muestre datos huérfanos.
+
+### 10.4 Informe de coherencia (GlobalPlanningInconsistencies)
+- **Un empleado, una fila por proyecto**: La lista "Empleados afectados" se construye con un `Map` por `employeeId` por proyecto, de modo que cada persona aparece como máximo una vez por proyecto (evita duplicados donde en una fila salía "en deadline" y en otra "no en deadline").
+- **Empleados inexistentes**: Si por datos antiguos o fallo de migración quedara algún `employee_id` sin correspondencia en `employees`, no se muestra "Desconocido": se excluyen esas filas (red de seguridad; la solución correcta es la limpieza en BD, ver 10.3).

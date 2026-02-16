@@ -56,7 +56,6 @@ const SECTIONS: { slug: string; title: string; icon: React.ElementType; short: s
   { slug: 'deadlines', title: 'Deadlines', icon: Target, short: 'Objetivos mensuales por proyecto y empleado', color: 'from-amber-500 to-orange-500' },
   { slug: 'informes', title: 'Informes', icon: BarChart3, short: 'Reportes, métricas y exportación de datos', color: 'from-rose-500 to-pink-500' },
   { slug: 'weekly-forecast', title: 'Weekly Forecast', icon: FileText, short: 'Cierre semanal y redistribución inteligente de horas', color: 'from-violet-500 to-purple-500' },
-  { slug: 'marketing', title: 'Marketing', icon: PieChart, short: 'Presupuestos, categorías y control de gastos', color: 'from-emerald-500 to-teal-500' },
   { slug: 'equipo', title: 'Equipo', icon: Users, short: 'Miembros, ausencias, horarios y capacidad', color: 'from-blue-500 to-cyan-500' },
   { slug: 'clientes-proyectos', title: 'Clientes y proyectos', icon: Building2, short: 'Catálogo de clientes, proyectos y horas contratadas', color: 'from-slate-500 to-indigo-500' },
   { slug: 'configuracion', title: 'Configuración', icon: Settings, short: 'Agencia, roles, permisos e integraciones', color: 'from-slate-600 to-slate-800' },
@@ -440,30 +439,6 @@ function WeeklyContent() {
   );
 }
 
-function MarketingContent() {
-  return (
-    <>
-      <ContentBlock title="Qué es el módulo Marketing">
-        <p>El modulo Marketing gestiona <strong className="text-white">presupuestos por categorías</strong> (ej. Paid Media, Orgánico, Eventos), planes de gasto y movimientos. Permite controlar el gasto real frente al presupuestado.</p>
-      </ContentBlock>
-
-      <ContentBlock title="Funcionalidades">
-        <div className="grid sm:grid-cols-2 gap-3">
-          <FeatureCard icon={Layers} title="Presupuestos jerárquicos" description="Agencia → categorías → planes. Cada nivel hereda y acumula presupuesto." color="from-emerald-500 to-teal-500" />
-          <FeatureCard icon={DollarSign} title="Registro de gastos" description="Movimientos por categoría y periodo. Cada gasto se asigna a un plan específico." color="from-amber-500 to-orange-500" />
-          <FeatureCard icon={BarChart3} title="Vista matriz" description="Meses vs categorías para ver la evolución del gasto a lo largo del año." color="from-indigo-500 to-blue-500" />
-          <FeatureCard icon={Bell} title="Alertas de presupuesto" description="Notificaciones cuando se supera el presupuesto o se acerca al límite." color="from-red-500 to-rose-500" />
-        </div>
-      </ContentBlock>
-
-      <ContentBlock title="Permisos y acceso">
-        <p>El acceso al modulo Marketing depende de los <strong className="text-white">permisos de tu rol</strong>.</p>
-        <WarningBox>Si no ves el menú de Marketing, tu cuenta no tiene asignado ese módulo. Contacta con tu administrador para que lo active desde Configuración de agencia.</WarningBox>
-      </ContentBlock>
-    </>
-  );
-}
-
 function EquipoContent() {
   return (
     <>
@@ -539,7 +514,6 @@ function ConfiguracionContent() {
         <InfoGrid items={[
           { icon: Target, label: 'Deadlines', value: 'On/Off', color: 'bg-amber-500/15 border-amber-400/25 text-amber-300' },
           { icon: FileText, label: 'Weekly', value: 'On/Off', color: 'bg-violet-500/15 border-violet-400/25 text-violet-300' },
-          { icon: PieChart, label: 'Marketing', value: 'On/Off', color: 'bg-emerald-500/15 border-emerald-400/25 text-emerald-300' },
           { icon: BarChart3, label: 'PPC / Ads', value: 'On/Off', color: 'bg-blue-500/15 border-blue-400/25 text-blue-300' },
         ]} />
         <div className="mt-3" />
@@ -560,7 +534,6 @@ const CONTENT_MAP: Record<string, React.FC> = {
   'deadlines': DeadlinesContent,
   'informes': InformesContent,
   'weekly-forecast': WeeklyContent,
-  'marketing': MarketingContent,
   'equipo': EquipoContent,
   'clientes-proyectos': ClientesContent,
   'configuracion': ConfiguracionContent,

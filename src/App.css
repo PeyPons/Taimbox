@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AppProvider } from "@/contexts/AppContext";
 import { AppLayout } from "@/components/layout/AppLayout";
-import DashboardAI from "./pages/DashboardAI";
 import ClientReportsPage from '@/pages/ClientReportsPage';
 import Index from "./pages/Index";
 import TeamPage from "./pages/TeamPage";
@@ -28,10 +27,7 @@ const App = () => (
           <BrowserRouter>
             <AppLayout>
               <Routes>
-                {/* La HOME (/) ahora carga la IA */}
-                <Route path="/" element={<DashboardAI />} />
-                
-                {/* El Planificador antiguo se mueve a /planner */}
+                <Route path="/" element={<Index />} />
                 <Route path="/planner" element={<Index />} />
                 
                 <Route path="/team" element={<TeamPage />} />

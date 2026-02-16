@@ -8,7 +8,7 @@ import { PendingTransfersPanel } from '@/components/transfers/TaskTransferCompon
 import { usePlannerData } from '@/hooks/usePlannerData';
 import { getMonthName, isCurrentWeek, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, CalendarDays, Sparkles, User, Loader2, ChevronsUpDown, RefreshCw, LayoutGrid, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, User, Loader2, ChevronsUpDown, LayoutGrid, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -16,27 +16,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { startOfMonth, endOfMonth, parseISO, isSameMonth, max, min, format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { AIService, AIProvider } from '@/services/aiService';
-import { ErrorService } from '@/services/errorService';
-import { logger } from '@/utils/logger';
-
-// ============================================================
-// SISTEMA DE IA (usa servicio centralizado)
-// ============================================================
-
-interface AIResponse {
-  text: string;
-  provider: 'gemini' | 'openrouter' | 'coco';
-}
-
-async function callAI(prompt: string): Promise<AIResponse> {
-  const result = await AIService.callWithFallback(prompt, 'PlannerGrid');
-  return {
-    text: result.text,
-    provider: result.provider
-  };
-}
-
 export function PlannerGrid() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
@@ -44,9 +23,6 @@ export function PlannerGrid() {
   const [openEmployeeCombo, setOpenEmployeeCombo] = useState(false);
   const [openProjectCombo, setOpenProjectCombo] = useState(false);
   const [selectedCell, setSelectedCell] = useState<{ employeeId: string; weekStart: Date; autoAdd?: boolean } | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [insights, setInsights] = useState<{ type: 'warning' | 'success' | 'info', text: string }[] | null>(null);
-  const [lastProvider, setLastProvider] = useState<AIProvider | null>(null);
   const [activeView, setActiveView] = useState<'grid' | 'gantt'>('grid');
   const isMobile = useIsMobile();
 
@@ -77,86 +53,6 @@ export function PlannerGrid() {
 
   const handleCellClick = (employeeId: string, weekStart: Date, autoAdd?: boolean) => setSelectedCell({ employeeId, weekStart, autoAdd });
 
-  const handleAnalyze = async () => {
-    setIsAnalyzing(true);
-    setInsights(null);
-    setLastProvider(null);
-    try {
-      const safeAllocations = allocations || [];
-      const safeProjects = projects || [];
-      const completedTasks = monthAllocations.filter(a => a.status === 'completed');
-      const pendingTasks = monthAllocations.filter(a => a.status !== 'completed');
-
-      const employeeData = filteredEmployees.map(e => {
-        try {
-          const load = getEmployeeMonthlyLoad(e.id, year, month);
-          const empTasks = monthAllocations.filter(a => a.employeeId === e.id);
-          const empCompleted = empTasks.filter(a => a.status === 'completed');
-          const empPending = empTasks.filter(a => a.status !== 'completed');
-          const totalReal = empCompleted.reduce((sum, a) => sum + (a.hoursActual || 0), 0);
-          const totalComp = empCompleted.reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
-          const balance = totalComp - totalReal;
-          const blocking = empPending.filter(task =>
-            safeAllocations.some(other => other.dependencyId === task.id && other.status !== 'completed')
-          ).length;
-          return {
-            name: e.name || 'Sin nombre',
-            department: e.department || 'N/A',
-            loadPercentage: load?.percentage || 0,
-            loadStatus: load?.status || 'empty',
-            tasksTotal: empTasks.length,
-            tasksPending: empPending.length,
-            hoursReal: Math.round(totalReal * 10) / 10,
-            hoursComputed: Math.round(totalComp * 10) / 10,
-            balance: Math.round(balance * 10) / 10,
-            blockingOthers: blocking
-          };
-        } catch { return null; }
-      }).filter(Boolean);
-
-      const globalReal = completedTasks.reduce((s, a) => s + (a.hoursActual || 0), 0);
-      const globalComp = completedTasks.reduce((s, a) => s + (a.hoursComputed || 0), 0);
-      const globalBalance = globalComp - globalReal;
-
-      const projectIssues = safeProjects.filter(p => p.status === 'active').map(p => {
-        try {
-          const projTasks = monthAllocations.filter(a => a.projectId === p.id);
-          const hoursUsed = projTasks.reduce((sum, a) => sum + (a.status === 'completed' ? (a.hoursActual || a.hoursAssigned || 0) : (a.hoursAssigned || 0)), 0);
-          const budget = p.budgetHours || 0;
-          const percentage = budget > 0 ? (hoursUsed / budget * 100) : 0;
-          return percentage > 90 ? { name: p.name, percentage: Math.round(percentage), budget } : null;
-        } catch { return null; }
-      }).filter(Boolean);
-
-      const employeesWithTasks = employeeData.filter(e => e && e.tasksTotal > 0);
-      const employeesWithoutTasks = employeeData.filter(e => e && e.tasksTotal === 0).map(e => e?.name);
-
-      if (employeesWithTasks.length === 0) {
-        setInsights([{ type: 'info', text: 'Sin tareas asignadas este mes. ¡Hora de planificar!' }]);
-        setIsAnalyzing(false);
-        return;
-      }
-
-      const analysisContext = {
-        mes: format(currentMonth, 'MMMM yyyy', { locale: es }),
-        global: { tareasTotales: monthAllocations.length, completadas: completedTasks.length, pendientes: pendingTasks.length, horasReales: Math.round(globalReal), balance: Math.round(globalBalance * 10) / 10 },
-        empleadosConTareas: employeesWithTasks,
-        empleadosSinTareas: employeesWithoutTasks,
-        proyectosEnRiesgo: projectIssues
-      };
-
-      const prompt = `Analiza: ${JSON.stringify(analysisContext)}. Dame exactamente 3 insights JSON: [{"type":"warning"|"success"|"info", "text":"..."}]`;
-      const response = await callAI(prompt);
-      setLastProvider(response.provider);
-      const jsonMatch = response.text.match(/\[[\s\S]*?\]/);
-      if (jsonMatch) setInsights(JSON.parse(jsonMatch[0]));
-      else setInsights([{ type: 'info', text: response.text.slice(0, 100) }]);
-
-    } catch (e) {
-      setInsights([{ type: 'warning', text: 'Error analizando datos.' }]);
-    } finally { setIsAnalyzing(false); }
-  };
-
   const gridTemplate = `250px repeat(${weeks.length}, minmax(0, 1fr)) 100px`;
 
   if (isLoadingMonth) {
@@ -169,17 +65,6 @@ export function PlannerGrid() {
       </div>
     );
   }
-
-  const getProviderBadge = () => {
-    if (!lastProvider) return null;
-    const config = {
-      gemini: { label: '✨ Gemini', className: 'bg-blue-100 text-blue-600' },
-      openrouter: { label: '🟣 OpenRouter', className: 'bg-purple-100 text-purple-600' },
-      coco: { label: '🥥 Coco', className: 'bg-orange-100 text-orange-600' }
-    };
-    const { label, className } = config[lastProvider];
-    return <span className={cn("px-1.5 py-0.5 rounded text-[9px] font-medium", className)}>{label}</span>;
-  };
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-950 rounded-lg border shadow-sm overflow-hidden">
@@ -285,49 +170,6 @@ export function PlannerGrid() {
                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goToNextMonth}><ChevronRight className="h-4 w-4" /></Button>
                 </div>
               </div>
-
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button className="bg-primary hover:bg-primary/90 text-white gap-2 h-9 shadow-sm">
-                    <Sparkles className="h-4 w-4" />
-                    <span className="hidden sm:inline">Insights Minguito</span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 p-0" align="end">
-                  <div className="bg-primary/10 dark:bg-indigo-900/30 p-3 border-b flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      <span className="font-semibold text-sm">Insights</span>
-                    </div>
-                    {lastProvider && getProviderBadge()}
-                  </div>
-                  <div className="p-4">
-                    {!isAnalyzing && !insights && (
-                      <div className="text-center py-2">
-                        <Button size="sm" onClick={handleAnalyze} className="w-full bg-primary text-white">Analizar</Button>
-                      </div>
-                    )}
-                    {isAnalyzing && (
-                      <div className="text-center py-4 flex flex-col items-center gap-2">
-                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        <span className="text-xs text-muted-foreground">Juzgando al equipo...</span>
-                      </div>
-                    )}
-                    {insights && (
-                      <div className="space-y-2">
-                        {insights.map((i, k) => (
-                          <div key={k} className={cn("text-xs p-2 rounded border font-medium", i.type === 'warning' ? "bg-red-50 border-red-200 text-red-800" : i.type === 'success' ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-blue-50 border-blue-200 text-blue-800")}>
-                            {i.text}
-                          </div>
-                        ))}
-                        <Button size="sm" variant="ghost" className="w-full text-xs h-7 mt-2" onClick={handleAnalyze}>
-                          <RefreshCw className="h-3 w-3 mr-2" /> Otra opinión
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </PopoverContent>
-              </Popover>
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">

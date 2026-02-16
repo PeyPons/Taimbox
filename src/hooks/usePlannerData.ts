@@ -129,7 +129,6 @@ export function usePlannerData(options: UsePlannerDataOptions = {}) {
         [employees]
     );
 
-    // Month allocations for AI analysis
     const monthAllocations = useMemo(() =>
         (allocations || []).filter(a => isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)),
         [allocations, currentMonth]

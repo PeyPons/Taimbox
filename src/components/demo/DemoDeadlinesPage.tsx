@@ -300,7 +300,7 @@ export function DemoDeadlinesPage() {
 
           {/* Banner Demo Side */}
           <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-xs text-blue-800 leading-relaxed">
-            <strong>Tip Pro:</strong> En la versión completa, arrastra y suelta proyectos para asignar horas automáticamente o utiliza el asistente de IA para balancear la carga de trabajo.
+            <strong>Tip Pro:</strong> En la versión completa, arrastra y suelta proyectos para asignar horas automáticamente.
           </div>
         </div>
       </div>

@@ -86,21 +86,20 @@ export function useDashboardView() {
         }
     }, [currentUser?.preferredView]);
 
-    // Estado derivado
+    // Estado derivado (modo Zen eliminado: siempre vista semanal)
     const isStrict = departmentConfig?.isViewStrict ?? false;
-    const deptView = departmentConfig?.defaultView ?? 'weekly';
-    const userView = localViewOverride || currentUser?.preferredView;
+    const deptViewRaw = departmentConfig?.defaultView ?? 'weekly';
+    const deptView: ViewMode = deptViewRaw === 'daily' ? 'weekly' : deptViewRaw;
+    const userViewRaw = localViewOverride || currentUser?.preferredView;
+    const userView: ViewMode | null = userViewRaw === 'daily' ? 'weekly' : userViewRaw;
 
-    // Lógica de decisión de la vista activa
+    // Siempre vista semanal (modo Zen eliminado)
     const activeView: ViewMode = useMemo(() => {
-        if (isStrict) {
-            return deptView;
-        }
+        if (isStrict) return deptView;
         return userView || deptView;
     }, [isStrict, deptView, userView]);
 
-    // Saber si mostramos el toggle en la UI o lo ocultamos
-    const showToggle = !isStrict;
+    const showToggle = false;
 
     // Función para cambiar la preferencia del usuario
     const setView = useCallback(async (newView: ViewMode) => {
@@ -127,7 +126,7 @@ export function useDashboardView() {
                 }).catch(console.error);
             }
 
-            toast.success(newView === 'daily' ? 'Vista Zen activada' : 'Vista semanal activada');
+            toast.success('Vista semanal activada');
         } catch (error) {
             console.error('[useDashboardView] Error updating view preference:', error);
             toast.error('Error al guardar la preferencia de vista');

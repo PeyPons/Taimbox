@@ -48,8 +48,8 @@ El archivo más importante para contratos de datos.
 ### 1.2 `src/App.tsx` - Entry Point
 **Ubicación**: `src/App.tsx`
 
-Configura la jerarquía de **9 Providers** y el Router con **24+ rutas**.
-- **Jerarquía**: `Helmet` > `QueryClient` > `Auth` > `Agency` > `App` > `Marketing` > `Goals` > `Notification` > `Tooltip`.
+Configura la jerarquía de **Providers** y el Router con las rutas de la aplicación.
+- **Jerarquía**: `Helmet` > `QueryClient` > `Auth` > `Agency` > `App` > `Goals` > `Notification` > `Tooltip`.
 - **Protección**: Usa `ProtectedRoute` (Auth) y `PermissionProtectedRoute` (RBAC).
 
 ### 1.3 `src/lib/supabase.ts`
@@ -94,11 +94,7 @@ Para optimizar rendimiento, usamos `loadedMonthsRef`.
 - **Propósito**: Aisla datos por agencia.
 - **Key Function**: `switchAgency(id)` limpia todo el estado y recarga.
 
-### 2.3 `MarketingContext.tsx` (Finanzas)
-- **Propósito**: Presupuestos jerárquicos y gastos.
-- **Estructura**: `AgencyBudget` -> `BudgetCategory` -> `MarketingPlan` -> `PlanMovement`.
-
-### 2.4 Otros Contextos
+### 2.3 Otros Contextos
 - **`GoalsContext`**: OKRs y Objetivos Profesionales.
 - **`NotificationContext`**: Centro de notificaciones.
 - **`AuthContext`**: Sesión de usuario Supabase.
@@ -190,7 +186,7 @@ Lógica reutilizable de UI.
 - **`useTaskTransfers`**: Máquina de estados para transferencias (`pending` -> `accepted/rejected`).
 - **`use-mobile.tsx`**: Detecta viewport (mobile vs desktop) para Layouts adaptativos.
 - **`useAppOrDemo`**: Selecciona contexto real o demo automáticamente.
-- **`useDashboardView`**: Controla la vista del dashboard del empleado.
+- **`useDashboardView`**: Gestiona la configuración de vista del dashboard del empleado por departamento (siempre vista semanal; modo Zen eliminado).
 - **`useDeadlines`**: Lógica de carga y gestión de deadlines. Acepta `{ agencyId }` para multi-tenant; usa `fetchDeadlinesForMonth()` de `utils/deadlineUtils.ts` para filtrar por agencia cuando varias comparten el mismo Supabase.
 - **`useIntegration`**: Detecta integraciones habilitadas por agencia.
 - **`useProjectFilters`**: Filtros personalizados de proyectos por agencia.
@@ -228,15 +224,7 @@ const { formatName: formatProjectName } = useProjectAliasing();
     - **Validación Visual**: Muestra barras de progreso de presupuesto en tiempo real.
     - **Refactorizado**: Dividido en subcomponentes (`AllocationProjectHeader`, `AllocationTaskRow`, `AllocationFormDialog`) y hook lógico (`useAllocationActions`) para mejorar mantenibilidad.
 
-### 5.2 Marketing (`src/components/marketing`)
-- **`MarketingMatrix.tsx`**:
-    - **Pivote Dinámico**: Filas (Categorías) vs Columnas (Meses).
-    - **Celdas Interactivas**: Click abre `ExpensesModal` o `BudgetDialog`.
-- **`CategoryDetailPanel.tsx`**:
-    - Panel lateral para gestión granular de una categoría.
-    - Muestra gráfico de "Evolución de Gasto".
-
-### 5.3 Equipo (`src/components/team`)
+### 5.2 Equipo (`src/components/team`)
 - **`EmployeeDialog.tsx`**:
     - **Dual Write**: Crea registro en `public.employees` Y usuario en `auth.users` (vía Edge Function).
 - **`AbsencesSheet.tsx`**:
@@ -274,7 +262,6 @@ Todas las páginas principales de la aplicación.
 |--------|--------|-------------|
 | `ReportsPage.tsx` | 105KB | Dashboard de métricas de rentabilidad |
 | `ClientReportsPage.tsx` | 11KB | Reportes orientados al cliente |
-| `DashboardAI.tsx` | 26KB | Análisis con IA de rendimiento |
 
 ### Publicidad (Ads)
 | Página | Tamaño | Descripción |
@@ -296,7 +283,6 @@ Todas las páginas principales de la aplicación.
 | `LandingPage.tsx` | 78KB | Página pública de marketing |
 | `GuiaPage.tsx` | ~18KB | Guía de funcionalidades pública (`/guia`, `/guia/:section`). Contiene 6 componentes de contenido reutilizables (FeatureCard, ExampleBox, TipBox, WarningBox, StepList, InfoGrid), navegación prev/next entre secciones y contenido detallado para las 9 secciones del producto. |
 | `Login.tsx` | 16KB | Autenticación con Supabase |
-| `MarketingPage.tsx` | 4KB | Wrapper del módulo Marketing |
 | `Index.tsx` | <1KB | Redirección inicial |
 | `NotFound.tsx` | <1KB | Error 404 |
 
@@ -309,7 +295,7 @@ Todas las páginas principales de la aplicación.
 Sistema centralizado de IA con fallback.
 - **Providers**: Gemini (primario) → OpenRouter (secundario) → Coco (fallback local).
 - **Función Principal**: `callWithFallback(prompt, context)`.
-- **Uso**: Generación de reportes en `AdsPage` y `DashboardAI`.
+- **Uso**: Generación de reportes en `AdsPage`.
 
 ### `src/services/errorService.ts`
 Manejo centralizado de errores.
@@ -319,7 +305,7 @@ Manejo centralizado de errores.
 ### `src/services/auditService.ts`
 Sistema de auditoría para cambios críticos.
 - **Registra**: Quién hizo qué, cuándo, en qué entidad.
-- **Uso**: Cambios en presupuestos de marketing (`MarketingContext`).
+- **Uso**: Cambios críticos que requieren auditoría (configuración, etc.).
 
 </details>
 
@@ -363,7 +349,6 @@ Define las integraciones disponibles para activar por agencia.
 | **`Employee`** | `AppContext`, `AgencyContext`, `EmployeeRow`, `TeamPage`, `capacityUtils` |
 | **`Project`** | `AppContext`, `ProjectsPage`, `useProjectMetrics`, `ClientProjectPage` |
 | **`AgencySettings`** | `AgencyContext`, `usePermissions`, `AgencySettingsPage` |
-| **`MarketingBudget`** | `MarketingContext`, `MarketingMatrix`, `BudgetPlanner` |
 
 ### 8.2 Dependencias de Lógica Core (Contexts & Utils)
 
@@ -379,7 +364,6 @@ Define las integraciones disponibles para activar por agencia.
 | Si modificas (UI) | Revisa... |
 |-----------------|-----------|
 | **`AllocationSheet`** | `useAllocationSheet`, `useTasksImpact`, `useTaskTransfers`. Es muy sensible a cambios de estado. |
-| **`MarketingMatrix`** | Depende fuertemente de la estructura de árbol de `MarketingContext`. |
 | **`EmployeeDialog`** | Interactúa con `Supabase Auth` y tabla `employees` simultáneamente. |
 
 ---
@@ -412,6 +396,20 @@ Antes de deployar cambios críticos:
 - [ ] **Split Weeks**: Si tocaste fechas, ¿probaste el cambio de año (Dic-Ene)?
 - [ ] **Mobile**: ¿Verificaste que el cambio se ve bien en `use-mobile`? El panel ya no bloquea acceso en móvil; PlannerGrid y DeadlinesPage tienen vistas específicas (Cards, Sheets). EmployeeDashboard usa Sheet en vez de Dialog en móvil. AllocationSheet tiene padding, botones ≥44px y sidebar oculto en móvil. WeeklyForecast y Reports usan widths responsive.
 - [ ] **Deadlines multi-tenant**: Si tocaste carga de deadlines, ¿usan `fetchDeadlinesForMonth(monthKey, currentAgency?.id)` o `useDeadlines({ agencyId })` para no mezclar datos entre agencias?
+
+### Limpieza de base de datos
+
+**Al eliminar un empleado** (para que no quede rastro en informes ni datos huérfanos):
+
+- **Archivo**: `supabase/migrations/20260216100000_cleanup_employee_on_delete.sql`
+- **Qué hace**: Crea la función `cleanup_employee_data(uuid)` que elimina asignaciones, ausencias, feedback semanal, rutinas, transferencias de tareas, quita al empleado de `deadlines.employee_hours` y de `team_events.affected_employee_ids`. La app la llama automáticamente antes de borrar el registro en `employees`.
+- **Cómo ejecutar**: En el SQL Editor de Supabase ejecutar el contenido del archivo, o `supabase db push`. Sin esta migración, al eliminar un empleado puede aparecer "Desconocido" en informes de coherencia.
+
+**Funcionalidades eliminadas (Marketing, modo Zen):**
+
+- **Archivo**: `supabase/migrations/20260216200000_remove_marketing_and_zen_cleanup.sql`
+- **Qué hace**: Elimina tablas de marketing y normaliza `department_config.default_view` y `employees.preferred_view` de `daily` a `weekly`.
+- **Cómo ejecutar**: SQL Editor o `supabase db push`. **Haz backup antes en producción.**
 
 ---
 

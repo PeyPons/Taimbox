@@ -10,11 +10,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { useDepartmentConfigs } from '@/hooks/useDashboardView';
 import { ViewMode, DepartmentConfig } from '@/types';
-import { Calendar, Sparkles, Lock, Unlock, Loader2, Settings } from 'lucide-react';
+import { Calendar, Lock, Unlock, Loader2, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface DepartmentViewConfigDialogProps {
@@ -48,7 +47,7 @@ export function DepartmentViewConfigDialog({
     }, [open, departmentName, getConfigForDepartment]);
 
     const handleSave = async () => {
-        const success = await saveDepartmentConfig(departmentName, defaultView, isStrict);
+        const success = await saveDepartmentConfig(departmentName, 'weekly', isStrict);
         if (success) {
             onOpenChange(false);
         }
@@ -68,50 +67,16 @@ export function DepartmentViewConfigDialog({
                 </DialogHeader>
 
                 <div className="space-y-6 py-4">
-                    {/* Selector de Vista por Defecto */}
+                    {/* Vista por defecto: solo semanal (modo Zen eliminado) */}
                     <div className="space-y-3">
                         <Label className="text-sm font-medium">Vista por defecto del equipo</Label>
-                        <RadioGroup
-                            value={defaultView}
-                            onValueChange={(val) => setDefaultView(val as ViewMode)}
-                            className="grid grid-cols-2 gap-3"
-                        >
-                            <Label
-                                htmlFor="weekly"
-                                className={cn(
-                                    "flex flex-col items-center gap-2 rounded-lg border-2 p-4 cursor-pointer transition-all hover:bg-slate-50",
-                                    defaultView === 'weekly'
-                                        ? "border-primary bg-primary/5"
-                                        : "border-slate-200"
-                                )}
-                            >
-                                <RadioGroupItem value="weekly" id="weekly" className="sr-only" />
-                                <Calendar className={cn(
-                                    "h-8 w-8",
-                                    defaultView === 'weekly' ? "text-primary" : "text-slate-400"
-                                )} />
+                        <div className="flex items-center gap-2 rounded-lg border-2 border-slate-200 p-4 bg-slate-50/50">
+                            <Calendar className="h-8 w-8 text-primary" />
+                            <div>
                                 <span className="font-medium">Semanal</span>
-                                <span className="text-xs text-slate-500 text-center">Vista completa de la semana</span>
-                            </Label>
-
-                            <Label
-                                htmlFor="daily"
-                                className={cn(
-                                    "flex flex-col items-center gap-2 rounded-lg border-2 p-4 cursor-pointer transition-all hover:bg-slate-50",
-                                    defaultView === 'daily'
-                                        ? "border-primary bg-primary/5"
-                                        : "border-slate-200"
-                                )}
-                            >
-                                <RadioGroupItem value="daily" id="daily" className="sr-only" />
-                                <Sparkles className={cn(
-                                    "h-8 w-8",
-                                    defaultView === 'daily' ? "text-primary" : "text-slate-400"
-                                )} />
-                                <span className="font-medium">Modo Zen</span>
-                                <span className="text-xs text-slate-500 text-center">Enfoque en el día actual</span>
-                            </Label>
-                        </RadioGroup>
+                                <span className="text-xs text-slate-500 block">Vista completa de la semana</span>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Switch de Estricto */}
@@ -153,7 +118,7 @@ export function DepartmentViewConfigDialog({
                                 {isStrict ? "Modo Estricto" : "Modo Flexible"}
                             </Badge>
                             <Badge variant="outline" className="text-xs">
-                                Vista: {defaultView === 'daily' ? 'Zen' : 'Semanal'}
+                                Vista: Semanal
                             </Badge>
                         </div>
                     </div>

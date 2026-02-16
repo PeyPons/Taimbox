@@ -14,7 +14,6 @@ import {
   FolderKanban,
   Settings,
   Megaphone,
-  Sparkles,
   Facebook,
   FileDown,
   LogOut,
@@ -25,8 +24,7 @@ import {
   ChevronRight,
   ChevronDown,
   X,
-  User,
-  PiggyBank
+  User
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from '@/lib/utils';
@@ -228,10 +226,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
 
               {/* PPC */}
-              {modules.ppc && ((canAccess('/ads') || canAccess('/meta-ads') || canAccess('/marketing'))) && (
+              {modules.ppc && (canAccess('/ads') || canAccess('/meta-ads')) && (
                 <NavGroup
                   label="PPC & medios"
-                  isActive={['/ads', '/meta-ads', '/marketing'].includes(location.pathname)}
+                  isActive={['/ads', '/meta-ads'].includes(location.pathname)}
                 >
                   {canAccess('/ads') && (
                     <NavLink to="/ads" icon={Megaphone} active={location.pathname === '/ads'}>
@@ -241,11 +239,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   {canAccess('/meta-ads') && (
                     <NavLink to="/meta-ads" icon={Facebook} active={location.pathname === '/meta-ads'}>
                       Meta Ads
-                    </NavLink>
-                  )}
-                  {canAccess('/marketing') && (
-                    <NavLink to="/marketing" icon={PiggyBank} active={location.pathname === '/marketing'}>
-                      Control Presupuestario
                     </NavLink>
                   )}
                 </NavGroup>
@@ -271,13 +264,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
             </div>
           )}
-
-          {/* AI Copilot - Always available but separated */}
-          <div className="pt-4 mt-4 border-t border-slate-800">
-            <NavLink to="/dashboard-ai" icon={Sparkles} active={location.pathname === '/dashboard-ai'}>
-              Copiloto IA
-            </NavLink>
-          </div>
 
         </nav>
 

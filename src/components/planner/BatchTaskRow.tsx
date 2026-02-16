@@ -57,6 +57,29 @@ export function BatchTaskRow({
     const [openEmployeeCombobox, setOpenEmployeeCombobox] = useState(false);
     const { formatName: formatProjectName } = useProjectAliasing();
 
+    // Ordenar proyectos: primero los que tienen deadline asignado al empleado de la tarea, luego el resto
+    const taskEmployeeIdForSort = task.employeeId || currentEmployeeId;
+    const { projectsWithDeadline, projectsWithoutDeadline } = useMemo(() => {
+        if (!viewDate || !taskEmployeeIdForSort || deadlines.length === 0) {
+            return { projectsWithDeadline: [], projectsWithoutDeadline: activeProjects };
+        }
+        const monthKey = format(startOfMonth(viewDate), 'yyyy-MM');
+        const withDeadline: Project[] = [];
+        const withoutDeadline: Project[] = [];
+        for (const p of activeProjects) {
+            const d = deadlines.find(d => d.projectId === p.id && d.month === monthKey && !d.isHidden);
+            const hours = d?.employeeHours[taskEmployeeIdForSort] ?? 0;
+            if (hours > 0) withDeadline.push(p);
+            else withoutDeadline.push(p);
+        }
+        return { projectsWithDeadline: withDeadline, projectsWithoutDeadline: withoutDeadline };
+    }, [activeProjects, deadlines, viewDate, taskEmployeeIdForSort]);
+
+    const sortedProjectsForSelector = useMemo(
+        () => [...projectsWithDeadline, ...projectsWithoutDeadline],
+        [projectsWithDeadline, projectsWithoutDeadline]
+    );
+
     // Calcular si esta tarea excede las horas contratadas
     const taskProject = task.projectId ? activeProjects.find(p => p.id === task.projectId) : null;
     const taskHours = parseFloat(task.hours) || 0;
@@ -166,8 +189,8 @@ export function BatchTaskRow({
                                 <CommandInput placeholder="Buscar proyecto..." />
                                 <CommandList className="max-h-[280px] overflow-y-auto overscroll-contain">
                                     <CommandEmpty>No hay.</CommandEmpty>
-                                    <CommandGroup heading="Proyectos asignados">
-                                        {activeProjects.map((project) => {
+                                    <CommandGroup heading={projectsWithDeadline.length > 0 ? "Proyectos (primero con tu deadline)" : "Proyectos"}>
+                                        {sortedProjectsForSelector.map((project) => {
                                             const client = clients.find(c => c.id === project.clientId);
                                             const budgetStatus = getProjectBudgetStatus(project.id);
                                             const totalUsed = budgetStatus.totalComputed + budgetStatus.totalPlanned;

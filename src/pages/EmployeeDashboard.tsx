@@ -48,9 +48,6 @@ import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useIntegration } from '@/hooks/useIntegration';
-import { useDashboardView } from '@/hooks/useDashboardView';
-import { ViewToggle, ViewModeIndicator } from '@/components/employee/ViewToggle';
-import { DailyZenDashboard } from '@/components/employee/DailyZenDashboard';
 import { PendingTransfersPanel } from '@/components/transfers/TaskTransferComponents';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 
@@ -99,9 +96,6 @@ export default function EmployeeDashboard() {
   const isCrmExportEnabled = useIntegration('crm_export');
   const { hasPermission } = usePermissions();
   const canAssignToOthers = hasPermission('can_assign_tasks_to_others');
-
-  // View mode hook for weekly vs daily zen view
-  const { activeView, showToggle, setView, isStrict, departmentDefaultView, isLoading: isLoadingViewConfig } = useDashboardView();
 
   // Get configurable weekly close day from agency settings
   const weeklyCloseDay = useWeeklyCloseDay();
@@ -430,7 +424,7 @@ export default function EmployeeDashboard() {
     }
   }, [currentMonth, isGlobalLoading, isLoadingProfile, ensureMonthLoaded]);
 
-  if (isGlobalLoading || isLoadingProfile || isLoadingViewConfig) {
+  if (isGlobalLoading || isLoadingProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
@@ -504,19 +498,6 @@ export default function EmployeeDashboard() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* View Mode Toggle or Indicator */}
-          {showToggle ? (
-            <ViewToggle
-              value={activeView}
-              onChange={setView}
-            />
-          ) : (
-            <ViewModeIndicator
-              isStrict={isStrict}
-              departmentView={departmentDefaultView}
-            />
-          )}
-
           {/* Dropdown de Acciones Secundarias */}
           <DropdownMenu open={actionsDropdownOpen} onOpenChange={setActionsDropdownOpen}>
             <DropdownMenuTrigger asChild>
@@ -549,13 +530,8 @@ export default function EmployeeDashboard() {
         </div>
       </div>
 
-      {/* CONTENT BASED ON VIEW MODE */}
-      {activeView === 'daily' ? (
-        /* DAILY ZEN MODE - Minimalist focused view */
-        <DailyZenDashboard employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
-      ) : (
-        /* WEEKLY MODE - Full planning view */
-        <>
+      {/* Vista semanal (planificación) */}
+      <>
           {/* 2. CONTROL MES */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white/60 p-3 rounded-lg border border-slate-200 backdrop-blur-sm">
             <div className="flex items-center gap-2">
@@ -680,8 +656,7 @@ export default function EmployeeDashboard() {
               </TabsContent>
             </div>
           </Tabs>
-        </>
-      )}
+      </>
 
       {/* MODALES Y DIÁLOGOS (Hidden UI) */}
       {selectedCell && (
