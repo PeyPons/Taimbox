@@ -295,7 +295,8 @@ Todas las páginas principales de la aplicación.
 ### Otros
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
-| `LandingPage.tsx` | 78KB | Página pública de marketing |
+| `LandingPage.tsx` | ~80KB | Página pública de marketing (home). Incluye **sticky header** (Login, enlaces API/Guía), **footer** con enlace a "Por qué Timeboxing" (`/por-que-timeboxing`), demo, guía y API. Schema JSON-LD SoftwareApplication en Helmet. Componentes: `LandingFooter.tsx`, `CalendarPreview.tsx`. |
+| `ArticlePage.tsx` | ~3KB | Página pública del artículo largo en `/por-que-timeboxing`. Renderiza `LandingArticle` (6 bloques: Gancho, Teoría, Problema en agencias, Solución con DemoPlanner lazy, Arquitectura/API, CTA). Schema JSON-LD Article + SoftwareApplication. Enlazada desde el footer de la home. |
 | `GuiaPage.tsx` | ~18KB | Guía de funcionalidades pública (`/guia`, `/guia/:section`). Contiene 6 componentes de contenido reutilizables (FeatureCard, ExampleBox, TipBox, WarningBox, StepList, InfoGrid), navegación prev/next entre secciones y contenido detallado para las 9 secciones del producto. |
 | `ApiDocsPage.tsx` + `api-docs/` | Shell ~3KB + ~30 archivos | Documentación pública de la API (`/api-docs`). **Arquitectura modular** en `src/pages/api-docs/` (data, components, sections). Sidebar colapsable con búsqueda (Ctrl+K), 4 grupos: Overview (5), Tutoriales (5), SDK y REST (4), Referencia (17 tablas expandibles con ResponseExample JSON). Incluye 5 tutoriales paso a paso, changelog, buenas prácticas de seguridad y ejemplos SDK+cURL por recurso. |
 | `Login.tsx` | 16KB | Autenticación con Supabase |

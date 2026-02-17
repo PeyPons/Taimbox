@@ -28,6 +28,7 @@ import AdminDocsPage from "./pages/admin/AdminDocsPage";
 // Página principal (carga inmediata para mejor UX)
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import LandingPage from "./pages/LandingPage";
+import ArticlePage from "./pages/ArticlePage";
 import GuiaPage from "./pages/GuiaPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
 import { ModuleGuard } from "./components/auth/ModuleGuard";
@@ -114,6 +115,9 @@ const App = () => (
                     <Routes>
                       {/* Página de inicio (Landing) */}
                       <Route path="/" element={<LandingPage />} />
+
+                      {/* Artículo: por qué Timeboxing (página pública) */}
+                      <Route path="/por-que-timeboxing" element={<ArticlePage />} />
 
                       {/* Guía de funcionalidades (páginas públicas detalladas) */}
                       <Route path="/guia" element={<GuiaPage />} />
