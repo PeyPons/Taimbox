@@ -220,9 +220,22 @@ El sistema sincroniza datos de Google Ads y Meta Ads mediante procesos externos.
 
   **Tabla `api_tokens`**: Almacena metadatos de tokens API emitidos (hash SHA-256, permisos, expiración). El JWT real solo se muestra una vez al crearlo.
 
+  **Revocación y expiración con efecto inmediato**: Por defecto, al revocar un token solo se pone `is_active = false` en la BD; el JWT sigue siendo válido hasta que expire. Para que la revocación niegue el acceso al instante, la función `requesting_agency_id()` debe comprobar si el token está revocado y devolver `NULL` en ese caso. Además, aunque PostgREST valida el claim `exp` del JWT automáticamente, se puede añadir una verificación adicional de `expires_at` en la BD para mayor consistencia. Script: `supabase/scripts/rls_check_api_token_revoked_and_expired.sql`. **Ejecutar ese script en el SQL Editor de Supabase** para que al revocar un token en el panel deje de funcionar de inmediato y para verificar también la expiración desde la BD (además de la validación automática del JWT).
+
+  **Enforzar permisos readonly/readwrite**: Por defecto, las políticas RLS solo verifican `agency_id`, no el claim `permissions` del JWT. Esto permite que tokens con `permissions='readonly'` puedan hacer INSERT/UPDATE/DELETE cuando no deberían. Para solucionarlo:
+  1. **Script completo (recomendado)**: Ejecutar `supabase/scripts/rls_enforce_api_permissions_all_tables_complete.sql` en el SQL Editor de Supabase. Este script:
+     - Crea la función `can_write_via_api()` si no existe.
+     - Detecta y modifica automáticamente todas las políticas RLS de INSERT/UPDATE/DELETE en todas las tablas principales.
+     - Maneja políticas que aplican a ALL (como "tenant_isolation") convirtiéndolas en políticas separadas.
+     - Respeta el tipo de tabla (agency_id directo, vía employee_id, vía project_id).
+  2. **Scripts individuales** (si prefieres aplicar tabla por tabla):
+     - `rls_enforce_api_permissions.sql`: Crea solo la función `can_write_via_api()`.
+     - `rls_fix_tenant_isolation_employees.sql`: Ejemplo para `employees` con política ALL.
+     - `rls_enforce_api_permissions_employees.sql`: Ejemplo para `employees` con políticas por comando.
+
   **Edge Functions relacionadas**:
-  - `generate-api-token`: Recibe `{ agency_id, name, permissions?, expires_in_days? }` del admin autenticado, firma un JWT con claim `agency_id` usando `SUPABASE_JWT_SECRET`, guarda el hash en `api_tokens` y devuelve el JWT.
-  - `revoke-api-token`: Recibe `{ token_id }`, verifica que el caller es admin de la agencia dueña y marca `is_active = false`.
+  - `generate-api-token`: Recibe `{ agency_id, name, permissions?, expires_in_days? }` del admin autenticado, firma un JWT con claim `agency_id` y `sub` = id del registro en `api_tokens`, guarda el hash en `api_tokens` y devuelve el JWT.
+  - `revoke-api-token`: Recibe `{ token_id }`, verifica que el caller es admin de la agencia dueña y marca `is_active = false`. El acceso se deniega en la siguiente petición solo si está aplicado el script anterior.
 
   **Políticas RLS por tipo de tabla**:
   | Tipo | Tablas | Política |

@@ -14,7 +14,14 @@ export interface TableDef {
   description: string;
   authNote: string;
   columns: ColumnDef[];
-  examples: { select: string; insert: string };
+  examples: {
+    select: string;
+    insert: string;
+    /** Ejemplo cURL para GET (consultar). Si no se define, se muestra un ejemplo genérico. */
+    curlSelect?: string;
+    /** Ejemplo cURL para POST (crear). Si no se define, se muestra un ejemplo genérico. */
+    curlInsert?: string;
+  };
   responses: { getList: string; getOne: string; post: string };
 }
 

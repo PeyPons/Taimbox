@@ -251,7 +251,7 @@ export default function ApiKeysPage() {
             Datos de conexión para tu integrador
           </CardTitle>
           <CardDescription>
-            Comparte estos 3 valores con quien necesite conectarse a la API. Los dos primeros son fijos; el Bearer Token se genera abajo.
+            Comparte estos valores con quien necesite conectarse a la API. El Bearer Token se genera en la sección de abajo. El ID de agencia solo hace falta para inserciones (crear empleados, clientes, proyectos).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -274,6 +274,12 @@ export default function ApiKeysPage() {
               Bearer &lt;token JWT&gt; — genera uno en la sección de abajo
             </div>
           </div>
+          <CopyField
+            label="ID de agencia"
+            sublabel="(solo para inserciones: empleados, clientes, proyectos…; en lecturas no hace falta)"
+            value={currentAgency?.id ?? ''}
+            displayValue={currentAgency?.id ? `${currentAgency.id.slice(0, 8)}...${currentAgency.id.slice(-4)}` : '—'}
+          />
         </CardContent>
       </Card>
 

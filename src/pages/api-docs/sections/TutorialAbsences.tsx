@@ -1,14 +1,13 @@
 import { CalendarOff } from 'lucide-react';
-import { SectionAnchor } from '../components/SectionAnchor';
+import { SectionHeading } from '../components/SectionHeading';
 import { TutorialStep } from '../components/TutorialStep';
 
 export function TutorialAbsences() {
   return (
     <section>
-      <SectionAnchor id="tutorial-absences" />
-      <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
-        <CalendarOff className="h-6 w-6 text-indigo-300" /> Gestionar ausencias
-      </h2>
+      <SectionHeading id="tutorial-absences" icon={CalendarOff} className="mb-2">
+        Gestionar ausencias
+      </SectionHeading>
       <p className="text-indigo-100/85 mb-6">
         Registra vacaciones, bajas y eventos del equipo para que la capacidad disponible se ajuste
         automaticamente en la planificacion.

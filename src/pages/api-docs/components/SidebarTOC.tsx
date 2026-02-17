@@ -6,9 +6,10 @@ import { SearchBar } from './SearchBar';
 
 interface SidebarTOCProps {
   activeSection: string;
+  onNavigate?: (id: string) => void;
 }
 
-export function SidebarTOC({ activeSection }: SidebarTOCProps) {
+export function SidebarTOC({ activeSection, onNavigate }: SidebarTOCProps) {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     TOC_GROUPS.forEach((g) => {
@@ -36,7 +37,8 @@ export function SidebarTOC({ activeSection }: SidebarTOCProps) {
   const allOpen = TOC_GROUPS.every((g) => openGroups[g.title]);
 
   const handleClick = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    onNavigate?.(id);
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   return (

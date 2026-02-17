@@ -1,16 +1,15 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Key, Shield, AlertTriangle, Clock, RefreshCw, Eye } from 'lucide-react';
-import { SectionAnchor } from '../components/SectionAnchor';
+import { SectionHeading } from '../components/SectionHeading';
 import { CodeBlock } from '../components/CodeBlock';
 
 export function OverviewAuth() {
   return (
     <section>
-      <SectionAnchor id="auth" />
-      <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-        <Key className="h-6 w-6 text-indigo-300" /> Autenticacion y seguridad
-      </h2>
+      <SectionHeading id="auth" icon={Key} className="mb-6">
+        Autenticacion y seguridad
+      </SectionHeading>
       <p className="text-indigo-100/85 mb-6">
         Para usar la API necesitas dos valores en los headers de cada peticion:
       </p>
@@ -65,7 +64,7 @@ export function OverviewAuth() {
         {[
           'Inicia sesion en Timeboxing como administrador de tu agencia.',
           'Ve a Configuracion \u2192 API & Integraciones en el menu lateral.',
-          'Haz clic en Crear token, asigna un nombre descriptivo y elige los permisos (lectura o lectura/escritura).',
+          'Haz clic en Crear token, asigna un nombre descriptivo y elige los permisos (solo lectura o lectura/escritura). Los tokens de solo lectura devuelven 403 en POST, PATCH y DELETE.',
           'Copia el token JWT que se muestra. Solo se muestra una vez; guardalo en un lugar seguro.',
         ].map((text, i) => (
           <div

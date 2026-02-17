@@ -1,14 +1,13 @@
 import { CalendarDays } from 'lucide-react';
-import { SectionAnchor } from '../components/SectionAnchor';
+import { SectionHeading } from '../components/SectionHeading';
 import { TutorialStep } from '../components/TutorialStep';
 
 export function TutorialPlanning() {
   return (
     <section>
-      <SectionAnchor id="tutorial-planning" />
-      <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
-        <CalendarDays className="h-6 w-6 text-indigo-300" /> Automatizar planificacion
-      </h2>
+      <SectionHeading id="tutorial-planning" icon={CalendarDays} className="mb-2">
+        Automatizar planificacion
+      </SectionHeading>
       <p className="text-indigo-100/85 mb-6">
         Crea y gestiona asignaciones de tareas semanales programaticamente. Ideal para
         pre-planificar sprints o distribuir horas automaticamente.

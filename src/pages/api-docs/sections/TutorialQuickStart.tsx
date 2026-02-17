@@ -1,14 +1,13 @@
 import { Rocket } from 'lucide-react';
-import { SectionAnchor } from '../components/SectionAnchor';
+import { SectionHeading } from '../components/SectionHeading';
 import { TutorialStep } from '../components/TutorialStep';
 
 export function TutorialQuickStart() {
   return (
     <section>
-      <SectionAnchor id="tutorial-quickstart" />
-      <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
-        <Rocket className="h-6 w-6 text-indigo-300" /> Primeros pasos
-      </h2>
+      <SectionHeading id="tutorial-quickstart" icon={Rocket} className="mb-2">
+        Primeros pasos
+      </SectionHeading>
       <p className="text-indigo-100/85 mb-6">
         En menos de 5 minutos tendras tu primera peticion funcionando. Este tutorial cubre: obtener
         un token, configurar el cliente y verificar la conexion.
@@ -51,6 +50,7 @@ const timeboxing = createClient(
     }
   }
 )`}
+          note="Si usas solo HTTP (cURL, Postman, Python requests, etc.), no necesitas este paso: usa la URL base y los headers apikey y Authorization en cada peticion. Puedes ir al paso 5 para ver un ejemplo con cURL."
         />
         <TutorialStep
           step={4}

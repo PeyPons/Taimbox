@@ -1,16 +1,15 @@
 import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SectionAnchor } from '../components/SectionAnchor';
+import { SectionHeading } from '../components/SectionHeading';
 import { CodeBlock } from '../components/CodeBlock';
 import { ERROR_CODES } from '../data/tables';
 
 export function OverviewResponses() {
   return (
     <section>
-      <SectionAnchor id="responses" />
-      <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-        <AlertTriangle className="h-6 w-6 text-indigo-300" /> Respuestas y errores
-      </h2>
+      <SectionHeading id="responses" icon={AlertTriangle} className="mb-6">
+        Respuestas y errores
+      </SectionHeading>
       <p className="text-indigo-100/85 mb-4">
         Todas las respuestas son JSON. La API devuelve codigos HTTP estandar y errores
         estructurados. Siempre verifica el campo{' '}
@@ -19,6 +18,15 @@ export function OverviewResponses() {
         </code>{' '}
         en la respuesta del SDK o el status HTTP en peticiones directas.
       </p>
+      <div className="mb-6 p-4 rounded-lg bg-slate-500/10 border border-slate-500/20">
+        <p className="text-sm text-slate-100/90">
+          <strong className="text-slate-300">200 con cuerpo vacío:</strong> Una petición GET
+          correcta (token válido) puede devolver <code className="font-mono text-xs">[]</code> con
+          status 200 cuando no hay filas que cumplan el filtro o cuando RLS no permite ver
+          ninguna. Solo recibirás 401/403 si el token es inválido o no tienes permiso para el
+          recurso. Trata 200 + array vacío como &quot;sin resultados&quot;, no como error.
+        </p>
+      </div>
 
       <h3 className="text-white font-semibold mb-3">Formato de datos</h3>
       <div className="grid sm:grid-cols-3 gap-3 mb-8">
@@ -26,7 +34,7 @@ export function OverviewResponses() {
           {
             title: 'GET lista',
             status: '200',
-            desc: 'Devuelve un array JSON de objetos. Puede estar vacio si no hay resultados.',
+            desc: 'Devuelve un array JSON de objetos. Puede estar vacio si no hay resultados o si RLS no permite ver ninguna fila (mismo 200, no se distingue por seguridad).',
           },
           {
             title: 'GET/POST/PATCH uno',

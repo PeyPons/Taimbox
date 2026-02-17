@@ -1,14 +1,13 @@
 import { Globe, AlertTriangle } from 'lucide-react';
-import { SectionAnchor } from '../components/SectionAnchor';
+import { SectionHeading } from '../components/SectionHeading';
 import { CodeBlock } from '../components/CodeBlock';
 
 export function OverviewBaseUrl() {
   return (
     <section>
-      <SectionAnchor id="base-url" />
-      <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-        <Globe className="h-6 w-6 text-indigo-300" /> Base URL y headers
-      </h2>
+      <SectionHeading id="base-url" icon={Globe} className="mb-6">
+        Base URL y headers
+      </SectionHeading>
       <p className="text-indigo-100/85 mb-4">
         Todas las peticiones van contra la URL de la API de Timeboxing. Necesitas la{' '}
         <code className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-xs text-indigo-200">
@@ -33,13 +32,27 @@ Prefer: return=representation           # Para recibir el objeto creado/modifica
           <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
           <p className="text-sm text-amber-100/90">
             <strong className="text-amber-300">Importante:</strong> Tu token esta vinculado a
-            tu{' '}
-            <code className="px-1 rounded bg-white/10 font-mono text-xs">agency_id</code>{' '}
-            mediante un JWT firmado. Solo podras leer y escribir datos de tu propia agencia
-            gracias a las politicas RLS. Si necesitas revocar un token, hazlo desde la seccion
-            API & Integraciones.
+            tu agencia mediante un JWT firmado. Solo podras leer y escribir datos de tu propia
+            agencia gracias a las politicas RLS. Si necesitas revocar un token, hazlo desde la
+            seccion API & Integraciones.
           </p>
         </div>
+      </div>
+
+      <div className="mt-4 p-4 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+        <h4 className="text-white font-semibold text-sm mb-2">¿Cuándo necesito el ID de agencia?</h4>
+        <ul className="text-sm text-indigo-100/90 space-y-1 list-disc list-inside">
+          <li>
+            <strong>En lecturas (GET):</strong> Nunca. El token ya identifica tu agencia y RLS
+            filtra automaticamente. No hace falta pasar <code className="font-mono text-xs">agency_id</code> en los filtros.
+          </li>
+          <li>
+            <strong>En inserciones (POST):</strong> Al crear empleados, clientes, proyectos u otros
+            recursos que pertenecen a una agencia, el body debe incluir <code className="font-mono text-xs">agency_id</code>.
+            Puedes copiarlo desde <strong>API & Integraciones</strong> (seccion &quot;Datos de conexion&quot;, campo &quot;ID de agencia&quot;)
+            o obtenerlo con <code className="font-mono text-xs">GET /agencies</code> (solo veras tu agencia).
+          </li>
+        </ul>
       </div>
     </section>
   );

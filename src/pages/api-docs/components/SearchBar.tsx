@@ -101,18 +101,27 @@ export function SearchBar() {
         </button>
       </div>
       {filtered.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 rounded-lg bg-slate-900 border border-white/10 shadow-xl z-50 max-h-64 overflow-y-auto">
+        <div
+          className={cn(
+            'absolute top-full left-0 right-0 mt-1 rounded-lg bg-slate-900/95 backdrop-blur-sm',
+            'border border-white/10 shadow-xl shadow-black/20 z-50',
+            'max-h-64 overflow-y-auto overflow-x-hidden scrollbar-slim',
+          )}
+        >
           {filtered.map((r, i) => (
             <button
               key={`${r.id}-${i}`}
               onClick={() => navigate(r.id)}
               className={cn(
-                'w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors flex items-center justify-between',
+                'w-full text-left px-3 py-2 text-sm hover:bg-white/10 transition-colors',
+                'flex items-center justify-between gap-3 min-w-0',
                 i > 0 && 'border-t border-white/5',
               )}
             >
-              <span className="text-white font-mono text-xs">{r.label}</span>
-              <span className="text-[10px] text-slate-500">{r.group}</span>
+              <span className="text-white font-mono text-xs truncate min-w-0">
+                {r.label}
+              </span>
+              <span className="text-[10px] text-slate-500 shrink-0">{r.group}</span>
             </button>
           ))}
         </div>

@@ -1,14 +1,13 @@
 import { BarChart3 } from 'lucide-react';
-import { SectionAnchor } from '../components/SectionAnchor';
+import { SectionHeading } from '../components/SectionHeading';
 import { TutorialStep } from '../components/TutorialStep';
 
 export function TutorialReports() {
   return (
     <section>
-      <SectionAnchor id="tutorial-reports" />
-      <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
-        <BarChart3 className="h-6 w-6 text-indigo-300" /> Exportar reportes
-      </h2>
+      <SectionHeading id="tutorial-reports" icon={BarChart3} className="mb-2">
+        Exportar reportes
+      </SectionHeading>
       <p className="text-indigo-100/85 mb-6">
         Consulta datos de planificacion para generar reportes de horas, rentabilidad y ocupacion
         del equipo.

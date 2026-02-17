@@ -1,6 +1,6 @@
 import { History } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SectionAnchor } from '../components/SectionAnchor';
+import { SectionHeading } from '../components/SectionHeading';
 import { CHANGELOG_ENTRIES } from '../data/changelog';
 
 const TYPE_STYLES = {
@@ -20,10 +20,9 @@ const TYPE_LABELS = {
 export function OverviewChangelog() {
   return (
     <section>
-      <SectionAnchor id="changelog" />
-      <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-        <History className="h-6 w-6 text-indigo-300" /> Changelog
-      </h2>
+      <SectionHeading id="changelog" icon={History} className="mb-6">
+        Changelog
+      </SectionHeading>
       <p className="text-indigo-100/85 mb-6">
         Historial de cambios en la API. Consulta esta seccion para conocer nuevas funcionalidades,
         mejoras y posibles cambios que rompan compatibilidad.

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { ArrowLeft, ArrowRight, Code, Menu, BookOpen, Key } from 'lucide-react';
@@ -25,33 +25,77 @@ import { RealtimeSection } from './api-docs/sections/RealtimeSection';
 import { ResourceReference } from './api-docs/sections/ResourceReference';
 
 function useScrollSpy() {
-  const [activeSection, setActiveSection] = useState('intro');
-  const observerRef = useRef<IntersectionObserver | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const ids = getAllSectionIds();
+  const hashId = location.hash.slice(1);
+  const validHash = hashId && ids.includes(hashId);
 
+  const [activeSection, setActiveSection] = useState(() => validHash ? hashId : 'intro');
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const isScrollingFromHashRef = useRef(false);
+
+  const programmaticNavRef = useRef(false);
+
+  const navigateToSection = (id: string) => {
+    if (!ids.includes(id)) return;
+    programmaticNavRef.current = true;
+    navigate(`#${id}`, { replace: true });
+    setActiveSection(id);
+  };
+
+  // Cuando hay hash (carga, recarga o atrás/adelante): scroll a la sección
+  useEffect(() => {
+    if (!validHash) return;
+    setActiveSection(hashId);
+    if (programmaticNavRef.current) {
+      programmaticNavRef.current = false;
+      isScrollingFromHashRef.current = true;
+      setTimeout(() => { isScrollingFromHashRef.current = false; }, 800);
+      return;
+    }
+    isScrollingFromHashRef.current = true;
+    requestAnimationFrame(() => {
+      const el = document.getElementById(hashId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      setTimeout(() => {
+        isScrollingFromHashRef.current = false;
+      }, 1200);
+    });
+  }, [hashId, validHash]);
+
+  // Scroll spy: la sección activa es la que está “en vista” (la más arriba entre las visibles)
   useEffect(() => {
     observerRef.current = new IntersectionObserver(
       (entries) => {
+        if (isScrollingFromHashRef.current) return;
         const visible = entries.filter((e) => e.isIntersecting);
-        if (visible.length > 0) {
-          const sorted = visible.sort(
-            (a, b) => a.boundingClientRect.top - b.boundingClientRect.top,
-          );
-          setActiveSection(sorted[0].target.id);
+        if (visible.length === 0) return;
+        // Entre las visibles, elegir la que tiene el top más bajo (la que “acabas de entrar”)
+        const sorted = [...visible].sort(
+          (a, b) => b.boundingClientRect.top - a.boundingClientRect.top,
+        );
+        const id = sorted[0].target.id;
+        setActiveSection(id);
+        const newHash = `#${id}`;
+        if (window.location.hash !== newHash) {
+          navigate(newHash, { replace: true });
         }
       },
-      { rootMargin: '-100px 0px -60% 0px', threshold: 0 },
+      { rootMargin: '-120px 0px -55% 0px', threshold: 0 },
     );
 
-    const ids = getAllSectionIds();
     ids.forEach((id) => {
       const el = document.getElementById(id);
       if (el) observerRef.current!.observe(el);
     });
 
     return () => observerRef.current?.disconnect();
-  }, []);
+  }, [navigate]);
 
-  return activeSection;
+  return { activeSection, navigateToSection };
 }
 
 function SectionDivider({ title }: { title: string }) {
@@ -67,7 +111,7 @@ function SectionDivider({ title }: { title: string }) {
 }
 
 export default function ApiDocsPage() {
-  const activeSection = useScrollSpy();
+  const { activeSection, navigateToSection } = useScrollSpy();
   const isMobile = useIsMobile();
 
   return (
@@ -102,14 +146,15 @@ export default function ApiDocsPage() {
 
         {/* Header fijo: siempre visible al hacer scroll */}
         <header className="fixed top-0 left-0 right-0 z-30 border-b border-white/10 bg-indigo-950/95 backdrop-blur-xl">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
-            <div className="flex items-center gap-2 sm:gap-4">
+          <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 flex items-center justify-between h-14">
+            <div className="flex items-center gap-1 sm:gap-2 md:gap-4 min-w-0 flex-1">
               {isMobile && (
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button
                       size="icon"
-                      className="bg-transparent border-0 text-white hover:bg-white/10"
+                      variant="ghost"
+                      className="h-9 w-9 bg-transparent border-0 text-white hover:bg-white/10 shrink-0"
                     >
                       <Menu className="h-5 w-5" />
                     </Button>
@@ -121,56 +166,63 @@ export default function ApiDocsPage() {
                     <SheetTitle className="text-white text-lg font-bold mb-6">
                       Navegacion
                     </SheetTitle>
-                    <SidebarTOC activeSection={activeSection} />
+                    <SidebarTOC activeSection={activeSection} onNavigate={navigateToSection} />
                   </SheetContent>
                 </Sheet>
               )}
-              <Link to="/">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white hover:bg-white/10 hover:text-white gap-1.5"
-                >
-                  <ArrowLeft className="h-4 w-4 shrink-0" />
-                  <span className="hidden sm:inline">Inicio</span>
-                </Button>
-              </Link>
-              <Link to="/guia">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-white/80 hover:bg-white/10 hover:text-white gap-1.5"
-                >
-                  <BookOpen className="h-4 w-4 shrink-0" />
-                  <span className="hidden sm:inline">Guia</span>
-                </Button>
-              </Link>
-              <span className="text-white/40 hidden sm:inline">|</span>
-              <div className="flex items-center gap-2 text-white">
+              {!isMobile && (
+                <>
+                  <Link to="/">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-white hover:bg-white/10 hover:text-white gap-1.5"
+                    >
+                      <ArrowLeft className="h-4 w-4 shrink-0" />
+                      <span className="hidden sm:inline">Inicio</span>
+                    </Button>
+                  </Link>
+                  <Link to="/guia">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-white/80 hover:bg-white/10 hover:text-white gap-1.5"
+                    >
+                      <BookOpen className="h-4 w-4 shrink-0" />
+                      <span className="hidden sm:inline">Guia</span>
+                    </Button>
+                  </Link>
+                  <span className="text-white/40 hidden sm:inline">|</span>
+                </>
+              )}
+              <div className="flex items-center gap-1.5 sm:gap-2 text-white min-w-0">
                 <Code className="h-4 w-4 text-indigo-300 shrink-0" />
-                <span className="font-semibold text-sm">API Docs</span>
-                <span className="hidden sm:inline text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-mono">
+                <span className="font-semibold text-xs sm:text-sm truncate">API Docs</span>
+                <span className="hidden md:inline text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-mono shrink-0">
                   v1
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Link to="/api-keys">
-                <Button
-                  size="sm"
-                  className="bg-indigo-900/60 border border-indigo-400/40 text-indigo-100 hover:bg-indigo-800/70 hover:text-white gap-1.5"
-                >
-                  <Key className="h-3.5 w-3.5 shrink-0" />
-                  <span className="hidden sm:inline">API & Integraciones</span>
-                </Button>
-              </Link>
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              {!isMobile && (
+                <Link to="/api-keys">
+                  <Button
+                    size="sm"
+                    className="bg-indigo-900/60 border border-indigo-400/40 text-indigo-100 hover:bg-indigo-800/70 hover:text-white gap-1.5"
+                  >
+                    <Key className="h-3.5 w-3.5 shrink-0" />
+                    <span className="hidden lg:inline">API & Integraciones</span>
+                  </Button>
+                </Link>
+              )}
               <Link to="/login">
                 <Button
                   size="sm"
-                  className="bg-gradient-to-r from-indigo-600 to-purple-600 border-0 text-white hover:from-indigo-500 hover:to-purple-500 hover:shadow-lg hover:shadow-indigo-500/30 transition-all duration-200 gap-1.5"
+                  className="bg-gradient-to-r from-indigo-600 to-purple-600 border-0 text-white hover:from-indigo-500 hover:to-purple-500 hover:shadow-lg hover:shadow-indigo-500/30 transition-all duration-200 gap-1.5 text-xs sm:text-sm px-2 sm:px-3"
                 >
-                  Acceder a la app
-                  <ArrowRight className="h-3.5 w-3.5 shrink-0" />
+                  <span className="hidden sm:inline">Acceder</span>
+                  <span className="sm:hidden">App</span>
+                  <ArrowRight className="h-3.5 w-3.5 shrink-0 hidden sm:inline" />
                 </Button>
               </Link>
             </div>
@@ -187,7 +239,7 @@ export default function ApiDocsPage() {
             aria-label="Navegacion documentacion"
           >
             <div className="p-4 pb-12">
-              <SidebarTOC activeSection={activeSection} />
+              <SidebarTOC activeSection={activeSection} onNavigate={navigateToSection} />
             </div>
           </aside>
         )}

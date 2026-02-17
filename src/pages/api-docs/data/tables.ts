@@ -102,6 +102,20 @@ export const TABLE_GROUPS: TableGroup[] = [
   })
   .select()
   .single()`,
+          curlSelect: `curl -X GET \\
+  '<BASE_URL>/employees?select=id,name,role,email,default_weekly_capacity,'\\
+  'is_active&agency_id=eq.<AGENCY_ID>&is_active=eq.true&order=name.asc' \\
+  -H 'apikey: <TU_API_KEY>' \\
+  -H 'Authorization: Bearer <TU_API_TOKEN>'`,
+          curlInsert: `curl -X POST \\
+  '<BASE_URL>/employees' \\
+  -H 'apikey: <TU_API_KEY>' \\
+  -H 'Authorization: Bearer <TU_API_TOKEN>' \\
+  -H 'Content-Type: application/json' \\
+  -H 'Prefer: return=representation' \\
+  -d '{"name":"Ana Garcia","role":"Disenador","default_weekly_capacity":40,'\\
+  '"agency_id":"<AGENCY_ID>","work_schedule":{"monday":8,"tuesday":8,'\\
+  '"wednesday":8,"thursday":8,"friday":8,"saturday":0,"sunday":0}}'`,
         },
         responses: {
           getList: `[
@@ -321,6 +335,21 @@ export const TABLE_GROUPS: TableGroup[] = [
   })
   .select()
   .single()`,
+          curlSelect: `curl -X GET \\
+  '<BASE_URL>/allocations?select=id,employee_id,project_id,week_start_date,'\\
+  'hours_assigned,task_name,status&employee_id=eq.<EMPLOYEE_ID>&'\\
+  'week_start_date=gte.2026-02-01&week_start_date=lte.2026-02-28&order=week_start_date.asc' \\
+  -H 'apikey: <TU_API_KEY>' \\
+  -H 'Authorization: Bearer <TU_API_TOKEN>'`,
+          curlInsert: `curl -X POST \\
+  '<BASE_URL>/allocations' \\
+  -H 'apikey: <TU_API_KEY>' \\
+  -H 'Authorization: Bearer <TU_API_TOKEN>' \\
+  -H 'Content-Type: application/json' \\
+  -H 'Prefer: return=representation' \\
+  -d '{"employee_id":"<EMPLOYEE_ID>","project_id":"<PROJECT_ID>",'\\
+  '"week_start_date":"2026-02-17","hours_assigned":8,'\\
+  '"task_name":"Diseno de landing","status":"planned"}'`,
         },
         responses: {
           getList: `[
@@ -594,6 +623,19 @@ export const TABLE_GROUPS: TableGroup[] = [
   })
   .select()
   .single()`,
+          curlSelect: `curl -X GET \\
+  '<BASE_URL>/absences?select=id,employee_id,start_date,end_date,type,hours&'\\
+  'employee_id=eq.<EMPLOYEE_ID>&end_date=gte.2026-02-01' \\
+  -H 'apikey: <TU_API_KEY>' \\
+  -H 'Authorization: Bearer <TU_API_TOKEN>'`,
+          curlInsert: `curl -X POST \\
+  '<BASE_URL>/absences' \\
+  -H 'apikey: <TU_API_KEY>' \\
+  -H 'Authorization: Bearer <TU_API_TOKEN>' \\
+  -H 'Content-Type: application/json' \\
+  -H 'Prefer: return=representation' \\
+  -d '{"employee_id":"<EMPLOYEE_ID>","start_date":"2026-03-10",'\\
+  '"end_date":"2026-03-14","type":"vacaciones","description":"Semana Santa"}'`,
         },
         responses: {
           getList: `[

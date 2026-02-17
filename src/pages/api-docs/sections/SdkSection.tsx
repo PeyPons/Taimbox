@@ -1,14 +1,13 @@
 import { Terminal } from 'lucide-react';
-import { SectionAnchor } from '../components/SectionAnchor';
+import { SectionHeading } from '../components/SectionHeading';
 import { CodeBlock } from '../components/CodeBlock';
 
 export function SdkSection() {
   return (
     <section>
-      <SectionAnchor id="sdk" />
-      <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-        <Terminal className="h-6 w-6 text-indigo-300" /> SDK JavaScript (opcional)
-      </h2>
+      <SectionHeading id="sdk" icon={Terminal} className="mb-6">
+        SDK JavaScript (opcional)
+      </SectionHeading>
       <p className="text-indigo-100/85 mb-4">
         Puedes integrar la API mediante peticiones HTTP estandar (ver seccion REST) o, si trabajas
         con JavaScript/TypeScript, usar el SDK que simplifica las consultas con una sintaxis mas

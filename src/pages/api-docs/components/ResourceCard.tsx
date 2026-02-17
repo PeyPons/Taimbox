@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { AuthBadge } from './AuthBadge';
 import { ParamTable } from './ParamTable';
@@ -9,6 +8,25 @@ import { CodeBlock } from './CodeBlock';
 import { ResponseExample } from './ResponseExample';
 import type { TableDef } from '../data/types';
 
+const API_BASE_URL = 'https://tu-proyecto.supabase.co/rest/v1';
+
+function buildDefaultCurlSelect(tableName: string): string {
+  return `curl -X GET \\
+  '${API_BASE_URL}/${tableName}?select=*' \\
+  -H 'apikey: <TU_API_KEY>' \\
+  -H 'Authorization: Bearer <TU_API_TOKEN>'`;
+}
+
+function buildDefaultCurlInsert(tableName: string): string {
+  return `curl -X POST \\
+  '${API_BASE_URL}/${tableName}' \\
+  -H 'apikey: <TU_API_KEY>' \\
+  -H 'Authorization: Bearer <TU_API_TOKEN>' \\
+  -H 'Content-Type: application/json' \\
+  -H 'Prefer: return=representation' \\
+  -d '{}'`;
+}
+
 interface ResourceCardProps {
   table: TableDef;
   defaultExpanded?: boolean;
@@ -16,6 +34,16 @@ interface ResourceCardProps {
 
 export function ResourceCard({ table, defaultExpanded = false }: ResourceCardProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
+  const [exampleLang, setExampleLang] = useState<'typescript' | 'curl'>('typescript');
+
+  const curlSelect = (table.examples.curlSelect ?? buildDefaultCurlSelect(table.name)).replace(
+    '<BASE_URL>',
+    API_BASE_URL
+  );
+  const curlInsert = (table.examples.curlInsert ?? buildDefaultCurlInsert(table.name)).replace(
+    '<BASE_URL>',
+    API_BASE_URL
+  );
 
   return (
     <Card className="border border-white/10 bg-white/[0.03] backdrop-blur-xl overflow-hidden">
@@ -55,18 +83,61 @@ export function ResourceCard({ table, defaultExpanded = false }: ResourceCardPro
             />
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-4">
-            <div>
-              <h5 className="text-white font-semibold text-sm mb-2 flex items-center gap-2">
-                <MethodBadge method="GET" /> <span>Consultar</span>
-              </h5>
-              <CodeBlock lang="typescript">{table.examples.select}</CodeBlock>
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <h5 className="text-white font-semibold text-sm">Ejemplos de uso</h5>
+              <div className="flex rounded-lg border border-white/10 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setExampleLang('typescript')}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                    exampleLang === 'typescript'
+                      ? 'bg-indigo-500/30 text-white'
+                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  TypeScript
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExampleLang('curl')}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                    exampleLang === 'curl'
+                      ? 'bg-indigo-500/30 text-white'
+                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  cURL
+                </button>
+              </div>
             </div>
-            <div>
-              <h5 className="text-white font-semibold text-sm mb-2 flex items-center gap-2">
-                <MethodBadge method="POST" /> <span>Crear</span>
-              </h5>
-              <CodeBlock lang="typescript">{table.examples.insert}</CodeBlock>
+            <div
+              className={
+                exampleLang === 'curl'
+                  ? 'flex flex-col gap-4'
+                  : 'grid lg:grid-cols-2 gap-4'
+              }
+            >
+              <div className={exampleLang === 'curl' ? 'min-w-0' : ''}>
+                <div className="text-white/70 text-xs font-medium mb-1.5 flex items-center gap-2">
+                  <MethodBadge method="GET" /> <span>Consultar</span>
+                </div>
+                {exampleLang === 'typescript' ? (
+                  <CodeBlock lang="typescript">{table.examples.select}</CodeBlock>
+                ) : (
+                  <CodeBlock lang="bash">{curlSelect}</CodeBlock>
+                )}
+              </div>
+              <div className={exampleLang === 'curl' ? 'min-w-0' : ''}>
+                <div className="text-white/70 text-xs font-medium mb-1.5 flex items-center gap-2">
+                  <MethodBadge method="POST" /> <span>Crear</span>
+                </div>
+                {exampleLang === 'typescript' ? (
+                  <CodeBlock lang="typescript">{table.examples.insert}</CodeBlock>
+                ) : (
+                  <CodeBlock lang="bash">{curlInsert}</CodeBlock>
+                )}
+              </div>
             </div>
           </div>
         </CardContent>

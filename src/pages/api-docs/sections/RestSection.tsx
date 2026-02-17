@@ -1,14 +1,13 @@
 import { Plug } from 'lucide-react';
-import { SectionAnchor } from '../components/SectionAnchor';
+import { SectionHeading } from '../components/SectionHeading';
 import { EndpointBlock } from '../components/EndpointBlock';
 
 export function RestSection() {
   return (
     <section>
-      <SectionAnchor id="rest" />
-      <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-        <Plug className="h-6 w-6 text-indigo-300" /> API REST (HTTP)
-      </h2>
+      <SectionHeading id="rest" icon={Plug} className="mb-6">
+        API REST (HTTP)
+      </SectionHeading>
       <p className="text-indigo-100/85 mb-6">
         Puedes hacer peticiones HTTP directas desde cualquier lenguaje. Todos los recursos siguen
         el mismo patron RESTful.

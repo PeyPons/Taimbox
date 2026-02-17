@@ -2,14 +2,15 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Key, Database, FileJson, Zap, Filter, Terminal, Shield } from 'lucide-react';
-import { SectionAnchor } from '../components/SectionAnchor';
+import { SectionHeading } from '../components/SectionHeading';
 
 export function OverviewIntro() {
   return (
     <section>
-      <SectionAnchor id="intro" />
       <div className="mb-8">
-        <h1 className="text-3xl sm:text-4xl font-black text-white mb-3">API de Integracion</h1>
+        <SectionHeading id="intro" level="h1" className="mb-3">
+          API de Integracion
+        </SectionHeading>
         <p className="text-lg text-indigo-200/90 max-w-2xl">
           Integra los datos de planificacion, equipo y proyectos de tu agencia en Timeboxing
           directamente con tus herramientas internas.

@@ -1,6 +1,6 @@
 import { Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SectionAnchor } from '../components/SectionAnchor';
+import { SectionHeading } from '../components/SectionHeading';
 import { CodeBlock } from '../components/CodeBlock';
 
 const FILTER_OPS = [
@@ -19,10 +19,9 @@ const FILTER_OPS = [
 export function FilteringSection() {
   return (
     <section>
-      <SectionAnchor id="filtering" />
-      <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-        <Filter className="h-6 w-6 text-indigo-300" /> Filtrado, paginacion y ordenacion
-      </h2>
+      <SectionHeading id="filtering" icon={Filter} className="mb-6">
+        Filtrado, paginacion y ordenacion
+      </SectionHeading>
       <div className="space-y-6">
         <div>
           <h3 className="text-white font-semibold mb-3">Operadores de filtro</h3>

@@ -1,14 +1,13 @@
 import { Users } from 'lucide-react';
-import { SectionAnchor } from '../components/SectionAnchor';
+import { SectionHeading } from '../components/SectionHeading';
 import { TutorialStep } from '../components/TutorialStep';
 
 export function TutorialSyncTeam() {
   return (
     <section>
-      <SectionAnchor id="tutorial-sync-team" />
-      <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-3">
-        <Users className="h-6 w-6 text-indigo-300" /> Sincronizar equipo
-      </h2>
+      <SectionHeading id="tutorial-sync-team" icon={Users} className="mb-2">
+        Sincronizar equipo
+      </SectionHeading>
       <p className="text-indigo-100/85 mb-6">
         Aprende a leer la lista de empleados, crear nuevos miembros y actualizar horarios desde tu
         sistema externo.
@@ -49,7 +48,7 @@ export function TutorialSyncTeam() {
         <TutorialStep
           step={2}
           title="Crear un nuevo empleado"
-          description="Anade un miembro al equipo. Los campos obligatorios son: name, role, default_weekly_capacity, work_schedule y agency_id."
+          description="Anade un miembro al equipo. Los campos obligatorios son: name, role, default_weekly_capacity, work_schedule y agency_id. El agency_id lo puedes copiar desde API & Integraciones (Datos de conexion)."
           code={`const { data: newEmployee, error } = await timeboxing
   .from('employees')
   .insert({
@@ -63,7 +62,7 @@ export function TutorialSyncTeam() {
       monday: 8, tuesday: 8, wednesday: 8,
       thursday: 8, friday: 8, saturday: 0, sunday: 0
     },
-    agency_id: 'tu-agency-id'
+    agency_id: process.env.TIMEBOXING_AGENCY_ID  // Copiado desde API & Integraciones
   })
   .select()
   .single()

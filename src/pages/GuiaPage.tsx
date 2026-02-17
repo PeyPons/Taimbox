@@ -473,7 +473,7 @@ function ClientesContent() {
     <>
       <ContentBlock title="Qué son Clientes y Proyectos">
         <p>Es el <strong className="text-white">catalogo</strong> de clientes de la agencia y de los proyectos asociados. Cada proyecto tiene horas contratadas (presupuesto), minimo de horas si aplica y estado.</p>
-        <ExampleBox>El cliente &quot;Loro Parque&quot; tiene 3 proyectos: SEO Mensual (35h), Paid Media (20h) y Contenido (15h). Cada uno con su presupuesto y estado independiente.</ExampleBox>
+        <ExampleBox>Un cliente puede tener varios proyectos: por ejemplo SEO Mensual (35h), Paid Media (20h) y Contenido (15h). Cada uno con su presupuesto y estado independiente.</ExampleBox>
       </ContentBlock>
 
       <ContentBlock title="Funcionalidades">

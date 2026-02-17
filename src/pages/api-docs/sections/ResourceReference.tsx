@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Database, ChevronsUpDown } from 'lucide-react';
-import { SectionAnchor } from '../components/SectionAnchor';
+import { SectionHeading } from '../components/SectionHeading';
 import { ResourceCard } from '../components/ResourceCard';
 import { TABLE_GROUPS, GROUP_ANCHOR_MAP } from '../data/tables';
 
@@ -19,12 +19,10 @@ export function ResourceReference() {
         const anchorId = GROUP_ANCHOR_MAP[group] || `res-${group.toLowerCase().replace(/\s/g, '-')}`;
         return (
           <div key={group} className="mb-12">
-            <SectionAnchor id={anchorId} />
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2.5">
-                <GroupIcon className="h-5 w-5 text-indigo-300" />
+              <SectionHeading id={anchorId} level="h3" icon={GroupIcon} className="mb-0">
                 {group}
-              </h3>
+              </SectionHeading>
               {group === TABLE_GROUPS[0].group && (
                 <button
                   onClick={toggleAll}

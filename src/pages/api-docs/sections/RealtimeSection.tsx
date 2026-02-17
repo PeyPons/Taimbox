@@ -1,14 +1,13 @@
 import { Zap } from 'lucide-react';
-import { SectionAnchor } from '../components/SectionAnchor';
+import { SectionHeading } from '../components/SectionHeading';
 import { CodeBlock } from '../components/CodeBlock';
 
 export function RealtimeSection() {
   return (
     <section>
-      <SectionAnchor id="realtime" />
-      <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-        <Zap className="h-6 w-6 text-indigo-300" /> Suscripciones Realtime
-      </h2>
+      <SectionHeading id="realtime" icon={Zap} className="mb-6">
+        Suscripciones Realtime
+      </SectionHeading>
       <p className="text-indigo-100/85 mb-4">
         Recibe cambios en tiempo real sin polling. Ideal para dashboards que se actualizan
         automaticamente cuando alguien modifica una asignacion o crea una ausencia.

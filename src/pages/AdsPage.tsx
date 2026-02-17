@@ -1242,7 +1242,7 @@ export default function AdsPage() {
                     <FormItem className="col-span-6 sm:col-span-3">
                       <FormLabel className="text-xs font-medium">Si contiene...</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ej: Loro" className="bg-white" {...field} />
+                        <Input placeholder="Ej: palabra clave" className="bg-white" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1255,7 +1255,7 @@ export default function AdsPage() {
                     <FormItem className="col-span-6 sm:col-span-3">
                       <FormLabel className="text-xs font-medium">Crear cuenta...</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ej: Loro Parque" className="bg-white" {...field} />
+                        <Input placeholder="Ej: Nombre de la cuenta" className="bg-white" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -249,6 +249,29 @@
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
   }
+
+  /* Scrollbar fino y elegante para dropdowns (ej. buscador API docs) */
+  .scrollbar-slim {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(99 102 241 / 0.5) transparent; /* indigo-500/50 */
+  }
+  .scrollbar-slim::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-slim::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-slim::-webkit-scrollbar-thumb {
+    background: rgb(99 102 241 / 0.4);
+    border-radius: 9999px;
+  }
+  .scrollbar-slim::-webkit-scrollbar-thumb:hover {
+    background: rgb(99 102 241 / 0.6);
+  }
+  .scrollbar-slim::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }
 
 @keyframes fadeIn {
