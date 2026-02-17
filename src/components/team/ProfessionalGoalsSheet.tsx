@@ -9,11 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { useApp } from '@/contexts/AppContext';
 import { useGoals } from '@/contexts/GoalsContext';
 import { ProfessionalGoal } from '@/types';
-import { Plus, Trash2, Target, Pencil, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { Plus, Trash2, Target, Pencil, ExternalLink, CheckCircle2, Check, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -105,6 +106,7 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
 
   const [newKrText, setNewKrText] = useState('');
   const [newKrType, setNewKrType] = useState<'check' | 'numeric'>('check');
+  const [openNewKrType, setOpenNewKrType] = useState(false);
   const [newKrTarget, setNewKrTarget] = useState('10');
 
   const form = useForm<GoalFormValues>({
@@ -319,13 +321,30 @@ export function ProfessionalGoalsSheet({ open, onOpenChange, employeeId }: Profe
 
                   <div className="flex gap-2 items-end pt-2 border-t mt-2">
                     <div className="w-24">
-                      <Select value={newKrType} onValueChange={(v: 'check' | 'numeric') => setNewKrType(v)}>
-                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="check">Check</SelectItem>
-                          <SelectItem value="numeric">Numérico</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Popover open={openNewKrType} onOpenChange={setOpenNewKrType}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="h-8 text-xs w-full justify-between font-normal">
+                            <span>{newKrType === 'check' ? 'Check' : 'Numérico'}</span>
+                            <ChevronDown className="h-3 w-3 opacity-50 shrink-0" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                          <Command>
+                            <CommandList>
+                              <CommandGroup>
+                                <CommandItem value="Check" onSelect={() => { setNewKrType('check'); setOpenNewKrType(false); }}>
+                                  <Check className={cn('mr-2 h-4 w-4 shrink-0', newKrType === 'check' ? 'opacity-100' : 'opacity-0')} />
+                                  Check
+                                </CommandItem>
+                                <CommandItem value="Numérico" onSelect={() => { setNewKrType('numeric'); setOpenNewKrType(false); }}>
+                                  <Check className={cn('mr-2 h-4 w-4 shrink-0', newKrType === 'numeric' ? 'opacity-100' : 'opacity-0')} />
+                                  Numérico
+                                </CommandItem>
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     <div className="flex-1">
                       <Input placeholder={newKrType === 'check' ? "Ej: Completar curso..." : "Ej: Ventas conseguidas"} className="h-8 text-xs" value={newKrText} onChange={e => setNewKrText(e.target.value)} onKeyDown={e => e.key === 'Enter' && addKeyResult()} />

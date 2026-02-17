@@ -6,11 +6,10 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
-import { LayoutGrid, Search, Check, Link as LinkIcon, Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { LayoutGrid, Search, Check, Link as LinkIcon, Plus, Trash2, AlertTriangle, ChevronDown } from 'lucide-react';
 import { Allocation, Project, Client, Employee, Deadline } from '@/types';
 import { NewTaskRow } from '@/types';
 import { BatchTaskRow } from '../BatchTaskRow';
@@ -110,6 +109,8 @@ export function AllocationFormDialog({
     formatProjectName
 }: AllocationFormDialogProps) {
     const [editProjectOpen, setEditProjectOpen] = React.useState(false);
+    const [openDependency, setOpenDependency] = React.useState(false);
+    const [openWeek, setOpenWeek] = React.useState(false);
     const isMobile = useIsMobile();
 
     // Derive month name for title
@@ -189,21 +190,65 @@ export function AllocationFormDialog({
 
                                 <div className="space-y-2">
                                     <Label className="flex items-center gap-2 text-xs text-slate-500"><LinkIcon className="w-3 h-3" /> Depende de otra tarea</Label>
-                                    <Select value={editDependencyId} onValueChange={setEditDependencyId} disabled={!editProjectId}>
-                                        <SelectTrigger className={cn(isMobile ? "h-11 min-h-[44px]" : "h-9")}><SelectValue placeholder="Sin dependencia" /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">-- Ninguna --</SelectItem>
-                                            {getAvailableDependencies(editProjectId, editingAllocation.id).map(dep => {
-                                                const owner = employees.find(e => e.id === dep.employeeId);
-                                                return <SelectItem key={dep.id} value={dep.id} className="text-xs">{dep.taskName} ({owner?.name})</SelectItem>;
-                                            })}
-                                        </SelectContent>
-                                    </Select>
+                                    <Popover open={openDependency} onOpenChange={setOpenDependency}>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" disabled={!editProjectId} className={cn("w-full justify-between font-normal", isMobile ? "h-11 min-h-[44px]" : "h-9")}>
+                                                <span className="truncate">{editDependencyId && editDependencyId !== 'none' ? (() => { const d = getAvailableDependencies(editProjectId, editingAllocation.id).find(x => x.id === editDependencyId); const o = d ? employees.find(e => e.id === d.employeeId) : null; return d ? `${d.taskName} (${o?.name})` : 'Sin dependencia'; })() : '-- Ninguna --'}</span>
+                                                <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-max min-w-[var(--radix-popover-trigger-width)] max-w-[min(92vw,560px)] p-0" align="start">
+                                            <Command>
+                                                <CommandList className="max-h-[280px]">
+                                                    <CommandItem value="none" className="text-xs py-2 px-3" onSelect={() => { setEditDependencyId('none'); setOpenDependency(false); }}>
+                                                        <Check className={cn('mr-2.5 h-3.5 w-3.5 shrink-0', (!editDependencyId || editDependencyId === 'none') ? 'opacity-100' : 'opacity-0')} />
+                                                        -- Ninguna --
+                                                    </CommandItem>
+                                                    {getAvailableDependencies(editProjectId, editingAllocation.id).map(dep => {
+                                                        const owner = employees.find(e => e.id === dep.employeeId);
+                                                        const shortName = owner?.name ? (owner.name.length > 8 ? owner.name.substring(0, 6) + '..' : owner.name) : '';
+                                                        const label = `${dep.taskName} (${shortName})`;
+                                                        return (
+                                                            <CommandItem key={dep.id} value={label} className="text-xs py-2 px-3 whitespace-nowrap" onSelect={() => { setEditDependencyId(dep.id); setOpenDependency(false); }}>
+                                                                <Check className={cn('mr-2.5 h-3.5 w-3.5 shrink-0', editDependencyId === dep.id ? 'opacity-100' : 'opacity-0')} />
+                                                                <span title={`${dep.taskName} (${owner?.name ?? ''})`}>{label}</span>
+                                                            </CommandItem>
+                                                        );
+                                                    })}
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2"><Label>Horas</Label><Input type="number" value={editHours} onChange={e => setEditHours(e.target.value)} step="0.5" className={cn(isMobile && "h-11 min-h-[44px]")} /></div>
-                                    <div className="space-y-2"><Label>Semana</Label><Select value={editWeek} onValueChange={setEditWeek}><SelectTrigger className={cn(isMobile && "h-11 min-h-[44px]")}><SelectValue /></SelectTrigger><SelectContent>{weeks.map((w, i) => <SelectItem key={w.weekStart.toISOString()} value={format(w.weekStart, 'yyyy-MM-dd')}>Sem {i + 1}</SelectItem>)}</SelectContent></Select></div>
+                                    <div className="space-y-2">
+                                        <Label>Semana</Label>
+                                        <Popover open={openWeek} onOpenChange={setOpenWeek}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" className={cn("w-full justify-between font-normal", isMobile && "h-11 min-h-[44px]")}>
+                                                    <span className="truncate">{editWeek ? `Sem ${weeks.findIndex(w => format(w.weekStart, 'yyyy-MM-dd') === editWeek) + 1}` : 'Semana'}</span>
+                                                    <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                                <Command>
+                                                    <CommandList className="max-h-[280px]">
+                                                        {weeks.map((w, i) => {
+                                                            const val = format(w.weekStart, 'yyyy-MM-dd');
+                                                            return (
+                                                                <CommandItem key={val} value={val} onSelect={() => { setEditWeek(val); setOpenWeek(false); }}>
+                                                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', editWeek === val ? 'opacity-100' : 'opacity-0')} />
+                                                                    Sem {i + 1}
+                                                                </CommandItem>
+                                                            );
+                                                        })}
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
                                 </div>
                             </div>
                         </div>

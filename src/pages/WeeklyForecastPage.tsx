@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -58,6 +57,9 @@ export default function WeeklyForecastPage() {
   const { activeFilters, filterProject } = useProjectFilters();
   const weeklyCloseDay = useWeeklyCloseDay();
   const [filterId, setFilterId] = useState<string>('all');
+  const [openFilterType, setOpenFilterType] = useState(false);
+  const [openRedistributeEmployee, setOpenRedistributeEmployee] = useState(false);
+  const [openRedistributeWeek, setOpenRedistributeWeek] = useState(false);
   const [sortBy, setSortBy] = useState<'name' | 'status' | 'difference' | 'contracted'>('status');
   const { formatName: formatProjectName } = useProjectAliasing();
 
@@ -913,19 +915,33 @@ export default function WeeklyForecastPage() {
               </Popover>
             </div>
             <div className="flex items-center gap-4 text-sm">
-              <Select value={filterId} onValueChange={setFilterId}>
-                <SelectTrigger className="w-full sm:w-[140px] h-8 text-xs">
-                  <SelectValue placeholder="Tipo de proyecto" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {activeFilters.map(filter => (
-                    <SelectItem key={filter.id} value={filter.id}>
-                      {filter.displayName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={openFilterType} onOpenChange={setOpenFilterType}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full sm:w-[140px] h-8 text-xs justify-between font-normal">
+                    <span className="truncate">{filterId === 'all' ? 'Todos' : activeFilters.find(f => f.id === filterId)?.displayName ?? 'Tipo'}</span>
+                    <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                  <Command>
+                    <CommandList className="max-h-[280px]">
+                      <CommandEmpty>No hay opciones.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem value="Todos" onSelect={() => { setFilterId('all'); setOpenFilterType(false); }}>
+                          <Check className={cn('mr-2 h-4 w-4 shrink-0', filterId === 'all' ? 'opacity-100' : 'opacity-0')} />
+                          Todos
+                        </CommandItem>
+                        {activeFilters.map(filter => (
+                          <CommandItem key={filter.id} value={filter.displayName} onSelect={() => { setFilterId(filter.id); setOpenFilterType(false); }}>
+                            <Check className={cn('mr-2 h-4 w-4 shrink-0', filterId === filter.id ? 'opacity-100' : 'opacity-0')} />
+                            {filter.displayName}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -1713,20 +1729,26 @@ export default function WeeklyForecastPage() {
                       {redistributeSelectedTasks.size > 0 && (
                         <div className="space-y-2">
                           <Label className="text-sm font-medium">Compañero destino</Label>
-                          <Select value={redistributeToEmployee} onValueChange={setRedistributeToEmployee}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="seleccionar compañero destino" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {employees
-                                .filter(e => e.isActive)
-                                .map(emp => (
-                                  <SelectItem key={emp.id} value={emp.id}>
-                                    {emp.name}
-                                  </SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
+                          <Popover open={openRedistributeEmployee} onOpenChange={setOpenRedistributeEmployee}>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" className="w-full justify-between font-normal">
+                                <span className="truncate">{redistributeToEmployee ? (employees.find(e => e.id === redistributeToEmployee)?.name ?? 'Seleccionar') : 'seleccionar compañero destino'}</span>
+                                <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                              <Command>
+                                <CommandList className="max-h-[280px]">
+                                  {employees.filter(e => e.isActive).map(emp => (
+                                    <CommandItem key={emp.id} value={emp.name || ''} onSelect={() => { setRedistributeToEmployee(emp.id); setOpenRedistributeEmployee(false); }}>
+                                      <Check className={cn('mr-2 h-4 w-4 shrink-0', redistributeToEmployee === emp.id ? 'opacity-100' : 'opacity-0')} />
+                                      {emp.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                         </div>
                       )}
 
@@ -1734,21 +1756,29 @@ export default function WeeklyForecastPage() {
                       {redistributeToEmployee && (
                         <div className="space-y-2">
                           <Label className="text-sm font-medium">Semana destino</Label>
-                          <Select value={redistributeWeek} onValueChange={setRedistributeWeek}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="seleccionar semana" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {(futureWeeks || []).map((week, idx) => {
-                                const storageKey = getStorageKey(week.weekStart, currentMonth);
-                                return (
-                                  <SelectItem key={storageKey} value={storageKey}>
-                                    Sem {idx + 1} ({format(week.weekStart, 'd MMM', { locale: es })})
-                                  </SelectItem>
-                                );
-                              })}
-                            </SelectContent>
-                          </Select>
+                          <Popover open={openRedistributeWeek} onOpenChange={setOpenRedistributeWeek}>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" className="w-full justify-between font-normal">
+                                <span className="truncate">{redistributeWeek ? (() => { const idx = (futureWeeks || []).findIndex(w => getStorageKey(w.weekStart, currentMonth) === redistributeWeek); return idx >= 0 ? `Sem ${idx + 1} (${format((futureWeeks || [])[idx].weekStart, 'd MMM', { locale: es })})` : 'Seleccionar semana'; })() : 'seleccionar semana'}</span>
+                                <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                              <Command>
+                                <CommandList className="max-h-[280px]">
+                                  {(futureWeeks || []).map((week, idx) => {
+                                    const storageKey = getStorageKey(week.weekStart, currentMonth);
+                                    return (
+                                      <CommandItem key={storageKey} value={storageKey} onSelect={() => { setRedistributeWeek(storageKey); setOpenRedistributeWeek(false); }}>
+                                        <Check className={cn('mr-2 h-4 w-4 shrink-0', redistributeWeek === storageKey ? 'opacity-100' : 'opacity-0')} />
+                                        Sem {idx + 1} ({format(week.weekStart, 'd MMM', { locale: es })})
+                                      </CommandItem>
+                                    );
+                                  })}
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                         </div>
                       )}
 

@@ -7,7 +7,8 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   BarChart3,
@@ -32,7 +33,9 @@ import {
   Star,
   Gauge,
   Link2,
-  ArrowRight
+  ArrowRight,
+  Check,
+  ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
@@ -94,6 +97,7 @@ export default function ReportsPage() {
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('all');
+  const [openFilterEmployee, setOpenFilterEmployee] = useState(false);
   const [isLoadingMonth, setIsLoadingMonth] = useState(false);
   const loadedMonthsRef = useRef<Set<string>>(new Set());
   const { formatName: formatProjectName } = useProjectAliasing();
@@ -1230,17 +1234,33 @@ export default function ReportsPage() {
             {/* Filtro Empleado */}
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-slate-400" />
-              <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                <SelectTrigger className="w-full sm:w-[180px] bg-white">
-                  <SelectValue placeholder="Filtrar empleado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todo el equipo</SelectItem>
-                  {(employees || []).filter(e => e.isActive).map(e => (
-                    <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={openFilterEmployee} onOpenChange={setOpenFilterEmployee}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full sm:w-[180px] bg-white justify-between font-normal">
+                    <span className="truncate">{selectedEmployeeId === 'all' ? 'Todo el equipo' : (employees || []).find(e => e.id === selectedEmployeeId)?.name ?? 'Filtrar empleado'}</span>
+                    <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                  <Command>
+                    <CommandList className="max-h-[280px]">
+                      <CommandEmpty>No hay empleados.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem value="Todo el equipo" onSelect={() => { setSelectedEmployeeId('all'); setOpenFilterEmployee(false); }}>
+                          <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedEmployeeId === 'all' ? 'opacity-100' : 'opacity-0')} />
+                          Todo el equipo
+                        </CommandItem>
+                        {(employees || []).filter(e => e.isActive).map(e => (
+                          <CommandItem key={e.id} value={e.name || ''} onSelect={() => { setSelectedEmployeeId(e.id); setOpenFilterEmployee(false); }}>
+                            <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedEmployeeId === e.id ? 'opacity-100' : 'opacity-0')} />
+                            {e.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Navegación Mes */}

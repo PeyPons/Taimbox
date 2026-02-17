@@ -13,9 +13,10 @@ import {
   Building2, Settings, Users, Palette, Save, Loader2,
   Filter, Plus, Trash2, HelpCircle, Info, X,
   Rocket, Facebook, Megaphone, PlusCircle, ShieldCheck, GitBranch, Database, AlertTriangle,
-  Eye, Lock, Unlock, Calendar
+  Eye, Lock, Unlock, Calendar, Check, ChevronDown
 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { AVAILABLE_INTEGRATIONS } from '@/config/integrations';
 import { CustomProjectFilter, RolePermissions, ProjectAliasingRule } from '@/types';
 import { DEFAULT_FILTERS } from '@/hooks/useProjectFilters';
@@ -111,6 +112,7 @@ export default function AgencySettingsPage() {
   const [weeklyCloseDay, setWeeklyCloseDay] = useState(
     currentAgency?.settings?.weeklyCloseDay ?? 4 // Default to Friday
   );
+  const [openWeeklyCloseDay, setOpenWeeklyCloseDay] = useState(false);
 
   // Department view configuration
   const [deptConfigDialogOpen, setDeptConfigDialogOpen] = useState(false);
@@ -1084,23 +1086,28 @@ export default function AgencySettingsPage() {
                             <Label htmlFor="weekly-close-day" className="text-xs font-semibold text-slate-700">
                               Día de cierre semanal
                             </Label>
-                            <Select
-                              value={String(weeklyCloseDay)}
-                              onValueChange={(val) => setWeeklyCloseDay(Number(val))}
-                            >
-                              <SelectTrigger id="weekly-close-day" className="h-8 text-sm bg-slate-50">
-                                <SelectValue placeholder="Selecciona un día" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="0">Lunes</SelectItem>
-                                <SelectItem value="1">Martes</SelectItem>
-                                <SelectItem value="2">Miércoles</SelectItem>
-                                <SelectItem value="3">Jueves</SelectItem>
-                                <SelectItem value="4">Viernes (Recomendado)</SelectItem>
-                                <SelectItem value="5">Sábado</SelectItem>
-                                <SelectItem value="6">Domingo</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <Popover open={openWeeklyCloseDay} onOpenChange={setOpenWeeklyCloseDay}>
+                              <PopoverTrigger asChild>
+                                <Button id="weekly-close-day" variant="outline" className="h-8 text-sm bg-slate-50 justify-between font-normal w-full">
+                                  <span className="truncate">{[0,1,2,3,4,5,6].indexOf(weeklyCloseDay) >= 0 ? (['Lunes','Martes','Miércoles','Jueves','Viernes (Recomendado)','Sábado','Domingo'][weeklyCloseDay]) : 'Selecciona un día'}</span>
+                                  <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                <Command>
+                                  <CommandList>
+                                    <CommandGroup>
+                                      {(['Lunes','Martes','Miércoles','Jueves','Viernes (Recomendado)','Sábado','Domingo'] as const).map((label, i) => (
+                                        <CommandItem key={i} value={label} onSelect={() => { setWeeklyCloseDay(i); setOpenWeeklyCloseDay(false); }}>
+                                          <Check className={cn('mr-2 h-4 w-4 shrink-0', weeklyCloseDay === i ? 'opacity-100' : 'opacity-0')} />
+                                          {label}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
                             <p className="text-[10px] text-slate-500">
                               Determina qué tareas se consideran "de esta semana".
                             </p>

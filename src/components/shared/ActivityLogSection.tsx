@@ -18,12 +18,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
     Plus, Pencil, Trash2, Clock, RefreshCw, ChevronDown, ChevronRight,
-    Activity, FolderOpen, User, ArrowRight, GitBranch, CheckCircle2, CornerDownRight
+    Activity, FolderOpen, User, ArrowRight, GitBranch, CheckCircle2, CornerDownRight, Check
 } from 'lucide-react';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -86,6 +87,8 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
     const [error, setError] = useState<string | null>(null);
     const [filterEmployee, setFilterEmployee] = useState<string>('all');
     const [filterProject, setFilterProject] = useState<string>('all');
+    const [openFilterEmployee, setOpenFilterEmployee] = useState(false);
+    const [openFilterProject, setOpenFilterProject] = useState(false);
     const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
     // --- Helpers ---
@@ -700,26 +703,58 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
                         {!isLoading && <Badge variant="outline" className="text-xs">{rootNodes.length} raíces</Badge>}
                     </CardTitle>
                     <div className="flex items-center gap-2">
-                        <Select value={filterEmployee} onValueChange={setFilterEmployee}>
-                            <SelectTrigger className="w-[120px] h-7 text-xs">
-                                <User className="h-3 w-3 mr-1" />
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todos</SelectItem>
-                                {activeEmployees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                        <Select value={filterProject} onValueChange={setFilterProject}>
-                            <SelectTrigger className="w-[120px] h-7 text-xs">
-                                <FolderOpen className="h-3 w-3 mr-1" />
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todos</SelectItem>
-                                {activeProjects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
+                        <Popover open={openFilterEmployee} onOpenChange={setOpenFilterEmployee}>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className="w-[120px] h-7 text-xs justify-between font-normal">
+                                    <span className="flex items-center gap-1 truncate"><User className="h-3 w-3 shrink-0" />{filterEmployee === 'all' ? 'Todos' : activeEmployees.find(e => e.id === filterEmployee)?.name ?? 'Empleado'}</span>
+                                    <ChevronDown className="h-3 w-3 opacity-50 shrink-0" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                <Command>
+                                    <CommandList className="max-h-[280px]">
+                                        <CommandGroup>
+                                            <CommandItem value="Todos" onSelect={() => { setFilterEmployee('all'); setOpenFilterEmployee(false); }}>
+                                                <Check className={cn('mr-2 h-4 w-4 shrink-0', filterEmployee === 'all' ? 'opacity-100' : 'opacity-0')} />
+                                                Todos
+                                            </CommandItem>
+                                            {activeEmployees.map(e => (
+                                                <CommandItem key={e.id} value={e.name || ''} onSelect={() => { setFilterEmployee(e.id); setOpenFilterEmployee(false); }}>
+                                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', filterEmployee === e.id ? 'opacity-100' : 'opacity-0')} />
+                                                    {e.name}
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
+                        <Popover open={openFilterProject} onOpenChange={setOpenFilterProject}>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className="w-[120px] h-7 text-xs justify-between font-normal">
+                                    <span className="flex items-center gap-1 truncate"><FolderOpen className="h-3 w-3 shrink-0" />{filterProject === 'all' ? 'Todos' : activeProjects.find(p => p.id === filterProject)?.name ?? 'Proyecto'}</span>
+                                    <ChevronDown className="h-3 w-3 opacity-50 shrink-0" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                <Command>
+                                    <CommandList className="max-h-[280px]">
+                                        <CommandGroup>
+                                            <CommandItem value="Todos" onSelect={() => { setFilterProject('all'); setOpenFilterProject(false); }}>
+                                                <Check className={cn('mr-2 h-4 w-4 shrink-0', filterProject === 'all' ? 'opacity-100' : 'opacity-0')} />
+                                                Todos
+                                            </CommandItem>
+                                            {activeProjects.map(p => (
+                                                <CommandItem key={p.id} value={p.name || ''} onSelect={() => { setFilterProject(p.id); setOpenFilterProject(false); }}>
+                                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', filterProject === p.id ? 'opacity-100' : 'opacity-0')} />
+                                                    {p.name}
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.location.reload()}>
                             <RefreshCw className="h-3.5 w-3.5" />
                         </Button>

@@ -59,9 +59,24 @@
 }
 
 @layer base {
+  html {
+    /* Reserva siempre el espacio de la scrollbar para evitar salto al abrir Select/Dialog (Radix) */
+    scrollbar-gutter: stable;
+  }
   html, body {
     overflow-x: hidden;
     max-width: 100vw;
+  }
+  /* Evitar desplazamiento/estrechamiento al abrir Select/Dialog: anular compensación de scroll
+     y mantener la barra de scroll visible para que el ancho útil no cambie. */
+  html[data-scroll-locked],
+  body[data-scroll-locked] {
+    --removed-body-scroll-bar-size: 0 !important;
+    margin-right: 0 !important;
+    padding-right: 0 !important;
+  }
+  body[data-scroll-locked] {
+    overflow-y: scroll !important; /* Mantener scrollbar visible = ancho estable */
   }
   #root {
     overflow-x: hidden;

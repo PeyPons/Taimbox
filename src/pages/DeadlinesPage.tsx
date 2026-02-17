@@ -17,7 +17,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Progress } from '@/components/ui/progress';
@@ -27,7 +28,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Plus, Pencil, Trash2, Save, Search, Eye, EyeOff, ChevronDown, ChevronRight, ChevronLeft,
-  Calendar, Users, AlertTriangle, CheckCircle2, XCircle, Copy, Filter, Sparkles, Edit, HelpCircle, PanelRight
+  Calendar, Users, AlertTriangle, CheckCircle2, XCircle, Copy, Filter, Sparkles, Edit, HelpCircle, PanelRight, Check
 } from 'lucide-react';
 import { DeadlinesTour, useDeadlinesTour } from '@/components/deadlines/DeadlinesTour';
 import { toast } from 'sonner';
@@ -102,6 +103,9 @@ export default function DeadlinesPage() {
 
   const [confirmAction, setConfirmAction] = useState<{ type: 'delete_deadline' | 'delete_allocation' | 'copy_month', id?: string, data?: any } | null>(null);
   const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
+  const [openFilterType, setOpenFilterType] = useState(false);
+  const [openFilterEmployee, setOpenFilterEmployee] = useState(false);
+  const [openSortBy, setOpenSortBy] = useState(false);
 
   const globalAssignmentFormSchema = z.object({
     name: z.string().min(1, 'El nombre es obligatorio'),
@@ -1822,44 +1826,94 @@ export default function DeadlinesPage() {
                   </div>
                   <div>
                     <Label className="text-slate-600 mb-1.5 block">Tipo de proyecto</Label>
-                    <Select value={filterId} onValueChange={setFilterId}>
-                      <SelectTrigger className="h-11 w-full">
-                        <SelectValue placeholder="Tipo de proyecto" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        {activeFilters.map(filter => (
-                          <SelectItem key={filter.id} value={filter.id}>{filter.displayName}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={openFilterType} onOpenChange={setOpenFilterType}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="h-11 w-full justify-between font-normal">
+                          <span className="truncate">{filterId === 'all' ? 'Todos' : activeFilters.find(f => f.id === filterId)?.displayName ?? 'Tipo de proyecto'}</span>
+                          <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                        <Command>
+                          <CommandList className="max-h-[280px]">
+                            <CommandEmpty>No hay opciones.</CommandEmpty>
+                            <CommandGroup>
+                              <CommandItem value="Todos" onSelect={() => { setFilterId('all'); setOpenFilterType(false); }}>
+                                <Check className={cn('mr-2 h-4 w-4 shrink-0', filterId === 'all' ? 'opacity-100' : 'opacity-0')} />
+                                Todos
+                              </CommandItem>
+                              {activeFilters.map(filter => (
+                                <CommandItem key={filter.id} value={filter.displayName} onSelect={() => { setFilterId(filter.id); setOpenFilterType(false); }}>
+                                  <Check className={cn('mr-2 h-4 w-4 shrink-0', filterId === filter.id ? 'opacity-100' : 'opacity-0')} />
+                                  {filter.displayName}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div>
                     <Label className="text-slate-600 mb-1.5 block">Empleado</Label>
-                    <Select value={filterByEmployee} onValueChange={setFilterByEmployee}>
-                      <SelectTrigger className="h-11 w-full">
-                        <SelectValue placeholder="Empleado" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        {activeEmployees.map(emp => (
-                          <SelectItem key={emp.id} value={emp.id}>{emp.first_name || emp.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={openFilterEmployee} onOpenChange={setOpenFilterEmployee}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="h-11 w-full justify-between font-normal">
+                          <span className="truncate">{filterByEmployee === 'all' ? 'Todos' : (activeEmployees.find(e => e.id === filterByEmployee)?.first_name || activeEmployees.find(e => e.id === filterByEmployee)?.name) ?? 'Empleado'}</span>
+                          <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                        <Command>
+                          <CommandList className="max-h-[280px]">
+                            <CommandEmpty>No hay empleados.</CommandEmpty>
+                            <CommandGroup>
+                              <CommandItem value="Todos" onSelect={() => { setFilterByEmployee('all'); setOpenFilterEmployee(false); }}>
+                                <Check className={cn('mr-2 h-4 w-4 shrink-0', filterByEmployee === 'all' ? 'opacity-100' : 'opacity-0')} />
+                                Todos
+                              </CommandItem>
+                              {activeEmployees.map(emp => (
+                                <CommandItem key={emp.id} value={emp.first_name || emp.name || ''} onSelect={() => { setFilterByEmployee(emp.id); setOpenFilterEmployee(false); }}>
+                                  <Check className={cn('mr-2 h-4 w-4 shrink-0', filterByEmployee === emp.id ? 'opacity-100' : 'opacity-0')} />
+                                  {emp.first_name || emp.name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div>
                     <Label className="text-slate-600 mb-1.5 block">Ordenar por</Label>
-                    <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'client' | 'assigned' | 'remaining')}>
-                      <SelectTrigger className="h-11 w-full">
-                        <SelectValue placeholder="Ordenar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="client">Por cliente</SelectItem>
-                        <SelectItem value="assigned">Más asignado</SelectItem>
-                        <SelectItem value="remaining">Más disponible</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Popover open={openSortBy} onOpenChange={setOpenSortBy}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="h-11 w-full justify-between font-normal">
+                          <span className="truncate">{sortBy === 'client' ? 'Por cliente' : sortBy === 'assigned' ? 'Más asignado' : 'Más disponible'}</span>
+                          <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                        <Command>
+                          <CommandList className="max-h-[280px]">
+                            <CommandGroup>
+                              <CommandItem value="Por cliente" onSelect={() => { setSortBy('client'); setOpenSortBy(false); }}>
+                                <Check className={cn('mr-2 h-4 w-4 shrink-0', sortBy === 'client' ? 'opacity-100' : 'opacity-0')} />
+                                Por cliente
+                              </CommandItem>
+                              <CommandItem value="Más asignado" onSelect={() => { setSortBy('assigned'); setOpenSortBy(false); }}>
+                                <Check className={cn('mr-2 h-4 w-4 shrink-0', sortBy === 'assigned' ? 'opacity-100' : 'opacity-0')} />
+                                Más asignado
+                              </CommandItem>
+                              <CommandItem value="Más disponible" onSelect={() => { setSortBy('remaining'); setOpenSortBy(false); }}>
+                                <Check className={cn('mr-2 h-4 w-4 shrink-0', sortBy === 'remaining' ? 'opacity-100' : 'opacity-0')} />
+                                Más disponible
+                              </CommandItem>
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="flex items-center justify-between py-2">
                     <span className="text-slate-600">Mostrar ocultos</span>
@@ -1878,8 +1932,8 @@ export default function DeadlinesPage() {
           </>
         ) : (
           <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 bg-white rounded-xl border shadow-sm p-2 sm:p-3" data-tour="filters">
-            <div className="flex-1 min-w-0">
-              <div className="relative">
+            <div className="flex-1 min-w-[11rem] sm:min-w-[12.5rem]">
+              <div className="relative min-w-0">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
                   placeholder="Buscar proyecto..."
@@ -1890,19 +1944,33 @@ export default function DeadlinesPage() {
               </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
-              <Select value={filterId} onValueChange={setFilterId}>
-                <SelectTrigger className="w-[120px] sm:w-[140px] h-8 sm:h-9 text-xs sm:text-sm">
-                  <SelectValue placeholder="Tipo de proyecto" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {activeFilters.map(filter => (
-                    <SelectItem key={filter.id} value={filter.id}>
-                      {filter.displayName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={openFilterType} onOpenChange={setOpenFilterType}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-[120px] sm:w-[140px] h-8 sm:h-9 text-xs sm:text-sm justify-between font-normal">
+                    <span className="truncate">{filterId === 'all' ? 'Todos' : activeFilters.find(f => f.id === filterId)?.displayName ?? 'Tipo'}</span>
+                    <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                  <Command>
+                    <CommandList className="max-h-[280px]">
+                      <CommandEmpty>No hay opciones.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem value="Todos" onSelect={() => { setFilterId('all'); setOpenFilterType(false); }}>
+                          <Check className={cn('mr-2 h-4 w-4 shrink-0', filterId === 'all' ? 'opacity-100' : 'opacity-0')} />
+                          Todos
+                        </CommandItem>
+                        {activeFilters.map(filter => (
+                          <CommandItem key={filter.id} value={filter.displayName} onSelect={() => { setFilterId(filter.id); setOpenFilterType(false); }}>
+                            <Check className={cn('mr-2 h-4 w-4 shrink-0', filterId === filter.id ? 'opacity-100' : 'opacity-0')} />
+                            {filter.displayName}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <label className="flex items-center gap-1.5 cursor-pointer shrink-0">
                 <span className="text-slate-600 whitespace-nowrap">Ocultos</span>
                 <Switch id="show-hidden" checked={showHidden} onCheckedChange={setShowHidden} className="scale-75 sm:scale-90" />
@@ -1913,27 +1981,61 @@ export default function DeadlinesPage() {
               </label>
             </div>
             <div className="flex items-center gap-2">
-              <Select value={filterByEmployee} onValueChange={setFilterByEmployee}>
-                <SelectTrigger className="w-[100px] sm:w-[140px] h-8 sm:h-9 text-xs sm:text-sm">
-                  <SelectValue placeholder="Empleado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {activeEmployees.map(emp => (
-                    <SelectItem key={emp.id} value={emp.id}>{emp.first_name || emp.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'client' | 'assigned' | 'remaining')}>
-                <SelectTrigger className="w-[100px] sm:w-[140px] h-8 sm:h-9 text-xs sm:text-sm">
-                  <SelectValue placeholder="ordenar" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="client">Por cliente</SelectItem>
-                  <SelectItem value="assigned">Más asignado</SelectItem>
-                  <SelectItem value="remaining">Más disponible</SelectItem>
-                </SelectContent>
-              </Select>
+              <Popover open={openFilterEmployee} onOpenChange={setOpenFilterEmployee}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-[100px] sm:w-[140px] h-8 sm:h-9 text-xs sm:text-sm justify-between font-normal">
+                    <span className="truncate">{filterByEmployee === 'all' ? 'Empleado' : (activeEmployees.find(e => e.id === filterByEmployee)?.first_name || activeEmployees.find(e => e.id === filterByEmployee)?.name) ?? 'Todos'}</span>
+                    <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                  <Command>
+                    <CommandList className="max-h-[280px]">
+                      <CommandEmpty>No hay empleados.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem value="Todos" onSelect={() => { setFilterByEmployee('all'); setOpenFilterEmployee(false); }}>
+                          <Check className={cn('mr-2 h-4 w-4 shrink-0', filterByEmployee === 'all' ? 'opacity-100' : 'opacity-0')} />
+                          Todos
+                        </CommandItem>
+                        {activeEmployees.map(emp => (
+                          <CommandItem key={emp.id} value={emp.first_name || emp.name || ''} onSelect={() => { setFilterByEmployee(emp.id); setOpenFilterEmployee(false); }}>
+                            <Check className={cn('mr-2 h-4 w-4 shrink-0', filterByEmployee === emp.id ? 'opacity-100' : 'opacity-0')} />
+                            {emp.first_name || emp.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <Popover open={openSortBy} onOpenChange={setOpenSortBy}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-[100px] sm:w-[140px] h-8 sm:h-9 text-xs sm:text-sm justify-between font-normal">
+                    <span className="truncate">{sortBy === 'client' ? 'Por cliente' : sortBy === 'assigned' ? 'Más asignado' : 'Más disponible'}</span>
+                    <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                  <Command>
+                    <CommandList className="max-h-[280px]">
+                      <CommandGroup>
+                        <CommandItem value="Por cliente" onSelect={() => { setSortBy('client'); setOpenSortBy(false); }}>
+                          <Check className={cn('mr-2 h-4 w-4 shrink-0', sortBy === 'client' ? 'opacity-100' : 'opacity-0')} />
+                          Por cliente
+                        </CommandItem>
+                        <CommandItem value="Más asignado" onSelect={() => { setSortBy('assigned'); setOpenSortBy(false); }}>
+                          <Check className={cn('mr-2 h-4 w-4 shrink-0', sortBy === 'assigned' ? 'opacity-100' : 'opacity-0')} />
+                          Más asignado
+                        </CommandItem>
+                        <CommandItem value="Más disponible" onSelect={() => { setSortBy('remaining'); setOpenSortBy(false); }}>
+                          <Check className={cn('mr-2 h-4 w-4 shrink-0', sortBy === 'remaining' ? 'opacity-100' : 'opacity-0')} />
+                          Más disponible
+                        </CommandItem>
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         )}

@@ -14,7 +14,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -25,7 +24,7 @@ import {
   AlertTriangle, TrendingUp, TrendingDown, Pencil, Trash2, Users,
   FolderOpen, Clock, CalendarDays, ArrowUpRight, ArrowDownRight,
   Minus, Eye, X, ChevronsUpDown, User, Target, Filter, LayoutGrid,
-  AlertOctagon, CircleDashed, Ban, CheckCircle2, XCircle, Zap, EyeOff, Link as LinkIcon
+  AlertOctagon, CircleDashed, Ban, CheckCircle2, XCircle, Zap, EyeOff, Link as LinkIcon, Check
 } from 'lucide-react';
 import { cn, matchesAliasingRule } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
@@ -148,6 +147,13 @@ export default function ClientsAndProjectsPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all'); // Por defecto mostrar todos los proyectos
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active'); // Por defecto solo activos
   const [projectTypeFilter, setProjectTypeFilter] = useState<string>('all');
+  const [openStatusFilter, setOpenStatusFilter] = useState(false);
+  const [openProjectTypeFilter, setOpenProjectTypeFilter] = useState(false);
+  const [openEditTaskProject, setOpenEditTaskProject] = useState(false);
+  const [openEditTaskEmployee, setOpenEditTaskEmployee] = useState(false);
+  const [openEditTaskDependency, setOpenEditTaskDependency] = useState(false);
+  const [openEditTaskWeek, setOpenEditTaskWeek] = useState(false);
+  const [openFormStatus, setOpenFormStatus] = useState(false);
   const [monthDeadlines, setMonthDeadlines] = useState<Deadline[]>([]);
 
   // Custom project filters from agency settings
@@ -1056,18 +1062,36 @@ export default function ClientsAndProjectsPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Estado</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="active">Activo</SelectItem>
-                            <SelectItem value="completed">Completado</SelectItem>
-                            <SelectItem value="archived">Archivado</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Popover open={openFormStatus} onOpenChange={setOpenFormStatus}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button variant="outline" className="w-full justify-between font-normal">
+                                <span className="truncate">{field.value === 'active' ? 'Activo' : field.value === 'completed' ? 'Completado' : field.value === 'archived' ? 'Archivado' : 'Estado'}</span>
+                                <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                            <Command>
+                              <CommandList className="max-h-[280px]">
+                                <CommandGroup>
+                                  <CommandItem value="Activo" onSelect={() => { field.onChange('active'); setOpenFormStatus(false); }}>
+                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', field.value === 'active' ? 'opacity-100' : 'opacity-0')} />
+                                    Activo
+                                  </CommandItem>
+                                  <CommandItem value="Completado" onSelect={() => { field.onChange('completed'); setOpenFormStatus(false); }}>
+                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', field.value === 'completed' ? 'opacity-100' : 'opacity-0')} />
+                                    Completado
+                                  </CommandItem>
+                                  <CommandItem value="Archivado" onSelect={() => { field.onChange('archived'); setOpenFormStatus(false); }}>
+                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', field.value === 'archived' ? 'opacity-100' : 'opacity-0')} />
+                                    Archivado
+                                  </CommandItem>
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -1296,33 +1320,57 @@ export default function ClientsAndProjectsPage() {
           </div>
 
           {/* Filtro de estado */}
-          <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
-            <SelectTrigger className="w-[160px] h-9">
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los estados</SelectItem>
-              <SelectItem value="active">Solo activos</SelectItem>
-              <SelectItem value="completed">Solo completados</SelectItem>
-              <SelectItem value="archived">Solo archivados</SelectItem>
-              <SelectItem value="hidden">Solo ocultos</SelectItem>
-            </SelectContent>
-          </Select>
+          <Popover open={openStatusFilter} onOpenChange={setOpenStatusFilter}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-[160px] h-9 justify-between font-normal">
+                <span className="truncate">{statusFilter === 'all' ? 'Todos los estados' : statusFilter === 'active' ? 'Solo activos' : statusFilter === 'completed' ? 'Solo completados' : statusFilter === 'archived' ? 'Solo archivados' : 'Solo ocultos'}</span>
+                <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+              <Command>
+                <CommandList className="max-h-[280px]">
+                  <CommandGroup>
+                    {(['all', 'active', 'completed', 'archived', 'hidden'] as const).map(val => (
+                      <CommandItem key={val} value={val === 'all' ? 'Todos los estados' : val === 'active' ? 'Solo activos' : val === 'completed' ? 'Solo completados' : val === 'archived' ? 'Solo archivados' : 'Solo ocultos'} onSelect={() => { setStatusFilter(val); setOpenStatusFilter(false); }}>
+                        <Check className={cn('mr-2 h-4 w-4 shrink-0', statusFilter === val ? 'opacity-100' : 'opacity-0')} />
+                        {val === 'all' ? 'Todos los estados' : val === 'active' ? 'Solo activos' : val === 'completed' ? 'Solo completados' : val === 'archived' ? 'Solo archivados' : 'Solo ocultos'}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
 
           {/* Filtro de tipo de proyecto (dinámico desde configuración de agencia) */}
-          <Select value={projectTypeFilter} onValueChange={setProjectTypeFilter}>
-            <SelectTrigger className="w-[140px] h-9">
-              <SelectValue placeholder="Tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los tipos</SelectItem>
-              {activeFilters.map(filter => (
-                <SelectItem key={filter.id} value={filter.id}>
-                  {filter.displayName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={openProjectTypeFilter} onOpenChange={setOpenProjectTypeFilter}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-[140px] h-9 justify-between font-normal">
+                <span className="truncate">{projectTypeFilter === 'all' ? 'Todos los tipos' : activeFilters.find(f => f.id === projectTypeFilter)?.displayName ?? 'Tipo'}</span>
+                <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+              <Command>
+                <CommandList className="max-h-[280px]">
+                  <CommandEmpty>No hay tipos.</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem value="Todos los tipos" onSelect={() => { setProjectTypeFilter('all'); setOpenProjectTypeFilter(false); }}>
+                      <Check className={cn('mr-2 h-4 w-4 shrink-0', projectTypeFilter === 'all' ? 'opacity-100' : 'opacity-0')} />
+                      Todos los tipos
+                    </CommandItem>
+                    {activeFilters.map(filter => (
+                      <CommandItem key={filter.id} value={filter.displayName} onSelect={() => { setProjectTypeFilter(filter.id); setOpenProjectTypeFilter(false); }}>
+                        <Check className={cn('mr-2 h-4 w-4 shrink-0', projectTypeFilter === filter.id ? 'opacity-100' : 'opacity-0')} />
+                        {filter.displayName}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
 
           {/* Filtro de empleado */}
           <Popover open={openEmployeeCombo} onOpenChange={setOpenEmployeeCombo}>
@@ -2203,18 +2251,26 @@ export default function ClientsAndProjectsPage() {
               <div className="grid gap-6 py-4">
                 <div className="space-y-2">
                   <Label>Proyecto</Label>
-                  <Select value={editTaskProjectId} onValueChange={setEditTaskProjectId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar proyecto" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {projects.filter(p => p.status === 'active').map(project => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={openEditTaskProject} onOpenChange={setOpenEditTaskProject}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between font-normal">
+                        <span className="truncate">{editTaskProjectId ? (projects.find(p => p.id === editTaskProjectId)?.name ?? 'Seleccionar proyecto') : 'Seleccionar proyecto'}</span>
+                        <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                      <Command>
+                        <CommandList className="max-h-[280px]">
+                          {projects.filter(p => p.status === 'active').map(project => (
+                            <CommandItem key={project.id} value={project.name} onSelect={() => { setEditTaskProjectId(project.id); setOpenEditTaskProject(false); }}>
+                              <Check className={cn('mr-2 h-4 w-4 shrink-0', editTaskProjectId === project.id ? 'opacity-100' : 'opacity-0')} />
+                              {project.name}
+                            </CommandItem>
+                          ))}
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div className="space-y-2">
@@ -2228,44 +2284,64 @@ export default function ClientsAndProjectsPage() {
 
                 <div className="space-y-2">
                   <Label>Empleado</Label>
-                  <Select value={editTaskEmployeeId} onValueChange={setEditTaskEmployeeId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar empleado" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {employees.filter(e => e.isActive).map(emp => (
-                        <SelectItem key={emp.id} value={emp.id}>
-                          {emp.name || emp.first_name || 'Sin nombre'}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={openEditTaskEmployee} onOpenChange={setOpenEditTaskEmployee}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between font-normal">
+                        <span className="truncate">{editTaskEmployeeId ? (employees.find(e => e.id === editTaskEmployeeId)?.name || employees.find(e => e.id === editTaskEmployeeId)?.first_name || 'Sin nombre') : 'Seleccionar empleado'}</span>
+                        <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                      <Command>
+                        <CommandList className="max-h-[280px]">
+                          {employees.filter(e => e.isActive).map(emp => (
+                            <CommandItem key={emp.id} value={emp.name || emp.first_name || 'Sin nombre'} onSelect={() => { setEditTaskEmployeeId(emp.id); setOpenEditTaskEmployee(false); }}>
+                              <Check className={cn('mr-2 h-4 w-4 shrink-0', editTaskEmployeeId === emp.id ? 'opacity-100' : 'opacity-0')} />
+                              {emp.name || emp.first_name || 'Sin nombre'}
+                            </CommandItem>
+                          ))}
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2 text-xs text-slate-500">
                     <LinkIcon className="w-3 h-3" /> Depende de otra tarea
                   </Label>
-                  <Select
-                    value={editTaskDependencyId}
-                    onValueChange={setEditTaskDependencyId}
-                    disabled={!editTaskProjectId}
-                  >
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="Sin dependencia" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">-- Ninguna --</SelectItem>
-                      {availableDependencies.map(dep => {
-                        const owner = employees.find(e => e.id === dep.employeeId);
-                        return (
-                          <SelectItem key={dep.id} value={dep.id} className="text-xs">
-                            {dep.taskName} ({owner?.name || 'Desconocido'})
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={openEditTaskDependency} onOpenChange={setOpenEditTaskDependency}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="h-9 w-full justify-between font-normal" disabled={!editTaskProjectId}>
+                        <span className="truncate">{editTaskDependencyId === 'none' ? '-- Ninguna --' : (() => { const dep = availableDependencies.find(d => d.id === editTaskDependencyId); const owner = dep ? employees.find(e => e.id === dep.employeeId) : null; return dep ? `${dep.taskName} (${owner?.name || 'Desconocido'})` : 'Sin dependencia'; })()}</span>
+                        <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-max min-w-[var(--radix-popover-trigger-width)] max-w-[min(92vw,560px)] p-0" align="start">
+                      <Command>
+                        <CommandList className="max-h-[280px]">
+                          <CommandGroup>
+                            <CommandItem value="none" className="text-xs py-2 px-3" onSelect={() => { setEditTaskDependencyId('none'); setOpenEditTaskDependency(false); }}>
+                              <Check className={cn('mr-2.5 h-3.5 w-3.5 shrink-0', editTaskDependencyId === 'none' ? 'opacity-100' : 'opacity-0')} />
+                              -- Ninguna --
+                            </CommandItem>
+                            {availableDependencies.map(dep => {
+                              const owner = employees.find(e => e.id === dep.employeeId);
+                              const name = owner?.name || 'Desconocido';
+                              const shortName = name.length > 8 ? name.substring(0, 6) + '..' : name;
+                              const label = `${dep.taskName} (${shortName})`;
+                              return (
+                                <CommandItem key={dep.id} value={label} className="text-xs py-2 px-3 whitespace-nowrap" onSelect={() => { setEditTaskDependencyId(dep.id); setOpenEditTaskDependency(false); }}>
+                                  <Check className={cn('mr-2.5 h-3.5 w-3.5 shrink-0', editTaskDependencyId === dep.id ? 'opacity-100' : 'opacity-0')} />
+                                  <span title={`${dep.taskName} (${name})`}>{label}</span>
+                                </CommandItem>
+                              );
+                            })}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -2281,18 +2357,29 @@ export default function ClientsAndProjectsPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Semana</Label>
-                    <Select value={editTaskWeek} onValueChange={setEditTaskWeek}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar semana" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {weeks.map((w, i) => (
-                          <SelectItem key={format(w.weekStart, 'yyyy-MM-dd')} value={format(w.weekStart, 'yyyy-MM-dd')}>
-                            Sem {i + 1} ({format(w.weekStart, 'dd/MM')})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={openEditTaskWeek} onOpenChange={setOpenEditTaskWeek}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-between font-normal">
+                          <span className="truncate">{editTaskWeek ? (() => { const idx = weeks.findIndex(w => format(w.weekStart, 'yyyy-MM-dd') === editTaskWeek); return idx >= 0 ? `Sem ${idx + 1} (${format(weeks[idx].weekStart, 'dd/MM')})` : 'Seleccionar semana'; })() : 'Seleccionar semana'}</span>
+                          <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                        <Command>
+                          <CommandList className="max-h-[280px]">
+                            {weeks.map((w, i) => {
+                              const val = format(w.weekStart, 'yyyy-MM-dd');
+                              return (
+                                <CommandItem key={val} value={val} onSelect={() => { setEditTaskWeek(val); setOpenEditTaskWeek(false); }}>
+                                  <Check className={cn('mr-2 h-4 w-4 shrink-0', editTaskWeek === val ? 'opacity-100' : 'opacity-0')} />
+                                  Sem {i + 1} ({format(w.weekStart, 'dd/MM')})
+                                </CommandItem>
+                              );
+                            })}
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
 

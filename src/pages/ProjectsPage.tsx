@@ -11,7 +11,6 @@ import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -25,7 +24,7 @@ import {
   ChevronsUpDown, User, Target, Plus, Trash2, ChevronDown,
   AlertTriangle, AlertCircle, Clock, TrendingUp, TrendingDown,
   CheckCircle2, XCircle, Calendar, Zap, Filter, LayoutGrid, List,
-  AlertOctagon, CircleDashed, Ban, Link as LinkIcon
+  AlertOctagon, CircleDashed, Ban, Link as LinkIcon, Check
 } from 'lucide-react';
 import { Project, OKR } from '@/types';
 import { cn } from '@/lib/utils';
@@ -61,6 +60,8 @@ export default function ProjectsPage() {
     okrs: [] as OKR[]
   });
   const [newOkrTitle, setNewOkrTitle] = useState('');
+  const [openFormClient, setOpenFormClient] = useState(false);
+  const [openFormStatus, setOpenFormStatus] = useState(false);
 
   const handlePrevMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
   const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
@@ -1057,10 +1058,26 @@ export default function ProjectsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Cliente asociado</Label>
-                <Select value={formData.clientId} onValueChange={(val) => setFormData({ ...formData, clientId: val })}>
-                  <SelectTrigger><SelectValue placeholder="seleccionar cliente" /></SelectTrigger>
-                  <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                </Select>
+                <Popover open={openFormClient} onOpenChange={setOpenFormClient}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between font-normal">
+                      <span className="truncate">{formData.clientId ? (clients.find(c => c.id === formData.clientId)?.name ?? 'seleccionar cliente') : 'seleccionar cliente'}</span>
+                      <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                    <Command>
+                      <CommandList className="max-h-[280px]">
+                        {clients.map(c => (
+                          <CommandItem key={c.id} value={c.name} onSelect={() => { setFormData({ ...formData, clientId: c.id }); setOpenFormClient(false); }}>
+                            <Check className={cn('mr-2 h-4 w-4 shrink-0', formData.clientId === c.id ? 'opacity-100' : 'opacity-0')} />
+                            {c.name}
+                          </CommandItem>
+                        ))}
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4">
@@ -1080,14 +1097,28 @@ export default function ProjectsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Estado</Label>
-                <Select value={formData.status} onValueChange={(val: 'active' | 'archived' | 'completed') => setFormData({ ...formData, status: val })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Activo</SelectItem>
-                    <SelectItem value="archived">Archivado</SelectItem>
-                    <SelectItem value="completed">Completado</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Popover open={openFormStatus} onOpenChange={setOpenFormStatus}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between font-normal">
+                      <span className="truncate">{formData.status === 'active' ? 'Activo' : formData.status === 'archived' ? 'Archivado' : 'Completado'}</span>
+                      <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                    <Command>
+                      <CommandList className="max-h-[280px]">
+                        <CommandGroup>
+                          {(['active', 'archived', 'completed'] as const).map(val => (
+                            <CommandItem key={val} value={val === 'active' ? 'Activo' : val === 'archived' ? 'Archivado' : 'Completado'} onSelect={() => { setFormData({ ...formData, status: val }); setOpenFormStatus(false); }}>
+                              <Check className={cn('mr-2 h-4 w-4 shrink-0', formData.status === val ? 'opacity-100' : 'opacity-0')} />
+                              {val === 'active' ? 'Activo' : val === 'archived' ? 'Archivado' : 'Completado'}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
             {/* Campo CRM Project ID */}

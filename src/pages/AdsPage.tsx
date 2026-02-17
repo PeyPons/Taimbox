@@ -13,13 +13,14 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   RefreshCw, Clock, Search, Settings, Layers,
   TrendingUp, TrendingDown, Scissors, Plus, Trash2,
   AlertTriangle, CheckCircle2, Calendar, Target,
-  ArrowUpRight, ArrowDownRight, Eye, EyeOff, X
+  ArrowUpRight, ArrowDownRight, Eye, EyeOff, X, Check, ChevronDown
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency, cn } from '@/lib/utils';
@@ -163,6 +164,7 @@ export default function AdsPage() {
   const [syncProgress, setSyncProgress] = useState(0);
   const [editingClient, setEditingClient] = useState<{ id: string, name: string, group: string, hidden: boolean, isSales: boolean } | null>(null);
   const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
+  const [openRuleAccount, setOpenRuleAccount] = useState(false);
 
   // Formulario nueva regla
   const ruleFormSchema = z.object({
@@ -1200,18 +1202,30 @@ export default function AdsPage() {
                   render={({ field }) => (
                     <FormItem className="col-span-12 sm:col-span-4">
                       <FormLabel className="text-xs font-medium">Cuenta origen</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="bg-white">
-                            <SelectValue placeholder="selecciona..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {uniqueAccountsForSelector.map(acc => (
-                            <SelectItem key={acc.id} value={acc.id}>{acc.name || acc.id}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Popover open={openRuleAccount} onOpenChange={setOpenRuleAccount}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button variant="outline" className="w-full justify-between font-normal bg-white">
+                              <span className="truncate">{field.value ? (uniqueAccountsForSelector.find(a => a.id === field.value)?.name || uniqueAccountsForSelector.find(a => a.id === field.value)?.id || 'selecciona...') : 'selecciona...'}</span>
+                              <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                          <Command>
+                            <CommandList className="max-h-[280px]">
+                              <CommandGroup>
+                                {uniqueAccountsForSelector.map(acc => (
+                                  <CommandItem key={acc.id} value={acc.name || acc.id} onSelect={() => { field.onChange(acc.id); setOpenRuleAccount(false); }}>
+                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', field.value === acc.id ? 'opacity-100' : 'opacity-0')} />
+                                    {acc.name || acc.id}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                       <FormMessage />
                     </FormItem>
                   )}

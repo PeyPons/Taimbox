@@ -2,18 +2,20 @@ import { useMemo, useState, memo, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { MetricsCard } from '@/components/shared/MetricsCard';
 import { format, isSameMonth, parseISO } from 'date-fns';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
 import {
   Sparkles, TrendingUp, TrendingDown, Users, Target,
-  CheckCircle2, Clock, Award, Filter
+  CheckCircle2, Clock, Award, Filter, Check, ChevronDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
@@ -34,6 +36,8 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
 
   const [filterProject, setFilterProject] = useState<string>('all');
   const [filterTeammate, setFilterTeammate] = useState<string>('all');
+  const [openFilterProject, setOpenFilterProject] = useState(false);
+  const [openFilterTeammate, setOpenFilterTeammate] = useState(false);
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
 
   const monthKey = format(viewDate, 'yyyy-MM');
@@ -306,33 +310,61 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
             <div className="flex items-center gap-3 flex-wrap">
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-slate-400" />
-                <Select value={filterProject} onValueChange={setFilterProject}>
-                  <SelectTrigger className="w-[180px] h-8 text-xs">
-                    <SelectValue placeholder="Todos los proyectos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos los proyectos</SelectItem>
-                    {projectGroups.map(g => (
-                      <SelectItem key={g.projectId} value={g.projectId}>
-                        {formatProjectName(g.projectName)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={openFilterProject} onOpenChange={setOpenFilterProject}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-[180px] h-8 text-xs justify-between font-normal">
+                      <span className="truncate">{filterProject === 'all' ? 'Todos los proyectos' : formatProjectName(projectGroups.find(g => g.projectId === filterProject)?.projectName ?? '')}</span>
+                      <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                    <Command>
+                      <CommandList className="max-h-[280px]">
+                        <CommandGroup>
+                          <CommandItem value="Todos los proyectos" onSelect={() => { setFilterProject('all'); setOpenFilterProject(false); }}>
+                            <Check className={cn('mr-2 h-4 w-4 shrink-0', filterProject === 'all' ? 'opacity-100' : 'opacity-0')} />
+                            Todos los proyectos
+                          </CommandItem>
+                          {projectGroups.map(g => (
+                            <CommandItem key={g.projectId} value={formatProjectName(g.projectName)} onSelect={() => { setFilterProject(g.projectId); setOpenFilterProject(false); }}>
+                              <Check className={cn('mr-2 h-4 w-4 shrink-0', filterProject === g.projectId ? 'opacity-100' : 'opacity-0')} />
+                              {formatProjectName(g.projectName)}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {allTeammates.length > 0 && (
-                <Select value={filterTeammate} onValueChange={setFilterTeammate}>
-                  <SelectTrigger className="w-[180px] h-8 text-xs">
-                    <SelectValue placeholder="Todos los compañeros" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos los compañeros</SelectItem>
-                    {allTeammates.map(emp => emp && (
-                      <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={openFilterTeammate} onOpenChange={setOpenFilterTeammate}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-[180px] h-8 text-xs justify-between font-normal">
+                      <span className="truncate">{filterTeammate === 'all' ? 'Todos los compañeros' : (allTeammates.find(e => e?.id === filterTeammate)?.name ?? 'Compañero')}</span>
+                      <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                    <Command>
+                      <CommandList className="max-h-[280px]">
+                        <CommandGroup>
+                          <CommandItem value="Todos los compañeros" onSelect={() => { setFilterTeammate('all'); setOpenFilterTeammate(false); }}>
+                            <Check className={cn('mr-2 h-4 w-4 shrink-0', filterTeammate === 'all' ? 'opacity-100' : 'opacity-0')} />
+                            Todos los compañeros
+                          </CommandItem>
+                          {allTeammates.map(emp => emp && (
+                            <CommandItem key={emp.id} value={emp.name || ''} onSelect={() => { setFilterTeammate(emp.id); setOpenFilterTeammate(false); }}>
+                              <Check className={cn('mr-2 h-4 w-4 shrink-0', filterTeammate === emp.id ? 'opacity-100' : 'opacity-0')} />
+                              {emp.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               )}
             </div>
           )}

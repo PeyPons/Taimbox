@@ -15,13 +15,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { InviteUserDialog } from '@/components/agencies/InviteUserDialog';
 import {
   Table,
@@ -31,8 +26,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ArrowLeft, Loader2, Users, Shield, Crown, AlertTriangle, Trash2, UserCheck, UserX, UserPlus } from 'lucide-react';
+import { ArrowLeft, Loader2, Users, Shield, Crown, AlertTriangle, Trash2, UserCheck, UserX, UserPlus, Check, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 export default function AgencyManagementPage() {
   const { id } = useParams<{ id: string }>();
@@ -53,6 +49,7 @@ export default function AgencyManagementPage() {
   const [isRemoving, setIsRemoving] = useState(false);
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
   const [selectedNewOwnerId, setSelectedNewOwnerId] = useState<string>('');
+  const [openNewOwner, setOpenNewOwner] = useState(false);
   const [isTransferring, setIsTransferring] = useState(false);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
 
@@ -456,27 +453,37 @@ export default function AgencyManagementPage() {
             <label className="text-sm font-medium text-slate-700 mb-2 block">
               Nuevo propietario
             </label>
-            <Select value={selectedNewOwnerId} onValueChange={setSelectedNewOwnerId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona un miembro" />
-              </SelectTrigger>
-              <SelectContent>
-                {members
-                  .filter(m => m.isActive && m.userId && !m.isPrimary)
-                  .map(member => (
-                    <SelectItem key={member.id} value={member.userId || ''}>
-                      <div className="flex items-center gap-2">
-                        {member.name}
-                        {member.isAdmin && (
-                          <Badge variant="outline" className="text-xs">
-                            Admin
-                          </Badge>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <Popover open={openNewOwner} onOpenChange={setOpenNewOwner}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-between font-normal">
+                  <span className="truncate">{selectedNewOwnerId ? (members.find(m => m.userId === selectedNewOwnerId)?.name ?? 'Selecciona un miembro') : 'Selecciona un miembro'}</span>
+                  <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                <Command>
+                  <CommandList className="max-h-[280px]">
+                    <CommandGroup>
+                      {members
+                        .filter(m => m.isActive && m.userId && !m.isPrimary)
+                        .map(member => (
+                          <CommandItem key={member.id} value={member.name || member.userId || ''} onSelect={() => { setSelectedNewOwnerId(member.userId || ''); setOpenNewOwner(false); }}>
+                            <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedNewOwnerId === (member.userId || '') ? 'opacity-100' : 'opacity-0')} />
+                            <div className="flex items-center gap-2">
+                              {member.name}
+                              {member.isAdmin && (
+                                <Badge variant="outline" className="text-xs">
+                                  Admin
+                                </Badge>
+                              )}
+                            </div>
+                          </CommandItem>
+                        ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
             {selectedNewOwnerId && (
               <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
                 <div className="flex items-start gap-2">

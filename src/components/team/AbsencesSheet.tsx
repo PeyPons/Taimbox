@@ -6,13 +6,14 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { Switch } from '@/components/ui/switch';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useApp } from '@/contexts/AppContext';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Trash2, CalendarIcon, Plus } from 'lucide-react';
+import { Trash2, CalendarIcon, Plus, Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { getAbsenceTypeLabel } from '@/utils/capacityUtils';
@@ -59,6 +60,7 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
       hours: 4,
     },
   });
+  const [openTypePopover, setOpenTypePopover] = useState(false);
 
   const isFullDay = form.watch('isFullDay');
 
@@ -137,19 +139,30 @@ export function AbsencesSheet({ open, onOpenChange, employeeId }: AbsencesSheetP
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tipo</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="vacation">Vacaciones</SelectItem>
-                        <SelectItem value="sick_leave">Baja Médica</SelectItem>
-                        <SelectItem value="personal">Asuntos Propios</SelectItem>
-                        <SelectItem value="other">Otro</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Popover open={openTypePopover} onOpenChange={setOpenTypePopover}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button variant="outline" className="w-full justify-between font-normal">
+                            <span className="truncate">{field.value === 'vacation' ? 'Vacaciones' : field.value === 'sick_leave' ? 'Baja Médica' : field.value === 'personal' ? 'Asuntos Propios' : field.value === 'other' ? 'Otro' : 'Tipo'}</span>
+                            <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                        <Command>
+                          <CommandList>
+                            <CommandGroup>
+                              {(['vacation', 'sick_leave', 'personal', 'other'] as const).map(val => (
+                                <CommandItem key={val} value={val === 'vacation' ? 'Vacaciones' : val === 'sick_leave' ? 'Baja Médica' : val === 'personal' ? 'Asuntos Propios' : 'Otro'} onSelect={() => { field.onChange(val); setOpenTypePopover(false); }}>
+                                  <Check className={cn('mr-2 h-4 w-4 shrink-0', field.value === val ? 'opacity-100' : 'opacity-0')} />
+                                  {val === 'vacation' ? 'Vacaciones' : val === 'sick_leave' ? 'Baja Médica' : val === 'personal' ? 'Asuntos Propios' : 'Otro'}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}

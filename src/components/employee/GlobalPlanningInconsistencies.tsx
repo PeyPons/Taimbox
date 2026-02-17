@@ -5,10 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
+import { Button } from '@/components/ui/button';
 import {
   AlertTriangle, CheckCircle2, Users, TrendingUp, TrendingDown,
-  Info, ChevronDown, ChevronUp, Filter
+  Info, ChevronDown, ChevronUp, Filter, Check
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
@@ -54,6 +56,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
   const [isLoading, setIsLoading] = useState(true);
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all');
+  const [openFilterEmployee, setOpenFilterEmployee] = useState(false);
   const { formatName: formatProjectName } = useProjectAliasing();
 
   const monthKey = format(viewDate, 'yyyy-MM');
@@ -329,17 +332,32 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
             </CardTitle>
             <div className="flex items-center gap-2 w-full sm:w-auto min-w-0">
               <Filter className="h-4 w-4 text-slate-400 shrink-0" />
-              <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-                <SelectTrigger className="w-full sm:w-[180px] h-9 sm:h-8 min-h-[44px] sm:min-h-0 text-xs">
-                  <SelectValue placeholder="Filtrar empleado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los empleados</SelectItem>
-                  {employees.filter(e => e.isActive).map(emp => (
-                    <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={openFilterEmployee} onOpenChange={setOpenFilterEmployee}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full sm:w-[180px] h-9 sm:h-8 min-h-[44px] sm:min-h-0 text-xs justify-between font-normal">
+                    <span className="truncate">{selectedEmployeeId === 'all' ? 'Todos los empleados' : employees.find(e => e.id === selectedEmployeeId)?.name ?? 'Filtrar empleado'}</span>
+                    <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                  <Command>
+                    <CommandList className="max-h-[280px]">
+                      <CommandGroup>
+                        <CommandItem value="Todos los empleados" onSelect={() => { setSelectedEmployeeId('all'); setOpenFilterEmployee(false); }}>
+                          <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedEmployeeId === 'all' ? 'opacity-100' : 'opacity-0')} />
+                          Todos los empleados
+                        </CommandItem>
+                        {employees.filter(e => e.isActive).map(emp => (
+                          <CommandItem key={emp.id} value={emp.name || ''} onSelect={() => { setSelectedEmployeeId(emp.id); setOpenFilterEmployee(false); }}>
+                            <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedEmployeeId === emp.id ? 'opacity-100' : 'opacity-0')} />
+                            {emp.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </CardHeader>

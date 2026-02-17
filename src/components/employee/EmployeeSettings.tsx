@@ -146,7 +146,7 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
             Ajustes de cuenta
           </DialogTitle>
           <DialogDescription>
-            Gestiona tu contraseña y avatar personalizado
+            Avatar y contraseña se guardan por separado: usa «Guardar avatar» para el avatar y «Cambiar contraseña» solo si quieres cambiar la contraseña.
           </DialogDescription>
         </DialogHeader>
 
@@ -184,14 +184,15 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
                   <Button
                     onClick={handleUpdateAvatar}
                     disabled={isUpdating || !avatarPhrase.trim()}
-                    size="icon"
-                    variant="outline"
+                    variant="secondary"
+                    className="shrink-0"
                   >
-                    <RefreshCw className={`h-4 w-4 ${isUpdating ? 'animate-spin' : ''}`} />
+                    <RefreshCw className={`h-4 w-4 mr-2 ${isUpdating ? 'animate-spin' : ''}`} />
+                    {isUpdating ? 'Guardando...' : 'Guardar avatar'}
                   </Button>
                 </div>
                 <p className="text-xs text-slate-500">
-                  Escribe cualquier frase y se generará un avatar único basado en ella
+                  Escribe cualquier frase y se generará un avatar único. Haz clic en «Guardar avatar» para aplicar el cambio (no hace falta cambiar la contraseña).
                 </p>
               </div>
             </div>

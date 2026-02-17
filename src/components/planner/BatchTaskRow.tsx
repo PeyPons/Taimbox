@@ -2,10 +2,9 @@ import { format, startOfMonth } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Check, X, Plus, Trash2, AlertTriangle, Link as LinkIcon, User } from 'lucide-react';
+import { Check, X, Plus, Trash2, AlertTriangle, Link as LinkIcon, User, ChevronDown } from 'lucide-react';
 import { Project, Employee, Allocation, NewTaskRow, Client, Deadline } from '@/types';
 import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { useState, useMemo } from 'react';
@@ -55,6 +54,8 @@ export function BatchTaskRow({
 }: BatchTaskRowProps) {
     const [openCombobox, setOpenCombobox] = useState(false);
     const [openEmployeeCombobox, setOpenEmployeeCombobox] = useState(false);
+    const [openDependency, setOpenDependency] = useState(false);
+    const [openWeek, setOpenWeek] = useState(false);
     const { formatName: formatProjectName } = useProjectAliasing();
 
     // Ordenar proyectos: primero los que tienen deadline asignado al empleado de la tarea, luego el resto
@@ -395,16 +396,35 @@ export function BatchTaskRow({
                 )}
 
                 <div className="w-full sm:w-[140px] min-w-0">
-                    <Select value={task.dependencyId || 'none'} onValueChange={(v) => updateTaskRow(task.id, 'dependencyId', v)} disabled={!task.projectId}>
-                        <SelectTrigger className="w-full h-11 sm:h-9 min-h-[44px] sm:min-h-0 text-xs px-2"><SelectValue placeholder="Sin dep." /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="none">-- Sin dependencia --</SelectItem>
-                            {getAvailableDependencies(task.projectId).map(dep => {
-                                const owner = employees.find(e => e.id === dep.employeeId);
-                                return <SelectItem key={dep.id} value={dep.id} className="text-xs">{dep.taskName} ({owner?.name?.substring(0, 6)}..)</SelectItem>;
-                            })}
-                        </SelectContent>
-                    </Select>
+                    <Popover open={openDependency} onOpenChange={setOpenDependency}>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" disabled={!task.projectId} className={cn("w-full h-11 sm:h-9 min-h-[44px] sm:min-h-0 text-xs px-2 justify-between font-normal")}>
+                                <span className="truncate">{task.dependencyId && task.dependencyId !== 'none' ? (() => { const d = getAvailableDependencies(task.projectId).find(x => x.id === task.dependencyId); const o = d ? employees.find(e => e.id === d.employeeId) : null; return d ? `${d.taskName} (${o?.name?.substring(0, 6)}..)` : 'Sin dep.'; })() : '-- Sin dependencia --'}</span>
+                                <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-max min-w-[var(--radix-popover-trigger-width)] max-w-[min(92vw,560px)] p-0" align="start">
+                            <Command>
+                                <CommandList className="max-h-[280px]">
+                                    <CommandItem value="none" className="text-xs py-2 px-3" onSelect={() => { updateTaskRow(task.id, 'dependencyId', 'none'); setOpenDependency(false); }}>
+                                        <Check className={cn('mr-2.5 h-3.5 w-3.5 shrink-0', (!task.dependencyId || task.dependencyId === 'none') ? 'opacity-100' : 'opacity-0')} />
+                                        -- Sin dependencia --
+                                    </CommandItem>
+                                    {getAvailableDependencies(task.projectId).map(dep => {
+                                        const owner = employees.find(e => e.id === dep.employeeId);
+                                        const shortName = owner?.name ? (owner.name.length > 8 ? owner.name.substring(0, 6) + '..' : owner.name) : '';
+                                        const label = `${dep.taskName} (${shortName})`;
+                                        return (
+                                            <CommandItem key={dep.id} value={label} className="text-xs py-2 px-3 whitespace-nowrap" onSelect={() => { updateTaskRow(task.id, 'dependencyId', dep.id); setOpenDependency(false); }}>
+                                                <Check className={cn('mr-2.5 h-3.5 w-3.5 shrink-0', task.dependencyId === dep.id ? 'opacity-100' : 'opacity-0')} />
+                                                <span title={`${dep.taskName} (${owner?.name ?? ''})`}>{label}</span>
+                                            </CommandItem>
+                                        );
+                                    })}
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
                 </div>
 
                 <div className="grid grid-cols-2 sm:flex sm:flex-nowrap gap-2 sm:gap-3 items-center">
@@ -417,12 +437,29 @@ export function BatchTaskRow({
                         step="0.5"
                     />
                     <div className="min-w-0 sm:w-32">
-                        <Select value={task.weekDate} onValueChange={(v) => updateTaskRow(task.id, 'weekDate', v)}>
-                            <SelectTrigger className={cn("w-full h-11 sm:h-9 min-h-[44px] sm:min-h-0 text-xs pl-2 pr-1", isWeekOverloaded && "border-red-300 text-red-700 bg-red-50")}>
-                                <SelectValue placeholder="Semana" />
-                            </SelectTrigger>
-                            <SelectContent>{weeks.map((w, i) => (<SelectItem key={w.weekStart.toISOString()} value={format(w.weekStart, 'yyyy-MM-dd')}>Sem {i + 1}</SelectItem>))}</SelectContent>
-                        </Select>
+                        <Popover open={openWeek} onOpenChange={setOpenWeek}>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className={cn("w-full h-11 sm:h-9 min-h-[44px] sm:min-h-0 text-xs pl-2 pr-1 justify-between font-normal", isWeekOverloaded && "border-red-300 text-red-700 bg-red-50")}>
+                                    <span className="truncate">{task.weekDate ? `Sem ${weeks.findIndex(w => format(w.weekStart, 'yyyy-MM-dd') === task.weekDate) + 1 || ''}` : 'Semana'}</span>
+                                    <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                <Command>
+                                    <CommandList className="max-h-[280px]">
+                                        {weeks.map((w, i) => {
+                                            const val = format(w.weekStart, 'yyyy-MM-dd');
+                                            return (
+                                                <CommandItem key={val} value={val} onSelect={() => { updateTaskRow(task.id, 'weekDate', val); setOpenWeek(false); }}>
+                                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', task.weekDate === val ? 'opacity-100' : 'opacity-0')} />
+                                                    Sem {i + 1}
+                                                </CommandItem>
+                                            );
+                                        })}
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
                     </div>
                 </div>
 

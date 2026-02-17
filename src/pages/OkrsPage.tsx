@@ -6,9 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Target, Trophy, TrendingUp, AlertCircle, CheckCircle2, Search, Filter, Plus, User, Briefcase, ChevronRight, Edit, Trash2, CheckSquare, X, Users as UsersIcon, Calendar } from 'lucide-react';
+import { Target, Trophy, TrendingUp, AlertCircle, CheckCircle2, Search, Filter, Plus, User, Briefcase, ChevronRight, ChevronDown, Edit, Trash2, CheckSquare, X, Users as UsersIcon, Calendar } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -69,6 +68,8 @@ export default function OkrsPage() {
     const [newKrText, setNewKrText] = useState('');
     const [newKrTarget, setNewKrTarget] = useState(10);
     const [newKrUnit, setNewKrUnit] = useState('');
+    const [openFormProject, setOpenFormProject] = useState(false);
+    const [openNewKrType, setOpenNewKrType] = useState(false);
 
     // Initialize Admin Selection
     useEffect(() => {
@@ -541,16 +542,26 @@ export default function OkrsPage() {
                         {goalType === 'project' && !editingGoal && (
                             <div className="space-y-2">
                                 <Label>Proyecto</Label>
-                                <Select value={formData.projectId} onValueChange={(v) => setFormData(p => ({ ...p, projectId: v }))}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="seleccionar proyecto..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {projects.filter(p => p.status === 'active').map(p => (
-                                            <SelectItem key={p.id} value={p.id}>{formatProjectName(p.name)}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <Popover open={openFormProject} onOpenChange={setOpenFormProject}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className="w-full justify-between font-normal">
+                                            <span className="truncate">{formData.projectId ? formatProjectName(projects.find(p => p.id === formData.projectId)?.name || '') : 'seleccionar proyecto...'}</span>
+                                            <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                        <Command>
+                                            <CommandList className="max-h-[280px]">
+                                                {projects.filter(p => p.status === 'active').map(p => (
+                                                    <CommandItem key={p.id} value={formatProjectName(p.name)} onSelect={() => { setFormData(prev => ({ ...prev, projectId: p.id })); setOpenFormProject(false); }}>
+                                                        <Check className={cn('mr-2 h-4 w-4 shrink-0', formData.projectId === p.id ? 'opacity-100' : 'opacity-0')} />
+                                                        {formatProjectName(p.name)}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                         )}
 
@@ -647,15 +658,30 @@ export default function OkrsPage() {
                                     {/* Add New Item Row */}
                                     <div className="flex gap-2 items-center p-1 bg-slate-50 rounded-lg border border-slate-200 mt-2">
                                         <div className="shrink-0">
-                                            <Select value={newKrType} onValueChange={(v: any) => setNewKrType(v)}>
-                                                <SelectTrigger className="w-[100px] h-9 border-0 bg-white shadow-sm">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="check">Check</SelectItem>
-                                                    <SelectItem value="numeric">Numérico</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                            <Popover open={openNewKrType} onOpenChange={setOpenNewKrType}>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant="outline" className="w-[100px] h-9 border-0 bg-white shadow-sm justify-between font-normal">
+                                                        <span>{newKrType === 'check' ? 'Check' : 'Numérico'}</span>
+                                                        <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                                    <Command>
+                                                        <CommandList>
+                                                            <CommandGroup>
+                                                                <CommandItem value="Check" onSelect={() => { setNewKrType('check'); setOpenNewKrType(false); }}>
+                                                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', newKrType === 'check' ? 'opacity-100' : 'opacity-0')} />
+                                                                    Check
+                                                                </CommandItem>
+                                                                <CommandItem value="Numérico" onSelect={() => { setNewKrType('numeric'); setOpenNewKrType(false); }}>
+                                                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', newKrType === 'numeric' ? 'opacity-100' : 'opacity-0')} />
+                                                                    Numérico
+                                                                </CommandItem>
+                                                            </CommandGroup>
+                                                        </CommandList>
+                                                    </Command>
+                                                </PopoverContent>
+                                            </Popover>
                                         </div>
 
                                         {newKrType === 'numeric' && (

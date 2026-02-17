@@ -2,11 +2,12 @@ import { useState, useMemo, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useReactToPrint } from 'react-to-print';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { FileDown, CalendarDays, Printer } from 'lucide-react';
+import { FileDown, CalendarDays, Printer, ChevronDown, Check } from 'lucide-react';
 import { format, subMonths, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -19,6 +20,7 @@ export default function ClientReportsPage() {
     const { projects, clients, allocations } = useApp();
     const { formatName: formatProjectName } = useProjectAliasing();
     const [selectedMonth, setSelectedMonth] = useState(new Date());
+    const [openMonthSelect, setOpenMonthSelect] = useState(false);
 
     // Referencia para la impresión
     const componentRef = useRef<HTMLDivElement>(null);
@@ -95,22 +97,34 @@ export default function ClientReportsPage() {
                 </div>
 
                 <div className="flex items-center gap-4 bg-white p-2 rounded-lg border shadow-sm">
-                    <Select
-                        value={selectedMonth.toISOString()}
-                        onValueChange={(val) => setSelectedMonth(new Date(val))}
-                    >
-                        <SelectTrigger className="w-[200px]">
-                            <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {monthsList.map(date => (
-                                <SelectItem key={date.toISOString()} value={date.toISOString()}>
-                                    {format(date, 'MMMM yyyy', { locale: es }).charAt(0).toUpperCase() + format(date, 'MMMM yyyy', { locale: es }).slice(1)}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <Popover open={openMonthSelect} onOpenChange={setOpenMonthSelect}>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" className="w-[200px] justify-between font-normal">
+                                <span className="flex items-center gap-2 truncate">
+                                    <CalendarDays className="h-4 w-4 text-muted-foreground shrink-0" />
+                                    {format(selectedMonth, 'MMMM yyyy', { locale: es }).charAt(0).toUpperCase() + format(selectedMonth, 'MMMM yyyy', { locale: es }).slice(1)}
+                                </span>
+                                <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                            <Command>
+                                <CommandList className="max-h-[280px]">
+                                    <CommandGroup>
+                                        {monthsList.map(date => {
+                                            const label = format(date, 'MMMM yyyy', { locale: es }).charAt(0).toUpperCase() + format(date, 'MMMM yyyy', { locale: es }).slice(1);
+                                            return (
+                                                <CommandItem key={date.toISOString()} value={label} onSelect={() => { setSelectedMonth(new Date(date)); setOpenMonthSelect(false); }}>
+                                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedMonth.getMonth() === date.getMonth() && selectedMonth.getFullYear() === date.getFullYear() ? 'opacity-100' : 'opacity-0')} />
+                                                    {label}
+                                                </CommandItem>
+                                            );
+                                        })}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
 
                     <div className="h-6 w-px bg-slate-200" />
 
