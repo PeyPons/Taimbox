@@ -230,7 +230,13 @@ El sistema sincroniza datos de Google Ads y Meta Ads mediante procesos externos.
   | `agency_id` directo | agencies, employees, clients, projects, global_assignments, task_transfers, department_config, ad_accounts_config, ads_sync_logs, meta_sync_logs, google_ads_campaigns, meta_ads_campaigns, team_events, client_settings, segmentation_rules, audit_logs, api_tokens, user_agencies | `agency_id = requesting_agency_id()` |
   | Vía `employee_id` | allocations, absences, professional_goals, user_routines, weekly_feedback, time_entries | `employee_id IN (SELECT id FROM employees WHERE agency_id = requesting_agency_id())` |
   | Vía `project_id` | deadlines, project_editing_locks | `project_id IN (SELECT id FROM projects WHERE agency_id = requesting_agency_id())` |
-  | Sin policy (RLS deniega) | google_ads_changes | Sin uso confirmado; RLS habilitado sin policy = acceso denegado |
+  | Política “no access” | google_ads_changes | Política `no_access_until_use` con USING (false) y WITH CHECK (false): nadie puede leer ni escribir. Script: `supabase/scripts/rls_google_ads_changes_no_access.sql`. Cuando se confirme uso, sustituir por políticas por agency_id. |
+
+  **Tabla `agencies` (solo lectura vía API)**: Para impedir que integradores creen agencias por API, conviene revocar `INSERT` en `public.agencies` para los roles `anon` y `authenticated`. Script: `supabase/scripts/revoke_agencies_insert.sql`. La creación de agencias debe hacerse desde la app (registro/onboarding) o con service_role.
+
+  **Funciones y `search_path`**: Las funciones en `public` deben tener `search_path` fijado (`pg_catalog`, `public`) para evitar "search path hijacking". Si la auditoría marca "Function Search Path Mutable", ejecutar `supabase/scripts/fix_function_search_path.sql` y añadir al script cualquier función nueva que aparezca.
+
+  **Índices**: Si la auditoría marca "Unindexed foreign keys", ejecutar `supabase/scripts/add_missing_fk_indexes.sql` (crea índices en FKs que no tienen uno). Si marca "Duplicate Index" en una tabla, ejecutar `supabase/scripts/drop_duplicate_index_google_ads_campaigns.sql` (o un script similar para otra tabla) para eliminar índices duplicados.
 
   **Importante**: El `service_role` key bypasea RLS. Las edge functions y workers que usan `SUPABASE_SERVICE_ROLE_KEY` no se ven afectados.
 
