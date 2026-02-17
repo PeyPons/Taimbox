@@ -33,11 +33,11 @@ export function DemoPlanner() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0">
       {/* Banner informativo */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3 min-w-0">
         <Info className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-blue-900 mb-1">
             Demo Interactivo - Datos de Ejemplo
           </p>
@@ -48,22 +48,24 @@ export function DemoPlanner() {
         </div>
       </div>
 
-      {/* Vista general con pestañas */}
-      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-        <TabsList className="w-full justify-start h-auto p-1 bg-slate-50">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-white">
-            Vista General
-          </TabsTrigger>
-          <TabsTrigger value="calendar" className="data-[state=active]:bg-white">
-            Calendario
-          </TabsTrigger>
-          <TabsTrigger value="projects" className="data-[state=active]:bg-white">
-            Proyectos
-          </TabsTrigger>
-          <TabsTrigger value="metrics" className="data-[state=active]:bg-white">
-            Métricas
-          </TabsTrigger>
-        </TabsList>
+      {/* Vista general con pestañas: menú con scroll horizontal en móvil para evitar overflow de página */}
+      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full min-w-0">
+        <div className="overflow-x-auto overflow-y-hidden -mx-1 px-1 custom-scrollbar">
+          <TabsList className="w-full justify-start h-auto p-1 bg-slate-50 min-w-max">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-white shrink-0">
+              Vista General
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="data-[state=active]:bg-white shrink-0">
+              Calendario
+            </TabsTrigger>
+            <TabsTrigger value="projects" className="data-[state=active]:bg-white shrink-0">
+              Proyectos
+            </TabsTrigger>
+            <TabsTrigger value="metrics" className="data-[state=active]:bg-white shrink-0">
+              Métricas
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Vista General */}
         <TabsContent value="overview" className="mt-4 space-y-6">
