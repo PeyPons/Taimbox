@@ -1032,13 +1032,14 @@ export default function ReportsPage() {
   // Cargar deadlines y global assignments del mes seleccionado, siguiente y meses históricos
   useEffect(() => {
     const loadData = async () => {
+      if (!currentAgency?.id) return;
       const thisMonth = startOfMonth(currentMonth); // Usar currentMonth en lugar de new Date()
       const thisMonthStr = format(thisMonth, 'yyyy-MM');
       const nextMonth = addMonths(thisMonth, 1);
       const nextMonthStr = format(nextMonth, 'yyyy-MM');
 
       // Cargar deadlines del mes actual (filtrados por agencia)
-      const { data: currentDeadlinesData, error: currentDeadlinesError } = await fetchDeadlinesForMonth(thisMonthStr, currentAgency?.id);
+      const { data: currentDeadlinesData, error: currentDeadlinesError } = await fetchDeadlinesForMonth(thisMonthStr, currentAgency.id);
       if (!currentDeadlinesError && currentDeadlinesData) {
         setCurrentMonthDeadlines(currentDeadlinesData);
       }
@@ -1047,7 +1048,8 @@ export default function ReportsPage() {
       const { data: currentGlobalData, error: currentGlobalError } = await supabase
         .from('global_assignments')
         .select('*')
-        .eq('month', thisMonthStr);
+        .eq('month', thisMonthStr)
+        .eq('agency_id', currentAgency.id);
 
       if (!currentGlobalError && currentGlobalData) {
         setCurrentMonthGlobalAssignments(currentGlobalData.map((g: any) => ({
@@ -1071,7 +1073,8 @@ export default function ReportsPage() {
       const { data: globalData, error: globalError } = await supabase
         .from('global_assignments')
         .select('*')
-        .eq('month', nextMonthStr);
+        .eq('month', nextMonthStr)
+        .eq('agency_id', currentAgency.id);
 
       if (!globalError && globalData) {
         setNextMonthGlobalAssignments(globalData.map((g: any) => ({
@@ -1103,7 +1106,8 @@ export default function ReportsPage() {
         const { data: histGlobalData } = await supabase
           .from('global_assignments')
           .select('*')
-          .eq('month', pastMonthStr);
+          .eq('month', pastMonthStr)
+          .eq('agency_id', currentAgency.id);
 
         if (histGlobalData) {
           historicalGlobalAssignmentsMap[pastMonthStr] = histGlobalData.map((g: any) => ({

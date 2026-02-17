@@ -9,21 +9,25 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { PlusCircle, ShieldCheck, Building2, ArrowRight } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useAgency } from '@/contexts/AgencyContext';
 
 export default function SettingsPage() {
     const [accountId, setAccountId] = useState('');
     const [loading, setLoading] = useState(false);
     const { canAccess } = usePermissions();
+    const { currentAgency } = useAgency();
 
     const handleAddAccount = async () => {
         if (!accountId) return toast.error("Por favor, escribe un ID de cuenta.");
+        if (!currentAgency?.id) return toast.error("No hay agencia seleccionada.");
 
         setLoading(true);
         // Insertamos en la nueva tabla de configuración (solo Meta, Google se añade automáticamente)
         const { error } = await supabase.from('ad_accounts_config').insert({
             platform: 'meta',
             account_id: accountId,
-            is_active: true
+            is_active: true,
+            agency_id: currentAgency.id
         });
 
         if (error) {

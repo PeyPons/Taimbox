@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ProfessionalGoal } from '@/types';
+import { useAgency } from '@/contexts/AgencyContext';
 
 interface SupabaseProfessionalGoal {
   id: string;
@@ -27,12 +28,21 @@ interface GoalsContextType {
 export const GoalsContext = createContext<GoalsContextType | undefined>(undefined);
 
 export function GoalsProvider({ children }: { children: React.ReactNode }) {
+  const { currentAgency } = useAgency();
   const [professionalGoals, setProfessionalGoals] = useState<ProfessionalGoal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchGoals = useCallback(async () => {
+    if (!currentAgency?.id) {
+      setProfessionalGoals([]);
+      setIsLoading(false);
+      return;
+    }
     try {
-      const { data, error } = await supabase.from('professional_goals').select('*');
+      const { data, error } = await supabase
+        .from('professional_goals')
+        .select('*, employees!inner(agency_id)')
+        .eq('employees.agency_id', currentAgency.id);
 
       if (error) {
         console.error('Error fetching goals:', error);
@@ -40,7 +50,8 @@ export function GoalsProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data) {
-        setProfessionalGoals(data.map((g: SupabaseProfessionalGoal) => ({
+        const rows = data as (SupabaseProfessionalGoal & { employees?: { agency_id: string } })[];
+        setProfessionalGoals(rows.map((g) => ({
           id: g.id,
           employeeId: g.employee_id,
           title: g.title,
@@ -51,15 +62,17 @@ export function GoalsProvider({ children }: { children: React.ReactNode }) {
           dueDate: g.due_date,
           trainingUrl: g.training_url
         })));
+      } else {
+        setProfessionalGoals([]);
       }
     } catch (error) {
       console.error('Error loading goals:', error);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentAgency?.id]);
 
-  // Cargar goals al montar
+  // Cargar goals al montar o cuando cambie la agencia
   React.useEffect(() => {
     fetchGoals();
   }, [fetchGoals]);

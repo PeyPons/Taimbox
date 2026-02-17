@@ -309,9 +309,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           .eq('employees.agency_id', agencyId)
           .lte('start_date', endStr)
           .gte('end_date', startStr),
-        // Team events: filtrar por date
+        // Team events: filtrar por agencia y date
         supabase.from('team_events')
           .select('*')
+          .eq('agency_id', agencyId)
           .gte('date', startStr)
           .lte('date', endStr),
         supabase.from('weekly_feedback')
@@ -319,8 +320,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           .eq('employees.agency_id', agencyId)
           .gte('week_start_date', startStr)
           .lte('week_start_date', endStr),
-        // Cargar rutinas (solo si hay usuario logueado, idealmente filtrar por usuario pero por ahora cargamos y filtramos en UI o RLS filtra solo)
-        supabase.from('user_routines').select('*')
+        // Cargar rutinas de empleados de la agencia actual
+        supabase.from('user_routines').select('*, employees!inner(agency_id)').eq('employees.agency_id', agencyId)
       ]);
 
       if (allocRes.error) console.error('Error fetching allocations:', allocRes.error);
@@ -458,6 +459,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           .gte('end_date', startStr),
         supabase.from('team_events')
           .select('*')
+          .eq('agency_id', agencyId)
           .gte('date', startStr)
           .lte('date', endStr),
         supabase.from('weekly_feedback')
@@ -779,7 +781,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       )
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'team_events' },
+        { event: '*', schema: 'public', table: 'team_events', filter: `agency_id=eq.${currentAgency.id}` },
         (payload) => {
           if (payload.eventType === 'INSERT') {
             const mapped = mapTeamEvent(payload.new as SupabaseTeamEvent);
@@ -1287,18 +1289,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // --- TEAM EVENTS ---
   const addTeamEvent = useCallback(async (event: Omit<TeamEvent, 'id'>) => {
+    if (!currentAgency?.id) return;
     const { data } = await supabase.from('team_events').insert({
       name: event.name,
       date: event.date,
       hours_reduction: event.hoursReduction,
-      affected_employee_ids: event.affectedEmployeeIds
+      affected_employee_ids: event.affectedEmployeeIds,
+      agency_id: currentAgency.id
     }).select().single();
     if (data) setTeamEvents(prev => [...prev, {
       ...data,
       hoursReduction: data.hours_reduction,
       affectedEmployeeIds: data.affected_employee_ids
     }]);
-  }, []);
+  }, [currentAgency?.id]);
 
   const updateTeamEvent = useCallback(async (event: TeamEvent) => {
     setTeamEvents(prev => prev.map(e => e.id === event.id ? event : e));

@@ -282,6 +282,7 @@ Todas las páginas principales de la aplicación.
 |--------|--------|-------------|
 | `LandingPage.tsx` | 78KB | Página pública de marketing |
 | `GuiaPage.tsx` | ~18KB | Guía de funcionalidades pública (`/guia`, `/guia/:section`). Contiene 6 componentes de contenido reutilizables (FeatureCard, ExampleBox, TipBox, WarningBox, StepList, InfoGrid), navegación prev/next entre secciones y contenido detallado para las 9 secciones del producto. |
+| `ApiDocsPage.tsx` | ~35KB | Documentación pública de la API de integración (`/api-docs`). **Selectiva**: expone solo 17 tablas de planificación/equipo/proyectos (excluye ads, auditoría e internas). Layout profesional con sidebar sticky + scroll-spy, 9 secciones (Intro, Base URL, Auth, SDK, REST, Filtrado, Realtime, Errores, Referencia de recursos), code blocks con copy, method badges, tablas de columnas detalladas y ejemplos SDK + cURL por recurso. Tono partner/integrador. |
 | `Login.tsx` | 16KB | Autenticación con Supabase |
 | `Index.tsx` | <1KB | Redirección inicial |
 | `NotFound.tsx` | <1KB | Error 404 |
@@ -396,6 +397,7 @@ Antes de deployar cambios críticos:
 - [ ] **Split Weeks**: Si tocaste fechas, ¿probaste el cambio de año (Dic-Ene)?
 - [ ] **Mobile**: ¿Verificaste que el cambio se ve bien en `use-mobile`? El panel ya no bloquea acceso en móvil; PlannerGrid y DeadlinesPage tienen vistas específicas (Cards, Sheets). EmployeeDashboard usa Sheet en vez de Dialog en móvil. AllocationSheet tiene padding, botones ≥44px y sidebar oculto en móvil. WeeklyForecast y Reports usan widths responsive.
 - [ ] **Deadlines multi-tenant**: Si tocaste carga de deadlines, ¿usan `fetchDeadlinesForMonth(monthKey, currentAgency?.id)` o `useDeadlines({ agencyId })` para no mezclar datos entre agencias?
+- [ ] **Aislamiento por agencia**: Las tablas con `agency_id` (team_events, client_settings, segmentation_rules, global_assignments, meta_ads_campaigns, ad_accounts_config, sync_logs, etc.) deben filtrarse siempre por `currentAgency.id` en selects e incluir `agency_id` en inserts/upserts. Las que no tienen columna (professional_goals, user_routines) se filtran por join con `employees.agency_id`. Ver DOCUMENTACION.md sección 7 "Aislamiento por agencia".
 - [ ] **Overlays (Select/Dialog)**: Para evitar el desplazamiento del contenido al abrir desplegables, las **páginas** usan **Popover + Command** en lugar de Select (Radix). Patrón de referencia: DeadlinesPage (filtros), BatchTaskRow (selector de proyecto). Si añades un nuevo filtro o selector en una página, usa Popover+Command. Los componentes compartidos (EmployeeDialog, AbsencesSheet, etc.) pueden seguir usando Select dentro de Dialogs/Sheets; si en algún caso se aprecia el mismo salto, aplicar el mismo patrón.
 
 ### Limpieza de base de datos

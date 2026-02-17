@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/lib/supabase';
+import { cn } from '@/lib/utils';
 import { useAgency } from '@/contexts/AgencyContext';
 import { toast } from 'sonner';
 import {

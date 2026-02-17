@@ -9,7 +9,7 @@ Esta documentación ofrece una visión profunda y técnica de la plataforma Time
 El sistema sigue una arquitectura de **Single Page Application (SPA)** con un backend proporcionado por **Supabase** (BaaS) y trabajadores externos para integraciones de publicidad.
 
 - **Frontend**: React 18 con Vite y TypeScript.
-- **Backend / DB**: Supabase (PostgreSQL + Auth + Realtime).
+- **Backend / DB**: Supabase (PostgreSQL + Auth + Realtime). La documentación pública de la API de integración está en `/api-docs` (`src/pages/ApiDocsPage.tsx`). Es una **API selectiva** (no open-source): expone solo 17 tablas de planificación, equipo y proyectos. Excluye tablas internas (ads, audit_logs, user_agencies). Consultarla para integraciones externas o partners.
 - **Estilos**: Tailwind CSS con componentes de Shadcn UI.
 - **Estado Global**: React Context API con persistencia reactiva.
 - **Lógica de Datos**: TanStack Query (React Query) para sincronización de servidor.
@@ -206,6 +206,13 @@ El sistema sincroniza datos de Google Ads y Meta Ads mediante procesos externos.
     2. Habilitar RLS con `agency_id` (o filtrar por relación, ej. vía `project_id` → `projects.agency_id` como en `deadlines`).
     3. Actualizar `src/types/index.ts`.
     4. Añadir lógica de carga en `AppContext.tsx` (o utilidad específica como `deadlineUtils.ts` si la carga es por entidad y por agencia).
+
+- **Aislamiento por agencia (multi-tenant)**  
+  Todas las lecturas/escrituras deben acotarse a la agencia actual para no mostrar datos de una agencia en otra.
+  - **Tablas con columna `agency_id`** (filtrar siempre por `agency_id` en queries e inserts): `agencies`, `employees`, `clients`, `projects`, `ad_accounts_config`, `ads_sync_logs`, `meta_sync_logs`, `meta_ads_campaigns`, `google_ads_campaigns`, `global_assignments`, `task_transfers`, `department_config`, `user_agencies`, `audit_logs`, `team_events`, `client_settings`, `segmentation_rules`.
+  - **Tablas sin `agency_id` que se filtran por join**: `deadlines` (join con `projects.agency_id` vía `fetchDeadlinesForMonth(monthKey, agencyId)`), `professional_goals` (join con `employees.agency_id` en GoalsContext), `user_routines` (join con `employees.agency_id` en AppContext), `allocations` y `absences` (join con `employees.agency_id`).  
+  - **Tablas sin uso en la app** (solo API/workers o deprecadas): `google_ads_changes` (no referenciada en el codebase), `time_entries` (solo documentada en ApiDocsPage; no hay CRUD desde la UI). Confirmar uso en workers o integraciones antes de eliminarlas.
+
 - **Modificar permisos**:
     - Editar `src/hooks/usePermissions.ts` y añadir la nueva clave de permiso al objeto `RESTRICTED_PERMISSIONS`.
 - **Actualizar Workers**:

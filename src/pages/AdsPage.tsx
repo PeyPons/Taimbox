@@ -198,10 +198,10 @@ export default function AdsPage() {
     try {
       const [adsRes, settingsRes, accountsRes, logsRes, rulesRes] = await Promise.all([
         supabase.from('google_ads_campaigns').select('*').eq('agency_id', currentAgency.id),
-        supabase.from('client_settings').select('*'),
+        supabase.from('client_settings').select('*').eq('agency_id', currentAgency.id),
         supabase.from('ad_accounts_config').select('*').eq('platform', 'google').eq('is_active', true).eq('agency_id', currentAgency.id),
-        supabase.from('ads_sync_logs').select('created_at').eq('status', 'completed').order('created_at', { ascending: false }).limit(1).maybeSingle(),
-        supabase.from('segmentation_rules').select('*').eq('platform', 'google')
+        supabase.from('ads_sync_logs').select('created_at').eq('agency_id', currentAgency.id).eq('status', 'completed').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('segmentation_rules').select('*').eq('platform', 'google').eq('agency_id', currentAgency.id)
       ]);
 
       const settingsMap: Record<string, { budget: number; group_name: string; is_hidden: boolean; is_sales_account: boolean }> = {};
@@ -320,11 +320,13 @@ export default function AdsPage() {
   }, [syncLogs, isSyncing]);
 
   const onAddRule = async (data: RuleFormValues) => {
+    if (!currentAgency?.id) return;
     const newRule = {
       platform: 'google',
       account_id: data.account,
       keyword: data.keyword,
-      virtual_name: data.name
+      virtual_name: data.name,
+      agency_id: currentAgency.id
     };
 
     const { data: result, error } = await supabase.from('segmentation_rules').insert(newRule).select();
@@ -351,6 +353,7 @@ export default function AdsPage() {
   };
 
   const handleSaveBudget = async (clientId: string, amount: string) => {
+    if (!currentAgency?.id) return;
     const numAmount = parseFloat(amount);
 
     setClientSettings(prev => ({
@@ -360,7 +363,8 @@ export default function AdsPage() {
 
     const { error } = await supabase.from('client_settings').upsert({
       client_id: clientId,
-      budget_limit: isNaN(numAmount) ? 0 : numAmount
+      budget_limit: isNaN(numAmount) ? 0 : numAmount,
+      agency_id: currentAgency.id
     }, { onConflict: 'client_id' });
 
     if (error) toast.error("Error guardando presupuesto");
@@ -368,12 +372,13 @@ export default function AdsPage() {
   };
 
   const handleSaveClientSettings = async () => {
-    if (!editingClient) return;
+    if (!editingClient || !currentAgency?.id) return;
     await supabase.from('client_settings').upsert({
       client_id: editingClient.id,
       group_name: editingClient.group,
       is_hidden: editingClient.hidden,
-      is_sales_account: editingClient.isSales
+      is_sales_account: editingClient.isSales,
+      agency_id: currentAgency.id
     }, { onConflict: 'client_id' });
     setEditingClient(null);
     fetchData();

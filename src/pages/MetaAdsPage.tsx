@@ -77,13 +77,14 @@ export default function MetaAdsPage() {
   const daysRemaining = daysInMonth - currentDay;
 
   const fetchData = async () => {
+    if (!currentAgency?.id) return;
     try {
       const [adsRes, settingsRes, accountsRes, logsRes, rulesRes] = await Promise.all([
-        supabase.from('meta_ads_campaigns').select('*'),
-        supabase.from('client_settings').select('*'),
-        supabase.from('ad_accounts_config').select('*').eq('platform', 'meta').eq('is_active', true),
-        supabase.from('meta_sync_logs').select('created_at').eq('status', 'completed').order('created_at', { ascending: false }).limit(1).maybeSingle(),
-        supabase.from('segmentation_rules').select('*').eq('platform', 'meta')
+        supabase.from('meta_ads_campaigns').select('*').eq('agency_id', currentAgency.id),
+        supabase.from('client_settings').select('*').eq('agency_id', currentAgency.id),
+        supabase.from('ad_accounts_config').select('*').eq('platform', 'meta').eq('is_active', true).eq('agency_id', currentAgency.id),
+        supabase.from('meta_sync_logs').select('created_at').eq('agency_id', currentAgency.id).eq('status', 'completed').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('segmentation_rules').select('*').eq('platform', 'meta').eq('agency_id', currentAgency.id)
       ]);
       const settingsMap: ClientSettingsMap = {};
       settingsRes.data?.forEach((s: { client_id: string; budget_limit?: number; group_name?: string; is_hidden?: boolean; is_sales_account?: boolean }) => { settingsMap[s.client_id] = { budget: Number(s.budget_limit) || 0, group_name: s.group_name || '', is_hidden: s.is_hidden || false, is_sales_account: s.is_sales_account !== false }; });
@@ -96,7 +97,7 @@ export default function MetaAdsPage() {
     } catch (error) { console.error('Error fetching data', error); } finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [currentAgency?.id]);
 
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
 
@@ -174,7 +175,8 @@ export default function MetaAdsPage() {
 
   const handleAddRule = async () => {
     if (!newRuleAccount || !newRuleKeyword || !newRuleName) { toast.error("Rellena todos los campos"); return; }
-    const { data, error } = await supabase.from('segmentation_rules').insert({ platform: 'meta', account_id: newRuleAccount, keyword: newRuleKeyword, virtual_name: newRuleName }).select();
+    if (!currentAgency?.id) { toast.error("No hay agencia seleccionada"); return; }
+    const { data, error } = await supabase.from('segmentation_rules').insert({ platform: 'meta', account_id: newRuleAccount, keyword: newRuleKeyword, virtual_name: newRuleName, agency_id: currentAgency.id }).select();
     if (error) toast.error("Error: " + error.message);
     else { setSegmentationRules(prev => [...prev, ...(data || [])]); setNewRuleKeyword(''); setNewRuleName(''); toast.success("Regla guardada"); }
   };
@@ -186,15 +188,16 @@ export default function MetaAdsPage() {
   };
 
   const handleSaveBudget = async (clientId: string, amount: string) => {
+    if (!currentAgency?.id) return;
     const numAmount = parseFloat(amount);
     setClientSettings(prev => ({ ...prev, [clientId]: { ...prev[clientId], budget: isNaN(numAmount) ? 0 : numAmount } }));
-    const { error } = await supabase.from('client_settings').upsert({ client_id: clientId, budget_limit: isNaN(numAmount) ? 0 : numAmount }, { onConflict: 'client_id' });
+    const { error } = await supabase.from('client_settings').upsert({ client_id: clientId, budget_limit: isNaN(numAmount) ? 0 : numAmount, agency_id: currentAgency.id }, { onConflict: 'client_id' });
     if (error) toast.error("Error guardando"); else fetchData();
   };
 
   const handleSaveClientSettings = async () => {
-    if (!editingClient) return;
-    await supabase.from('client_settings').upsert({ client_id: editingClient.id, group_name: editingClient.group, is_hidden: editingClient.hidden, is_sales_account: editingClient.isSales }, { onConflict: 'client_id' });
+    if (!editingClient || !currentAgency?.id) return;
+    await supabase.from('client_settings').upsert({ client_id: editingClient.id, group_name: editingClient.group, is_hidden: editingClient.hidden, is_sales_account: editingClient.isSales, agency_id: currentAgency.id }, { onConflict: 'client_id' });
     setEditingClient(null); fetchData(); toast.success('Guardado');
   };
 

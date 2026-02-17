@@ -123,7 +123,6 @@ export default function LandingPage() {
                 </Link>
                 <Button
                   size="lg"
-                  variant="outline"
                   className="w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-semibold border-2 border-white/30 text-white hover:text-white hover:bg-white/10 hover:border-white/50 bg-white/5 backdrop-blur-md shadow-xl"
                   onClick={() => {
                     const demoSection = document.getElementById('demo');
@@ -135,10 +134,17 @@ export default function LandingPage() {
                 <Link to="/guia">
                   <Button
                     size="lg"
-                    variant="outline"
                     className="w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-semibold border-2 border-white/30 text-white hover:text-white hover:bg-white/10 hover:border-white/50 bg-white/5 backdrop-blur-md shadow-xl"
                   >
                     Guía completa de funcionalidades
+                  </Button>
+                </Link>
+                <Link to="/api-docs">
+                  <Button
+                    size="lg"
+                    className="w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-semibold border-2 border-white/30 text-white hover:text-white hover:bg-white/10 hover:border-white/50 bg-white/5 backdrop-blur-md shadow-xl"
+                  >
+                    Documentación API
                   </Button>
                 </Link>
               </div>
@@ -1051,8 +1057,8 @@ export default function LandingPage() {
                   </AccordionTrigger>
                   <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
                     Sí, ofrecemos una API REST completa que te permite integrar la plataforma con tus herramientas existentes.
+                    Puedes consultar la <Link to="/api-docs" className="text-indigo-300 hover:text-white underline underline-offset-2">documentación de la API</Link> para conexión, autenticación y referencia de tablas.
                     También puedes exportar datos en múltiples formatos para trabajar con hojas de cálculo u otros sistemas.
-                    Además, estamos trabajando en integraciones nativas con herramientas populares.
                   </AccordionContent>
                 </AccordionItem>
 

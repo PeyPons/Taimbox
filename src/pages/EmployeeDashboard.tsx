@@ -190,20 +190,23 @@ export default function EmployeeDashboard() {
 
   const getOrCreateInternalProject = async (): Promise<string | null> => {
     if (internalProject) return internalProject.id;
+    if (!currentAgency?.id) {
+      toast.error('No hay agencia seleccionada.');
+      return null;
+    }
     setIsCreatingProject(true);
     try {
       let clientId = internalClient?.id;
       if (!clientId) {
         const { data: clientData, error: clientError } = await supabase
-          .from('clients').insert({ name: INTERNAL_CLIENT_NAME, color: '#6b7280' }).select().single();
+          .from('clients').insert({ name: INTERNAL_CLIENT_NAME, color: '#6b7280', agency_id: currentAgency.id }).select().single();
         if (clientError) throw clientError;
         clientId = clientData.id;
         toast.success(`Cliente "${INTERNAL_CLIENT_NAME}" creado`);
       }
 
       const { data: projectData, error: projectError } = await supabase
-        .from('projects')
-        .insert({ name: INTERNAL_PROJECT_NAME, client_id: clientId, status: 'active', budget_hours: 9999, minimum_hours: 0 })
+        .from('projects').insert({ name: INTERNAL_PROJECT_NAME, client_id: clientId, status: 'active', budget_hours: 9999, minimum_hours: 0, agency_id: currentAgency.id })
         .select().single();
 
       if (projectError) throw projectError;

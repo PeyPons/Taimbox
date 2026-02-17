@@ -22,6 +22,7 @@ import { PermissionProtectedRoute } from "./components/auth/PermissionProtectedR
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import LandingPage from "./pages/LandingPage";
 import GuiaPage from "./pages/GuiaPage";
+import ApiDocsPage from "./pages/ApiDocsPage";
 import { ModuleGuard } from "./components/auth/ModuleGuard";
 import { BrandingEffect } from "./components/layout/BrandingEffect";
 
@@ -108,6 +109,9 @@ const App = () => (
                       {/* Guía de funcionalidades (páginas públicas detalladas) */}
                       <Route path="/guia" element={<GuiaPage />} />
                       <Route path="/guia/:section" element={<GuiaPage />} />
+
+                      {/* Documentación API (pública) */}
+                      <Route path="/api-docs" element={<ApiDocsPage />} />
 
                       {/* Ruta pública Login */}
                       <Route path="/login" element={<Login />} />
