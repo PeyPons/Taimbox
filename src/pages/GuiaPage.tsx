@@ -523,6 +523,28 @@ function ConfiguracionContent() {
       <ContentBlock title="Configuración de agencia">
         <p>En Agency Settings se configura el nombre de la agencia, zona horaria y otras opciones globales. En <strong className="text-white">multi-tenant</strong>, cada agencia tiene sus propios datos (empleados, proyectos, allocations) completamente aislados.</p>
       </ContentBlock>
+
+      <ContentBlock title="API e integraciones">
+        <p>Desde el menú lateral, en <strong className="text-white">Configuración → API & Integraciones</strong>, los administradores pueden crear y revocar <strong className="text-white">tokens de acceso</strong> para conectar sistemas externos (CRM, ERP, dashboards) con los datos de la agencia. Cada token es un JWT vinculado a la agencia y protegido por políticas RLS.</p>
+        <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10">
+          <p className="text-sm text-indigo-200/90 mb-3">
+            La <Link to="/api-docs" className="text-indigo-300 hover:text-white font-medium underline underline-offset-2">documentación pública de la API</Link> incluye:
+          </p>
+          <ul className="text-sm text-indigo-200/80 space-y-1.5 list-disc list-inside">
+            <li>Overview (autenticación, base URL, respuestas, changelog)</li>
+            <li>Cinco tutoriales paso a paso (primeros pasos, sincronizar equipo, planificación, reportes, ausencias)</li>
+            <li>SDK JavaScript, API REST, filtrado y suscripciones Realtime</li>
+            <li>Referencia completa de 17 recursos (tablas) con ejemplos de respuesta</li>
+            <li>Búsqueda rápida (Ctrl+K) y menú lateral fijo para navegar en la doc</li>
+          </ul>
+          <Link to="/api-docs">
+            <Button className="mt-4 bg-indigo-600 hover:bg-indigo-500 text-white border-0">
+              Ver documentación API
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </Link>
+        </div>
+      </ContentBlock>
     </>
   );
 }

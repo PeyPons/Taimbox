@@ -283,7 +283,7 @@ Todas las páginas principales de la aplicación.
 |--------|--------|-------------|
 | `LandingPage.tsx` | 78KB | Página pública de marketing |
 | `GuiaPage.tsx` | ~18KB | Guía de funcionalidades pública (`/guia`, `/guia/:section`). Contiene 6 componentes de contenido reutilizables (FeatureCard, ExampleBox, TipBox, WarningBox, StepList, InfoGrid), navegación prev/next entre secciones y contenido detallado para las 9 secciones del producto. |
-| `ApiDocsPage.tsx` | ~35KB | Documentación pública de la API de integración (`/api-docs`). **Selectiva**: expone solo 17 tablas de planificación/equipo/proyectos (excluye ads, auditoría e internas). Layout profesional con sidebar sticky + scroll-spy, 9 secciones (Intro, Base URL, Auth, SDK, REST, Filtrado, Realtime, Errores, Referencia de recursos), code blocks con copy, method badges, tablas de columnas detalladas y ejemplos SDK + cURL por recurso. Tono partner/integrador. |
+| `ApiDocsPage.tsx` + `api-docs/` | Shell ~3KB + ~30 archivos | Documentación pública de la API (`/api-docs`). **Arquitectura modular** en `src/pages/api-docs/` (data, components, sections). Sidebar colapsable con búsqueda (Ctrl+K), 4 grupos: Overview (5), Tutoriales (5), SDK y REST (4), Referencia (17 tablas expandibles con ResponseExample JSON). Incluye 5 tutoriales paso a paso, changelog, buenas prácticas de seguridad y ejemplos SDK+cURL por recurso. |
 | `Login.tsx` | 16KB | Autenticación con Supabase |
 | `Index.tsx` | <1KB | Redirección inicial |
 | `NotFound.tsx` | <1KB | Error 404 |

@@ -1057,7 +1057,7 @@ export default function LandingPage() {
                   </AccordionTrigger>
                   <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
                     Sí, ofrecemos una API REST completa que te permite integrar la plataforma con tus herramientas existentes.
-                    Puedes consultar la <Link to="/api-docs" className="text-indigo-300 hover:text-white underline underline-offset-2">documentación de la API</Link> para conexión, autenticación y referencia de tablas.
+                    La <Link to="/api-docs" className="text-indigo-300 hover:text-white underline underline-offset-2">documentación de la API</Link> incluye tutoriales paso a paso, autenticación por tokens, referencia de tablas con ejemplos de respuesta, SDK JavaScript y búsqueda rápida (Ctrl+K).
                     También puedes exportar datos en múltiples formatos para trabajar con hojas de cálculo u otros sistemas.
                   </AccordionContent>
                 </AccordionItem>
