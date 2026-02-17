@@ -84,7 +84,7 @@ const TABLE_GROUPS: TableGroup[] = [
     tables: [
       {
         name: 'agencies',
-        description: 'Cada agencia es un tenant aislado. Todos los recursos se asocian a una agencia.',
+        description: 'Cada agencia es un tenant aislado. Todos los recursos se asocian a una agencia. Solo lectura vía API: la creación de agencias se realiza desde la app (registro/onboarding).',
         authNote: 'Requiere autenticación. Solo puedes acceder a las agencias de tu usuario.',
         columns: [
           { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Identificador único.' },
@@ -99,12 +99,10 @@ const TABLE_GROUPS: TableGroup[] = [
           select: `const { data } = await timeboxing
   .from('agencies')
   .select('id, name, slug, settings')
+  .eq('id', agencyId)
   .single()`,
-          insert: `const { data } = await timeboxing
-  .from('agencies')
-  .insert({ name: 'Mi Agencia', slug: 'mi-agencia' })
-  .select()
-  .single()`,
+          insert: `// Las agencias no se crean vía API.
+// Se gestionan desde la app (registro / onboarding).`,
         },
       },
       {
