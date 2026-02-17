@@ -24,7 +24,8 @@ import {
   ChevronRight,
   ChevronDown,
   X,
-  User
+  User,
+  Key
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from '@/lib/utils';
@@ -260,6 +261,22 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       Informes clientes
                     </NavLink>
                   )}
+                </NavGroup>
+              )}
+
+              {/* CONFIGURACIÓN */}
+              {canAccess('/settings') && (
+                <NavGroup
+                  label="Configuración"
+                  icon={Settings}
+                  isActive={['/agency', '/settings', '/api-keys'].includes(location.pathname)}
+                >
+                  <NavLink to="/agency" icon={Settings} active={location.pathname === '/agency'}>
+                    Agencia
+                  </NavLink>
+                  <NavLink to="/api-keys" icon={Key} active={location.pathname === '/api-keys'}>
+                    API & Integraciones
+                  </NavLink>
                 </NavGroup>
               )}
             </div>

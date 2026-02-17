@@ -276,6 +276,7 @@ Todas las páginas principales de la aplicación.
 | `SettingsPage.tsx` | 6KB | Preferencias de usuario |
 | `AgenciesPage.tsx` | 8KB | Selector de agencias |
 | `AgencyManagementPage.tsx` | 19KB | Administración avanzada de agencia |
+| `ApiKeysPage.tsx` | ~15KB | Gestión de tokens API por agencia (crear, listar, revocar). Ruta `/api-keys`. |
 
 ### Otros
 | Página | Tamaño | Descripción |
@@ -307,6 +308,25 @@ Manejo centralizado de errores.
 Sistema de auditoría para cambios críticos.
 - **Registra**: Quién hizo qué, cuándo, en qué entidad.
 - **Uso**: Cambios críticos que requieren auditoría (configuración, etc.).
+
+### Edge Functions (Supabase)
+| Función | Archivo | Descripción |
+|---------|---------|-------------|
+| `create-user` | `supabase/functions/create-user/index.ts` | Crear usuarios de Auth (requiere admin). |
+| `delete-user` | `supabase/functions/delete-user/index.ts` | Eliminar usuarios de Auth. |
+| `update-user` | `supabase/functions/update-user/index.ts` | Actualizar usuarios de Auth. |
+| `register-agency` | `supabase/functions/register-agency/index.ts` | Registro de nueva agencia. |
+| `invite-user-to-agency` | `supabase/functions/invite-user-to-agency/index.ts` | Invitar usuario a agencia. |
+| `sync-google-ads` | `supabase/functions/sync-google-ads/index.ts` | Sincronizar datos de Google Ads. |
+| `sync-meta-ads` | `supabase/functions/sync-meta-ads/index.ts` | Sincronizar datos de Meta Ads. |
+| **`generate-api-token`** | `supabase/functions/generate-api-token/index.ts` | Genera JWT firmado con claim `agency_id` para acceso API. Verifica permisos admin. Guarda hash en `api_tokens`. |
+| **`revoke-api-token`** | `supabase/functions/revoke-api-token/index.ts` | Revoca un token API (`is_active = false`). Verifica permisos admin. |
+
+### Base de datos (Supabase)
+- **RLS**: Todas las tablas públicas usan Row Level Security con la función `requesting_agency_id()` (JWT o `user_agencies`). Si añades una tabla, definir política coherente.
+- **api_tokens**: Tabla para tokens API por agencia; gestión en `/api-keys` (ApiKeysPage). Edge functions: `generate-api-token`, `revoke-api-token`.
+- **Limpieza empleado**: La app llama a `cleanup_employee_data(uuid)` antes de borrar un empleado; debe existir en la BD para no dejar datos huérfanos.
+- Scripts de utilidad (ej. limpieza por agencia) pueden vivir en `supabase/scripts` si se usan manualmente.
 
 </details>
 
@@ -398,21 +418,13 @@ Antes de deployar cambios críticos:
 - [ ] **Mobile**: ¿Verificaste que el cambio se ve bien en `use-mobile`? El panel ya no bloquea acceso en móvil; PlannerGrid y DeadlinesPage tienen vistas específicas (Cards, Sheets). EmployeeDashboard usa Sheet en vez de Dialog en móvil. AllocationSheet tiene padding, botones ≥44px y sidebar oculto en móvil. WeeklyForecast y Reports usan widths responsive.
 - [ ] **Deadlines multi-tenant**: Si tocaste carga de deadlines, ¿usan `fetchDeadlinesForMonth(monthKey, currentAgency?.id)` o `useDeadlines({ agencyId })` para no mezclar datos entre agencias?
 - [ ] **Aislamiento por agencia**: Las tablas con `agency_id` (team_events, client_settings, segmentation_rules, global_assignments, meta_ads_campaigns, ad_accounts_config, sync_logs, etc.) deben filtrarse siempre por `currentAgency.id` en selects e incluir `agency_id` en inserts/upserts. Las que no tienen columna (professional_goals, user_routines) se filtran por join con `employees.agency_id`. Ver DOCUMENTACION.md sección 7 "Aislamiento por agencia".
+- [ ] **RLS**: Todas las tablas públicas tienen RLS con `requesting_agency_id()`. Si añades una tabla, habilitar RLS y crear política. El `service_role` bypasea RLS.
+- [ ] **Tokens API**: Los tokens se gestionan desde `/api-keys` (ApiKeysPage). Edge functions: `generate-api-token` (firma JWT con claim `agency_id`) y `revoke-api-token`. Ver DOCUMENTACION.md sección 7 para detalles de la arquitectura.
 - [ ] **Overlays (Select/Dialog)**: Para evitar el desplazamiento del contenido al abrir desplegables, las **páginas** usan **Popover + Command** en lugar de Select (Radix). Patrón de referencia: DeadlinesPage (filtros), BatchTaskRow (selector de proyecto). Si añades un nuevo filtro o selector en una página, usa Popover+Command. Los componentes compartidos (EmployeeDialog, AbsencesSheet, etc.) pueden seguir usando Select dentro de Dialogs/Sheets; si en algún caso se aprecia el mismo salto, aplicar el mismo patrón.
 
 ### Limpieza de base de datos
 
-**Al eliminar un empleado** (para que no quede rastro en informes ni datos huérfanos):
-
-- **Archivo**: `supabase/migrations/20260216100000_cleanup_employee_on_delete.sql`
-- **Qué hace**: Crea la función `cleanup_employee_data(uuid)` que elimina asignaciones, ausencias, feedback semanal, rutinas, transferencias de tareas, quita al empleado de `deadlines.employee_hours` y de `team_events.affected_employee_ids`. La app la llama automáticamente antes de borrar el registro en `employees`.
-- **Cómo ejecutar**: En el SQL Editor de Supabase ejecutar el contenido del archivo, o `supabase db push`. Sin esta migración, al eliminar un empleado puede aparecer "Desconocido" en informes de coherencia.
-
-**Funcionalidades eliminadas (Marketing, modo Zen):**
-
-- **Archivo**: `supabase/migrations/20260216200000_remove_marketing_and_zen_cleanup.sql`
-- **Qué hace**: Elimina tablas de marketing y normaliza `department_config.default_view` y `employees.preferred_view` de `daily` a `weekly`.
-- **Cómo ejecutar**: SQL Editor o `supabase db push`. **Haz backup antes en producción.**
+**Al eliminar un empleado**: La app llama a `supabase.rpc('cleanup_employee_data', { p_employee_id: id })` antes del DELETE en `employees`. Esa función debe existir en Supabase (elimina asignaciones, ausencias, feedback, rutinas, transferencias, actualiza `deadlines.employee_hours` y `team_events.affected_employee_ids`). Sin ella puede aparecer "Desconocido" en informes.
 
 ---
 

@@ -213,6 +213,29 @@ El sistema sincroniza datos de Google Ads y Meta Ads mediante procesos externos.
   - **Tablas sin `agency_id` que se filtran por join**: `deadlines` (join con `projects.agency_id` vía `fetchDeadlinesForMonth(monthKey, agencyId)`), `professional_goals` (join con `employees.agency_id` en GoalsContext), `user_routines` (join con `employees.agency_id` en AppContext), `allocations` y `absences` (join con `employees.agency_id`).  
   - **Tablas sin uso en la app** (solo API/workers o deprecadas): `google_ads_changes` (no referenciada en el codebase), `time_entries` (solo documentada en ApiDocsPage; no hay CRUD desde la UI). Confirmar uso en workers o integraciones antes de eliminarlas.
 
+- **Row Level Security (RLS) y tokens API**  
+  En la base de datos (Supabase), **todas las tablas públicas** tienen RLS habilitado. El acceso se controla mediante la función SQL `requesting_agency_id()`, que:
+  1. Primero intenta leer el claim `agency_id` del JWT (para tokens API generados por agencia).
+  2. Si no existe, busca la agencia primaria del usuario en `user_agencies`.
+
+  **Tabla `api_tokens`**: Almacena metadatos de tokens API emitidos (hash SHA-256, permisos, expiración). El JWT real solo se muestra una vez al crearlo.
+
+  **Edge Functions relacionadas**:
+  - `generate-api-token`: Recibe `{ agency_id, name, permissions?, expires_in_days? }` del admin autenticado, firma un JWT con claim `agency_id` usando `SUPABASE_JWT_SECRET`, guarda el hash en `api_tokens` y devuelve el JWT.
+  - `revoke-api-token`: Recibe `{ token_id }`, verifica que el caller es admin de la agencia dueña y marca `is_active = false`.
+
+  **Políticas RLS por tipo de tabla**:
+  | Tipo | Tablas | Política |
+  |------|--------|----------|
+  | `agency_id` directo | agencies, employees, clients, projects, global_assignments, task_transfers, department_config, ad_accounts_config, ads_sync_logs, meta_sync_logs, google_ads_campaigns, meta_ads_campaigns, team_events, client_settings, segmentation_rules, audit_logs, api_tokens, user_agencies | `agency_id = requesting_agency_id()` |
+  | Vía `employee_id` | allocations, absences, professional_goals, user_routines, weekly_feedback, time_entries | `employee_id IN (SELECT id FROM employees WHERE agency_id = requesting_agency_id())` |
+  | Vía `project_id` | deadlines, project_editing_locks | `project_id IN (SELECT id FROM projects WHERE agency_id = requesting_agency_id())` |
+  | Sin policy (RLS deniega) | google_ads_changes | Sin uso confirmado; RLS habilitado sin policy = acceso denegado |
+
+  **Importante**: El `service_role` key bypasea RLS. Las edge functions y workers que usan `SUPABASE_SERVICE_ROLE_KEY` no se ven afectados.
+
+  **Página de gestión**: `src/pages/ApiKeysPage.tsx` (ruta `/api-keys`, requiere `can_access_agency_settings`). Permite crear, listar y revocar tokens API. Enlace en Sidebar bajo "Configuración".
+
 - **Modificar permisos**:
     - Editar `src/hooks/usePermissions.ts` y añadir la nueva clave de permiso al objeto `RESTRICTED_PERMISSIONS`.
 - **Actualizar Workers**:
@@ -368,6 +391,12 @@ Antes de modificar cualquier archivo crítico, usa este checklist:
 - [ ] ¿Limpié el canal al desmontar (`removeChannel`)?
 - [ ] ¿Filtré eventos por `agency_id` o contexto (ej. `project_id` en lista de proyectos de la agencia) para evitar fugas de datos?
 
+### Al modificar políticas RLS o tokens API:
+- [ ] ¿La función `requesting_agency_id()` sigue devolviendo el `agency_id` correcto para ambos escenarios (usuario normal y API token)?
+- [ ] ¿Las edge functions `generate-api-token` y `revoke-api-token` verifican permisos del caller (`can_access_agency_settings`)?
+- [ ] ¿La nueva tabla tiene política RLS? Si no, el acceso será denegado por defecto (RLS habilitado sin policy).
+- [ ] ¿El `service_role` key sigue funcionando? (Bypasea RLS, no necesita policy).
+
 ### Al cargar o modificar deadlines:
 - [ ] ¿Uso `fetchDeadlinesForMonth(monthKey, currentAgency?.id)` o `useDeadlines({ agencyId: currentAgency?.id })` para no mezclar datos entre agencias en el mismo Supabase?
 - [ ] ¿Las operaciones de borrado masivo (ej. "Resetear mes") filtran por proyectos de la agencia?
@@ -403,7 +432,7 @@ key={`emp-${emp.employeeId}`}  // Para empleados
 
 ### 10.3 Eliminación de empleados (limpieza en BD)
 Al eliminar un empleado **debe borrarse todo rastro en la base de datos**. No se debe solo ocultar en UI.
-- **Migración**: `supabase/migrations/20260216100000_cleanup_employee_on_delete.sql` define la función `cleanup_employee_data(p_employee_id uuid)`, que elimina o actualiza: `allocations`, `absences`, `weekly_feedback`, `user_routines`, `task_transfers`, quita la clave del empleado en `deadlines.employee_hours` y lo elimina de `team_events.affected_employee_ids`.
+- **Función en BD**: `cleanup_employee_data(p_employee_id uuid)` debe existir en Supabase. Elimina o actualiza: `allocations`, `absences`, `weekly_feedback`, `user_routines`, `task_transfers`, quita la clave del empleado en `deadlines.employee_hours` y lo elimina de `team_events.affected_employee_ids`.
 - **Flujo**: En `AppContext.deleteEmployee` se llama primero a `supabase.rpc('cleanup_employee_data', { p_employee_id: id })` y después al `DELETE` en `employees`. Si la migración no está aplicada, el usuario verá un toast indicándolo.
 - **Estado local**: Tras el cleanup se actualizan también `weeklyFeedback`, `userRoutines` y `teamEvents` en el estado para que la UI no muestre datos huérfanos.
 

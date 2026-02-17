@@ -78,6 +78,7 @@ const TeamCapacityPage = lazyWithRetry(() => import("./pages/TeamCapacityPage"))
 const OnboardingWizard = lazyWithRetry(() => import("./components/onboarding/OnboardingWizard"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 const TeamPulsePage = lazyWithRetry(() => import("./pages/TeamPulsePage"));
+const ApiKeysPage = lazyWithRetry(() => import("./pages/ApiKeysPage"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -143,6 +144,7 @@ const App = () => (
                           <Route path="/ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/ads"><ModuleGuard module="ppc"><AdsPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
                           <Route path="/meta-ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/meta-ads"><ModuleGuard module="ppc"><MetaAdsPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
                           <Route path="/weekly-forecast" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/weekly-forecast"><ModuleGuard module="weeklyFeedback"><WeeklyForecastPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
+                          <Route path="/api-keys" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><ApiKeysPage /></PermissionProtectedRoute></Suspense>} />
                         </Route>
                       </Route>
 

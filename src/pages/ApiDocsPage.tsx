@@ -1001,7 +1001,7 @@ export default function ApiDocsPage() {
                   </p>
                 </div>
 
-                {/* Solicitar acceso */}
+                {/* Generar token */}
                 <Card className="border-2 border-indigo-300/40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl mb-6 shadow-xl shadow-indigo-950/20">
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
@@ -1009,13 +1009,20 @@ export default function ApiDocsPage() {
                         <Key className="h-6 w-6 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-slate-900 dark:text-white font-bold text-lg mb-2">Solicitar acceso a la API</h3>
+                        <h3 className="text-slate-900 dark:text-white font-bold text-lg mb-2">Genera tu token API</h3>
                         <p className="text-slate-700 dark:text-white/95 text-sm leading-relaxed mb-3">
-                          La API de Timeboxing es de uso privado. Para obtener tus credenciales de integración (<code className="px-1 py-0.5 rounded bg-slate-200 dark:bg-white/20 font-mono text-xs text-slate-800 dark:text-white">API_KEY</code> y <code className="px-1 py-0.5 rounded bg-slate-200 dark:bg-white/20 font-mono text-xs text-slate-800 dark:text-white">API_TOKEN</code>), contacta directamente con nuestro equipo. Te proporcionaremos acceso vinculado a tu agencia.
+                          Los administradores de cada agencia pueden crear sus propios tokens de acceso directamente desde la sección <strong>API & Integraciones</strong> dentro de la app.
+                          Cada token está vinculado a tu <code className="px-1 py-0.5 rounded bg-slate-200 dark:bg-white/20 font-mono text-xs text-slate-800 dark:text-white">agency_id</code> y protegido por políticas RLS (Row Level Security).
                         </p>
-                        <p className="text-slate-600 dark:text-white/85 text-xs leading-relaxed">
-                          Todas las operaciones están limitadas a los datos de tu agencia mediante tu <code className="px-1 rounded bg-slate-200 dark:bg-white/20 font-mono text-slate-800 dark:text-white">agency_id</code>. No es posible acceder a datos de otras agencias.
+                        <p className="text-slate-600 dark:text-white/85 text-xs leading-relaxed mb-3">
+                          Todas las operaciones están limitadas a los datos de tu agencia. No es posible acceder a datos de otras agencias.
                         </p>
+                        <Link to="/api-keys">
+                          <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 border-0 text-white text-sm hover:from-indigo-500 hover:to-purple-500">
+                            <Key className="h-4 w-4 mr-2" />
+                            Ir a API & Integraciones
+                          </Button>
+                        </Link>
                       </div>
                     </div>
                   </CardContent>
@@ -1050,21 +1057,21 @@ export default function ApiDocsPage() {
                   <Globe className="h-6 w-6 text-indigo-300" /> Base URL y headers
                 </h2>
                 <p className="text-indigo-100/85 mb-4">
-                  Todas las peticiones van contra la URL de la API de Timeboxing. Las credenciales (<code className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-xs text-indigo-200">API_KEY</code> y <code className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-xs text-indigo-200">API_TOKEN</code>) te las proporcionará nuestro equipo cuando solicites acceso.
+                  Todas las peticiones van contra la URL de la API de Timeboxing. Necesitas la <code className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-xs text-indigo-200">ANON_KEY</code> de tu instancia Supabase (la misma que usa la app) y un <code className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-xs text-indigo-200">API_TOKEN</code> que puedes generar desde la sección <strong>API & Integraciones</strong>.
                 </p>
                 <CodeBlock lang="bash">{`# URL base de la API de Timeboxing
 http://supabase.peypons.duckdns.org/rest/v1/
 
 # Headers obligatorios en cada petición
-apikey: <TU_API_KEY>                    # Proporcionada por Timeboxing
-Authorization: Bearer <TU_API_TOKEN>    # Proporcionado por Timeboxing
+apikey: <ANON_KEY>                      # Clave anónima de tu instancia Supabase
+Authorization: Bearer <TU_API_TOKEN>    # Token generado en API & Integraciones
 Content-Type: application/json
 Prefer: return=representation           # Para recibir el objeto creado/modificado`}</CodeBlock>
                 <div className="mt-4 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
                     <p className="text-sm text-amber-100/90">
-                      <strong className="text-amber-300">Importante:</strong> Tu token está vinculado a tu <code className="px-1 rounded bg-white/10 font-mono text-xs">agency_id</code>. Solo podrás leer y escribir datos de tu propia agencia. Si necesitas credenciales o tu token ha expirado, contacta con nuestro equipo.
+                      <strong className="text-amber-300">Importante:</strong> Tu token está vinculado a tu <code className="px-1 rounded bg-white/10 font-mono text-xs">agency_id</code> mediante un JWT firmado. Solo podrás leer y escribir datos de tu propia agencia gracias a las políticas RLS. Si necesitas revocar un token, hazlo desde la sección API & Integraciones.
                     </p>
                   </div>
                 </div>
@@ -1077,17 +1084,17 @@ Prefer: return=representation           # Para recibir el objeto creado/modifica
                   <Key className="h-6 w-6 text-indigo-300" /> Autenticación
                 </h2>
                 <p className="text-indigo-100/85 mb-6">
-                  Para usar la API necesitas dos credenciales que te proporcionará el equipo de Timeboxing:
+                  Para usar la API necesitas dos valores en los headers de cada petición:
                 </p>
                 <div className="grid sm:grid-cols-2 gap-4 mb-6">
                   <Card className="border border-white/10 bg-white/5">
                     <CardContent className="p-5">
                       <div className="flex items-center gap-2 mb-3">
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">HEADER</span>
-                        <code className="text-white font-medium text-sm font-mono">API_KEY</code>
+                        <code className="text-white font-medium text-sm font-mono">apikey</code>
                       </div>
                       <p className="text-xs text-indigo-200/70 leading-relaxed">
-                        Clave de proyecto. Se envía en el header <code className="text-indigo-200 bg-white/10 px-1 rounded font-mono">apikey</code> en cada petición. Identifica tu acceso a la plataforma.
+                        La clave anónima (<code className="text-indigo-200 bg-white/10 px-1 rounded font-mono">ANON_KEY</code>) de tu instancia Supabase. Es la misma que usa la aplicación web. Se envía en el header <code className="text-indigo-200 bg-white/10 px-1 rounded font-mono">apikey</code>.
                       </p>
                     </CardContent>
                   </Card>
@@ -1095,18 +1102,39 @@ Prefer: return=representation           # Para recibir el objeto creado/modifica
                     <CardContent className="p-5">
                       <div className="flex items-center gap-2 mb-3">
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">HEADER</span>
-                        <code className="text-white font-medium text-sm font-mono">API_TOKEN</code>
+                        <code className="text-white font-medium text-sm font-mono">Authorization</code>
                       </div>
                       <p className="text-xs text-indigo-200/70 leading-relaxed">
-                        Token de acceso vinculado a tu agencia. Se envía en <code className="text-indigo-200 bg-white/10 px-1 rounded font-mono">Authorization: Bearer &lt;token&gt;</code>. Delimita qué datos puedes leer y escribir.
+                        Token JWT generado desde <Link to="/api-keys" className="text-indigo-300 underline hover:text-white">API & Integraciones</Link>. Contiene el <code className="text-indigo-200 bg-white/10 px-1 rounded font-mono">agency_id</code> de tu agencia. Se envía como <code className="text-indigo-200 bg-white/10 px-1 rounded font-mono">Bearer &lt;token&gt;</code>.
                       </p>
                     </CardContent>
                   </Card>
                 </div>
+
+                <h3 className="text-white font-semibold mb-3">¿Cómo obtener un token?</h3>
+                <div className="mb-6 space-y-3">
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-white/[0.03] border border-white/5">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold shrink-0">1</span>
+                    <span className="text-sm text-indigo-100/85">Inicia sesión en Timeboxing como administrador de tu agencia.</span>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-white/[0.03] border border-white/5">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold shrink-0">2</span>
+                    <span className="text-sm text-indigo-100/85">Ve a <strong>Configuración → API & Integraciones</strong> en el menú lateral.</span>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-white/[0.03] border border-white/5">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold shrink-0">3</span>
+                    <span className="text-sm text-indigo-100/85">Haz clic en <strong>Crear token</strong>, asigna un nombre descriptivo y elige los permisos (lectura o lectura/escritura).</span>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-white/[0.03] border border-white/5">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold shrink-0">4</span>
+                    <span className="text-sm text-indigo-100/85">Copia el token JWT que se muestra. <strong>Solo se muestra una vez</strong>; guárdalo en un lugar seguro.</span>
+                  </div>
+                </div>
+
                 <h3 className="text-white font-semibold mb-3">Ejemplo de petición autenticada</h3>
                 <CodeBlock lang="bash">{`curl -X GET \\
   'http://supabase.peypons.duckdns.org/rest/v1/employees?is_active=eq.true' \\
-  -H 'apikey: <TU_API_KEY>' \\
+  -H 'apikey: <ANON_KEY>' \\
   -H 'Authorization: Bearer <TU_API_TOKEN>' \\
   -H 'Content-Type: application/json'`}</CodeBlock>
                 <div className="mt-4 grid sm:grid-cols-2 gap-3">
@@ -1114,7 +1142,7 @@ Prefer: return=representation           # Para recibir el objeto creado/modifica
                     <div className="flex items-start gap-2">
                       <Shield className="h-4 w-4 text-indigo-400 mt-0.5 shrink-0" />
                       <div className="text-sm text-indigo-100/90">
-                        <strong className="text-indigo-300">Aislamiento por agencia:</strong> Tu token solo da acceso a los datos de tu <code className="px-1 rounded bg-white/10 font-mono text-xs">agency_id</code>. Es imposible acceder a datos de otras agencias.
+                        <strong className="text-indigo-300">Row Level Security (RLS):</strong> Las políticas RLS de la base de datos garantizan que solo puedes acceder a datos de tu agencia. El token JWT contiene el <code className="px-1 rounded bg-white/10 font-mono text-xs">agency_id</code> y PostgREST lo verifica automáticamente.
                       </div>
                     </div>
                   </div>
@@ -1122,7 +1150,7 @@ Prefer: return=representation           # Para recibir el objeto creado/modifica
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
                       <div className="text-sm text-amber-100/90">
-                        <strong className="text-amber-300">Seguridad:</strong> No compartas tus credenciales. Si sospechas que han sido comprometidas, contacta con nosotros para revocarlas y emitir nuevas.
+                        <strong className="text-amber-300">Seguridad:</strong> No compartas tus tokens en repositorios públicos. Si sospechas que un token ha sido comprometido, revócalo inmediatamente desde API & Integraciones y crea uno nuevo.
                       </div>
                     </div>
                   </div>
@@ -1142,12 +1170,22 @@ Prefer: return=representation           # Para recibir el objeto creado/modifica
                 <div className="mt-4" />
                 <CodeBlock lang="typescript">{`import { createClient } from '@supabase/supabase-js'
 
-// URL y clave te las proporciona Timeboxing (no expongas la clave en el frontend)
+// URL de tu instancia Supabase + clave anónima (la misma que usa la app)
 const SUPABASE_URL = 'http://supabase.peypons.duckdns.org'
-const supabase = createClient(SUPABASE_URL, process.env.SUPABASE_KEY)
+const ANON_KEY = process.env.SUPABASE_ANON_KEY
+
+// Token API generado desde API & Integraciones
+const API_TOKEN = process.env.TIMEBOXING_API_TOKEN
+
+const timeboxing = createClient(SUPABASE_URL, ANON_KEY, {
+  global: {
+    headers: { Authorization: \`Bearer \${API_TOKEN}\` }
+  }
+})
 
 // Ejemplo: listar empleados activos de tu agencia
-const { data: employees, error } = await supabase
+// (RLS filtra automáticamente por tu agency_id)
+const { data: employees, error } = await timeboxing
   .from('employees')
   .select('id, name, role, email')
   .eq('is_active', true)
@@ -1162,7 +1200,7 @@ if (error) {
                   <div className="flex items-start gap-2">
                     <Terminal className="h-4 w-4 text-indigo-400 mt-0.5 shrink-0" />
                     <p className="text-sm text-indigo-100/90">
-                      <strong className="text-indigo-300">Nota:</strong> No necesitas filtrar por <code className="px-1 rounded bg-white/10 font-mono text-xs">agency_id</code> en cada consulta: tu token ya está vinculado a tu agencia y las políticas de seguridad lo aplican automáticamente.
+                      <strong className="text-indigo-300">Nota:</strong> No necesitas filtrar por <code className="px-1 rounded bg-white/10 font-mono text-xs">agency_id</code> en cada consulta: tu token JWT contiene el <code className="px-1 rounded bg-white/10 font-mono text-xs">agency_id</code> de tu agencia y las políticas RLS lo aplican automáticamente a nivel de base de datos.
                     </p>
                   </div>
                 </div>
