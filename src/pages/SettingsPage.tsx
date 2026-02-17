@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { PlusCircle, ShieldCheck, Building2, ArrowRight } from 'lucide-react';
+import { PlusCircle, ShieldCheck, Building2, ArrowRight, MessageCircle } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAgency } from '@/contexts/AgencyContext';
 
@@ -64,6 +64,26 @@ export default function SettingsPage() {
                             </CardTitle>
                             <CardDescription>
                                 Gestiona el nombre, roles, departamentos, módulos y branding de tu agencia.
+                            </CardDescription>
+                        </CardHeader>
+                    </Card>
+                </Link>
+            )}
+
+            {/* CONTACTAR SOPORTE */}
+            {canAccess('/settings') && (
+                <Link to="/soporte" className="block">
+                    <Card className="border-slate-200 shadow-sm hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group">
+                        <CardHeader>
+                            <CardTitle className="flex items-center justify-between">
+                                <span className="flex items-center gap-2">
+                                    <MessageCircle className="w-5 h-5 text-blue-600" />
+                                    Contactar soporte
+                                </span>
+                                <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-primary transition-colors" />
+                            </CardTitle>
+                            <CardDescription>
+                                Envía una solicitud de ayuda o reporta un problema. El equipo de soporte te responderá.
                             </CardDescription>
                         </CardHeader>
                     </Card>

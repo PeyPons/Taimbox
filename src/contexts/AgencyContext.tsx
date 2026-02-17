@@ -10,6 +10,7 @@ interface SupabaseAgency {
   slug: string;
   settings: AgencySettings;
   setup_completed: boolean;
+  status?: string;
   created_at: string;
   updated_at: string;
 }
@@ -81,6 +82,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
   const [availableAgencies, setAvailableAgencies] = useState<Array<{ agencyId: string; agencyName: string }>>([]);
   const [userAgencies, setUserAgencies] = useState<UserAgency[]>([]);
   const isInitialLoadRef = useRef(true);
+  const repairAttemptedRef = useRef(false);
 
   // Migración automática de integraciones para agencias existentes (definida primero para usarse en mapSupabaseAgency)
   const migrateIntegrations = useCallback(async (agencyId: string, settings: AgencySettings): Promise<AgencySettings> => {
@@ -157,12 +159,14 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
     // Ejecutar migración si es necesario
     const migratedSettings = await migrateIntegrations(data.id, settings);
 
+    const status = (data.status === 'suspended' ? 'suspended' : 'active') as Agency['status'];
     return {
       id: data.id,
       name: data.name,
       slug: data.slug,
       settings: migratedSettings,
       setupCompleted: data.setup_completed ?? true,
+      status,
       createdAt: data.created_at,
       updatedAt: data.updated_at
     };
@@ -187,6 +191,15 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
     setError(null);
 
     try {
+      // 0. Si hay agencia primary en user_agencies (ej. impersonación), la priorizamos
+      const { data: userAgenciesPrimary } = await supabase
+        .from('user_agencies')
+        .select('agency_id')
+        .eq('user_id', user.id)
+        .eq('is_primary', true)
+        .maybeSingle();
+      const primaryAgencyId = userAgenciesPrimary?.agency_id ?? null;
+
       // 1. Buscar TODOS los empleados por email para obtener todas las agencias
       const { data: employeesData, error: employeeError } = await supabase
         .from('employees')
@@ -221,17 +234,96 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
         selectedEmployee = allEmployees[0];
 
         if (userIdError || !selectedEmployee?.agency_id) {
-          console.warn('[AgencyContext] No se encontró empleado para el usuario:', {
-            email: user.email,
-            userId: user.id,
-            emailError: employeeError,
-            userIdError: userIdError
-          });
-          setCurrentAgency(null);
-          if (isInitialLoad) {
-            setIsLoading(false);
+          // Fallback: obtener agencias desde user_agencies y buscar empleado en esas agencias
+          console.debug('[AgencyContext] Fallback: buscando agencias en user_agencies para user_id:', user.id);
+          const { data: userAgenciesData, error: uaError } = await supabase
+            .from('user_agencies')
+            .select('agency_id')
+            .eq('user_id', user.id);
+
+          if (!uaError && userAgenciesData && userAgenciesData.length > 0) {
+            const agencyIds = userAgenciesData.map(ua => ua.agency_id);
+            // Buscar empleado por user_id en esas agencias (evita depender de email en .or())
+            const { data: employeesByAgencies, error: empByAgenciesError } = await supabase
+              .from('employees')
+              .select('agency_id, email, user_id, created_at')
+              .in('agency_id', agencyIds)
+              .eq('user_id', user.id)
+              .order('created_at', { ascending: false });
+
+            if (!empByAgenciesError && employeesByAgencies && employeesByAgencies.length > 0) {
+              allEmployees = employeesByAgencies;
+              selectedEmployee = employeesByAgencies[0];
+              console.debug('[AgencyContext] Empleado encontrado vía user_agencies');
+            } else {
+              // Último intento: por email dentro de esas agencias
+              const { data: byEmail, error: byEmailErr } = await supabase
+                .from('employees')
+                .select('agency_id, email, user_id, created_at')
+                .in('agency_id', agencyIds)
+                .eq('email', user.email?.toLowerCase())
+                .order('created_at', { ascending: false });
+              if (!byEmailErr && byEmail && byEmail.length > 0) {
+                allEmployees = byEmail;
+                selectedEmployee = byEmail[0];
+                console.debug('[AgencyContext] Empleado encontrado por email vía user_agencies');
+              }
+            }
           }
-          return;
+
+          if (!selectedEmployee?.agency_id) {
+            // Reparar si no hay filas en user_agencies pero el usuario podría tener empleado (ej. tras "Salir de vista" que borró la fila)
+            const hasNoUserAgencies = !userAgenciesData || userAgenciesData.length === 0;
+            if (hasNoUserAgencies && !repairAttemptedRef.current) {
+              repairAttemptedRef.current = true;
+              try {
+                await supabase.rpc('repair_user_agencies_from_employees');
+              } catch (_) {
+                // ignorar
+              }
+              return fetchAgencyForUser();
+            }
+            // Sin empleado pero con user_agencies (ej. platform admin "accediendo como" agencia)
+            if (userAgenciesData && userAgenciesData.length > 0) {
+              const agencyIds = userAgenciesData.map(ua => ua.agency_id);
+              const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+              const urlAgencyId = params?.get('agency');
+              const selectedAgencyId = urlAgencyId && agencyIds.includes(urlAgencyId)
+                ? urlAgencyId
+                : agencyIds[0];
+              if (selectedAgencyId) {
+                const storageKey = `selected_agency_${user.id}`;
+                localStorage.setItem(storageKey, selectedAgencyId);
+                const { data: agencyData, error: agencyErr } = await supabase
+                  .from('agencies')
+                  .select('*')
+                  .eq('id', selectedAgencyId)
+                  .single();
+                if (!agencyErr && agencyData) {
+                  const agency = await mapSupabaseAgency(agencyData);
+                  const { data: agenciesList } = await supabase
+                    .from('agencies')
+                    .select('id, name')
+                    .in('id', agencyIds);
+                  setAvailableAgencies((agenciesList || []).map(a => ({ agencyId: a.id, agencyName: a.name })));
+                  setCurrentAgency(agency);
+                  if (isInitialLoad) setIsLoading(false);
+                  return;
+                }
+              }
+            }
+            console.warn('[AgencyContext] No se encontró empleado para el usuario:', {
+              email: user.email,
+              userId: user.id,
+              emailError: employeeError,
+              userIdError: userIdError
+            });
+            setCurrentAgency(null);
+            if (isInitialLoad) {
+              setIsLoading(false);
+            }
+            return;
+          }
         }
       }
 
@@ -274,11 +366,28 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
         setAvailableAgencies([]);
       }
 
-      // 2. Obtener la agencia por el agency_id del empleado seleccionado
+      // Priorizar agencia con is_primary (ej. impersonación desde admin)
+      const agencyIdToLoad = primaryAgencyId || selectedEmployee?.agency_id;
+      if (primaryAgencyId && !allEmployees.some(emp => emp.agency_id === primaryAgencyId)) {
+        const { data: primaryAgencyData } = await supabase
+          .from('agencies')
+          .select('id, name')
+          .eq('id', primaryAgencyId)
+          .single();
+        if (primaryAgencyData) {
+          setAvailableAgencies(prev => {
+            const has = prev.some(a => a.agencyId === primaryAgencyId);
+            if (has) return prev;
+            return [...prev, { agencyId: primaryAgencyData.id, agencyName: primaryAgencyData.name }];
+          });
+        }
+      }
+
+      // 2. Obtener la agencia por el agency_id a cargar
       const { data: agencyData, error: agencyError } = await supabase
         .from('agencies')
         .select('*')
-        .eq('id', selectedEmployee.agency_id)
+        .eq('id', agencyIdToLoad)
         .single();
 
       if (agencyError || !agencyData) {
@@ -321,6 +430,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
   // Cargar agencia cuando el usuario esté autenticado
   useEffect(() => {
     if (isAuthInitialized) {
+      repairAttemptedRef.current = false;
       fetchAgencyForUser();
     }
   }, [isAuthInitialized, fetchAgencyForUser]);

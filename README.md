@@ -278,6 +278,20 @@ Todas las páginas principales de la aplicación.
 | `AgencyManagementPage.tsx` | 19KB | Administración avanzada de agencia |
 | `ApiKeysPage.tsx` | ~15KB | Gestión de tokens API por agencia (crear, listar, revocar). Ruta `/api-keys`. |
 
+### Área administrativa (solo plataforma)
+| Página / Ruta | Descripción |
+|---------------|-------------|
+| `/admin` | Redirige a `/admin/agencies`. Solo accesible si el usuario está en `platform_admins` (RPC `is_platform_admin`). |
+| `/admin/agencies` | Listado de agencias, filtros, Suspender/Reactivar. Botón **Entrar**: acceder a la app como esa agencia (ver deadlines, planner, etc. con su contexto). |
+| `/admin/support` | Tickets de soporte: listado, filtros, crear ticket, cambiar estado. Botón "Ver" abre detalle con comentarios internos y formulario para añadir respuestas. |
+| `/admin/metrics` | Métricas de plataforma: total agencias (activas/suspendidas), empleados, usuarios con agencia, tickets por estado. |
+| `/admin/docs` | Documentación interna con procedimientos para el equipo admin. |
+| `/suspended` | Página estática cuando la agencia del usuario tiene `status = suspended`. Mensaje y botón "Cerrar sesión". Fuera de AppLayout. |
+
+**App de usuario (soporte):** Ruta `/soporte`: (1) Formulario "Nueva solicitud" que crea un ticket (RPC `create_support_ticket_from_app`). (2) "Mis tickets": listado de tickets de la agencia con estado y fecha; botón "Ver" abre detalle con conversación (respuestas visibles) y formulario para responder (RPCs `list_my_support_tickets`, `get_my_support_ticket`, `list_my_support_ticket_replies`, `add_support_ticket_reply_from_app`). En Configuración hay tarjeta y en Sidebar enlace "Contactar soporte".
+
+**Nota:** Las rutas `/admin/*` no dependen de agencia; el panel usa RPCs con SECURITY DEFINER. **Acceder como agencia:** RPCs `admin_impersonate_agency(p_agency_id)` y `admin_stop_impersonate(p_agency_id)`; columna `is_impersonation` en `user_agencies`. Al entrar en una agencia de la que no eres miembro se muestra un banner "Viendo como [Agencia]" con botón "Salir de vista".
+
 ### Otros
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
@@ -326,7 +340,6 @@ Sistema de auditoría para cambios críticos.
 - **RLS**: Todas las tablas públicas usan Row Level Security con la función `requesting_agency_id()` (JWT o `user_agencies`). Si añades una tabla, definir política coherente.
 - **api_tokens**: Tabla para tokens API por agencia; gestión en `/api-keys` (ApiKeysPage). Edge functions: `generate-api-token`, `revoke-api-token`.
 - **Limpieza empleado**: La app llama a `cleanup_employee_data(uuid)` antes de borrar un empleado; debe existir en la BD para no dejar datos huérfanos.
-- Scripts de utilidad (ej. limpieza por agencia) pueden vivir en `supabase/scripts` si se usan manualmente.
 
 </details>
 
@@ -419,7 +432,7 @@ Antes de deployar cambios críticos:
 - [ ] **Deadlines multi-tenant**: Si tocaste carga de deadlines, ¿usan `fetchDeadlinesForMonth(monthKey, currentAgency?.id)` o `useDeadlines({ agencyId })` para no mezclar datos entre agencias?
 - [ ] **Aislamiento por agencia**: Las tablas con `agency_id` (team_events, client_settings, segmentation_rules, global_assignments, meta_ads_campaigns, ad_accounts_config, sync_logs, etc.) deben filtrarse siempre por `currentAgency.id` en selects e incluir `agency_id` en inserts/upserts. Las que no tienen columna (professional_goals, user_routines) se filtran por join con `employees.agency_id`. Ver DOCUMENTACION.md sección 7 "Aislamiento por agencia".
 - [ ] **RLS**: Todas las tablas públicas tienen RLS con `requesting_agency_id()`. Si añades una tabla, habilitar RLS y crear política. El `service_role` bypasea RLS.
-- [ ] **Tokens API**: Los tokens se gestionan desde `/api-keys` (ApiKeysPage). Edge functions: `generate-api-token` (firma JWT con claim `agency_id` y `permissions`) y `revoke-api-token`. **Importante**: Para que los permisos `readonly`/`readwrite` funcionen correctamente, ejecutar `supabase/scripts/rls_enforce_api_permissions.sql` y luego aplicar las políticas RLS modificadas (ver `rls_enforce_api_permissions_employees.sql` como ejemplo). Ver DOCUMENTACION.md sección 7 para detalles de la arquitectura.
+- [ ] **Tokens API**: Los tokens se gestionan desde `/api-keys` (ApiKeysPage). Edge functions: `generate-api-token` (firma JWT con claim `agency_id` y `permissions`) y `revoke-api-token`. Para que los permisos `readonly`/`readwrite` funcionen correctamente, la BD debe tener la función `can_write_via_api()` y políticas RLS que la usen. Ver DOCUMENTACION.md sección 7 para detalles de la arquitectura.
 - [ ] **Overlays (Select/Dialog)**: Para evitar el desplazamiento del contenido al abrir desplegables, las **páginas** usan **Popover + Command** en lugar de Select (Radix). Patrón de referencia: DeadlinesPage (filtros), BatchTaskRow (selector de proyecto). Si añades un nuevo filtro o selector en una página, usa Popover+Command. Los componentes compartidos (EmployeeDialog, AbsencesSheet, etc.) pueden seguir usando Select dentro de Dialogs/Sheets; si en algún caso se aprecia el mismo salto, aplicar el mismo patrón.
 
 ### Limpieza de base de datos

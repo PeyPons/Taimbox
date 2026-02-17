@@ -298,9 +298,11 @@ export default function ReportsPage() {
     employees.filter(e => e.isActive).forEach(emp => {
       const capacity = getMonthlyCapacity(year, month, emp.workSchedule);
       const empAllocations = monthAllocations.filter(a => a.employeeId === emp.id);
-      const plannedHours = empAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
+      const plannedHoursRaw = empAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
+      const plannedHours = round2(plannedHoursRaw);
+      const capacityRounded = round2(capacity);
       const percentage = capacity > 0 ? (plannedHours / capacity) * 100 : 0;
-      const hoursAvailable = Math.max(0, capacity - plannedHours);
+      const hoursAvailable = round2(Math.max(0, capacity - plannedHoursRaw));
 
       // Alerta de sobrecarga (>100%)
       if (percentage > 100) {
@@ -309,9 +311,9 @@ export default function ReportsPage() {
           severity: percentage > 120 ? 'high' : 'medium',
           employeeId: emp.id,
           employeeName: emp.name,
-          message: `${emp.name} está al ${percentage.toFixed(0)}% de capacidad`,
+          message: `${emp.name} está al ${round2(percentage).toFixed(0)}% de capacidad`,
           value: percentage,
-          detail: `${plannedHours}h planificadas de ${capacity}h disponibles (+${(plannedHours - capacity).toFixed(1)}h exceso)`
+          detail: `${plannedHours}h planificadas de ${capacityRounded}h disponibles (+${round2(plannedHours - capacity).toFixed(1)}h exceso)`
         });
       }
 
@@ -324,7 +326,7 @@ export default function ReportsPage() {
           employeeName: emp.name,
           message: `${emp.name} tiene ${hoursAvailable.toFixed(0)}h disponibles`,
           value: hoursAvailable,
-          detail: `Solo al ${percentage.toFixed(0)}% de ocupación este mes`
+          detail: `Solo al ${round2(percentage).toFixed(0)}% de ocupación este mes`
         });
       }
     });
@@ -664,8 +666,10 @@ export default function ReportsPage() {
         emp.workSchedule
       );
 
-      // Restar ausencias
+      // Restar ausencias y eventos (mes actual y siguiente)
       const employeeAbsences = (absences || []).filter(a => a.employeeId === emp.id);
+      const thisMonthEnd = endOfMonth(thisMonth);
+
       const absenceHours = getAbsenceHoursInRange(
         nextMonthStart,
         nextMonthEnd,
@@ -673,7 +677,6 @@ export default function ReportsPage() {
         emp.workSchedule
       );
 
-      // Restar eventos del equipo
       const eventHours = getTeamEventHoursInRange(
         nextMonthStart,
         nextMonthEnd,
@@ -683,7 +686,7 @@ export default function ReportsPage() {
         employeeAbsences
       );
 
-      // Capacidad disponible sin ajuste
+      // Capacidad disponible mes siguiente (sin ajuste por fiabilidad)
       const availableCapacity = Math.max(0, baseCapacity - absenceHours - eventHours);
 
       // Factor de ajuste basado en reliabilityIndex
@@ -692,11 +695,26 @@ export default function ReportsPage() {
         ? reliability.index / 100  // Si index = 120, factor = 1.2 (tarda 20% más)
         : 1;
 
-      // Capacidad neta reajustada (reducida preventivamente si suele tardar más)
+      // Capacidad neta reajustada mes siguiente (reducida preventivamente si suele tardar más)
       const adjustedCapacity = round2(availableCapacity / adjustmentFactor);
 
-      // Capacidad del mes actual (para comparación)
-      const currentMonthCapacity = getMonthlyCapacity(year, month, emp.workSchedule);
+      // Capacidad del mes actual: base menos vacaciones y eventos de este mes
+      const currentMonthBaseCapacity = getMonthlyCapacity(year, month, emp.workSchedule);
+      const currentMonthAbsenceHours = getAbsenceHoursInRange(
+        thisMonthStart,
+        thisMonthEnd,
+        employeeAbsences,
+        emp.workSchedule
+      );
+      const currentMonthEventHours = getTeamEventHoursInRange(
+        thisMonthStart,
+        thisMonthEnd,
+        emp.id,
+        teamEvents || [],
+        emp.workSchedule,
+        employeeAbsences
+      );
+      const currentMonthCapacity = Math.max(0, currentMonthBaseCapacity - currentMonthAbsenceHours - currentMonthEventHours);
 
       // 2. LÓGICA DE ESTIMACIÓN "MIX DE CARGA"
       // A. Inercia Recurrente (40%): Usar el mes ACTUAL como referencia principal
@@ -707,23 +725,20 @@ export default function ReportsPage() {
       const totalWorkingDays = getWorkingDaysInRange(thisMonthStart, endOfMonth(thisMonth), emp.workSchedule).days;
       const monthProgress = totalWorkingDays > 0 ? workingDaysPassed / totalWorkingDays : 0;
 
-      // Horas de allocations del mes actual
+      // Horas de allocations del mes actual (carga real planificada en el planificador)
       const currentMonthAllocationsHours = monthAllocations
         .filter(a => a.employeeId === emp.id)
         .reduce((sum, a) => sum + a.hoursAssigned, 0);
 
-      // Horas de deadlines del mes actual
-      const currentMonthDeadlineHours = currentMonthDeadlines
-        .filter(d => !d.isHidden)
-        .reduce((sum, d) => sum + (d.employeeHours[emp.id] || 0), 0);
-
-      // Horas de global assignments del mes actual
+      // Horas de global assignments del mes actual (formaciones, reuniones, etc.)
       const currentMonthGlobalHours = currentMonthGlobalAssignments
         .filter(g => g.affectsAll || (g.affectedEmployeeIds || []).includes(emp.id))
         .reduce((sum, g) => sum + g.hours, 0);
 
-      // Total del mes actual: allocations + deadlines + global assignments
-      const currentMonthTotalHours = currentMonthAllocationsHours + currentMonthDeadlineHours + currentMonthGlobalHours;
+      // Total del mes actual: solo allocations + global. NO sumar deadlines:
+      // los deadlines son el "objetivo" por proyecto que ya se refleja en las allocations;
+      // sumarlos sería doble conteo (por eso salían 280h+ para 150h de capacidad).
+      const currentMonthTotalHours = currentMonthAllocationsHours + currentMonthGlobalHours;
 
       // Para la inercia del mes siguiente, usamos las horas planificadas del mes actual
       // Las allocations ya representan el mes completo, NO debemos proyectarlas
@@ -749,17 +764,12 @@ export default function ReportsPage() {
           } catch { return false; }
         }).reduce((sum, a) => sum + a.hoursAssigned, 0);
 
-        const previousMonthDeadlines = historicalDeadlines[previousMonthStr] || [];
-        const previousMonthDeadlineHours = previousMonthDeadlines
-          .filter(d => !d.isHidden)
-          .reduce((sum, d) => sum + (d.employeeHours[emp.id] || 0), 0);
-
         const previousMonthGlobals = historicalGlobalAssignments[previousMonthStr] || [];
         const previousMonthGlobalHours = previousMonthGlobals
           .filter(g => g.affectsAll || (g.affectedEmployeeIds || []).includes(emp.id))
           .reduce((sum, g) => sum + g.hours, 0);
 
-        inertiaHours = previousMonthAllocationsHours + previousMonthDeadlineHours + previousMonthGlobalHours;
+        inertiaHours = previousMonthAllocationsHours + previousMonthGlobalHours;
       }
 
       const previousMonthTotalHours = inertiaHours; // Renombrado para mantener compatibilidad con el resto del código
@@ -785,20 +795,14 @@ export default function ReportsPage() {
           })
           .reduce((sum, a) => sum + a.hoursAssigned, 0);
 
-        // Horas de deadlines del mes histórico
-        const pastMonthDeadlines = historicalDeadlines[pastMonthStr] || [];
-        const deadlineHours = pastMonthDeadlines
-          .filter(d => !d.isHidden)
-          .reduce((sum, d) => sum + (d.employeeHours[emp.id] || 0), 0);
-
         // Horas de global assignments del mes histórico
         const pastMonthGlobals = historicalGlobalAssignments[pastMonthStr] || [];
         const globalHours = pastMonthGlobals
           .filter(g => g.affectsAll || (g.affectedEmployeeIds || []).includes(emp.id))
           .reduce((sum, g) => sum + g.hours, 0);
 
-        // Total del mes: allocations + deadlines + global assignments
-        const totalHoursInMonth = allocationsHours + deadlineHours + globalHours;
+        // Total del mes: solo allocations + global (sin deadlines para evitar doble conteo)
+        const totalHoursInMonth = allocationsHours + globalHours;
 
         if (totalHoursInMonth > 0) {
           historicalMonths.push({
@@ -1639,7 +1643,7 @@ export default function ReportsPage() {
                 Predicción de carga - Mes siguiente
               </CardTitle>
               <CardDescription className="flex items-center gap-2">
-                Estimación de disponibilidad basada en histórico de deadlines anteriores.
+                El objetivo es ver cómo puede estar el mes que viene. Estimación basada en histórico y deadlines.
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -1710,36 +1714,17 @@ export default function ReportsPage() {
                       </div>
                     </div>
 
-                    {/* Comparativa mes actual vs siguiente */}
+                    {/* Comparativa: foco en mes siguiente (objetivo: ver cómo puede estar el mes que viene) */}
                     <div className="grid grid-cols-2 gap-4 mb-4">
-                      {/* Mes actual */}
-                      <div className="bg-slate-50 rounded-lg p-3">
-                        <p className="text-xs text-muted-foreground mb-1">Mes actual</p>
-                        <div className="flex justify-between items-baseline">
-                          <span className="text-sm font-medium">{emp.currentMonth.assigned}h</span>
-                          <span className="text-xs text-muted-foreground">de {emp.currentMonth.capacity}h</span>
-                        </div>
-                        <Progress
-                          value={Math.min(emp.currentMonth.percentage, 100)}
-                          className={cn("h-1.5 mt-1",
-                            emp.currentMonth.percentage > 100 ? "[&>div]:bg-red-500" :
-                              emp.currentMonth.percentage > 85 ? "[&>div]:bg-amber-500" : ""
-                          )}
-                        />
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                          {emp.currentMonth.available}h libres ({(100 - emp.currentMonth.percentage).toFixed(0)}%)
-                        </p>
-                      </div>
-
-                      {/* Mes siguiente */}
+                      {/* Mes siguiente (principal) */}
                       <div className={cn(
-                        "rounded-lg p-3",
-                        emp.nextMonth.hasDeadlines ? "bg-primary/10" : "bg-amber-50 border border-dashed border-amber-200"
+                        "rounded-lg p-3 border-2",
+                        emp.nextMonth.hasDeadlines ? "bg-primary/10 border-primary/30" : "bg-amber-50 border-amber-200 border-dashed"
                       )}>
-                        <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                        <p className="text-xs font-medium text-slate-700 mb-1 flex items-center gap-1">
                           Mes siguiente
                           {!emp.nextMonth.hasDeadlines && (
-                            <span className="text-amber-600">(estimado)</span>
+                            <span className="text-amber-600 font-normal">(estimado)</span>
                           )}
                         </p>
                         <div className="flex justify-between items-baseline">
@@ -1777,6 +1762,25 @@ export default function ReportsPage() {
                             -{emp.nextMonth.absenceHours.toFixed(1)}h por ausencias
                           </p>
                         )}
+                      </div>
+
+                      {/* Mes actual (contexto) */}
+                      <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                        <p className="text-xs text-muted-foreground mb-1">Contexto: mes actual</p>
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-sm font-medium">{emp.currentMonth.assigned}h</span>
+                          <span className="text-xs text-muted-foreground">de {emp.currentMonth.capacity}h</span>
+                        </div>
+                        <Progress
+                          value={Math.min(emp.currentMonth.percentage, 100)}
+                          className={cn("h-1.5 mt-1",
+                            emp.currentMonth.percentage > 100 ? "[&>div]:bg-red-500" :
+                              emp.currentMonth.percentage > 85 ? "[&>div]:bg-amber-500" : ""
+                          )}
+                        />
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          {emp.currentMonth.available}h libres ({(100 - emp.currentMonth.percentage).toFixed(0)}%)
+                        </p>
                       </div>
                     </div>
 

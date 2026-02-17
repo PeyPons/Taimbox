@@ -99,12 +99,15 @@ export interface AgencySettings {
   weeklyCloseDay?: number; // Days from week start for weekly close (0-6, default 4 = Friday)
 }
 
+export type AgencyStatus = 'active' | 'suspended';
+
 export interface Agency {
   id: string;
   name: string;
   slug: string;
   settings: AgencySettings;
   setupCompleted?: boolean;
+  status?: AgencyStatus;
   createdAt?: string;
   updatedAt?: string;
 }

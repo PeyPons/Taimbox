@@ -17,6 +17,13 @@ import { NotificationProvider } from "@/contexts/NotificationContext";
 import Login from "./pages/Login";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { PermissionProtectedRoute } from "./components/auth/PermissionProtectedRoute";
+import { PlatformAdminRoute } from "./components/auth/PlatformAdminRoute";
+import { AdminLayout } from "./components/layout/AdminLayout";
+import SuspendedPage from "./pages/SuspendedPage";
+import AdminAgenciesPage from "./pages/admin/AdminAgenciesPage";
+import AdminSupportPage from "./pages/admin/AdminSupportPage";
+import AdminMetricsPage from "./pages/admin/AdminMetricsPage";
+import AdminDocsPage from "./pages/admin/AdminDocsPage";
 
 // Página principal (carga inmediata para mejor UX)
 import EmployeeDashboard from "./pages/EmployeeDashboard";
@@ -79,6 +86,7 @@ const OnboardingWizard = lazyWithRetry(() => import("./components/onboarding/Onb
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 const TeamPulsePage = lazyWithRetry(() => import("./pages/TeamPulsePage"));
 const ApiKeysPage = lazyWithRetry(() => import("./pages/ApiKeysPage"));
+const ContactSupportPage = lazyWithRetry(() => import("./pages/ContactSupportPage"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -122,6 +130,20 @@ const App = () => (
                         {/* Onboarding Wizard (sin AppLayout) */}
                         <Route path="/onboarding" element={<Suspense fallback={<PageLoader />}><OnboardingWizard /></Suspense>} />
 
+                        {/* Suspended: fuera de AppLayout, solo sesión */}
+                        <Route path="/suspended" element={<SuspendedPage />} />
+
+                        {/* Área admin: sin AgencyContext, solo platform_admin */}
+                        <Route path="/admin" element={<PlatformAdminRoute />}>
+                          <Route element={<AdminLayout />}>
+                            <Route index element={<Navigate to="/admin/agencies" replace />} />
+                            <Route path="agencies" element={<Suspense fallback={<PageLoader />}><AdminAgenciesPage /></Suspense>} />
+                            <Route path="support" element={<Suspense fallback={<PageLoader />}><AdminSupportPage /></Suspense>} />
+                            <Route path="metrics" element={<Suspense fallback={<PageLoader />}><AdminMetricsPage /></Suspense>} />
+                            <Route path="docs" element={<Suspense fallback={<PageLoader />}><AdminDocsPage /></Suspense>} />
+                          </Route>
+                        </Route>
+
                         <Route element={<AppLayout />}>
                           {/* Dashboard Personal */}
                           <Route path="/dashboard" element={<EmployeeDashboard />} />
@@ -145,6 +167,7 @@ const App = () => (
                           <Route path="/meta-ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/meta-ads"><ModuleGuard module="ppc"><MetaAdsPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
                           <Route path="/weekly-forecast" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/weekly-forecast"><ModuleGuard module="weeklyFeedback"><WeeklyForecastPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
                           <Route path="/api-keys" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><ApiKeysPage /></PermissionProtectedRoute></Suspense>} />
+                          <Route path="/soporte" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><ContactSupportPage /></PermissionProtectedRoute></Suspense>} />
                         </Route>
                       </Route>
 

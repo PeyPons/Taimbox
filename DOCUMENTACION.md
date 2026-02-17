@@ -220,18 +220,9 @@ El sistema sincroniza datos de Google Ads y Meta Ads mediante procesos externos.
 
   **Tabla `api_tokens`**: Almacena metadatos de tokens API emitidos (hash SHA-256, permisos, expiración). El JWT real solo se muestra una vez al crearlo.
 
-  **Revocación y expiración con efecto inmediato**: Por defecto, al revocar un token solo se pone `is_active = false` en la BD; el JWT sigue siendo válido hasta que expire. Para que la revocación niegue el acceso al instante, la función `requesting_agency_id()` debe comprobar si el token está revocado y devolver `NULL` en ese caso. Además, aunque PostgREST valida el claim `exp` del JWT automáticamente, se puede añadir una verificación adicional de `expires_at` en la BD para mayor consistencia. Script: `supabase/scripts/rls_check_api_token_revoked_and_expired.sql`. **Ejecutar ese script en el SQL Editor de Supabase** para que al revocar un token en el panel deje de funcionar de inmediato y para verificar también la expiración desde la BD (además de la validación automática del JWT).
+  **Revocación y expiración con efecto inmediato**: Por defecto, al revocar un token solo se pone `is_active = false` en la BD; el JWT sigue siendo válido hasta que expire. Para que la revocación niegue el acceso al instante, la función `requesting_agency_id()` debe comprobar si el token está revocado y devolver `NULL` en ese caso. También puede verificarse `expires_at` en la BD además de la validación automática del claim `exp` del JWT.
 
-  **Enforzar permisos readonly/readwrite**: Por defecto, las políticas RLS solo verifican `agency_id`, no el claim `permissions` del JWT. Esto permite que tokens con `permissions='readonly'` puedan hacer INSERT/UPDATE/DELETE cuando no deberían. Para solucionarlo:
-  1. **Script completo (recomendado)**: Ejecutar `supabase/scripts/rls_enforce_api_permissions_all_tables_complete.sql` en el SQL Editor de Supabase. Este script:
-     - Crea la función `can_write_via_api()` si no existe.
-     - Detecta y modifica automáticamente todas las políticas RLS de INSERT/UPDATE/DELETE en todas las tablas principales.
-     - Maneja políticas que aplican a ALL (como "tenant_isolation") convirtiéndolas en políticas separadas.
-     - Respeta el tipo de tabla (agency_id directo, vía employee_id, vía project_id).
-  2. **Scripts individuales** (si prefieres aplicar tabla por tabla):
-     - `rls_enforce_api_permissions.sql`: Crea solo la función `can_write_via_api()`.
-     - `rls_fix_tenant_isolation_employees.sql`: Ejemplo para `employees` con política ALL.
-     - `rls_enforce_api_permissions_employees.sql`: Ejemplo para `employees` con políticas por comando.
+  **Enforzar permisos readonly/readwrite**: Por defecto, las políticas RLS solo verifican `agency_id`, no el claim `permissions` del JWT. Para que tokens con `permissions='readonly'` no puedan hacer INSERT/UPDATE/DELETE, la BD debe tener la función `can_write_via_api()` y las políticas RLS de INSERT/UPDATE/DELETE deben comprobarla. Las tablas con `agency_id` directo, vía `employee_id` o vía `project_id` deben tener políticas coherentes con ese tipo.
 
   **Edge Functions relacionadas**:
   - `generate-api-token`: Recibe `{ agency_id, name, permissions?, expires_in_days? }` del admin autenticado, firma un JWT con claim `agency_id` y `sub` = id del registro en `api_tokens`, guarda el hash en `api_tokens` y devuelve el JWT.
@@ -243,17 +234,38 @@ El sistema sincroniza datos de Google Ads y Meta Ads mediante procesos externos.
   | `agency_id` directo | agencies, employees, clients, projects, global_assignments, task_transfers, department_config, ad_accounts_config, ads_sync_logs, meta_sync_logs, google_ads_campaigns, meta_ads_campaigns, team_events, client_settings, segmentation_rules, audit_logs, api_tokens, user_agencies | `agency_id = requesting_agency_id()` |
   | Vía `employee_id` | allocations, absences, professional_goals, user_routines, weekly_feedback, time_entries | `employee_id IN (SELECT id FROM employees WHERE agency_id = requesting_agency_id())` |
   | Vía `project_id` | deadlines, project_editing_locks | `project_id IN (SELECT id FROM projects WHERE agency_id = requesting_agency_id())` |
-  | Política “no access” | google_ads_changes | Política `no_access_until_use` con USING (false) y WITH CHECK (false): nadie puede leer ni escribir. Script: `supabase/scripts/rls_google_ads_changes_no_access.sql`. Cuando se confirme uso, sustituir por políticas por agency_id. |
+  | Política “no access” | google_ads_changes | Política `no_access_until_use` con USING (false) y WITH CHECK (false): nadie puede leer ni escribir. Cuando se confirme uso, sustituir por políticas por agency_id. |
 
-  **Tabla `agencies` (solo lectura vía API)**: Para impedir que integradores creen agencias por API, conviene revocar `INSERT` en `public.agencies` para los roles `anon` y `authenticated`. Script: `supabase/scripts/revoke_agencies_insert.sql`. La creación de agencias debe hacerse desde la app (registro/onboarding) o con service_role.
+  **Tabla `agencies` (solo lectura vía API)**: Para impedir que integradores creen agencias por API, conviene revocar `INSERT` en `public.agencies` para los roles `anon` y `authenticated`. La creación de agencias debe hacerse desde la app (registro/onboarding) o con service_role.
 
-  **Funciones y `search_path`**: Las funciones en `public` deben tener `search_path` fijado (`pg_catalog`, `public`) para evitar "search path hijacking". Si la auditoría marca "Function Search Path Mutable", ejecutar `supabase/scripts/fix_function_search_path.sql` y añadir al script cualquier función nueva que aparezca.
+  **Funciones y `search_path`**: Las funciones en `public` deben tener `search_path` fijado (`pg_catalog`, `public`) para evitar "search path hijacking".
 
-  **Índices**: Si la auditoría marca "Unindexed foreign keys", ejecutar `supabase/scripts/add_missing_fk_indexes.sql` (crea índices en FKs que no tienen uno). Si marca "Duplicate Index" en una tabla, ejecutar `supabase/scripts/drop_duplicate_index_google_ads_campaigns.sql` (o un script similar para otra tabla) para eliminar índices duplicados.
+  **Índices**: Las claves foráneas sin índice pueden generar "Unindexed foreign keys" en auditorías; conviene añadir índices donde haga falta. Revisar también índices duplicados por tabla.
 
   **Importante**: El `service_role` key bypasea RLS. Las edge functions y workers que usan `SUPABASE_SERVICE_ROLE_KEY` no se ven afectados.
 
   **Página de gestión**: `src/pages/ApiKeysPage.tsx` (ruta `/api-keys`, requiere `can_access_agency_settings`). Permite crear, listar y revocar tokens API. Enlace en Sidebar bajo "Configuración".
+
+- **Área administrativa de plataforma (God Mode)**  
+  Panel interno para la empresa (Timeboxing), no para las agencias cliente.
+  - **Tabla `platform_admins`**: `user_id` (PK), `role`, `created_at`. RLS habilitado pero **sin políticas** de lectura/escritura para `authenticated`/`anon`; nadie puede listar ni escribirse como admin desde el cliente. Solo accesible vía RPC con SECURITY DEFINER o con service_role.
+  - **Semilla platform admin**: La tabla `platform_admins` y la RPC `is_platform_admin` deben existir en la BD. El primer admin se añade insertando su `auth.users.id` en `platform_admins` (INSERT idempotente con `ON CONFLICT (user_id) DO NOTHING`).
+  - **AdminLayout**: Layout independiente que **no** usa AgencyContext ni AppContext. Rutas `/admin/*` se sirven con este layout y el guard `PlatformAdminRoute` (sesión + RPC `is_platform_admin`). No reutilizar componentes de la app principal que usen `useAgency()` en el área admin sin refactor presentacional.
+  - **RPCs SECURITY DEFINER**: `is_platform_admin()`, `admin_list_agencies(p_search, p_status)`, `admin_update_agency_status(p_agency_id, p_status)`. Toda lectura/escritura de datos "globales" (listar todas las agencias, cambiar estado) se hace mediante estas RPCs, no con consultas directas (RLS ocultaría los datos).
+  - **Estado `suspended` en `agencies`**: Columna `status` (`active` | `suspended`). Si la agencia está suspendida, `ProtectedRoute` redirige a `/suspended` (excepto si la ruta es `/admin/*`, ya que esas rutas no exigen agencia). La página `/suspended` muestra mensaje y botón "Cerrar sesión". No documentar las RPCs `admin_*` ni `is_platform_admin` en la API pública (`/api-docs`).
+  - **Dependencias**: `usePlatformAdmin`, `PlatformAdminRoute`, `AdminLayout`, `AdminAgenciesPage`, `AdminSupportPage`, `AdminMetricsPage`, `AdminDocsPage`, `SuspendedPage`, `ContactSupportPage`. Sidebar muestra "Administración" solo cuando `usePlatformAdmin().isPlatformAdmin` es true.
+
+  - **Soporte (support_tickets):** Tabla `support_tickets` y tabla de respuestas con columna `is_internal`: respuestas con `is_internal = true` solo las ve el admin; `false` las ve la agencia. **Admin:** listado, crear ticket, cambiar estado; "Ver" abre Sheet con detalle, historial de respuestas (con etiqueta Interno / Al usuario) y formulario para añadir comentario interno o respuesta al usuario (`admin_add_support_ticket_reply` con `p_internal`). **App de usuario:** ruta `/soporte` (ContactSupportPage): "Nueva solicitud" (`create_support_ticket_from_app`); "Mis tickets" lista tickets de la agencia (`list_my_support_tickets`), "Ver" abre detalle con conversación (`get_my_support_ticket`, `list_my_support_ticket_replies` — solo respuestas no internas) y formulario para responder (`add_support_ticket_reply_from_app`).
+
+  - **Métricas:** RPC `admin_platform_metrics()`; página `/admin/metrics`. Página estática `/admin/docs` con procedimientos internos.
+
+  - **Acceder como agencia:** Para soporte o debugging, un platform admin puede "entrar" en la app con el contexto de una agencia. Columna `is_impersonation` en `user_agencies`; RPCs `admin_impersonate_agency(p_agency_id)` (añade/actualiza fila con `is_primary = true` para que `requesting_agency_id()` devuelva esa agencia) y `admin_stop_impersonate(p_agency_id)` (borra la fila de impersonación y restaura `is_primary` en otra). En Admin → Agencias, botón "Entrar" llama a la RPC y redirige a `/dashboard?agency=<id>`. **AgencyContext** prioriza la agencia con `is_primary` en `user_agencies` y, si no hay empleado para esa agencia, carga la agencia solo por `user_agencies` (y opcionalmente `?agency=` en la URL). **ImpersonationBanner** (`src/components/admin/ImpersonationBanner.tsx`) en AppLayout muestra "Viendo la app como agencia: [nombre]" y "Salir de vista" (llama a `admin_stop_impersonate` y redirige a `/admin/agencies`). La tabla `user_agencies` debe tener UNIQUE (user_id, agency_id). RPC `repair_user_agencies_from_employees()` repara membresías perdidas recreando filas desde la tabla `employees`.
+
+- **Reportes (`ReportsPage.tsx`)**  
+  - **Alertas del equipo**: Las horas planificadas y capacidad en alertas se formatean con `round2()` para evitar decimales flotantes largos (ej. 158.41 en lugar de 158.4100000000002).
+  - **Predicción de carga**: La sección "Predicción de carga - Mes siguiente" prioriza el **mes siguiente** (objetivo: ver cómo puede estar el mes que viene). El "mes actual" se muestra como "Contexto: mes actual" en la segunda columna. Descripción de la card: "El objetivo es ver cómo puede estar el mes que viene."
+  - **Mes actual sin doble conteo**: El "mes actual" (y la inercia/histórico para la estimación) usa **solo** `allocations` + `global_assignments`. No se suman las horas de **deadlines**, porque los deadlines son el objetivo por proyecto que ya queda reflejado en las tareas planificadas (allocations); sumar ambos producía doble conteo y cifras irreales (ej. 282h para 150h de capacidad).
+  - **Vacaciones y eventos**: Tanto el **mes actual** como el **mes siguiente** usan capacidad **neta**: se resta de la capacidad base las ausencias (`getAbsenceHoursInRange`) y los eventos de equipo (`getTeamEventHoursInRange`) en ese mes, de modo que el porcentaje y las "horas libres" reflejan la realidad (vacaciones, bajas, formaciones, etc.).
 
 - **Modificar permisos**:
     - Editar `src/hooks/usePermissions.ts` y añadir la nueva clave de permiso al objeto `RESTRICTED_PERMISSIONS`.

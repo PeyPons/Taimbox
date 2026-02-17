@@ -5,6 +5,7 @@ import { useApp } from '@/contexts/AppContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 import { AgencySelectorCompact } from '@/components/agencies/AgencySelectorCompact';
 import {
   LayoutDashboard,
@@ -25,7 +26,9 @@ import {
   ChevronDown,
   X,
   User,
-  Key
+  Key,
+  Shield,
+  MessageCircle
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from '@/lib/utils';
@@ -80,6 +83,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { canAccess } = usePermissions();
   const { currentAgency } = useAgency();
   const { signOut } = useAuth();
+  const { isPlatformAdmin } = usePlatformAdmin();
 
   const handleLogout = async () => {
     try {
@@ -269,7 +273,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <NavGroup
                   label="Configuración"
                   icon={Settings}
-                  isActive={['/agency', '/settings', '/api-keys'].includes(location.pathname)}
+                  isActive={['/agency', '/settings', '/api-keys', '/soporte'].includes(location.pathname)}
                 >
                   <NavLink to="/agency" icon={Settings} active={location.pathname === '/agency'}>
                     Agencia
@@ -277,8 +281,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <NavLink to="/api-keys" icon={Key} active={location.pathname === '/api-keys'}>
                     API & Integraciones
                   </NavLink>
+                  <NavLink to="/soporte" icon={MessageCircle} active={location.pathname === '/soporte'}>
+                    Contactar soporte
+                  </NavLink>
                 </NavGroup>
               )}
+
+            </div>
+          )}
+
+          {/* ADMINISTRACIÓN (solo platform admins; visible aunque no sea isSuperior) */}
+          {isPlatformAdmin && (
+            <div className="pt-2 mt-2 border-t border-slate-800">
+              <NavLink to="/admin" icon={Shield} active={location.pathname.startsWith('/admin')}>
+                Administración
+              </NavLink>
             </div>
           )}
 
