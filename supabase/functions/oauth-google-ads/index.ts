@@ -74,7 +74,15 @@ Deno.serve(async (req) => {
             }),
         })
 
-        const tokens = await tokenResponse.json()
+        const tokenResponseText = await tokenResponse.text()
+        let tokens: Record<string, unknown>
+        try {
+            tokens = JSON.parse(tokenResponseText)
+        } catch {
+            const preview = tokenResponseText.slice(0, 200)
+            console.error('[oauth-google-ads] Token response was not JSON:', tokenResponse.status, preview)
+            throw new Error(`Google devolvió una respuesta no válida (${tokenResponse.status}). Comprueba Client ID/Secret y redirect_uri.`)
+        }
 
         if (tokens.error) {
             console.error('[oauth-google-ads] Google API Error Response:', JSON.stringify(tokens))

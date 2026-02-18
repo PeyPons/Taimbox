@@ -345,6 +345,16 @@ Si al vincular Google Ads o listar cuentas aparece **503 (Service Unavailable)**
 - Que el contenedor tenga las variables anteriores (`docker inspect ... | grep GOOGLE` y comprobar SUPABASE_*).
 - Reproducir el error y ejecutar `docker logs supabase-edge-functions --tail 100` para ver el error exacto.
 
+#### Solución de problemas: Google OAuth y API Google Ads
+
+- **`unauthorized_client` / "Refresh token no válido para este Client ID/Secret"**  
+  El refresh token guardado en la agencia se generó con **otro** OAuth Client (otro Client ID/Secret en Google Cloud) distinto al configurado en las variables de entorno del contenedor. Solución: en la app, **desvincular** la cuenta de Google Ads y **volver a vincular**; así se obtiene un refresh token con el Client ID/Secret actual. Asegúrate de que en el contenedor solo haya un juego de credenciales y que coincidan con el proyecto OAuth usado en el flujo de consentimiento.
+
+- **"Google devolvió una página HTML" / "Unexpected token '<', \"<!DOCTYPE\"..."**  
+  La llamada a Google (intercambio de token o Google Ads API) está devolviendo una página de error HTML en lugar de JSON. Posibles causas:
+  - **Intercambio de token**: mismo origen que `unauthorized_client`; desvincular y vincular de nuevo.
+  - **Google Ads API (listAccessibleCustomers)**: comprueba que `GOOGLE_DEVELOPER_TOKEN` sea el token de **cuenta de desarrollador de Google Ads** (aprobado o en modo test) y que la cuenta de Google que vinculaste tenga acceso a la API. Si usas cuenta Manager (MCC), puede ser necesario configurar el header `login-customer-id` en la función (no implementado por defecto).
+
 #### Crear una nueva Edge Function
 
 1. Crear carpeta en `supabase/functions/<nombre>/index.ts`.
