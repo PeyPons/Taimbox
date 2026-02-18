@@ -1657,12 +1657,18 @@ export default function AgencySettingsPage() {
                               onClick={async () => {
                                 if (!currentAgency?.id) return;
                                 try {
+                                  const { googleRefreshToken: _rt, googleAdsCustomerId: _cid, ...restIntegrations } = currentAgency?.settings?.integrations || {};
+                                  const newSettings = {
+                                    ...currentAgency?.settings,
+                                    integrations: { ...restIntegrations }
+                                  };
                                   const { error } = await supabase
                                     .from('agencies')
                                     .update({
                                       google_ads_refresh_token: null,
                                       google_ads_customer_id: null,
-                                      updated_at: new Date().toISOString()
+                                      updated_at: new Date().toISOString(),
+                                      settings: newSettings
                                     })
                                     .eq('id', currentAgency.id);
                                   if (error) throw error;
