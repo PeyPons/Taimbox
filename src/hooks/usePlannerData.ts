@@ -11,6 +11,7 @@ import { useDepartmentView } from '@/contexts/DepartmentViewContext';
 import { getWeeksForMonth, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { useAgency } from '@/contexts/AgencyContext';
 import { employeeBelongsToDepartment, normalizeDepartments } from '@/utils/departmentUtils';
+import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 import { Employee } from '@/types';
 
 interface WeekData {
@@ -41,6 +42,7 @@ export function usePlannerData(options: UsePlannerDataOptions = {}) {
     } = useApp();
     const { currentAgency } = useAgency();
     const { selectedDepartmentId } = useDepartmentView();
+    const { isPlatformAdmin } = usePlatformAdmin();
     const departments = useMemo(() => normalizeDepartments(currentAgency?.settings?.departments), [currentAgency?.settings?.departments]);
 
     // ============================================================
@@ -109,12 +111,12 @@ export function usePlannerData(options: UsePlannerDataOptions = {}) {
         const selectedEmployeeId = options.selectedEmployeeId ?? 'all';
         const selectedProjectId = options.selectedProjectId ?? 'all';
 
+        // Si showOnlyMe está activo: para usuarios normales filtrar por currentUser; si es platform admin sin perfil en la agencia, mostrar todos (ver datos de la agencia).
+        const effectiveShowOnlyMe = showOnlyMe && currentUser != null;
+
         return (employees || []).filter((e: Employee) => {
             if (!e.isActive) return false;
-            if (showOnlyMe) {
-                if (!currentUser) return false;
-                if (e.id !== currentUser.id) return false;
-            }
+            if (effectiveShowOnlyMe && e.id !== currentUser!.id) return false;
             if (selectedEmployeeId !== 'all' && e.id !== selectedEmployeeId) return false;
             if (selectedProjectId !== 'all') {
                 const employeesInProject = employeesByProject.get(selectedProjectId);
@@ -127,7 +129,7 @@ export function usePlannerData(options: UsePlannerDataOptions = {}) {
             }
             return true;
         });
-    }, [employees, options.showOnlyMe, options.selectedEmployeeId, options.selectedProjectId, employeesByProject, currentUser, selectedDepartmentId, departments]);
+    }, [employees, options.showOnlyMe, options.selectedEmployeeId, options.selectedProjectId, employeesByProject, currentUser, selectedDepartmentId, departments, isPlatformAdmin]);
 
     // Sorted lists for dropdowns
     const sortedProjects = useMemo(() =>

@@ -13,7 +13,12 @@ import {
 import { Eye, ChevronDown, Check, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export function DepartmentViewSelector() {
+interface DepartmentViewSelectorProps {
+  /** En true, se muestra sin borde superior ni padding extra para integrar en una fila (ej. junto al nombre de la agencia) */
+  inline?: boolean;
+}
+
+export function DepartmentViewSelector({ inline }: DepartmentViewSelectorProps) {
   const { currentAgency } = useAgency();
   const { selectedDepartmentId, setSelectedDepartmentId } = useDepartmentView();
   const departments = normalizeDepartments(currentAgency?.settings?.departments);
@@ -25,27 +30,33 @@ export function DepartmentViewSelector() {
     : null;
 
   return (
-    <div className="space-y-2 pt-2 border-t border-slate-800">
+    <div className={cn(
+      "shrink-0",
+      !inline && "space-y-2 pt-2 border-t border-slate-800"
+    )}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-between text-left h-auto py-1.5 px-2 hover:bg-slate-800 text-slate-300 text-xs"
+            className={cn(
+              "justify-between text-left h-auto hover:bg-slate-800 text-slate-300",
+              inline ? "py-1 px-1.5 text-[11px] w-auto min-w-0" : "w-full py-1.5 px-2 text-xs"
+            )}
           >
-            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <Eye className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-              <span className="truncate text-xs font-medium">
+            <div className="flex items-center gap-1 min-w-0 flex-1">
+              <Eye className={cn("shrink-0 text-slate-400", inline ? "h-3 w-3" : "h-3.5 w-3.5")} />
+              <span className={cn("truncate font-medium", inline ? "text-[11px]" : "text-xs")}>
                 {selectedDept ? selectedDept.name : 'Vista Global'}
               </span>
               {selectedDept && (
                 <span
-                  className="ml-1.5 h-2 w-2 rounded-full shrink-0 border border-slate-600"
+                  className={cn("rounded-full shrink-0 border border-slate-600", inline ? "ml-1 h-1.5 w-1.5" : "ml-1.5 h-2 w-2")}
                   style={{ backgroundColor: selectedDept.color }}
                 />
               )}
             </div>
-            <ChevronDown className="h-3 w-3 shrink-0 text-slate-400 ml-1" />
+            <ChevronDown className={cn("shrink-0 text-slate-400 ml-0.5", inline ? "h-2.5 w-2.5" : "h-3 w-3 ml-1")} />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56 bg-slate-800 border-slate-700">

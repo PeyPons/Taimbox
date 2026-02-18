@@ -49,6 +49,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useIntegration } from '@/hooks/useIntegration';
 import { PendingTransfersPanel } from '@/components/transfers/TaskTransferComponents';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
+import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
+import { Link } from 'react-router-dom';
 
 const INTERNAL_CLIENT_NAME = 'Interno';
 const INTERNAL_PROJECT_NAME = 'Gestiones internas';
@@ -63,6 +65,7 @@ export default function EmployeeDashboard() {
   const myEmployeeProfile = appCurrentUser || null;
   const isLoadingProfile = isGlobalLoading;
   const { canAccess } = usePermissions();
+  const { isPlatformAdmin, isLoading: isPlatformAdminLoading } = usePlatformAdmin();
   const isManager = canAccess('/planner') || canAccess('/reports');
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -445,6 +448,20 @@ export default function EmployeeDashboard() {
   }
 
   if (!myEmployeeProfile) {
+    if (!isPlatformAdminLoading && isPlatformAdmin) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+          <div className="text-center space-y-4 max-w-md px-4">
+            <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto" />
+            <h2 className="text-xl font-semibold text-slate-700">Eres administrador de plataforma</h2>
+            <p className="text-slate-500">Tu cuenta no está vinculada a ninguna agencia. Puedes acceder al panel de administración para gestionar agencias, soporte y otros administradores.</p>
+            <Button asChild className="mt-2">
+              <Link to="/admin">Ir al panel de administración</Link>
+            </Button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center space-y-4">

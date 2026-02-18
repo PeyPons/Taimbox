@@ -14,6 +14,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
+import { useDepartmentView } from '@/contexts/DepartmentViewContext';
+import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -82,6 +84,18 @@ interface ActivityLogSectionProps {
 export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLogSectionProps) {
     const { employees, projects, clients, allocations } = useApp();
     const { currentAgency } = useAgency();
+    const { selectedDepartmentId } = useDepartmentView();
+    const departments = useMemo(() => normalizeDepartments(currentAgency?.settings?.departments), [currentAgency?.settings?.departments]);
+    const employeesForView = useMemo(() => {
+        if (!selectedDepartmentId || !departments.length) return employees ?? [];
+        const dept = departments.find(d => d.id === selectedDepartmentId || d.name === selectedDepartmentId);
+        if (!dept) return employees ?? [];
+        return (employees ?? []).filter(e => employeeBelongsToDepartment(e.department, dept.id, dept.name));
+    }, [employees, selectedDepartmentId, departments]);
+    const filteredProjectsForView = useMemo(() => {
+        if (!selectedDepartmentId || !(projects ?? []).length) return projects ?? [];
+        return (projects ?? []).filter(p => p.responsibleDepartmentId === selectedDepartmentId);
+    }, [projects, selectedDepartmentId]);
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -212,6 +226,11 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
         };
 
         // 3. Process logs to populate nodes
+        const deptEmployeeIds = selectedDepartmentId != null ? new Set(employeesForView.map(e => e.id)) : null;
+        const deptProjectIds = selectedDepartmentId != null && filteredProjectsForView.length > 0
+            ? new Set(filteredProjectsForView.map(p => p.id))
+            : null;
+
         logs.forEach(log => {
             const taskId = log.resource_id;
             const data = log.details?.newValue || log.details?.previousValue;
@@ -219,6 +238,12 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
 
             const projectId = String(data.projectId || '');
             const employeeId = String(data.employeeId || '');
+
+            // Vista por departamento: solo logs de empleados del departamento; si hay proyectos del depto, además filtrar por proyecto
+            if (selectedDepartmentId != null && deptEmployeeIds != null) {
+                if (!deptEmployeeIds.has(employeeId)) return;
+                if (deptProjectIds != null && !deptProjectIds.has(projectId)) return;
+            }
 
             // Apply filters
             if (filterEmployee !== 'all' && employeeId !== filterEmployee) return;
@@ -430,29 +455,28 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
         const nodeIds = Array.from(nodes.keys());
         nodeIds.forEach(nodeId => {
             const parentId = findParentId(nodeId);
-            if (parentId) {
-                parentLinks.set(nodeId, parentId);
-                // Ensure parent exists even if no logs
-                if (!nodes.has(parentId)) {
-                    // Try to look up allocation for basic info
-                    const pAlloc = allocations.find(a => a.id === parentId);
+            if (!parentId) return;
+            const pAlloc = allocations.find(a => a.id === parentId);
+            if (selectedDepartmentId != null && deptEmployeeIds != null) {
+                if (!pAlloc || !deptEmployeeIds.has(pAlloc.employeeId)) return;
+                if (deptProjectIds != null && !deptProjectIds.has(pAlloc.projectId)) return;
+            }
+            parentLinks.set(nodeId, parentId);
+            if (!nodes.has(parentId)) {
+                const childAlloc = allocations.find(a => a.id === nodeId);
+                const fallbackTaskName = childAlloc?.originalTransferredTaskName || pAlloc?.taskName || 'Tarea';
 
-                    // If parent allocation has no task name, try to get it from the child's original name
-                    const childAlloc = allocations.find(a => a.id === nodeId);
-                    const fallbackTaskName = childAlloc?.originalTransferredTaskName || pAlloc?.taskName || 'Tarea';
-
-                    getNode(parentId, pAlloc ? {
-                        taskName: pAlloc.taskName || fallbackTaskName,
-                        projectId: pAlloc.projectId,
-                        projectName: getProjectName(pAlloc.projectId),
-                        clientName: getClientName(pAlloc.projectId)
-                    } : {
-                        taskName: fallbackTaskName,
-                        projectId: childAlloc?.projectId || '',
-                        projectName: childAlloc ? getProjectName(childAlloc.projectId) : '',
-                        clientName: childAlloc ? getClientName(childAlloc.projectId) : ''
-                    });
-                }
+                getNode(parentId, pAlloc ? {
+                    taskName: pAlloc.taskName || fallbackTaskName,
+                    projectId: pAlloc.projectId,
+                    projectName: getProjectName(pAlloc.projectId),
+                    clientName: getClientName(pAlloc.projectId)
+                } : {
+                    taskName: fallbackTaskName,
+                    projectId: childAlloc?.projectId || '',
+                    projectName: childAlloc ? getProjectName(childAlloc.projectId) : '',
+                    clientName: childAlloc ? getClientName(childAlloc.projectId) : ''
+                });
             }
         });
 
@@ -528,7 +552,7 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
         return roots
             .filter(r => r.modifications.length > 0 || r.children.length > 0)
             .sort((a, b) => getDeepLatest(b) - getDeepLatest(a));
-    }, [logs, allocations, filterEmployee, filterProject, employees, projects, clients]);
+    }, [logs, allocations, filterEmployee, filterProject, employees, projects, clients, selectedDepartmentId, employeesForView, filteredProjectsForView]);
 
     // --- Group roots by project ---
     const projectGroups = useMemo(() => {
@@ -690,8 +714,8 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
         );
     }
 
-    const activeEmployees = employees.filter(e => e.isActive).sort((a, b) => a.name.localeCompare(b.name));
-    const activeProjects = projects.filter(p => p.status === 'active').sort((a, b) => a.name.localeCompare(b.name));
+    const activeEmployees = (selectedDepartmentId ? employeesForView : (employees ?? [])).filter(e => e.isActive).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    const activeProjects = (selectedDepartmentId ? filteredProjectsForView : (projects ?? [])).filter(p => p.status === 'active').sort((a, b) => a.name.localeCompare(b.name));
 
     return (
         <Card>

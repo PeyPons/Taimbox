@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
+import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,6 +44,8 @@ export default function WeeklyForecastPage() {
   } = useApp();
   const { currentAgency } = useAgency();
   const { selectedDepartmentId } = useDepartmentView();
+  const { isPlatformAdmin } = usePlatformAdmin();
+  const agencyIdForData = currentUser?.agencyId ?? (isPlatformAdmin ? currentAgency?.id : undefined);
 
   const departments = useMemo(() => normalizeDepartments(currentAgency?.settings?.departments), [currentAgency?.settings?.departments]);
   const employeesForView = useMemo(() => {
@@ -56,6 +59,19 @@ export default function WeeklyForecastPage() {
     const saved = localStorage.getItem('forecast_date');
     return saved ? new Date(saved) : new Date();
   });
+
+  const filteredProjectsForView = useMemo(() => {
+    if (!selectedDepartmentId || !(projects ?? []).length) return projects ?? [];
+    const byResponsible = (projects ?? []).filter(p => p.responsibleDepartmentId === selectedDepartmentId);
+    if (byResponsible.length > 0) return byResponsible;
+    const deptIds = new Set(employeesForView.map(e => e.id));
+    return (projects ?? []).filter(p =>
+      (allocations ?? []).some(a =>
+        a.projectId === p.id && deptIds.has(a.employeeId) && isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)
+      )
+    );
+  }, [projects, selectedDepartmentId, employeesForView, allocations, currentMonth]);
+
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [redistributeSelectedTasks, setRedistributeSelectedTasks] = useState<Set<string>>(new Set());
   const [redistributeToEmployee, setRedistributeToEmployee] = useState('');
@@ -80,7 +96,7 @@ export default function WeeklyForecastPage() {
   // Cargar transferencias de la nueva tabla (BD)
   useEffect(() => {
     const fetchDbTransfers = async () => {
-      if (!currentUser?.agencyId) return;
+      if (!agencyIdForData) return;
 
       const start = startOfMonth(currentMonth).toISOString();
       const end = endOfMonth(currentMonth).toISOString();
@@ -93,7 +109,7 @@ export default function WeeklyForecastPage() {
           to_employee:employees!task_transfers_to_employee_id_fkey(name, avatar_url),
           allocation:allocations!task_transfers_allocation_id_fkey(task_name, project_id)
         `)
-        .eq('agency_id', currentUser.agencyId)
+        .eq('agency_id', agencyIdForData)
         .gte('requested_at', start)
         .lte('requested_at', end);
 
@@ -103,7 +119,7 @@ export default function WeeklyForecastPage() {
     };
 
     fetchDbTransfers();
-  }, [currentMonth, currentUser?.agencyId]);
+  }, [currentMonth, agencyIdForData]);
 
   useEffect(() => {
     localStorage.setItem('forecast_date', currentMonth.toISOString());
@@ -142,8 +158,9 @@ export default function WeeklyForecastPage() {
 
   // Sección A: Semáforo de proyectos (Month-End Forecast) con filtros
   const projectForecast = useMemo(() => {
-    if (!projects || !Array.isArray(projects)) return [];
-    let filteredProjects = projects.filter(p => p.status === 'active' && !p.isHidden);
+    const baseProjects = selectedDepartmentId ? filteredProjectsForView : (projects ?? []);
+    if (!baseProjects || !Array.isArray(baseProjects)) return [];
+    let filteredProjects = baseProjects.filter(p => p.status === 'active' && !p.isHidden);
 
     // Filtro por cliente
     if (filterClient !== 'all') {
@@ -157,15 +174,20 @@ export default function WeeklyForecastPage() {
 
     const today = new Date();
 
+    const deptEmployeeIds = selectedDepartmentId ? new Set(employeesForView.map(e => e.id)) : null;
+
     const forecastData = filteredProjects.map(project => {
       const deadline = monthDeadlines.find(d => d.projectId === project.id);
       const contracted = getEffectiveBudget(project, deadline);
 
       // Realizado: Suma de hours_actual de allocations pasadas + hours_assigned de allocations futuras en este mes
-      const monthAllocations = (allocations || []).filter(a => {
+      let monthAllocations = (allocations || []).filter(a => {
         return a.projectId === project.id &&
           isAllocationInEffectiveMonth(a.weekStartDate, currentMonth);
       });
+      if (deptEmployeeIds) {
+        monthAllocations = monthAllocations.filter(a => deptEmployeeIds.has(a.employeeId));
+      }
 
       // Separar por completadas y planificadas
       const completed = monthAllocations.filter(a => a.status === 'completed');
@@ -238,7 +260,7 @@ export default function WeeklyForecastPage() {
     });
 
     return Array.isArray(forecastData) ? forecastData : [];
-  }, [projects, allocations, clients, currentMonth, filterClient, filterProjectStatus, filterId, filterProject]);
+  }, [projects, allocations, clients, currentMonth, filterClient, filterProjectStatus, filterId, filterProject, selectedDepartmentId, filteredProjectsForView, employeesForView]);
 
   // Sección B: Transferencias de horas (rediseñado) - muestra quién le pasó a quién
 
@@ -684,8 +706,14 @@ export default function WeeklyForecastPage() {
       filtered = filtered.filter(t => t.status === filterTransferStatus);
     }
 
+    // Vista por departamento: solo transferencias donde origen y destino están en el departamento
+    if (selectedDepartmentId && employeesForView.length > 0) {
+      const deptEmployeeIds = new Set(employeesForView.map(e => e.id));
+      filtered = filtered.filter(t => deptEmployeeIds.has(t.fromEmployeeId) && deptEmployeeIds.has(t.toEmployeeId));
+    }
+
     return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [weeklyFeedback, allocations, employees, projects, currentMonth, filterFeedbackEmployee, filterFeedbackProject, filterTransferStatus, dbTransfers]);
+  }, [weeklyFeedback, allocations, employees, projects, currentMonth, filterFeedbackEmployee, filterFeedbackProject, filterTransferStatus, dbTransfers, selectedDepartmentId, employeesForView]);
 
   // Semanas futuras para el selector de redistribución
   const futureWeeks = useMemo(() => {
@@ -708,9 +736,12 @@ export default function WeeklyForecastPage() {
     if (!selectedProject) return [];
 
     const today = new Date();
-    const delayedTasks = allocations.filter(a => {
+    const deptEmployeeIds = selectedDepartmentId ? new Set(employeesForView.map(e => e.id)) : null;
+
+    let delayedTasks = allocations.filter(a => {
       if (a.projectId !== selectedProject) return false;
       if (a.status === 'completed') return false;
+      if (deptEmployeeIds && !deptEmployeeIds.has(a.employeeId)) return false;
 
       try {
         const taskWeekDate = parseISO(a.weekStartDate);
@@ -743,7 +774,7 @@ export default function WeeklyForecastPage() {
         tasks: tasks || []
       };
     }).filter(g => g.employeeName !== 'Desconocido' && g.tasks && g.tasks.length > 0);
-  }, [selectedProject, allocations, currentMonth, employees]);
+  }, [selectedProject, allocations, currentMonth, employees, selectedDepartmentId, employeesForView]);
 
   // Sección C: Redistribución Rápida (mejorada - sin horas globales)
   const handleRedistribute = async () => {
@@ -860,8 +891,8 @@ export default function WeeklyForecastPage() {
         currentMonth={currentMonth}
         weeks={weeks}
         allocations={allocations}
-        projects={projects}
-        employees={employees}
+        projects={selectedDepartmentId ? filteredProjectsForView : projects}
+        employees={employeesForView}
       />
 
       {/* TABS */}
@@ -1172,7 +1203,7 @@ export default function WeeklyForecastPage() {
                 <PopoverTrigger asChild>
                   <Button variant="outline" role="combobox" className="w-full h-8 text-xs justify-between bg-white">
                     <span className="truncate">
-                      {filterFeedbackEmployee === 'all' ? 'Todos los compañeros' : employees.find(e => e.id === filterFeedbackEmployee)?.name || 'Compañero'}
+                      {filterFeedbackEmployee === 'all' ? (selectedDepartmentId ? 'Todo el departamento' : 'Todos los compañeros') : (employees.find(e => e.id === filterFeedbackEmployee)?.name || 'Compañero')}
                     </span>
                     <ChevronDown className="ml-2 h-3 w-3 opacity-50" />
                   </Button>
@@ -1221,9 +1252,9 @@ export default function WeeklyForecastPage() {
                       <CommandGroup>
                         <CommandItem value="all" onSelect={() => setFilterFeedbackProject('all')}>
                           <Check className={cn("mr-2 h-4 w-4", filterFeedbackProject === 'all' ? "opacity-100" : "opacity-0")} />
-                          Todos los proyectos
+                          {selectedDepartmentId ? 'Todos (dep.)' : 'Todos los proyectos'}
                         </CommandItem>
-                        {projects
+                        {(selectedDepartmentId ? filteredProjectsForView : (projects ?? []))
                           .filter(p => p.status === 'active' && !p.isHidden)
                           .map(proj => {
                             const client = clients.find(c => c.id === proj.clientId);
@@ -1485,12 +1516,20 @@ export default function WeeklyForecastPage() {
             <CardContent>
               {(() => {
                 // Find tasks that have dependencyId pointing to an uncompleted task
-                const blockedTasks = allocations.filter(a => {
+                let blockedTasks = allocations.filter(a => {
                   if (!a.dependencyId || a.status === 'completed') return false;
                   if (!isAllocationInEffectiveMonth(a.weekStartDate, currentMonth)) return false;
                   const blockingTask = allocations.find(b => b.id === a.dependencyId);
                   return blockingTask && blockingTask.status !== 'completed';
                 });
+
+                if (selectedDepartmentId && employeesForView.length > 0) {
+                  const deptIds = new Set(employeesForView.map(e => e.id));
+                  blockedTasks = blockedTasks.filter(a => {
+                    const blockingTask = allocations.find(b => b.id === a.dependencyId);
+                    return blockingTask && deptIds.has(a.employeeId) && deptIds.has(blockingTask.employeeId);
+                  });
+                }
 
                 if (blockedTasks.length === 0) {
                   return (

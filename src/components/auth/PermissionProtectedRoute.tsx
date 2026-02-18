@@ -2,6 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 import { useMemo, useRef, useEffect, useState } from 'react';
 
 interface PermissionProtectedRouteProps {
@@ -18,6 +19,7 @@ export function PermissionProtectedRoute({ children, requiredPermission }: Permi
   const { canAccess } = usePermissions();
   const { currentUser, isLoading: isAppLoading, employees } = useApp();
   const { session, isInitialized: isAuthInitialized } = useAuth();
+  const { isPlatformAdmin, isLoading: isPlatformAdminLoading } = usePlatformAdmin();
   
   // Ref para evitar logs duplicados
   const hasLoggedWarningRef = useRef(false);
@@ -38,14 +40,14 @@ export function PermissionProtectedRoute({ children, requiredPermission }: Permi
 
   // Determinar si todavía estamos en proceso de carga
   const isStillLoading = useMemo(() => {
-    // Si auth no está inicializado, seguimos cargando
     if (!isAuthInitialized) return true;
-    // Si AppContext está cargando, seguimos cargando
     if (isAppLoading) return true;
-    // Si hay sesión pero aún esperamos vinculación
-    if (session && employees.length > 0 && !currentUser && !linkWaitComplete) return true;
+    // Si puede ser platform admin sin empleado, esperar a saberlo antes de redirigir
+    if (session && !currentUser && isPlatformAdminLoading) return true;
+    // Si hay sesión pero aún esperamos vinculación (y no es platform admin)
+    if (session && employees.length > 0 && !currentUser && !linkWaitComplete && !isPlatformAdmin) return true;
     return false;
-  }, [isAuthInitialized, isAppLoading, session, employees.length, currentUser, linkWaitComplete]);
+  }, [isAuthInitialized, isAppLoading, session, employees.length, currentUser, linkWaitComplete, isPlatformAdmin, isPlatformAdminLoading]);
 
   // Mientras carga, mostrar spinner
   if (isStillLoading) {
@@ -62,8 +64,8 @@ export function PermissionProtectedRoute({ children, requiredPermission }: Permi
   }
 
   // Si hay sesión pero no se encontró el empleado vinculado (después de esperar)
-  if (!currentUser) {
-    // Solo loguear una vez para evitar spam en consola
+  // Excepción: administrador de plataforma puede ver contenido de la agencia actual sin ser empleado
+  if (!currentUser && !isPlatformAdmin) {
     if (!hasLoggedWarningRef.current) {
       hasLoggedWarningRef.current = true;
       console.warn('[PermissionProtectedRoute] Sesión activa pero sin empleado vinculado. Redirigiendo a /');

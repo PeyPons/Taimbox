@@ -21,8 +21,8 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <Header onMenuClick={() => setIsSidebarOpen(true)} />
       <ImpersonationBanner />
+      <Header onMenuClick={() => setIsSidebarOpen(true)} />
       <DepartmentViewBanner />
 
       <div className="flex flex-1">
@@ -33,8 +33,8 @@ export function AppLayout() {
 
         <main className={cn(
           "flex-1 min-w-0 min-h-screen transition-all duration-300 overflow-x-hidden max-w-full w-full",
-          "lg:ml-64", // Margin on desktop
-          "mt-16 lg:mt-0" // Top margin on mobile for header
+          "lg:ml-64",
+          "main-content-area" // En móvil: header + banner impersonación (CSS variable)
         )}>
           <Outlet />
         </main>

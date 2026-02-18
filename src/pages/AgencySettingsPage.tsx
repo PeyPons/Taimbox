@@ -622,7 +622,23 @@ export default function AgencySettingsPage() {
                     <Separator />
                     <div className="space-y-2">
                       <Label className="text-xs font-semibold text-slate-500 uppercase">Otros</Label>
-                      {(['can_access_reports', 'can_access_client_reports', 'can_access_deadlines', 'can_access_okrs', 'can_assign_tasks_to_others', 'can_access_weekly_forecast'] as const).map(p => (
+                      {(['can_access_reports', 'can_access_client_reports', 'can_access_deadlines', 'can_access_okrs', 'can_access_team_capacity', 'can_assign_tasks_to_others', 'can_access_weekly_forecast'] as const).map(p => (
+                        <div key={p} className="flex items-center justify-between py-1 px-2 rounded hover:bg-white">
+                          <Label htmlFor={`role-${index}-${p}`} className="text-sm font-normal cursor-pointer flex-1">{PERMISSION_LABELS[p]}</Label>
+                          <Switch
+                            id={`role-${index}-${p}`}
+                            checked={role.name === 'Administrador' ? true : (role.permissions && role.permissions[p] !== false)}
+                            disabled={role.name === 'Administrador'}
+                            onCheckedChange={(checked) => toggleRolePermission(index, p, checked)}
+                            className="scale-75"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <Separator />
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-slate-500 uppercase">Configuración y soporte</Label>
+                      {(['can_access_agency_settings', 'can_access_api_keys', 'can_access_support'] as const).map(p => (
                         <div key={p} className="flex items-center justify-between py-1 px-2 rounded hover:bg-white">
                           <Label htmlFor={`role-${index}-${p}`} className="text-sm font-normal cursor-pointer flex-1">{PERMISSION_LABELS[p]}</Label>
                           <Switch

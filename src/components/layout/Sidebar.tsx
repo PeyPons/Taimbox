@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
 import { useApp } from '@/contexts/AppContext';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -29,7 +29,9 @@ import {
   User,
   Key,
   Shield,
-  MessageCircle
+  MessageCircle,
+  Building2,
+  Plus
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from '@/lib/utils';
@@ -81,8 +83,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser } = useApp();
-  const { canAccess } = usePermissions();
-  const { currentAgency } = useAgency();
+  const { canAccess, hasPermission } = usePermissions();
+  const { currentAgency, availableAgencies } = useAgency();
+  const hasMultipleAgencies = (availableAgencies?.length || 0) > 1;
+  const hasAgencyPaths = location.pathname === '/agency' || location.pathname === '/agencies' || location.pathname.startsWith('/agencies/');
+  const searchParams = new URLSearchParams(location.search || '');
+  const isAgenciesCreate = location.pathname === '/agencies' && searchParams.get('action') === 'create';
   const { signOut } = useAuth();
   const { isPlatformAdmin } = usePlatformAdmin();
 
@@ -269,22 +275,49 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </NavGroup>
               )}
 
-              {/* CONFIGURACIÓN */}
+              {/* CONFIGURACIÓN: unificado (agencia, miembros, ajustes, API, soporte) */}
               {canAccess('/settings') && (
                 <NavGroup
                   label="Configuración"
                   icon={Settings}
-                  isActive={['/agency', '/settings', '/api-keys', '/soporte'].includes(location.pathname)}
+                  isActive={['/agency', '/settings', '/api-keys', '/soporte', '/agencies'].includes(location.pathname) || hasAgencyPaths}
                 >
-                  <NavLink to="/agency" icon={Settings} active={location.pathname === '/agency'}>
-                    Agencia
-                  </NavLink>
-                  <NavLink to="/api-keys" icon={Key} active={location.pathname === '/api-keys'}>
-                    API & Integraciones
-                  </NavLink>
-                  <NavLink to="/soporte" icon={MessageCircle} active={location.pathname === '/soporte'}>
-                    Contactar soporte
-                  </NavLink>
+                  {hasPermission('can_access_agency_settings') && (
+                    <>
+                      <NavLink to="/agencies" icon={Building2} active={location.pathname === '/agencies' && !isAgenciesCreate}>
+                        Mis Agencias
+                      </NavLink>
+                      {currentAgency && (
+                        <NavLink
+                          to={`/agencies/${currentAgency.id}/manage`}
+                          icon={Users}
+                          active={location.pathname === `/agencies/${currentAgency.id}/manage`}
+                        >
+                          Gestionar miembros
+                        </NavLink>
+                      )}
+                    </>
+                  )}
+                  {canAccess('/agency') && (
+                    <NavLink to="/agency" icon={Settings} active={location.pathname === '/agency'}>
+                      Configuración de agencia
+                    </NavLink>
+                  )}
+                  {canAccess('/api-keys') && (
+                    <NavLink to="/api-keys" icon={Key} active={location.pathname === '/api-keys'}>
+                      API & Integraciones
+                    </NavLink>
+                  )}
+                  {canAccess('/soporte') && (
+                    <NavLink to="/soporte" icon={MessageCircle} active={location.pathname === '/soporte'}>
+                      Soporte
+                    </NavLink>
+                  )}
+                  {hasPermission('can_access_agency_settings') && (
+                    <NavLink to="/agencies?action=create" icon={Plus} active={isAgenciesCreate}>
+                      Crear nueva agencia
+                    </NavLink>
+                  )}
                 </NavGroup>
               )}
 
@@ -302,48 +335,33 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         </nav>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/30 space-y-3">
+        {/* Footer: una sola línea — avatar, nombre, vista, logout (sin nombre agencia) */}
+        <div className="px-2 py-1.5 border-t border-slate-800 bg-slate-950/50">
           {currentUser ? (
-            <>
-              <div className="px-2 flex items-center gap-3 group">
-                <Avatar className="h-8 w-8 border border-primary/30">
-                  <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
-                  <AvatarFallback className="bg-primary text-white">
-                    {currentUser?.name?.charAt(0) || <User className="h-4 w-4" />}
-                  </AvatarFallback>
-                </Avatar>
-
-                <div className="flex-1 overflow-hidden min-w-0">
-                  <p className="text-sm font-medium text-slate-200 truncate" title={currentUser.name}>
-                    {currentUser.first_name || currentUser.name}
-                  </p>
-                  <p className="text-xs text-slate-500 truncate" title={currentUser.email}>
-                    {currentUser.email}
-                  </p>
-                </div>
-
-                <button
-                  onClick={handleLogout}
-                  className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-950/30 rounded-md transition-colors"
-                  title="Cerrar sesión"
-                >
-                  <LogOut className="h-4 w-4" />
-                </button>
-              </div>
-              
-              {/* Agency Selector Compacto - Al final del footer */}
-              <AgencySelectorCompact />
-              {/* Selector de vista por departamento (Vista Global / Marketing / etc.) */}
-              <DepartmentViewSelector />
-            </>
+            <div className="flex items-center gap-1.5 min-h-0 text-[11px] overflow-hidden">
+              <Avatar className="h-6 w-6 shrink-0 border border-primary/30">
+                <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} />
+                <AvatarFallback className="bg-primary text-white text-[10px]">
+                  {currentUser?.name?.charAt(0) || <User className="h-2.5 w-2.5" />}
+                </AvatarFallback>
+              </Avatar>
+              <span className="font-medium text-slate-200 truncate min-w-0 flex-1" title={currentUser.email}>
+                {currentUser.first_name || currentUser.name}
+              </span>
+              {hasMultipleAgencies && <AgencySelectorCompact inline />}
+              <DepartmentViewSelector inline />
+              <button
+                onClick={handleLogout}
+                className="p-1 text-slate-500 hover:text-red-400 hover:bg-red-950/30 rounded shrink-0"
+                title="Cerrar sesión"
+              >
+                <LogOut className="h-3 w-3" />
+              </button>
+            </div>
           ) : (
-            <div className="px-2 flex items-center gap-3 opacity-50">
-              <div className="h-8 w-8 rounded-full bg-slate-800 animate-pulse" />
-              <div className="space-y-1">
-                <div className="h-2 w-20 bg-slate-800 rounded animate-pulse" />
-                <div className="h-2 w-16 bg-slate-800 rounded animate-pulse" />
-              </div>
+            <div className="flex items-center gap-1.5 opacity-50">
+              <div className="h-6 w-6 rounded-full bg-slate-800 animate-pulse shrink-0" />
+              <div className="h-2 flex-1 bg-slate-800 rounded animate-pulse" />
             </div>
           )}
         </div>

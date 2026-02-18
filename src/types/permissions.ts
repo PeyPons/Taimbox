@@ -18,6 +18,8 @@ export interface UserPermissions {
   can_access_weekly?: boolean;
   can_access_settings?: boolean;
   can_access_agency_settings?: boolean;
+  can_access_api_keys?: boolean;
+  can_access_support?: boolean;
   can_assign_tasks_to_others?: boolean;
 }
 
@@ -40,6 +42,8 @@ export const ROUTE_PERMISSIONS: Record<string, keyof UserPermissions> = {
   '/weekly-forecast': 'can_access_weekly_forecast',
   '/settings': 'can_access_settings',
   '/agency': 'can_access_agency_settings',
+  '/api-keys': 'can_access_api_keys',
+  '/soporte': 'can_access_support',
 };
 
 /**
@@ -62,6 +66,8 @@ export const DEFAULT_PERMISSIONS: UserPermissions = {
   can_access_weekly: true,
   can_access_settings: true,
   can_access_agency_settings: true,
+  can_access_api_keys: true,
+  can_access_support: true,
   can_assign_tasks_to_others: true,
 };
 
@@ -85,6 +91,8 @@ export const PERMISSION_LABELS: Record<keyof UserPermissions, string> = {
   can_access_weekly: 'Weekly',
   can_access_settings: 'Configuración',
   can_access_agency_settings: 'Configuración de Agencia',
+  can_access_api_keys: 'API e integraciones',
+  can_access_support: 'Contactar soporte',
   can_assign_tasks_to_others: 'Asignar tareas a otros',
 };
 

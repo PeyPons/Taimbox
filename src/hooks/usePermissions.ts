@@ -20,6 +20,8 @@ const RESTRICTED_PERMISSIONS: UserPermissions = {
   can_access_weekly: true,
   can_access_settings: true,
   can_access_agency_settings: false,
+  can_access_api_keys: false,
+  can_access_support: true,
 };
 
 /**
