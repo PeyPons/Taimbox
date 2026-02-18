@@ -29,7 +29,11 @@ Deno.serve(async (req) => {
         const supabase = createClient(supabaseUrl, supabaseKey)
 
         // 1. Obtener agency_id del request
-        const { agency_id } = await req.json()
+        const reqData = await req.json()
+        const { agency_id } = reqData
+
+        console.log(`[list-google-accounts] Request for agency: ${agency_id}`)
+
         if (!agency_id) throw new Error('Falta el agency_id')
 
         // 2. Obtener refresh token de la agencia
@@ -40,17 +44,21 @@ Deno.serve(async (req) => {
             .single()
 
         if (agencyError || !agency) {
+            console.error('[list-google-accounts] Agency not found or DB error:', agencyError)
             throw new Error('Agencia no encontrada')
         }
 
         // Fallback para refresh token (columna > settings)
         const refreshToken = agency.google_ads_refresh_token || agency.settings?.integrations?.googleRefreshToken
 
+        console.log(`[list-google-accounts] Refresh token found: ${!!refreshToken}`)
+
         if (!refreshToken) {
             throw new Error('La agencia no tiene una cuenta de Google vinculada (falta refresh token)')
         }
 
         // 3. Obtener Access Token
+        console.log('[list-google-accounts] Exchanging refresh token for access token...')
         const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -64,6 +72,7 @@ Deno.serve(async (req) => {
 
         const tokenData = await tokenResponse.json()
         if (tokenData.error) {
+            console.error('[list-google-accounts] Token Exchange Error:', JSON.stringify(tokenData))
             throw new Error(`Error obteniendo access token: ${tokenData.error_description || tokenData.error}`)
         }
         const accessToken = tokenData.access_token

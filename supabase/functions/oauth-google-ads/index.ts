@@ -29,7 +29,17 @@ Deno.serve(async (req) => {
         const supabase = createClient(supabaseUrl, supabaseKey)
 
         // 1. Obtener datos del request
-        const { code, redirect_uri, agency_id } = await req.json()
+        const reqData = await req.json()
+        const { code, redirect_uri, agency_id } = reqData
+
+        console.log('[oauth-google-ads] Request received:', JSON.stringify({
+            hasCode: !!code,
+            redirect_uri,
+            agency_id,
+            clientIdExists: !!clientId,
+            clientSecretExists: !!clientSecret
+        }))
+
         if (!code) throw new Error('Falta el código de autorización')
         if (!agency_id) throw new Error('Falta el agency_id')
 
@@ -40,7 +50,7 @@ Deno.serve(async (req) => {
                 : 'https://timeboxing.peypons.duckdns.org/google-callback'
         )
 
-        console.log(`[oauth-google-ads] Agency: ${agency_id}, Redirect URI: ${finalRedirectUri}`)
+        console.log(`[oauth-google-ads] Final Redirect URI used: ${finalRedirectUri}`)
 
         // 2. Intercambio con Google (usando credenciales de PLATAFORMA)
         const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -58,7 +68,7 @@ Deno.serve(async (req) => {
         const tokens = await tokenResponse.json()
 
         if (tokens.error) {
-            console.error('[oauth-google-ads] Error de Google:', JSON.stringify(tokens))
+            console.error('[oauth-google-ads] Google API Error Response:', JSON.stringify(tokens))
             throw new Error(`Google Error: ${tokens.error_description || tokens.error}`)
         }
 
