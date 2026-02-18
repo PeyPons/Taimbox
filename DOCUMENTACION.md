@@ -145,6 +145,21 @@ Gestiona la carga de la base de datos principal (`employees`, `projects`, `alloc
 ### 4.2. Estrategia de Realtime y Colaboración
 Para soportar múltiples usuarios concurrentes sin saturar conexiones WebSocket, utilizamos una estrategia de **Canales Unificados**.
 
+#### Tablas con Realtime habilitado (solo estas)
+En Supabase (Database → Replication / publicación `supabase_realtime`) deben estar **únicamente** estas tablas. El resto conviene tenerlas deshabilitadas para reducir carga y conexiones.
+
+| Tabla | Uso en la app |
+|-------|----------------|
+| `allocations` | AppContext (planificador) y TeamPulsePage |
+| `projects` | AppContext |
+| `absences` | AppContext |
+| `team_events` | AppContext |
+| `deadlines` | DeadlinesPage |
+| `global_assignments` | DeadlinesPage |
+| `project_editing_locks` | DeadlinesPage (bloqueos de edición) |
+| `ads_sync_logs` | AdsPage (estado de sync Google Ads) |
+| `meta_sync_logs` | MetaAdsPage (estado de sync Meta Ads) |
+
 #### Arquitectura de Canales (`DeadlinesPage`)
 En lugar de abrir una conexión por entidad, abrimos **un solo canal por sala** (mes/contexto) que transporta todos los tipos de eventos.
 - **Antes (Ineficiente)**: 3 canales por usuario (`deadlines`, `assignments`, `locks`).
