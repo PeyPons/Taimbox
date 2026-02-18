@@ -92,8 +92,10 @@ Deno.serve(async (req) => {
         try {
             tokenData = JSON.parse(tokenResponseText)
         } catch (e) {
-            const preview = tokenResponseText.slice(0, 200)
-            console.error('[list-google-accounts] Token response was not JSON:', tokenResponse.status, preview)
+            const maxLog = 8000
+            const fullBody = tokenResponseText.length > maxLog ? tokenResponseText.slice(0, maxLog) + '\n...[truncado]' : tokenResponseText
+            console.error('[list-google-accounts] Token response was not JSON. Status:', tokenResponse.status, tokenResponse.statusText)
+            console.error('[list-google-accounts] Token response body (completo o truncado):', fullBody)
             if (tokenResponseText.trimStart().startsWith('<')) {
                 throw new Error('Google devolvió una página HTML en lugar de JSON. Comprueba que GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET sean los mismos con los que se vinculó la cuenta.')
             }
@@ -129,12 +131,14 @@ Deno.serve(async (req) => {
         try {
             listData = JSON.parse(listResponseText)
         } catch (e) {
-            const preview = listResponseText.slice(0, 300)
-            console.error('[list-google-accounts] List API response was not JSON:', listResponse.status, listResponse.statusText, preview)
+            const maxLog = 8000
+            const fullBody = listResponseText.length > maxLog ? listResponseText.slice(0, maxLog) + '\n...[truncado]' : listResponseText
+            console.error('[list-google-accounts] List API response was not JSON. Status:', listResponse.status, listResponse.statusText)
+            console.error('[list-google-accounts] List API response body (completo o truncado):', fullBody)
             if (listResponseText.trimStart().startsWith('<')) {
                 throw new Error(`Google Ads API devolvió HTML en lugar de JSON (${listResponse.status}). Revisa GOOGLE_DEVELOPER_TOKEN (aprobado en Google Ads) y que la cuenta tenga acceso a la API.`)
             }
-            throw new Error(`Error API Google Ads: ${listResponse.status} ${listResponse.statusText}. Respuesta: ${preview}`)
+            throw new Error(`Error API Google Ads: ${listResponse.status} ${listResponse.statusText}. Respuesta: ${listResponseText.slice(0, 500)}`)
         }
 
         if (listData.error) {
