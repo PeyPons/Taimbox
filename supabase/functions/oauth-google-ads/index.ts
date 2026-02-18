@@ -28,8 +28,17 @@ Deno.serve(async (req) => {
 
         const supabase = createClient(supabaseUrl, supabaseKey)
 
-        // 1. Obtener datos del request
-        const reqData = await req.json()
+        // 1. Obtener datos del request (parsing seguro para evitar 503 por crash)
+        let reqData: { code?: string; redirect_uri?: string; agency_id?: string }
+        try {
+            const text = await req.text()
+            reqData = text ? JSON.parse(text) : {}
+        } catch {
+            return new Response(
+                JSON.stringify({ error: 'Cuerpo de la petición inválido o vacío. Se espera JSON con code, redirect_uri y agency_id.' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
         const { code, redirect_uri, agency_id } = reqData
 
         console.log('[oauth-google-ads] Request received:', JSON.stringify({

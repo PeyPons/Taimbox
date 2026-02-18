@@ -323,6 +323,28 @@ docker inspect supabase-edge-functions --format '{{range .Config.Env}}{{println 
 docker logs supabase-edge-functions --tail 50 -f
 ```
 
+#### Solución de problemas: 503 Service Unavailable
+
+Si al vincular Google Ads o listar cuentas aparece **503 (Service Unavailable)** en `oauth-google-ads` o `list-google-accounts`, suele deberse a:
+
+1. **Funciones no desplegadas o desactualizadas**  
+   Asegúrate de haber copiado las funciones al volumen y reiniciado el contenedor (ver comandos de despliegue arriba).
+
+2. **Variables de entorno faltantes en el contenedor**  
+   Las funciones necesitan en el contenedor `supabase-edge-functions`:
+   - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+   - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (para `oauth-google-ads`)
+   - `GOOGLE_DEVELOPER_TOKEN` (para `list-google-accounts`)  
+   Si falta alguna, la función puede fallar antes de devolver una respuesta controlada y el runtime devuelve 503.
+
+3. **Crash no capturado**  
+   Si el body de la petición está vacío o no es JSON válido, las funciones devuelven **400** con mensaje claro. Si aun así ves 503, revisa los logs del contenedor para ver el stack trace.
+
+**Comprobar en el servidor:**
+- Que existan las carpetas `oauth-google-ads` y `list-google-accounts` dentro del volumen de functions.
+- Que el contenedor tenga las variables anteriores (`docker inspect ... | grep GOOGLE` y comprobar SUPABASE_*).
+- Reproducir el error y ejecutar `docker logs supabase-edge-functions --tail 100` para ver el error exacto.
+
 #### Crear una nueva Edge Function
 
 1. Crear carpeta en `supabase/functions/<nombre>/index.ts`.

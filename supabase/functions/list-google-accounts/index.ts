@@ -28,8 +28,17 @@ Deno.serve(async (req) => {
 
         const supabase = createClient(supabaseUrl, supabaseKey)
 
-        // 1. Obtener agency_id del request
-        const reqData = await req.json()
+        // 1. Obtener agency_id del request (parsing seguro para evitar 503 por crash)
+        let reqData: { agency_id?: string }
+        try {
+            const text = await req.text()
+            reqData = text ? JSON.parse(text) : {}
+        } catch {
+            return new Response(
+                JSON.stringify({ error: 'Cuerpo de la petición inválido o vacío. Se espera JSON con agency_id.' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
         const { agency_id } = reqData
 
         console.log(`[list-google-accounts] Request for agency: ${agency_id}`)
@@ -93,13 +102,17 @@ Deno.serve(async (req) => {
         }
         const accessToken = tokenData.access_token
 
-        // 4. Listar clientes accesibles
-        // USANDO API v23
+        const developerToken = Deno.env.get('GOOGLE_DEVELOPER_TOKEN')
+        if (!developerToken) {
+            throw new Error('Error de configuración: Falta GOOGLE_DEVELOPER_TOKEN en variables de entorno.')
+        }
+
+        // 4. Listar clientes accesibles (Google Ads API v23)
         const listResponse = await fetch(`https://googleads.googleapis.com/v23/customers:listAccessibleCustomers`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
-                'developer-token': Deno.env.get('GOOGLE_DEVELOPER_TOKEN') || '',
+                'developer-token': developerToken,
             }
         })
 
