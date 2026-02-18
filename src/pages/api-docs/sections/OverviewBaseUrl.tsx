@@ -22,7 +22,7 @@ export function OverviewBaseUrl() {
       <CodeBlock lang="bash">{`# URL base de la API de Timeboxing
 http://supabase.peypons.duckdns.org/rest/v1/
 
-# Headers obligatorios en cada peticion
+# Headers obligatorios en cada petición
 apikey: <ANON_KEY>                      # Clave anonima de tu instancia Supabase
 Authorization: Bearer <TU_API_TOKEN>    # Token generado en API & Integraciones
 Content-Type: application/json
@@ -31,9 +31,9 @@ Prefer: return=representation           # Para recibir el objeto creado/modifica
         <div className="flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
           <p className="text-sm text-amber-100/90">
-            <strong className="text-amber-300">Importante:</strong> Tu token esta vinculado a
-            tu agencia mediante un JWT firmado. Solo podras leer y escribir datos de tu propia
-            agencia gracias a las politicas RLS. Si necesitas revocar un token, hazlo desde la
+            <strong className="text-amber-300">Importante:</strong> Tu token está vinculado a
+            tu agencia mediante un JWT firmado. Solo podrás leer y escribir datos de tu propia
+            agencia gracias a las políticas RLS. Si necesitas revocar un token, hazlo desde la
             seccion API & Integraciones.
           </p>
         </div>
@@ -44,7 +44,7 @@ Prefer: return=representation           # Para recibir el objeto creado/modifica
         <ul className="text-sm text-indigo-100/90 space-y-1 list-disc list-inside">
           <li>
             <strong>En lecturas (GET):</strong> Nunca. El token ya identifica tu agencia y RLS
-            filtra automaticamente. No hace falta pasar <code className="font-mono text-xs">agency_id</code> en los filtros.
+            filtra automáticamente. No hace falta pasar <code className="font-mono text-xs">agency_id</code> en los filtros.
           </li>
           <li>
             <strong>En inserciones (POST):</strong> Al crear empleados, clientes, proyectos u otros

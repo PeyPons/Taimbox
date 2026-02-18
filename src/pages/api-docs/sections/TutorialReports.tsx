@@ -40,7 +40,7 @@ console.log('Horas por proyecto:', byProject)`}
         <TutorialStep
           step={2}
           title="Calcular rentabilidad"
-          description="Cruza las horas con los datos del proyecto (presupuesto, tarifa mensual) para obtener metricas de rentabilidad."
+          description="Cruza las horas con los datos del proyecto (presupuesto, tarifa mensual) para obtener métricas de rentabilidad."
           code={`const { data: projects } = await timeboxing
   .from('projects')
   .select('id, name, budget_hours, monthly_fee')
@@ -70,7 +70,7 @@ console.table(report)`}
         <TutorialStep
           step={3}
           title="Reporte de ocupacion del equipo"
-          description="Calcula la carga de cada empleado para detectar sobrecargas o infrautilizacion."
+          description="Calcula la carga de cada empleado para detectar sobrecargas o infrautilización."
           code={`const { data: employees } = await timeboxing
   .from('employees')
   .select('id, name, default_weekly_capacity')

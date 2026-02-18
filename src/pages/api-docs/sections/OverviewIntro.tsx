@@ -9,10 +9,10 @@ export function OverviewIntro() {
     <section>
       <div className="mb-8">
         <SectionHeading id="intro" level="h1" className="mb-3">
-          API de Integracion
+          API de Integración
         </SectionHeading>
         <p className="text-lg text-indigo-200/90 max-w-2xl">
-          Integra los datos de planificacion, equipo y proyectos de tu agencia en Timeboxing
+          Integra los datos de planificación, equipo y proyectos de tu agencia en Timeboxing
           directamente con tus herramientas internas.
         </p>
       </div>
@@ -58,7 +58,7 @@ export function OverviewIntro() {
             {[
               { icon: Database, text: 'Sincronizar proyectos y empleados con tu ERP o CRM' },
               { icon: FileJson, text: 'Consultar horas asignadas y reales por semana o mes' },
-              { icon: Zap, text: 'Crear ausencias y eventos del equipo automaticamente' },
+              { icon: Zap, text: 'Crear ausencias y eventos del equipo automáticamente' },
               { icon: Filter, text: 'Generar reportes personalizados con datos de planificacion' },
               { icon: Terminal, text: 'Automatizar la creacion de asignaciones desde scripts' },
               { icon: Shield, text: 'Recibir cambios en tiempo real via suscripciones Realtime' },

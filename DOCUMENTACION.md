@@ -257,7 +257,7 @@ El sistema sincroniza datos de Google Ads y Meta Ads mediante procesos externos.
 
   **Revocación y expiración con efecto inmediato**: Por defecto, al revocar un token solo se pone `is_active = false` en la BD; el JWT sigue siendo válido hasta que expire. Para que la revocación niegue el acceso al instante, la función `requesting_agency_id()` debe comprobar si el token está revocado y devolver `NULL` en ese caso. También puede verificarse `expires_at` en la BD además de la validación automática del claim `exp` del JWT.
 
-  **Enforzar permisos readonly/readwrite**: Por defecto, las políticas RLS solo verifican `agency_id`, no el claim `permissions` del JWT. Para que tokens con `permissions='readonly'` no puedan hacer INSERT/UPDATE/DELETE, la BD debe tener la función `can_write_via_api()` y las políticas RLS de INSERT/UPDATE/DELETE deben comprobarla. Las tablas con `agency_id` directo, vía `employee_id` o vía `project_id` deben tener políticas coherentes con ese tipo.
+  **Aplicar permisos readonly/readwrite**: Por defecto, las políticas RLS solo verifican `agency_id`, no el claim `permissions` del JWT. Para que tokens con `permissions='readonly'` no puedan hacer INSERT/UPDATE/DELETE, la BD debe tener la función `can_write_via_api()` y las políticas RLS de INSERT/UPDATE/DELETE deben comprobarla. Las tablas con `agency_id` directo, vía `employee_id` o vía `project_id` deben tener políticas coherentes con ese tipo.
 
   **Edge Functions relacionadas**:
   - `generate-api-token`: Recibe `{ agency_id, name, permissions?, expires_in_days? }` del admin autenticado, firma un JWT con claim `agency_id` y `sub` = id del registro en `api_tokens`, guarda el hash en `api_tokens` y devuelve el JWT.

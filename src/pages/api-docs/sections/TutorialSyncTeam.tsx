@@ -34,7 +34,7 @@ export function TutorialSyncTeam() {
         <TutorialStep
           step={1}
           title="Leer todos los empleados"
-          description="Obtener la lista completa de empleados activos con sus datos basicos."
+          description="Obtener la lista completa de empleados activos con sus datos básicos."
           code={`const { data: employees, error } = await timeboxing
   .from('employees')
   .select('id, name, email, role, default_weekly_capacity, work_schedule, is_active')
@@ -48,7 +48,7 @@ export function TutorialSyncTeam() {
         <TutorialStep
           step={2}
           title="Crear un nuevo empleado"
-          description="Anade un miembro al equipo. Los campos obligatorios son: name, role, default_weekly_capacity, work_schedule y agency_id. El agency_id lo puedes copiar desde API & Integraciones (Datos de conexion)."
+          description="Añade un miembro al equipo. Los campos obligatorios son: name, role, default_weekly_capacity, work_schedule y agency_id. El agency_id lo puedes copiar desde API & Integraciones (Datos de conexión)."
           code={`const { data: newEmployee, error } = await timeboxing
   .from('employees')
   .insert({
@@ -76,7 +76,7 @@ if (error) {
         <TutorialStep
           step={3}
           title="Actualizar horario laboral"
-          description="Modifica las horas semanales de un empleado existente. Util para reflejar cambios de jornada."
+          description="Modifica las horas semanales de un empleado existente. Útil para reflejar cambios de jornada."
           code={`const { data, error } = await timeboxing
   .from('employees')
   .update({
@@ -101,8 +101,8 @@ if (error) {
   .update({ is_active: false })
   .eq('id', employeeId)
 
-// El empleado ya no aparecera en planificacion ni vistas activas`}
-          note="Los empleados inactivos mantienen sus asignaciones historicas. No uses DELETE a menos que quieras eliminar todo rastro."
+// El empleado ya no aparecerá en planificación ni vistas activas`}
+          note="Los empleados inactivos mantienen sus asignaciones históricas. No uses DELETE a menos que quieras eliminar todo rastro."
         />
       </div>
 

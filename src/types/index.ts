@@ -96,6 +96,8 @@ export interface AgencySettings {
     googleAdsCustomerId?: string;
     googleAdsDevToken?: string;
     googleRefreshToken?: string;
+    googleClientId?: string;
+    googleClientSecret?: string;
   };
   enabledIntegrations?: {
     weekly_feedback?: boolean;       // Sistema de cierre semanal (Weekly Reports)

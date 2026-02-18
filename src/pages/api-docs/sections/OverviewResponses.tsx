@@ -11,7 +11,7 @@ export function OverviewResponses() {
         Respuestas y errores
       </SectionHeading>
       <p className="text-indigo-100/85 mb-4">
-        Todas las respuestas son JSON. La API devuelve codigos HTTP estandar y errores
+        Todas las respuestas son JSON. La API devuelve códigos HTTP estándar y errores
         estructurados. Siempre verifica el campo{' '}
         <code className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-xs text-indigo-200">
           error
@@ -34,7 +34,7 @@ export function OverviewResponses() {
           {
             title: 'GET lista',
             status: '200',
-            desc: 'Devuelve un array JSON de objetos. Puede estar vacio si no hay resultados o si RLS no permite ver ninguna fila (mismo 200, no se distingue por seguridad).',
+            desc: 'Devuelve un array JSON de objetos. Puede estar vacío si no hay resultados o si RLS no permite ver ninguna fila (mismo 200, no se distingue por seguridad).',
           },
           {
             title: 'GET/POST/PATCH uno',
@@ -62,19 +62,19 @@ export function OverviewResponses() {
         ))}
       </div>
 
-      <h3 className="text-white font-semibold mb-3">Codigos de estado</h3>
+      <h3 className="text-white font-semibold mb-3">Códigos de estado</h3>
       <div className="overflow-x-auto mb-6">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-white/15">
               <th className="text-left py-2.5 px-3 text-indigo-300 font-semibold text-xs w-20">
-                Codigo
+                Código
               </th>
               <th className="text-left py-2.5 px-3 text-indigo-300 font-semibold text-xs w-32">
                 Estado
               </th>
               <th className="text-left py-2.5 px-3 text-indigo-300 font-semibold text-xs">
-                Descripcion
+                Descripción
               </th>
             </tr>
           </thead>
@@ -118,7 +118,7 @@ export function OverviewResponses() {
 }`}</CodeBlock>
 
       <div className="mt-6" />
-      <h3 className="text-white font-semibold mb-3">Patron recomendado (SDK)</h3>
+      <h3 className="text-white font-semibold mb-3">Patrón recomendado (SDK)</h3>
       <CodeBlock lang="typescript">{`const { data, error } = await timeboxing
   .from('allocations')
   .insert({ /* ... */ })

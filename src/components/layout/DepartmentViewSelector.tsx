@@ -40,7 +40,7 @@ export function DepartmentViewSelector({ inline }: DepartmentViewSelectorProps) 
             variant="ghost"
             size="sm"
             className={cn(
-              "justify-between text-left h-auto hover:bg-slate-800 text-slate-300",
+              "justify-between text-left h-auto hover:bg-slate-800 hover:text-white text-slate-300",
               inline ? "py-1 px-1.5 text-[11px] w-auto min-w-0" : "w-full py-1.5 px-2 text-xs"
             )}
           >

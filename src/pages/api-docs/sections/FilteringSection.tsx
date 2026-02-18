@@ -20,7 +20,7 @@ export function FilteringSection() {
   return (
     <section>
       <SectionHeading id="filtering" icon={Filter} className="mb-6">
-        Filtrado, paginacion y ordenacion
+        Filtrado, paginación y ordenación
       </SectionHeading>
       <div className="space-y-6">
         <div>
@@ -32,7 +32,7 @@ export function FilteringSection() {
                   <th className="text-left py-2 px-3 text-indigo-300 font-semibold text-xs">Operador</th>
                   <th className="text-left py-2 px-3 text-indigo-300 font-semibold text-xs">SDK</th>
                   <th className="text-left py-2 px-3 text-indigo-300 font-semibold text-xs">HTTP</th>
-                  <th className="text-left py-2 px-3 text-indigo-300 font-semibold text-xs">Descripcion</th>
+                  <th className="text-left py-2 px-3 text-indigo-300 font-semibold text-xs">Descripción</th>
                 </tr>
               </thead>
               <tbody className="font-mono text-xs">
@@ -49,7 +49,7 @@ export function FilteringSection() {
           </div>
         </div>
         <div>
-          <h3 className="text-white font-semibold mb-3">Paginacion</h3>
+          <h3 className="text-white font-semibold mb-3">Paginación</h3>
           <CodeBlock lang="typescript">{`// SDK: limit + offset (mas range)
 const { data } = await timeboxing
   .from('allocations')
@@ -60,7 +60,7 @@ const { data } = await timeboxing
 // Range: 0-24`}</CodeBlock>
         </div>
         <div>
-          <h3 className="text-white font-semibold mb-3">Ordenacion</h3>
+          <h3 className="text-white font-semibold mb-3">Ordenación</h3>
           <CodeBlock lang="typescript">{`// SDK
 const { data } = await timeboxing
   .from('employees')

@@ -9,8 +9,8 @@ export function TutorialQuickStart() {
         Primeros pasos
       </SectionHeading>
       <p className="text-indigo-100/85 mb-6">
-        En menos de 5 minutos tendras tu primera peticion funcionando. Este tutorial cubre: obtener
-        un token, configurar el cliente y verificar la conexion.
+        En menos de 5 minutos tendrás tu primera petición funcionando. Este tutorial cubre: obtener
+        un token, configurar el cliente y verificar la conexión.
       </p>
 
       <div className="mb-4 p-4 rounded-lg bg-white/[0.03] border border-white/5">
@@ -25,8 +25,8 @@ export function TutorialQuickStart() {
         <TutorialStep
           step={1}
           title="Genera tu token API"
-          description="Accede a Configuracion > API & Integraciones en Timeboxing y crea un nuevo token. Dale un nombre descriptivo como 'Mi integracion' y selecciona permisos de lectura."
-          note="El token solo se muestra una vez. Copialo y guardalo en un lugar seguro (ej: variable de entorno)."
+          description="Accede a Configuración > API & Integraciones en Timeboxing y crea un nuevo token. Dale un nombre descriptivo como 'Mi integración' y selecciona permisos de lectura."
+          note="El token solo se muestra una vez. Cópialo y guárdalo en un lugar seguro (ej: variable de entorno)."
         />
         <TutorialStep
           step={2}
@@ -38,7 +38,7 @@ export function TutorialQuickStart() {
         <TutorialStep
           step={3}
           title="Configura el cliente"
-          description="Crea un archivo de configuracion con tus credenciales. Nunca hardcodees tokens en el codigo fuente."
+          description="Crea un archivo de configuración con tus credenciales. Nunca hardcodees tokens en el código fuente."
           code={`import { createClient } from '@supabase/supabase-js'
 
 const timeboxing = createClient(
@@ -50,7 +50,7 @@ const timeboxing = createClient(
     }
   }
 )`}
-          note="Si usas solo HTTP (cURL, Postman, Python requests, etc.), no necesitas este paso: usa la URL base y los headers apikey y Authorization en cada peticion. Puedes ir al paso 5 para ver un ejemplo con cURL."
+          note="Si usas solo HTTP (cURL, Postman, Python requests, etc.), no necesitas este paso: usa la URL base y los headers apikey y Authorization en cada petición. Puedes ir al paso 5 para ver un ejemplo con cURL."
         />
         <TutorialStep
           step={4}
@@ -68,12 +68,12 @@ if (error) {
   console.log('Conexion exitosa! Empleados:', data)
   // [{ id: "...", name: "Ana Garcia", role: "Disenador" }, ...]
 }`}
-          note="Si recibes un error 401, verifica que la ANON_KEY y el API_TOKEN sean correctos. Si recibes un array vacio, es posible que no haya empleados activos en tu agencia."
+          note="Si recibes un error 401, verifica que la ANON_KEY y el API_TOKEN sean correctos. Si recibes un array vacío, es posible que no haya empleados activos en tu agencia."
         />
         <TutorialStep
           step={5}
-          title="Tambien funciona con cURL"
-          description="Si no usas JavaScript, puedes verificar la conexion con una peticion HTTP directa."
+          title="También funciona con cURL"
+          description="Si no usas JavaScript, puedes verificar la conexión con una petición HTTP directa."
           code={`curl -s \\
   'http://supabase.peypons.duckdns.org/rest/v1/employees?is_active=eq.true&limit=5&select=id,name,role' \\
   -H 'apikey: TU_ANON_KEY' \\

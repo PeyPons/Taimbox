@@ -6,11 +6,11 @@ export function TutorialPlanning() {
   return (
     <section>
       <SectionHeading id="tutorial-planning" icon={CalendarDays} className="mb-2">
-        Automatizar planificacion
+        Automatizar planificación
       </SectionHeading>
       <p className="text-indigo-100/85 mb-6">
         Crea y gestiona asignaciones de tareas semanales programaticamente. Ideal para
-        pre-planificar sprints o distribuir horas automaticamente.
+        pre-planificar sprints o distribuir horas automáticamente.
       </p>
 
       <div className="space-y-0">
@@ -51,12 +51,12 @@ export function TutorialPlanning() {
 if (!error) {
   console.log('Tarea creada:', allocation.id)
 }`}
-          note="Si week_start_date no es un lunes, la asignacion se creara igualmente pero puede causar inconsistencias en el planificador visual."
+          note="Si week_start_date no es un lunes, la asignación se creará igualmente pero puede causar inconsistencias en el planificador visual."
         />
         <TutorialStep
           step={3}
           title="Distribuir horas entre semanas"
-          description="Crea multiples asignaciones en batch para distribuir un presupuesto mensual."
+          description="Crea múltiples asignaciones en batch para distribuir un presupuesto mensual."
           code={`const weeks = ['2026-03-02', '2026-03-09', '2026-03-16', '2026-03-23']
 const hoursPerWeek = 10
 
@@ -93,7 +93,7 @@ console.log(\`Creadas \${data?.length} asignaciones\`)`}
         <TutorialStep
           step={5}
           title="Configurar objetivos mensuales (deadlines)"
-          description="Define cuantas horas debe dedicar cada empleado a un proyecto en un mes."
+          description="Define cuántas horas debe dedicar cada empleado a un proyecto en un mes."
           code={`const { data: deadline } = await timeboxing
   .from('deadlines')
   .upsert({

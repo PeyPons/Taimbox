@@ -10,7 +10,7 @@ export function TutorialAbsences() {
       </SectionHeading>
       <p className="text-indigo-100/85 mb-6">
         Registra vacaciones, bajas y eventos del equipo para que la capacidad disponible se ajuste
-        automaticamente en la planificacion.
+        automáticamente en la planificación.
       </p>
 
       <div className="space-y-0">
@@ -30,7 +30,7 @@ export function TutorialAbsences() {
         <TutorialStep
           step={2}
           title="Crear una ausencia (vacaciones)"
-          description="Registra un periodo de vacaciones. La capacidad del empleado se reducira automaticamente en el planificador."
+          description="Registra un periodo de vacaciones. La capacidad del empleado se reducirá automáticamente en el planificador."
           code={`const { data: absence, error } = await timeboxing
   .from('absences')
   .insert({
@@ -45,14 +45,14 @@ export function TutorialAbsences() {
 
 if (!error) {
   console.log('Ausencia registrada:', absence.id)
-  // La capacidad de esa semana se reducira automaticamente
+  // La capacidad de esa semana se reducirá automáticamente
 }`}
           note="Tipos comunes: 'vacaciones', 'baja', 'permiso', 'formacion'. Puedes usar cualquier texto."
         />
         <TutorialStep
           step={3}
           title="Ausencia parcial (medio dia)"
-          description="Para ausencias que no cubren el dia completo, usa el campo hours."
+          description="Para ausencias que no cubren el día completo, usa el campo hours."
           code={`const { data } = await timeboxing
   .from('absences')
   .insert({
@@ -61,7 +61,7 @@ if (!error) {
     end_date: '2026-03-15',
     type: 'permiso',
     hours: 4,
-    description: 'Cita medica por la manana'
+    description: 'Cita médica por la mañana'
   })
   .select()
   .single()
@@ -71,7 +71,7 @@ if (!error) {
         <TutorialStep
           step={4}
           title="Crear un evento de equipo (festivo)"
-          description="Los eventos afectan a multiples empleados. Ideal para festivos o formaciones grupales."
+          description="Los eventos afectan a múltiples empleados. Ideal para festivos o formaciones grupales."
           code={`// Primero obtener IDs de empleados afectados
 const { data: employees } = await timeboxing
   .from('employees')
@@ -125,7 +125,7 @@ const eventHours = events?.reduce((s, e) => s + e.hours_reduction, 0) || 0
 const effectiveCapacity = Math.max(0, baseCapacity - Math.max(absenceHours, eventHours))
 
 console.log(\`Capacidad real: \${effectiveCapacity}h / \${baseCapacity}h\`)`}
-          note="Timeboxing usa Max(ausencia, evento) por dia para evitar doble contabilidad. Este ejemplo simplifica el calculo; la app usa un algoritmo diario mas preciso."
+          note="Timeboxing usa Max(ausencia, evento) por día para evitar doble contabilidad. Este ejemplo simplifica el cálculo; la app usa un algoritmo diario más preciso."
         />
       </div>
 

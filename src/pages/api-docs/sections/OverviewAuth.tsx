@@ -8,7 +8,7 @@ export function OverviewAuth() {
   return (
     <section>
       <SectionHeading id="auth" icon={Key} className="mb-6">
-        Autenticacion y seguridad
+        Autenticación y seguridad
       </SectionHeading>
       <p className="text-indigo-100/85 mb-6">
         Para usar la API necesitas dos valores en los headers de cada peticion:
@@ -59,13 +59,13 @@ export function OverviewAuth() {
         </Card>
       </div>
 
-      <h3 className="text-white font-semibold mb-3">Como obtener un token</h3>
+      <h3 className="text-white font-semibold mb-3">Cómo obtener un token</h3>
       <div className="mb-6 space-y-3">
         {[
           'Inicia sesion en Timeboxing como administrador de tu agencia.',
-          'Ve a Configuracion \u2192 API & Integraciones en el menu lateral.',
+          'Ve a Configuración \u2192 API & Integraciones en el menú lateral.',
           'Haz clic en Crear token, asigna un nombre descriptivo y elige los permisos (solo lectura o lectura/escritura). Los tokens de solo lectura devuelven 403 en POST, PATCH y DELETE.',
-          'Copia el token JWT que se muestra. Solo se muestra una vez; guardalo en un lugar seguro.',
+          'Copia el token JWT que se muestra. Solo se muestra una vez; guárdalo en un lugar seguro.',
         ].map((text, i) => (
           <div
             key={i}
@@ -86,13 +86,13 @@ export function OverviewAuth() {
   -H 'Authorization: Bearer <TU_API_TOKEN>' \\
   -H 'Content-Type: application/json'`}</CodeBlock>
 
-      <h3 className="text-white font-semibold mt-8 mb-4">Buenas practicas de seguridad</h3>
+      <h3 className="text-white font-semibold mt-8 mb-4">Buenas prácticas de seguridad</h3>
       <div className="grid sm:grid-cols-2 gap-3 mb-6">
         {[
           {
             icon: Eye,
             title: 'No expongas tokens',
-            text: 'Nunca incluyas tokens en repositorios publicos, logs o codigo frontend accesible.',
+            text: 'Nunca incluyas tokens en repositorios públicos, logs o código frontend accesible.',
           },
           {
             icon: RefreshCw,
@@ -101,13 +101,13 @@ export function OverviewAuth() {
           },
           {
             icon: Shield,
-            title: 'Permisos minimos',
+            title: 'Permisos mínimos',
             text: 'Crea tokens con solo los permisos necesarios. Usa solo lectura si no necesitas escribir.',
           },
           {
             icon: Clock,
             title: 'Usa expiracion',
-            text: 'Al crear un token puedes definir dias de expiracion. Los tokens sin expirar son mas riesgosos.',
+            text: 'Al crear un token puedes definir días de expiración. Los tokens sin expirar son más riesgosos.',
           },
         ].map(({ icon: Icon, title, text }) => (
           <div
@@ -129,10 +129,10 @@ export function OverviewAuth() {
             <Shield className="h-4 w-4 text-indigo-400 mt-0.5 shrink-0" />
             <div className="text-sm text-indigo-100/90">
               <strong className="text-indigo-300">Row Level Security (RLS):</strong> Las
-              politicas RLS de la base de datos garantizan que solo puedes acceder a datos de tu
+              políticas RLS de la base de datos garantizan que solo puedes acceder a datos de tu
               agencia. El token JWT contiene el{' '}
               <code className="px-1 rounded bg-white/10 font-mono text-xs">agency_id</code> y
-              PostgREST lo verifica automaticamente.
+              PostgREST lo verifica automáticamente.
             </div>
           </div>
         </div>
@@ -141,8 +141,8 @@ export function OverviewAuth() {
             <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
             <div className="text-sm text-amber-100/90">
               <strong className="text-amber-300">Rate limiting:</strong> Actualmente no hay
-              limites estrictos de tasa, pero se recomienda no superar 100 peticiones/minuto. En
-              futuras versiones se podrian implementar limites formales.
+              límites estrictos de tasa, pero se recomienda no superar 100 peticiones/minuto. En
+              futuras versiones se podrían implementar límites formales.
             </div>
           </div>
         </div>

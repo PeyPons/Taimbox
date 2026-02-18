@@ -40,7 +40,8 @@ const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 export default function WeeklyForecastPage() {
   const {
     projects, allocations, employees, clients, weeklyFeedback,
-    addAllocation, updateAllocation, currentUser, absences, teamEvents, getEmployeeLoadForWeek
+    addAllocation, updateAllocation, currentUser, absences, teamEvents, getEmployeeLoadForWeek,
+    ensureMonthLoaded, isLoading: isGlobalLoading
   } = useApp();
   const { currentAgency } = useAgency();
   const { selectedDepartmentId } = useDepartmentView();
@@ -92,6 +93,13 @@ export default function WeeklyForecastPage() {
 
   const [dbTransfers, setDbTransfers] = useState<any[]>([]);
   const [monthDeadlines, setMonthDeadlines] = useState<Deadline[]>([]);
+
+  // Cargar datos del mes cuando cambia (igual que EmployeeDashboard)
+  useEffect(() => {
+    if (!isGlobalLoading) {
+      ensureMonthLoaded(currentMonth);
+    }
+  }, [currentMonth, isGlobalLoading, ensureMonthLoaded]);
 
   // Cargar transferencias de la nueva tabla (BD)
   useEffect(() => {

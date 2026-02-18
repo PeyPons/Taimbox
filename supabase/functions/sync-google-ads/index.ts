@@ -244,10 +244,10 @@ Deno.serve(async (req) => {
         async function processAgency(agency: any) {
             const integrations = agency.settings?.integrations || {};
 
-            // Env vars fallback handled inside Deno.env (MUST be set in Function Secrets or Docker .env)
-            const clientId = getSecret('GOOGLE_CLIENT_ID');
-            const clientSecret = getSecret('GOOGLE_CLIENT_SECRET');
-            const developerToken = getSecret('GOOGLE_DEVELOPER_TOKEN') || integrations.googleAdsDevToken;
+            // Credenciales por agencia (desde settings.integrations) con fallback a env vars globales
+            const clientId = integrations.googleClientId || getSecret('GOOGLE_CLIENT_ID');
+            const clientSecret = integrations.googleClientSecret || getSecret('GOOGLE_CLIENT_SECRET');
+            const developerToken = integrations.googleAdsDevToken || getSecret('GOOGLE_DEVELOPER_TOKEN');
             const globalRefreshToken = getSecret('GOOGLE_REFRESH_TOKEN');
             const globalMccId = getSecret('GOOGLE_MCC_ID');
 

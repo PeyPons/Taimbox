@@ -9,8 +9,8 @@ export function SdkSection() {
         SDK JavaScript (opcional)
       </SectionHeading>
       <p className="text-indigo-100/85 mb-4">
-        Puedes integrar la API mediante peticiones HTTP estandar (ver seccion REST) o, si trabajas
-        con JavaScript/TypeScript, usar el SDK que simplifica las consultas con una sintaxis mas
+        Puedes integrar la API mediante peticiones HTTP estándar (ver sección REST) o, si trabajas
+        con JavaScript/TypeScript, usar el SDK que simplifica las consultas con una sintaxis más
         legible.
       </p>
       <CodeBlock lang="bash">{`npm install @supabase/supabase-js`}</CodeBlock>
@@ -51,7 +51,7 @@ if (error) {
             <code className="px-1 rounded bg-white/10 font-mono text-xs">agency_id</code> en
             cada consulta: tu token JWT contiene el{' '}
             <code className="px-1 rounded bg-white/10 font-mono text-xs">agency_id</code> de tu
-            agencia y las politicas RLS lo aplican automaticamente a nivel de base de datos.
+            agencia y las políticas RLS lo aplican automáticamente a nivel de base de datos.
           </p>
         </div>
       </div>

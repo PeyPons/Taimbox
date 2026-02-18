@@ -24,14 +24,14 @@ export function OverviewChangelog() {
         Changelog
       </SectionHeading>
       <p className="text-indigo-100/85 mb-6">
-        Historial de cambios en la API. Consulta esta seccion para conocer nuevas funcionalidades,
+        Historial de cambios en la API. Consulta esta sección para conocer nuevas funcionalidades,
         mejoras y posibles cambios que rompan compatibilidad.
       </p>
 
       {CHANGELOG_ENTRIES.length === 0 ? (
         <div className="p-6 rounded-lg bg-white/[0.03] border border-white/5 text-center">
           <p className="text-sm text-indigo-200/60">
-            No hay entradas en el changelog todavia. Los cambios se documentaran aqui.
+            No hay entradas en el changelog todavía. Los cambios se documentarán aquí.
           </p>
         </div>
       ) : (

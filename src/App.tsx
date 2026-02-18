@@ -35,6 +35,7 @@ import GuiaPage from "./pages/GuiaPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
 import { ModuleGuard } from "./components/auth/ModuleGuard";
 import { BrandingEffect } from "./components/layout/BrandingEffect";
+import { ScrollToTop } from "./components/ScrollToTop";
 
 // Loading fallback para páginas lazy
 const PageLoader = () => (
@@ -107,87 +108,88 @@ const App = () => (
       <AuthProvider>
         <AgencyProvider>
           <DepartmentViewProvider>
-          <AppProvider>
-            <GoalsProvider>
+            <AppProvider>
+              <GoalsProvider>
                 <NotificationProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
-                  <BrandingEffect />
-                  <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                    <Routes>
-                      {/* Página de inicio (Landing) */}
-                      <Route path="/" element={<LandingPage />} />
+                  <TooltipProvider>
+                    <Toaster />
+                    <Sonner />
+                    <BrandingEffect />
+                    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                      <ScrollToTop />
+                      <Routes>
+                        {/* Página de inicio (Landing) */}
+                        <Route path="/" element={<LandingPage />} />
 
-                      {/* Artículo: por qué Timeboxing (página pública) */}
-                      <Route path="/por-que-timeboxing" element={<ArticlePage />} />
+                        {/* Artículo: por qué Timeboxing (página pública) */}
+                        <Route path="/por-que-timeboxing" element={<ArticlePage />} />
 
-                      {/* Guía de funcionalidades (páginas públicas detalladas) */}
-                      <Route path="/guia" element={<GuiaPage />} />
-                      <Route path="/guia/:section" element={<GuiaPage />} />
+                        {/* Guía de funcionalidades (páginas públicas detalladas) */}
+                        <Route path="/guia" element={<GuiaPage />} />
+                        <Route path="/guia/:section" element={<GuiaPage />} />
 
-                      {/* Documentación API (pública) */}
-                      <Route path="/api-docs" element={<ApiDocsPage />} />
+                        {/* Documentación API (pública) */}
+                        <Route path="/api-docs" element={<ApiDocsPage />} />
 
-                      {/* Ruta pública Login */}
-                      <Route path="/login" element={<Login />} />
+                        {/* Ruta pública Login */}
+                        <Route path="/login" element={<Login />} />
 
-                      {/* Rutas Protegidas */}
-                      <Route element={<ProtectedRoute />}>
-                        {/* Onboarding Wizard (sin AppLayout) */}
-                        <Route path="/onboarding" element={<Suspense fallback={<PageLoader />}><OnboardingWizard /></Suspense>} />
+                        {/* Rutas Protegidas */}
+                        <Route element={<ProtectedRoute />}>
+                          {/* Onboarding Wizard (sin AppLayout) */}
+                          <Route path="/onboarding" element={<Suspense fallback={<PageLoader />}><OnboardingWizard /></Suspense>} />
 
-                        {/* Suspended: fuera de AppLayout, solo sesión */}
-                        <Route path="/suspended" element={<SuspendedPage />} />
+                          {/* Suspended: fuera de AppLayout, solo sesión */}
+                          <Route path="/suspended" element={<SuspendedPage />} />
 
-                        {/* Área admin: sin AgencyContext, solo platform_admin */}
-                        <Route path="/admin" element={<PlatformAdminRoute />}>
-                          <Route element={<AdminLayout />}>
-                            <Route index element={<Navigate to="/admin/agencies" replace />} />
-                            <Route path="agencies" element={<Suspense fallback={<PageLoader />}><AdminAgenciesPage /></Suspense>} />
-                            <Route path="admins" element={<Suspense fallback={<PageLoader />}><AdminAdminsPage /></Suspense>} />
-                            <Route path="support" element={<Suspense fallback={<PageLoader />}><AdminSupportPage /></Suspense>} />
-                            <Route path="metrics" element={<Suspense fallback={<PageLoader />}><AdminMetricsPage /></Suspense>} />
-                            <Route path="docs" element={<Suspense fallback={<PageLoader />}><AdminDocsPage /></Suspense>} />
+                          {/* Área admin: sin AgencyContext, solo platform_admin */}
+                          <Route path="/admin" element={<PlatformAdminRoute />}>
+                            <Route element={<AdminLayout />}>
+                              <Route index element={<Navigate to="/admin/agencies" replace />} />
+                              <Route path="agencies" element={<Suspense fallback={<PageLoader />}><AdminAgenciesPage /></Suspense>} />
+                              <Route path="admins" element={<Suspense fallback={<PageLoader />}><AdminAdminsPage /></Suspense>} />
+                              <Route path="support" element={<Suspense fallback={<PageLoader />}><AdminSupportPage /></Suspense>} />
+                              <Route path="metrics" element={<Suspense fallback={<PageLoader />}><AdminMetricsPage /></Suspense>} />
+                              <Route path="docs" element={<Suspense fallback={<PageLoader />}><AdminDocsPage /></Suspense>} />
+                            </Route>
+                          </Route>
+
+                          <Route element={<AppLayout />}>
+                            {/* Dashboard Personal */}
+                            <Route path="/dashboard" element={<EmployeeDashboard />} />
+
+                            {/* Resto de rutas protegidas por permisos - con Suspense para lazy loading */}
+                            <Route path="/planner" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/planner"><Index /></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/deadlines" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/deadlines"><ModuleGuard module="deadlines"><DeadlinesPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/team" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/team"><TeamPage /></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/team/pulse" element={<Suspense fallback={<PageLoader />}><TeamPulsePage /></Suspense>} />
+                            <Route path="/team-capacity" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/team-capacity"><TeamCapacityPage /></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/clients" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/clients"><ClientsAndProjectsPage /></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/projects" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/projects"><ClientsAndProjectsPage /></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/okrs" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/okrs"><OkrsPage /></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/reports" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/reports"><ReportsPage /></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/informes-clientes" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/informes-clientes"><ClientReportsPage /></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/settings" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><SettingsPage /></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/agency" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/agency"><AgencySettingsPage /></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/agencies" element={<Suspense fallback={<PageLoader />}><AgenciesPage /></Suspense>} />
+                            <Route path="/agencies/:id/manage" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><AgencyManagementPage /></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/ads"><ModuleGuard module="ppc"><AdsPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/meta-ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/meta-ads"><ModuleGuard module="ppc"><MetaAdsPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/weekly-forecast" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/weekly-forecast"><ModuleGuard module="weeklyFeedback"><WeeklyForecastPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/api-keys" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/api-keys"><ApiKeysPage /></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/soporte" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/soporte"><ContactSupportPage /></PermissionProtectedRoute></Suspense>} />
                           </Route>
                         </Route>
 
-                        <Route element={<AppLayout />}>
-                          {/* Dashboard Personal */}
-                          <Route path="/dashboard" element={<EmployeeDashboard />} />
+                        {/* 404 */}
+                        <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>} />
 
-                          {/* Resto de rutas protegidas por permisos - con Suspense para lazy loading */}
-                          <Route path="/planner" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/planner"><Index /></PermissionProtectedRoute></Suspense>} />
-                          <Route path="/deadlines" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/deadlines"><ModuleGuard module="deadlines"><DeadlinesPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
-                          <Route path="/team" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/team"><TeamPage /></PermissionProtectedRoute></Suspense>} />
-                          <Route path="/team/pulse" element={<Suspense fallback={<PageLoader />}><TeamPulsePage /></Suspense>} />
-                          <Route path="/team-capacity" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/team-capacity"><TeamCapacityPage /></PermissionProtectedRoute></Suspense>} />
-                          <Route path="/clients" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/clients"><ClientsAndProjectsPage /></PermissionProtectedRoute></Suspense>} />
-                          <Route path="/projects" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/projects"><ClientsAndProjectsPage /></PermissionProtectedRoute></Suspense>} />
-                          <Route path="/okrs" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/okrs"><OkrsPage /></PermissionProtectedRoute></Suspense>} />
-                          <Route path="/reports" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/reports"><ReportsPage /></PermissionProtectedRoute></Suspense>} />
-                          <Route path="/informes-clientes" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/informes-clientes"><ClientReportsPage /></PermissionProtectedRoute></Suspense>} />
-                          <Route path="/settings" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><SettingsPage /></PermissionProtectedRoute></Suspense>} />
-                          <Route path="/agency" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/agency"><AgencySettingsPage /></PermissionProtectedRoute></Suspense>} />
-                          <Route path="/agencies" element={<Suspense fallback={<PageLoader />}><AgenciesPage /></Suspense>} />
-                          <Route path="/agencies/:id/manage" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><AgencyManagementPage /></PermissionProtectedRoute></Suspense>} />
-                          <Route path="/ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/ads"><ModuleGuard module="ppc"><AdsPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
-                          <Route path="/meta-ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/meta-ads"><ModuleGuard module="ppc"><MetaAdsPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
-                          <Route path="/weekly-forecast" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/weekly-forecast"><ModuleGuard module="weeklyFeedback"><WeeklyForecastPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
-                          <Route path="/api-keys" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/api-keys"><ApiKeysPage /></PermissionProtectedRoute></Suspense>} />
-                          <Route path="/soporte" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/soporte"><ContactSupportPage /></PermissionProtectedRoute></Suspense>} />
-                        </Route>
-                      </Route>
-
-                      {/* 404 */}
-                      <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>} />
-
-                    </Routes>
-                  </BrowserRouter>
-                </TooltipProvider>
+                      </Routes>
+                    </BrowserRouter>
+                  </TooltipProvider>
                 </NotificationProvider>
               </GoalsProvider>
-          </AppProvider>
+            </AppProvider>
           </DepartmentViewProvider>
         </AgencyProvider>
       </AuthProvider>

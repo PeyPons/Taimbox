@@ -68,7 +68,7 @@ Gestiona la carga de la base de datos principal (`employees`, `projects`, `alloc
 #### Lógica de Carga y UPSERT (Anti-Stale)
 Cuando se cargan nuevos datos (ej. navegar a otro mes), NO reemplazamos todo. Hacemos un **merge inteligente**:
 ```typescript
-// Ejemplo simplificado de lógica de mergew
+// Ejemplo simplificado de lógica de merge
 setAllocations(prev => {
   const incomingMap = new Map(newAllocations.map(a => [a.id, a]));
   // 1. Actualizar existentes

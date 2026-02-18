@@ -10,7 +10,7 @@ export function RealtimeSection() {
       </SectionHeading>
       <p className="text-indigo-100/85 mb-4">
         Recibe cambios en tiempo real sin polling. Ideal para dashboards que se actualizan
-        automaticamente cuando alguien modifica una asignacion o crea una ausencia.
+        automáticamente cuando alguien modifica una asignación o crea una ausencia.
       </p>
       <CodeBlock lang="typescript">{`// Escuchar cambios en asignaciones de un proyecto (requiere SDK)
 const channel = timeboxing
@@ -37,7 +37,7 @@ timeboxing.removeChannel(channel)`}</CodeBlock>
         <div className="flex items-start gap-2">
           <Zap className="h-4 w-4 text-indigo-400 mt-0.5 shrink-0" />
           <p className="text-sm text-indigo-100/90">
-            <strong className="text-indigo-300">Nota:</strong> Realtime esta habilitado en las
+            <strong className="text-indigo-300">Nota:</strong> Realtime está habilitado en las
             tablas principales (allocations, employees, projects). Si necesitas suscripciones en
             otras tablas, contacta con nuestro equipo.
           </p>
