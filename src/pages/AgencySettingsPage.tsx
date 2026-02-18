@@ -1609,7 +1609,7 @@ export default function AgencySettingsPage() {
                       <div className="space-y-3 flex flex-col justify-center">
                         <Label>Conexión con Google Ads</Label>
                         {(currentAgency?.google_ads_refresh_token || integrations.googleRefreshToken) ? (
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-2">
                             <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">✅ Vinculado</Badge>
                             <Button
                               variant="outline"
@@ -1627,6 +1627,32 @@ export default function AgencySettingsPage() {
                               }}
                             >
                               Re-vincular
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-slate-500 hover:text-red-600"
+                              onClick={async () => {
+                                if (!currentAgency?.id) return;
+                                try {
+                                  const { error } = await supabase
+                                    .from('agencies')
+                                    .update({
+                                      google_ads_refresh_token: null,
+                                      google_ads_customer_id: null,
+                                      updated_at: new Date().toISOString()
+                                    })
+                                    .eq('id', currentAgency.id);
+                                  if (error) throw error;
+                                  setIntegrations(prev => ({ ...prev, googleRefreshToken: undefined, googleAdsCustomerId: '' }));
+                                  await refreshAgency();
+                                  toast.success('Cuenta de Google Ads desvinculada');
+                                } catch (e: any) {
+                                  toast.error(e?.message || 'Error al desvincular');
+                                }
+                              }}
+                            >
+                              Desvincular
                             </Button>
                           </div>
                         ) : (
