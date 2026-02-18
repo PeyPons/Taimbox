@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
         // 4. Lógica de Negocio (Ported from ads-worker.js)
 
         // --- HELPERS ---
-        const API_VERSION = 'v15'; // Google Ads API Version
+        const API_VERSION = 'v22'; // Google Ads API Version
 
         function getDateRange() {
             const now = new Date();

@@ -94,8 +94,8 @@ Deno.serve(async (req) => {
         const accessToken = tokenData.access_token
 
         // 4. Listar clientes accesibles
-        // https://developers.google.com/google-ads/api/rest/custom/customer/listAccessibleCustomers
-        const listResponse = await fetch(`https://googleads.googleapis.com/v17/customers:listAccessibleCustomers`, {
+        // USANDO API v23
+        const listResponse = await fetch(`https://googleads.googleapis.com/v23/customers:listAccessibleCustomers`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
@@ -103,7 +103,15 @@ Deno.serve(async (req) => {
             }
         })
 
-        const listData = await listResponse.json()
+        const listResponseText = await listResponse.text()
+        let listData
+        try {
+            listData = JSON.parse(listResponseText)
+        } catch (e) {
+            console.error('[list-google-accounts] Error parsing list response:', listResponseText)
+            throw new Error(`Error API Google Ads: ${listResponse.status}`)
+        }
+
         if (listData.error) {
             throw new Error(`Error de Google Ads API: ${listData.error.message}`)
         }
