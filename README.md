@@ -275,11 +275,12 @@ Todas las páginas principales de la aplicación.
 ### Configuración
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
-| `AgencySettingsPage.tsx` | 60KB+ | Configuración de agencia por secciones: General, Equipo (roles), **Departamentos** (nombre + color por área), Proyectos (filtros/aliasing), Módulos, Integraciones, Apariencia. Navegación lateral. |
+| `AgencySettingsPage.tsx` | 60KB+ | Configuración de agencia por secciones: General, Equipo (roles), **Departamentos** (nombre + color por área), Proyectos (filtros/aliasing), Módulos, Integraciones (Google Ads OAuth + Meta Ads), Apariencia. Navegación lateral. |
 | `SettingsPage.tsx` | 6KB | Preferencias de usuario |
 | `AgenciesPage.tsx` | 8KB | Selector de agencias |
 | `AgencyManagementPage.tsx` | 19KB | Administración avanzada de agencia |
 | `ApiKeysPage.tsx` | ~15KB | Gestión de tokens API por agencia (crear, listar, revocar). Ruta `/api-keys`. |
+| `GoogleCallbackPage.tsx` | ~2KB | Página de transición OAuth. Captura `?code=` de Google, invoca `exchange-google-token`, redirige a `/agency`. Sin AppLayout. |
 
 ### Área administrativa (solo plataforma)
 | Página / Ruta | Descripción |

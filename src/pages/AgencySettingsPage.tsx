@@ -1529,15 +1529,17 @@ export default function AgencySettingsPage() {
                         <Label htmlFor="google-customer-id">MCC Customer ID</Label>
                         <Input
                           id="google-customer-id"
-                          value={integrations.googleAdsCustomerId || ''}
-                          onChange={(e) => setIntegrations(prev => ({ ...prev, googleAdsCustomerId: e.target.value }))}
+                          value={currentAgency?.google_ads_customer_id || integrations.googleAdsCustomerId || ''}
+                          onChange={(e) => {
+                            setIntegrations(prev => ({ ...prev, googleAdsCustomerId: e.target.value }));
+                          }}
                           placeholder="Ej: 9810132048"
                         />
                         <p className="text-xs text-slate-500">El ID de tu cuenta MCC de Google Ads (sin guiones).</p>
                       </div>
                       <div className="space-y-3 flex flex-col justify-center">
                         <Label>Conexión con Google Ads</Label>
-                        {integrations.googleRefreshToken ? (
+                        {(currentAgency?.google_ads_refresh_token || integrations.googleRefreshToken) ? (
                           <div className="flex items-center gap-3">
                             <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">✅ Vinculado</Badge>
                             <Button

@@ -39,8 +39,9 @@ export default function GoogleCallbackPage() {
             }
 
             try {
-                const { data, error: fnError } = await supabase.functions.invoke('exchange-google-token', {
-                    body: { code, agency_id: currentAgency.id },
+                const redirectUri = window.location.origin + '/google-callback';
+                const { data, error: fnError } = await supabase.functions.invoke('oauth-google-ads', {
+                    body: { code, redirect_uri: redirectUri, agency_id: currentAgency.id },
                 });
 
                 if (fnError) throw fnError;

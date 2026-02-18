@@ -125,6 +125,8 @@ export interface Agency {
   status?: AgencyStatus;
   createdAt?: string;
   updatedAt?: string;
+  google_ads_refresh_token?: string;
+  google_ads_customer_id?: string;
 }
 
 // ============================================

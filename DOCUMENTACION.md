@@ -219,7 +219,123 @@ El sistema sincroniza datos de Google Ads y Meta Ads mediante procesos externos.
 - **Unidad de Medida**: Google Ads entrega el coste en `micros` (millonésimas de moneda), el worker lo convierte dividiendo por `1,000,000` antes de guardarlo.
 - **Sincronización**: Utilizan `Supabase Realtime` para reaccionar a cambios en la tabla de configuración y ejecutar sincronizaciones bajo demanda.
 
----
+### 5.2. Edge Functions (Supabase)
+
+Funciones serverless que corren en Deno dentro del contenedor `supabase-edge-functions`.
+
+#### Inventario de funciones
+
+| Función | Archivo | Descripción |
+|---------|---------|-------------|
+| `sync-google-ads` | `supabase/functions/sync-google-ads/index.ts` | Sincroniza campañas. Usa credenciales plataforma (env vars) + refresh token (DB/JSON). |
+| `oauth-google-ads` | `supabase/functions/oauth-google-ads/index.ts` | **(Nuevo)** Intercambia código OAuth y guarda `refresh_token` en columna de agencia. |
+| `exchange-google-token` | `supabase/functions/exchange-google-token/index.ts` | *(Legacy)* Versión anterior que guardaba en JSON. |
+| `sync-meta-ads` | `supabase/functions/sync-meta-ads/index.ts` | Sincroniza campañas y costes de Meta/Facebook Ads. |
+| `generate-api-token` | `supabase/functions/generate-api-token/index.ts` | Genera JWT con claim `agency_id` para acceso API. |
+| `revoke-api-token` | `supabase/functions/revoke-api-token/index.ts` | Revoca un token API (marca `is_active = false`). |
+| `create-user` | `supabase/functions/create-user/index.ts` | Crea usuario en Auth + `employees`. |
+| `update-user` | `supabase/functions/update-user/index.ts` | Actualiza usuario en Auth. |
+| `delete-user` | `supabase/functions/delete-user/index.ts` | Elimina usuario de Auth. |
+| `invite-user-to-agency` | `supabase/functions/invite-user-to-agency/index.ts` | Invita a un usuario existente a una agencia. |
+| `register-agency` | `supabase/functions/register-agency/index.ts` | Registra una nueva agencia (onboarding). |
+| `add-platform-admin` | `supabase/functions/add-platform-admin/index.ts` | Añade un usuario como admin de plataforma. |
+
+#### Arquitectura Google Ads OAuth (Modelo SaaS)
+
+El flujo de Google Ads sigue un modelo SaaS donde la plataforma posee las credenciales OAuth y cada agencia solo autoriza su cuenta:
+
+| Credencial | Origen | Quién la gestiona |
+|---|---|---|
+| `GOOGLE_CLIENT_ID` | Variable de entorno (servidor + frontend) | **Plataforma** |
+| `GOOGLE_CLIENT_SECRET` | Variable de entorno (servidor) | **Plataforma** |
+| `GOOGLE_DEVELOPER_TOKEN` | Variable de entorno (servidor) | **Plataforma** |
+| `agencies.google_ads_refresh_token` | Columna en BD (obtenido vía OAuth) | **Automático** |
+| `agencies.google_ads_customer_id` | Columna en BD (MCC ID) | **Cliente** (en Ajustes → Integraciones) |
+
+**Flujo OAuth completo:**
+1. Cliente entra en Configuración → Integraciones → Google Ads.
+2. Introduce el MCC Customer ID y hace clic en "Conectar con Google".
+3. El frontend redirige a Google con `VITE_GOOGLE_CLIENT_ID` → pantalla de consentimiento.
+4. Google redirige a `/google-callback?code=...` → `GoogleCallbackPage.tsx` captura el código.
+5. El frontend invoca `oauth-google-ads` con `{ code, redirect_uri, agency_id }`.
+6. La Edge Function intercambia el código por tokens usando `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`.
+7. Guarda el `refresh_token` en la columna `agencies.google_ads_refresh_token`.
+8. `sync-google-ads` usa `GOOGLE_DEVELOPER_TOKEN` + credenciales plataforma + `refresh_token` (columna) + `customer_id` (columna) para sincronizar.
+
+**URIs de redirección autorizadas en Google Cloud Console:**
+- `http://localhost:8080/google-callback` (desarrollo)
+- `https://timeboxing.peypons.duckdns.org/google-callback` (producción)
+
+#### Variables de entorno requeridas
+
+**En el contenedor `supabase-edge-functions`** (Docker):
+```
+SUPABASE_URL=http://kong:8000
+SUPABASE_SERVICE_ROLE_KEY=<service_role_key>
+GOOGLE_CLIENT_ID=<client_id>.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-<secret>
+GOOGLE_DEVELOPER_TOKEN=<developer_token>
+```
+
+**En el frontend** (`.env` de Vite):
+```
+VITE_GOOGLE_CLIENT_ID=<mismo_client_id>.apps.googleusercontent.com
+```
+
+#### Despliegue de Edge Functions (self-hosted)
+
+El entorno usa Supabase self-hosted con Docker. El contenedor `supabase-edge-functions` lee las funciones desde un volumen montado:
+
+```
+~/Timeboxing/supabase/functions/          ← código fuente (repo git)
+        ↓  cp
+~/supabase-pi/supabase/docker/volumes/functions/  ← volumen que lee el contenedor
+        ↓  docker restart
+supabase-edge-functions                   ← recarga el código
+```
+
+**Comandos para desplegar:**
+```bash
+# 1. Copiar todas las funciones al volumen
+cp -r ~/Timeboxing/supabase/functions/* ~/supabase-pi/supabase/docker/volumes/functions/
+
+# 2. Reiniciar el edge runtime
+docker restart supabase-edge-functions
+
+# 3. Verificar que arrancó
+docker logs supabase-edge-functions --tail 5
+```
+
+**Para una sola función (más rápido):**
+```bash
+cp -r ~/Timeboxing/supabase/functions/<nombre-funcion> \
+      ~/supabase-pi/supabase/docker/volumes/functions/ \
+   && docker restart supabase-edge-functions
+```
+
+**Verificar variables de entorno del contenedor:**
+```bash
+docker inspect supabase-edge-functions --format '{{range .Config.Env}}{{println .}}{{end}}' | grep GOOGLE
+```
+
+**Verificar logs:**
+```bash
+docker logs supabase-edge-functions --tail 50 -f
+```
+
+#### Crear una nueva Edge Function
+
+1. Crear carpeta en `supabase/functions/<nombre>/index.ts`.
+2. Seguir la estructura estándar (ver `exchange-google-token` como referencia):
+   - Import de Supabase: `import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'`
+   - Headers CORS
+   - `Deno.serve(async (req) => { ... })`
+   - Crear cliente Supabase con `SUPABASE_SERVICE_ROLE_KEY`
+3. Añadir la función al script `deploy-functions.sh`.
+4. Copiar al volumen de Docker y reiniciar `supabase-edge-functions`.
+5. La función estará accesible en `<SUPABASE_URL>/functions/v1/<nombre>`.
+
+> **⚠️ IMPORTANTE**: Los lints de VS Code sobre `Deno`, `esm.sh` y tipos implícitos `any` en archivos de Edge Functions son **esperados** — el IDE no tiene los tipos de Deno instalados. Estos errores no afectan al runtime en el servidor.
 
 ## 6. Glosario de Variables y Términos Técnicos
 

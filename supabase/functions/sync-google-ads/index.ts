@@ -240,27 +240,32 @@ Deno.serve(async (req) => {
         }
 
 
-        // --- MAIN PROCESS AGENCY ---
+        // --- MAIN PROCESS AGENCY (SAAS MODEL) ---
         async function processAgency(agency: any) {
             const integrations = agency.settings?.integrations || {};
 
-            // Credenciales GLOBALES de la plataforma (modelo SaaS)
+            // 1. CREDENCIALES DE LA PLATAFORMA (Timeboxing)
             const clientId = getSecret('GOOGLE_CLIENT_ID');
             const clientSecret = getSecret('GOOGLE_CLIENT_SECRET');
             const developerToken = getSecret('GOOGLE_DEVELOPER_TOKEN');
 
-            // Credenciales POR AGENCIA (obtenidas vía OAuth y configuración)
-            const refreshToken = integrations.googleRefreshToken;
-            const mccId = integrations.googleAdsCustomerId;
+            // 2. CREDENCIALES DEL CLIENTE (Agencia)
+            // Prioridad: Columna DB (nuevo OAuth) > Integrations JSON (legacy) > Env Global (testing)
+            const refreshToken = agency.google_ads_refresh_token || integrations.googleRefreshToken || getSecret('GOOGLE_REFRESH_TOKEN');
+            const loginCustomerId = agency.google_ads_customer_id || integrations.googleAdsCustomerId || getSecret('GOOGLE_MCC_ID');
 
-            if (!refreshToken || !mccId || !clientId || !clientSecret || !developerToken) {
-                await log(`ℹ️ Agencia ${agency.name} saltada: Faltan credenciales.`);
-                await log(`  [Plataforma] clientId: ${clientId ? '✅' : '❌'} | clientSecret: ${clientSecret ? '✅' : '❌'} | developerToken: ${developerToken ? '✅' : '❌'}`);
-                await log(`  [Agencia] refreshToken: ${refreshToken ? '✅' : '❌'} | mccId: ${mccId ? '✅' : '❌'}`);
+            // Validación
+            if (!clientId || !clientSecret || !developerToken) {
+                await log(`❌ Error Crítico: Faltan credenciales de PLATAFORMA (Client ID/Secret/DevToken) en variables de entorno.`);
                 return;
             }
 
-            await log(`🏢 Procesando ${agency.name} (MCC: ${mccId})...`);
+            if (!refreshToken) {
+                await log(`ℹ️ Agencia ${agency.name} saltada: No tiene Google Ads conectado (Falta Refresh Token).`);
+                return;
+            }
+
+            await log(`🏢 Procesando ${agency.name} (Modo SaaS)...`);
 
             try {
                 await log(`  ⏳ Refrescando token de acceso...`);
@@ -290,7 +295,7 @@ Deno.serve(async (req) => {
                 await log(`    ⏳ Consultando métricas para ${clients.length} cuentas...`);
 
                 for (const client of clients) {
-                    const campaigns = await fetchCampaigns(accessToken, client.account_id, clientSecret, clientId, developerToken, refreshToken, mccId);
+                    const campaigns = await fetchCampaigns(accessToken, client.account_id, clientSecret, clientId, developerToken, refreshToken, loginCustomerId);
 
                     if (campaigns.length > 0) {
                         const dateRange = getDateRange();
