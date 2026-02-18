@@ -52,6 +52,60 @@ import {
 } from "@/components/ui/select"
 import React from 'react';
 
+/** Selector de cuentas Google Ads: solo se monta cuando hay token, para no romper reglas de hooks al desvincular */
+function GoogleAdsAccountSelect({
+  agencyId,
+  value,
+  onValueChange,
+}: {
+  agencyId: string;
+  value: string;
+  onValueChange: (v: string) => void;
+}) {
+  const [accounts, setAccounts] = useState<{ id: string; resourceName: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchAccounts = async () => {
+      if (!agencyId) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const { data, err } = await supabase.functions.invoke('list-google-accounts', {
+          body: { agency_id: agencyId }
+        });
+        if (cancelled) return;
+        if (err) throw err;
+        if (data?.error) throw new Error(data.error);
+        setAccounts(data?.accounts ?? []);
+      } catch (e: unknown) {
+        if (cancelled) return;
+        console.error('Error fetching Google accounts:', e);
+        setError('Error cargando cuentas');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    fetchAccounts();
+    return () => { cancelled = true; };
+  }, [agencyId]);
+
+  if (loading) return <SelectItem value="__loading__" disabled>Cargando cuentas...</SelectItem>;
+  if (error) return <SelectItem value="__error__" disabled>{error}</SelectItem>;
+  if (accounts.length === 0) return <SelectItem value="__empty__" disabled>No se encontraron cuentas</SelectItem>;
+  return (
+    <>
+      {accounts.map(acc => (
+        <SelectItem key={acc.id} value={acc.id}>
+          {acc.resourceName} ({acc.id})
+        </SelectItem>
+      ))}
+    </>
+  );
+}
+
 export default function AgencySettingsPage() {
   const { currentAgency, refreshAgency, updateSettings, updateAgencyName, isLoading: isAgencyLoading } = useAgency();
   const { projects, clients } = useApp();
@@ -1535,69 +1589,37 @@ export default function AgencySettingsPage() {
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="google-customer-id">Cuenta de Google Ads</Label>
-                        {(currentAgency?.google_ads_refresh_token || integrations.googleRefreshToken) ? (
+                        {(currentAgency?.google_ads_refresh_token || integrations.googleRefreshToken) && currentAgency?.id ? (
                           <div className="space-y-2">
                             <Select
                               value={currentAgency?.google_ads_customer_id || integrations.googleAdsCustomerId || ''}
                               onValueChange={(value) => {
                                 setIntegrations(prev => ({ ...prev, googleAdsCustomerId: value }));
-                                // Guardar directamente el cambio de cuenta en la columna de la agencia
-                                if (currentAgency?.id) {
-                                  supabase.from('agencies')
-                                    .update({ google_ads_customer_id: value })
-                                    .eq('id', currentAgency.id)
-                                    .then(({ error }) => {
-                                      if (error) toast.error('Error guardando la cuenta seleccionada');
-                                      else toast.success('Cuenta de Google Ads actualizada');
-                                    });
-                                }
+                                supabase.from('agencies')
+                                  .update({ google_ads_customer_id: value })
+                                  .eq('id', currentAgency.id!)
+                                  .then(({ error }) => {
+                                    if (error) toast.error('Error guardando la cuenta seleccionada');
+                                    else toast.success('Cuenta de Google Ads actualizada');
+                                  });
                               }}
                             >
                               <SelectTrigger className="w-full bg-white">
                                 <SelectValue placeholder="Selecciona una cuenta..." />
                               </SelectTrigger>
                               <SelectContent>
-                                {(() => {
-                                  const [accounts, setAccounts] = React.useState<{ id: string, resourceName: string }[]>([]);
-                                  const [loading, setLoading] = React.useState(false);
-                                  const [error, setError] = React.useState<string | null>(null);
-
-                                  React.useEffect(() => {
-                                    const fetchAccounts = async () => {
-                                      if (!currentAgency?.id) return;
-                                      setLoading(true);
-                                      try {
-                                        const { data, error } = await supabase.functions.invoke('list-google-accounts', {
-                                          body: { agency_id: currentAgency.id }
-                                        });
-
-                                        if (error) throw error;
-                                        if (data.error) throw new Error(data.error);
-
-                                        setAccounts(data.accounts || []);
-                                      } catch (err: any) {
-                                        console.error('Error fetching Google accounts:', err);
-                                        setError('Error cargando cuentas');
-                                      } finally {
-                                        setLoading(false);
-                                      }
-                                    };
-                                    fetchAccounts();
-                                  }, [currentAgency?.id]);
-
-                                  if (loading) return <SelectItem value="loading" disabled>Cargando cuentas...</SelectItem>;
-                                  if (error) return <SelectItem value="error" disabled>{error}</SelectItem>;
-                                  if (accounts.length === 0) return <SelectItem value="empty" disabled>No se encontraron cuentas</SelectItem>;
-
-                                  return accounts.map(acc => (
-                                    <SelectItem key={acc.id} value={acc.id}>
-                                      {acc.resourceName} ({acc.id})
-                                    </SelectItem>
-                                  ));
-                                })()}
+                                <GoogleAdsAccountSelect
+                                  agencyId={currentAgency.id}
+                                  value={currentAgency.google_ads_customer_id || integrations.googleAdsCustomerId || ''}
+                                  onValueChange={(v) => setIntegrations(prev => ({ ...prev, googleAdsCustomerId: v }))}
+                                />
                               </SelectContent>
                             </Select>
                             <p className="text-xs text-slate-500">Selecciona la cuenta principal o MCC para sincronizar.</p>
+                          </div>
+                        ) : (currentAgency?.google_ads_refresh_token || integrations.googleRefreshToken) ? (
+                          <div className="p-3 border border-dashed rounded bg-slate-100 text-slate-500 text-sm text-center">
+                            Cargando...
                           </div>
                         ) : (
                           <div className="p-3 border border-dashed rounded bg-slate-100 text-slate-500 text-sm text-center">
