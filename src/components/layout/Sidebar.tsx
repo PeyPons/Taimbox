@@ -7,6 +7,7 @@ import { useAgency } from '@/contexts/AgencyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 import { AgencySelectorCompact } from '@/components/agencies/AgencySelectorCompact';
+import { DepartmentViewSelector } from '@/components/layout/DepartmentViewSelector';
 import {
   LayoutDashboard,
   Users,
@@ -333,6 +334,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               
               {/* Agency Selector Compacto - Al final del footer */}
               <AgencySelectorCompact />
+              {/* Selector de vista por departamento (Vista Global / Marketing / etc.) */}
+              <DepartmentViewSelector />
             </>
           ) : (
             <div className="px-2 flex items-center gap-3 opacity-50">

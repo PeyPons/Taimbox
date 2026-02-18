@@ -3,8 +3,8 @@ import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { SupportMessageEditor } from "@/components/support/SupportMessageEditor";
 import {
   Table,
   TableBody,
@@ -29,6 +29,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Loader2, MessageSquarePlus, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { SupportMessageContent } from "@/components/support/SupportMessageContent";
 
 interface SupportTicketRow {
   id: string;
@@ -85,6 +86,8 @@ export default function AdminSupportPage() {
   const [replies, setReplies] = useState<TicketReply[]>([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [replyMessage, setReplyMessage] = useState("");
+  const [createMessageKey, setCreateMessageKey] = useState(0);
+  const [replyKey, setReplyKey] = useState(0);
   const [replyIsInternal, setReplyIsInternal] = useState(true);
   const [addingReply, setAddingReply] = useState(false);
 
@@ -196,6 +199,7 @@ export default function AdminSupportPage() {
       if (error) throw error;
       toast.success(replyIsInternal ? "Comentario interno añadido" : "Respuesta enviada al usuario");
       setReplyMessage("");
+      setReplyKey((k) => k + 1);
       const { data } = await supabase.rpc("admin_list_support_ticket_replies", {
         p_ticket_id: selectedTicketId,
       });
@@ -246,6 +250,7 @@ export default function AdminSupportPage() {
       toast.success("Ticket creado");
       setCreateSubject("");
       setCreateMessage("");
+      setCreateMessageKey((k) => k + 1);
       setFormOpen(false);
       fetchTickets();
     } catch (e: unknown) {
@@ -320,11 +325,12 @@ export default function AdminSupportPage() {
             </div>
             <div>
               <label className="text-sm font-medium text-slate-700">Mensaje</label>
-              <Textarea
+              <SupportMessageEditor
+                key={createMessageKey}
                 value={createMessage}
-                onChange={(e) => setCreateMessage(e.target.value)}
+                onChange={setCreateMessage}
                 placeholder="Descripción o notas internas"
-                rows={4}
+                minHeight="120px"
                 className="mt-1"
               />
             </div>
@@ -479,7 +485,7 @@ export default function AdminSupportPage() {
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-400 mb-0.5">Mensaje inicial</p>
-                  <p className="text-slate-700 whitespace-pre-wrap text-sm">{ticketDetail.message}</p>
+                  <SupportMessageContent content={ticketDetail.message} />
                 </div>
                 <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-200">
                   <Select
@@ -542,19 +548,19 @@ export default function AdminSupportPage() {
                             </Badge>
                             <span className="text-xs text-slate-500">{formatDate(r.created_at)}</span>
                           </div>
-                          <p className="text-slate-700 whitespace-pre-wrap">{r.message}</p>
+                          <SupportMessageContent content={r.message} className="text-slate-700 text-sm" />
                         </div>
                       </li>
                     ))}
                   </ul>
                 )}
                 <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
-                  <Textarea
-                    placeholder={replyIsInternal ? "Nota interna (solo visible para admin)..." : "Respuesta visible para la agencia..."}
+                  <SupportMessageEditor
+                    key={replyKey}
                     value={replyMessage}
-                    onChange={(e) => setReplyMessage(e.target.value)}
-                    rows={3}
-                    className="resize-none border-slate-200"
+                    onChange={setReplyMessage}
+                    placeholder={replyIsInternal ? "Nota interna (solo visible para admin)…" : "Respuesta visible para la agencia…"}
+                    minHeight="100px"
                   />
                   <div className="flex flex-wrap items-center gap-3">
                     <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">

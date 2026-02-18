@@ -32,9 +32,9 @@ El archivo más importante para contratos de datos.
 |-----------|--------------|-------------|
 | **`Allocation`** | `id`, `employeeId`, `projectId`, `hoursAssigned`, `hoursActual`, `status` | **CORE**: Tarea asignada. Unidad atómica del calendario. |
 | **`Deadline`** | `projectId`, `month`, `employeeHours`, `budgetOverride` | Configuración mensual por proyecto (distribución y ajuste de budget). En multi-tenant se cargan filtrando por agencia vía join con `projects`. |
-| **`Employee`** | `id`, `defaultWeeklyCapacity`, `workSchedule`, `role` | Define capacidad y horario base. |
-| **`Project`** | `id`, `budgetHours`, `monthlyFee`, `status` (`active/archived/completed`) | Contenedor de asignaciones. |
-| **`AgencySettings`** | `roles`, `modules`, `integrations`, `projectAliasingRules` | Configuración multi-tenant. |
+| **`Employee`** | `id`, `defaultWeeklyCapacity`, `workSchedule`, `role`, `department` | Define capacidad y horario base. `department`: id del departamento principal (para filtrado por vista). |
+| **`Project`** | `id`, `budgetHours`, `monthlyFee`, `status`, `responsibleDepartmentId` | Contenedor de asignaciones. `responsibleDepartmentId` opcional para filtrado en reportes por departamento. |
+| **`AgencySettings`** | `roles`, `modules`, `departments`, `integrations`, `projectAliasingRules`, `planningPrecisionExclusions` | Configuración multi-tenant. `departments`: lista de áreas (id, nombre, color) para **Vistas por Departamento**. Exclusiones para precisión de planificación. |
 | **`RolePermissions`** | `name`, `is_system_role`, `permissions` | Rol con permisos configurables por agencia. |
 | **`ProjectAliasingRule`** | `displayPrefix`, `matchPatterns`, `virtualClientName` | Regla para renombrar proyectos (ej: Kit Digital → KD:). |
 | **`WorkSchedule`** | `monday`...`sunday` | Horas laborables por día (0-24). |
@@ -94,7 +94,13 @@ Para optimizar rendimiento, usamos `loadedMonthsRef`.
 - **Propósito**: Aisla datos por agencia.
 - **Key Function**: `switchAgency(id)` limpia todo el estado y recarga.
 
-### 2.3 Otros Contextos
+### 2.3 `DepartmentViewContext.tsx` (Vistas por Departamento)
+- **Propósito**: Gestiona la vista activa: **Vista Global** (todo) o un departamento concreto (ej. Marketing).
+- **Estado**: `selectedDepartmentId` (null = global, string = id del departamento).
+- **Persistencia**: `localStorage` por agencia (`timeboxing_department_view_${agencyId}`).
+- **Consumidores**: Sidebar (selector), barra de aviso bajo el header, Planificador, Team Pulse, Reportes.
+
+### 2.4 Otros Contextos
 - **`GoalsContext`**: OKRs y Objetivos Profesionales.
 - **`NotificationContext`**: Centro de notificaciones.
 - **`AuthContext`**: Sesión de usuario Supabase.
@@ -141,10 +147,7 @@ Centraliza la lógica de quién puede tocar qué.
     - Retorna `true` si es el propio usuario o tiene permiso `can_assign_tasks_to_others`.
 - `isWeekEditable(weekStartDate, config, now, weeklyEnabled)`: Si `weeklyEnabled` es `false`, siempre retorna `true`.
 
-### 3.4 `src/utils/aiReportUtils.ts` (IA & Reporting)
-- Generación de textos con IA para reportes de Ads. Integra `AIService`.
-
-### 3.5 `src/utils/logger.ts` (Logging)
+### 3.4 `src/utils/logger.ts` (Logging)
 - Sistema centralizado de logs (`info`, `warn`, `error`) con soporte para entornos dev/prod.
 
 </details>
@@ -181,7 +184,7 @@ Lógica reutilizable de UI.
 - Retorna `tasksImpact` con arrays de `projects` y `weeks` afectados.
 
 ### 4.4 Otros Hooks
-- **`usePlannerData`**: Controla `currentMonth` y `loadedMonths`.
+- **`usePlannerData`**: Controla `currentMonth` y `loadedMonths`. Aplica filtro por **departamento** (empleados visibles) cuando hay vista por departamento activa.
 - **`useProjectMetrics`**: Centraliza fórmulas de rentabilidad (`hoursValue`, `progressOperational`).
 - **`useTaskTransfers`**: Máquina de estados para transferencias (`pending` -> `accepted/rejected`).
 - **`use-mobile.tsx`**: Detecta viewport (mobile vs desktop) para Layouts adaptativos.
@@ -272,7 +275,7 @@ Todas las páginas principales de la aplicación.
 ### Configuración
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
-| `AgencySettingsPage.tsx` | 60KB | Configuración completa de agencia (roles, módulos) |
+| `AgencySettingsPage.tsx` | 60KB+ | Configuración de agencia por secciones: General, Equipo (roles), **Departamentos** (nombre + color por área), Proyectos (filtros/aliasing), Módulos, Integraciones, Apariencia. Navegación lateral. |
 | `SettingsPage.tsx` | 6KB | Preferencias de usuario |
 | `AgenciesPage.tsx` | 8KB | Selector de agencias |
 | `AgencyManagementPage.tsx` | 19KB | Administración avanzada de agencia |
@@ -283,12 +286,13 @@ Todas las páginas principales de la aplicación.
 |---------------|-------------|
 | `/admin` | Redirige a `/admin/agencies`. Solo accesible si el usuario está en `platform_admins` (RPC `is_platform_admin`). |
 | `/admin/agencies` | Listado de agencias, filtros, Suspender/Reactivar. Botón **Entrar**: acceder a la app como esa agencia (ver deadlines, planner, etc. con su contexto). |
+| `/admin/admins` | **Administradores de plataforma**: listado de usuarios con acceso a /admin (no vinculados a agencia). Añadir por email (el usuario debe existir en el sistema), quitar acceso. No se puede quitar al último admin. |
 | `/admin/support` | Tickets de soporte: listado, filtros, crear ticket, cambiar estado. Botón "Ver" abre detalle con comentarios internos y formulario para añadir respuestas. |
 | `/admin/metrics` | Métricas de plataforma: total agencias (activas/suspendidas), empleados, usuarios con agencia, tickets por estado. |
 | `/admin/docs` | Documentación interna con procedimientos para el equipo admin. |
 | `/suspended` | Página estática cuando la agencia del usuario tiene `status = suspended`. Mensaje y botón "Cerrar sesión". Fuera de AppLayout. |
 
-**App de usuario (soporte):** Ruta `/soporte`: (1) Formulario "Nueva solicitud" que crea un ticket (RPC `create_support_ticket_from_app`). (2) "Mis tickets": listado de tickets de la agencia con estado y fecha; botón "Ver" abre detalle con conversación (respuestas visibles) y formulario para responder (RPCs `list_my_support_tickets`, `get_my_support_ticket`, `list_my_support_ticket_replies`, `add_support_ticket_reply_from_app`). En Configuración hay tarjeta y en Sidebar enlace "Contactar soporte".
+**App de usuario (soporte):** Ruta `/soporte`: (1) Formulario "Nueva solicitud" que crea un ticket (RPC `create_support_ticket_from_app`). (2) "Mis tickets": listado de tickets de la agencia con estado y fecha; botón "Ver" abre detalle con conversación (respuestas visibles) y formulario para responder (RPCs `list_my_support_tickets`, `get_my_support_ticket`, `list_my_support_ticket_replies`, `add_support_ticket_reply_from_app`). Los mensajes admiten formato con un editor WYSIWYG (barra de herramientas: negrita, cursiva, código); el contenido se guarda como Markdown y se muestra formateado con `SupportMessageContent`. En Configuración hay tarjeta y en Sidebar enlace "Contactar soporte".
 
 **Nota:** Las rutas `/admin/*` no dependen de agencia; el panel usa RPCs con SECURITY DEFINER. **Acceder como agencia:** RPCs `admin_impersonate_agency(p_agency_id)` y `admin_stop_impersonate(p_agency_id)`; columna `is_impersonation` en `user_agencies`. Al entrar en una agencia de la que no eres miembro se muestra un banner "Viendo como [Agencia]" con botón "Salir de vista".
 
@@ -308,12 +312,6 @@ Todas las páginas principales de la aplicación.
 <details>
 <summary><h2>⚙️ Fase 7: Servicios Core</h2></summary>
 
-### `src/services/aiService.ts`
-Sistema centralizado de IA con fallback.
-- **Providers**: Gemini (primario) → OpenRouter (secundario) → Coco (fallback local).
-- **Función Principal**: `callWithFallback(prompt, context)`.
-- **Uso**: Generación de reportes en `AdsPage`.
-
 ### `src/services/errorService.ts`
 Manejo centralizado de errores.
 - **`handle(error, context, options)`**: Loggea, muestra toast, y opcionalmente reporta a servicio externo.
@@ -325,6 +323,13 @@ Sistema de auditoría para cambios críticos.
 - **Uso**: Cambios críticos que requieren auditoría (configuración, etc.).
 
 ### Edge Functions (Supabase)
+**Supabase self-hosted:** no se usa `supabase login` ni `supabase functions deploy`. Para estos casos:
+1. **Crear el script de deploy en el servidor** con un heredoc (copiar/pegar el bloque completo desde `supabase/scripts/README-deploy.md` → sección "Crear el script de deploy en el servidor (heredoc)").
+2. **Tener la carpeta** `supabase/functions/` en el servidor (p. ej. en `~/Timeboxing/supabase/functions/`, por rsync o clonando el repo).
+3. **Ejecutar el deploy:** `cd ~/Timeboxing && ./supabase/scripts/deploy-edge-functions-supabase-pi.sh`
+
+Detalle completo (rutas, variables, rsync desde PC): **`supabase/scripts/README-deploy.md`**. Resumen técnico: DOCUMENTACION.md sección 7 "Supabase self-hosted".
+
 | Función | Archivo | Descripción |
 |---------|---------|-------------|
 | `create-user` | `supabase/functions/create-user/index.ts` | Crear usuarios de Auth (requiere admin). |
@@ -336,6 +341,7 @@ Sistema de auditoría para cambios críticos.
 | `sync-meta-ads` | `supabase/functions/sync-meta-ads/index.ts` | Sincronizar datos de Meta Ads. |
 | **`generate-api-token`** | `supabase/functions/generate-api-token/index.ts` | Genera JWT firmado con claim `agency_id` para acceso API. Verifica permisos admin. Guarda hash en `api_tokens`. |
 | **`revoke-api-token`** | `supabase/functions/revoke-api-token/index.ts` | Revoca un token API (`is_active = false`). Verifica permisos admin. |
+| **`add-platform-admin`** | `supabase/functions/add-platform-admin/index.ts` | Añade un administrador de plataforma (body: email, role; opc. password, name). Si se envía contraseña, crea el usuario en Auth y lo añade a `platform_admins`; si no, el usuario debe existir. Verifica caller con `is_platform_admin`. Usado desde `/admin/admins`. |
 
 ### Base de datos (Supabase)
 - **RLS**: Todas las tablas públicas usan Row Level Security con la función `requesting_agency_id()` (JWT o `user_agencies`). Si añades una tabla, definir política coherente.
@@ -383,7 +389,7 @@ Define las integraciones disponibles para activar por agencia.
 | **`Allocation`** | `AppContext`, `AllocationSheet`, `useAllocationSheet`, `PlannerGrid`, `useProjectMetrics` |
 | **`Employee`** | `AppContext`, `AgencyContext`, `EmployeeRow`, `TeamPage`, `capacityUtils` |
 | **`Project`** | `AppContext`, `ProjectsPage`, `useProjectMetrics`, `ClientProjectPage` |
-| **`AgencySettings`** | `AgencyContext`, `usePermissions`, `AgencySettingsPage` |
+| **`AgencySettings`** | `AgencyContext`, `usePermissions`, `AgencySettingsPage`, `ReliabilityIndexCard`, `ReportsPage`, `planningPrecisionUtils` (planningPrecisionExclusions) |
 
 ### 8.2 Dependencias de Lógica Core (Contexts & Utils)
 
@@ -435,6 +441,7 @@ Antes de deployar cambios críticos:
 - [ ] **RLS**: Todas las tablas públicas tienen RLS con `requesting_agency_id()`. Si añades una tabla, habilitar RLS y crear política. El `service_role` bypasea RLS.
 - [ ] **Tokens API**: Los tokens se gestionan desde `/api-keys` (ApiKeysPage). Edge functions: `generate-api-token` (firma JWT con claim `agency_id` y `permissions`) y `revoke-api-token`. Para que los permisos `readonly`/`readwrite` funcionen correctamente, la BD debe tener la función `can_write_via_api()` y políticas RLS que la usen. Ver DOCUMENTACION.md sección 7 para detalles de la arquitectura.
 - [ ] **Overlays (Select/Dialog)**: Para evitar el desplazamiento del contenido al abrir desplegables, las **páginas** usan **Popover + Command** en lugar de Select (Radix). Patrón de referencia: DeadlinesPage (filtros), BatchTaskRow (selector de proyecto). Si añades un nuevo filtro o selector en una página, usa Popover+Command. Los componentes compartidos (EmployeeDialog, AbsencesSheet, etc.) pueden seguir usando Select dentro de Dialogs/Sheets; si en algún caso se aprecia el mismo salto, aplicar el mismo patrón.
+- [ ] **Edge Functions (self-hosted)**: Si añadiste o modificaste una Edge Function y el backend es Supabase self-hosted, desplegar siguiendo la convención del proyecto: crear el script en el servidor con el heredoc de `supabase/scripts/README-deploy.md` (si no existe), tener `supabase/functions/` en el servidor, ejecutar `./supabase/scripts/deploy-edge-functions-supabase-pi.sh`. No usar `supabase login` ni `supabase functions deploy`.
 
 ### Limpieza de base de datos
 

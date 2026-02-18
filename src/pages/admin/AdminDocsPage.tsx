@@ -53,11 +53,23 @@ export default function AdminDocsPage() {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <FileText className="h-4 w-4 text-primary" />
+            Administradores de plataforma
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm text-slate-700">
+          <p>En <strong>Admin → Administradores</strong> puedes listar quién tiene acceso al panel /admin, <strong>añadir</strong> un nuevo administrador por email (si ya existe) o <strong>crear una cuenta nueva</strong> indicando email y contraseña, y <strong>quitar</strong> acceso. No se puede quitar al último admin. Estos usuarios no están vinculados a ninguna agencia.</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <FileText className="h-4 w-4 text-primary" />
             Acceso admin
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-slate-700">
-          <p>Solo los usuarios incluidos en la tabla <code className="bg-slate-100 px-1 rounded">platform_admins</code> pueden acceder al área /admin. El resto de rutas de la app usan permisos por rol y agencia (user_agencies, employees).</p>
+          <p>Solo los usuarios incluidos en la tabla <code className="bg-slate-100 px-1 rounded">platform_admins</code> pueden acceder al área /admin. El primer admin se añade insertando su <code className="bg-slate-100 px-1 rounded">auth.users.id</code> en <code className="bg-slate-100 px-1 rounded">platform_admins</code> (SQL o Dashboard). El resto de rutas de la app usan permisos por rol y agencia (user_agencies, employees).</p>
         </CardContent>
       </Card>
     </div>

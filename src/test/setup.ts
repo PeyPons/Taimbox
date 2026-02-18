@@ -13,8 +13,6 @@ Object.defineProperty(window, 'import', {
     meta: {
       env: {
         DEV: true,
-        VITE_GEMINI_API_KEY: 'test-gemini-key',
-        VITE_OPENROUTER_API_KEY: 'test-openrouter-key',
       },
     },
   },

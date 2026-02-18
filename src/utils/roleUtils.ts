@@ -49,33 +49,32 @@ export function getValidRole(
   return employee.role || 'Administrador';
 }
 
+type DeptOption = string | { id: string; name: string };
+
 /**
- * Obtiene el departamento válido de un empleado
- * Si el departamento del empleado no existe, devuelve el primero disponible
+ * Obtiene el departamento válido de un empleado (nombre para mostrar).
+ * Acepta string[] (legacy) o DepartmentDefinition[] (id/name).
+ * Si el departamento del empleado no existe, devuelve el primero disponible.
  */
 export function getValidDepartment(
   employee: Employee | undefined,
-  availableDepartments: string[] | undefined
+  availableDepartments: DeptOption[] | undefined
 ): string {
+  const firstDeptName = availableDepartments?.length
+    ? (typeof availableDepartments[0] === 'string' ? availableDepartments[0] : availableDepartments[0].name)
+    : null;
+
   if (!employee?.department) {
-    if (availableDepartments && availableDepartments.length > 0) {
-      return availableDepartments[0];
-    }
-    return 'General'; // Fallback
+    return firstDeptName ?? 'General';
   }
 
-  // Verificar si el departamento existe
   if (availableDepartments && availableDepartments.length > 0) {
-    const deptExists = availableDepartments.some(
-      d => d.toLowerCase() === employee.department?.toLowerCase()
-    );
-
-    if (deptExists) {
-      return employee.department;
-    }
-
-    // No existe, usar el primero disponible
-    return availableDepartments[0];
+    const match = availableDepartments.find(d => {
+      if (typeof d === 'string') return d.toLowerCase() === employee.department?.toLowerCase();
+      return d.id === employee.department || d.name.toLowerCase() === employee.department?.toLowerCase();
+    });
+    if (match) return typeof match === 'string' ? match : match.name;
+    return firstDeptName ?? employee.department;
   }
 
   return employee.department || 'General';

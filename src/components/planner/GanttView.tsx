@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import type { Employee } from '@/types';
 import { format, addDays, startOfMonth, endOfMonth, eachWeekOfInterval, differenceInDays, startOfWeek, endOfWeek, isSameMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -28,10 +29,13 @@ interface GanttTask {
 
 interface GanttViewProps {
     initialViewDate?: Date;
+    /** Si se proporciona (ej. vista por departamento), se usan estos empleados en lugar de todos */
+    employeesFiltered?: Employee[];
 }
 
-export function GanttView({ initialViewDate }: GanttViewProps) {
-    const { projects, allocations, employees, clients } = useApp();
+export function GanttView({ initialViewDate, employeesFiltered }: GanttViewProps) {
+    const { projects, allocations, employees: allEmployees, clients } = useApp();
+    const employees = employeesFiltered ?? allEmployees ?? [];
     const { formatName: formatProjectName } = useProjectAliasing();
 
     const [viewDate, setViewDate] = useState(initialViewDate || new Date());
@@ -221,9 +225,9 @@ export function GanttView({ initialViewDate }: GanttViewProps) {
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePrev}>
                                 <ChevronLeft className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={handleToday} className="h-8 text-xs px-3">
+                            <Button variant="ghost" size="sm" onClick={handleToday} className="h-8 text-xs px-3" aria-label="Mes actual">
                                 <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
-                                Hoy
+                                Mes actual
                             </Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleNext}>
                                 <ChevronRight className="h-4 w-4" />

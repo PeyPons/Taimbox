@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
+import { useDepartmentView } from '@/contexts/DepartmentViewContext';
+import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { getValidRole } from '@/utils/roleUtils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +50,15 @@ interface EmployeeCapacity {
 export default function TeamCapacityPage() {
     const { employees, allocations, absences, teamEvents } = useApp();
     const { currentAgency } = useAgency();
+    const { selectedDepartmentId } = useDepartmentView();
+
+    const departments = useMemo(() => normalizeDepartments(currentAgency?.settings?.departments), [currentAgency?.settings?.departments]);
+    const employeesForView = useMemo(() => {
+        if (!selectedDepartmentId || !departments.length) return employees ?? [];
+        const dept = departments.find(d => d.id === selectedDepartmentId || d.name === selectedDepartmentId);
+        if (!dept) return employees ?? [];
+        return (employees ?? []).filter(e => employeeBelongsToDepartment(e.department, dept.id, dept.name));
+    }, [employees, selectedDepartmentId, departments]);
 
     const today = new Date();
     const [viewMode, setViewMode] = useState<ViewMode>('month');
@@ -86,9 +97,9 @@ export default function TeamCapacityPage() {
         }
     }, [today, viewMode]);
 
-    // Calcular capacidad de cada empleado con ausencias y eventos
+    // Calcular capacidad de cada empleado con ausencias y eventos (respeta vista por departamento)
     const teamCapacity = useMemo(() => {
-        const activeEmployees = employees.filter(e => e.isActive);
+        const activeEmployees = employeesForView.filter(e => e.isActive);
 
         return activeEmployees.map(emp => {
             const schedule = emp.workSchedule || {};
@@ -168,7 +179,7 @@ export default function TeamCapacityPage() {
                 pendingTasks
             } as EmployeeCapacity;
         }).sort((a, b) => b.availableHours - a.availableHours);
-    }, [employees, allocations, absences, teamEvents, rangeStart, rangeEnd, today]);
+    }, [employeesForView, allocations, absences, teamEvents, rangeStart, rangeEnd, today]);
 
     // Filtrar por categorías
     const highAvailability = teamCapacity.filter(e => e.status === 'free' && e.availableHours >= (viewMode === 'week' ? 4 : 10));

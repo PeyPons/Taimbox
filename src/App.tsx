@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AgencyProvider } from "@/contexts/AgencyContext";
+import { DepartmentViewProvider } from "@/contexts/DepartmentViewContext";
 import { AppProvider } from "@/contexts/AppContext";
 import { GoalsProvider } from "@/contexts/GoalsContext";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -21,6 +22,7 @@ import { PlatformAdminRoute } from "./components/auth/PlatformAdminRoute";
 import { AdminLayout } from "./components/layout/AdminLayout";
 import SuspendedPage from "./pages/SuspendedPage";
 import AdminAgenciesPage from "./pages/admin/AdminAgenciesPage";
+import AdminAdminsPage from "./pages/admin/AdminAdminsPage";
 import AdminSupportPage from "./pages/admin/AdminSupportPage";
 import AdminMetricsPage from "./pages/admin/AdminMetricsPage";
 import AdminDocsPage from "./pages/admin/AdminDocsPage";
@@ -104,6 +106,7 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <AgencyProvider>
+          <DepartmentViewProvider>
           <AppProvider>
             <GoalsProvider>
                 <NotificationProvider>
@@ -142,6 +145,7 @@ const App = () => (
                           <Route element={<AdminLayout />}>
                             <Route index element={<Navigate to="/admin/agencies" replace />} />
                             <Route path="agencies" element={<Suspense fallback={<PageLoader />}><AdminAgenciesPage /></Suspense>} />
+                            <Route path="admins" element={<Suspense fallback={<PageLoader />}><AdminAdminsPage /></Suspense>} />
                             <Route path="support" element={<Suspense fallback={<PageLoader />}><AdminSupportPage /></Suspense>} />
                             <Route path="metrics" element={<Suspense fallback={<PageLoader />}><AdminMetricsPage /></Suspense>} />
                             <Route path="docs" element={<Suspense fallback={<PageLoader />}><AdminDocsPage /></Suspense>} />
@@ -184,6 +188,7 @@ const App = () => (
                 </NotificationProvider>
               </GoalsProvider>
           </AppProvider>
+          </DepartmentViewProvider>
         </AgencyProvider>
       </AuthProvider>
     </QueryClientProvider>

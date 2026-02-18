@@ -11,6 +11,7 @@ El sistema sigue una arquitectura de **Single Page Application (SPA)** con un ba
 - **Frontend**: React 18 con Vite y TypeScript.
 - **Backend / DB**: Supabase (PostgreSQL + Auth + Realtime). La documentación pública de la API de integración está en `/api-docs` (shell en `src/pages/ApiDocsPage.tsx`, contenido modular en `src/pages/api-docs/`). La landing pública (`LandingPage.tsx`) incluye footer (`LandingFooter`) con enlace al artículo "Por qué Timeboxing", header sticky con Login y schema JSON-LD SoftwareApplication. El artículo largo está en página aparte `/por-que-timeboxing` (`ArticlePage.tsx`, renderiza `LandingArticle`) con schema Article + SoftwareApplication; solo se enlaza desde el footer de la home. Es una **API selectiva** (no open-source): expone solo 17 tablas de planificación, equipo y proyectos. Excluye tablas internas (ads, audit_logs, user_agencies). La documentación incluye 4 grupos (Overview, Tutoriales, SDK/REST, Referencia de Recursos), 5 tutoriales paso a paso, changelog, búsqueda (Ctrl+K), sidebar con grupos colapsables, y ResponseExample JSON por recurso. Estructura de archivos: `api-docs/data/` (types, tables, toc, changelog), `api-docs/components/` (CodeBlock, SidebarTOC, SearchBar, ResourceCard, TutorialStep, ResponseExample, etc.), `api-docs/sections/` (15 secciones). Consultarla para integraciones externas o partners.
 - **Estilos**: Tailwind CSS con componentes de Shadcn UI.
+- **Texto en navegación por mes**: En vistas que trabajan por mes (dashboard, reportes, proyectos, planificador, Gantt), el botón para volver al mes actual se etiqueta **"Mes actual"** (no "Hoy"), para mantener consistencia con el modelo mensual de la herramienta. Archivos afectados: `EmployeeDashboard.tsx`, `ReportsPage.tsx`, `ProjectsPage.tsx`, `ClientsAndProjectsPage.tsx`, `PlannerGrid.tsx`, `GanttView.tsx`.
 - **Estado Global**: React Context API con persistencia reactiva.
 - **Lógica de Datos**: TanStack Query (React Query) para sincronización de servidor.
 - **Workers**: Scripts independientes en Node.js para sincronización de APIs externas (Google/Meta Ads).
@@ -74,9 +75,27 @@ Permite renombrar proyectos automáticamente según patrones configurables:
 
 > **⚠️ IMPORTANTE**: Si creas un nuevo componente que muestra nombres de proyectos, DEBES usar `useProjectAliasing().formatName()` para mantener consistencia.
 
+#### Exclusiones del cálculo de precisión de planificación
+- `AgencySettings.planningPrecisionExclusions`: Opcional. Permite excluir tareas de **proyectos** y/o **clientes** concretos del cálculo del **índice de fiabilidad** (precisión de planificación).
+- **Campos**: `projectIds?: string[]`, `clientIds?: string[]`. Si un cliente está en `clientIds`, se excluyen todas las tareas de proyectos de ese cliente.
+- **Dónde se aplica**:
+  - **Dashboard del empleado → pestaña "Mis métricas"**: la tarjeta "Precisión de planificación" es `ReliabilityIndexCard`, que ya aplica las exclusiones (las tareas de proyectos/clientes excluidos no entran en el índice).
+  - **Reportes** (`ReportsPage`): el índice de fiabilidad por empleado usa las mismas exclusiones.
+  - Utilidad compartida: `src/utils/planningPrecisionUtils.ts` → `getExcludedProjectIds(projects, exclusions)`.
+- **Configuración**: En Configuración de agencia (`AgencySettingsPage`), pestaña **Módulos y métricas** → bloque "Precisión de planificación": selectores con búsqueda para elegir proyectos y clientes a excluir. La página está organizada en secciones (General, Equipo, Departamentos, Proyectos, Módulos y métricas, Integraciones, Apariencia) para facilitar la localización de opciones.
+
+#### Vistas por Departamento
+- **Propósito**: Permitir a los managers filtrar la plataforma por área (ej. Marketing, Desarrollo) sin perder la vista global.
+- **Configuración**: En Configuración de agencia, pestaña **Departamentos**: listado con nombre y color por departamento. El color se usa en la barra de aviso cuando el filtro está activo.
+- **Asignación**: En ficha de empleado, campo "Departamento principal" (un empleado pertenece a un departamento). En ficha de proyecto, "Departamento responsable" (para reportes financieros).
+- **Selector**: En el Sidebar, dropdown "Vista por departamento": opción "Vista Global (CEO)" y lista de departamentos. La selección se persiste en `localStorage` por agencia.
+- **Barra de aviso**: Si hay un departamento seleccionado, aparece una barra bajo el header con el color del departamento, texto "Estás viendo la vista filtrada de: [Nombre]. El resto de datos están ocultos." y botón "Borrar filtro".
+- **Comportamiento**: Planificador y Gantt muestran solo empleados del departamento (sus tareas en todos los proyectos siguen visibles). Team Pulse y Reportes filtran por empleados y, en reportes, la rentabilidad por proyectos del departamento responsable. Utilidades: `src/utils/departmentUtils.ts` (`normalizeDepartments`, `employeeBelongsToDepartment`). Contexto: `DepartmentViewContext`; componentes: `DepartmentViewSelector`, `DepartmentViewBanner`.
+
 ### 2.2. Empleado (`Employee`)
 Representa a los miembros del equipo.
 - `role`: Nombre del rol que determina los permisos.
+- `department`: ID (o nombre legacy) del departamento principal para filtrado en vistas por departamento.
 - `defaultWeeklyCapacity`: Horas base de trabajo por semana (ej. 40).
 - `workSchedule`: Objeto que define las horas por día (`monday`: 8, `friday`: 6, etc.).
 - `user_id`: Enlace con `auth.users` de Supabase para autenticación.
@@ -87,6 +106,7 @@ Contenedores de trabajo facturable o interno.
 - `minimumHours`: Suelo de horas que el equipo debe cumplir.
 - `monthlyFee`: Fee recurrente en euros para cálculos de rentabilidad.
 - `status`: `active`, `paused` o `completed`.
+- `responsibleDepartmentId`: Opcional. ID del departamento responsable; usado para filtrar proyectos en reportes por vista departamento.
 
 ### 2.3b. Deadline (`Deadline`)
 Define la foto mensual de un proyecto.
@@ -259,6 +279,10 @@ El sistema sincroniza datos de Google Ads y Meta Ads mediante procesos externos.
 
   **Importante**: El `service_role` key bypasea RLS. Las edge functions y workers que usan `SUPABASE_SERVICE_ROLE_KEY` no se ven afectados.
 
+  **Supabase self-hosted (sin Supabase Cloud)**  
+  No se usa `supabase login` ni `supabase functions deploy`: el login es solo para la cuenta de Supabase Cloud. **Convención del proyecto para self-hosted:** generar el script de deploy en el servidor con un **heredoc** (crear el archivo pegando el bloque en la consola) y luego ejecutar ese script para copiar `supabase/functions/` al volumen del Edge Runtime y reiniciar el servicio. Documentación completa (bloque heredoc listo para pegar, rutas, variables): **`supabase/scripts/README-deploy.md`** (secciones "Crear el script de deploy en el servidor (heredoc)" y "Servidor con Timeboxing en ~/Timeboxing y Supabase en ~/supabase-pi"). Script: `supabase/scripts/deploy-edge-functions-supabase-pi.sh`; rutas por defecto: Timeboxing `$HOME/Timeboxing`, Supabase docker `$HOME/supabase-pi/supabase/docker`, servicio `functions`. Flujo: (1) Crear el script en el servidor con el heredoc de README-deploy.md; (2) Tener `supabase/functions/` en el servidor (p. ej. `~/Timeboxing/supabase/functions/`); (3) Ejecutar `./supabase/scripts/deploy-edge-functions-supabase-pi.sh` desde `~/Timeboxing`.
+  Alternativa manual: (1) Copiar la carpeta `supabase/functions/` al host del Edge Runtime; (2) Arrancar el Edge Runtime con esa ruta (p. ej. Docker: `docker run ... -v /ruta/functions:/usr/services supabase/edge-runtime start --main-service /usr/services` o script [edge-runtime](https://github.com/supabase/edge-runtime)); (3) Configurar el proxy para `.../functions/v1/<nombre-funcion>`; (4) Definir `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`. Tras cambios, actualizar archivos y reiniciar el contenedor.
+
   **Página de gestión**: `src/pages/ApiKeysPage.tsx` (ruta `/api-keys`, requiere `can_access_agency_settings`). Permite crear, listar y revocar tokens API. Enlace en Sidebar bajo "Configuración".
 
 - **Área administrativa de plataforma (God Mode)**  
@@ -266,11 +290,12 @@ El sistema sincroniza datos de Google Ads y Meta Ads mediante procesos externos.
   - **Tabla `platform_admins`**: `user_id` (PK), `role`, `created_at`. RLS habilitado pero **sin políticas** de lectura/escritura para `authenticated`/`anon`; nadie puede listar ni escribirse como admin desde el cliente. Solo accesible vía RPC con SECURITY DEFINER o con service_role.
   - **Semilla platform admin**: La tabla `platform_admins` y la RPC `is_platform_admin` deben existir en la BD. El primer admin se añade insertando su `auth.users.id` en `platform_admins` (INSERT idempotente con `ON CONFLICT (user_id) DO NOTHING`).
   - **AdminLayout**: Layout independiente que **no** usa AgencyContext ni AppContext. Rutas `/admin/*` se sirven con este layout y el guard `PlatformAdminRoute` (sesión + RPC `is_platform_admin`). No reutilizar componentes de la app principal que usen `useAgency()` en el área admin sin refactor presentacional.
-  - **RPCs SECURITY DEFINER**: `is_platform_admin()`, `admin_list_agencies(p_search, p_status)`, `admin_update_agency_status(p_agency_id, p_status)`. Toda lectura/escritura de datos "globales" (listar todas las agencias, cambiar estado) se hace mediante estas RPCs, no con consultas directas (RLS ocultaría los datos).
+  - **RPCs SECURITY DEFINER**: `is_platform_admin()`, `admin_list_agencies(p_search, p_status)`, `admin_update_agency_status(p_agency_id, p_status)`, `admin_list_platform_admins()`, `admin_add_platform_admin_by_email(p_email, p_role)`, `admin_remove_platform_admin(p_user_id)`. Toda lectura/escritura de datos "globales" (listar agencias, cambiar estado, gestionar admins de plataforma) se hace mediante estas RPCs, no con consultas directas (RLS ocultaría los datos).
+  - **Gestión de administradores de plataforma**: Página `/admin/admins` (AdminAdminsPage). Listar admins (email, rol, fecha), añadir por email o crear cuenta nueva con contraseña, quitar acceso. No se puede quitar al último admin. **Añadir admin**: la app llama a la Edge Function `add-platform-admin` (body: `email`, `role`, opcionales `password`, `name`). Si se envía `password` (mín. 6 caracteres), se crea el usuario en Auth con `auth.admin.createUser` y se añade a `platform_admins`; si el email ya existe, se localiza al usuario y solo se añade a `platform_admins`. Sin contraseña, el usuario debe existir en auth. La función verifica que el caller es platform admin (RPC `is_platform_admin`). Migración: `supabase/migrations/20260218000000_platform_admin_management.sql` define las RPCs; la tabla `platform_admins` debe existir con `user_id`, `role`, `created_at`.
   - **Estado `suspended` en `agencies`**: Columna `status` (`active` | `suspended`). Si la agencia está suspendida, `ProtectedRoute` redirige a `/suspended` (excepto si la ruta es `/admin/*`, ya que esas rutas no exigen agencia). La página `/suspended` muestra mensaje y botón "Cerrar sesión". No documentar las RPCs `admin_*` ni `is_platform_admin` en la API pública (`/api-docs`).
-  - **Dependencias**: `usePlatformAdmin`, `PlatformAdminRoute`, `AdminLayout`, `AdminAgenciesPage`, `AdminSupportPage`, `AdminMetricsPage`, `AdminDocsPage`, `SuspendedPage`, `ContactSupportPage`. Sidebar muestra "Administración" solo cuando `usePlatformAdmin().isPlatformAdmin` es true.
+  - **Dependencias**: `usePlatformAdmin`, `PlatformAdminRoute`, `AdminLayout`, `AdminAgenciesPage`, `AdminAdminsPage`, `AdminSupportPage`, `AdminMetricsPage`, `AdminDocsPage`, `SuspendedPage`, `ContactSupportPage`. Sidebar muestra "Administración" solo cuando `usePlatformAdmin().isPlatformAdmin` es true.
 
-  - **Soporte (support_tickets):** Tabla `support_tickets` y tabla de respuestas con columna `is_internal`: respuestas con `is_internal = true` solo las ve el admin; `false` las ve la agencia. **Admin:** listado, crear ticket, cambiar estado; "Ver" abre Sheet con detalle, historial de respuestas (con etiqueta Interno / Al usuario) y formulario para añadir comentario interno o respuesta al usuario (`admin_add_support_ticket_reply` con `p_internal`). **App de usuario:** ruta `/soporte` (ContactSupportPage): "Nueva solicitud" (`create_support_ticket_from_app`); "Mis tickets" lista tickets de la agencia (`list_my_support_tickets`), "Ver" abre detalle con conversación (`get_my_support_ticket`, `list_my_support_ticket_replies` — solo respuestas no internas) y formulario para responder (`add_support_ticket_reply_from_app`).
+  - **Soporte (support_tickets):** Tabla `support_tickets` y tabla de respuestas con columna `is_internal`: respuestas con `is_internal = true` solo las ve el admin; `false` las ve la agencia. **Admin:** listado, crear ticket, cambiar estado; "Ver" abre Sheet con detalle, historial de respuestas (con etiqueta Interno / Al usuario) y formulario para añadir comentario interno o respuesta al usuario (`admin_add_support_ticket_reply` con `p_internal`). **App de usuario:** ruta `/soporte` (ContactSupportPage): "Nueva solicitud" (`create_support_ticket_from_app`); "Mis tickets" lista tickets de la agencia (`list_my_support_tickets`), "Ver" abre detalle con conversación (`get_my_support_ticket`, `list_my_support_ticket_replies` — solo respuestas no internas) y formulario para responder (`add_support_ticket_reply_from_app`). **Formato de mensajes:** Los mensajes se guardan como texto (Markdown); en UI se muestran con formato. En los formularios se usa un editor WYSIWYG (`SupportMessageEditor`, `src/components/support/SupportMessageEditor.tsx`) con barra de herramientas (negrita, cursiva, código) basado en Tiptap (`@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/markdown`, `@tiptap/extension-placeholder`). Al mostrar mensajes ya guardados se usa `SupportMessageContent` (`src/components/support/SupportMessageContent.tsx`) con `react-markdown` y `remark-breaks`.
 
   - **Métricas:** RPC `admin_platform_metrics()`; página `/admin/metrics`. Página estática `/admin/docs` con procedimientos internos.
 
@@ -375,8 +400,7 @@ Todos los componentes re-renderizan
 
 | Archivo | Propósito | Dependencias Clave |
 |---------|-----------|--------------------|
-| `src/utils/aiReportUtils.ts` | Generación de resúmenes IA para Ads | `AIService`, `logger`, `CONSTANTS` |
-| `src/utils/logger.ts` | Sistema de logging estructurado | Usado en `aiReportUtils`, `PlannerGrid` |
+| `src/utils/logger.ts` | Sistema de logging estructurado | Usado en `PlannerGrid` y otros |
 | `src/hooks/useTasksImpact.ts` | Pre-cálculo de impacto de nuevas tareas | `useAllocationSheet`, `ProjectBudgetStatus` |
 | `src/hooks/use-mobile.tsx` | Detección de dispositivo móvil (breakpoint 768px) | UI responsiva: `AppLayout` (ya no bloquea móvil), `PlannerGrid` → `MobilePlannerView`, `AllocationSheet` (vista semanal/mensual en cards, toggles Semana/Mes ≥44px), `AllocationTaskRow` (isMobile), `DeadlinesPage` (filtros/edición en Sheet), `Sidebar` |
 | `src/hooks/useProjectAliasing.ts` | Formateo de nombres de proyectos según reglas de agencia | `AgencyContext`, `formatProjectName`, usado en 15+ componentes |

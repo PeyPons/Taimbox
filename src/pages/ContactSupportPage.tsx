@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { SupportMessageEditor } from "@/components/support/SupportMessageEditor";
 import { Badge } from "@/components/ui/badge";
 import {
   Sheet,
@@ -25,6 +25,7 @@ import { useAgency } from "@/contexts/AgencyContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Loader2, MessageCircle, CheckCircle, Eye, Send } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { SupportMessageContent } from "@/components/support/SupportMessageContent";
 
 interface MyTicketRow {
   id: string;
@@ -63,6 +64,8 @@ export default function ContactSupportPage() {
   const [replies, setReplies] = useState<MyTicketReply[]>([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [replyText, setReplyText] = useState("");
+  const [messageKey, setMessageKey] = useState(0);
+  const [replyKey, setReplyKey] = useState(0);
   const [sendingReply, setSendingReply] = useState(false);
 
   const fetchMyTickets = useCallback(async () => {
@@ -141,6 +144,7 @@ export default function ContactSupportPage() {
       setSent(true);
       setSubject("");
       setMessage("");
+      setMessageKey((k) => k + 1);
       toast.success("Solicitud enviada. Te responderemos lo antes posible.");
       fetchMyTickets();
     } catch (e: unknown) {
@@ -165,6 +169,7 @@ export default function ContactSupportPage() {
       if (error) throw error;
       toast.success("Respuesta enviada");
       setReplyText("");
+      setReplyKey((k) => k + 1);
       const { data } = await supabase.rpc("list_my_support_ticket_replies", {
         p_ticket_id: selectedTicketId,
       });
@@ -233,13 +238,13 @@ export default function ContactSupportPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="message">Mensaje</Label>
-                <Textarea
+                <SupportMessageEditor
+                  key={messageKey}
                   id="message"
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Describe tu consulta o incidencia con el mayor detalle posible..."
-                  rows={5}
-                  className="resize-none"
+                  onChange={setMessage}
+                  placeholder="Describe tu consulta o incidencia con el mayor detalle posible…"
+                  minHeight="140px"
                 />
               </div>
               <Button type="submit" disabled={loading}>
@@ -360,7 +365,7 @@ export default function ContactSupportPage() {
                 </div>
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-slate-400 mb-0.5">Mensaje inicial</p>
-                  <p className="text-slate-700 whitespace-pre-wrap text-sm">{ticketDetail.message}</p>
+                  <SupportMessageContent content={ticketDetail.message} />
                 </div>
                 <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-200">
                   <Badge
@@ -415,7 +420,7 @@ export default function ContactSupportPage() {
                           <div className="min-w-0 flex-1">
                             <p className="font-medium text-slate-800 mb-0.5">{displayName}</p>
                             <p className="text-xs text-slate-500 mb-1.5">{formatDate(r.created_at)}</p>
-                            <p className="text-slate-700 whitespace-pre-wrap">{r.message}</p>
+                            <SupportMessageContent content={r.message} className="text-slate-700 text-sm" />
                           </div>
                         </li>
                       );
@@ -424,12 +429,12 @@ export default function ContactSupportPage() {
                 )}
                 {ticketDetail.status !== "closed" && (
                   <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-3">
-                    <Textarea
-                      placeholder="Escribe tu respuesta..."
+                    <SupportMessageEditor
+                      key={replyKey}
                       value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      rows={3}
-                      className="resize-none border-slate-200"
+                      onChange={setReplyText}
+                      placeholder="Escribe tu respuesta…"
+                      minHeight="100px"
                     />
                     <Button
                       size="sm"

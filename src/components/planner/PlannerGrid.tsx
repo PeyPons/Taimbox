@@ -93,7 +93,7 @@ export function PlannerGrid() {
       </div>
 
       {activeView === 'gantt' ? (
-        <GanttView initialViewDate={currentMonth} />
+        <GanttView initialViewDate={currentMonth} employeesFiltered={filteredEmployees} />
       ) : isMobile ? (
         <div className="flex flex-col flex-1 overflow-hidden">
           {/* Header móvil: mes y navegación */}
@@ -104,7 +104,7 @@ export function PlannerGrid() {
               </h2>
               <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-md p-0.5">
                 <Button variant="ghost" size="icon" className="h-11 w-11 min-h-[44px]" onClick={goToPrevMonth} aria-label="Mes anterior"><ChevronLeft className="h-5 w-5" /></Button>
-                <Button variant="ghost" size="sm" onClick={goToToday} className="h-11 text-sm px-3 min-h-[44px]"><CalendarDays className="h-4 w-4 mr-1" />Hoy</Button>
+                <Button variant="ghost" size="sm" onClick={goToToday} className="h-11 text-sm px-3 min-h-[44px]" aria-label="Mes actual"><CalendarDays className="h-4 w-4 mr-1" />Mes actual</Button>
                 <Button variant="ghost" size="icon" className="h-11 w-11 min-h-[44px]" onClick={goToNextMonth} aria-label="Mes siguiente"><ChevronRight className="h-5 w-5" /></Button>
               </div>
             </div>

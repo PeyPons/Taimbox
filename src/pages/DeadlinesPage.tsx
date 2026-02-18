@@ -9,6 +9,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useApp } from '@/contexts/AppContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAgency } from '@/contexts/AgencyContext';
+import { useDepartmentView } from '@/contexts/DepartmentViewContext';
+import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,6 +53,15 @@ export default function DeadlinesPage() {
   const isManager = canAccess('/planner') || canAccess('/reports');
   const canEditDeadlines = isManager || canAccess('/deadlines');
   const { currentAgency } = useAgency();
+  const { selectedDepartmentId } = useDepartmentView();
+
+  const departments = useMemo(() => normalizeDepartments(currentAgency?.settings?.departments), [currentAgency?.settings?.departments]);
+  const employeesForView = useMemo(() => {
+    if (!selectedDepartmentId || !departments.length) return employees ?? [];
+    const dept = departments.find(d => d.id === selectedDepartmentId || d.name === selectedDepartmentId);
+    if (!dept) return employees ?? [];
+    return (employees ?? []).filter(e => employeeBelongsToDepartment(e.department, dept.id, dept.name));
+  }, [employees, selectedDepartmentId, departments]);
   const { showTour } = useDeadlinesTour();
   const isMobile = useIsMobile();
   const { formatName: formatProjectName } = useProjectAliasing();
@@ -475,10 +486,10 @@ export default function DeadlinesPage() {
   }, []);
 
   const activeEmployees = useMemo(() => {
-    return employees.filter(e => e.isActive).sort((a, b) =>
+    return employeesForView.filter(e => e.isActive).sort((a, b) =>
       (a.first_name || a.name).localeCompare(b.first_name || b.name)
     );
-  }, [employees]);
+  }, [employeesForView]);
 
   // Calcular capacidad mensual de un empleado (restando ausencias y eventos)
   const getMonthlyCapacity = (employeeId: string) => {

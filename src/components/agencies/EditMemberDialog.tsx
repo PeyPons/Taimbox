@@ -37,7 +37,11 @@ export function EditMemberDialog({ open, onOpenChange, member, onSuccess }: Edit
 
   // Obtener roles y departamentos disponibles
   const availableRoles = currentAgency?.settings?.roles || [];
-  const availableDepartments = currentAgency?.settings?.departments || [];
+  const availableDepartments = (() => {
+    const raw = currentAgency?.settings?.departments;
+    if (!raw || !Array.isArray(raw)) return [];
+    return raw.map((d: string | { id: string; name: string }) => (typeof d === 'string' ? { id: d, name: d } : d));
+  })();
 
   // Asegurar que el rol "Administrador" siempre esté disponible
   const ADMIN_ROLE_NAME = 'Administrador';
@@ -132,8 +136,8 @@ export function EditMemberDialog({ open, onOpenChange, member, onSuccess }: Edit
                 </SelectTrigger>
                 <SelectContent>
                   {availableDepartments.map((dept) => (
-                    <SelectItem key={dept} value={dept}>
-                      {dept}
+                    <SelectItem key={dept.id} value={dept.id}>
+                      {dept.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

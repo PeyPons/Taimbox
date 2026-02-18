@@ -14,12 +14,13 @@ import {
   Building2, Settings, Users, Palette, Save, Loader2,
   Filter, Plus, Trash2, HelpCircle, Info, X,
   Rocket, Facebook, Megaphone, PlusCircle, ShieldCheck, GitBranch, Database, AlertTriangle,
-  Eye, Lock, Unlock, Calendar, Check, ChevronDown
+  Eye, Lock, Unlock, Calendar, Check, ChevronDown, BarChart2, Layers
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { AVAILABLE_INTEGRATIONS } from '@/config/integrations';
-import { CustomProjectFilter, RolePermissions, ProjectAliasingRule } from '@/types';
+import { CustomProjectFilter, RolePermissions, ProjectAliasingRule, DepartmentDefinition } from '@/types';
+import { normalizeDepartments } from '@/utils/departmentUtils';
 import { DEFAULT_FILTERS } from '@/hooks/useProjectFilters';
 import { UserPermissions, PERMISSION_LABELS, DEFAULT_PERMISSIONS } from '@/types/permissions';
 import {
@@ -40,9 +41,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { DepartmentViewConfigDialog } from '@/components/agencies/DepartmentViewConfigDialog';
 import { useDepartmentConfigs } from '@/hooks/useDashboardView';
+import { useApp } from '@/contexts/AppContext';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function AgencySettingsPage() {
   const { currentAgency, refreshAgency, updateSettings, updateAgencyName, isLoading: isAgencyLoading } = useAgency();
+  const { projects, clients } = useApp();
   const [saving, setSaving] = useState(false);
 
   // Estado local para edición
@@ -102,11 +106,12 @@ export default function AgencySettingsPage() {
     return existingRoles as RolePermissions[];
   });
 
-  const [departments, setDepartments] = useState<string[]>(
-    currentAgency?.settings?.departments || ['SEO', 'PPC']
+  const [departments, setDepartments] = useState<DepartmentDefinition[]>(() =>
+    normalizeDepartments(currentAgency?.settings?.departments)
   );
   const [expandedRoleIndex, setExpandedRoleIndex] = useState<number | null>(null);
   const [newDepartment, setNewDepartment] = useState('');
+  const [newDepartmentColor, setNewDepartmentColor] = useState('#6366f1');
   const [enabledIntegrations, setEnabledIntegrations] = useState<Record<string, boolean>>(
     currentAgency?.settings?.enabledIntegrations || {}
   );
@@ -114,6 +119,14 @@ export default function AgencySettingsPage() {
     currentAgency?.settings?.weeklyCloseDay ?? 4 // Default to Friday
   );
   const [openWeeklyCloseDay, setOpenWeeklyCloseDay] = useState(false);
+
+  // Excluir proyectos/clientes del cálculo de precisión de planificación (índice de fiabilidad)
+  const [planningPrecisionExclusions, setPlanningPrecisionExclusions] = useState<{ projectIds: string[]; clientIds: string[] }>({
+    projectIds: currentAgency?.settings?.planningPrecisionExclusions?.projectIds ?? [],
+    clientIds: currentAgency?.settings?.planningPrecisionExclusions?.clientIds ?? []
+  });
+  const [openExcludeProjects, setOpenExcludeProjects] = useState(false);
+  const [openExcludeClients, setOpenExcludeClients] = useState(false);
 
   // Department view configuration
   const [deptConfigDialogOpen, setDeptConfigDialogOpen] = useState(false);
@@ -155,8 +168,13 @@ export default function AgencySettingsPage() {
         setRoles(currentAgency.settings?.roles || []);
       }
 
-      setDepartments(currentAgency.settings?.departments || ['SEO', 'PPC']);
+      setDepartments(normalizeDepartments(currentAgency.settings?.departments));
       setEnabledIntegrations(currentAgency.settings?.enabledIntegrations || {});
+      setWeeklyCloseDay(currentAgency.settings?.weeklyCloseDay ?? 4);
+      setPlanningPrecisionExclusions({
+        projectIds: currentAgency.settings?.planningPrecisionExclusions?.projectIds ?? [],
+        clientIds: currentAgency.settings?.planningPrecisionExclusions?.clientIds ?? []
+      });
       fetchConnectedAccounts();
     }
   }, [currentAgency]);
@@ -213,17 +231,27 @@ export default function AgencySettingsPage() {
 
   // Department Management
   const addNewDepartment = () => {
-    if (!newDepartment.trim()) return;
-    if (departments.includes(newDepartment.trim())) {
-      toast.error('Este departamento ya existe');
+    const name = newDepartment.trim();
+    if (!name) return;
+    if (departments.some(d => d.name.toLowerCase() === name.toLowerCase())) {
+      toast.error('Ya existe un departamento con ese nombre');
       return;
     }
-    setDepartments([...departments, newDepartment.trim()]);
+    const id = `dept-${Date.now()}-${name.replace(/\s+/g, '-').toLowerCase().slice(0, 12)}`;
+    setDepartments([...departments, { id, name, color: newDepartmentColor }]);
     setNewDepartment('');
+    setNewDepartmentColor('#6366f1');
   };
 
-  const deleteDepartment = (dept: string) => {
-    setDepartments(departments.filter(d => d !== dept));
+  const deleteDepartment = (deptId: string) => {
+    setDepartments(departments.filter(d => d.id !== deptId));
+  };
+  const updateDepartmentColor = (deptId: string, color: string) => {
+    setDepartments(departments.map(d => d.id === deptId ? { ...d, color } : d));
+  };
+  const updateDepartmentName = (deptId: string, name: string) => {
+    if (!name.trim()) return;
+    setDepartments(departments.map(d => d.id === deptId ? { ...d, name: name.trim() } : d));
   };
 
   const handleSave = async () => {
@@ -246,7 +274,8 @@ export default function AgencySettingsPage() {
         projectAliasingRules,
         integrations,
         enabledIntegrations,
-        weeklyCloseDay
+        weeklyCloseDay,
+        planningPrecisionExclusions
       });
 
       // Si el nombre ha cambiado, actualizarlo por separado
@@ -431,20 +460,47 @@ export default function AgencySettingsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6 pb-24">
-      <div className="flex items-center justify-between">
+    <div className="max-w-5xl mx-auto p-4 sm:p-6 pb-24">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <Building2 className="h-6 w-6" />
             Configuración de agencia
           </h1>
-          <p className="text-slate-500 mt-1">Gestiona la configuración de tu agencia</p>
+          <p className="text-slate-500 mt-1">Elige una sección para ver y editar la configuración</p>
         </div>
-        <Badge variant="outline" className="text-sm">
+        <Badge variant="outline" className="text-sm w-fit">
           {currentAgency.slug}
         </Badge>
       </div>
 
+      <Tabs defaultValue="general" className="mt-6 flex flex-col lg:flex-row gap-6">
+        <TabsList className="flex flex-row lg:flex-col lg:w-52 h-auto p-2 rounded-xl bg-slate-100 border border-slate-200 shrink-0 lg:sticky lg:top-4 self-start w-full overflow-x-auto flex-nowrap">
+          <TabsTrigger value="general" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
+            <Settings className="h-4 w-4 shrink-0" /> <span className="truncate">General</span>
+          </TabsTrigger>
+          <TabsTrigger value="team" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
+            <Users className="h-4 w-4 shrink-0" /> <span className="truncate">Equipo</span>
+          </TabsTrigger>
+          <TabsTrigger value="projects" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
+            <Filter className="h-4 w-4 shrink-0" /> <span className="truncate">Proyectos</span>
+          </TabsTrigger>
+          <TabsTrigger value="modules" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
+            <BarChart2 className="h-4 w-4 shrink-0" /> <span className="truncate">Módulos</span>
+          </TabsTrigger>
+          <TabsTrigger value="integrations" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
+            <Rocket className="h-4 w-4 shrink-0" /> <span className="truncate">Integraciones</span>
+          </TabsTrigger>
+          <TabsTrigger value="departments" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
+            <Layers className="h-4 w-4 shrink-0" /> <span className="truncate">Departamentos</span>
+          </TabsTrigger>
+          <TabsTrigger value="appearance" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
+            <Palette className="h-4 w-4 shrink-0" /> <span className="truncate">Apariencia</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <div className="flex-1 min-w-0 space-y-6">
+          <TabsContent value="general" className="mt-0 space-y-6">
       {/* Información General */}
       <Card>
         <CardHeader>
@@ -480,7 +536,9 @@ export default function AgencySettingsPage() {
           </div>
         </CardContent>
       </Card>
+          </TabsContent>
 
+          <TabsContent value="team" className="mt-0 space-y-6">
       {/* Roles y Departamentos */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Roles y Permisos */}
@@ -584,109 +642,133 @@ export default function AgencySettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Departamentos */}
-        <Card className="h-full">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-blue-600" />
-              Departamentos
-            </CardTitle>
-            <CardDescription>
-              Organiza a tu equipo en departamentos
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Nuevo departamento..."
-                value={newDepartment}
-                onChange={(e) => setNewDepartment(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && addNewDepartment()}
-              />
-              <Button onClick={addNewDepartment} disabled={!newDepartment.trim()}>
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              {departments.length === 0 ? (
-                <p className="text-sm text-slate-400 italic text-center py-4">No hay departamentos definidos.</p>
-              ) : (
-                departments.map((dept) => {
-                  const config = getConfigForDepartment(dept);
-                  return (
-                    <div key={dept} className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <span className="font-medium text-slate-700 truncate">{dept}</span>
-                        {config && (
-                          <div className="flex items-center gap-1">
-                            <Badge
-                              variant="outline"
-                              className="text-[10px] px-1.5 py-0 h-5"
-                            >
-                              Semanal
-                            </Badge>
-                            {config.isViewStrict && (
-                              <TooltipProvider delayDuration={300}>
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Lock className="h-3 w-3 text-amber-600" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className="text-xs">Vista estricta - Los empleados no pueden cambiarla</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <TooltipProvider delayDuration={300}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/10"
-                                onClick={() => {
-                                  setSelectedDeptForConfig(dept);
-                                  setDeptConfigDialogOpen(true);
-                                }}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="text-xs">Configurar vista por defecto</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
-                          onClick={() => deleteDepartment(dept)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
+        {/* Enlace a pestaña Departamentos */}
+        <Card className="h-full border-dashed">
+          <CardContent className="py-6">
+            <p className="text-sm text-slate-500">
+              Los departamentos (nombre y color) se gestionan en la pestaña <strong>Departamentos</strong>. Así podrás filtrar la plataforma por área (Marketing, Desarrollo, etc.).
+            </p>
           </CardContent>
         </Card>
       </div>
+          </TabsContent>
 
-      {/* Department View Config Dialog */}
+          <TabsContent value="departments" className="mt-0 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Layers className="h-5 w-5 text-blue-600" />
+                  Departamentos
+                </CardTitle>
+                <CardDescription>
+                  Define las áreas de tu equipo (ej: Marketing, Desarrollo). El color se usa en la barra de aviso al filtrar por departamento.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-slate-500">Nombre</Label>
+                    <Input
+                      placeholder="Ej: Equipo Creativo, Ventas..."
+                      value={newDepartment}
+                      onChange={(e) => setNewDepartment(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && addNewDepartment()}
+                      className="w-48"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-slate-500">Color</Label>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="color"
+                        value={newDepartmentColor}
+                        onChange={(e) => setNewDepartmentColor(e.target.value)}
+                        className="h-9 w-12 cursor-pointer rounded border border-slate-200 bg-white"
+                      />
+                      <Input
+                        value={newDepartmentColor}
+                        onChange={(e) => setNewDepartmentColor(e.target.value)}
+                        className="w-24 font-mono text-sm"
+                      />
+                    </div>
+                  </div>
+                  <Button onClick={addNewDepartment} disabled={!newDepartment.trim()}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Añadir departamento
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  {departments.length === 0 ? (
+                    <p className="text-sm text-slate-400 italic text-center py-4">No hay departamentos. Añade uno para filtrar la vista por área.</p>
+                  ) : (
+                    departments.map((dept) => {
+                      const config = getConfigForDepartment(dept.name);
+                      return (
+                        <div key={dept.id} className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm gap-2">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div
+                              className="h-6 w-6 rounded shrink-0 border border-slate-200"
+                              style={{ backgroundColor: dept.color }}
+                              title={dept.color}
+                            />
+                            <Input
+                              value={dept.name}
+                              onChange={(e) => updateDepartmentName(dept.id, e.target.value)}
+                              className="h-8 w-40 font-medium border-0 shadow-none focus-visible:ring-0"
+                            />
+                            <input
+                              type="color"
+                              value={dept.color}
+                              onChange={(e) => updateDepartmentColor(dept.id, e.target.value)}
+                              className="h-7 w-8 cursor-pointer rounded border border-slate-200 bg-white shrink-0"
+                            />
+                            {config && (
+                              <div className="flex items-center gap-1">
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">Semanal</Badge>
+                                {config.isViewStrict && (
+                                  <TooltipProvider delayDuration={300}>
+                                    <Tooltip>
+                                      <TooltipTrigger><Lock className="h-3 w-3 text-amber-600" /></TooltipTrigger>
+                                      <TooltipContent><p className="text-xs">Vista estricta</p></TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <TooltipProvider delayDuration={300}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/10" onClick={() => { setSelectedDeptForConfig(dept.name); setDeptConfigDialogOpen(true); }}>
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p className="text-xs">Configurar vista por defecto del dashboard</p></TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50" onClick={() => deleteDepartment(dept.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+      {/* Department View Config Dialog - global */}
       <DepartmentViewConfigDialog
         open={deptConfigDialogOpen}
         onOpenChange={setDeptConfigDialogOpen}
         departmentName={selectedDeptForConfig}
       />
 
+          <TabsContent value="modules" className="mt-0 space-y-6">
       {/* Módulos Habilitados */}
       <Card>
         <CardHeader>
@@ -749,8 +831,139 @@ export default function AgencySettingsPage() {
         </CardContent>
       </Card>
 
+      {/* Precisión de planificación (exclusiones para el índice de fiabilidad) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart2 className="h-5 w-5 text-amber-600" />
+            Precisión de planificación
+          </CardTitle>
+          <CardDescription>
+            Excluye tareas de proyectos o clientes concretos del cálculo del índice de fiabilidad (precisión de planificación). Útil para no incluir, por ejemplo, gestiones internas.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Excluir proyectos</Label>
+              <Popover open={openExcludeProjects} onOpenChange={setOpenExcludeProjects}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between bg-slate-50 font-normal" size="sm">
+                    <span className="truncate">
+                      {planningPrecisionExclusions.projectIds.length === 0
+                        ? 'Ninguno seleccionado'
+                        : `${planningPrecisionExclusions.projectIds.length} proyecto(s)`}
+                    </span>
+                    <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0 ml-2" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[280px] max-w-[360px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar proyecto..." />
+                    <CommandList className="max-h-[260px]">
+                      <CommandEmpty>No hay proyectos o no coincide la búsqueda</CommandEmpty>
+                      <CommandGroup>
+                        {(projects || []).map((p) => {
+                          const selected = planningPrecisionExclusions.projectIds.includes(p.id);
+                          return (
+                            <CommandItem
+                              key={p.id}
+                              value={p.name}
+                              onSelect={() => {
+                                setPlanningPrecisionExclusions(prev => ({
+                                  ...prev,
+                                  projectIds: selected
+                                    ? prev.projectIds.filter(id => id !== p.id)
+                                    : [...prev.projectIds, p.id]
+                                }));
+                              }}
+                            >
+                              <Check className={cn('mr-2 h-4 w-4 shrink-0', selected ? 'opacity-100' : 'opacity-0')} />
+                              <span className="truncate">{p.name}</span>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {planningPrecisionExclusions.projectIds.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {planningPrecisionExclusions.projectIds.map((id) => {
+                    const p = (projects || []).find(pr => pr.id === id);
+                    return p ? (
+                      <Badge key={id} variant="secondary" className="text-xs">
+                        {p.name}
+                      </Badge>
+                    ) : null;
+                  })}
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Excluir clientes</Label>
+              <Popover open={openExcludeClients} onOpenChange={setOpenExcludeClients}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between bg-slate-50 font-normal" size="sm">
+                    <span className="truncate">
+                      {planningPrecisionExclusions.clientIds.length === 0
+                        ? 'Ninguno seleccionado'
+                        : `${planningPrecisionExclusions.clientIds.length} cliente(s)`}
+                    </span>
+                    <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0 ml-2" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[280px] max-w-[360px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar cliente..." />
+                    <CommandList className="max-h-[260px]">
+                      <CommandEmpty>No hay clientes o no coincide la búsqueda</CommandEmpty>
+                      <CommandGroup>
+                        {(clients || []).map((c) => {
+                          const selected = planningPrecisionExclusions.clientIds.includes(c.id);
+                          return (
+                            <CommandItem
+                              key={c.id}
+                              value={c.name}
+                              onSelect={() => {
+                                setPlanningPrecisionExclusions(prev => ({
+                                  ...prev,
+                                  clientIds: selected
+                                    ? prev.clientIds.filter(id => id !== c.id)
+                                    : [...prev.clientIds, c.id]
+                                }));
+                              }}
+                            >
+                              <Check className={cn('mr-2 h-4 w-4 shrink-0', selected ? 'opacity-100' : 'opacity-0')} />
+                              <span className="truncate">{c.name}</span>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {planningPrecisionExclusions.clientIds.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {planningPrecisionExclusions.clientIds.map((id) => {
+                    const c = (clients || []).find(cl => cl.id === id);
+                    return c ? (
+                      <Badge key={id} variant="secondary" className="text-xs">
+                        {c.name}
+                      </Badge>
+                    ) : null;
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+          </TabsContent>
 
-
+          <TabsContent value="projects" className="mt-0 space-y-6">
       {/* Filtros de Proyectos */}
       <Card>
         <CardHeader>
@@ -1031,7 +1244,9 @@ export default function AgencySettingsPage() {
           </div>
         </CardContent>
       </Card>
+          </TabsContent>
 
+          <TabsContent value="integrations" className="mt-0 space-y-6">
       {/* Integrations */}
       <Card>
         <CardHeader>
@@ -1318,7 +1533,9 @@ export default function AgencySettingsPage() {
           </div>
         </CardContent>
       </Card>
+          </TabsContent>
 
+          <TabsContent value="appearance" className="mt-0 space-y-6">
       {/* Personalización */}
       <Card>
         <CardHeader>
@@ -1361,8 +1578,9 @@ export default function AgencySettingsPage() {
           </div>
         </CardContent>
       </Card>
-
-
+          </TabsContent>
+        </div>
+      </Tabs>
 
       {/* Botón Flotante de Guardar - Siempre visible */}
       <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 lg:left-auto lg:right-6 lg:transform-none">

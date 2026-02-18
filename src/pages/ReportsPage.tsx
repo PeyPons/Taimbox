@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
+import { useDepartmentView } from '@/contexts/DepartmentViewContext';
+import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { useProjectMetrics } from '@/hooks/useProjectMetrics';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -46,6 +48,7 @@ import { format, subMonths, addMonths, startOfMonth, endOfMonth, parseISO, isSam
 import { es } from 'date-fns/locale';
 import { supabase } from '@/lib/supabase';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
+import { getExcludedProjectIds } from '@/utils/planningPrecisionUtils';
 import { Deadline, GlobalAssignment, WorkSchedule } from '@/types';
 import { GlobalPlanningInconsistencies } from '@/components/employee/GlobalPlanningInconsistencies';
 
@@ -94,6 +97,7 @@ const getReliabilityLabel = (data: ReliabilityData): string => {
 export default function ReportsPage() {
   const { employees, clients, projects, allocations, absences, teamEvents, loadDataForMonth, isLoading: isGlobalLoading } = useApp();
   const { currentAgency } = useAgency();
+  const { selectedDepartmentId } = useDepartmentView();
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('all');
@@ -102,7 +106,19 @@ export default function ReportsPage() {
   const loadedMonthsRef = useRef<Set<string>>(new Set());
   const { formatName: formatProjectName } = useProjectAliasing();
 
-  // Métricas centralizadas (Single Source of Truth)
+  const departments = useMemo(() => normalizeDepartments(currentAgency?.settings?.departments), [currentAgency?.settings?.departments]);
+  const filteredEmployeesForReport = useMemo(() => {
+    if (!selectedDepartmentId || !departments.length) return employees ?? [];
+    const dept = departments.find(d => d.id === selectedDepartmentId || d.name === selectedDepartmentId);
+    if (!dept) return employees ?? [];
+    return (employees ?? []).filter(e => employeeBelongsToDepartment(e.department, dept.id, dept.name));
+  }, [employees, selectedDepartmentId, departments]);
+  const filteredProjectsForReport = useMemo(() => {
+    if (!selectedDepartmentId || !(projects ?? []).length) return projects ?? [];
+    return (projects ?? []).filter(p => p.responsibleDepartmentId === selectedDepartmentId);
+  }, [projects, selectedDepartmentId]);
+
+  // Métricas centralizadas (Single Source of Truth) - cuando hay filtro por departamento, useProjectMetrics sigue con todos los datos; filtramos después en activeEmployees y en proyectos mostrados
   const {
     projectMetrics,
     employeeMetrics,
@@ -122,9 +138,10 @@ export default function ReportsPage() {
   const monthEnd = endOfMonth(currentMonth);
 
   const activeEmployees = useMemo(() => {
-    if (selectedEmployeeId === 'all') return employees.filter(e => e.isActive);
-    return employees.filter(e => e.id === selectedEmployeeId);
-  }, [employees, selectedEmployeeId]);
+    const base = selectedDepartmentId ? filteredEmployeesForReport : (employees ?? []);
+    if (selectedEmployeeId === 'all') return base.filter(e => e.isActive);
+    return base.filter(e => e.id === selectedEmployeeId);
+  }, [employees, selectedEmployeeId, selectedDepartmentId, filteredEmployeesForReport]);
 
   const monthAllocations = useMemo(() => {
     return (allocations || []).filter(a => {
@@ -155,10 +172,12 @@ export default function ReportsPage() {
   // ============================================================================
   const reliabilityByEmployee = useMemo(() => {
     const reliabilityMap: Record<string, ReliabilityData> = {};
+    const excludedIds = getExcludedProjectIds(projects || [], currentAgency?.settings?.planningPrecisionExclusions);
 
-    // Agrupar TODAS las allocations completadas por empleado (histórico completo)
+    // Agrupar TODAS las allocations completadas por empleado (histórico completo), excluyendo proyectos/clientes configurados
     (employees || []).forEach(emp => {
       const completedTasks = (allocations || []).filter(a =>
+        !excludedIds.has(a.projectId) &&
         a.employeeId === emp.id &&
         a.status === 'completed' &&
         a.hoursAssigned > 0 &&
@@ -201,7 +220,7 @@ export default function ReportsPage() {
     });
 
     return reliabilityMap;
-  }, [employees, allocations]);
+  }, [employees, allocations, projects, currentAgency?.settings?.planningPrecisionExclusions]);
 
   const employeeData = useMemo(() => {
     return activeEmployees.map(e => {
@@ -248,10 +267,11 @@ export default function ReportsPage() {
   }, [activeEmployees, monthAllocations, year, month, reliabilityByEmployee, absences, teamEvents, monthStart, monthEnd]);
 
   const projectData = useMemo(() => {
+    const projectsSource = selectedDepartmentId ? filteredProjectsForReport : (projects || []);
     const relevantProjectIds = new Set(monthAllocations.map(a => a.projectId));
     const projectsToShow = selectedEmployeeId === 'all'
-      ? (projects || []).filter(p => p.status === 'active')
-      : (projects || []).filter(p => relevantProjectIds.has(p.id));
+      ? projectsSource.filter(p => p.status === 'active')
+      : projectsSource.filter(p => relevantProjectIds.has(p.id));
 
     return projectsToShow.map(p => {
       const client = (clients || []).find(c => c.id === p.clientId);
@@ -276,7 +296,7 @@ export default function ReportsPage() {
       };
     }).filter(p => selectedEmployeeId === 'all' || p.hoursPlanned > 0)
       .sort((a, b) => b.hoursPlanned - a.hoursPlanned);
-  }, [projects, clients, monthAllocations, selectedEmployeeId]);
+  }, [projects, clients, monthAllocations, selectedEmployeeId, selectedDepartmentId, filteredProjectsForReport]);
 
   // ============================================================================
   // DASHBOARD EJECUTIVO: Alertas, Proyectos en Riesgo, Logros
@@ -294,8 +314,8 @@ export default function ReportsPage() {
       detail: string;
     }> = [];
 
-    // Analizar cada empleado activo
-    employees.filter(e => e.isActive).forEach(emp => {
+    const employeesForAlerts = selectedDepartmentId ? filteredEmployeesForReport : (employees ?? []);
+    employeesForAlerts.filter(e => e.isActive).forEach(emp => {
       const capacity = getMonthlyCapacity(year, month, emp.workSchedule);
       const empAllocations = monthAllocations.filter(a => a.employeeId === emp.id);
       const plannedHoursRaw = empAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
@@ -336,7 +356,7 @@ export default function ReportsPage() {
       const severityOrder = { high: 0, medium: 1, low: 2 };
       return severityOrder[a.severity] - severityOrder[b.severity];
     });
-  }, [employees, monthAllocations, year, month]);
+  }, [employees, monthAllocations, year, month, selectedDepartmentId, filteredEmployeesForReport]);
 
   // Proyectos en riesgo (superando horas contratadas o con problemas)
   // Determinar en qué semana del mes seleccionado estamos (1-4)
@@ -558,7 +578,8 @@ export default function ReportsPage() {
     // Esto asegura que se muestren todas las semanas, incluso si son 5 (como diciembre)
     const weeks = getWeeksForMonth(currentMonth);
 
-    return employees.filter(e => e.isActive).map(emp => {
+    const baseForHeatmap = selectedDepartmentId ? filteredEmployeesForReport : (employees ?? []);
+    return baseForHeatmap.filter(e => e.isActive).map(emp => {
       // Obtener ausencias del empleado para el mes actual
       const employeeAbsences = (absences || []).filter(a => a.employeeId === emp.id);
 
@@ -633,7 +654,7 @@ export default function ReportsPage() {
         weeklyLoad
       };
     });
-  }, [employees, allocations, currentMonth, monthStart, monthEnd, absences, teamEvents]);
+  }, [employees, allocations, currentMonth, monthStart, monthEnd, absences, teamEvents, selectedDepartmentId, filteredEmployeesForReport]);
 
   // Estado para deadlines y global assignments del mes siguiente
   const [nextMonthDeadlines, setNextMonthDeadlines] = useState<Deadline[]>([]);
@@ -657,7 +678,8 @@ export default function ReportsPage() {
     const nextMonthEnd = endOfMonth(nextMonth);
     const nextMonthStr = format(nextMonth, 'yyyy-MM');
 
-    return employees.filter(e => e.isActive).map(emp => {
+    const baseForFuture = selectedDepartmentId ? filteredEmployeesForReport : (employees ?? []);
+    return baseForFuture.filter(e => e.isActive).map(emp => {
       // 1. CÁLCULO DE CAPACIDAD NETA REAJUSTADA
       // Capacidad base del mes siguiente
       const baseCapacity = getMonthlyCapacity(
@@ -1031,7 +1053,7 @@ export default function ReportsPage() {
         }
       };
     }).sort((a, b) => b.nextMonth.estimatedAvailable - a.nextMonth.estimatedAvailable);
-  }, [employees, allocations, monthAllocations, reliabilityByEmployee, year, month, absences, teamEvents, nextMonthDeadlines, nextMonthGlobalAssignments, currentMonthDeadlines, currentMonthGlobalAssignments, historicalDeadlines, historicalGlobalAssignments, currentMonth]);
+  }, [employees, allocations, monthAllocations, reliabilityByEmployee, year, month, absences, teamEvents, nextMonthDeadlines, nextMonthGlobalAssignments, currentMonthDeadlines, currentMonthGlobalAssignments, historicalDeadlines, historicalGlobalAssignments, currentMonth, selectedDepartmentId, filteredEmployeesForReport]);
 
   // Cargar deadlines y global assignments del mes seleccionado, siguiente y meses históricos
   useEffect(() => {
@@ -1181,7 +1203,7 @@ export default function ReportsPage() {
     {
       title: 'Capacidad',
       value: `${totalCapacity}h`,
-      subtitle: selectedEmployeeId === 'all' ? 'Total equipo' : 'Disponible',
+      subtitle: selectedEmployeeId === 'all' ? (selectedDepartmentId ? 'Total departamento' : 'Total equipo') : 'Disponible',
       icon: Users,
       color: 'text-slate-600',
       bgColor: 'bg-slate-100',
@@ -1233,7 +1255,7 @@ export default function ReportsPage() {
               Reportes y métricas
             </h1>
             <p className="text-muted-foreground">
-              Análisis de rendimiento {selectedEmployeeId !== 'all' ? 'individual' : 'del equipo'}.
+              Análisis de rendimiento {selectedEmployeeId !== 'all' ? 'individual' : selectedDepartmentId ? 'del departamento' : 'del equipo'}.
             </p>
           </div>
 
@@ -1256,9 +1278,9 @@ export default function ReportsPage() {
                       <CommandGroup>
                         <CommandItem value="Todo el equipo" onSelect={() => { setSelectedEmployeeId('all'); setOpenFilterEmployee(false); }}>
                           <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedEmployeeId === 'all' ? 'opacity-100' : 'opacity-0')} />
-                          Todo el equipo
+                          {selectedDepartmentId ? 'Todo el departamento' : 'Todo el equipo'}
                         </CommandItem>
-                        {(employees || []).filter(e => e.isActive).map(e => (
+                        {(selectedDepartmentId ? filteredEmployeesForReport : (employees ?? [])).filter(e => e.isActive).map(e => (
                           <CommandItem key={e.id} value={e.name || ''} onSelect={() => { setSelectedEmployeeId(e.id); setOpenFilterEmployee(false); }}>
                             <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedEmployeeId === e.id ? 'opacity-100' : 'opacity-0')} />
                             {e.name}
@@ -1285,7 +1307,7 @@ export default function ReportsPage() {
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleNextMonth}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={handleToday} className="text-xs">Hoy</Button>
+              <Button variant="ghost" size="sm" onClick={handleToday} className="text-xs" aria-label="Mes actual">Mes actual</Button>
             </div>
           </div>
         </div>

@@ -3,6 +3,8 @@ import { supabase } from '@/lib/supabase';
 
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
+import { useDepartmentView } from '@/contexts/DepartmentViewContext';
+import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,6 +42,15 @@ export default function WeeklyForecastPage() {
     addAllocation, updateAllocation, currentUser, absences, teamEvents, getEmployeeLoadForWeek
   } = useApp();
   const { currentAgency } = useAgency();
+  const { selectedDepartmentId } = useDepartmentView();
+
+  const departments = useMemo(() => normalizeDepartments(currentAgency?.settings?.departments), [currentAgency?.settings?.departments]);
+  const employeesForView = useMemo(() => {
+    if (!selectedDepartmentId || !departments.length) return employees ?? [];
+    const dept = departments.find(d => d.id === selectedDepartmentId || d.name === selectedDepartmentId);
+    if (!dept) return employees ?? [];
+    return (employees ?? []).filter(e => employeeBelongsToDepartment(e.department, dept.id, dept.name));
+  }, [employees, selectedDepartmentId, departments]);
 
   const [currentMonth, setCurrentMonth] = useState(() => {
     const saved = localStorage.getItem('forecast_date');
@@ -1176,7 +1187,7 @@ export default function WeeklyForecastPage() {
                           <Check className={cn("mr-2 h-4 w-4", filterFeedbackEmployee === 'all' ? "opacity-100" : "opacity-0")} />
                           Todos los compañeros
                         </CommandItem>
-                        {employees
+                        {employeesForView
                           .filter(e => e.isActive)
                           .map(emp => (
                             <CommandItem key={emp.id} value={emp.name} onSelect={() => setFilterFeedbackEmployee(emp.id)}>
@@ -1739,7 +1750,7 @@ export default function WeeklyForecastPage() {
                             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                               <Command>
                                 <CommandList className="max-h-[280px]">
-                                  {employees.filter(e => e.isActive).map(emp => (
+                                  {employeesForView.filter(e => e.isActive).map(emp => (
                                     <CommandItem key={emp.id} value={emp.name || ''} onSelect={() => { setRedistributeToEmployee(emp.id); setOpenRedistributeEmployee(false); }}>
                                       <Check className={cn('mr-2 h-4 w-4 shrink-0', redistributeToEmployee === emp.id ? 'opacity-100' : 'opacity-0')} />
                                       {emp.name}

@@ -300,3 +300,12 @@
     transform: scale(1); 
   }
 }
+
+/* Placeholder del editor de soporte (Tiptap) */
+.ProseMirror[data-placeholder]:before {
+  content: attr(data-placeholder);
+  float: left;
+  color: hsl(var(--muted-foreground));
+  pointer-events: none;
+  height: 0;
+}

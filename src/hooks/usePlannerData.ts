@@ -7,7 +7,10 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useDepartmentView } from '@/contexts/DepartmentViewContext';
 import { getWeeksForMonth, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { useAgency } from '@/contexts/AgencyContext';
+import { employeeBelongsToDepartment, normalizeDepartments } from '@/utils/departmentUtils';
 import { Employee } from '@/types';
 
 interface WeekData {
@@ -36,6 +39,9 @@ export function usePlannerData(options: UsePlannerDataOptions = {}) {
         isLoading: isGlobalLoading,
         getEmployeeMonthlyLoad
     } = useApp();
+    const { currentAgency } = useAgency();
+    const { selectedDepartmentId } = useDepartmentView();
+    const departments = useMemo(() => normalizeDepartments(currentAgency?.settings?.departments), [currentAgency?.settings?.departments]);
 
     // ============================================================
     // Date State & Navigation
@@ -114,9 +120,14 @@ export function usePlannerData(options: UsePlannerDataOptions = {}) {
                 const employeesInProject = employeesByProject.get(selectedProjectId);
                 if (!employeesInProject || !employeesInProject.has(e.id)) return false;
             }
+            // Vista por departamento: solo empleados del departamento seleccionado
+            if (selectedDepartmentId && departments.length > 0) {
+                const dept = departments.find(d => d.id === selectedDepartmentId || d.name === selectedDepartmentId);
+                if (dept && !employeeBelongsToDepartment(e.department, dept.id, dept.name)) return false;
+            }
             return true;
         });
-    }, [employees, options.showOnlyMe, options.selectedEmployeeId, options.selectedProjectId, employeesByProject, currentUser]);
+    }, [employees, options.showOnlyMe, options.selectedEmployeeId, options.selectedProjectId, employeesByProject, currentUser, selectedDepartmentId, departments]);
 
     // Sorted lists for dropdowns
     const sortedProjects = useMemo(() =>

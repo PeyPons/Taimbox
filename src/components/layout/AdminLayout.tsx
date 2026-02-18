@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Building2, ArrowLeft, MessageSquare, BarChart3, FileText } from "lucide-react";
+import { Building2, ArrowLeft, MessageSquare, BarChart3, FileText, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -32,6 +32,16 @@ export function AdminLayout() {
             asChild
           >
             <Link to="/admin/agencies">Agencias</Link>
+          </Button>
+          <Button
+            variant={location.pathname.startsWith("/admin/admins") ? "secondary" : "ghost"}
+            size="sm"
+            asChild
+          >
+            <Link to="/admin/admins" className="gap-1">
+              <Shield className="h-4 w-4" />
+              Administradores
+            </Link>
           </Button>
           <Button
             variant={location.pathname.startsWith("/admin/support") ? "secondary" : "ghost"}

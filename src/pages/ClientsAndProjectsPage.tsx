@@ -5,6 +5,7 @@ import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
+import { useDepartmentView } from '@/contexts/DepartmentViewContext';
 import { Client, Project, OKR, Allocation } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +38,7 @@ import { useIntegration } from '@/hooks/useIntegration';
 import { Deadline } from '@/types';
 import { getEffectiveBudget } from '@/utils/budgetUtils';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
+import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { supabase } from '@/lib/supabase';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
@@ -115,8 +117,17 @@ export default function ClientsAndProjectsPage() {
     updateAllocation
   } = useApp();
   const { currentAgency } = useAgency();
+  const { selectedDepartmentId } = useDepartmentView();
   const isCrmExportEnabled = useIntegration('crm_export');
   const { formatName: formatProjectName } = useProjectAliasing();
+
+  const departmentOptions = normalizeDepartments(currentAgency?.settings?.departments);
+  const employeesForView = useMemo(() => {
+    if (!selectedDepartmentId || !departmentOptions.length) return employees ?? [];
+    const dept = departmentOptions.find(d => d.id === selectedDepartmentId || d.name === selectedDepartmentId);
+    if (!dept) return employees ?? [];
+    return (employees ?? []).filter(e => employeeBelongsToDepartment(e.department, dept.id, dept.name));
+  }, [employees, selectedDepartmentId, departmentOptions]);
 
   // Estados
   const [searchQuery, setSearchQuery] = useState('');
@@ -166,6 +177,7 @@ export default function ClientsAndProjectsPage() {
     minimumHours: z.coerce.number().min(0, 'Las horas mínimas no pueden ser negativas'),
     monthlyFee: z.coerce.number().min(0, 'El fee mensual no puede ser negativo'),
     status: z.enum(['active', 'archived', 'completed']),
+    responsibleDepartmentId: z.string().optional().or(z.literal('')),
     externalId: z.coerce.number().optional().or(z.literal('')),
     okrs: z.array(z.object({
       id: z.string(),
@@ -196,6 +208,7 @@ export default function ClientsAndProjectsPage() {
       minimumHours: 0,
       monthlyFee: 0,
       status: 'active',
+      responsibleDepartmentId: '',
       externalId: '',
       okrs: [],
     },
@@ -690,6 +703,7 @@ export default function ClientsAndProjectsPage() {
       minimumHours: 0,
       monthlyFee: 0,
       status: 'active',
+      responsibleDepartmentId: '',
       externalId: '',
       okrs: [],
     });
@@ -705,6 +719,7 @@ export default function ClientsAndProjectsPage() {
       minimumHours: project.minimumHours || 0,
       monthlyFee: project.monthlyFee || 0,
       status: project.status,
+      responsibleDepartmentId: project.responsibleDepartmentId ?? '',
       externalId: project.externalId || '',
       okrs: project.okrs || []
     });
@@ -720,6 +735,7 @@ export default function ClientsAndProjectsPage() {
           minimumHours: Number(data.minimumHours) || 0,
           monthlyFee: Number(data.monthlyFee) || 0,
           status: data.status,
+          responsibleDepartmentId: data.responsibleDepartmentId || undefined,
           externalId: data.externalId !== '' ? Number(data.externalId) : undefined,
           okrs: (data.okrs || []).map(o => ({ ...o, id: o.id || crypto.randomUUID() })) as OKR[],
           agencyId: currentAgency?.id || ''
@@ -734,6 +750,7 @@ export default function ClientsAndProjectsPage() {
           minimumHours: Number(data.minimumHours) || 0,
           monthlyFee: Number(data.monthlyFee) || 0,
           status: data.status,
+          responsibleDepartmentId: data.responsibleDepartmentId || undefined,
           externalId: data.externalId !== '' ? Number(data.externalId) : undefined,
           okrs: (data.okrs || []).map(o => ({ ...o, id: o.id || crypto.randomUUID() })) as OKR[]
         });
@@ -925,8 +942,9 @@ export default function ClientsAndProjectsPage() {
               size="sm"
               className="h-8 text-xs"
               onClick={() => setCurrentMonth(new Date())}
+              aria-label="Mes actual"
             >
-              Hoy
+              Mes actual
             </Button>
           </div>
 
@@ -1096,6 +1114,49 @@ export default function ClientsAndProjectsPage() {
                       </FormItem>
                     )}
                   />
+                  {departmentOptions.length > 0 && (
+                    <FormField
+                      control={projectForm.control}
+                      name="responsibleDepartmentId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Departamento responsable</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button variant="outline" className="w-full justify-between font-normal">
+                                  <span className="truncate">
+                                    {field.value
+                                      ? departmentOptions.find(d => d.id === field.value)?.name ?? 'Sin asignar'
+                                      : 'Sin asignar'}
+                                  </span>
+                                  <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                              <Command>
+                                <CommandList className="max-h-[280px]">
+                                  <CommandItem value="Sin asignar" onSelect={() => field.onChange('')}>
+                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', !field.value ? 'opacity-100' : 'opacity-0')} />
+                                    Sin asignar
+                                  </CommandItem>
+                                  {departmentOptions.map(dept => (
+                                    <CommandItem key={dept.id} value={dept.name} onSelect={() => field.onChange(dept.id)}>
+                                      <Check className={cn('mr-2 h-4 w-4 shrink-0', field.value === dept.id ? 'opacity-100' : 'opacity-0')} />
+                                      <span className="h-3 w-3 rounded-full shrink-0 mr-2 border border-slate-300" style={{ backgroundColor: dept.color }} />
+                                      {dept.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                   {/* Campo CRM Project ID */}
                   {isCrmExportEnabled && (
                     <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg space-y-2">
@@ -1392,7 +1453,7 @@ export default function ClientsAndProjectsPage() {
                     <CommandItem onSelect={() => { setSelectedEmployeeId('all'); setOpenEmployeeCombo(false); }}>
                       Todos los empleados
                     </CommandItem>
-                    {employees.filter(e => e.isActive).map(e => (
+                    {employeesForView.filter(e => e.isActive).map(e => (
                       <CommandItem key={e.id} onSelect={() => { setSelectedEmployeeId(e.id); setOpenEmployeeCombo(false); }}>
                         {e.name}
                       </CommandItem>
@@ -2294,11 +2355,11 @@ export default function ClientsAndProjectsPage() {
                     <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                       <Command>
                         <CommandList className="max-h-[280px]">
-                          {employees.filter(e => e.isActive).map(emp => (
-                            <CommandItem key={emp.id} value={emp.name || emp.first_name || 'Sin nombre'} onSelect={() => { setEditTaskEmployeeId(emp.id); setOpenEditTaskEmployee(false); }}>
-                              <Check className={cn('mr-2 h-4 w-4 shrink-0', editTaskEmployeeId === emp.id ? 'opacity-100' : 'opacity-0')} />
-                              {emp.name || emp.first_name || 'Sin nombre'}
-                            </CommandItem>
+                          {employeesForView.filter(e => e.isActive).map(emp => (
+                              <CommandItem key={emp.id} value={emp.name || emp.first_name || 'Sin nombre'} onSelect={() => { setEditTaskEmployeeId(emp.id); setOpenEditTaskEmployee(false); }}>
+                                <Check className={cn('mr-2 h-4 w-4 shrink-0', editTaskEmployeeId === emp.id ? 'opacity-100' : 'opacity-0')} />
+                                {emp.name || emp.first_name || 'Sin nombre'}
+                              </CommandItem>
                           ))}
                         </CommandList>
                       </Command>

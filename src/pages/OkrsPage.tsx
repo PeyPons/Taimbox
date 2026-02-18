@@ -1,5 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
+import { useDepartmentView } from '@/contexts/DepartmentViewContext';
+import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { useGoals } from '@/contexts/GoalsContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -35,9 +38,19 @@ interface KeyResultItem {
 
 export default function OkrsPage() {
     const { projects, clients, updateProject, currentUser, employees, allocations } = useApp();
+    const { currentAgency } = useAgency();
+    const { selectedDepartmentId } = useDepartmentView();
     const { professionalGoals, addProfessionalGoal, updateProfessionalGoal, deleteProfessionalGoal } = useGoals();
     const { hasPermission } = usePermissions();
     const { formatName: formatProjectName } = useProjectAliasing();
+
+    const departments = useMemo(() => normalizeDepartments(currentAgency?.settings?.departments), [currentAgency?.settings?.departments]);
+    const employeesForView = useMemo(() => {
+        if (!selectedDepartmentId || !departments.length) return employees ?? [];
+        const dept = departments.find(d => d.id === selectedDepartmentId || d.name === selectedDepartmentId);
+        if (!dept) return employees ?? [];
+        return (employees ?? []).filter(e => employeeBelongsToDepartment(e.department, dept.id, dept.name));
+    }, [employees, selectedDepartmentId, departments]);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState('projects');
@@ -376,7 +389,7 @@ export default function OkrsPage() {
                                     <CommandInput placeholder="Buscar empleado..." />
                                     <CommandList>
                                         <CommandGroup>
-                                            {employees.filter(e => e.isActive).map((employee) => (
+                                            {employeesForView.filter(e => e.isActive).map((employee) => (
                                                 <CommandItem key={employee.id} value={employee.name} onSelect={() => setAdminSelectedEmployeeId(employee.id)}>
                                                     <Check className={cn("mr-2 h-4 w-4", adminSelectedEmployeeId === employee.id ? "opacity-100" : "opacity-0")} />
                                                     {employee.name}

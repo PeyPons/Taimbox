@@ -14,6 +14,8 @@ import { Employee, WorkSchedule, EmployeeRole } from '@/types';
 import { UserPermissions, PERMISSION_LABELS, DEFAULT_PERMISSIONS } from '@/types/permissions';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
+import { useDepartmentView } from '@/contexts/DepartmentViewContext';
+import { normalizeDepartments } from '@/utils/departmentUtils';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Briefcase, CalendarClock, Target, Lock, Clock, ShieldCheck, Hash, Key } from 'lucide-react';
@@ -75,7 +77,11 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
   };
 
   const availableRoles = getRoleNames(currentAgency?.settings?.roles);
-  const availableDepartments = currentAgency?.settings?.departments || ['SEO', 'PPC'];
+  const normalizedDepts = normalizeDepartments(currentAgency?.settings?.departments);
+  const availableDepartments = normalizedDepts.length
+    ? normalizedDepts
+    : [{ id: 'general', name: 'General', color: '#6366f1' }];
+  const { selectedDepartmentId } = useDepartmentView();
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [showProjects, setShowProjects] = useState(false);
@@ -89,7 +95,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
       email: '',
       password: '',
       role: availableRoles[0] || '',
-      department: availableDepartments[0] || '',
+      department: availableDepartments[0]?.id ?? '',
       capacity: 40,
       hourlyRate: 0,
       crmUserId: '',
@@ -102,24 +108,32 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
   useEffect(() => {
     if (open) {
       if (employeeToEdit) {
+        const matchDept = availableDepartments.find(
+          d => d.id === employeeToEdit!.department || d.name === employeeToEdit!.department
+        );
+        const departmentValue = matchDept?.id ?? employeeToEdit.department ?? availableDepartments[0]?.id ?? '';
         form.reset({
           name: employeeToEdit.name,
           email: employeeToEdit.email || '',
           password: '',
           role: employeeToEdit.role || availableRoles[0] || '',
-          department: employeeToEdit.department || availableDepartments[0] || '',
+          department: departmentValue,
           capacity: employeeToEdit.defaultWeeklyCapacity,
           hourlyRate: employeeToEdit.hourlyRate || 0,
           crmUserId: employeeToEdit.crmUserId || '',
           workSchedule: employeeToEdit.workSchedule || defaultSchedule,
         });
       } else {
+        const defaultDeptId =
+          selectedDepartmentId && availableDepartments.some(d => d.id === selectedDepartmentId || d.name === selectedDepartmentId)
+            ? selectedDepartmentId
+            : availableDepartments[0]?.id ?? '';
         form.reset({
           name: '',
           email: '',
           password: '',
           role: availableRoles[0] || '',
-          department: availableDepartments[0] || '',
+          department: defaultDeptId,
           capacity: 40,
           hourlyRate: 0,
           crmUserId: '',
@@ -127,7 +141,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
         });
       }
     }
-  }, [open, employeeToEdit, form]);
+  }, [open, employeeToEdit, form, availableDepartments, selectedDepartmentId]);
 
   const onSubmit = async (data: EmployeeFormValues) => {
     setIsProcessing(true);
@@ -453,7 +467,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
                       name="department"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Departamento</FormLabel>
+                          <FormLabel>Departamento principal</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
@@ -462,7 +476,12 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
                             </FormControl>
                             <SelectContent>
                               {availableDepartments.map(dept => (
-                                <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                                <SelectItem key={dept.id} value={dept.id}>
+                                  <span className="flex items-center gap-2">
+                                    <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: dept.color }} />
+                                    {dept.name}
+                                  </span>
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>

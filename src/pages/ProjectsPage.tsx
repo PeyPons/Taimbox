@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
+import { useDepartmentView } from '@/contexts/DepartmentViewContext';
+import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { useIntegration } from '@/hooks/useIntegration';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -38,8 +40,17 @@ type FilterType = 'all' | 'needs-planning' | 'behind-schedule' | 'over-budget' |
 export default function ProjectsPage() {
   const { projects, clients, allocations, employees, deleteProject, updateProject, addProject } = useApp();
   const { currentAgency } = useAgency();
+  const { selectedDepartmentId } = useDepartmentView();
   const isCrmExportEnabled = useIntegration('crm_export');
   const { formatName: formatProjectName } = useProjectAliasing();
+
+  const departments = useMemo(() => normalizeDepartments(currentAgency?.settings?.departments), [currentAgency?.settings?.departments]);
+  const employeesForView = useMemo(() => {
+    if (!selectedDepartmentId || !departments.length) return employees ?? [];
+    const dept = departments.find(d => d.id === selectedDepartmentId || d.name === selectedDepartmentId);
+    if (!dept) return employees ?? [];
+    return (employees ?? []).filter(e => employeeBelongsToDepartment(e.department, dept.id, dept.name));
+  }, [employees, selectedDepartmentId, departments]);
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState('');
@@ -352,8 +363,8 @@ export default function ProjectsPage() {
             <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-8 w-8">
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleToday} className="text-xs h-8">
-              Hoy
+            <Button variant="ghost" size="sm" onClick={handleToday} className="text-xs h-8" aria-label="Mes actual">
+              Mes actual
             </Button>
           </div>
         </div>
@@ -630,7 +641,7 @@ export default function ProjectsPage() {
                   <CommandItem onSelect={() => { setSelectedEmployeeId('all'); setOpenEmployeeCombo(false); }}>
                     Todos los empleados
                   </CommandItem>
-                  {employees.filter(e => e.isActive).map(e => (
+                  {employeesForView.filter(e => e.isActive).map(e => (
                     <CommandItem key={e.id} onSelect={() => { setSelectedEmployeeId(e.id); setOpenEmployeeCombo(false); }}>
                       {e.name}
                     </CommandItem>

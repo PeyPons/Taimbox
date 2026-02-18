@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
+import { useDepartmentView } from '@/contexts/DepartmentViewContext';
+import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { supabase } from '@/lib/supabase';
 import { Allocation } from '@/types';
 import { format, startOfWeek, isSameDay } from 'date-fns';
@@ -15,7 +18,17 @@ import { toast } from 'sonner';
 
 export default function TeamPulsePage() {
     const { employees, allocations, projects, clients, isLoading, refreshData } = useApp();
+    const { currentAgency } = useAgency();
+    const { selectedDepartmentId } = useDepartmentView();
     const [realtimeAllocations, setRealtimeAllocations] = useState<Allocation[]>([]);
+
+    const departments = useMemo(() => normalizeDepartments(currentAgency?.settings?.departments), [currentAgency?.settings?.departments]);
+    const filteredEmployees = useMemo(() => {
+        if (!selectedDepartmentId || !departments.length) return employees;
+        const dept = departments.find(d => d.id === selectedDepartmentId || d.name === selectedDepartmentId);
+        if (!dept) return employees;
+        return employees.filter(e => employeeBelongsToDepartment(e.department, dept.id, dept.name));
+    }, [employees, selectedDepartmentId, departments]);
 
     // Sincronizar estado local con contexto inicial
     useEffect(() => {
@@ -45,9 +58,9 @@ export default function TeamPulsePage() {
     const weekStart = startOfWeek(today, { weekStartsOn: 1 });
     const weekStartStr = format(weekStart, 'yyyy-MM-dd');
 
-    // Agrupar datos por empleado
+    // Agrupar datos por empleado (respeta vista por departamento)
     const employeeColumns = useMemo(() => {
-        return employees
+        return filteredEmployees
             .filter(e => e.isActive && e.role !== 'admin') // Filtrar admins si se desea, o inactivos
             .sort((a, b) => a.name.localeCompare(b.name)) // Orden alfabético
             .map(employee => {
@@ -80,7 +93,7 @@ export default function TeamPulsePage() {
                     status: activeTask ? 'busy' : 'idle'
                 };
             });
-    }, [employees, realtimeAllocations, weekStartStr]);
+    }, [filteredEmployees, realtimeAllocations, weekStartStr]);
 
     const getProjectName = (projectId: string) => {
         const p = projects.find(pr => pr.id === projectId);

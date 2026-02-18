@@ -54,6 +54,7 @@ interface SupabaseProject {
   external_id?: string;
   project_type?: string;
   is_hidden?: boolean;
+  responsible_department_id?: string | null;
   okrs?: { id: string; title: string; progress: number }[];
   deliverables_log?: Record<string, string[]>;
 }
@@ -282,6 +283,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           externalId: p.external_id ? Number(p.external_id) : undefined,
           projectType: p.project_type,
           isHidden: p.is_hidden || false,
+          responsibleDepartmentId: p.responsible_department_id ?? undefined,
           okrs: p.okrs,
           deliverables_log: p.deliverables_log
         })));
@@ -623,6 +625,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         externalId: p.external_id ? Number(p.external_id) : undefined,
         projectType: p.project_type,
         isHidden: p.is_hidden || false,
+        responsibleDepartmentId: p.responsible_department_id ?? undefined,
         okrs: p.okrs,
         deliverables_log: p.deliverables_log
       }));
@@ -684,6 +687,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       externalId: row.external_id ? Number(row.external_id) : undefined,
       projectType: row.project_type,
       isHidden: row.is_hidden || false,
+      responsibleDepartmentId: row.responsible_department_id ?? undefined,
       okrs: row.okrs,
       deliverables_log: row.deliverables_log
     });
@@ -1222,7 +1226,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       budget_hours: project.budgetHours,
       minimum_hours: project.minimumHours,
       monthly_fee: project.monthlyFee,
-      external_id: project.externalId
+      external_id: project.externalId,
+      responsible_department_id: project.responsibleDepartmentId ?? null
     }).select().single();
 
     if (data) {
@@ -1235,7 +1240,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         budgetHours: round2(data.budget_hours),
         minimumHours: round2(data.minimum_hours || 0),
         monthlyFee: round2(data.monthly_fee || 0),
-        externalId: data.external_id ? Number(data.external_id) : undefined
+        externalId: data.external_id ? Number(data.external_id) : undefined,
+        responsibleDepartmentId: data.responsible_department_id ?? undefined
       }]);
     }
   }, [currentAgency?.id]);
@@ -1253,7 +1259,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       deliverables_log: project.deliverables_log,
       external_id: project.externalId,
       project_type: project.projectType,
-      is_hidden: project.isHidden || false
+      is_hidden: project.isHidden || false,
+      responsible_department_id: project.responsibleDepartmentId ?? null
     }).eq('id', project.id);
   }, []);
 

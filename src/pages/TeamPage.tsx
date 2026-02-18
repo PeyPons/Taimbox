@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
+import { useDepartmentView } from '@/contexts/DepartmentViewContext';
+import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { EmployeeCard } from '@/components/team/EmployeeCard';
 import { TeamEventManager } from '@/components/team/TeamEventManager';
 import { Button } from '@/components/ui/button';
@@ -11,13 +14,22 @@ import { Employee } from '@/types';
 
 export default function TeamPage() {
   const { employees } = useApp();
+  const { currentAgency } = useAgency();
+  const { selectedDepartmentId } = useDepartmentView();
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Estado para el diálogo de edición/creación completo
+
+  const departments = useMemo(() => normalizeDepartments(currentAgency?.settings?.departments), [currentAgency?.settings?.departments]);
+  const employeesForView = useMemo(() => {
+    if (!selectedDepartmentId || !departments.length) return employees ?? [];
+    const dept = departments.find(d => d.id === selectedDepartmentId || d.name === selectedDepartmentId);
+    if (!dept) return employees ?? [];
+    return (employees ?? []).filter(e => employeeBelongsToDepartment(e.department, dept.id, dept.name));
+  }, [employees, selectedDepartmentId, departments]);
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
-  const filteredEmployees = employees.filter(e => 
+  const filteredEmployees = employeesForView.filter(e =>
     e.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     e.role.toLowerCase().includes(searchTerm.toLowerCase())
   );

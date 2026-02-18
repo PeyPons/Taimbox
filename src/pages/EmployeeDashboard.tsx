@@ -544,7 +544,7 @@ export default function EmployeeDashboard() {
             </div>
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-md">
               <Button variant="ghost" size="icon" className={cn("h-7 w-7", isMobile && "h-11 w-11 min-h-[44px]")} onClick={handlePrevMonth}><ChevronLeft className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="sm" onClick={handleToday} className={cn("h-7 text-xs px-2", isMobile && "h-11 min-h-[44px] text-sm px-3")}>Hoy</Button>
+              <Button variant="ghost" size="sm" onClick={handleToday} className={cn("h-7 text-xs px-2", isMobile && "h-11 min-h-[44px] text-sm px-3")} aria-label="Mes actual">Mes actual</Button>
               <Button variant="ghost" size="icon" className={cn("h-7 w-7", isMobile && "h-11 w-11 min-h-[44px]")} onClick={handleNextMonth}><ChevronRight className="h-4 w-4" /></Button>
             </div>
           </div>

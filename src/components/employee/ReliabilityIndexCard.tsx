@@ -1,5 +1,7 @@
 import { useMemo, memo } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
+import { getExcludedProjectIds } from '@/utils/planningPrecisionUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -18,13 +20,17 @@ interface ReliabilityIndexCardProps {
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 export const ReliabilityIndexCard = memo(function ReliabilityIndexCard({ employeeId, viewDate }: ReliabilityIndexCardProps) {
-  const { allocations, employees } = useApp();
+  const { allocations, employees, projects } = useApp();
+  const { currentAgency } = useAgency();
   const employee = employees.find(e => e.id === employeeId);
   const targetMonth = viewDate || new Date();
 
   const reliability = useMemo(() => {
-    // 1. Obtener TODAS las tareas completadas históricas (ignorando viewDate)
+    const excludedIds = getExcludedProjectIds(projects || [], currentAgency?.settings?.planningPrecisionExclusions);
+
+    // 1. Obtener TODAS las tareas completadas históricas (ignorando viewDate), excluyendo proyectos/clientes configurados
     const allCompletedTasks = (allocations || []).filter(a => {
+      if (excludedIds.has(a.projectId)) return false;
       return a.employeeId === employeeId &&
         a.status === 'completed' &&
         a.hoursAssigned > 0 &&
@@ -54,7 +60,7 @@ export const ReliabilityIndexCard = memo(function ReliabilityIndexCard({ employe
     const averageDeviation = tasksAnalyzed > 0 ? round2((totalReal - totalEstimated) / tasksAnalyzed) : 0;
 
     return { index, totalEstimated, totalReal, tasksAnalyzed, trend, averageDeviation };
-  }, [allocations, employeeId]);
+  }, [allocations, employeeId, projects, currentAgency?.settings?.planningPrecisionExclusions]);
 
   const getConfig = () => {
     if (reliability.tasksAnalyzed < 5) {

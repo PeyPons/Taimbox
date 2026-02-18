@@ -4,6 +4,13 @@
 
 export type ViewMode = 'weekly' | 'daily';
 
+/** Departamento/área para filtrado de vistas (ej: Marketing, Desarrollo). Definido en Configuración de Agencia. */
+export interface DepartmentDefinition {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export interface DepartmentConfig {
   id: string;
   agencyId: string;
@@ -77,7 +84,8 @@ export interface RolePermissions {
 export interface AgencySettings {
   modules?: AgencyModules;
   roles?: RolePermissions[];
-  departments?: string[];
+  /** Lista de departamentos/áreas (nombre + color). Legacy: puede ser string[]; normalizar a DepartmentDefinition[] en la UI. */
+  departments?: (string | DepartmentDefinition)[];
   branding?: AgencyBranding;
   features?: Record<string, boolean>;
   projectFilters?: CustomProjectFilter[];  // Custom project filters
@@ -97,6 +105,11 @@ export interface AgencySettings {
   };
   // Weekly system configuration
   weeklyCloseDay?: number; // Days from week start for weekly close (0-6, default 4 = Friday)
+  // Excluir tareas de estos proyectos o clientes del cálculo de precisión de planificación (índice de fiabilidad)
+  planningPrecisionExclusions?: {
+    projectIds?: string[];
+    clientIds?: string[];
+  };
 }
 
 export type AgencyStatus = 'active' | 'suspended';
@@ -173,6 +186,8 @@ export interface Project {
   externalId?: number;    // ID del proyecto en el CRM
   projectType?: string;   // 'PPC' | 'Entregable' | 'Mensual'
   isHidden?: boolean;     // Si el proyecto está oculto
+  /** ID del departamento responsable (para filtrado en reportes por área). */
+  responsibleDepartmentId?: string | null;
 }
 
 export interface OKR {

@@ -18,6 +18,7 @@ import {
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { getValidRole, getValidDepartment } from '@/utils/roleUtils';
+import { normalizeDepartments } from '@/utils/departmentUtils';
 import { toast } from 'sonner';
 
 interface EmployeeCardProps {
@@ -30,11 +31,9 @@ export const EmployeeCard = memo(function EmployeeCard({ employee }: EmployeeCar
   
   // Obtener roles y departamentos disponibles
   const availableRoles = currentAgency?.settings?.roles || [];
-  const availableDepartments = currentAgency?.settings?.departments || [];
-  
-  // Obtener rol y departamento válidos (nunca vacíos)
+  const availableDepartments = normalizeDepartments(currentAgency?.settings?.departments);
   const displayRole = getValidRole(employee, availableRoles);
-  const displayDepartment = getValidDepartment(employee, availableDepartments);
+  const displayDepartment = getValidDepartment(employee, availableDepartments.length ? availableDepartments : undefined);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
