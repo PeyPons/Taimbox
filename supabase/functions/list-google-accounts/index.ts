@@ -49,9 +49,16 @@ Deno.serve(async (req) => {
         }
 
         // Fallback para refresh token (columna > settings)
-        const refreshToken = agency.google_ads_refresh_token || agency.settings?.integrations?.googleRefreshToken
+        let refreshToken = agency.google_ads_refresh_token
+        let source = 'DB_COLUMN'
 
-        console.log(`[list-google-accounts] Refresh token found: ${!!refreshToken}`)
+        if (!refreshToken) {
+            refreshToken = agency.settings?.integrations?.googleRefreshToken
+            source = 'LEGACY_JSON'
+        }
+
+        console.log(`[list-google-accounts] Refresh token source: ${source}`)
+        console.log(`[list-google-accounts] Refresh token found: ${!!refreshToken}, Length: ${refreshToken?.length}`)
 
         if (!refreshToken) {
             throw new Error('La agencia no tiene una cuenta de Google vinculada (falta refresh token)')
