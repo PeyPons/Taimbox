@@ -47,6 +47,9 @@ $SUPABASE_CMD functions deploy invite-user-to-agency
 echo "  → sync-google-ads..."
 $SUPABASE_CMD functions deploy sync-google-ads --no-verify-jwt
 
+echo "  → exchange-google-token..."
+$SUPABASE_CMD functions deploy exchange-google-token --no-verify-jwt
+
 echo "  → sync-meta-ads..."
 $SUPABASE_CMD functions deploy sync-meta-ads --no-verify-jwt
 

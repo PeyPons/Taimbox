@@ -91,6 +91,7 @@ const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 const TeamPulsePage = lazyWithRetry(() => import("./pages/TeamPulsePage"));
 const ApiKeysPage = lazyWithRetry(() => import("./pages/ApiKeysPage"));
 const ContactSupportPage = lazyWithRetry(() => import("./pages/ContactSupportPage"));
+const GoogleCallbackPage = lazyWithRetry(() => import("./pages/GoogleCallbackPage"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -141,6 +142,9 @@ const App = () => (
 
                           {/* Suspended: fuera de AppLayout, solo sesión */}
                           <Route path="/suspended" element={<SuspendedPage />} />
+
+                          {/* Google OAuth Callback (sin AppLayout, página de transición) */}
+                          <Route path="/google-callback" element={<Suspense fallback={<PageLoader />}><GoogleCallbackPage /></Suspense>} />
 
                           {/* Área admin: sin AgencyContext, solo platform_admin */}
                           <Route path="/admin" element={<PlatformAdminRoute />}>

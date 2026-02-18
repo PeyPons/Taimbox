@@ -1533,47 +1533,55 @@ export default function AgencySettingsPage() {
                           onChange={(e) => setIntegrations(prev => ({ ...prev, googleAdsCustomerId: e.target.value }))}
                           placeholder="Ej: 9810132048"
                         />
+                        <p className="text-xs text-slate-500">El ID de tu cuenta MCC de Google Ads (sin guiones).</p>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="google-dev-token">Developer Token</Label>
-                        <Input
-                          id="google-dev-token"
-                          type="password"
-                          value={integrations.googleAdsDevToken || ''}
-                          onChange={(e) => setIntegrations(prev => ({ ...prev, googleAdsDevToken: e.target.value }))}
-                          placeholder="Token de desarrollador"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="google-client-id">Client ID (OAuth)</Label>
-                        <Input
-                          id="google-client-id"
-                          type="password"
-                          value={integrations.googleClientId || ''}
-                          onChange={(e) => setIntegrations(prev => ({ ...prev, googleClientId: e.target.value }))}
-                          placeholder="xxxx.apps.googleusercontent.com"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="google-client-secret">Client Secret (OAuth)</Label>
-                        <Input
-                          id="google-client-secret"
-                          type="password"
-                          value={integrations.googleClientSecret || ''}
-                          onChange={(e) => setIntegrations(prev => ({ ...prev, googleClientSecret: e.target.value }))}
-                          placeholder="GOCSPX-..."
-                        />
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="google-refresh-token">Refresh Token (OAuth)</Label>
-                        <Input
-                          id="google-refresh-token"
-                          type="password"
-                          value={integrations.googleRefreshToken || ''}
-                          onChange={(e) => setIntegrations(prev => ({ ...prev, googleRefreshToken: e.target.value }))}
-                          placeholder="1//0g..."
-                        />
-                        <p className="text-xs text-slate-500">Obtenido tras completar el flujo OAuth con tu cuenta de Google Ads.</p>
+                      <div className="space-y-3 flex flex-col justify-center">
+                        <Label>Conexión con Google Ads</Label>
+                        {integrations.googleRefreshToken ? (
+                          <div className="flex items-center gap-3">
+                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">✅ Vinculado</Badge>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+                                if (!googleClientId) {
+                                  toast.error('Error de configuración: Falta VITE_GOOGLE_CLIENT_ID en el entorno.');
+                                  return;
+                                }
+                                const redirectUri = window.location.origin + '/google-callback';
+                                const scope = 'https://www.googleapis.com/auth/adwords';
+                                const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(googleClientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`;
+                                window.location.href = authUrl;
+                              }}
+                            >
+                              Re-vincular
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-2">
+                            <Button
+                              variant="outline"
+                              className="w-full justify-center gap-2 border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800"
+                              onClick={() => {
+                                const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+                                if (!googleClientId) {
+                                  toast.error('Error de configuración: Falta VITE_GOOGLE_CLIENT_ID en el entorno.');
+                                  return;
+                                }
+                                const redirectUri = window.location.origin + '/google-callback';
+                                const scope = 'https://www.googleapis.com/auth/adwords';
+                                const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(googleClientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`;
+                                window.location.href = authUrl;
+                              }}
+                            >
+                              🔗 Conectar con Google
+                            </Button>
+                            <p className="text-xs text-slate-500">
+                              Se abrirá la pantalla de consentimiento de Google. Al autorizar, la conexión se guardará automáticamente.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

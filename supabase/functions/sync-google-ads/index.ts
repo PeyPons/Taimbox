@@ -244,23 +244,19 @@ Deno.serve(async (req) => {
         async function processAgency(agency: any) {
             const integrations = agency.settings?.integrations || {};
 
-            // Credenciales por agencia (desde settings.integrations) con fallback a env vars globales
-            const clientId = integrations.googleClientId || getSecret('GOOGLE_CLIENT_ID');
-            const clientSecret = integrations.googleClientSecret || getSecret('GOOGLE_CLIENT_SECRET');
-            const developerToken = integrations.googleAdsDevToken || getSecret('GOOGLE_DEVELOPER_TOKEN');
-            const globalRefreshToken = getSecret('GOOGLE_REFRESH_TOKEN');
-            const globalMccId = getSecret('GOOGLE_MCC_ID');
+            // Credenciales GLOBALES de la plataforma (modelo SaaS)
+            const clientId = getSecret('GOOGLE_CLIENT_ID');
+            const clientSecret = getSecret('GOOGLE_CLIENT_SECRET');
+            const developerToken = getSecret('GOOGLE_DEVELOPER_TOKEN');
 
-            const refreshToken = integrations.googleRefreshToken || globalRefreshToken;
-            const mccId = integrations.googleAdsCustomerId || globalMccId;
+            // Credenciales POR AGENCIA (obtenidas vía OAuth y configuración)
+            const refreshToken = integrations.googleRefreshToken;
+            const mccId = integrations.googleAdsCustomerId;
 
             if (!refreshToken || !mccId || !clientId || !clientSecret || !developerToken) {
                 await log(`ℹ️ Agencia ${agency.name} saltada: Faltan credenciales.`);
-                await log(`  - clientId: ${clientId ? '✅' : '❌'}`);
-                await log(`  - clientSecret: ${clientSecret ? '✅' : '❌'}`);
-                await log(`  - developerToken: ${developerToken ? '✅' : '❌'}`);
-                await log(`  - refreshToken: ${refreshToken ? '✅' : '❌'} (Integration: ${integrations.googleRefreshToken ? 'SÍ' : 'NO'}, Global: ${globalRefreshToken ? 'SÍ' : 'NO'})`);
-                await log(`  - mccId: ${mccId ? '✅' : '❌'}`);
+                await log(`  [Plataforma] clientId: ${clientId ? '✅' : '❌'} | clientSecret: ${clientSecret ? '✅' : '❌'} | developerToken: ${developerToken ? '✅' : '❌'}`);
+                await log(`  [Agencia] refreshToken: ${refreshToken ? '✅' : '❌'} | mccId: ${mccId ? '✅' : '❌'}`);
                 return;
             }
 
