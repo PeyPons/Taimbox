@@ -16,9 +16,18 @@
 
 set -e
 
-# Rutas en tu servidor
-TIMBOXING_DIR="${TIMBOXING_DIR:-$HOME/Timeboxing}"
-SUPABASE_DOCKER_DIR="${SUPABASE_DOCKER_DIR:-$HOME/supabase-pi/supabase/docker}"
+# Directorio del script (ej. /home/alex/Timeboxing/supabase/scripts) y raíz del proyecto
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# Rutas: si no se definen o no existen, usar la raíz del proyecto (útil al ejecutar como root)
+if [ -z "$TIMBOXING_DIR" ] || [ ! -d "$TIMBOXING_DIR" ]; then
+  TIMBOXING_DIR="$PROJECT_ROOT"
+fi
+if [ -z "$SUPABASE_DOCKER_DIR" ] || [ ! -f "$SUPABASE_DOCKER_DIR/docker-compose.yml" ]; then
+  # Supabase suele estar en el mismo directorio padre que Timeboxing (ej. /home/alex/supabase-pi)
+  SUPABASE_DOCKER_DIR="$(dirname "$PROJECT_ROOT")/supabase-pi/supabase/docker"
+fi
 COMPOSE_FILE="${SUPABASE_DOCKER_DIR}/docker-compose.yml"
 FUNCTIONS_SOURCE="${TIMBOXING_DIR}/supabase/functions"
 VOLUMES_FUNCTIONS="${SUPABASE_DOCKER_DIR}/volumes/functions"
