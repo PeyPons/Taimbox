@@ -43,6 +43,14 @@ import { DepartmentViewConfigDialog } from '@/components/agencies/DepartmentView
 import { useDepartmentConfigs } from '@/hooks/useDashboardView';
 import { useApp } from '@/contexts/AppContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import React from 'react';
 
 export default function AgencySettingsPage() {
   const { currentAgency, refreshAgency, updateSettings, updateAgencyName, isLoading: isAgencyLoading } = useAgency();
