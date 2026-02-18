@@ -53,8 +53,11 @@ $SUPABASE_CMD functions deploy exchange-google-token --no-verify-jwt
 echo "  → oauth-google-ads..."
 $SUPABASE_CMD functions deploy oauth-google-ads --no-verify-jwt
 
-echo "  → sync-meta-ads..."
-$SUPABASE_CMD functions deploy sync-meta-ads --no-verify-jwt
+echo "  → list-google-accounts..."
+$SUPABASE_CMD functions deploy list-google-accounts --no-verify-jwt
+
+echo "  → sync-google-ads..."
+$SUPABASE_CMD functions deploy sync-google-ads --no-verify-jwt
 
 echo "✅ ¡Todas las funciones han sido desplegadas!"
 

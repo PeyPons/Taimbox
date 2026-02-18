@@ -1526,17 +1526,78 @@ export default function AgencySettingsPage() {
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="google-customer-id">MCC Customer ID</Label>
-                        <Input
-                          id="google-customer-id"
-                          value={currentAgency?.google_ads_customer_id || integrations.googleAdsCustomerId || ''}
-                          onChange={(e) => {
-                            setIntegrations(prev => ({ ...prev, googleAdsCustomerId: e.target.value }));
-                          }}
-                          placeholder="Ej: 9810132048"
-                        />
-                        <p className="text-xs text-slate-500">El ID de tu cuenta MCC de Google Ads (sin guiones).</p>
+                        <Label htmlFor="google-customer-id">Cuenta de Google Ads</Label>
+                        {(currentAgency?.google_ads_refresh_token || integrations.googleRefreshToken) ? (
+                          <div className="space-y-2">
+                            <Select
+                              value={currentAgency?.google_ads_customer_id || integrations.googleAdsCustomerId || ''}
+                              onValueChange={(value) => {
+                                setIntegrations(prev => ({ ...prev, googleAdsCustomerId: value }));
+                                // Guardar directamente el cambio de cuenta en la columna de la agencia
+                                if (currentAgency?.id) {
+                                  supabase.from('agencies')
+                                    .update({ google_ads_customer_id: value })
+                                    .eq('id', currentAgency.id)
+                                    .then(({ error }) => {
+                                      if (error) toast.error('Error guardando la cuenta seleccionada');
+                                      else toast.success('Cuenta de Google Ads actualizada');
+                                    });
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="w-full bg-white">
+                                <SelectValue placeholder="Selecciona una cuenta..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(() => {
+                                  const [accounts, setAccounts] = React.useState<{ id: string, resourceName: string }[]>([]);
+                                  const [loading, setLoading] = React.useState(false);
+                                  const [error, setError] = React.useState<string | null>(null);
+
+                                  React.useEffect(() => {
+                                    const fetchAccounts = async () => {
+                                      if (!currentAgency?.id) return;
+                                      setLoading(true);
+                                      try {
+                                        const { data, error } = await supabase.functions.invoke('list-google-accounts', {
+                                          body: { agency_id: currentAgency.id }
+                                        });
+
+                                        if (error) throw error;
+                                        if (data.error) throw new Error(data.error);
+
+                                        setAccounts(data.accounts || []);
+                                      } catch (err: any) {
+                                        console.error('Error fetching Google accounts:', err);
+                                        setError('Error cargando cuentas');
+                                      } finally {
+                                        setLoading(false);
+                                      }
+                                    };
+                                    fetchAccounts();
+                                  }, [currentAgency?.id]);
+
+                                  if (loading) return <SelectItem value="loading" disabled>Cargando cuentas...</SelectItem>;
+                                  if (error) return <SelectItem value="error" disabled>{error}</SelectItem>;
+                                  if (accounts.length === 0) return <SelectItem value="empty" disabled>No se encontraron cuentas</SelectItem>;
+
+                                  return accounts.map(acc => (
+                                    <SelectItem key={acc.id} value={acc.id}>
+                                      {acc.resourceName} ({acc.id})
+                                    </SelectItem>
+                                  ));
+                                })()}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-slate-500">Selecciona la cuenta principal o MCC para sincronizar.</p>
+                          </div>
+                        ) : (
+                          <div className="p-3 border border-dashed rounded bg-slate-100 text-slate-500 text-sm text-center">
+                            Conecta primero con Google para ver tus cuentas disponibles.
+                          </div>
+                        )}
                       </div>
+
                       <div className="space-y-3 flex flex-col justify-center">
                         <Label>Conexión con Google Ads</Label>
                         {(currentAgency?.google_ads_refresh_token || integrations.googleRefreshToken) ? (
@@ -1580,7 +1641,7 @@ export default function AgencySettingsPage() {
                               🔗 Conectar con Google
                             </Button>
                             <p className="text-xs text-slate-500">
-                              Se abrirá la pantalla de consentimiento de Google. Al autorizar, la conexión se guardará automáticamente.
+                              Se abrirá la pantalla de consentimiento de Google. Al autorizar, podrás seleccionar tu cuenta.
                             </p>
                           </div>
                         )}
