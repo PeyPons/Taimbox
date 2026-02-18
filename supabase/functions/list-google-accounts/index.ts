@@ -77,7 +77,16 @@ Deno.serve(async (req) => {
             }),
         })
 
-        const tokenData = await tokenResponse.json()
+        const tokenResponseText = await tokenResponse.text()
+        let tokenData
+
+        try {
+            tokenData = JSON.parse(tokenResponseText)
+        } catch (e) {
+            console.error('[list-google-accounts] Error parsing token response:', tokenResponseText)
+            throw new Error(`Error de comunicación con Google (Respuesta no válida): ${tokenResponse.status} ${tokenResponse.statusText}`)
+        }
+
         if (tokenData.error) {
             console.error('[list-google-accounts] Token Exchange Error:', JSON.stringify(tokenData))
             throw new Error(`Error obteniendo access token: ${tokenData.error_description || tokenData.error}`)
