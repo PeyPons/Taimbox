@@ -254,7 +254,7 @@ export function ProjectsArticle() {
                             Todos tus proyectos, un presupuesto vivo
                         </h2>
                         <p className="text-indigo-100/90 mb-4 leading-relaxed">
-                            Cada proyecto tiene su client, su presupuesto en horas y su barra de progreso en tiempo real. Cuando se acerca al límite, lo sabes antes de que sea un problema.
+                            Cada proyecto tiene su cliente, su presupuesto en horas y su barra de progreso en tiempo real. Cuando se acerca al límite, lo sabes antes de que sea un problema.
                         </p>
                         <ul className="space-y-3">
                             {[

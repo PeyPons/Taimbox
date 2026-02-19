@@ -411,7 +411,7 @@ export function EmployeeDashboardArticle() {
                             Tu semana en un vistazo
                         </h2>
                         <p className="text-indigo-100/90 mb-4 leading-relaxed">
-                            Un calendario semanal que muestra tus bloques de tiempo asignados proyecto a proyecto. Ves tu carga mensual, las hours planificadas vs capacidad, y alertas instantáneas cuando estás sobrecargado.
+                            Un calendario semanal que muestra tus bloques de tiempo asignados proyecto a proyecto. Ves tu carga mensual, las horas planificadas vs capacidad, y alertas instantáneas cuando estás sobrecargado.
                         </p>
                         <ul className="space-y-3">
                             {[

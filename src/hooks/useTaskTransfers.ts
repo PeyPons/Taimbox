@@ -89,7 +89,7 @@ export function useTaskTransfers(): UseTaskTransfersResult {
     ): Promise<boolean> => {
         setIsActionLoading(true);
         try {
-            const transfer = pendingTransfers.find(t => t.id === transferId);
+            const transfer = (pendingTransfers || []).find(t => t.id === transferId);
             if (!transfer) return false;
 
             // Update transfer status with acceptance details

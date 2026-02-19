@@ -80,7 +80,7 @@ export function AllocationTaskRow({
     const weeklyCloseDay = useWeeklyCloseDay();
 
     const isCompleted = alloc.status === 'completed';
-    const pendingTransfer = outgoingTransfers.find(t => t.allocationId === alloc.id && t.status === 'pending');
+    const pendingTransfer = (outgoingTransfers || []).find(t => t.allocationId === alloc.id && t.status === 'pending');
     const depTask = alloc.dependencyId ? allocations.find(a => a.id === alloc.dependencyId) : null;
     const depOwner = depTask ? employees.find(e => e.id === depTask.employeeId) : null;
     const isDepReady = depTask?.status === 'completed';

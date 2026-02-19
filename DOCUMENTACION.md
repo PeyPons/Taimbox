@@ -658,3 +658,30 @@ Al eliminar un empleado **debe borrarse todo rastro en la base de datos**. No se
 ### 10.4 Informe de coherencia (GlobalPlanningInconsistencies)
 - **Un empleado, una fila por proyecto**: La lista "Empleados afectados" se construye con un `Map` por `employeeId` por proyecto, de modo que cada persona aparece como máximo una vez por proyecto (evita duplicados donde en una fila salía "en deadline" y en otra "no en deadline").
 - **Empleados inexistentes**: Si por datos antiguos o fallo de migración quedara algún `employee_id` sin correspondencia en `employees`, no se muestra "Desconocido": se excluyen esas filas (red de seguridad; la solución correcta es la limpieza en BD, ver 10.3).
+
+### 10.5 Robustez en mapeos y búsquedas (find/map)
+- **Fallbacks en Contextos/Hooks**: Siempre asume que las listas (`allocations`, `employees`, `pendingTransfers`) pueden ser `undefined` durante la carga inicial o en entornos de prueba/demo.
+- **Patrón Recomendado**:
+  ```tsx
+  // Mal
+  const item = list.find(x => x.id === id); 
+  
+  // Bien
+  const item = (list || []).find(x => x.id === id);
+  ```
+- **DemoContext**: Al crear proveedores de demo, asegúrate de que todas las propiedades requeridas por el contexto original estén presentes (aunque sean arrays vacíos o funciones dummy) para evitar que los componentes hijos fallen al intentar desestructurarlas o llamar a sus métodos.
+- **Fallback en la llamada**: Asegura que el objeto sobre el que llamas a `.find()` o `.map()` no sea undefined: `const myData = (breakdown || []).find(...)`
+- **Garantizar arrays en hooks**: En `useAllocationSheet`, las funciones que devuelven datos calculados deben asegurar que el origen de iteración sea siempre un array para evitar crashes durante el re-renderizado: `(Object.entries(breakdownMap) || []).map(...)`
+
+### 11. Mantenimiento de Contenido y Terminología
+#### 11.1 Terminología Consistente
+Para mantener la coherencia en toda la plataforma y el material de marketing, se deben usar siempre los mismos términos:
+- **Weekly Forecast**: Se prefiere este término (en singular) frente a "Weeklys Forecast".
+- **Horas Computadas**: El término técnico para las horas validadas tras el proceso de Weekly.
+- **Team Pulse**: Nombre del sistema de métricas de salud y carga del equipo.
+
+#### 11.2 Calidad del Copy y Ortografía
+Al añadir nuevas secciones a las landing pages o guías, se debe prestar especial atención a:
+- **Acentos en mayúsculas y minúsculas**: Palabras como *día, más, catálogo, módulo, verás, podrá* deben llevar siempre su tilde correspondiente.
+- **Evitar Spanglish innecesario**: Usar "cliente" en lugar de "client" y "horas" en lugar de "hours" en el contenido dirigido al usuario final.
+- **Consistencia en Títulos**: Los títulos de secciones en la `GuiaPage` deben seguir una jerarquía lógica y revisarse para evitar errores ortográficos tras actualizaciones.

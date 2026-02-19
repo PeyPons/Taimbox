@@ -27,7 +27,7 @@ export function useAllocationSheet(employeeId: string, viewDate: Date, deadlines
     getEmployeeLoadForWeek, getProjectById
   } = useApp();
 
-  const employee = employees.find(e => e.id === employeeId);
+  const employee = (employees || []).find(e => e.id === employeeId);
   const weeks = useMemo(() => getWeeksForMonth(viewDate), [viewDate]);
 
   // Calcular índice de la semana actual
@@ -114,7 +114,7 @@ export function useAllocationSheet(employeeId: string, viewDate: Date, deadlines
   // Calcular estado de horas contratadas de un proyecto (por mes, no por semana)
   const getProjectBudgetStatus = useMemo(() => {
     return (projectId: string): ProjectBudgetStatus => {
-      const project = projects.find(p => p.id === projectId);
+      const project = (projects || []).find(p => p.id === projectId);
       if (!project) {
         return {
           totalComputed: 0,
@@ -149,12 +149,12 @@ export function useAllocationSheet(employeeId: string, viewDate: Date, deadlines
         breakdownMap[a.employeeId].planned += planned;
       });
 
-      const breakdown = Object.entries(breakdownMap).map(([empId, data]) => {
-        const emp = employees.find(e => e.id === empId);
+      const breakdown = (Object.entries(breakdownMap) || []).map(([empId, data]) => {
+        const emp = (employees || []).find(e => e.id === empId);
         return { employeeId: empId, employeeName: emp?.name || 'Desconocido', ...data };
       }).sort((a, b) => (b.computed + b.planned) - (a.computed + a.planned));
 
-      const deadline = deadlines.find(d => d.projectId === projectId);
+      const deadline = (deadlines || []).find(d => d.projectId === projectId);
       const budgetMax = getEffectiveBudget(project, deadline);
       const budgetMin = project.minimumHours || 0;
       // TODO: If we ever implement minimum override, use getEffectiveMinimum here

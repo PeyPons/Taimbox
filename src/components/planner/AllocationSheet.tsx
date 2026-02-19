@@ -461,8 +461,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const renderProjectDetail = (projectId: string, onClose: () => void) => {
     const project = getProjectById(projectId);
     const budgetStatus = getProjectBudgetStatus(projectId);
-    const { totalComputed, totalPlanned, budgetMax, budgetMin, percentage, status, breakdown } = budgetStatus;
-    const myData = breakdown.find(b => b.employeeId === employeeId);
+    const { totalComputed, totalPlanned, budgetMax, budgetMin, percentage, status, breakdown = [] } = budgetStatus || {};
+    const myData = (breakdown || []).find(b => b.employeeId === employeeId);
     const exceededBy = totalComputed > budgetMax ? totalComputed - budgetMax : 0;
     const isExact100 = budgetMax > 0 && Math.abs(totalComputed - budgetMax) < 0.1;
     const isAtMinimum = budgetMin > 0 && totalComputed >= budgetMin && (budgetMax === 0 || totalComputed <= budgetMax);
@@ -556,7 +556,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                   <div className="space-y-1.5">
                     {breakdown.map(({ employeeId: empId, employeeName, computed, planned }) => {
                       const isMe = empId === employeeId;
-                      const emp = employees.find(e => e.id === empId);
+                      const emp = (employees || []).find(e => e.id === empId);
                       return (
                         <div key={empId} className={cn(
                           "text-xs px-2 py-1.5 rounded flex items-center gap-2",
@@ -1050,336 +1050,334 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                       </div>
                                     ) : (
                                       <div className="min-w-0 overflow-x-auto overflow-y-visible">
-                                      <table className="w-full text-sm min-w-[320px]">
-                                        <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
-                                          <tr>
-                                            <th className="py-2 px-3 text-left font-medium w-8"></th>
-                                            <th className="py-2 px-3 text-left font-medium">Tarea</th>
-                                            <th className="py-2 px-3 text-center font-medium w-20">Horas</th>
-                                            <th className="py-2 px-3 text-center font-medium w-24">Real</th>
-                                            <th className="py-2 px-3 text-center font-medium w-24">Comp</th>
-                                            <th className="py-2 px-3 text-center font-medium w-20">Balance</th>
-                                            <th className="py-2 px-3 text-center font-medium w-12"></th>
-                                          </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100">
-                                          {sortedTasks.map((alloc, taskIndex) => {
-                                            const isCompleted = alloc.status === 'completed';
-                                            const taskBalance = isCompleted ? round2((alloc.hoursComputed || 0) - (alloc.hoursActual || 0)) : 0;
-                                            const depTask = alloc.dependencyId ? allocations.find(a => a.id === alloc.dependencyId) : null;
-                                            const depOwner = depTask ? employees.find(e => e.id === depTask.employeeId) : null;
-                                            const isDepReady = depTask?.status === 'completed';
-                                            const blockingTasks = allocations.filter(a => a.dependencyId === alloc.id && a.status !== 'completed');
-                                            const isFirstTask = taskIndex === 0;
+                                        <table className="w-full text-sm min-w-[320px]">
+                                          <thead className="bg-slate-50 text-slate-500 text-xs uppercase">
+                                            <tr>
+                                              <th className="py-2 px-3 text-left font-medium w-8"></th>
+                                              <th className="py-2 px-3 text-left font-medium">Tarea</th>
+                                              <th className="py-2 px-3 text-center font-medium w-20">Horas</th>
+                                              <th className="py-2 px-3 text-center font-medium w-24">Real</th>
+                                              <th className="py-2 px-3 text-center font-medium w-24">Comp</th>
+                                              <th className="py-2 px-3 text-center font-medium w-20">Balance</th>
+                                              <th className="py-2 px-3 text-center font-medium w-12"></th>
+                                            </tr>
+                                          </thead>
+                                          <tbody className="divide-y divide-slate-100">
+                                            {sortedTasks.map((alloc, taskIndex) => {
+                                              const isCompleted = alloc.status === 'completed';
+                                              const taskBalance = isCompleted ? round2((alloc.hoursComputed || 0) - (alloc.hoursActual || 0)) : 0;
+                                              const depTask = alloc.dependencyId ? (allocations || []).find(a => a.id === alloc.dependencyId) : null;
+                                              const depOwner = depTask ? (employees || []).find(e => e.id === depTask.employeeId) : null;
+                                              const isDepReady = depTask?.status === 'completed';
+                                              const blockingTasks = (allocations || []).filter(a => a.dependencyId === alloc.id && a.status !== 'completed');
+                                              const isFirstTask = taskIndex === 0;
 
-                                            // Verificar si hay transferencia pendiente (Bloqueo de edición)
-                                            const pendingTransfer = outgoingTransfers.find(t => t.allocationId === alloc.id && t.status === 'pending');
+                                              // Verificar si hay transferencia pendiente (Bloqueo de edición)
+                                              const pendingTransfer = (outgoingTransfers || []).find(t => t.allocationId === alloc.id && t.status === 'pending');
 
-                                            return (
-                                              <tr
-                                                key={alloc.id}
-                                                className={cn(
-                                                  "hover:bg-slate-50 transition-colors",
-                                                  isCompleted && "bg-slate-50/50",
-                                                  !isCompleted && depTask && !isDepReady && "bg-amber-50/50"
-                                                )}
-                                                {...(isFirstTask && { 'data-tour': 'planner-task' })}
-                                              >
-                                                <td className="py-2 px-3" {...(isFirstTask && { 'data-tour': 'planner-checkbox' })}>
-                                                  <Checkbox
-                                                    checked={isCompleted}
-                                                    onCheckedChange={() => toggleTaskCompletion(alloc)}
-                                                    disabled={!!pendingTransfer}
-                                                    className={cn(
-                                                      isCompleted && "data-[state=checked]:bg-emerald-600",
-                                                      pendingTransfer && "opacity-50 cursor-not-allowed"
-                                                    )}
-                                                  />
-                                                </td>
-                                                <td className="py-2 px-3">
-                                                  <div className="space-y-1">
-                                                    <div className="flex items-center gap-1.5">
-                                                      <div
-                                                        className={cn(
-                                                          "font-medium rounded px-1 -mx-1",
-                                                          isCompleted && "line-through text-slate-400",
-                                                          pendingTransfer ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:bg-slate-100"
-                                                        )}
-                                                        onDoubleClick={() => !pendingTransfer && startInlineEdit(alloc)}
-                                                        {...(isFirstTask && { 'data-tour': 'planner-task-name' })}
-                                                      >
-                                                        {inlineEditingId === alloc.id ? (
-                                                          <input
-                                                            ref={inlineInputRef}
-                                                            autoFocus
-                                                            value={inlineNameValue}
-                                                            onChange={(e) => setInlineNameValue(e.target.value)}
-                                                            onBlur={() => saveInlineEdit(alloc)}
-                                                            onKeyDown={(e) => {
-                                                              if (e.key === 'Enter') saveInlineEdit(alloc);
-                                                              if (e.key === 'Escape') cancelInlineEdit();
-                                                            }}
-                                                            className="w-full px-1 py-0.5 text-sm border rounded bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                          />
-                                                        ) : (
-                                                          // Limpiar nombre de tarea removiendo información de transferencia
-                                                          <div className="flex items-center gap-2">
-                                                            <span>
-                                                              {(() => {
-                                                                let cleanName = alloc.taskName || 'Tarea';
-                                                                // Remover "(transferida de X, original: Y)" o "(transferida de X)"
-                                                                cleanName = cleanName.replace(/\s*\(transferida de .+?(?:, original: .+?)?\)/g, '').trim();
-                                                                return cleanName || 'Tarea';
-                                                              })()}
-                                                            </span>
-                                                          </div>
-                                                        )}
-                                                      </div>
-                                                      {/* Badge Weekly si la tarea fue ajustada vía Weekly (horas=0 o transferida) */}
-                                                      {(() => {
-                                                        const isTransferred = alloc.transferSourceEmployeeId || alloc.taskName?.includes('(transferida de') || alloc.transferredFromAllocationId;
-                                                        const isDistributed = alloc.distributionSourceAllocationId;
-                                                        const hasWeeklyFeedback = weeklyFeedback.some(fb => fb.allocationId === alloc.id);
-                                                        const wasAdjustedViaWeekly = hasWeeklyFeedback || isTransferred || isDistributed ||
-                                                          (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0 && alloc.status === 'completed');
+                                              return (
+                                                <tr
+                                                  key={alloc.id}
+                                                  className={cn(
+                                                    "hover:bg-slate-50 transition-colors",
+                                                    isCompleted && "bg-slate-50/50",
+                                                    !isCompleted && depTask && !isDepReady && "bg-amber-50/50"
+                                                  )}
+                                                  {...(isFirstTask && { 'data-tour': 'planner-task' })}
+                                                >
+                                                  <td className="py-2 px-3" {...(isFirstTask && { 'data-tour': 'planner-checkbox' })}>
+                                                    <Checkbox
+                                                      checked={isCompleted}
+                                                      onCheckedChange={() => toggleTaskCompletion(alloc)}
+                                                      disabled={!!pendingTransfer}
+                                                      className={cn(
+                                                        isCompleted && "data-[state=checked]:bg-emerald-600",
+                                                        pendingTransfer && "opacity-50 cursor-not-allowed"
+                                                      )}
+                                                    />
+                                                  </td>
+                                                  <td className="py-2 px-3">
+                                                    <div className="space-y-1">
+                                                      <div className="flex items-center gap-1.5">
+                                                        <div
+                                                          className={cn(
+                                                            "font-medium rounded px-1 -mx-1",
+                                                            isCompleted && "line-through text-slate-400",
+                                                            pendingTransfer ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:bg-slate-100"
+                                                          )}
+                                                          onDoubleClick={() => !pendingTransfer && startInlineEdit(alloc)}
+                                                          {...(isFirstTask && { 'data-tour': 'planner-task-name' })}
+                                                        >
+                                                          {inlineEditingId === alloc.id ? (
+                                                            <input
+                                                              ref={inlineInputRef}
+                                                              autoFocus
+                                                              value={inlineNameValue}
+                                                              onChange={(e) => setInlineNameValue(e.target.value)}
+                                                              onBlur={() => saveInlineEdit(alloc)}
+                                                              onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') saveInlineEdit(alloc);
+                                                                if (e.key === 'Escape') cancelInlineEdit();
+                                                              }}
+                                                              className="w-full px-1 py-0.5 text-sm border rounded bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                                            />
+                                                          ) : (
+                                                            // Limpiar nombre de tarea removiendo información de transferencia
+                                                            <div className="flex items-center gap-2">
+                                                              <span>
+                                                                {(() => {
+                                                                  let cleanName = alloc.taskName || 'Tarea';
+                                                                  // Remover "(transferida de X, original: Y)" o "(transferida de X)"
+                                                                  cleanName = cleanName.replace(/\s*\(transferida de .+?(?:, original: .+?)?\)/g, '').trim();
+                                                                  return cleanName || 'Tarea';
+                                                                })()}
+                                                              </span>
+                                                            </div>
+                                                          )}
+                                                        </div>
+                                                        {/* Badge Weekly si la tarea fue ajustada vía Weekly (horas=0 o transferida) */}
+                                                        {(() => {
+                                                          const isTransferred = alloc.transferSourceEmployeeId || alloc.taskName?.includes('(transferida de') || alloc.transferredFromAllocationId;
+                                                          const isDistributed = alloc.distributionSourceAllocationId;
+                                                          const hasWeeklyFeedback = weeklyFeedback.some(fb => fb.allocationId === alloc.id);
+                                                          const wasAdjustedViaWeekly = hasWeeklyFeedback || isTransferred || isDistributed ||
+                                                            (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0 && alloc.status === 'completed');
 
-                                                        if (!wasAdjustedViaWeekly) return null;
+                                                          if (!wasAdjustedViaWeekly) return null;
 
-                                                        // Extraer información de transferencia/distribución para el tooltip
-                                                        let transferInfo: string | null = null;
+                                                          // Extraer información de transferencia/distribución para el tooltip
+                                                          let transferInfo: string | null = null;
 
-                                                        // Caso 0: Nuevas columnas (Tracking Robusto)
-                                                        if (alloc.transferSourceEmployeeId) {
-                                                          const sourceEmployee = employees.find(e => e.id === alloc.transferSourceEmployeeId);
-                                                          const originalName = alloc.originalTransferredTaskName || alloc.taskName || 'Tarea';
-                                                          if (isDistributed) {
-                                                            transferInfo = `Distribuida (origen genérico)\nFuente original: ${sourceEmployee?.name || 'compañero'}\nTarea original: ${originalName}`;
-                                                          } else {
-                                                            transferInfo = `Transferida de ${sourceEmployee?.name || 'compañero'}\nTarea original: ${originalName}`;
+                                                          // Caso 0: Nuevas columnas (Tracking Robusto)
+                                                          if (alloc.transferSourceEmployeeId) {
+                                                            const sourceEmployee = (employees || []).find(e => e.id === alloc.transferSourceEmployeeId);
+                                                            const originalName = alloc.originalTransferredTaskName || alloc.taskName || 'Tarea';
+                                                            if (isDistributed) {
+                                                              transferInfo = `Distribuida (origen genérico)\nFuente original: ${sourceEmployee?.name || 'compañero'}\nTarea original: ${originalName}`;
+                                                            } else {
+                                                              transferInfo = `Transferida de ${sourceEmployee?.name || 'compañero'}\nTarea original: ${originalName}`;
+                                                            }
                                                           }
-                                                        }
-                                                        // Caso 1: Tarea distribuida desde una transferencia (Legacy)
-                                                        else if (isDistributed && alloc.distributionSourceAllocationId) {
-                                                          const sourceTask = allocations.find(a => a.id === alloc.distributionSourceAllocationId);
-                                                          if (sourceTask) {
-                                                            const sourceEmployee = employees.find(e => e.id === sourceTask.employeeId);
-                                                            // Buscar la tarea original de la que proviene la transferencia
-                                                            if (sourceTask.transferredFromAllocationId) {
-                                                              const originalTask = allocations.find(a => a.id === sourceTask.transferredFromAllocationId);
-                                                              if (originalTask) {
-                                                                const originalEmployee = employees.find(e => e.id === originalTask.employeeId);
+                                                          // Caso 1: Tarea distribuida desde una transferencia (Legacy)
+                                                          else if (isDistributed && alloc.distributionSourceAllocationId) {
+                                                            const sourceTask = (allocations || []).find(a => a.id === alloc.distributionSourceAllocationId);
+                                                            if (sourceTask) {
+                                                              const sourceEmployee = (employees || []).find(e => e.id === sourceTask.employeeId);
+                                                              // Buscar la tarea original de la que proviene la transferencia
+                                                              if (sourceTask.transferredFromAllocationId) {
+                                                                const originalTask = sourceTask.transferredFromAllocationId
+                                                                  ? (allocations || []).find(a => a.id === sourceTask.transferredFromAllocationId)
+                                                                  : null;
+                                                                const originalEmployee = originalTask ? (employees || []).find(e => e.id === originalTask.employeeId) : null;
                                                                 // Limpiar el nombre original (sin el sufijo de transferencia)
-                                                                const cleanOriginalName = originalTask.taskName?.replace(/\(transferida de .+?\)/g, '').trim() || originalTask.taskName || 'Sin nombre';
+                                                                const cleanOriginalName = originalTask?.taskName?.replace(/\(transferida de .+?\)/g, '').trim() || originalTask?.taskName || 'Sin nombre';
                                                                 transferInfo = `Distribuida desde transferencia de ${sourceEmployee?.name || 'compañero'}\nTarea original: ${cleanOriginalName} (de ${originalEmployee?.name || 'compañero'})`;
                                                               } else {
-                                                                transferInfo = `Distribuida desde transferencia de ${sourceEmployee?.name || 'compañero'}`;
+                                                                transferInfo = `Distribuida desde tarea de ${sourceEmployee?.name || 'compañero'}`;
                                                               }
-                                                            } else {
-                                                              transferInfo = `Distribuida desde tarea de ${sourceEmployee?.name || 'compañero'}`;
                                                             }
                                                           }
-                                                        }
-                                                        // Caso 2: Tarea transferida directamente
-                                                        else if (isTransferred) {
-                                                          const transferMatch = alloc.taskName?.match(/\(transferida de (.+?)(?:, original: (.+?))?\)/);
-                                                          if (transferMatch) {
-                                                            const fromEmployee = transferMatch[1];
-                                                            const originalName = transferMatch[2];
-                                                            if (originalName) {
-                                                              transferInfo = `Transferida de ${fromEmployee}\nTarea original: ${originalName}`;
-                                                            } else {
-                                                              transferInfo = `Transferida de ${fromEmployee}`;
-                                                            }
-                                                          } else if (alloc.transferredFromAllocationId) {
-                                                            // Si tiene el campo de BD, buscar información
-                                                            const originalTask = allocations.find(a => a.id === alloc.transferredFromAllocationId);
-                                                            if (originalTask) {
-                                                              const fromEmployee = employees.find(e => e.id === originalTask.employeeId);
+                                                          // Caso 2: Tarea transferida directamente
+                                                          else if (isTransferred) {
+                                                            const transferMatch = alloc.taskName?.match(/\(transferida de (.+?)(?:, original: (.+?))?\)/);
+                                                            if (transferMatch) {
+                                                              const fromEmployee = transferMatch[1];
+                                                              const originalName = transferMatch[2];
+                                                              if (originalName) {
+                                                                transferInfo = `Transferida de ${fromEmployee}\nTarea original: ${originalName}`;
+                                                              } else {
+                                                                transferInfo = `Transferida de ${fromEmployee}`;
+                                                              }
+                                                            } else if (alloc.transferredFromAllocationId) {
+                                                              // Si tiene el campo de BD, buscar información
+                                                              const originalTask = alloc.transferredFromAllocationId
+                                                                ? (allocations || []).find(a => a.id === alloc.transferredFromAllocationId)
+                                                                : null;
+                                                              const fromEmployee = originalTask ? (employees || []).find(e => e.id === originalTask.employeeId) : null;
                                                               // Limpiar el nombre original (sin el sufijo de transferencia)
-                                                              const cleanOriginalName = originalTask.taskName?.replace(/\(transferida de .+?\)/g, '').trim() || originalTask.taskName || 'Sin nombre';
+                                                              const cleanOriginalName = originalTask?.taskName?.replace(/\(transferida de .+?\)/g, '').trim() || originalTask?.taskName || 'Sin nombre';
                                                               transferInfo = `Transferida de ${fromEmployee?.name || 'compañero'}\nTarea original: ${cleanOriginalName}`;
                                                             }
                                                           }
-                                                        }
 
-                                                        return (
-                                                          <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                              <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-primary/10 text-indigo-700 border-indigo-200 cursor-help">
-                                                                Weekly
-                                                              </Badge>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent className="max-w-xs z-[9999]" side="top">
-                                                              <div className="space-y-1 text-xs">
-                                                                {transferInfo ? (
-                                                                  <div className="whitespace-pre-line">{transferInfo}</div>
-                                                                ) : (
-                                                                  <div>Tarea gestionada vía Weekly</div>
-                                                                )}
+                                                          return (
+                                                            <Tooltip>
+                                                              <TooltipTrigger asChild>
+                                                                <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-primary/10 text-indigo-700 border-indigo-200 cursor-help">
+                                                                  Weekly
+                                                                </Badge>
+                                                              </TooltipTrigger>
+                                                              <TooltipContent className="max-w-xs z-[9999]" side="top">
+                                                                <div className="space-y-1 text-xs">
+                                                                  {transferInfo ? (
+                                                                    <div className="whitespace-pre-line">{transferInfo}</div>
+                                                                  ) : (
+                                                                    <div>Tarea gestionada vía Weekly</div>
+                                                                  )}
+                                                                </div>
+                                                              </TooltipContent>
+                                                            </Tooltip>
+                                                          );
+                                                        })()}
+                                                      </div>
+                                                      {depTask && !isCompleted && (
+                                                        <div
+                                                          className={cn(
+                                                            "flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded w-fit border",
+                                                            isDepReady
+                                                              ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                                                              : "text-amber-700 bg-amber-50 border-amber-200"
+                                                          )}
+                                                          {...(isFirstTask && { 'data-tour': 'planner-dependency' })}
+                                                        >
+                                                          {isDepReady ? <CheckCircle2 className="w-2.5 h-2.5" /> : <LinkIcon className="w-2.5 h-2.5" />}
+                                                          <span className="truncate max-w-[120px]">{isDepReady ? 'Listo:' : 'Dep:'} {depTask.taskName} <strong>({depOwner?.name})</strong></span>
+                                                        </div>
+                                                      )}
+                                                      {blockingTasks.length > 0 && !isCompleted && (
+                                                        <div className="flex flex-col gap-0.5">
+                                                          {blockingTasks.map(bt => {
+                                                            const blockedUser = (employees || []).find(e => e.id === bt.employeeId);
+                                                            const firstName = blockedUser?.name?.split(' ')[0] || 'Compañero';
+                                                            return (
+                                                              <div key={bt.id} className="flex items-center gap-1 text-[9px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded w-fit border border-amber-200">
+                                                                <Users className="w-2.5 h-2.5" />
+                                                                <span>💡 <strong>{firstName}</strong> te espera</span>
                                                               </div>
-                                                            </TooltipContent>
-                                                          </Tooltip>
-                                                        );
+                                                            );
+                                                          })}
+                                                        </div>
+                                                      )}
+                                                    </div>
+                                                  </td>
+                                                  <td className="py-2 px-3 text-center">
+                                                    <div className="flex items-center justify-center gap-1">
+                                                      <span className="font-mono text-xs">{alloc.hoursAssigned || 0}</span>
+                                                      {/* Badge Weekly si horas=0 por ajuste de weekly */}
+                                                      {(() => {
+                                                        const isTransferred = alloc.taskName?.includes('(transferida de');
+                                                        const hasWeeklyFeedback = weeklyFeedback.some(fb => fb.allocationId === alloc.id);
+                                                        const wasAdjustedViaWeekly = hasWeeklyFeedback || isTransferred;
+                                                        const isZeroDueToWeekly = (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0) && wasAdjustedViaWeekly;
+
+                                                        return isZeroDueToWeekly ? (
+                                                          <Badge variant="outline" className="h-3.5 px-1 text-[8px] bg-primary/10 text-indigo-700 border-indigo-200">
+                                                            Weekly
+                                                          </Badge>
+                                                        ) : null;
                                                       })()}
                                                     </div>
-                                                    {depTask && !isCompleted && (
-                                                      <div
+                                                  </td>
+                                                  <td className="py-2 px-3 text-center">
+                                                    {isCompleted ? (
+                                                      <input
+                                                        type="number"
+                                                        step="0.25"
+                                                        min="0"
+                                                        disabled={!!pendingTransfer}
+                                                        defaultValue={alloc.hoursActual || 0}
+                                                        onBlur={(e) => updateInlineHours(alloc, 'hoursActual', e.target.value)}
                                                         className={cn(
-                                                          "flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded w-fit border",
-                                                          isDepReady
-                                                            ? "text-emerald-700 bg-emerald-50 border-emerald-200"
-                                                            : "text-amber-700 bg-amber-50 border-amber-200"
+                                                          "w-12 px-1 py-0.5 text-[10px] text-center border rounded font-mono",
+                                                          pendingTransfer ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-blue-50 text-blue-700"
                                                         )}
-                                                        {...(isFirstTask && { 'data-tour': 'planner-dependency' })}
-                                                      >
-                                                        {isDepReady ? <CheckCircle2 className="w-2.5 h-2.5" /> : <LinkIcon className="w-2.5 h-2.5" />}
-                                                        <span className="truncate max-w-[120px]">{isDepReady ? 'Listo:' : 'Dep:'} {depTask.taskName} <strong>({depOwner?.name})</strong></span>
-                                                      </div>
-                                                    )}
-                                                    {blockingTasks.length > 0 && !isCompleted && (
-                                                      <div className="flex flex-col gap-0.5">
-                                                        {blockingTasks.map(bt => {
-                                                          const blockedUser = employees.find(e => e.id === bt.employeeId);
-                                                          const firstName = blockedUser?.name?.split(' ')[0] || 'Compañero';
-                                                          return (
-                                                            <div key={bt.id} className="flex items-center gap-1 text-[9px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded w-fit border border-amber-200">
-                                                              <Users className="w-2.5 h-2.5" />
-                                                              <span>💡 <strong>{firstName}</strong> te espera</span>
-                                                            </div>
-                                                          );
-                                                        })}
-                                                      </div>
-                                                    )}
-                                                  </div>
-                                                </td>
-                                                <td className="py-2 px-3 text-center">
-                                                  <div className="flex items-center justify-center gap-1">
-                                                    <span className="font-mono text-xs">{alloc.hoursAssigned || 0}</span>
-                                                    {/* Badge Weekly si horas=0 por ajuste de weekly */}
-                                                    {(() => {
-                                                      const isTransferred = alloc.taskName?.includes('(transferida de');
-                                                      const hasWeeklyFeedback = weeklyFeedback.some(fb => fb.allocationId === alloc.id);
-                                                      const wasAdjustedViaWeekly = hasWeeklyFeedback || isTransferred;
-                                                      const isZeroDueToWeekly = (alloc.hoursAssigned === 0 && alloc.hoursActual === 0 && alloc.hoursComputed === 0) && wasAdjustedViaWeekly;
-
-                                                      return isZeroDueToWeekly ? (
-                                                        <Badge variant="outline" className="h-3.5 px-1 text-[8px] bg-primary/10 text-indigo-700 border-indigo-200">
-                                                          Weekly
-                                                        </Badge>
-                                                      ) : null;
-                                                    })()}
-                                                  </div>
-                                                </td>
-                                                <td className="py-2 px-3 text-center">
-                                                  {isCompleted ? (
-                                                    <input
-                                                      type="number"
-                                                      step="0.25"
-                                                      min="0"
-                                                      disabled={!!pendingTransfer}
-                                                      defaultValue={alloc.hoursActual || 0}
-                                                      onBlur={(e) => updateInlineHours(alloc, 'hoursActual', e.target.value)}
-                                                      className={cn(
-                                                        "w-12 px-1 py-0.5 text-[10px] text-center border rounded font-mono",
-                                                        pendingTransfer ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-blue-50 text-blue-700"
-                                                      )}
-                                                    />
-                                                  ) : (
-                                                    <span className="text-slate-300 text-xs">-</span>
-                                                  )}
-                                                </td>
-                                                <td className="py-2 px-3 text-center" {...(isFirstTask && { 'data-tour': 'planner-hours' })}>
-                                                  {isCompleted ? (
-                                                    <input
-                                                      type="number"
-                                                      step="0.25"
-                                                      min="0"
-                                                      disabled={!!pendingTransfer}
-                                                      defaultValue={alloc.hoursComputed || 0}
-                                                      onBlur={(e) => updateInlineHours(alloc, 'hoursComputed', e.target.value)}
-                                                      className={cn(
-                                                        "w-12 px-1 py-0.5 text-[10px] text-center border rounded font-mono",
-                                                        pendingTransfer ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-emerald-50 text-emerald-700"
-                                                      )}
-                                                    />
-                                                  ) : (
-                                                    <span className="text-slate-300 text-xs">-</span>
-                                                  )}
-                                                </td>
-                                                <td className="py-2 px-3 text-center">
-                                                  {isCompleted && taskBalance !== 0 ? (
-                                                    taskBalance > 0 ? (
-                                                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-100 shadow-sm">
-                                                        <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
-                                                        <span className="text-xs font-semibold text-emerald-700">+{taskBalance}h</span>
-                                                      </div>
+                                                      />
                                                     ) : (
-                                                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-100 shadow-sm">
-                                                        <TrendingDown className="h-3.5 w-3.5 text-amber-600" />
-                                                        <span className="text-xs font-semibold text-amber-700">{taskBalance}h</span>
-                                                      </div>
-                                                    )
-                                                  ) : isCompleted ? (
-                                                    <span className="text-slate-300 text-xs font-medium">Exacto</span>
-                                                  ) : (
-                                                    <span className="text-slate-200 text-xs">-</span>
-                                                  )}
-                                                </td>
-                                                <td className="py-2 px-3">
-                                                  <div className="flex items-center gap-1">
-                                                    {/* Botón Transferir */}
-                                                    <Tooltip>
-                                                      <TooltipTrigger asChild>
-                                                        <Button
-                                                          variant="ghost"
-                                                          size="sm"
-                                                          disabled={!!pendingTransfer}
-                                                          className="h-7 w-7 p-0 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 disabled:opacity-30"
-                                                          onClick={() => {
-                                                            setTransferTask(alloc);
-                                                            setTransferDialogOpen(true);
-                                                          }}
-                                                        >
-                                                          {pendingTransfer ? <ArrowRightLeft className="h-3.5 w-3.5 animate-pulse text-amber-500" /> : <ArrowRightLeft className="h-3.5 w-3.5" />}
-                                                        </Button>
-                                                      </TooltipTrigger>
-                                                      <TooltipContent side="top">Transferir a otro compañero</TooltipContent>
-                                                    </Tooltip>
-                                                    {/* Botón Editar */}
-                                                    <Button
-                                                      variant="ghost"
-                                                      size="sm"
-                                                      disabled={!!pendingTransfer}
-                                                      className="h-7 w-7 p-0 disabled:opacity-30"
-                                                      onClick={() => {
-                                                        if (pendingTransfer) return;
-                                                        // BLOQUEO: No permitir editar tareas de semanas pasadas (solo si Weekly está activo)
-                                                        if (isWeeklyEnabled) {
-                                                          try {
-                                                            const taskWeekDate = parseISO(alloc.weekStartDate);
-                                                            const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
-                                                            const today = new Date();
+                                                      <span className="text-slate-300 text-xs">-</span>
+                                                    )}
+                                                  </td>
+                                                  <td className="py-2 px-3 text-center" {...(isFirstTask && { 'data-tour': 'planner-hours' })}>
+                                                    {isCompleted ? (
+                                                      <input
+                                                        type="number"
+                                                        step="0.25"
+                                                        min="0"
+                                                        disabled={!!pendingTransfer}
+                                                        defaultValue={alloc.hoursComputed || 0}
+                                                        onBlur={(e) => updateInlineHours(alloc, 'hoursComputed', e.target.value)}
+                                                        className={cn(
+                                                          "w-12 px-1 py-0.5 text-[10px] text-center border rounded font-mono",
+                                                          pendingTransfer ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-emerald-50 text-emerald-700"
+                                                        )}
+                                                      />
+                                                    ) : (
+                                                      <span className="text-slate-300 text-xs">-</span>
+                                                    )}
+                                                  </td>
+                                                  <td className="py-2 px-3 text-center">
+                                                    {isCompleted && taskBalance !== 0 ? (
+                                                      taskBalance > 0 ? (
+                                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-100 shadow-sm">
+                                                          <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
+                                                          <span className="text-xs font-semibold text-emerald-700">+{taskBalance}h</span>
+                                                        </div>
+                                                      ) : (
+                                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-100 shadow-sm">
+                                                          <TrendingDown className="h-3.5 w-3.5 text-amber-600" />
+                                                          <span className="text-xs font-semibold text-amber-700">{taskBalance}h</span>
+                                                        </div>
+                                                      )
+                                                    ) : isCompleted ? (
+                                                      <span className="text-slate-300 text-xs font-medium">Exacto</span>
+                                                    ) : (
+                                                      <span className="text-slate-200 text-xs">-</span>
+                                                    )}
+                                                  </td>
+                                                  <td className="py-2 px-3">
+                                                    <div className="flex items-center gap-1">
+                                                      {/* Botón Transferir */}
+                                                      <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                          <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            disabled={!!pendingTransfer}
+                                                            className="h-7 w-7 p-0 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 disabled:opacity-30"
+                                                            onClick={() => {
+                                                              setTransferTask(alloc);
+                                                              setTransferDialogOpen(true);
+                                                            }}
+                                                          >
+                                                            {pendingTransfer ? <ArrowRightLeft className="h-3.5 w-3.5 animate-pulse text-amber-500" /> : <ArrowRightLeft className="h-3.5 w-3.5" />}
+                                                          </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="top">Transferir a otro compañero</TooltipContent>
+                                                      </Tooltip>
+                                                      {/* Botón Editar */}
+                                                      <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        disabled={!!pendingTransfer}
+                                                        className="h-7 w-7 p-0 disabled:opacity-30"
+                                                        onClick={() => {
+                                                          if (pendingTransfer) return;
+                                                          // BLOQUEO: No permitir editar tareas de semanas pasadas (solo si Weekly está activo)
+                                                          if (isWeeklyEnabled) {
+                                                            try {
+                                                              const taskWeekDate = parseISO(alloc.weekStartDate);
+                                                              const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
+                                                              const today = new Date();
 
-                                                            if (taskWeekEnd < today) {
-                                                              toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
-                                                              return;
+                                                              if (taskWeekEnd < today) {
+                                                                toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
+                                                                return;
+                                                              }
+                                                            } catch {
+                                                              // Si hay error parseando la fecha, permitir editar (por seguridad)
                                                             }
-                                                          } catch {
-                                                            // Si hay error parseando la fecha, permitir editar (por seguridad)
                                                           }
-                                                        }
-                                                        startEditFull(alloc);
-                                                      }}
-                                                    >
-                                                      <Pencil className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                  </div>
-                                                </td>
-                                              </tr>
-                                            );
-                                          })}
-                                        </tbody>
-                                      </table>
+                                                          startEditFull(alloc);
+                                                        }}
+                                                      >
+                                                        <Pencil className="h-3.5 w-3.5" />
+                                                      </Button>
+                                                    </div>
+                                                  </td>
+                                                </tr>
+                                              );
+                                            })}
+                                          </tbody>
+                                        </table>
                                       </div>
                                     )}
                                   </div>

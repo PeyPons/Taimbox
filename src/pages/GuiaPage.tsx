@@ -271,7 +271,7 @@ function PlanificadorContent() {
       <ContentBlock title="Cómo añadir una tarea">
         <StepList steps={[
           { title: 'Pulsa el botón +', description: 'En la cabecera de la semana o en el botón "Añadir" de la vista semanal.' },
-          { title: 'Selecciona el proyecto', description: 'Busca entre tus proyectos activos. Veras las horas disponibles y el porcentaje usado en cada uno.' },
+          { title: 'Selecciona el proyecto', description: 'Busca entre tus proyectos activos. Verás las horas disponibles y el porcentaje usado en cada uno.' },
           { title: 'Nombre, horas y semana', description: 'Escribe el nombre de la tarea, las horas estimadas y en qué semana va.' },
           { title: 'Dependencias (opcional)', description: 'Si la tarea depende de otra, selecciónala. El sistema avisará si la dependencia no está lista.' },
           { title: 'Guardar', description: 'La tarea aparece en el calendario inmediatamente y las barras de carga se actualizan en tiempo real.' },
@@ -306,7 +306,7 @@ function MiEspacioContent() {
   return (
     <>
       <ContentBlock title="Qué es Mi espacio">
-        <p>Mi espacio es tu <strong className="text-white">dashboard personal</strong>. Aquí ves tu carga de trabajo, tus proyectos, el control de planificación y las prioridades del dia o de la semana.</p>
+        <p>Mi espacio es tu <strong className="text-white">dashboard personal</strong>. Aquí ves tu carga de trabajo, tus proyectos, el control de planificación y las prioridades del día o de la semana.</p>
         <ExampleBox>Es lunes por la mañana. Abres Mi espacio y ves que tienes 3 tareas que bloquean a compañeros. Sabes exactamente por dónde empezar.</ExampleBox>
       </ContentBlock>
 
@@ -331,7 +331,7 @@ function MiEspacioContent() {
         <WarningBox>Si ves déficit (rojo), significa que aún no has planificado todas las horas que el deadline te asigna en ese proyecto. Añade tareas desde el planificador para cubrir la diferencia.</WarningBox>
       </ContentBlock>
 
-      <ContentBlock title="Acciones rapidas">
+      <ContentBlock title="Acciones rápidas">
         <div className="grid sm:grid-cols-2 gap-3">
           <FeatureCard icon={Clock} title="Registrar gestión interna" description="Reuniones, formaciones u otras tareas no facturables. Se crean como tareas de gestión interna." color="from-slate-500 to-slate-700" />
           <FeatureCard icon={Plus} title="Añadir tareas" description="Acceso rápido al mismo flujo de añadir tarea del planificador, sin salir de tu dashboard." color="from-indigo-500 to-purple-500" />
@@ -388,7 +388,7 @@ function InformesContent() {
 
       <ContentBlock title="Informes por cliente">
         <p>Existe un apartado específico de <strong className="text-white">informes por cliente</strong> para generar reportes orientados a facturación o entrega a cliente, con las horas y el desglose que necesites.</p>
-        <ExampleBox>Al final de mes generas un informe para &quot;Cliente X&quot; con el desglose de horas por proyecto: SEO 35h, Paid Media 20h, Contenido 15h. Lo exportas en Excel y se lo envias directamente.</ExampleBox>
+        <ExampleBox>Al final de mes generas un informe para &quot;Cliente X&quot; con el desglose de horas por proyecto: SEO 35h, Paid Media 20h, Contenido 15h. Lo exportas en Excel y se lo envías directamente.</ExampleBox>
         <div className="mt-3" />
         <TipBox>Los informes por cliente respetan el aliasing de proyectos: si tienes reglas de renombrado (ej. Kit Digital → KD:), se aplican automáticamente en los reportes.</TipBox>
       </ContentBlock>
@@ -430,7 +430,7 @@ function EquipoContent() {
 
       <ContentBlock title="Funcionalidades">
         <div className="grid sm:grid-cols-2 gap-3">
-          <FeatureCard icon={Users} title="Listado de empleados" description="Nombre, rol, avatar y datos de contacto. Busca y filtra rapidamente." color="from-blue-500 to-cyan-500" />
+          <FeatureCard icon={Users} title="Listado de empleados" description="Nombre, rol, avatar y datos de contacto. Busca y filtra rápidamente." color="from-blue-500 to-cyan-500" />
           <FeatureCard icon={Clock} title="Horarios personalizados" description="Configura horas laborables por día (lunes a domingo) para calcular capacidad real." color="from-indigo-500 to-blue-500" />
           <FeatureCard icon={CalendarOff} title="Ausencias y vacaciones" description="Fechas de inicio y fin. El planificador descuenta capacidad automáticamente." color="from-amber-500 to-orange-500" />
           <FeatureCard icon={Gauge} title="Capacidad" description="Capacidad mensual y semanal derivada del horario y las ausencias registradas." color="from-emerald-500 to-teal-500" />
@@ -454,7 +454,7 @@ function ClientesContent() {
   return (
     <>
       <ContentBlock title="Qué son Clientes y Proyectos">
-        <p>Es el <strong className="text-white">catalogo</strong> de clientes de la agencia y de los proyectos asociados. Cada proyecto tiene horas contratadas (presupuesto), minimo de horas si aplica y estado.</p>
+        <p>Es el <strong className="text-white">catálogo</strong> de clientes de la agencia y de los proyectos asociados. Cada proyecto tiene horas contratadas (presupuesto), mínimo de horas si aplica y estado.</p>
         <ExampleBox>Un cliente puede tener varios proyectos: por ejemplo SEO Mensual (35h), Paid Media (20h) y Contenido (15h). Cada uno con su presupuesto y estado independiente.</ExampleBox>
       </ContentBlock>
 
@@ -463,13 +463,13 @@ function ClientesContent() {
           <FeatureCard icon={Building2} title="Clientes" description="Nombre, datos de facturación, color identificativo y proyectos vinculados." color="from-slate-500 to-indigo-500" />
           <FeatureCard icon={FolderOpen} title="Proyectos" description="Nombre, cliente, horas contratadas (budget), mínimo, fee mensual y estado (activo/pausado/completado)." color="from-indigo-500 to-purple-500" />
           <FeatureCard icon={Tag} title="Alias de proyectos" description="Reglas para mostrar nombres abreviados (ej. Kit Digital → KD:) en planificador e informes." color="from-purple-500 to-pink-500" />
-          <FeatureCard icon={ToggleLeft} title="Estado del proyecto" description="Si archivas un proyecto deja de aparecer en asignación nueva pero conserva el historico." color="from-amber-500 to-orange-500" />
+          <FeatureCard icon={ToggleLeft} title="Estado del proyecto" description="Si archivas un proyecto deja de aparecer en asignación nueva pero conserva el histórico." color="from-amber-500 to-orange-500" />
         </div>
       </ContentBlock>
 
       <ContentBlock title="Relación con el Planificador">
         <p>Cada tarea del planificador está ligada a un proyecto. Las horas contratadas se usan para mostrar avisos de sobrepaso de presupuesto.</p>
-        <WarningBox>Sin proyectos activos no podras asignar tareas nuevas. Asegurate de tener al menos un proyecto en estado &quot;activo&quot; para poder planificar.</WarningBox>
+        <WarningBox>Sin proyectos activos no podrás asignar tareas nuevas. Asegúrate de tener al menos un proyecto en estado &quot;activo&quot; para poder planificar.</WarningBox>
       </ContentBlock>
     </>
   );
@@ -491,15 +491,15 @@ function ConfiguracionContent() {
         <ExampleBox>Cambias el permiso &quot;can_edit_tasks&quot; en el rol &quot;Empleado&quot;. Automáticamente, todos los empleados con ese rol pierden (o ganan) esa capacidad.</ExampleBox>
       </ContentBlock>
 
-      <ContentBlock title="Modulos">
-        <p>Se pueden <strong className="text-white">activar o desactivar</strong> modulos individualmente:</p>
+      <ContentBlock title="Módulos">
+        <p>Se pueden <strong className="text-white">activar o desactivar</strong> módulos individualmente:</p>
         <InfoGrid items={[
           { icon: Target, label: 'Deadlines', value: 'On/Off', color: 'bg-amber-500/15 border-amber-400/25 text-amber-300' },
           { icon: FileText, label: 'Weekly', value: 'On/Off', color: 'bg-violet-500/15 border-violet-400/25 text-violet-300' },
           { icon: BarChart3, label: 'PPC / Ads', value: 'On/Off', color: 'bg-blue-500/15 border-blue-400/25 text-blue-300' },
         ]} />
         <div className="mt-3" />
-        <TipBox>Si un módulo está desactivado, el menu y las rutas asociadas desaparecen para todos los usuarios de la agencia.</TipBox>
+        <TipBox>Si un módulo está desactivado, el menú y las rutas asociadas desaparecen para todos los usuarios de la agencia.</TipBox>
       </ContentBlock>
 
       <ContentBlock title="Configuración de agencia">

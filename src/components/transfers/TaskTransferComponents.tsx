@@ -51,7 +51,7 @@ export function PendingTransfersPanel() {
         );
     }
 
-    if (pendingTransfers.length === 0) {
+    if ((pendingTransfers || []).length === 0) {
         return null; // Don't show if no pending transfers
     }
 
@@ -83,14 +83,14 @@ export function PendingTransfersPanel() {
                         <Bell className="h-5 w-5 animate-pulse" />
                         Transferencias Pendientes
                         <Badge variant="secondary" className="ml-2 bg-amber-200 text-amber-800">
-                            {pendingTransfers.length}
+                            {(pendingTransfers || []).length}
                         </Badge>
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <ScrollArea className="max-h-[300px]">
                         <div className="space-y-3">
-                            {pendingTransfers.map((transfer) => (
+                            {(pendingTransfers || []).map((transfer) => (
                                 <div
                                     key={transfer.id}
                                     className="flex items-center justify-between gap-4 p-3 bg-white rounded-lg border border-amber-100 shadow-sm hover:shadow-md transition-shadow"
@@ -204,7 +204,7 @@ export function OutgoingTransfersList() {
     const { currentUser } = useApp();
     const [cancelling, setCancelling] = useState<string | null>(null);
 
-    if (isLoading || outgoingTransfers.length === 0) return null;
+    if (isLoading || (outgoingTransfers || []).length === 0) return null;
 
     const handleCancel = async (id: string) => {
         setCancelling(id);
@@ -236,7 +236,7 @@ export function OutgoingTransfersList() {
             <CardContent>
                 <ScrollArea className="max-h-[200px]">
                     <div className="space-y-2">
-                        {outgoingTransfers
+                        {(outgoingTransfers || [])
                             .filter(t => t.fromEmployeeId === currentUser?.id) // Filter only my transfers
                             .map((transfer) => (
                                 <div

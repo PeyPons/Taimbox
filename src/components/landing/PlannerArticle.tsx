@@ -318,7 +318,7 @@ export function PlannerArticle() {
                     <div>
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-purple-300/90 mb-3 block">Asignación con contexto</span>
                         <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 leading-tight">
-                            Sabe lo que va a pasar antes de que pase
+                            Sabes lo que va a pasar antes de que pase
                         </h2>
                         <p className="text-indigo-100/90 mb-4 leading-relaxed">
                             Antes de guardar una asignación, ves exactamente el impacto: cómo afecta al presupuesto del proyecto, a la carga del empleado y si genera conflictos. Decisiones informadas, no a ciegas.

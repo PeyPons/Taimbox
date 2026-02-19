@@ -834,7 +834,7 @@ export default function LandingPage() {
                       <Badge className="ml-2 bg-primary/100 text-white text-[10px] px-1.5 py-0">Nuevo</Badge>
                     </TabsTrigger>
                     <TabsTrigger value="weeklys" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm whitespace-nowrap">
-                      Weeklys Forecast
+                      Weekly Forecast
                     </TabsTrigger>
                     <TabsTrigger value="deadlines" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm relative whitespace-nowrap">
                       Deadlines

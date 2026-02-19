@@ -246,7 +246,7 @@ export function ReportsArticle() {
                             Informes profesionales, listos para enviar
                         </h2>
                         <p className="text-indigo-100/90 mb-4 leading-relaxed">
-                            Genera informes per-cliente con el desglose de horas por categoría, proyecto y empleado. Exporta en PDF o Excel con un clic. Tu cliente ve exactamente en qué se invirtió su presupuesto.
+                            Genera informes por cliente con el desglose de horas por categoría, proyecto y empleado. Exporta en PDF o Excel con un clic. Tu cliente ve exactamente en qué se invirtió su presupuesto.
                         </p>
                         <div className="rounded-xl border-l-4 border-purple-400 bg-purple-500/10 border border-purple-500/20 p-4">
                             <p className="text-indigo-100/90 text-sm m-0">
@@ -325,7 +325,7 @@ export function ReportsArticle() {
                         Mide lo que importa. Actúa con datos.
                     </h2>
                     <p className="text-indigo-100/95 mb-6 text-base sm:text-lg leading-relaxed text-center max-w-2xl mx-auto">
-                        Los reportes de Timeboxing conectan tiempo, personas y dinero. Sabe exactamente cuánto cuesta y cuánto genera cada proyecto.
+                        Los reportes de Timeboxing conectan tiempo, personas y dinero. Sabes exactamente cuánto cuesta y cuánto genera cada proyecto.
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
                         {[
