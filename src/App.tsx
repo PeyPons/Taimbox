@@ -39,6 +39,7 @@ import ProjectsLandingPage from "./pages/ProjectsLandingPage";
 import IntegrationsLandingPage from "./pages/IntegrationsLandingPage";
 import GuiaPage from "./pages/GuiaPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
+import PresentationPage from "./pages/PresentationPage";
 import { ModuleGuard } from "./components/auth/ModuleGuard";
 import { BrandingEffect } from "./components/layout/BrandingEffect";
 import { ScrollToTop } from "./components/ScrollToTop";
@@ -147,6 +148,9 @@ const App = () => (
 
                         {/* Documentación API (pública) */}
                         <Route path="/api-docs" element={<ApiDocsPage />} />
+
+                        {/* Presentación interna (oculta, no enlazada) */}
+                        <Route path="/pitch" element={<PresentationPage />} />
 
                         {/* Ruta pública Login */}
                         <Route path="/login" element={<Login />} />
