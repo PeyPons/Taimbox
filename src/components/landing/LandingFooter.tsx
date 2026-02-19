@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Calendar, FileText, Code, HelpCircle, Mail, BookOpen, PlayCircle } from 'lucide-react';
+import { Calendar, FileText, Code, HelpCircle, Mail, BookOpen, PlayCircle, LayoutDashboard, CalendarRange, Users, BarChart3, FolderKanban, Plug } from 'lucide-react';
 
 export function LandingFooter() {
   const currentYear = new Date().getFullYear();
@@ -27,6 +27,42 @@ export function LandingFooter() {
                 <Link to="/por-que-timeboxing" className="text-sm text-indigo-200/80 hover:text-white flex items-center gap-2 transition-colors">
                   <BookOpen className="h-4 w-4" />
                   Por qué Timeboxing
+                </Link>
+              </li>
+              <li>
+                <Link to="/dashboard-empleado" className="text-sm text-indigo-200/80 hover:text-white flex items-center gap-2 transition-colors">
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard del Empleado
+                </Link>
+              </li>
+              <li>
+                <Link to="/planificador-recursos" className="text-sm text-indigo-200/80 hover:text-white flex items-center gap-2 transition-colors">
+                  <CalendarRange className="h-4 w-4" />
+                  Planificador de Recursos
+                </Link>
+              </li>
+              <li>
+                <Link to="/gestion-equipos" className="text-sm text-indigo-200/80 hover:text-white flex items-center gap-2 transition-colors">
+                  <Users className="h-4 w-4" />
+                  Gestión de Equipos
+                </Link>
+              </li>
+              <li>
+                <Link to="/reportes-rentabilidad" className="text-sm text-indigo-200/80 hover:text-white flex items-center gap-2 transition-colors">
+                  <BarChart3 className="h-4 w-4" />
+                  Reportes y Rentabilidad
+                </Link>
+              </li>
+              <li>
+                <Link to="/control-proyectos" className="text-sm text-indigo-200/80 hover:text-white flex items-center gap-2 transition-colors">
+                  <FolderKanban className="h-4 w-4" />
+                  Proyectos y Deadlines
+                </Link>
+              </li>
+              <li>
+                <Link to="/integraciones" className="text-sm text-indigo-200/80 hover:text-white flex items-center gap-2 transition-colors">
+                  <Plug className="h-4 w-4" />
+                  Integraciones
                 </Link>
               </li>
               <li>

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
-import { ArrowLeft, ArrowRight, Code, Menu, BookOpen, Key } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Code, Menu, BookOpen, Key, Home } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SidebarTOC } from './api-docs/components/SidebarTOC';
@@ -66,14 +66,13 @@ function useScrollSpy() {
     });
   }, [hashId, validHash]);
 
-  // Scroll spy: la sección activa es la que está “en vista” (la más arriba entre las visibles)
+  // Scroll spy: la sección activa es la que está "en vista" (la más arriba entre las visibles)
   useEffect(() => {
     observerRef.current = new IntersectionObserver(
       (entries) => {
         if (isScrollingFromHashRef.current) return;
         const visible = entries.filter((e) => e.isIntersecting);
         if (visible.length === 0) return;
-        // Entre las visibles, elegir la que tiene el top más bajo (la que “acabas de entrar”)
         const sorted = [...visible].sort(
           (a, b) => b.boundingClientRect.top - a.boundingClientRect.top,
         );
@@ -163,9 +162,24 @@ export default function ApiDocsPage() {
                     side="left"
                     className="w-80 bg-indigo-950 border-white/10 p-6 overflow-y-auto"
                   >
-                    <SheetTitle className="text-white text-lg font-bold mb-6">
-                      Navegacion
+                    <SheetTitle className="text-white text-lg font-bold mb-4">
+                      Navegación
                     </SheetTitle>
+                    {/* Mobile nav links to leave the page */}
+                    <div className="flex gap-2 mb-5 pb-4 border-b border-white/10">
+                      <Link to="/" className="flex-1">
+                        <Button variant="outline" size="sm" className="w-full border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white gap-1.5 text-xs">
+                          <Home className="h-3.5 w-3.5" />
+                          Inicio
+                        </Button>
+                      </Link>
+                      <Link to="/guia" className="flex-1">
+                        <Button variant="outline" size="sm" className="w-full border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white gap-1.5 text-xs">
+                          <BookOpen className="h-3.5 w-3.5" />
+                          Guía
+                        </Button>
+                      </Link>
+                    </div>
                     <SidebarTOC activeSection={activeSection} onNavigate={navigateToSection} />
                   </SheetContent>
                 </Sheet>
@@ -247,48 +261,48 @@ export default function ApiDocsPage() {
         {/* Contenido principal: margen izquierdo en desktop para no quedar bajo el sidebar */}
         <div className={isMobile ? 'relative z-10 px-4 sm:px-6 py-8' : 'relative z-10 ml-60 min-h-screen'}>
           <main className={isMobile ? 'max-w-4xl mx-auto space-y-16' : 'max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-16'}>
-              {/* Overview */}
-              <OverviewIntro />
-              <OverviewAuth />
-              <OverviewBaseUrl />
-              <OverviewResponses />
-              <OverviewChangelog />
+            {/* Overview */}
+            <OverviewIntro />
+            <OverviewAuth />
+            <OverviewBaseUrl />
+            <OverviewResponses />
+            <OverviewChangelog />
 
-              {/* Tutorials */}
-              <SectionDivider title="Tutoriales" />
-              <TutorialQuickStart />
-              <TutorialSyncTeam />
-              <TutorialPlanning />
-              <TutorialReports />
-              <TutorialAbsences />
+            {/* Tutorials */}
+            <SectionDivider title="Tutoriales" />
+            <TutorialQuickStart />
+            <TutorialSyncTeam />
+            <TutorialPlanning />
+            <TutorialReports />
+            <TutorialAbsences />
 
-              {/* SDK y REST */}
-              <SectionDivider title="SDK y REST" />
-              <SdkSection />
-              <RestSection />
-              <FilteringSection />
-              <RealtimeSection />
+            {/* SDK y REST */}
+            <SectionDivider title="SDK y REST" />
+            <SdkSection />
+            <RestSection />
+            <FilteringSection />
+            <RealtimeSection />
 
-              {/* Resource Reference */}
-              <SectionDivider title="Referencia de Recursos" />
-              <ResourceReference />
+            {/* Resource Reference */}
+            <SectionDivider title="Referencia de Recursos" />
+            <ResourceReference />
 
-              {/* Footer links */}
-              <div className="pt-8 border-t border-white/10 flex flex-wrap gap-4">
-                <Link to="/guia">
-                  <Button className="border-2 border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white">
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    Guia de funcionalidades
-                  </Button>
-                </Link>
-                <Link to="/">
-                  <Button className="border-2 border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white">
-                    Volver al inicio
-                  </Button>
-                </Link>
-              </div>
-            </main>
-          </div>
+            {/* Footer links */}
+            <div className="pt-8 border-t border-white/10 flex flex-wrap gap-4">
+              <Link to="/guia">
+                <Button className="border-2 border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Guia de funcionalidades
+                </Button>
+              </Link>
+              <Link to="/">
+                <Button className="border-2 border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white">
+                  Volver al inicio
+                </Button>
+              </Link>
+            </div>
+          </main>
+        </div>
       </div>
     </>
   );

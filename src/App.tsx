@@ -31,6 +31,12 @@ import AdminDocsPage from "./pages/admin/AdminDocsPage";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import LandingPage from "./pages/LandingPage";
 import ArticlePage from "./pages/ArticlePage";
+import EmployeeDashboardLandingPage from "./pages/EmployeeDashboardLandingPage";
+import PlannerLandingPage from "./pages/PlannerLandingPage";
+import TeamLandingPage from "./pages/TeamLandingPage";
+import ReportsLandingPage from "./pages/ReportsLandingPage";
+import ProjectsLandingPage from "./pages/ProjectsLandingPage";
+import IntegrationsLandingPage from "./pages/IntegrationsLandingPage";
 import GuiaPage from "./pages/GuiaPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
 import { ModuleGuard } from "./components/auth/ModuleGuard";
@@ -124,6 +130,16 @@ const App = () => (
 
                         {/* Artículo: por qué Timeboxing (página pública) */}
                         <Route path="/por-que-timeboxing" element={<ArticlePage />} />
+
+                        {/* Landing comercial: Dashboard del Empleado (página pública) */}
+                        <Route path="/dashboard-empleado" element={<EmployeeDashboardLandingPage />} />
+
+                        {/* Landings comerciales de funcionalidades (páginas públicas) */}
+                        <Route path="/planificador-recursos" element={<PlannerLandingPage />} />
+                        <Route path="/gestion-equipos" element={<TeamLandingPage />} />
+                        <Route path="/reportes-rentabilidad" element={<ReportsLandingPage />} />
+                        <Route path="/control-proyectos" element={<ProjectsLandingPage />} />
+                        <Route path="/integraciones" element={<IntegrationsLandingPage />} />
 
                         {/* Guía de funcionalidades (páginas públicas detalladas) */}
                         <Route path="/guia" element={<GuiaPage />} />

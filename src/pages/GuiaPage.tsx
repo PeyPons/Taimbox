@@ -48,6 +48,7 @@ import {
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { cn } from '@/lib/utils';
+import { LandingHeader } from '@/components/landing/LandingHeader';
 
 /* ─── SECTIONS DATA ─── */
 const SECTIONS: { slug: string; title: string; icon: React.ElementType; short: string; color: string }[] = [
@@ -73,27 +74,8 @@ function GuiaLayout({ children, title, description }: { children: React.ReactNod
         backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
         backgroundSize: '50px 50px'
       }} />
+      <LandingHeader />
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div className="flex items-center gap-3">
-            <Link to="/">
-              <Button variant="ghost" size="icon" className="text-white hover:text-white hover:bg-white/10 hover:scale-110 rounded-full transition-all duration-200">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <Link to="/guia" className="flex items-center gap-2 text-white/80 hover:text-white transition-colors duration-200">
-              <BookOpen className="h-5 w-5" />
-              <span className="font-semibold">Guía de funcionalidades</span>
-            </Link>
-          </div>
-          <Link to="/login">
-            <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 border-0 text-white hover:from-indigo-500 hover:to-purple-500 hover:shadow-lg hover:shadow-indigo-500/30 hover:scale-105 transition-all duration-200">
-              Acceder a la app
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          </Link>
-        </div>
         {title && (
           <div className="mb-10">
             <h1 className="text-3xl sm:text-5xl font-black text-white mb-3">{title}</h1>

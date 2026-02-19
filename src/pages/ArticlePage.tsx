@@ -1,9 +1,7 @@
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Calendar } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { LandingArticle } from '@/components/landing/LandingArticle';
 import { LandingFooter } from '@/components/landing/LandingFooter';
+import { LandingHeader } from '@/components/landing/LandingHeader';
 
 export default function ArticlePage() {
   return (
@@ -45,30 +43,7 @@ export default function ArticlePage() {
           backgroundSize: '50px 50px'
         }} />
 
-        <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-indigo-950/90 backdrop-blur-xl">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
-            <Link to="/" className="flex items-center gap-2 text-white font-bold text-lg hover:text-indigo-200 transition-colors">
-              <Calendar className="h-5 w-5 text-indigo-400" />
-              Timeboxing
-            </Link>
-            <div className="flex items-center gap-3">
-              <Link to="/" className="text-sm text-indigo-200 hover:text-white">
-                Inicio
-              </Link>
-              <Link to="/api-docs" className="text-sm text-indigo-200 hover:text-white hidden sm:inline">
-                API
-              </Link>
-              <Link to="/guia" className="text-sm text-indigo-200 hover:text-white hidden sm:inline">
-                Guía
-              </Link>
-              <Link to="/login">
-                <Button size="sm" className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white">
-                  Login
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </header>
+        <LandingHeader />
 
         <div className="relative z-10">
           <LandingArticle />

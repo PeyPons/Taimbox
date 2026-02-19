@@ -44,6 +44,7 @@ import { Helmet } from 'react-helmet-async';
 import { cn } from '@/lib/utils';
 import { CalendarPreview } from '@/components/landing/CalendarPreview';
 import { LandingFooter } from '@/components/landing/LandingFooter';
+import { LandingHeader } from '@/components/landing/LandingHeader';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Monitor, AlertCircle } from 'lucide-react';
 
@@ -70,28 +71,7 @@ export default function LandingPage() {
       </Helmet>
 
       <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 relative overflow-hidden">
-        {/* Sticky Header: Login visible durante toda la lectura */}
-        <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-indigo-950/90 backdrop-blur-xl">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
-            <Link to="/" className="flex items-center gap-2 text-white font-bold text-lg hover:text-indigo-200 transition-colors">
-              <Calendar className="h-5 w-5 text-indigo-400" />
-              Timeboxing
-            </Link>
-            <div className="flex items-center gap-3">
-              <Link to="/api-docs" className="text-sm text-indigo-200 hover:text-white hidden sm:inline">
-                API
-              </Link>
-              <Link to="/guia" className="text-sm text-indigo-200 hover:text-white hidden sm:inline">
-                Guía
-              </Link>
-              <Link to="/login">
-                <Button size="sm" className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white">
-                  Login
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </header>
+        <LandingHeader />
         {/* Efectos de fondo animados mejorados */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/100/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
@@ -226,13 +206,13 @@ export default function LandingPage() {
           {/* Feature Bubbles Row */}
           {(() => {
             const features = [
-              { icon: Calendar, label: 'Calendario', color: 'from-indigo-500 to-purple-500', title: 'Calendario Visual', subtitle: 'La vista principal de tu equipo', description: 'Ve quién hace qué, cuándo y por qué. Identifica sobrecargas al instante con un vistazo al calendario completo de tu equipo.', featureList: ['Vista semanal y mensual', 'Código de colores por proyecto', 'Drag & drop para reasignar', 'Filtros por empleado o proyecto'], example: 'María está al 120% esta semana. Con un vistazo al calendario, ves que tiene 3 proyectos superpuestos y puedes redistribuir antes de que sea tarde.', stat: '+40%', statLabel: 'visibilidad del equipo' },
-              { icon: Link2, label: 'Dependencias', color: 'from-purple-500 to-pink-500', title: 'Dependencias', subtitle: 'Gestión inteligente de bloqueos', description: 'Visualiza qué tareas bloquean a otras y recibe alertas cuando una dependencia está en riesgo.', featureList: ['Mapa visual de dependencias', 'Alertas de cuellos de botella', 'Priorización automática', 'Notificaciones en cascada'], example: 'El diseño bloquea al desarrollo. Si el diseño se retrasa, automáticamente recibes alerta de que 3 tareas de desarrollo se verán afectadas.', stat: '100%', statLabel: 'visibilidad de bloqueos' },
-              { icon: Target, label: 'Deadlines', color: 'from-amber-500 to-orange-500', title: 'Deadlines', subtitle: 'Objetivos mensuales por proyecto', description: 'Define metas de horas por proyecto y empleado. Compara lo planificado vs ejecutado en tiempo real.', featureList: ['Objetivos por proyecto', 'Seguimiento en tiempo real', 'Sugerencias de redistribución', 'Alertas de desviación'], example: 'Tienes 200h asignadas al proyecto X pero solo 150h disponibles. El sistema te sugiere redistribuir 50h a otro mes o empleado.', stat: '85%', statLabel: 'cumplimiento de deadlines' },
-              { icon: Users, label: 'Equipo', color: 'from-blue-500 to-cyan-500', title: 'Gestión de Equipo', subtitle: 'Todo sobre tu equipo en un lugar', description: 'Horarios, ausencias, vacaciones y capacidad. Cada empleado tiene su perfil completo.', featureList: ['Horarios personalizados', 'Gestión de ausencias', 'Capacidad mensual', 'Objetivos profesionales'], example: 'Juan tiene vacaciones la próxima semana. El sistema ya lo considera y no permite asignarle tareas en ese período.', stat: '0', statLabel: 'conflictos de agenda' },
-              { icon: FileText, label: 'Weekly', color: 'from-violet-500 to-purple-500', title: 'Weekly Reports', subtitle: 'Cierre semanal automático', description: 'Cada semana, el sistema genera un resumen con métricas, redistribuye horas no completadas a compañeros con disponibilidad y prepara la siguiente semana.', featureList: ['Resumen semanal automático', 'Redistribución inteligente', 'Métricas de productividad', 'Comparativa semanal'], example: 'Carlos no completó 15h esta semana. El sistema detecta que Laura tiene 10h libres y Pedro 5h, y les redistribuye el trabajo automáticamente.', stat: 'Auto', statLabel: 'redistribución de carga' },
-              { icon: Bell, label: 'Alertas', color: 'from-yellow-500 to-amber-500', title: 'Alertas Inteligentes', subtitle: 'Nunca más sorpresas', description: 'Recibe notificaciones cuando detectamos sobrecargas, dependencias en riesgo o desviaciones de presupuesto.', featureList: ['Alertas de sobrecarga', 'Notificaciones de dependencias', 'Avisos de presupuesto', 'Recordatorios de deadlines'], example: '3 días antes del deadline, recibes alerta de que el proyecto lleva solo 60% completado. Tiempo de actuar.', stat: '60%', statLabel: 'problemas detectados antes' },
-              { icon: BarChart3, label: 'Métricas', color: 'from-rose-500 to-pink-500', title: 'Métricas y Analytics', subtitle: 'Decisiones basadas en datos', description: 'Índice de fiabilidad de estimaciones, productividad por empleado y proyecto, y tendencias históricas.', featureList: ['Índice de fiabilidad', 'Productividad por equipo', 'Tendencias históricas', 'Exportación de reportes'], example: 'Tu índice de fiabilidad es del 78%. Históricamente, subestimas proyectos de diseño en un 20%. Ahora lo sabes y puedes ajustar.', stat: '+78%', statLabel: 'precisión en estimaciones' },
+              { icon: Calendar, label: 'Calendario', color: 'from-indigo-500 to-purple-500', title: 'Calendario Visual', subtitle: 'La vista principal de tu equipo', description: 'Ve quién hace qué, cuándo y por qué. Identifica sobrecargas al instante con un vistazo al calendario completo de tu equipo.', featureList: ['Vista semanal y mensual', 'Código de colores por proyecto', 'Drag & drop para reasignar', 'Filtros por empleado o proyecto'], example: 'María está al 120% esta semana. Con un vistazo al calendario, ves que tiene 3 proyectos superpuestos y puedes redistribuir antes de que sea tarde.', stat: '+40%', statLabel: 'visibilidad del equipo', landingUrl: '/planificador-recursos' },
+              { icon: Link2, label: 'Dependencias', color: 'from-purple-500 to-pink-500', title: 'Dependencias', subtitle: 'Gestión inteligente de bloqueos', description: 'Visualiza qué tareas bloquean a otras y recibe alertas cuando una dependencia está en riesgo.', featureList: ['Mapa visual de dependencias', 'Alertas de cuellos de botella', 'Priorización automática', 'Notificaciones en cascada'], example: 'El diseño bloquea al desarrollo. Si el diseño se retrasa, automáticamente recibes alerta de que 3 tareas de desarrollo se verán afectadas.', stat: '100%', statLabel: 'visibilidad de bloqueos', landingUrl: '/planificador-recursos' },
+              { icon: Target, label: 'Deadlines', color: 'from-amber-500 to-orange-500', title: 'Deadlines', subtitle: 'Objetivos mensuales por proyecto', description: 'Define metas de horas por proyecto y empleado. Compara lo planificado vs ejecutado en tiempo real.', featureList: ['Objetivos por proyecto', 'Seguimiento en tiempo real', 'Sugerencias de redistribución', 'Alertas de desviación'], example: 'Tienes 200h asignadas al proyecto X pero solo 150h disponibles. El sistema te sugiere redistribuir 50h a otro mes o empleado.', stat: '85%', statLabel: 'cumplimiento de deadlines', landingUrl: '/control-proyectos' },
+              { icon: Users, label: 'Equipo', color: 'from-blue-500 to-cyan-500', title: 'Gestión de Equipo', subtitle: 'Todo sobre tu equipo en un lugar', description: 'Horarios, ausencias, vacaciones y capacidad. Cada empleado tiene su perfil completo.', featureList: ['Horarios personalizados', 'Gestión de ausencias', 'Capacidad mensual', 'Objetivos profesionales'], example: 'Juan tiene vacaciones la próxima semana. El sistema ya lo considera y no permite asignarle tareas en ese período.', stat: '0', statLabel: 'conflictos de agenda', landingUrl: '/gestion-equipos' },
+              { icon: FileText, label: 'Weekly', color: 'from-violet-500 to-purple-500', title: 'Weekly Reports', subtitle: 'Cierre semanal automático', description: 'Cada semana, el sistema genera un resumen con métricas, redistribuye horas no completadas a compañeros con disponibilidad y prepara la siguiente semana.', featureList: ['Resumen semanal automático', 'Redistribución inteligente', 'Métricas de productividad', 'Comparativa semanal'], example: 'Carlos no completó 15h esta semana. El sistema detecta que Laura tiene 10h libres y Pedro 5h, y les redistribuye el trabajo automáticamente.', stat: 'Auto', statLabel: 'redistribución de carga', landingUrl: '/reportes-rentabilidad' },
+              { icon: Bell, label: 'Alertas', color: 'from-yellow-500 to-amber-500', title: 'Alertas Inteligentes', subtitle: 'Nunca más sorpresas', description: 'Recibe notificaciones cuando detectamos sobrecargas, dependencias en riesgo o desviaciones de presupuesto.', featureList: ['Alertas de sobrecarga', 'Notificaciones de dependencias', 'Avisos de presupuesto', 'Recordatorios de deadlines'], example: '3 días antes del deadline, recibes alerta de que el proyecto lleva solo 60% completado. Tiempo de actuar.', stat: '60%', statLabel: 'problemas detectados antes', landingUrl: '/dashboard-empleado' },
+              { icon: BarChart3, label: 'Métricas', color: 'from-rose-500 to-pink-500', title: 'Métricas y Analytics', subtitle: 'Decisiones basadas en datos', description: 'Índice de fiabilidad de estimaciones, productividad por empleado y proyecto, y tendencias históricas.', featureList: ['Índice de fiabilidad', 'Productividad por equipo', 'Tendencias históricas', 'Exportación de reportes'], example: 'Tu índice de fiabilidad es del 78%. Históricamente, subestimas proyectos de diseño en un 20%. Ahora lo sabes y puedes ajustar.', stat: '+78%', statLabel: 'precisión en estimaciones', landingUrl: '/reportes-rentabilidad' },
             ];
             const current = features[activeFeature];
             const FeatureIcon = current.icon;
@@ -361,6 +341,11 @@ export default function LandingPage() {
                           <p className="text-xs text-indigo-200/90 italic">💡 {current.example}</p>
                         </div>
 
+                        <Link to={current.landingUrl} className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-300 hover:text-white transition-colors">
+                          Ver página completa
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+
                         <div className="flex justify-between items-center pt-2">
                           <Button
                             variant="outline"
@@ -408,6 +393,11 @@ export default function LandingPage() {
                           <div className="p-4 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-xl border border-indigo-400/20">
                             <p className="text-sm text-indigo-200/90 italic">💡 {current.example}</p>
                           </div>
+
+                          <Link to={current.landingUrl} className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-300 hover:text-white transition-colors mt-2">
+                            Ver página completa de esta funcionalidad
+                            <ArrowRight className="h-4 w-4" />
+                          </Link>
                         </div>
 
                         <div className="lg:col-span-2 flex flex-col justify-between">
