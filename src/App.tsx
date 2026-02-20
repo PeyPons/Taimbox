@@ -43,6 +43,7 @@ import PresentationPage from "./pages/PresentationPage";
 import { ModuleGuard } from "./components/auth/ModuleGuard";
 import { BrandingEffect } from "./components/layout/BrandingEffect";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { CookieBanner } from "./components/landing/CookieBanner";
 
 // Loading fallback para páginas lazy
 const PageLoader = () => (
@@ -125,6 +126,7 @@ const App = () => (
                     <BrandingEffect />
                     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                       <ScrollToTop />
+                      <CookieBanner />
                       <Routes>
                         {/* Página de inicio (Landing) */}
                         <Route path="/" element={<LandingPage />} />

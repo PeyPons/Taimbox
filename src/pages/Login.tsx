@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Rocket, LogIn } from "lucide-react";
 
 // Schema de Login
@@ -36,7 +36,9 @@ type RegisterFormValues = z.infer<typeof registerFormSchema>;
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<'login' | 'register'>(tabParam === 'register' ? 'register' : 'login');
   const [isRegistering, setIsRegistering] = useState(false);
 
   // Obtener la ruta de origen desde el state de navegación
@@ -60,6 +62,11 @@ export default function Login() {
       agencyName: '',
     },
   });
+
+  // Abrir pestaña de registro si la URL lleva ?tab=register
+  useEffect(() => {
+    if (tabParam === 'register') setActiveTab('register');
+  }, [tabParam]);
 
   // Si ya estamos logueados, redirigir
   useEffect(() => {

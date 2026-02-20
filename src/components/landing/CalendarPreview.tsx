@@ -93,9 +93,10 @@ export function CalendarPreview() {
         </div>
       </div>
 
-      {/* Calendar Grid - Scroll horizontal en mobile */}
-      <div className="p-3 sm:p-6 bg-slate-50">
-        <div className="grid grid-cols-6 gap-2 sm:gap-3 min-w-[600px] sm:min-w-0 overflow-x-auto sm:overflow-x-visible -mx-3 sm:mx-0 px-3 sm:px-0">
+      {/* Calendar Grid - Scroll horizontal en mobile sin desbordar la página */}
+      <div className="p-3 sm:p-6 bg-slate-50 overflow-hidden">
+        <div className="overflow-x-auto overflow-y-hidden max-w-full sm:max-w-none sm:overflow-visible custom-scrollbar" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="grid grid-cols-6 gap-2 sm:gap-3 min-w-[520px] sm:min-w-0 w-max sm:w-auto mx-auto">
           {/* Week Headers */}
           {weeks.map((week) => (
             <div key={week.week} className="text-center">
@@ -217,6 +218,7 @@ export function CalendarPreview() {
             <div className="text-lg sm:text-2xl font-bold text-emerald-700">{totalMonth}h</div>
             <div className="text-[10px] sm:text-xs text-slate-600">/ {totalCapacity}h</div>
             <div className="text-xs sm:text-sm font-bold text-emerald-600">{monthPercentage}%</div>
+          </div>
           </div>
         </div>
       </div>

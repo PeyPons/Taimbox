@@ -69,7 +69,7 @@ export default function LandingPage() {
         </script>
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 relative overflow-x-hidden min-w-0">
         <LandingHeader />
         {/* Efectos de fondo animados mejorados */}
         <div className="absolute inset-0 overflow-hidden">
@@ -91,19 +91,19 @@ export default function LandingPage() {
 
         {/* Hero Section */}
         <div className="relative z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 md:pt-20 pb-10 sm:pb-12 md:pb-16">
-            <div className="text-center relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-16 md:pt-20 pb-8 sm:pb-12 md:pb-16">
+            <div className="text-center relative min-w-0">
               {/* Badge animado mejorado */}
-              <div className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-indigo-500/40 via-purple-500/40 to-pink-500/40 backdrop-blur-md rounded-full text-white text-sm sm:text-base font-bold mb-8 sm:mb-12 border border-white/20 shadow-2xl shadow-indigo-500/30 animate-fade-in relative overflow-hidden group">
+              <div className="inline-flex items-center gap-2 px-3 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-indigo-500/40 via-purple-500/40 to-pink-500/40 backdrop-blur-md rounded-full text-white text-xs sm:text-base font-bold mb-6 sm:mb-12 border border-white/20 shadow-2xl shadow-indigo-500/30 animate-fade-in relative overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 animate-spin-slow relative z-10" />
+                <Sparkles className="h-3.5 w-3.5 sm:h-5 sm:w-5 animate-spin-slow relative z-10" />
                 <span className="whitespace-nowrap relative z-10">Tu equipo, tu tiempo, tu control</span>
               </div>
 
-              {/* Título principal con efecto mejorado */}
-              <div className="relative mb-6 sm:mb-8">
-                <div className="absolute -inset-8 bg-gradient-to-r from-indigo-600/30 via-purple-600/30 to-pink-600/30 blur-3xl opacity-60 -z-10 animate-pulse" />
-                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black mb-2 sm:mb-4 leading-[1.1] tracking-tight relative">
+              {/* Título principal: escalado para móvil */}
+              <div className="relative mb-4 sm:mb-8">
+                <div className="absolute -inset-4 sm:-inset-8 bg-gradient-to-r from-indigo-600/30 via-purple-600/30 to-pink-600/30 blur-3xl opacity-60 -z-10 animate-pulse" />
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black mb-2 sm:mb-4 leading-[1.15] tracking-tight relative px-1">
                   <span className="block text-white drop-shadow-2xl">El tiempo de tu</span>
                   <span className="block relative">
                     <span className="absolute inset-0 bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 blur-xl opacity-50 animate-pulse" />
@@ -114,38 +114,38 @@ export default function LandingPage() {
                 </h1>
               </div>
 
-              {/* Descripción más impactante */}
-              <div className="mb-6 sm:mb-8 max-w-4xl mx-auto px-4">
-                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-indigo-100/90 leading-relaxed font-light mb-2">
+              {/* Descripción: más legible en móvil */}
+              <div className="mb-5 sm:mb-8 max-w-4xl mx-auto px-2 sm:px-4">
+                <p className="text-base sm:text-xl md:text-2xl lg:text-3xl text-indigo-100/90 leading-relaxed font-light mb-2">
                   No más hojas de cálculo. No más adivinanzas.
                 </p>
-                <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl text-white font-semibold leading-tight">
+                <p className="text-lg sm:text-2xl md:text-3xl lg:text-4xl text-white font-semibold leading-tight break-words">
                   Ve quién hace qué, <span className="bg-gradient-to-r from-indigo-200 to-purple-200 bg-clip-text text-transparent">cuándo</span> y <span className="bg-gradient-to-r from-purple-200 to-pink-200 bg-clip-text text-transparent">por qué</span>.
                 </p>
               </div>
 
-              {/* CTA: solo lo prioritario */}
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center px-4 mb-8 sm:mb-10">
-                <Link to="/login" className="group relative">
+              {/* CTA: solo lo prioritario, botones más compactos en móvil */}
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center px-2 sm:px-4 mb-6 sm:mb-10 max-w-md sm:max-w-none mx-auto">
+                <Link to="/login?tab=register" className="group relative">
                   <div className="absolute -inset-1 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300" />
-                  <Button size="lg" className="relative w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-semibold shadow-2xl hover:shadow-indigo-500/50 transition-all transform hover:scale-105">
-                    Acceder ahora
-                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  <Button size="lg" className="relative w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 sm:px-10 py-5 sm:py-7 text-base sm:text-xl font-semibold shadow-2xl hover:shadow-indigo-500/50 transition-all transform hover:scale-105 min-h-[48px]">
+                    Empezar gratis
+                    <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
                 <Link to="/pitch">
                   <Button
                     size="lg"
                     variant="outline"
-                    className="w-full sm:w-auto px-6 sm:px-8 py-6 sm:py-7 text-base sm:text-lg font-semibold border-2 border-white/30 text-white hover:text-white hover:bg-white/10 hover:border-white/50 bg-white/5 backdrop-blur-md shadow-xl"
+                    className="w-full sm:w-auto px-5 sm:px-8 py-5 sm:py-7 text-sm sm:text-lg font-semibold border-2 border-white/30 text-white hover:text-white hover:bg-white/10 hover:border-white/50 bg-white/5 backdrop-blur-md shadow-xl min-h-[48px]"
                   >
                     El coste de no medir (3 min)
                   </Button>
                 </Link>
               </div>
 
-              {/* Preview visual - Calendario completo */}
-              <div className="relative mt-6 sm:mt-8 md:mt-10 max-w-5xl mx-auto px-2 sm:px-0">
+              {/* Preview visual - Calendario completo (scroll interno en móvil) */}
+              <div className="relative mt-4 sm:mt-8 md:mt-10 max-w-5xl mx-auto px-2 sm:px-0 overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-t from-indigo-950/50 to-transparent -z-10" />
                 <div className="relative transform hover:scale-[1.01] transition-all duration-500">
                   <CalendarPreview />
@@ -201,9 +201,9 @@ export default function LandingPage() {
 
             return (
               <>
-                {/* Mobile: Horizontal scroll carousel */}
-                <div className="md:hidden mb-4">
-                  <div className="flex gap-2 overflow-x-auto pb-3 px-1 snap-x snap-mandatory scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                {/* Mobile: Horizontal scroll carousel (contenido dentro del ancho) */}
+                <div className="md:hidden mb-4 overflow-x-hidden">
+                  <div className="flex gap-2 overflow-x-auto pb-3 -mx-2 px-2 snap-x snap-mandatory scrollbar-hide min-h-[44px] items-center" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
                     {features.map((feature, index) => {
                       const Icon = feature.icon;
                       return (
@@ -807,19 +807,19 @@ export default function LandingPage() {
                     </TabsList>
                   </div>
 
-                  <TabsContent value="planner" className="m-0 p-3 sm:p-4 md:p-6 bg-white min-h-[600px]">
+                  <TabsContent value="planner" className="m-0 p-3 sm:p-4 md:p-6 bg-white min-h-[380px] sm:min-h-[500px] md:min-h-[600px]">
                     <DemoPlanner />
                   </TabsContent>
 
-                  <TabsContent value="dashboard" className="m-0 p-0 bg-slate-50 min-h-[600px]">
+                  <TabsContent value="dashboard" className="m-0 p-0 bg-slate-50 min-h-[380px] sm:min-h-[500px] md:min-h-[600px]">
                     <DemoEmployeeDashboard />
                   </TabsContent>
 
-                  <TabsContent value="weeklys" className="m-0 p-0 bg-slate-50 min-h-[600px]">
+                  <TabsContent value="weeklys" className="m-0 p-0 bg-slate-50 min-h-[380px] sm:min-h-[500px] md:min-h-[600px]">
                     <DemoWeeklyForecastPage />
                   </TabsContent>
 
-                  <TabsContent value="deadlines" className="m-0 p-0 bg-slate-50 min-h-[600px]">
+                  <TabsContent value="deadlines" className="m-0 p-0 bg-slate-50 min-h-[380px] sm:min-h-[500px] md:min-h-[600px]">
                     <DemoDeadlinesPage />
                   </TabsContent>
                 </Tabs>
@@ -831,16 +831,16 @@ export default function LandingPage() {
         {/* Casos de uso y beneficios - Para equipos que valoran su tiempo */}
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
           <div className="text-center mb-10 sm:mb-12">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-6 px-4">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black text-white mb-4 sm:mb-6 px-2 sm:px-4">
               <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
                 Para equipos que valoran su tiempo
               </span>
             </h2>
-            {/* Audience badges */}
+            {/* Audience badges: adaptados a móvil */}
             <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-4">
-              <span className="px-4 py-1.5 bg-primary/100/20 rounded-full text-indigo-200 text-sm font-medium border border-indigo-500/30">Equipos de marketing digital</span>
-              <span className="px-4 py-1.5 bg-purple-500/20 rounded-full text-purple-200 text-sm font-medium border border-purple-500/30">Desarrolladores y diseñadores</span>
-              <span className="px-4 py-1.5 bg-pink-500/20 rounded-full text-pink-200 text-sm font-medium border border-pink-500/30">Cualquier equipo que coordine trabajo</span>
+              <span className="px-3 sm:px-4 py-1.5 bg-primary/100/20 rounded-full text-indigo-200 text-xs sm:text-sm font-medium border border-indigo-500/30 text-center">Equipos de marketing digital</span>
+              <span className="px-3 sm:px-4 py-1.5 bg-purple-500/20 rounded-full text-purple-200 text-xs sm:text-sm font-medium border border-purple-500/30 text-center">Desarrolladores y diseñadores</span>
+              <span className="px-3 sm:px-4 py-1.5 bg-pink-500/20 rounded-full text-pink-200 text-xs sm:text-sm font-medium border border-pink-500/30 text-center">Cualquier equipo que coordine trabajo</span>
             </div>
           </div>
 
@@ -1140,52 +1140,52 @@ export default function LandingPage() {
           </Card>
 
           <div className="text-center mt-8">
-            <Link to="/login">
+            <Link to="/login?tab=register">
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-6 text-lg font-semibold shadow-2xl"
               >
-                Empezar ahora
+                Empezar gratis
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
           </div>
         </div>
 
-        {/* CTA Section mejorado */}
-        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 py-16 sm:py-20 md:py-24 relative overflow-hidden">
+        {/* CTA Section: adaptado a móvil */}
+        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 py-12 sm:py-20 md:py-24 relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.15),transparent_70%)] -z-10" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.1),transparent_50%)] -z-10" />
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-            <div className="inline-block mb-4">
-              <div className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
-                <CheckCircle2 className="h-4 w-4 text-white" />
-                <span className="text-sm font-semibold text-white">Sin compromiso</span>
+            <div className="inline-block mb-3 sm:mb-4">
+              <div className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
+                <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
+                <span className="text-xs sm:text-sm font-semibold text-white">Sin compromiso</span>
               </div>
             </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4 sm:mb-6 leading-tight">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-3 sm:mb-6 leading-tight px-1">
               ¿Listo para{' '}
               <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
                 transformar
               </span>
               {' '}a tu equipo?
             </h2>
-            <p className="text-lg sm:text-xl md:text-2xl text-indigo-100 mb-8 sm:mb-10 font-light max-w-2xl mx-auto">
-              Accede ahora y descubre cómo gestionar el tiempo de tu equipo de forma inteligente.
+            <p className="text-base sm:text-xl md:text-2xl text-indigo-100 mb-6 sm:mb-10 font-light max-w-2xl mx-auto px-2">
+              Crea tu cuenta y descubre cómo gestionar el tiempo de tu equipo de forma inteligente.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center flex-wrap">
-              <Link to="/login" className="group relative">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center flex-wrap w-full sm:w-auto max-w-sm sm:max-w-none mx-auto">
+              <Link to="/login?tab=register" className="group relative">
                 <div className="absolute -inset-1 bg-white rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300" />
-                <Button size="lg" className="relative w-full sm:w-auto bg-white text-primary hover:bg-slate-50 px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-bold shadow-2xl hover:shadow-white/50 transition-all transform hover:scale-105">
-                  Acceder ahora
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                <Button size="lg" className="relative w-full sm:w-auto bg-white text-primary hover:bg-slate-50 px-6 sm:px-10 py-5 sm:py-7 text-base sm:text-xl font-bold shadow-2xl hover:shadow-white/50 transition-all transform hover:scale-105 min-h-[48px]">
+                  Crear mi cuenta
+                  <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
               <Link to="/pitch">
                 <Button
                   size="lg"
                   variant="outline"
-                  className="w-full sm:w-auto px-6 sm:px-8 py-6 sm:py-7 text-base sm:text-lg font-semibold border-2 border-white/40 text-white hover:text-white hover:bg-white/20 hover:border-white/60 bg-white/10 backdrop-blur-md shadow-xl"
+                  className="w-full sm:w-auto px-5 sm:px-8 py-5 sm:py-7 text-sm sm:text-lg font-semibold border-2 border-white/40 text-white hover:text-white hover:bg-white/20 hover:border-white/60 bg-white/10 backdrop-blur-md shadow-xl min-h-[48px]"
                 >
                   Ver presentación de ROI
                 </Button>
@@ -1193,7 +1193,7 @@ export default function LandingPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-semibold border-2 border-white/40 text-white hover:text-white hover:bg-white/20 hover:border-white/60 bg-white/10 backdrop-blur-md shadow-xl"
+                className="w-full sm:w-auto px-6 sm:px-10 py-5 sm:py-7 text-base sm:text-xl font-semibold border-2 border-white/40 text-white hover:text-white hover:bg-white/20 hover:border-white/60 bg-white/10 backdrop-blur-md shadow-xl min-h-[48px]"
                 onClick={() => {
                   const demoSection = document.getElementById('demo');
                   demoSection?.scrollIntoView({ behavior: 'smooth' });

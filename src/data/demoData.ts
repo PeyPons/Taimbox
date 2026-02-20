@@ -254,6 +254,27 @@ export const demoAllocations: Allocation[] = [
   { id: 'demo-a22', employeeId: 'demo-1', projectId: 'demo-p1', weekStartDate: weeks[0], hoursAssigned: 5, hoursActual: 5, hoursComputed: 5, status: 'completed', taskName: 'Revisión de contenidos', dependencyId: 'demo-a6' },
   { id: 'demo-a23', employeeId: 'demo-2', projectId: 'demo-p1', weekStartDate: weeks[1], hoursAssigned: 15, status: 'planned', taskName: 'Continuación de auditoría', dependencyId: 'demo-a1' },
   { id: 'demo-a24', employeeId: 'demo-3', projectId: 'demo-p3', weekStartDate: weeks[1], hoursAssigned: 12, status: 'planned', taskName: 'Análisis de enlaces', dependencyId: 'demo-a14' },
+  // Semana 3 (weeks[2]): Carlos, Ana y Luis con horas para que no quede vacía
+  { id: 'demo-a25', employeeId: 'demo-2', projectId: 'demo-p2', weekStartDate: weeks[2], hoursAssigned: 16, hoursActual: 16, hoursComputed: 16, status: 'completed', taskName: 'Contenidos blog Q1' },
+  { id: 'demo-a26', employeeId: 'demo-2', projectId: 'demo-p3', weekStartDate: weeks[2], hoursAssigned: 14, status: 'planned', taskName: 'Seguimiento enlaces' },
+  { id: 'demo-a27', employeeId: 'demo-2', projectId: 'demo-p4', weekStartDate: weeks[2], hoursAssigned: 8, status: 'planned', taskName: 'Brief creativo' },
+  { id: 'demo-a28', employeeId: 'demo-3', projectId: 'demo-p1', weekStartDate: weeks[2], hoursAssigned: 20, hoursActual: 18, hoursComputed: 18, status: 'completed', taskName: 'Correcciones técnicas' },
+  { id: 'demo-a29', employeeId: 'demo-3', projectId: 'demo-p4', weekStartDate: weeks[2], hoursAssigned: 12, status: 'planned', taskName: 'Informe competencia' },
+  { id: 'demo-a30', employeeId: 'demo-4', projectId: 'demo-p3', weekStartDate: weeks[2], hoursAssigned: 22, hoursActual: 20, hoursComputed: 20, status: 'completed', taskName: 'Campaña outreach' },
+  { id: 'demo-a31', employeeId: 'demo-4', projectId: 'demo-p5', weekStartDate: weeks[2], hoursAssigned: 10, status: 'planned', taskName: 'Optimización local' },
+  { id: 'demo-a32', employeeId: 'demo-4', projectId: 'demo-p4', weekStartDate: weeks[2], hoursAssigned: 8, status: 'planned', taskName: 'Coordinación con diseño' },
+  // Semana 4 (weeks[3]): todos los empleados con datos
+  { id: 'demo-a33', employeeId: 'demo-1', projectId: 'demo-p1', weekStartDate: weeks[3], hoursAssigned: 12, status: 'planned', taskName: 'Cierre técnico mes' },
+  { id: 'demo-a34', employeeId: 'demo-1', projectId: 'demo-p2', weekStartDate: weeks[3], hoursAssigned: 18, status: 'planned', taskName: 'Lote contenidos marzo' },
+  { id: 'demo-a35', employeeId: 'demo-1', projectId: 'demo-p4', weekStartDate: weeks[3], hoursAssigned: 8, status: 'planned', taskName: 'Revisión KPIs' },
+  { id: 'demo-a36', employeeId: 'demo-2', projectId: 'demo-p1', weekStartDate: weeks[3], hoursAssigned: 10, status: 'planned', taskName: 'Ajustes copy' },
+  { id: 'demo-a37', employeeId: 'demo-2', projectId: 'demo-p2', weekStartDate: weeks[3], hoursAssigned: 24, status: 'planned', taskName: 'Producción editorial' },
+  { id: 'demo-a38', employeeId: 'demo-2', projectId: 'demo-p3', weekStartDate: weeks[3], hoursAssigned: 6, status: 'planned', taskName: 'Cierre enlaces' },
+  { id: 'demo-a39', employeeId: 'demo-3', projectId: 'demo-p1', weekStartDate: weeks[3], hoursAssigned: 16, status: 'planned', taskName: 'Validación final' },
+  { id: 'demo-a40', employeeId: 'demo-3', projectId: 'demo-p3', weekStartDate: weeks[3], hoursAssigned: 14, status: 'planned', taskName: 'Informe enlaces' },
+  { id: 'demo-a41', employeeId: 'demo-4', projectId: 'demo-p3', weekStartDate: weeks[3], hoursAssigned: 18, status: 'planned', taskName: 'Nueva ronda outreach' },
+  { id: 'demo-a42', employeeId: 'demo-4', projectId: 'demo-p4', weekStartDate: weeks[3], hoursAssigned: 14, status: 'planned', taskName: 'Seguimiento estrategia' },
+  { id: 'demo-a43', employeeId: 'demo-4', projectId: 'demo-p5', weekStartDate: weeks[3], hoursAssigned: 6, status: 'planned', taskName: 'Informe local' },
 ];
 
 const currentMonthStr = format(currentDate, 'yyyy-MM');

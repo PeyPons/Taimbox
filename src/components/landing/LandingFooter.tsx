@@ -57,14 +57,14 @@ export function LandingFooter() {
             </ul>
           </div>
 
-          {/* CTA */}
+          {/* CTA principal: registro para nuevos usuarios */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-3">Acceso</h4>
+            <h4 className="text-white font-semibold text-sm mb-3">Empieza gratis</h4>
             <Link
-              to="/login"
+              to="/login?tab=register"
               className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-semibold rounded-lg transition-all shadow-lg"
             >
-              Iniciar sesión
+              Crear mi cuenta
             </Link>
             <p className="mt-2 text-xs text-indigo-200/60">
               Prueba gratuita. Sin tarjeta de crédito.
@@ -83,6 +83,13 @@ export function LandingFooter() {
             © {currentYear} Timeboxing. Todos los derechos reservados.
           </p>
           <div className="flex gap-4 text-xs text-indigo-200/60">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent("open-cookie-preferences"))}
+              className="hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer bg-transparent border-none"
+            >
+              Cookies
+            </button>
             <Link to="/api-docs" className="hover:text-white flex items-center gap-1.5 transition-colors">
               <Code className="h-3.5 w-3.5" />
               API

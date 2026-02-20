@@ -346,37 +346,37 @@ export function MockBeforeAfter() {
     const beforeItems = ['Excel y hojas sueltas', 'Horas sin registrar', 'Desvíos invisibles', 'Reporting manual', 'Estimaciones a ojo'];
     const afterItems = ['Plataforma centralizada', '100% horas planificadas', 'Alertas automáticas', 'Informes en 1 clic', 'Datos reales por proyecto'];
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 w-full max-w-2xl">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 w-full max-w-2xl">
             {/* Before */}
-            <div className="rounded-2xl border-2 border-red-500/30 bg-red-500/10 p-5 sm:p-6 shadow-lg shadow-red-950/20">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-red-500/40 flex items-center justify-center shrink-0">
-                        <AlertTriangle className="h-5 w-5 text-red-300" />
+            <div className="rounded-xl sm:rounded-2xl border-2 border-red-500/30 bg-red-500/10 p-4 sm:p-6 shadow-lg shadow-red-950/20">
+                <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-red-500/40 flex items-center justify-center shrink-0">
+                        <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-red-300" />
                     </div>
-                    <span className="text-lg sm:text-xl font-bold text-red-200">Sin Timeboxing</span>
+                    <span className="text-base sm:text-xl font-bold text-red-200">Sin Timeboxing</span>
                 </div>
-                <ul className="space-y-3">
-                    {beforeItems.map(t => (
-                        <li key={t} className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full bg-red-400 shrink-0" aria-hidden />
-                            <span className="text-base sm:text-lg text-red-100/90 font-medium">{t}</span>
+                <ul className="space-y-2 sm:space-y-3">
+                    {beforeItems.map((t, i) => (
+                        <li key={t} className={`flex items-center gap-2 sm:gap-3 ${i >= 3 ? 'hidden sm:flex' : ''}`}>
+                            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-red-400 shrink-0" aria-hidden />
+                            <span className="text-sm sm:text-lg text-red-100/90 font-medium">{t}</span>
                         </li>
                     ))}
                 </ul>
             </div>
             {/* After */}
-            <div className="rounded-2xl border-2 border-emerald-500/30 bg-emerald-500/10 p-5 sm:p-6 shadow-lg shadow-emerald-950/20">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/40 flex items-center justify-center shrink-0">
-                        <CheckCircle2 className="h-5 w-5 text-emerald-300" />
+            <div className="rounded-xl sm:rounded-2xl border-2 border-emerald-500/30 bg-emerald-500/10 p-4 sm:p-6 shadow-lg shadow-emerald-950/20">
+                <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-emerald-500/40 flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-300" />
                     </div>
-                    <span className="text-lg sm:text-xl font-bold text-emerald-200">Con Timeboxing</span>
+                    <span className="text-base sm:text-xl font-bold text-emerald-200">Con Timeboxing</span>
                 </div>
-                <ul className="space-y-3">
-                    {afterItems.map(t => (
-                        <li key={t} className="flex items-center gap-3">
-                            <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
-                            <span className="text-base sm:text-lg text-emerald-100/95 font-medium">{t}</span>
+                <ul className="space-y-2 sm:space-y-3">
+                    {afterItems.map((t, i) => (
+                        <li key={t} className={`flex items-center gap-2 sm:gap-3 ${i >= 3 ? 'hidden sm:flex' : ''}`}>
+                            <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400 shrink-0" />
+                            <span className="text-sm sm:text-lg text-emerald-100/95 font-medium">{t}</span>
                         </li>
                     ))}
                 </ul>
