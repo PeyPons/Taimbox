@@ -8,7 +8,7 @@ import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { isCurrentWeek, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { getValidRole } from '@/utils/roleUtils';
-import { useApp } from '@/contexts/AppContext';
+import { useAppOrDemo } from '@/hooks/useAppOrDemo';
 import { useAgency } from '@/contexts/AgencyContext';
 import { WeekCell } from './WeekCell';
 
@@ -36,7 +36,7 @@ export function MobilePlannerView({
   getEmployeeMonthlyLoad,
   onOpenSheet,
 }: MobilePlannerViewProps) {
-  const { getEmployeeLoadForWeek } = useApp();
+  const { getEmployeeLoadForWeek } = useAppOrDemo();
   const { currentAgency } = useAgency();
   const availableRoles = currentAgency?.settings?.roles || [];
 

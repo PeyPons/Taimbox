@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { useApp } from '@/contexts/AppContext';
+import { useAppOrDemo } from '@/hooks/useAppOrDemo';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,7 +15,7 @@ interface WidgetProps {
 
 // WIDGET 1: RECOMENDACIONES - TONO GPS AMIGABLE
 export const PriorityInsights = memo(function PriorityInsights({ employeeId, viewDate }: WidgetProps) {
-    const { allocations, projects, employees } = useApp();
+    const { allocations, projects, employees } = useAppOrDemo();
     const { formatName: formatProjectName } = useProjectAliasing();
     const targetMonth = viewDate || new Date();
 
@@ -149,7 +149,7 @@ export const PriorityInsights = memo(function PriorityInsights({ employeeId, vie
 
 // WIDGET 2: DEPENDENCIAS - TONO GPS AMIGABLE
 export const ProjectTeamPulse = memo(function ProjectTeamPulse({ employeeId, viewDate }: WidgetProps) {
-    const { allocations, projects, employees } = useApp();
+    const { allocations, projects, employees } = useAppOrDemo();
     const { formatName: formatProjectName } = useProjectAliasing();
     const targetMonth = viewDate || new Date();
 

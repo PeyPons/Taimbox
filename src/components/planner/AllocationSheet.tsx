@@ -707,7 +707,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                           {isMobile && <span className="ml-1.5 text-xs">{effectiveShowAllWeeks ? 'Mes' : 'Semana'}</span>}
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent side="bottom">Vista: {effectiveShowAllWeeks ? "Mes Completo" : "Semana Actual"}</TooltipContent>
+                      <TooltipContent side="bottom">Vista: {effectiveShowAllWeeks ? "mes completo" : "semana actual"}</TooltipContent>
                     </Tooltip>
 
                     <Tooltip>

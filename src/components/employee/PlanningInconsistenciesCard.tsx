@@ -1,5 +1,5 @@
 import { useMemo, memo, useState, useEffect } from 'react';
-import { useApp } from '@/contexts/AppContext';
+import { useAppOrDemo } from '@/hooks/useAppOrDemo';
 import { useAgency } from '@/contexts/AgencyContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +31,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
   viewDate,
   isManager = false
 }: PlanningInconsistenciesCardProps) {
-  const app = useApp();
+  const app = useAppOrDemo();
   const { allocations, projects, employees } = app;
   const deadlinesFromContext = (app as { deadlines?: Deadline[] }).deadlines;
   const { currentAgency } = useAgency();

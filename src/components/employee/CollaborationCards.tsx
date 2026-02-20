@@ -1,5 +1,5 @@
 import { useMemo, memo } from 'react';
-import { useApp } from '@/contexts/AppContext';
+import { useAppOrDemo } from '@/hooks/useAppOrDemo';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,7 +17,7 @@ interface CollaborationCardsProps {
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 export const CollaborationCards = memo(function CollaborationCards({ employeeId, viewDate }: CollaborationCardsProps) {
-  const { allocations, employees, getEmployeeMonthlyLoad } = useApp();
+  const { allocations, employees, getEmployeeMonthlyLoad } = useAppOrDemo();
 
   // Memoizado: mapa de empleados para acceso O(1)
   const employeesMap = useMemo(() => {

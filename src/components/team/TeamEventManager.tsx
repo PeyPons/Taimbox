@@ -141,7 +141,7 @@ export function TeamEventManager() {
                                 <p className="text-xs text-muted-foreground flex gap-2">
                                     <span>{format(new Date(event.date), "PPP", { locale: es })}</span>
                                     <span>•</span>
-                                    <span className="font-semibold text-slate-700">{event.hoursReduction >= 8 ? "Día Completo" : `-${event.hoursReduction}h`}</span>
+                                    <span className="font-semibold text-slate-700">{event.hoursReduction >= 8 ? "Día completo" : `-${event.hoursReduction}h`}</span>
                                 </p>
                             </div>
                         </div>

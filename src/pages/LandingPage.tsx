@@ -31,7 +31,10 @@ import {
   Code,
   FileDown,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  LayoutGrid,
+  LayoutDashboard,
+  CalendarCheck
 } from 'lucide-react';
 import { DemoPlanner } from '@/components/demo/DemoDashboard';
 import { DemoEmployeeDashboard } from '@/components/demo/DemoEmployeeDashboard';
@@ -45,11 +48,7 @@ import { cn } from '@/lib/utils';
 import { CalendarPreview } from '@/components/landing/CalendarPreview';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { Monitor, AlertCircle } from 'lucide-react';
-
 export default function LandingPage() {
-  const isMobile = useIsMobile();
   const [demoTab, setDemoTab] = useState('planner');
   const [activeFeature, setActiveFeature] = useState(0);
 
@@ -125,8 +124,8 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              {/* CTA mejorado */}
-              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center px-4 mb-8 sm:mb-10">
+              {/* CTA: solo lo prioritario */}
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center px-4 mb-8 sm:mb-10">
                 <Link to="/login" className="group relative">
                   <div className="absolute -inset-1 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300" />
                   <Button size="lg" className="relative w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-semibold shadow-2xl hover:shadow-indigo-500/50 transition-all transform hover:scale-105">
@@ -134,30 +133,13 @@ export default function LandingPage() {
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
-                <Button
-                  size="lg"
-                  className="w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-semibold border-2 border-white/30 text-white hover:text-white hover:bg-white/10 hover:border-white/50 bg-white/5 backdrop-blur-md shadow-xl"
-                  onClick={() => {
-                    const demoSection = document.getElementById('demo');
-                    demoSection?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                >
-                  Explorar demo
-                </Button>
-                <Link to="/guia">
+                <Link to="/pitch">
                   <Button
                     size="lg"
-                    className="w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-semibold border-2 border-white/30 text-white hover:text-white hover:bg-white/10 hover:border-white/50 bg-white/5 backdrop-blur-md shadow-xl"
+                    variant="outline"
+                    className="w-full sm:w-auto px-6 sm:px-8 py-6 sm:py-7 text-base sm:text-lg font-semibold border-2 border-white/30 text-white hover:text-white hover:bg-white/10 hover:border-white/50 bg-white/5 backdrop-blur-md shadow-xl"
                   >
-                    Guía completa de funcionalidades
-                  </Button>
-                </Link>
-                <Link to="/api-docs">
-                  <Button
-                    size="lg"
-                    className="w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-semibold border-2 border-white/30 text-white hover:text-white hover:bg-white/10 hover:border-white/50 bg-white/5 backdrop-blur-md shadow-xl"
-                  >
-                    Documentación API
+                    El coste de no medir (3 min)
                   </Button>
                 </Link>
               </div>
@@ -759,88 +741,71 @@ export default function LandingPage() {
 
         {/* Demo Section */}
         <div id="demo" className="bg-white/5 backdrop-blur-sm border-t border-indigo-500/20 py-12 sm:py-16 md:py-20 relative">
-          {/* Botón flotante para deadlines */}
-          <div className="fixed bottom-6 right-6 z-50 hidden lg:block">
-            <Button
-              size="lg"
-              className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-2xl rounded-full px-6 py-6 h-auto animate-bounce"
-              onClick={() => {
-                setDemoTab('deadlines');
-                const demoSection = document.getElementById('demo');
-                demoSection?.scrollIntoView({ behavior: 'smooth' });
-              }}
-            >
-              <Target className="h-5 w-5 mr-2" />
-              Ver Deadlines
-            </Button>
-          </div>
-
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8 sm:mb-10 md:mb-12">
-              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-primary/100/20 backdrop-blur-sm rounded-full text-indigo-200 text-xs sm:text-sm font-medium mb-3 sm:mb-4 border border-indigo-400/30">
+            <div className="text-center mb-6 sm:mb-8">
+              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-primary/100/20 backdrop-blur-sm rounded-full text-indigo-200 text-xs sm:text-sm font-medium mb-3 border border-indigo-400/30">
                 <Award className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span>Demo interactivo</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4 px-4">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-3 px-4">
                 Explora la plataforma en acción
               </h2>
-              <p className="text-base sm:text-lg md:text-xl text-indigo-200 max-w-3xl mx-auto px-4 mb-4">
-                Descubre cómo funciona nuestra plataforma con datos de ejemplo realistas.
-                Explora diferentes escenarios: equipos equilibrados, sobrecargas, optimizaciones y más.
-              </p>
-              <p className="text-sm sm:text-base text-indigo-200/70 max-w-2xl mx-auto px-4">
-                Navega por tu dashboard, gestiona deadlines mensuales, visualiza dependencias
-                entre tareas y descubre cómo nuestras métricas te ayudan a tomar mejores decisiones.
-                Todo con datos simulados que reflejan situaciones reales que enfrentas día a día.
+              <p className="text-sm sm:text-base text-indigo-200/90 max-w-2xl mx-auto px-4">
+                Datos de ejemplo. Cambia de módulo aquí abajo para ver Planificador, Dashboard, Weekly y Deadlines.
               </p>
             </div>
 
             <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-indigo-200/50 shadow-2xl overflow-hidden relative">
-              {/* Overlay oscuro en mobile que bloquea la demo */}
-              {isMobile && (
-                <>
-                  <div className="absolute inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-6 rounded-xl">
-                    <div className="text-center max-w-md">
-                      <div className="mb-6 flex justify-center">
-                        <div className="rounded-full bg-primary/100/20 p-6 backdrop-blur-sm border border-indigo-500/30">
-                          <Monitor className="h-12 w-12 text-indigo-300" />
-                        </div>
-                      </div>
-                      <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">
-                        Demo optimizada para escritorio
-                      </h3>
-                      <p className="text-base text-gray-300 mb-6 leading-relaxed">
-                        Esta demo está diseñada para pantallas de escritorio. En dispositivos móviles puede verse de manera incorrecta.
-                        Por favor, accede desde un ordenador o tablet en modo horizontal para explorar la demo completa.
-                      </p>
-                      <div className="bg-white/5 backdrop-blur-md rounded-xl border border-white/10 p-4 mb-6">
-                        <p className="text-gray-400 text-sm">
-                          La herramienta completa está optimizada para escritorio y ofrece la mejor experiencia en pantallas grandes.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-
               <DemoProvider>
                 <Tabs value={demoTab} onValueChange={setDemoTab} className="w-full">
-                  <TabsList className="w-full justify-start h-auto p-1 bg-primary/10/50 border-b border-indigo-200/50 rounded-none rounded-t-xl overflow-x-auto flex-nowrap">
-                    <TabsTrigger value="planner" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm whitespace-nowrap">
-                      Planificador
-                    </TabsTrigger>
-                    <TabsTrigger value="dashboard" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm whitespace-nowrap">
-                      Dashboard Empleado
-                      <Badge className="ml-2 bg-primary/100 text-white text-[10px] px-1.5 py-0">Nuevo</Badge>
-                    </TabsTrigger>
-                    <TabsTrigger value="weeklys" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm whitespace-nowrap">
-                      Weekly Forecast
-                    </TabsTrigger>
-                    <TabsTrigger value="deadlines" className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm relative whitespace-nowrap">
-                      Deadlines
-                      <Badge className="ml-2 bg-amber-500 text-white text-[10px] px-1.5 py-0">Beta</Badge>
-                    </TabsTrigger>
-                  </TabsList>
+                  {/* Barra de navegación de la demo: en móvil scroll horizontal; en desktop grid 2x2 */}
+                  <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-3 sm:px-4 py-3 sm:py-4 border-b-2 border-indigo-500/50">
+                    <p className="text-indigo-100 text-xs sm:text-sm font-medium mb-2 sm:mb-3">
+                      Elige qué explorar:
+                    </p>
+                    <TabsList className="w-full justify-start h-auto p-0 bg-transparent border-0 flex flex-nowrap sm:flex-wrap gap-2 sm:gap-3 rounded-none overflow-x-auto overflow-y-hidden custom-scrollbar min-h-[44px] -mx-1 px-1 sm:mx-0 sm:px-0">
+                      <TabsTrigger
+                        value="planner"
+                        className={cn(
+                          "flex items-center gap-2 rounded-lg px-4 py-2.5 sm:px-5 sm:py-3 min-h-[44px] min-w-0 sm:min-w-[auto] text-sm font-semibold transition-all shrink-0",
+                          "bg-white/10 text-white hover:bg-white/20 data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-lg data-[state=active]:ring-2 data-[state=active]:ring-white/50"
+                        )}
+                      >
+                        <LayoutGrid className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                        <span className="whitespace-nowrap">Planificador</span>
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="dashboard"
+                        className={cn(
+                          "flex items-center gap-2 rounded-lg px-4 py-2.5 sm:px-5 sm:py-3 min-h-[44px] min-w-0 sm:min-w-[auto] text-sm font-semibold transition-all shrink-0",
+                          "bg-white/10 text-white hover:bg-white/20 data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-lg data-[state=active]:ring-2 data-[state=active]:ring-white/50"
+                        )}
+                      >
+                        <LayoutDashboard className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                        <span className="whitespace-nowrap">Dashboard</span>
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="weeklys"
+                        className={cn(
+                          "flex items-center gap-2 rounded-lg px-4 py-2.5 sm:px-5 sm:py-3 min-h-[44px] min-w-0 sm:min-w-[auto] text-sm font-semibold transition-all shrink-0",
+                          "bg-white/10 text-white hover:bg-white/20 data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-lg data-[state=active]:ring-2 data-[state=active]:ring-white/50"
+                        )}
+                      >
+                        <CalendarCheck className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                        <span className="whitespace-nowrap">Weekly</span>
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="deadlines"
+                        className={cn(
+                          "flex items-center gap-2 rounded-lg px-4 py-2.5 sm:px-5 sm:py-3 min-h-[44px] min-w-0 sm:min-w-[auto] text-sm font-semibold transition-all shrink-0",
+                          "bg-white/10 text-white hover:bg-white/20 data-[state=active]:bg-white data-[state=active]:text-indigo-700 data-[state=active]:shadow-lg data-[state=active]:ring-2 data-[state=active]:ring-white/50"
+                        )}
+                      >
+                        <Target className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                        <span className="whitespace-nowrap">Deadlines</span>
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
 
                   <TabsContent value="planner" className="m-0 p-3 sm:p-4 md:p-6 bg-white min-h-[600px]">
                     <DemoPlanner />
@@ -1208,12 +1173,21 @@ export default function LandingPage() {
             <p className="text-lg sm:text-xl md:text-2xl text-indigo-100 mb-8 sm:mb-10 font-light max-w-2xl mx-auto">
               Accede ahora y descubre cómo gestionar el tiempo de tu equipo de forma inteligente.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center flex-wrap">
               <Link to="/login" className="group relative">
                 <div className="absolute -inset-1 bg-white rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300" />
                 <Button size="lg" className="relative w-full sm:w-auto bg-white text-primary hover:bg-slate-50 px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-bold shadow-2xl hover:shadow-white/50 transition-all transform hover:scale-105">
                   Acceder ahora
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+              <Link to="/pitch">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full sm:w-auto px-6 sm:px-8 py-6 sm:py-7 text-base sm:text-lg font-semibold border-2 border-white/40 text-white hover:text-white hover:bg-white/20 hover:border-white/60 bg-white/10 backdrop-blur-md shadow-xl"
+                >
+                  Ver presentación de ROI
                 </Button>
               </Link>
               <Button

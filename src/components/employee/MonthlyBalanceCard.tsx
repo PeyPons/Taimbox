@@ -1,5 +1,5 @@
 import { useMemo, memo } from 'react';
-import { useApp } from '@/contexts/AppContext';
+import { useAppOrDemo } from '@/hooks/useAppOrDemo';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { isSameMonth, parseISO } from 'date-fns';
@@ -15,7 +15,7 @@ interface MonthlyBalanceCardProps {
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 export const MonthlyBalanceCard = memo(function MonthlyBalanceCard({ employeeId, viewDate }: MonthlyBalanceCardProps) {
-  const { allocations } = useApp();
+  const { allocations } = useAppOrDemo();
 
   // Allocations completadas del mes para este empleado
   const monthlyStats = useMemo(() => {

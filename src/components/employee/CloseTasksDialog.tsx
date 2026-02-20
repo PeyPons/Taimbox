@@ -99,7 +99,7 @@ export function CloseTasksDialog({ open, onOpenChange, employeeId }: CloseTasksD
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5" />
-            Cerrar Tareas de la Semana Anterior
+            Cerrar tareas de la semana anterior
           </DialogTitle>
           <DialogDescription id="close-tasks-description">
             Tareas abiertas de la semana del <strong>{format(lastWeekStart, "d 'de' MMMM", { locale: es })}</strong> al <strong>{format(lastWeekEnd, "d 'de' MMMM", { locale: es })}</strong>.

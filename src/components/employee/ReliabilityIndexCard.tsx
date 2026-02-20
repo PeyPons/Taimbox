@@ -1,5 +1,5 @@
 import { useMemo, memo } from 'react';
-import { useApp } from '@/contexts/AppContext';
+import { useAppOrDemo } from '@/hooks/useAppOrDemo';
 import { useAgency } from '@/contexts/AgencyContext';
 import { getExcludedProjectIds } from '@/utils/planningPrecisionUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +20,7 @@ interface ReliabilityIndexCardProps {
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 export const ReliabilityIndexCard = memo(function ReliabilityIndexCard({ employeeId, viewDate }: ReliabilityIndexCardProps) {
-  const { allocations, employees, projects } = useApp();
+  const { allocations, employees, projects } = useAppOrDemo();
   const { currentAgency } = useAgency();
   const employee = employees.find(e => e.id === employeeId);
   const targetMonth = viewDate || new Date();

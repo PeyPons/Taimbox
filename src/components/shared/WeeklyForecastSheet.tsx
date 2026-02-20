@@ -47,7 +47,7 @@ export function WeeklyForecastSheet({ open, onOpenChange, initialViewDate }: Wee
         <SheetHeader className="pb-6 border-b mb-6">
           <SheetTitle className="text-2xl font-bold flex items-center gap-2">
             <TrendingUp className="h-6 w-6" />
-            Previsión Mensual (Weekly Forecast)
+            Previsión mensual (Weekly Forecast)
           </SheetTitle>
           <SheetDescription>
             Seguimiento de horas contratadas y redistribución de carga
@@ -85,7 +85,7 @@ export function WeeklyForecastSheet({ open, onOpenChange, initialViewDate }: Wee
 
           <div className="bg-white rounded-lg border p-4">
             <p className="text-sm text-slate-600">
-              Para ver el contenido completo de Weekly Forecast (Semáforo de proyectos, Feed de bloqueos, Redistribución), 
+              Para ver el contenido completo de Weekly Forecast (semáforo de proyectos, feed de bloqueos, redistribución), 
               accede a la página completa desde el menú de navegación.
             </p>
           </div>

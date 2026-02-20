@@ -291,7 +291,7 @@ export default function MetaAdsPage() {
           <StatCard icon={TrendingUp} label="Conversiones" value={reportData.reduce((acc, r) => acc + r.campaigns.reduce((a, c) => a + (c.conversions || 0), 0), 0).toFixed(0)} subValue={`Valor ${formatCurrency(globalStats.totalRevenue)}`} color="emerald" />
           <StatCard icon={Target} label="ROAS" value={`${globalStats.globalRoas.toFixed(2)}x`} subValue={globalStats.globalRoas >= 2 ? '✓ Objetivo' : globalStats.globalRoas >= 1 ? 'Aceptable' : 'Por debajo'} color={globalStats.globalRoas >= 2 ? 'emerald' : globalStats.globalRoas >= 1 ? 'amber' : 'red'} />
           <StatCard icon={Calendar} label="Días restantes" value={daysRemaining.toString()} subValue={`${Math.round((currentDay / daysInMonth) * 100)}% del mes`} color="slate" />
-          <StatCard icon={AlertTriangle} label="En Riesgo" value={globalStats.atRisk.toString()} subValue="cuentas" color={globalStats.atRisk > 0 ? 'red' : 'slate'} />
+          <StatCard icon={AlertTriangle} label="En riesgo" value={globalStats.atRisk.toString()} subValue="cuentas" color={globalStats.atRisk > 0 ? 'red' : 'slate'} />
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 items-center bg-white p-3 rounded-xl border shadow-sm">

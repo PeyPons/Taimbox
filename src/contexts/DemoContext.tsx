@@ -17,6 +17,7 @@ interface DemoContextType {
   getEmployeeMonthlyLoad: (employeeId: string, year: number, month: number) => {
     hours: number;
     capacity: number;
+    status: LoadStatus;
     percentage: number;
   };
   getEmployeeLoadForWeek: (
@@ -44,7 +45,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
 
   const getEmployeeMonthlyLoad = (employeeId: string, year: number, month: number) => {
     const employee = demoEmployees.find(e => e.id === employeeId);
-    if (!employee) return { hours: 0, capacity: 0, percentage: 0 };
+    if (!employee) return { hours: 0, capacity: 0, status: 'empty' as LoadStatus, percentage: 0 };
 
     const monthStart = new Date(year, month, 1);
     const monthAllocations = demoAllocations.filter(a => {
@@ -54,11 +55,19 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
         allocDate.getMonth() === month;
     });
 
-    const hours = monthAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
+    const hours = Math.round((monthAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0) + Number.EPSILON) * 100) / 100;
     const capacity = getMonthlyCapacity(year, month, employee.workSchedule);
     const percentage = capacity > 0 ? (hours / capacity) * 100 : 0;
+    const hoursRemaining = capacity - hours;
 
-    return { hours, capacity, percentage };
+    let status: LoadStatus = 'empty';
+    if (hours === 0) status = 'empty';
+    else if (capacity === 0 && hours > 0) status = 'overload';
+    else if (hours > capacity) status = 'overload';
+    else if (hoursRemaining >= 2 && hoursRemaining <= 5) status = 'healthy';
+    else status = 'warning';
+
+    return { hours, capacity, status, percentage };
   };
 
   const getEmployeeLoadForWeek = (

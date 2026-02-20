@@ -1,7 +1,11 @@
 import { Employee, Client, Project, Allocation, Deadline } from '@/types';
 import { startOfWeek, format, addDays, startOfMonth, endOfMonth } from 'date-fns';
 
-// Generar semanas del mes actual
+/**
+ * Datos de demo para la landing y componentes bajo DemoProvider.
+ * weeks = lunes de cada semana del mes actual (calculado al cargar el módulo).
+ * Escenarios: María ~80-90%, Carlos sobrecarga, Ana subcarga, Luis óptimo. Incluye dependencias y deadlines.
+ */
 const currentDate = new Date();
 const monthStart = startOfMonth(currentDate);
 const monthEnd = endOfMonth(currentDate);
@@ -13,7 +17,6 @@ while (currentWeek <= monthEnd) {
   currentWeek = addDays(currentWeek, 7);
 }
 
-// Empleados con diferentes escenarios
 export const demoEmployees: Employee[] = [
   {
     id: 'demo-1',
@@ -84,14 +87,7 @@ export const demoProjects: Project[] = [
   { id: 'demo-p5', clientId: 'demo-c4', name: 'SEO Local', status: 'active', budgetHours: 60, minimumHours: 0 },
 ];
 
-// Allocations con diferentes escenarios:
-// - María: Carga normal (80-90%)
-// - Carlos: Sobrecarga (110-120%)
-// - Ana: Subcarga (50-60%)
-// - Luis: Carga óptima (85-95%)
-
 export const demoAllocations: Allocation[] = [
-  // María - Carga normal (80-90%)
   { 
     id: 'demo-a1', 
     employeeId: 'demo-1', 
@@ -123,15 +119,7 @@ export const demoAllocations: Allocation[] = [
     status: 'planned', 
     taskName: 'Análisis de keywords'
   },
-  { 
-    id: 'demo-a4', 
-    employeeId: 'demo-1', 
-    projectId: 'demo-p1', 
-    weekStartDate: weeks[1], 
-    hoursAssigned: 15, // Reducido para que María tenga menos que el deadline (50h)
-    status: 'planned', 
-    taskName: 'Implementación mejoras'
-  },
+  { id: 'demo-a4', employeeId: 'demo-1', projectId: 'demo-p1', weekStartDate: weeks[1], hoursAssigned: 15, status: 'planned', taskName: 'Implementación mejoras' },
   { 
     id: 'demo-a5', 
     employeeId: 'demo-1', 
@@ -141,8 +129,6 @@ export const demoAllocations: Allocation[] = [
     status: 'planned', 
     taskName: 'Optimización contenidos'
   },
-
-  // Carlos - Sobrecarga (110-120%)
   { 
     id: 'demo-a6', 
     employeeId: 'demo-2', 
@@ -192,8 +178,6 @@ export const demoAllocations: Allocation[] = [
     status: 'planned', 
     taskName: 'Link building intensivo'
   },
-
-  // Ana - Subcarga (50-60%) - Ana tiene MENOS que el deadline (25h -> 20h total)
   { 
     id: 'demo-a11', 
     employeeId: 'demo-3', 
@@ -214,17 +198,7 @@ export const demoAllocations: Allocation[] = [
     status: 'planned', 
     taskName: 'Análisis técnico'
   },
-  { 
-    id: 'demo-a13', 
-    employeeId: 'demo-3', 
-    projectId: 'demo-p1', 
-    weekStartDate: weeks[1], 
-    hoursAssigned: 8, // Reducido para que Ana tenga menos que el deadline (25h -> 20h total)
-    status: 'planned', 
-    taskName: 'Optimización técnica'
-  },
-
-  // Luis - Carga óptima (85-95%)
+  { id: 'demo-a13', employeeId: 'demo-3', projectId: 'demo-p1', weekStartDate: weeks[1], hoursAssigned: 8, status: 'planned', taskName: 'Optimización técnica' },
   { 
     id: 'demo-a14', 
     employeeId: 'demo-4', 
@@ -274,113 +248,17 @@ export const demoAllocations: Allocation[] = [
     status: 'planned', 
     taskName: 'Estrategia de outreach'
   },
-
-  // Más allocations para precisión de planificación (con horas reales/computadas)
-  { 
-    id: 'demo-a19', 
-    employeeId: 'demo-1', 
-    projectId: 'demo-p1', 
-    weekStartDate: weeks[2], 
-    hoursAssigned: 18, 
-    hoursActual: 19.5, // Más de lo planificado
-    hoursComputed: 18,
-    status: 'completed', 
-    taskName: 'Optimización técnica avanzada'
-  },
-  { 
-    id: 'demo-a20', 
-    employeeId: 'demo-1', 
-    projectId: 'demo-p2', 
-    weekStartDate: weeks[2], 
-    hoursAssigned: 14, 
-    hoursActual: 12, // Menos de lo planificado
-    hoursComputed: 12,
-    status: 'completed', 
-    taskName: 'Redacción de artículos'
-  },
-  { 
-    id: 'demo-a21', 
-    employeeId: 'demo-1', 
-    projectId: 'demo-p4', 
-    weekStartDate: weeks[2], 
-    hoursAssigned: 10, 
-    hoursActual: 10, // Exacto
-    hoursComputed: 10,
-    status: 'completed', 
-    taskName: 'Análisis de competencia'
-  },
-
-  // Dependencias: María depende de Carlos (demo-a22 depende de demo-a6)
-  { 
-    id: 'demo-a22', 
-    employeeId: 'demo-1', 
-    projectId: 'demo-p1', 
-    weekStartDate: weeks[0], 
-    hoursAssigned: 5, // Reducido para coherencia
-    hoursActual: 5,
-    hoursComputed: 5,
-    status: 'completed', 
-    taskName: 'Revisión de contenidos',
-    dependencyId: 'demo-a6' // Depende de Carlos
-  },
-  // Carlos depende de María (demo-a23 depende de demo-a1) - Carlos tiene MÁS que el deadline
-  { 
-    id: 'demo-a23', 
-    employeeId: 'demo-2', 
-    projectId: 'demo-p1', 
-    weekStartDate: weeks[1], 
-    hoursAssigned: 15, // Aumentado para que Carlos tenga más que el deadline (30h -> 35h total)
-    status: 'planned', 
-    taskName: 'Continuación de auditoría',
-    dependencyId: 'demo-a1' // Depende de María
-  },
-  // Ana depende de Luis - Ana trabaja en demo-p3 SIN deadline (para mostrar coherencia sin deadline)
-  { 
-    id: 'demo-a24', 
-    employeeId: 'demo-3', 
-    projectId: 'demo-p3', 
-    weekStartDate: weeks[1], 
-    hoursAssigned: 12, 
-    status: 'planned', 
-    taskName: 'Análisis de enlaces',
-    dependencyId: 'demo-a14' // Depende de Luis
-  },
+  { id: 'demo-a19', employeeId: 'demo-1', projectId: 'demo-p1', weekStartDate: weeks[2], hoursAssigned: 18, hoursActual: 19.5, hoursComputed: 18, status: 'completed', taskName: 'Optimización técnica avanzada' },
+  { id: 'demo-a20', employeeId: 'demo-1', projectId: 'demo-p2', weekStartDate: weeks[2], hoursAssigned: 14, hoursActual: 12, hoursComputed: 12, status: 'completed', taskName: 'Redacción de artículos' },
+  { id: 'demo-a21', employeeId: 'demo-1', projectId: 'demo-p4', weekStartDate: weeks[2], hoursAssigned: 10, hoursActual: 10, hoursComputed: 10, status: 'completed', taskName: 'Análisis de competencia' },
+  { id: 'demo-a22', employeeId: 'demo-1', projectId: 'demo-p1', weekStartDate: weeks[0], hoursAssigned: 5, hoursActual: 5, hoursComputed: 5, status: 'completed', taskName: 'Revisión de contenidos', dependencyId: 'demo-a6' },
+  { id: 'demo-a23', employeeId: 'demo-2', projectId: 'demo-p1', weekStartDate: weeks[1], hoursAssigned: 15, status: 'planned', taskName: 'Continuación de auditoría', dependencyId: 'demo-a1' },
+  { id: 'demo-a24', employeeId: 'demo-3', projectId: 'demo-p3', weekStartDate: weeks[1], hoursAssigned: 12, status: 'planned', taskName: 'Análisis de enlaces', dependencyId: 'demo-a14' },
 ];
 
-// Deadlines para coherencia de planificación
 const currentMonthStr = format(currentDate, 'yyyy-MM');
 export const demoDeadlines: Deadline[] = [
-  {
-    id: 'demo-d1',
-    projectId: 'demo-p1',
-    month: currentMonthStr,
-    notes: 'Deadline para SEO Técnico',
-    employeeHours: {
-      'demo-1': 50, // María: deadline 50h
-      'demo-2': 30, // Carlos: deadline 30h
-      'demo-3': 25, // Ana: deadline 25h
-    }
-  },
-  {
-    id: 'demo-d2',
-    projectId: 'demo-p2',
-    month: currentMonthStr,
-    notes: 'Deadline para Contenidos',
-    employeeHours: {
-      'demo-1': 40, // María: deadline 40h
-      'demo-2': 35, // Carlos: deadline 35h
-    }
-  },
-  {
-    id: 'demo-d3',
-    projectId: 'demo-p4',
-    month: currentMonthStr,
-    notes: 'Deadline para SEO Full',
-    employeeHours: {
-      'demo-1': 30, // María: deadline 30h
-      'demo-2': 20, // Carlos: deadline 20h
-      'demo-4': 25, // Luis: deadline 25h
-    }
-  },
-  // demo-p3 y demo-p5 NO tienen deadline (para mostrar coherencia sin deadline)
+  { id: 'demo-d1', projectId: 'demo-p1', month: currentMonthStr, notes: 'Deadline para SEO Técnico', employeeHours: { 'demo-1': 50, 'demo-2': 30, 'demo-3': 25 } },
+  { id: 'demo-d2', projectId: 'demo-p2', month: currentMonthStr, notes: 'Deadline para Contenidos', employeeHours: { 'demo-1': 40, 'demo-2': 35 } },
+  { id: 'demo-d3', projectId: 'demo-p4', month: currentMonthStr, notes: 'Deadline para SEO Full', employeeHours: { 'demo-1': 30, 'demo-2': 20, 'demo-4': 25 } },
 ];

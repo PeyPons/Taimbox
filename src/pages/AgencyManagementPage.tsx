@@ -264,7 +264,7 @@ export default function AgencyManagementPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-600">Total Miembros</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600">Total miembros</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-900">{stats.total}</div>

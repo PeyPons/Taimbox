@@ -99,7 +99,7 @@ export function DemoWeeklyForecastPage() {
                 <CardHeader className="bg-gradient-to-r from-indigo-50 to-white pb-2">
                     <CardTitle className="flex items-center gap-2 text-lg sm:text-xl font-bold text-indigo-900">
                         <TrendingUp className="h-5 w-5 text-primary" />
-                        Evolución Mensual (Planificado vs Real)
+                        Evolución mensual (planificado vs real)
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6">
@@ -205,7 +205,7 @@ export function DemoWeeklyForecastPage() {
                                     </Avatar>
                                     <div className="flex flex-col">
                                         <span className="text-sm font-semibold text-slate-900">{item.fromEmployee?.name.split(' ')[0]}</span>
-                                        <Badge variant="secondary" className="text-[10px] w-fit">Semana Orig.</Badge>
+                                        <Badge variant="secondary" className="text-[10px] w-fit">Semana orig.</Badge>
                                     </div>
                                 </div>
 
@@ -224,7 +224,7 @@ export function DemoWeeklyForecastPage() {
                                         <span className="text-sm font-semibold text-slate-900">{item.toEmployee?.name.split(' ')[0]}</span>
                                         {item.targetWeek ? (
                                             <Badge variant="outline" className="text-[10px] w-fit border-indigo-200 text-indigo-700">
-                                                {item.status === 'distributed' ? 'Semana Dest.' : 'Recibido'}
+                                                {item.status === 'distributed' ? 'Semana dest.' : 'Recibido'}
                                             </Badge>
                                         ) : (
                                             <Badge variant="outline" className="text-[10px] w-fit border-amber-200 text-amber-700 bg-amber-50">

@@ -164,7 +164,7 @@ export default function WeeklyForecastPage() {
     load();
   }, [currentMonth, currentAgency?.id]);
 
-  // Sección A: Semáforo de proyectos (Month-End Forecast) con filtros
+  // Sección A: Semáforo de proyectos (month-end forecast) con filtros
   const projectForecast = useMemo(() => {
     const baseProjects = selectedDepartmentId ? filteredProjectsForView : (projects ?? []);
     if (!baseProjects || !Array.isArray(baseProjects)) return [];
@@ -1065,7 +1065,7 @@ export default function WeeklyForecastPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5" />
-                Semáforo de proyectos (Month-End Forecast)
+                Semáforo de proyectos (month-end forecast)
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1123,7 +1123,7 @@ export default function WeeklyForecastPage() {
                               <span className="font-bold text-sm block">{proj.contracted}h</span>
                             </div>
                             <div>
-                              <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Total Est.</span>
+                              <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Total est.</span>
                               <span className="font-bold text-sm block">{proj.realized}h</span>
                             </div>
                           </div>
@@ -1655,7 +1655,7 @@ export default function WeeklyForecastPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                Redistribución de Horas
+                Redistribución de horas
               </CardTitle>
               <p className="text-sm text-muted-foreground">
                 Selecciona un proyecto y redistribuye horas entre compañeros

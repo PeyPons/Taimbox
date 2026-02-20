@@ -15,45 +15,45 @@ export function MockPlanningGrid() {
     const weeks = ['S1', 'S2', 'S3', 'S4'];
 
     return (
-        <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-3 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-md">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-md">
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                    <div className="h-7 w-7 rounded-lg bg-indigo-500/30 flex items-center justify-center">
-                        <Calendar className="h-3.5 w-3.5 text-indigo-300" />
+                    <div className="h-8 w-8 rounded-lg bg-indigo-500/30 flex items-center justify-center">
+                        <Calendar className="h-4 w-4 text-indigo-300" />
                     </div>
-                    <span className="text-white font-semibold text-xs">Planificador — Feb 2026</span>
+                    <span className="text-white font-semibold text-sm">Planificador — Feb 2026</span>
                 </div>
-                <span className="text-[8px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-semibold">4 empleados</span>
+                <span className="text-xs px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 font-semibold">4 empleados</span>
             </div>
-            <div className="grid grid-cols-5 gap-1 mb-1.5">
-                <div className="text-[9px] font-bold text-slate-500 px-1">Empleado</div>
+            <div className="grid grid-cols-5 gap-1.5 mb-2">
+                <div className="text-xs font-bold text-slate-500 px-1">Empleado</div>
                 {weeks.map(w => (
-                    <div key={w} className="text-center text-[9px] font-bold text-slate-500">{w}</div>
+                    <div key={w} className="text-center text-xs font-bold text-slate-500">{w}</div>
                 ))}
             </div>
             {employees.map((emp, ei) => (
-                <div key={ei} className={`grid grid-cols-5 gap-1 items-center rounded-lg p-1 mb-0.5 ${ei === 2 ? 'bg-red-500/10 border border-red-500/20' : 'bg-slate-800/60'}`}>
-                    <div className="flex items-center gap-1.5 px-1">
-                        <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${emp.color} flex items-center justify-center text-[8px] font-bold text-white`}>{emp.initials}</div>
-                        <span className="text-[9px] text-white/90 font-medium hidden sm:inline">{emp.name}</span>
+                <div key={ei} className={`grid grid-cols-5 gap-1.5 items-center rounded-lg p-2 mb-1 ${ei === 2 ? 'bg-red-500/10 border border-red-500/20' : 'bg-slate-800/60'}`}>
+                    <div className="flex items-center gap-2 px-1">
+                        <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${emp.color} flex items-center justify-center text-xs font-bold text-white`}>{emp.initials}</div>
+                        <span className="text-xs text-white/90 font-medium hidden sm:inline">{emp.name}</span>
                     </div>
                     {emp.weeks.map((h, i) => {
                         const pct = (h / 10) * 100;
                         const color = pct > 90 ? 'bg-red-500/80' : pct > 70 ? 'bg-amber-500/80' : 'bg-emerald-500/80';
                         return (
                             <div key={i} className="flex flex-col items-center gap-0.5">
-                                <div className="w-full h-3 rounded bg-slate-700/50 relative overflow-hidden">
+                                <div className="w-full h-3.5 rounded bg-slate-700/50 relative overflow-hidden">
                                     <div className={`absolute inset-y-0 left-0 rounded ${color}`} style={{ width: `${pct}%` }} />
                                 </div>
-                                <span className="text-[8px] font-mono text-white/70">{h}h</span>
+                                <span className="text-xs font-mono text-white/70">{h}h</span>
                             </div>
                         );
                     })}
                 </div>
             ))}
-            <div className="mt-1.5 flex items-start gap-1.5 rounded-lg bg-red-500/10 border border-red-500/20 px-2 py-1.5">
-                <AlertTriangle className="h-3 w-3 text-red-400 mt-0.5 shrink-0" />
-                <p className="text-[9px] text-red-200/80">Julia al <strong className="text-red-200">100%</strong> en S1-S2. Redistribuir carga.</p>
+            <div className="mt-2 flex items-start gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-2.5 py-2">
+                <AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
+                <p className="text-xs text-red-200/90">Julia al <strong className="text-red-200">100%</strong> en S1-S2. Redistribuir carga.</p>
             </div>
         </div>
     );
@@ -62,44 +62,44 @@ export function MockPlanningGrid() {
 /* ─── Mockup: Allocation Sheet ─── */
 export function MockAllocationSheet() {
     return (
-        <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-3 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-sm">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-sm">
             <div className="flex items-center gap-2 mb-3">
-                <div className="h-7 w-7 rounded-lg bg-purple-500/30 flex items-center justify-center">
-                    <MousePointerClick className="h-3.5 w-3.5 text-purple-300" />
+                <div className="h-8 w-8 rounded-lg bg-purple-500/30 flex items-center justify-center">
+                    <MousePointerClick className="h-4 w-4 text-purple-300" />
                 </div>
-                <span className="text-white font-semibold text-xs">Asignar tarea</span>
+                <span className="text-white font-semibold text-sm">Asignar tarea</span>
             </div>
-            <div className="rounded-xl bg-slate-800/60 p-2.5 border border-slate-700/50 mb-2">
-                <p className="text-[9px] text-indigo-400">Acme Corp — Rediseño Web</p>
-                <p className="text-[11px] text-white font-semibold">Maquetación producto</p>
-                <div className="flex items-center gap-2 text-[9px] text-slate-400 mt-1">
-                    <Clock className="h-3 w-3" /><span>Deadline: 14 feb</span>
+            <div className="rounded-xl bg-slate-800/60 p-3 border border-slate-700/50 mb-2">
+                <p className="text-xs text-indigo-400">Acme Corp — Rediseño Web</p>
+                <p className="text-sm text-white font-semibold">Maquetación producto</p>
+                <div className="flex items-center gap-2 text-xs text-slate-400 mt-1.5">
+                    <Clock className="h-3.5 w-3.5" /><span>Deadline: 14 feb</span>
                     <span className="text-slate-600">|</span>
-                    <Users className="h-3 w-3" /><span>María A.</span>
+                    <Users className="h-3.5 w-3.5" /><span>María A.</span>
                 </div>
             </div>
-            <div className="rounded-xl bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 p-2.5 mb-2">
-                <p className="text-[9px] text-indigo-300 font-semibold mb-1.5">Impacto antes de guardar</p>
-                <div className="grid grid-cols-2 gap-1.5">
-                    <div className="rounded-lg bg-slate-800/60 p-2">
-                        <p className="text-[8px] text-slate-400">Presupuesto</p>
-                        <p className="text-[11px] font-bold text-white">32h <span className="text-emerald-400">→ 38h</span></p>
-                        <div className="w-full h-1 rounded-full bg-slate-700 mt-1 overflow-hidden">
+            <div className="rounded-xl bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 p-3 mb-2">
+                <p className="text-xs text-indigo-300 font-semibold mb-2">Impacto antes de guardar</p>
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-lg bg-slate-800/60 p-2.5">
+                        <p className="text-xs text-slate-400">Presupuesto</p>
+                        <p className="text-sm font-bold text-white">32h <span className="text-emerald-400">→ 38h</span></p>
+                        <div className="w-full h-1.5 rounded-full bg-slate-700 mt-1 overflow-hidden">
                             <div className="h-full rounded-full bg-amber-500" style={{ width: '95%' }} />
                         </div>
                     </div>
-                    <div className="rounded-lg bg-slate-800/60 p-2">
-                        <p className="text-[8px] text-slate-400">Carga María S2</p>
-                        <p className="text-[11px] font-bold text-white">6h <span className="text-red-400">→ 12h</span></p>
-                        <div className="w-full h-1 rounded-full bg-slate-700 mt-1 overflow-hidden">
+                    <div className="rounded-lg bg-slate-800/60 p-2.5">
+                        <p className="text-xs text-slate-400">Carga María S2</p>
+                        <p className="text-sm font-bold text-white">6h <span className="text-red-400">→ 12h</span></p>
+                        <div className="w-full h-1.5 rounded-full bg-slate-700 mt-1 overflow-hidden">
                             <div className="h-full rounded-full bg-red-500" style={{ width: '100%' }} />
                         </div>
                     </div>
                 </div>
             </div>
-            <div className="flex gap-1.5">
-                <div className="flex-1 h-7 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center text-[10px] font-semibold text-white">Confirmar</div>
-                <div className="h-7 rounded-lg border border-slate-600 px-3 flex items-center justify-center text-[10px] text-slate-400">Cancelar</div>
+            <div className="flex gap-2">
+                <div className="flex-1 h-8 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center text-sm font-semibold text-white">Confirmar</div>
+                <div className="h-8 rounded-lg border border-slate-600 px-4 flex items-center justify-center text-sm text-slate-400">Cancelar</div>
             </div>
         </div>
     );
@@ -113,38 +113,38 @@ export function MockDashboard() {
         { project: 'Gamma Ltd', task: 'Informe mensual', hours: '2h', status: 'indigo' },
     ];
     return (
-        <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-3 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-sm">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-sm">
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-[9px] font-bold text-white">MA</div>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-xs font-bold text-white">MA</div>
                     <div>
-                        <p className="text-xs text-white font-semibold">Mi día — Lunes 10 feb</p>
-                        <p className="text-[9px] text-slate-400">3 tareas · 6.5h planificadas</p>
+                        <p className="text-sm text-white font-semibold">Mi día — Lunes 10 feb</p>
+                        <p className="text-xs text-slate-400">3 tareas · 6.5h planificadas</p>
                     </div>
                 </div>
-                <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold">On track</span>
+                <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-bold">On track</span>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
                 {tasks.map((t, i) => (
-                    <div key={i} className="flex items-center gap-2 rounded-xl bg-slate-800/60 p-2 border border-slate-700/50">
-                        <div className={`w-1 h-8 rounded-full bg-${t.status}-500`} />
+                    <div key={i} className="flex items-center gap-2 rounded-xl bg-slate-800/60 p-2.5 border border-slate-700/50">
+                        <div className={`w-1.5 h-8 rounded-full bg-${t.status}-500`} />
                         <div className="flex-1 min-w-0">
-                            <p className="text-[9px] text-slate-400">{t.project}</p>
-                            <p className="text-[11px] text-white font-medium truncate">{t.task}</p>
+                            <p className="text-xs text-slate-400">{t.project}</p>
+                            <p className="text-sm text-white font-medium truncate">{t.task}</p>
                         </div>
-                        <span className="text-[10px] font-mono font-bold text-white/70">{t.hours}</span>
+                        <span className="text-sm font-mono font-bold text-white/70">{t.hours}</span>
                     </div>
                 ))}
             </div>
-            <div className="mt-2 rounded-xl bg-gradient-to-r from-emerald-900/40 to-teal-900/30 border border-emerald-500/20 p-2">
+            <div className="mt-3 rounded-xl bg-gradient-to-r from-emerald-900/40 to-teal-900/30 border border-emerald-500/20 p-2.5">
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                        <Shield className="h-3.5 w-3.5 text-emerald-400" />
-                        <span className="text-[10px] text-white/90 font-semibold">Fiabilidad</span>
+                    <div className="flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-emerald-400" />
+                        <span className="text-sm text-white/90 font-semibold">Fiabilidad</span>
                     </div>
-                    <span className="text-xs font-bold text-emerald-400">94%</span>
+                    <span className="text-sm font-bold text-emerald-400">94%</span>
                 </div>
-                <div className="w-full h-1.5 rounded-full bg-slate-800/60 overflow-hidden mt-1">
+                <div className="w-full h-2 rounded-full bg-slate-800/60 overflow-hidden mt-1.5">
                     <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400" style={{ width: '94%' }} />
                 </div>
             </div>
@@ -161,30 +161,30 @@ export function MockTeamCapacity() {
         { name: 'Pedro S.', role: 'Contenido', pct: 60, status: 'emerald' },
     ];
     return (
-        <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-3 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-sm">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-sm">
             <div className="flex items-center gap-2 mb-3">
-                <div className="h-7 w-7 rounded-lg bg-blue-500/30 flex items-center justify-center">
-                    <Users className="h-3.5 w-3.5 text-blue-300" />
+                <div className="h-8 w-8 rounded-lg bg-blue-500/30 flex items-center justify-center">
+                    <Users className="h-4 w-4 text-blue-300" />
                 </div>
-                <span className="text-white font-semibold text-xs">Capacidad del equipo — Feb 2026</span>
+                <span className="text-white font-semibold text-sm">Capacidad del equipo — Feb 2026</span>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
                 {team.map((m, i) => (
                     <div key={i} className="flex items-center gap-2">
-                        <div className="w-16 text-right">
-                            <p className="text-[10px] text-white font-medium">{m.name}</p>
-                            <p className="text-[8px] text-slate-500">{m.role}</p>
+                        <div className="w-20 text-right">
+                            <p className="text-sm text-white font-medium">{m.name}</p>
+                            <p className="text-xs text-slate-500">{m.role}</p>
                         </div>
-                        <div className="flex-1 h-3 rounded-full bg-slate-700/50 overflow-hidden">
+                        <div className="flex-1 h-3.5 rounded-full bg-slate-700/50 overflow-hidden">
                             <div className={`h-full rounded-full bg-${m.status}-500`} style={{ width: `${Math.min(m.pct, 100)}%` }} />
                         </div>
-                        <span className={`text-[10px] font-bold text-${m.status}-400 w-8 text-right`}>{m.pct}%</span>
+                        <span className={`text-sm font-bold text-${m.status}-400 w-9 text-right`}>{m.pct}%</span>
                     </div>
                 ))}
             </div>
-            <div className="mt-2 flex items-start gap-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 px-2 py-1.5">
-                <AlertTriangle className="h-3 w-3 text-amber-400 mt-0.5 shrink-0" />
-                <p className="text-[9px] text-amber-200/80">Carlos está al 95%. Julia sobrecargada (100%). Considera reasignar.</p>
+            <div className="mt-3 flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-2.5 py-2">
+                <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
+                <p className="text-xs text-amber-200/90">Carlos está al 95%. Julia sobrecargada (100%). Considera reasignar.</p>
             </div>
         </div>
     );
@@ -198,37 +198,37 @@ export function MockReportsDashboard() {
         { name: 'Gamma Ltd', budget: '60h', used: '45h', pct: 75, profit: '+5.100€', color: 'emerald' },
     ];
     return (
-        <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-3 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-md">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-md">
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                    <div className="h-7 w-7 rounded-lg bg-emerald-500/30 flex items-center justify-center">
-                        <BarChart3 className="h-3.5 w-3.5 text-emerald-300" />
+                    <div className="h-8 w-8 rounded-lg bg-emerald-500/30 flex items-center justify-center">
+                        <BarChart3 className="h-4 w-4 text-emerald-300" />
                     </div>
-                    <span className="text-white font-semibold text-xs">Rentabilidad por cliente</span>
+                    <span className="text-white font-semibold text-sm">Rentabilidad por cliente</span>
                 </div>
                 <div className="flex gap-1">
-                    <FileDown className="h-3.5 w-3.5 text-slate-400" />
+                    <FileDown className="h-4 w-4 text-slate-400" />
                 </div>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
                 {clients.map((c, i) => (
-                    <div key={i} className="flex items-center gap-2 rounded-xl bg-slate-800/60 p-2 border border-slate-700/50">
+                    <div key={i} className="flex items-center gap-2 rounded-xl bg-slate-800/60 p-2.5 border border-slate-700/50">
                         <div className="flex-1 min-w-0">
-                            <p className="text-[11px] text-white font-medium">{c.name}</p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-[9px] text-slate-400">{c.used} / {c.budget}</span>
-                                <div className="flex-1 h-1.5 rounded-full bg-slate-700/50 overflow-hidden">
+                            <p className="text-sm text-white font-medium">{c.name}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                                <span className="text-xs text-slate-400">{c.used} / {c.budget}</span>
+                                <div className="flex-1 h-2 rounded-full bg-slate-700/50 overflow-hidden">
                                     <div className={`h-full rounded-full bg-${c.color}-500`} style={{ width: `${Math.min(c.pct, 100)}%` }} />
                                 </div>
                             </div>
                         </div>
-                        <span className={`text-[11px] font-bold text-${c.color}-400`}>{c.profit}</span>
+                        <span className={`text-sm font-bold text-${c.color}-400`}>{c.profit}</span>
                     </div>
                 ))}
             </div>
-            <div className="mt-2 p-2 rounded-xl bg-gradient-to-r from-emerald-900/40 to-teal-900/30 border border-emerald-500/20 flex items-center justify-between">
-                <span className="text-[10px] text-white font-semibold">Rentabilidad neta mes</span>
-                <span className="text-sm font-black text-emerald-400">+6.300€</span>
+            <div className="mt-3 p-2.5 rounded-xl bg-gradient-to-r from-emerald-900/40 to-teal-900/30 border border-emerald-500/20 flex items-center justify-between">
+                <span className="text-sm text-white font-semibold">Rentabilidad neta mes</span>
+                <span className="text-base font-black text-emerald-400">+6.300€</span>
             </div>
         </div>
     );
@@ -242,28 +242,28 @@ export function MockDeadlines() {
         { name: 'SEO Gamma', deadline: '15h', planned: '12h', pct: 80, ok: true },
     ];
     return (
-        <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-3 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-sm">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-sm">
             <div className="flex items-center gap-2 mb-3">
-                <div className="h-7 w-7 rounded-lg bg-amber-500/30 flex items-center justify-center">
-                    <FolderKanban className="h-3.5 w-3.5 text-amber-300" />
+                <div className="h-8 w-8 rounded-lg bg-amber-500/30 flex items-center justify-center">
+                    <FolderKanban className="h-4 w-4 text-amber-300" />
                 </div>
-                <span className="text-white font-semibold text-xs">Deadlines — Febrero 2026</span>
+                <span className="text-white font-semibold text-sm">Deadlines — Febrero 2026</span>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
                 {projects.map((p, i) => (
-                    <div key={i} className={`flex items-center gap-2 rounded-xl p-2 border ${p.ok ? 'bg-slate-800/60 border-slate-700/50' : 'bg-red-500/10 border-red-500/20'}`}>
-                        {p.ok ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" /> : <AlertTriangle className="h-3.5 w-3.5 text-red-400 shrink-0" />}
+                    <div key={i} className={`flex items-center gap-2 rounded-xl p-2.5 border ${p.ok ? 'bg-slate-800/60 border-slate-700/50' : 'bg-red-500/10 border-red-500/20'}`}>
+                        {p.ok ? <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" /> : <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />}
                         <div className="flex-1 min-w-0">
-                            <p className="text-[10px] text-white font-medium truncate">{p.name}</p>
-                            <p className="text-[9px] text-slate-400">{p.planned} / {p.deadline}</p>
+                            <p className="text-sm text-white font-medium truncate">{p.name}</p>
+                            <p className="text-xs text-slate-400">{p.planned} / {p.deadline}</p>
                         </div>
-                        <span className={`text-[10px] font-bold ${p.ok ? 'text-emerald-400' : 'text-red-400'}`}>{p.pct}%</span>
+                        <span className={`text-sm font-bold ${p.ok ? 'text-emerald-400' : 'text-red-400'}`}>{p.pct}%</span>
                     </div>
                 ))}
             </div>
-            <div className="mt-2 flex items-start gap-1.5 rounded-lg bg-red-500/10 border border-red-500/20 px-2 py-1.5">
-                <Target className="h-3 w-3 text-red-400 mt-0.5 shrink-0" />
-                <p className="text-[9px] text-red-200/80"><strong>Beta Inc</strong> supera deadline en 5h. Necesita override o redistribución.</p>
+            <div className="mt-3 flex items-start gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-2.5 py-2">
+                <Target className="h-4 w-4 text-red-400 mt-0.5 shrink-0" />
+                <p className="text-xs text-red-200/90"><strong>Beta Inc</strong> supera deadline en 5h. Necesita override o redistribución.</p>
             </div>
         </div>
     );
@@ -278,26 +278,26 @@ export function MockIntegrations() {
         { name: 'Webhooks', status: 'Configurado', icon: Wifi, color: 'purple', lastSync: '2 endpoints' },
     ];
     return (
-        <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-3 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-sm">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-sm">
             <div className="flex items-center gap-2 mb-3">
-                <div className="h-7 w-7 rounded-lg bg-cyan-500/30 flex items-center justify-center">
-                    <Plug className="h-3.5 w-3.5 text-cyan-300" />
+                <div className="h-8 w-8 rounded-lg bg-cyan-500/30 flex items-center justify-center">
+                    <Plug className="h-4 w-4 text-cyan-300" />
                 </div>
-                <span className="text-white font-semibold text-xs">Integraciones activas</span>
+                <span className="text-white font-semibold text-sm">Integraciones activas</span>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
                 {integrations.map((integ, i) => {
                     const Icon = integ.icon;
                     return (
-                        <div key={i} className="flex items-center gap-2 rounded-xl bg-slate-800/60 p-2 border border-slate-700/50">
-                            <div className={`w-7 h-7 rounded-lg bg-${integ.color}-500/20 flex items-center justify-center`}>
-                                <Icon className={`h-3.5 w-3.5 text-${integ.color}-400`} />
+                        <div key={i} className="flex items-center gap-2 rounded-xl bg-slate-800/60 p-2.5 border border-slate-700/50">
+                            <div className={`w-8 h-8 rounded-lg bg-${integ.color}-500/20 flex items-center justify-center`}>
+                                <Icon className={`h-4 w-4 text-${integ.color}-400`} />
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-[11px] text-white font-medium">{integ.name}</p>
-                                <p className="text-[8px] text-slate-400">{integ.lastSync}</p>
+                                <p className="text-sm text-white font-medium">{integ.name}</p>
+                                <p className="text-xs text-slate-400">{integ.lastSync}</p>
                             </div>
-                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full bg-${integ.color}-500/20 text-${integ.color}-400 font-semibold`}>{integ.status}</span>
+                            <span className={`text-xs px-2 py-1 rounded-full bg-${integ.color}-500/20 text-${integ.color}-400 font-semibold`}>{integ.status}</span>
                         </div>
                     );
                 })}
@@ -309,33 +309,33 @@ export function MockIntegrations() {
 /* ─── Mockup: Weekly Forecast ─── */
 export function MockWeeklyForecast() {
     return (
-        <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-3 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-sm">
+        <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-sm">
             <div className="flex items-center gap-2 mb-3">
-                <div className="h-7 w-7 rounded-lg bg-indigo-500/30 flex items-center justify-center">
-                    <MessageSquare className="h-3.5 w-3.5 text-indigo-300" />
+                <div className="h-8 w-8 rounded-lg bg-indigo-500/30 flex items-center justify-center">
+                    <MessageSquare className="h-4 w-4 text-indigo-300" />
                 </div>
-                <span className="text-white font-semibold text-xs">Weekly Forecast — S2 Feb</span>
+                <span className="text-white font-semibold text-sm">Weekly Forecast — S2 Feb</span>
             </div>
-            <div className="grid grid-cols-3 gap-1.5 mb-2">
-                <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-2 text-center">
-                    <p className="text-sm font-bold text-emerald-400">12</p>
-                    <p className="text-[8px] text-emerald-200/60">Completadas</p>
+            <div className="grid grid-cols-3 gap-2 mb-3">
+                <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-2.5 text-center">
+                    <p className="text-base font-bold text-emerald-400">12</p>
+                    <p className="text-xs text-emerald-200/70">Completadas</p>
                 </div>
-                <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-2 text-center">
-                    <p className="text-sm font-bold text-amber-400">3</p>
-                    <p className="text-[8px] text-amber-200/60">En progreso</p>
+                <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-2.5 text-center">
+                    <p className="text-base font-bold text-amber-400">3</p>
+                    <p className="text-xs text-amber-200/70">En progreso</p>
                 </div>
-                <div className="rounded-lg bg-slate-800/60 border border-slate-700/50 p-2 text-center">
-                    <p className="text-sm font-bold text-white">2</p>
-                    <p className="text-[8px] text-slate-400">Pendientes</p>
+                <div className="rounded-lg bg-slate-800/60 border border-slate-700/50 p-2.5 text-center">
+                    <p className="text-base font-bold text-white">2</p>
+                    <p className="text-xs text-slate-400">Pendientes</p>
                 </div>
             </div>
-            <div className="rounded-xl bg-indigo-500/10 border border-indigo-500/20 p-2">
-                <div className="flex items-center gap-1.5 mb-1">
-                    <Zap className="h-3 w-3 text-indigo-400" />
-                    <span className="text-[10px] text-indigo-200 font-semibold">Predicción cierre</span>
+            <div className="rounded-xl bg-indigo-500/10 border border-indigo-500/20 p-2.5">
+                <div className="flex items-center gap-2 mb-1.5">
+                    <Zap className="h-4 w-4 text-indigo-400" />
+                    <span className="text-sm text-indigo-200 font-semibold">Predicción cierre</span>
                 </div>
-                <p className="text-[9px] text-indigo-200/70">Al ritmo actual, el equipo cerrará la semana con <strong className="text-indigo-200">95% de cumplimiento</strong>. +3h redistribuibles.</p>
+                <p className="text-xs text-indigo-200/80">Al ritmo actual, el equipo cerrará la semana con <strong className="text-indigo-200">95% de cumplimiento</strong>. +3h redistribuibles.</p>
             </div>
         </div>
     );
@@ -343,41 +343,43 @@ export function MockWeeklyForecast() {
 
 /* ─── Mockup: Before/After comparison ─── */
 export function MockBeforeAfter() {
+    const beforeItems = ['Excel y hojas sueltas', 'Horas sin registrar', 'Desvíos invisibles', 'Reporting manual', 'Estimaciones a ojo'];
+    const afterItems = ['Plataforma centralizada', '100% horas planificadas', 'Alertas automáticas', 'Informes en 1 clic', 'Datos reales por proyecto'];
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 w-full max-w-2xl">
             {/* Before */}
-            <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-3 sm:p-4">
-                <div className="flex items-center gap-1.5 mb-2">
-                    <div className="w-5 h-5 rounded bg-red-500/30 flex items-center justify-center">
-                        <AlertTriangle className="h-3 w-3 text-red-400" />
+            <div className="rounded-2xl border-2 border-red-500/30 bg-red-500/10 p-5 sm:p-6 shadow-lg shadow-red-950/20">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-red-500/40 flex items-center justify-center shrink-0">
+                        <AlertTriangle className="h-5 w-5 text-red-300" />
                     </div>
-                    <span className="text-[11px] font-bold text-red-300">Sin Timeboxing</span>
+                    <span className="text-lg sm:text-xl font-bold text-red-200">Sin Timeboxing</span>
                 </div>
-                <div className="space-y-1.5">
-                    {['Excel y hojas sueltas', 'Horas sin registrar', 'Desvíos invisibles', 'Reporting manual', 'Estimaciones a ojo'].map(t => (
-                        <div key={t} className="flex items-center gap-1.5">
-                            <div className="w-1 h-1 rounded-full bg-red-400" />
-                            <span className="text-[10px] text-red-200/70">{t}</span>
-                        </div>
+                <ul className="space-y-3">
+                    {beforeItems.map(t => (
+                        <li key={t} className="flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-red-400 shrink-0" aria-hidden />
+                            <span className="text-base sm:text-lg text-red-100/90 font-medium">{t}</span>
+                        </li>
                     ))}
-                </div>
+                </ul>
             </div>
             {/* After */}
-            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-3 sm:p-4">
-                <div className="flex items-center gap-1.5 mb-2">
-                    <div className="w-5 h-5 rounded bg-emerald-500/30 flex items-center justify-center">
-                        <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+            <div className="rounded-2xl border-2 border-emerald-500/30 bg-emerald-500/10 p-5 sm:p-6 shadow-lg shadow-emerald-950/20">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/40 flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="h-5 w-5 text-emerald-300" />
                     </div>
-                    <span className="text-[11px] font-bold text-emerald-300">Con Timeboxing</span>
+                    <span className="text-lg sm:text-xl font-bold text-emerald-200">Con Timeboxing</span>
                 </div>
-                <div className="space-y-1.5">
-                    {['Plataforma centralizada', '100% horas planificadas', 'Alertas automáticas', 'Informes en 1 clic', 'Datos reales por proyecto'].map(t => (
-                        <div key={t} className="flex items-center gap-1.5">
-                            <CheckCircle2 className="h-3 w-3 text-emerald-400" />
-                            <span className="text-[10px] text-emerald-200/80">{t}</span>
-                        </div>
+                <ul className="space-y-3">
+                    {afterItems.map(t => (
+                        <li key={t} className="flex items-center gap-3">
+                            <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
+                            <span className="text-base sm:text-lg text-emerald-100/95 font-medium">{t}</span>
+                        </li>
                     ))}
-                </div>
+                </ul>
             </div>
         </div>
     );

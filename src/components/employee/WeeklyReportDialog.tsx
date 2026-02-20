@@ -982,7 +982,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                               </div>
                                             </div>
                                             <div className="space-y-1 pt-2 border-t border-blue-200">
-                                              <Label className="text-xs font-medium text-slate-700">Nueva Estimación para Semana Siguiente *</Label>
+                                              <Label className="text-xs font-medium text-slate-700">Nueva estimación para semana siguiente *</Label>
                                               <Input
                                                 type="text"
                                                 inputMode="decimal"

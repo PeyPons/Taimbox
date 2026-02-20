@@ -1,5 +1,5 @@
 import { useMemo, useState, memo, useEffect } from 'react';
-import { useApp } from '@/contexts/AppContext';
+import { useAppOrDemo } from '@/hooks/useAppOrDemo';
 import { useAgency } from '@/contexts/AgencyContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,7 +30,7 @@ interface MyWeekViewProps {
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyWeekViewProps) {
-  const { allocations, projects, clients, employees, getEmployeeMonthlyLoad } = useApp();
+  const { allocations, projects, clients, employees, getEmployeeMonthlyLoad } = useAppOrDemo();
   const { currentAgency } = useAgency();
   const { formatName: formatProjectName } = useProjectAliasing();
 

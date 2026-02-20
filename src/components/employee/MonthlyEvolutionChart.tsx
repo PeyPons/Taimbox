@@ -104,7 +104,7 @@ export function MonthlyEvolutionChart({
                                         style={{ height: `${Math.max(heightPlanned, 4)}%` }}
                                     >
                                         <span className="opacity-0 group-hover:opacity-100 absolute -top-12 left-1/2 -translate-x-1/2 text-[10px] bg-slate-800 text-white px-2 py-1 rounded z-20 whitespace-nowrap shadow-sm">
-                                            Planificado: {data.totalPlanned.toFixed(2)}h
+                                            planificado: {data.totalPlanned.toFixed(2)}h
                                         </span>
                                     </div>
 
@@ -117,7 +117,7 @@ export function MonthlyEvolutionChart({
                                         style={{ height: `${Math.max(heightComputed, 4)}%` }}
                                     >
                                         <span className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] font-bold bg-emerald-700 text-white px-2 py-1 rounded z-30 whitespace-nowrap shadow-sm">
-                                            Computado: {data.totalComputed.toFixed(2)}h
+                                            computado: {data.totalComputed.toFixed(2)}h
                                         </span>
                                     </div>
                                 </div>
@@ -139,11 +139,11 @@ export function MonthlyEvolutionChart({
                 <div className="flex justify-center gap-6 mt-6 border-t pt-4 text-[10px] text-slate-500 uppercase tracking-wide font-medium">
                     <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-sm bg-slate-300" />
-                        <span>Planificado</span>
+                        <span>planificado</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-sm bg-emerald-500" />
-                        <span>Computado</span>
+                        <span>computado</span>
                     </div>
                 </div>
             </CardContent>

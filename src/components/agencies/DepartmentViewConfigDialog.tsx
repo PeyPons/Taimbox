@@ -115,7 +115,7 @@ export function DepartmentViewConfigDialog({
                                     isStrict ? "bg-amber-100 text-amber-700 hover:bg-amber-100" : ""
                                 )}
                             >
-                                {isStrict ? "Modo Estricto" : "Modo Flexible"}
+                                {isStrict ? "Modo estricto" : "Modo flexible"}
                             </Badge>
                             <Badge variant="outline" className="text-xs">
                                 Vista: Semanal

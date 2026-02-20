@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
 import { useApp } from '@/contexts/AppContext';
@@ -27,6 +27,7 @@ import {
   ChevronDown,
   X,
   User,
+  Presentation,
   Key,
   Shield,
   MessageCircle,
@@ -82,9 +83,42 @@ function NavGroup({ label, icon: Icon, children, isActive = false }: NavGroupPro
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser } = useApp();
+  const { currentUser, employees, projects } = useApp();
   const { canAccess, hasPermission } = usePermissions();
   const { currentAgency, availableAgencies } = useAgency();
+
+  const showPitchBanner = useMemo(() => {
+    if (!currentAgency?.id || !hasPermission('can_access_agency_settings')) return false;
+    const isEmpty = (employees?.length ?? 0) === 0 && (projects?.length ?? 0) === 0;
+    return isEmpty;
+  }, [currentAgency?.id, employees?.length, projects?.length, hasPermission]);
+
+  const pitchBannerDismissedKey = `timeboxing_pitch_banner_dismissed_${currentAgency?.id ?? ''}`;
+  const [pitchBannerDismissed, setPitchBannerDismissed] = useState(() => {
+    try {
+      return localStorage.getItem(pitchBannerDismissedKey) === '1';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    if (!showPitchBanner) return;
+    try {
+      setPitchBannerDismissed(localStorage.getItem(pitchBannerDismissedKey) === '1');
+    } catch {
+      setPitchBannerDismissed(false);
+    }
+  }, [showPitchBanner, pitchBannerDismissedKey]);
+
+  const dismissPitchBanner = () => {
+    try {
+      localStorage.setItem(pitchBannerDismissedKey, '1');
+      setPitchBannerDismissed(true);
+    } catch {
+      setPitchBannerDismissed(true);
+    }
+  };
   const hasMultipleAgencies = (availableAgencies?.length || 0) > 1;
   const hasAgencyPaths = location.pathname === '/agency' || location.pathname === '/agencies' || location.pathname.startsWith('/agencies/');
   const searchParams = new URLSearchParams(location.search || '');
@@ -334,6 +368,36 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           )}
 
         </nav>
+
+        {/* Banner onboarding: administradores con agencia vacía */}
+        {showPitchBanner && !pitchBannerDismissed && (
+          <div className="mx-2 mb-2 p-2.5 rounded-lg bg-indigo-500/15 border border-indigo-400/25 text-left">
+            <div className="flex items-start gap-2">
+              <Presentation className="h-4 w-4 text-indigo-400 shrink-0 mt-0.5" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-slate-200 leading-snug">
+                  Bienvenido. Recuerda por qué tu equipo necesita esta disciplina.
+                </p>
+                <a
+                  href={`${typeof window !== 'undefined' ? window.location.origin : ''}/pitch`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-semibold text-indigo-300 hover:text-indigo-200 mt-1 inline-block"
+                >
+                  Ver visión del sistema →
+                </a>
+              </div>
+              <button
+                type="button"
+                onClick={dismissPitchBanner}
+                className="p-0.5 text-slate-500 hover:text-slate-300 shrink-0"
+                aria-label="Cerrar"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Footer: una sola línea — avatar, nombre, vista, logout (sin nombre agencia) */}
         <div className="px-2 py-1.5 border-t border-slate-800 bg-slate-950/50">

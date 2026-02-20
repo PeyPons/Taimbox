@@ -6,14 +6,14 @@ import { LoadIndicator } from '@/components/shared/LoadIndicator';
 import { MetricsCard } from '@/components/shared/MetricsCard';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getWeeksForMonth, getMonthName } from '@/utils/dateUtils';
+import { getWeeksForMonth } from '@/utils/dateUtils';
 import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { demoEmployees, demoClients, demoProjects, demoAllocations } from '@/data/demoData';
 import { DemoProvider, useDemo } from '@/contexts/DemoContext';
 import { DemoEmployeeDashboard } from './DemoEmployeeDashboard';
 import { cn } from '@/lib/utils';
-import { AlertCircle, Info, Users, Calendar, BarChart3, Target, TrendingUp, TrendingDown, CheckCircle2, Clock } from 'lucide-react';
+import { AlertCircle, Info } from 'lucide-react';
 
 export function DemoPlanner() {
   const { employees, allocations, projects, clients, getEmployeeMonthlyLoad, getEmployeeLoadForWeek } = useDemo();
@@ -21,16 +21,9 @@ export function DemoPlanner() {
   const [selectedTab, setSelectedTab] = useState('overview');
 
   const weeks = useMemo(() => getWeeksForMonth(currentMonth), [currentMonth]);
-  const gridTemplate = `250px repeat(${weeks.length}, minmax(0, 1fr)) 100px`;
-  const gridTemplateMobile = `repeat(${weeks.length}, minmax(120px, 1fr)) 80px`;
 
-  // Empleado demo (María)
-  const demoEmployee = employees[0];
-  const monthlyLoad = getEmployeeMonthlyLoad(
-    demoEmployee.id,
-    currentMonth.getFullYear(),
-    currentMonth.getMonth()
-  );
+  // Dos empleados de ejemplo para el desglose por semana (María + Carlos)
+  const calendarEmployees = employees.slice(0, 2);
 
   return (
     <div className="space-y-6 min-w-0">
@@ -53,10 +46,7 @@ export function DemoPlanner() {
         <div className="overflow-x-auto overflow-y-hidden -mx-1 px-1 custom-scrollbar">
           <TabsList className="w-full justify-start h-auto p-1 bg-slate-50 min-w-max">
             <TabsTrigger value="overview" className="data-[state=active]:bg-white shrink-0">
-              Vista General
-            </TabsTrigger>
-            <TabsTrigger value="calendar" className="data-[state=active]:bg-white shrink-0">
-              Calendario
+              Vista general
             </TabsTrigger>
             <TabsTrigger value="projects" className="data-[state=active]:bg-white shrink-0">
               Proyectos
@@ -67,7 +57,7 @@ export function DemoPlanner() {
           </TabsList>
         </div>
 
-        {/* Vista General */}
+        {/* Vista general: equipo, proyectos, escenarios + desglose por semana */}
         <TabsContent value="overview" className="mt-4 space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="p-6">
@@ -95,7 +85,7 @@ export function DemoPlanner() {
             </Card>
 
             <Card className="p-6">
-              <h3 className="text-sm font-semibold text-slate-700 mb-4">Proyectos Activos</h3>
+              <h3 className="text-sm font-semibold text-slate-700 mb-4">Proyectos activos</h3>
               <div className="space-y-2">
                 {projects.map(proj => {
                   const client = clients.find(c => c.id === proj.clientId);
@@ -144,123 +134,80 @@ export function DemoPlanner() {
               </div>
             </Card>
           </div>
-        </TabsContent>
 
-        {/* Calendario */}
-        <TabsContent value="calendar" className="mt-4">
-          <Card className="overflow-hidden border-slate-200 shadow-sm bg-white">
-            <div className="overflow-x-auto custom-scrollbar">
-              <div style={{ minWidth: '1000px' }}>
-                <div className="grid bg-slate-50 border-b" style={{ gridTemplateColumns: `250px repeat(${weeks.length}, minmax(0, 1fr)) 100px` }}>
-                  <div className="hidden sm:block px-4 py-3 font-bold text-sm text-slate-700 flex items-center border-r">
-                    Calendario
-                  </div>
-                  <div className="sm:hidden px-2 py-2 font-bold text-xs text-slate-700 flex items-center border-r">
-                    Cal.
-                  </div>
-                  {weeks.map((week, index) => {
-                    const effectiveStart = week.effectiveStart || week.weekStart;
-                    const effectiveEnd = week.effectiveEnd || addDays(week.weekStart, 6);
-
-                    const workingDays = [];
-                    let currentDay = new Date(effectiveStart);
-                    while (currentDay <= effectiveEnd) {
-                      const dayOfWeek = currentDay.getDay();
-                      if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-                        workingDays.push(new Date(currentDay));
-                      }
-                      currentDay = addDays(currentDay, 1);
-                    }
-
-                    const firstWorkingDay = workingDays[0];
-                    const lastWorkingDay = workingDays[workingDays.length - 1];
-                    const weekDateLabel = firstWorkingDay && lastWorkingDay
-                      ? `${format(firstWorkingDay, 'd', { locale: es })}-${format(lastWorkingDay, 'd MMM', { locale: es })}`
-                      : `${format(effectiveStart, 'd', { locale: es })}-${format(effectiveEnd, 'd MMM', { locale: es })}`;
-
-                    return (
-                      <div key={week.weekStart.toISOString()} className="text-center px-1 py-2 border-r flex flex-col justify-center">
-                        <span className="text-xs font-bold uppercase text-slate-500">S{index + 1}</span>
-                        <span className="text-[10px] text-slate-400 font-medium">
-                          {weekDateLabel}
-                        </span>
-                      </div>
-                    );
-                  })}
-                  <div className="px-2 py-3 font-bold text-xs text-center flex items-center justify-center">TOTAL</div>
-                </div>
-
-                <div className="grid bg-white" style={{ gridTemplateColumns: gridTemplate }}>
-                  {/* Columna Empleado - Desktop */}
-                  <div className="hidden sm:block sticky left-0 z-10 bg-background/95 backdrop-blur border-r p-3 flex items-center">
-                    <div className="flex items-center gap-3 w-full">
-                      <Avatar className="h-10 w-10 border border-indigo-200">
-                        <AvatarFallback className="bg-indigo-100 text-indigo-700 font-bold text-sm">
-                          {demoEmployee.name.substring(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col min-w-0">
-                        <span className="font-semibold text-sm text-foreground truncate">{demoEmployee.name}</span>
-                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider truncate">{demoEmployee.role}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Celdas de semanas */}
-                  {weeks.map((week) => {
-                    const weekStartDate = format(week.weekStart, 'yyyy-MM-dd');
-                    const load = getEmployeeLoadForWeek(demoEmployee.id, weekStartDate, week.effectiveStart, week.effectiveEnd, currentMonth);
-                    const weekAllocations = allocations.filter(a =>
-                      a.employeeId === demoEmployee.id &&
-                      a.weekStartDate === weekStartDate
-                    );
-
-                    return (
-                      <div key={week.weekStart.toISOString()} className="border-r last:border-r-0 p-2">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className={cn(
-                              "font-bold",
-                              load.percentage > 100 ? "text-red-600" :
-                                load.percentage > 85 ? "text-amber-600" :
-                                  load.percentage > 50 ? "text-emerald-600" :
-                                    "text-blue-600"
-                            )}>
-                              {load.hours}h
-                            </span>
-                            <span className="text-slate-400">/{load.capacity}h</span>
-                          </div>
-                          <Progress
-                            value={Math.min(load.percentage, 100)}
-                            className={cn(
-                              "h-1.5",
-                              load.percentage > 100 && "[&>div]:bg-red-500",
-                              load.percentage > 85 && "[&>div]:bg-amber-500",
-                              load.percentage > 50 && "[&>div]:bg-emerald-500",
-                              load.percentage <= 50 && "[&>div]:bg-blue-500"
-                            )}
-                          />
-                          {weekAllocations.length > 0 && (
-                            <div className="text-[10px] text-slate-500 mt-1">
-                              {weekAllocations.length} tarea{weekAllocations.length > 1 ? 's' : ''}
-                            </div>
-                          )}
+          {/* Carga por semana (antes pestaña Calendario): mismo contenido, integrado en vista general */}
+          <Card className="overflow-hidden border-slate-200 shadow-sm">
+            <CardHeader className="py-3">
+              <CardTitle className="text-sm">Carga por semana</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">Desglose de horas planificadas por semana (ejemplo: María y Carlos)</p>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-4">
+                {calendarEmployees.map((emp) => {
+                  const empMonthlyLoad = getEmployeeMonthlyLoad(emp.id, currentMonth.getFullYear(), currentMonth.getMonth());
+                  return (
+                    <div key={emp.id} className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-slate-50/50 rounded-lg border border-slate-200">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Avatar className="h-10 w-10 border border-indigo-200 shrink-0">
+                          <AvatarFallback className="bg-indigo-100 text-indigo-700 font-bold text-sm">
+                            {emp.name.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm text-foreground truncate">{emp.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{emp.role}</p>
                         </div>
                       </div>
-                    );
-                  })}
-
-                  <div className="flex items-center justify-center border-l p-2 bg-slate-50/30">
-                    <LoadIndicator
-                      hours={monthlyLoad.hours}
-                      capacity={monthlyLoad.capacity}
-                      percentage={monthlyLoad.percentage}
-                      size="md"
-                    />
-                  </div>
-                </div>
+                      <LoadIndicator
+                        hours={empMonthlyLoad.hours}
+                        capacity={empMonthlyLoad.capacity}
+                        percentage={empMonthlyLoad.percentage}
+                        size="md"
+                        className="shrink-0"
+                      />
+                      <div className="flex flex-wrap gap-2 flex-1">
+                        {weeks.map((week, index) => {
+                          const weekStartDate = format(week.weekStart, 'yyyy-MM-dd');
+                          const load = getEmployeeLoadForWeek(emp.id, weekStartDate, week.effectiveStart, week.effectiveEnd, currentMonth);
+                          const weekAllocations = allocations.filter(a =>
+                            a.employeeId === emp.id && a.weekStartDate === weekStartDate
+                          );
+                          const effectiveStart = week.effectiveStart || week.weekStart;
+                          const effectiveEnd = week.effectiveEnd || addDays(week.weekStart, 6);
+                          const weekLabel = `${format(effectiveStart, 'd', { locale: es })}-${format(effectiveEnd, 'd MMM', { locale: es })}`;
+                          return (
+                            <div
+                              key={week.weekStart.toISOString()}
+                              className={cn(
+                                "rounded-lg border px-3 py-2 min-w-[80px]",
+                                load.percentage > 100 ? "border-red-200 bg-red-50" :
+                                  load.percentage > 85 ? "border-amber-200 bg-amber-50" :
+                                    "border-slate-200 bg-slate-50"
+                              )}
+                            >
+                              <p className="text-[10px] font-bold uppercase text-slate-500">S{index + 1}</p>
+                              <p className="text-xs text-slate-600 mt-0.5">{weekLabel}</p>
+                              <p className={cn(
+                                "font-bold text-sm mt-1",
+                                load.percentage > 100 ? "text-red-600" :
+                                  load.percentage > 85 ? "text-amber-600" : "text-emerald-600"
+                              )}>
+                                {load.hours}h / {load.capacity}h
+                              </p>
+                              {weekAllocations.length > 0 && (
+                                <p className="text-[10px] text-slate-500 mt-0.5">
+                                  {weekAllocations.length} tarea{weekAllocations.length > 1 ? 's' : ''}
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
+            </CardContent>
           </Card>
         </TabsContent>
 
@@ -326,7 +273,7 @@ export function DemoPlanner() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Resumen del Equipo</CardTitle>
+                <CardTitle className="text-sm">Resumen del equipo</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {employees.map(emp => {
@@ -359,7 +306,7 @@ export function DemoPlanner() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Estado de Proyectos</CardTitle>
+                <CardTitle className="text-sm">Estado de proyectos</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {projects.map(proj => {
