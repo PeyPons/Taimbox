@@ -394,7 +394,7 @@ Si al vincular Google Ads o listar cuentas aparece **503 (Service Unavailable)**
   Todas las lecturas/escrituras deben acotarse a la agencia actual para no mostrar datos de una agencia en otra.
   - **Tablas con columna `agency_id`** (filtrar siempre por `agency_id` en queries e inserts): `agencies`, `employees`, `clients`, `projects`, `ad_accounts_config`, `ads_sync_logs`, `meta_sync_logs`, `meta_ads_campaigns`, `google_ads_campaigns`, `global_assignments`, `task_transfers`, `department_config`, `user_agencies`, `audit_logs`, `team_events`, `client_settings`, `segmentation_rules`.
   - **Tablas sin `agency_id` que se filtran por join**: `deadlines` (join con `projects.agency_id` vía `fetchDeadlinesForMonth(monthKey, agencyId)`), `professional_goals` (join con `employees.agency_id` en GoalsContext), `user_routines` (join con `employees.agency_id` en AppContext), `allocations` y `absences` (join con `employees.agency_id`).  
-  - **Tablas sin uso en la app** (solo API/workers o deprecadas): `google_ads_changes` (no referenciada en el codebase), `time_entries` (solo documentada en ApiDocsPage; no hay CRUD desde la UI). Confirmar uso en workers o integraciones antes de eliminarlas.
+  - **Tablas sin uso en la app** (solo API/workers o deprecadas): `google_ads_changes` (no referenciada en el codebase). La tabla `time_entries` se usa desde la UI con el módulo **Cronómetro de tareas** (RPC `log_timer_hours`); tiene constraint de máximo 12 h por entrada. La tabla `active_timers` almacena el timer activo por empleado (1 fila por empleado); se filtra por `employee_id` y RLS por `auth.uid()`.
 
 - **Row Level Security (RLS) y tokens API**  
   En la base de datos (Supabase), **todas las tablas públicas** tienen RLS habilitado. El acceso se controla mediante la función SQL `requesting_agency_id()`, que:
@@ -415,7 +415,7 @@ Si al vincular Google Ads o listar cuentas aparece **503 (Service Unavailable)**
   | Tipo | Tablas | Política |
   |------|--------|----------|
   | `agency_id` directo | agencies, employees, clients, projects, global_assignments, task_transfers, department_config, ad_accounts_config, ads_sync_logs, meta_sync_logs, google_ads_campaigns, meta_ads_campaigns, team_events, client_settings, segmentation_rules, audit_logs, api_tokens, user_agencies | `agency_id = requesting_agency_id()` |
-  | Vía `employee_id` | allocations, absences, professional_goals, user_routines, weekly_feedback, time_entries | `employee_id IN (SELECT id FROM employees WHERE agency_id = requesting_agency_id())` |
+  | Vía `employee_id` | allocations, absences, professional_goals, user_routines, weekly_feedback, time_entries, active_timers | allocations/absences/time_entries: por agency. active_timers: políticas por usuario (`auth.uid()` = employees.user_id). |
   | Vía `project_id` | deadlines, project_editing_locks | `project_id IN (SELECT id FROM projects WHERE agency_id = requesting_agency_id())` |
   | Política “no access” | google_ads_changes | Política `no_access_until_use` con USING (false) y WITH CHECK (false): nadie puede leer ni escribir. Cuando se confirme uso, sustituir por políticas por agency_id. |
 
@@ -651,7 +651,7 @@ key={`emp-${emp.employeeId}`}  // Para empleados
 
 ### 10.3 Eliminación de empleados (limpieza en BD)
 Al eliminar un empleado **debe borrarse todo rastro en la base de datos**. No se debe solo ocultar en UI.
-- **Función en BD**: `cleanup_employee_data(p_employee_id uuid)` debe existir en Supabase. Elimina o actualiza: `allocations`, `absences`, `weekly_feedback`, `user_routines`, `task_transfers`, quita la clave del empleado en `deadlines.employee_hours` y lo elimina de `team_events.affected_employee_ids`.
+- **Función en BD**: `cleanup_employee_data(p_employee_id uuid)` está definida en la migración `20260221110000_cleanup_employee_data.sql`. Elimina: `active_timers`, `time_entries`, `allocations`, `absences`, `weekly_feedback`, `user_routines`, `professional_goals`, `task_transfers` (donde el empleado es origen o destino); quita la clave del empleado en `deadlines.employee_hours` y lo elimina de `team_events.affected_employee_ids` (solo cuando es un array de IDs).
 - **Flujo**: En `AppContext.deleteEmployee` se llama primero a `supabase.rpc('cleanup_employee_data', { p_employee_id: id })` y después al `DELETE` en `employees`. Si la migración no está aplicada, el usuario verá un toast indicándolo.
 - **Estado local**: Tras el cleanup se actualizan también `weeklyFeedback`, `userRoutines` y `teamEvents` en el estado para que la UI no muestre datos huérfanos.
 

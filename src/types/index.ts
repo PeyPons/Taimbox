@@ -45,6 +45,7 @@ export interface AgencyModules {
   weeklyFeedback?: boolean;
   professionalGoals?: boolean;
   deadlines?: boolean;
+  timeTracker?: boolean;
 }
 
 export interface AgencyBranding {
@@ -112,6 +113,8 @@ export interface AgencySettings {
     projectIds?: string[];
     clientIds?: string[];
   };
+  /** Cronómetro de tareas: máximo de horas por sesión antes de auto-pausa (1–24, por defecto 12). */
+  timeTrackerMaxHours?: number;
 }
 
 export type AgencyStatus = 'active' | 'suspended';

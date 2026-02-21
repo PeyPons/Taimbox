@@ -70,6 +70,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const weeklyCloseDay = useWeeklyCloseDay();
   const { formatName: formatProjectName } = useProjectAliasing();
   const isWeeklyEnabled = useIntegration('weekly_feedback');
+  const isTimeTrackerEnabled = (currentAgency?.settings?.modules?.timeTracker ?? false) && currentUser?.id === employeeId && currentUser?.user_id != null;
 
   // Estados para los sheets de Timeline y Weekly
   const [timelineOpen, setTimelineOpen] = useState(false);
@@ -1762,6 +1763,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                             setTransferDialogOpen={setTransferDialogOpen}
                                             isWeeklyEnabled={isWeeklyEnabled}
                                             isMobile={isMobile}
+                                            showTaskTimer={isTimeTrackerEnabled}
+                                            onTimeLogged={() => loadDataForMonth(viewDate)}
                                           />
                                         ))}
                                       </div>

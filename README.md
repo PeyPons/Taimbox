@@ -358,7 +358,7 @@ Detalle completo (rutas, variables, rsync desde PC): **`supabase/scripts/README-
 ### Base de datos (Supabase)
 - **RLS**: Todas las tablas públicas usan Row Level Security con la función `requesting_agency_id()` (JWT o `user_agencies`). Si añades una tabla, definir política coherente.
 - **api_tokens**: Tabla para tokens API por agencia; gestión en `/api-keys` (ApiKeysPage). Edge functions: `generate-api-token`, `revoke-api-token`.
-- **Limpieza empleado**: La app llama a `cleanup_employee_data(uuid)` antes de borrar un empleado; debe existir en la BD para no dejar datos huérfanos.
+- **Limpieza empleado**: La app llama a `cleanup_employee_data(uuid)` antes de borrar un empleado. La función está definida en la migración `20260221110000_cleanup_employee_data.sql` (elimina active_timers, time_entries, allocations, absences, feedback, rutinas, professional_goals, task_transfers y actualiza deadlines/team_events).
 
 </details>
 
@@ -457,7 +457,7 @@ Antes de deployar cambios críticos:
 
 ### Limpieza de base de datos
 
-**Al eliminar un empleado**: La app llama a `supabase.rpc('cleanup_employee_data', { p_employee_id: id })` antes del DELETE en `employees`. Esa función debe existir en Supabase (elimina asignaciones, ausencias, feedback, rutinas, transferencias, actualiza `deadlines.employee_hours` y `team_events.affected_employee_ids`). Sin ella puede aparecer "Desconocido" en informes.
+**Al eliminar un empleado**: La app llama a `supabase.rpc('cleanup_employee_data', { p_employee_id: id })` antes del DELETE en `employees`. Esa función debe existir en Supabase (elimina asignaciones, ausencias, feedback, rutinas, transferencias, **active_timers**, actualiza `deadlines.employee_hours` y `team_events.affected_employee_ids`). Sin ella puede aparecer "Desconocido" en informes.
 
 ---
 

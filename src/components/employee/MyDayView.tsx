@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
 import { usePermissions } from '@/hooks/usePermissions';
+import { TaskTimer } from '@/components/employee/TaskTimer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Circle, Clock, ArrowRight, Sun, Calendar, AlertTriangle, FileText, Zap, X } from 'lucide-react';
@@ -13,8 +15,10 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
 export function MyDayView() {
-    const { projects, clients, currentUser, updateAllocation, allocations } = useApp();
+    const { projects, clients, currentUser, updateAllocation, allocations, loadDataForMonth } = useApp();
+    const { currentAgency } = useAgency();
     const { canAccess } = usePermissions();
+    const isTimeTrackerEnabled = (currentAgency?.settings?.modules?.timeTracker ?? false) && currentUser?.user_id != null;
     const navigate = useNavigate();
     const [completedToday, setCompletedToday] = useState<string[]>([]);
 
@@ -294,13 +298,20 @@ export function MyDayView() {
                                 </div>
 
                                 <div className="flex items-center justify-between pt-2 border-t border-slate-100/50 mt-2">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
                                         <div className={cn("flex items-center gap-1.5 text-xs px-2 py-1 rounded",
                                             isOverdue ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-500"
                                         )}>
                                             <Clock className="h-3 w-3" />
                                             <span>{task.hoursAssigned}h</span>
                                         </div>
+                                        {isTimeTrackerEnabled && currentUser && (
+                                            <TaskTimer
+                                                employeeId={currentUser.id}
+                                                allocationId={task.id}
+                                                onTimeLogged={() => loadDataForMonth(new Date())}
+                                            />
+                                        )}
                                         {isReport && (
                                             <div title="Prioridad informe" className="flex items-center justify-center h-6 w-6 rounded bg-indigo-50 text-indigo-600">
                                                 <FileText className="h-3 w-3" />

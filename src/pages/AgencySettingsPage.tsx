@@ -118,8 +118,12 @@ export default function AgencySettingsPage() {
     ppc: true,
     weeklyFeedback: true,
     professionalGoals: true,
-    deadlines: true
+    deadlines: true,
+    timeTracker: false
   });
+  const [timeTrackerMaxHours, setTimeTrackerMaxHours] = useState(
+    currentAgency?.settings?.timeTrackerMaxHours ?? 12
+  );
   const [primaryColor, setPrimaryColor] = useState(
     currentAgency?.settings?.branding?.primaryColor || '#6366f1'
   );
@@ -203,8 +207,10 @@ export default function AgencySettingsPage() {
         seo: true,
         ppc: true,
         professionalGoals: true,
-        deadlines: true
+        deadlines: true,
+        timeTracker: false
       });
+      setTimeTrackerMaxHours(currentAgency.settings?.timeTrackerMaxHours ?? 12);
       setPrimaryColor(currentAgency.settings?.branding?.primaryColor || '#6366f1');
       setProjectFilters(currentAgency.settings?.projectFilters || DEFAULT_FILTERS);
       setIntegrations(currentAgency.settings?.integrations || {
@@ -337,7 +343,8 @@ export default function AgencySettingsPage() {
         integrations,
         enabledIntegrations,
         weeklyCloseDay,
-        planningPrecisionExclusions
+        planningPrecisionExclusions,
+        timeTrackerMaxHours
       });
 
       // Si el nombre ha cambiado, actualizarlo por separado
@@ -905,6 +912,34 @@ export default function AgencySettingsPage() {
                       onCheckedChange={() => toggleModule('deadlines')}
                     />
                   </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-lg border">
+                    <div>
+                      <Label className="font-medium">Cronómetro de tareas</Label>
+                      <p className="text-xs text-slate-500">Temporizador en tiempo real para imputar horas a las tareas</p>
+                    </div>
+                    <Switch
+                      checked={modules.timeTracker}
+                      onCheckedChange={() => toggleModule('timeTracker')}
+                    />
+                  </div>
+                  {modules.timeTracker && (
+                    <div className="flex items-center justify-between p-3 rounded-lg border">
+                      <div>
+                        <Label className="font-medium text-sm">Máximo de horas por sesión</Label>
+                        <p className="text-xs text-slate-500">Auto-pausa del cronómetro tras este tiempo (evita olvidos)</p>
+                      </div>
+                      <select
+                        value={timeTrackerMaxHours}
+                        onChange={(e) => setTimeTrackerMaxHours(Number(e.target.value))}
+                        className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
+                      >
+                        {[4, 6, 8, 10, 12, 16, 24].map((h) => (
+                          <option key={h} value={h}>{h}h</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -459,7 +459,7 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'allocation_id', type: 'uuid', required: true, fk: 'allocations(id)', description: 'Asignacion a la que se imputan las horas.' },
           { name: 'employee_id', type: 'uuid', required: true, fk: 'employees(id)', description: 'Empleado que registra.' },
           { name: 'date', type: 'date', required: true, description: 'Dia del registro (YYYY-MM-DD).' },
-          { name: 'hours', type: 'numeric', required: false, default: '0', check: '>= 0 AND <= 24', description: 'Horas trabajadas (0-24).' },
+          { name: 'hours', type: 'numeric', required: false, default: '0', check: '>= 0 AND <= 24', description: 'Horas trabajadas por entrada (0-24). El cronómetro usa un máximo configurable por agencia (timeTrackerMaxHours).' },
           { name: 'notes', type: 'text', required: false, description: 'Notas sobre el trabajo realizado.' },
           { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Auto-generado.' },
           { name: 'updated_at', type: 'timestamptz', required: false, default: 'now()', description: 'Auto-generado.' },

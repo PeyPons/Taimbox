@@ -28,6 +28,7 @@ import {
 import { getWeekEndDate } from '@/utils/dateUtils';
 import { parseISO } from 'date-fns';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
+import { TaskTimer } from '@/components/employee/TaskTimer';
 
 interface AllocationTaskRowProps {
     alloc: Allocation;
@@ -52,6 +53,10 @@ interface AllocationTaskRowProps {
     isWeeklyEnabled: boolean;
     /** En móvil: fila más alta y táctil */
     isMobile?: boolean;
+    /** Mostrar cronómetro de tareas (módulo timeTracker + empleado con user_id) */
+    showTaskTimer?: boolean;
+    /** Callback al registrar tiempo (refrescar allocations) */
+    onTimeLogged?: (allocationId: string, hoursLogged: number) => void;
 }
 
 export function AllocationTaskRow({
@@ -75,7 +80,9 @@ export function AllocationTaskRow({
     setTransferTask,
     setTransferDialogOpen,
     isWeeklyEnabled,
-    isMobile = false
+    isMobile = false,
+    showTaskTimer = false,
+    onTimeLogged,
 }: AllocationTaskRowProps) {
     const weeklyCloseDay = useWeeklyCloseDay();
 
@@ -251,14 +258,22 @@ export function AllocationTaskRow({
 
                 {/* MÉTRICAS REDISEÑADAS */}
                 <div className="mt-2 space-y-1.5">
-                    {/* TAREA PENDIENTE: Solo muestra EST */}
+                    {/* TAREA PENDIENTE: Estimado + cronómetro si está habilitado */}
                     {!isCompleted && (
-                        <div className="flex items-center">
+                        <div className="flex items-center gap-2 flex-wrap">
                             <div className={cn("flex items-center gap-1.5 text-slate-600 bg-slate-100 px-2 py-1 rounded-md", isMobile ? "text-sm" : "text-[11px]")}>
                                 <Clock className={cn("text-slate-400", isMobile ? "w-4 h-4" : "w-3 h-3")} />
                                 <span className="font-medium">Estimado:</span>
                                 <span className={cn("font-bold font-mono", isMobile && "text-base")}>{alloc.hoursAssigned}h</span>
                             </div>
+                            {showTaskTimer && (
+                                <TaskTimer
+                                    employeeId={alloc.employeeId}
+                                    allocationId={alloc.id}
+                                    disabled={false}
+                                    onTimeLogged={onTimeLogged}
+                                />
+                            )}
                         </div>
                     )}
 
