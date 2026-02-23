@@ -55,15 +55,15 @@ export default function LandingPage() {
   return (
     <>
       <Helmet>
-        <title>Taimbox - Gestión de Recursos y Planificación</title>
-        <meta name="description" content="Plataforma de gestión de recursos y planificación para agencias digitales. Visualiza, planifica y optimiza el trabajo de tu equipo." />
+        <title>Taimbox | Gestión de Recursos y Planificación de Equipos</title>
+        <meta name="description" content="Optimiza la rentabilidad de tu empresa con Taimbox. Gestión de recursos, planificación inteligente y control de márgenes." />
         <script type="application/ld+json">
           {JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'SoftwareApplication',
             name: 'Taimbox',
             applicationCategory: 'BusinessApplication',
-            description: 'Plataforma de gestión de recursos, planificación y control financiero para agencias. Taimbox con horas computadas, deadlines, integración Ads y API.',
+            description: 'Optimiza la rentabilidad de tu empresa con Taimbox. Gestión de recursos, planificación inteligente y control de márgenes.',
             offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' }
           })}
         </script>

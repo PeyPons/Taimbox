@@ -7,8 +7,8 @@ export default function EmployeeDashboardLandingPage() {
     return (
         <>
             <Helmet>
-                <title>Dashboard del Empleado — Tu centro de control personal | Taimbox</title>
-                <meta name="description" content="Dashboard personal para empleados: calendario semanal, prioridades inteligentes, métricas de fiabilidad, weekly feedback y colaboración con compañeros. Todo sin ruido." />
+                <title>Panel del Empleado y Cronómetro de Tareas | Taimbox</title>
+                <meta name="description" content="Empodera a tu equipo con un panel diseñado para la ejecución. Cronómetro integrado y visualización de tareas para empresas eficientes y productivas." />
                 <link rel="canonical" href="/dashboard-empleado" />
                 <script type="application/ld+json">
                     {JSON.stringify({
@@ -17,13 +17,13 @@ export default function EmployeeDashboardLandingPage() {
                             {
                                 '@type': 'WebPage',
                                 name: 'Dashboard del Empleado — Taimbox',
-                                description: 'Centro de control personal para empleados de agencia. Calendario, prioridades, métricas de fiabilidad y weekly feedback.',
+                                description: 'Empodera a tu equipo con un panel diseñado para la ejecución. Cronómetro integrado y visualización de tareas para empresas eficientes y productivas.',
                             },
                             {
                                 '@type': 'SoftwareApplication',
                                 name: 'Taimbox',
                                 applicationCategory: 'BusinessApplication',
-                                description: 'Plataforma de gestión de recursos, planificación y control financiero para agencias.',
+                                description: 'Empodera a tu equipo con un panel diseñado para la ejecución. Cronómetro integrado y visualización de tareas para empresas eficientes y productivas.',
                             },
                         ],
                     })}

@@ -7,15 +7,15 @@ export default function ProjectsLandingPage() {
     return (
         <>
             <Helmet>
-                <title>Proyectos y Deadlines — Del briefing al deadline sin sorpresas | Taimbox</title>
-                <meta name="description" content="Gestiona clientes, proyectos, presupuestos, deadlines mensuales y OKRs con control de coherencia automática para agencias." />
+                <title>Control de Proyectos y Seguimiento de Tiempos | Taimbox</title>
+                <meta name="description" content="Supervisa el progreso de tus proyectos empresariales al detalle. Registro de tiempos, presupuestos de horas y cumplimiento de plazos en tiempo real." />
                 <link rel="canonical" href="/control-proyectos" />
                 <script type="application/ld+json">
                     {JSON.stringify({
                         '@context': 'https://schema.org',
                         '@type': 'WebPage',
                         name: 'Proyectos y Deadlines — Taimbox',
-                        description: 'Control total de proyectos con presupuestos en vivo, deadlines mensuales, OKRs y validación automática.',
+                        description: 'Supervisa el progreso de tus proyectos empresariales al detalle. Registro de tiempos, presupuestos de horas y cumplimiento de plazos en tiempo real.',
                     })}
                 </script>
             </Helmet>

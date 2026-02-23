@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
         if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
             redirectUri = 'http://localhost:8080/google-callback'
         } else {
-            redirectUri = 'https://timeboxing.peypons.duckdns.org/google-callback'
+            redirectUri = 'https://taimbox.com/google-callback'
         }
 
         console.log(`[exchange-google-token] Agency: ${agency_id}, Redirect URI: ${redirectUri}`)

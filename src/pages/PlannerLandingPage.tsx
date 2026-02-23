@@ -7,15 +7,15 @@ export default function PlannerLandingPage() {
     return (
         <>
             <Helmet>
-                <title>Planificador de Recursos — Visualiza cada hora de tu equipo | Taimbox</title>
-                <meta name="description" content="Planifica recursos con visibilidad total: grid visual de tu equipo, asignaciones con impacto financiero, dependencias y gestión de semanas partidas." />
+                <title>Planificador de Recursos y Capacidad para Empresas | Taimbox</title>
+                <meta name="description" content="Gestiona la carga de trabajo de tu equipo de forma visual. Evita cuellos de botella y optimiza la capacidad de tu empresa con planificación inteligente." />
                 <link rel="canonical" href="/planificador-recursos" />
                 <script type="application/ld+json">
                     {JSON.stringify({
                         '@context': 'https://schema.org',
                         '@type': 'WebPage',
                         name: 'Planificador de Recursos — Taimbox',
-                        description: 'Grid visual de planificación de recursos para agencias. Asigna tareas, detecta sobrecargas y gestiona dependencias.',
+                        description: 'Gestiona la carga de trabajo de tu equipo de forma visual. Evita cuellos de botella y optimiza la capacidad de tu empresa con planificación inteligente.',
                     })}
                 </script>
             </Helmet>

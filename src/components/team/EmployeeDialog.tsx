@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -70,17 +70,19 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
   const isCrmUserIdEnabled = useIntegration('crm_user_id');
 
   // Obtener roles y departamentos dinámicos de la agencia
-  // Helper to extract role names safely handling both new object structure and legacy strings
-  const getRoleNames = (roles: (string | import('@/types').RolePermissions)[] | undefined): string[] => {
+  const availableRoles = useMemo(() => {
+    const roles = currentAgency?.settings?.roles;
     if (!roles || roles.length === 0) return []; // Sin fallbacks hardcodeados
     return roles.map(r => typeof r === 'string' ? r : r.name);
-  };
+  }, [currentAgency?.settings?.roles]);
 
-  const availableRoles = getRoleNames(currentAgency?.settings?.roles);
-  const normalizedDepts = normalizeDepartments(currentAgency?.settings?.departments);
-  const availableDepartments = normalizedDepts.length
-    ? normalizedDepts
-    : [{ id: 'general', name: 'General', color: '#6366f1' }];
+  const availableDepartments = useMemo(() => {
+    const normalizedDepts = normalizeDepartments(currentAgency?.settings?.departments);
+    return normalizedDepts.length
+      ? normalizedDepts
+      : [{ id: 'general', name: 'General', color: '#6366f1' }];
+  }, [currentAgency?.settings?.departments]);
+
   const { selectedDepartmentId } = useDepartmentView();
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -141,7 +143,9 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
         });
       }
     }
-  }, [open, employeeToEdit, form, availableDepartments, selectedDepartmentId]);
+    // Solo resetear cuando el diálogo se abre o cambia el empleado seleccionado
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, employeeToEdit?.id]);
 
   const onSubmit = async (data: EmployeeFormValues) => {
     setIsProcessing(true);

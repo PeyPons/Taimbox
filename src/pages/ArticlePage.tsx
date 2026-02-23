@@ -7,8 +7,8 @@ export default function ArticlePage() {
   return (
     <>
       <Helmet>
-        <title>Por qué tu lista de tareas mata la rentabilidad de tu agencia | Taimbox</title>
-        <meta name="description" content="Taimbox: metodología y plataforma para agencias. Horas computadas, Team Pulse, API. Sistema operativo financiero basado en tiempo." />
+        <title>¿Por qué Taimbox? Metodología para Empresas | Taimbox</title>
+        <meta name="description" content="Descubre cómo Taimbox puede mejorar la eficiencia de tu empresa. Aprende a gestionar el tiempo por bloques para maximizar el enfoque y resultados de tu equipo." />
         <link rel="canonical" href="/por-que-timeboxing" />
         <script type="application/ld+json">
           {JSON.stringify({
@@ -17,7 +17,7 @@ export default function ArticlePage() {
               {
                 '@type': 'Article',
                 headline: 'Taimbox: Por qué tu lista de tareas está matando la rentabilidad de tu agencia',
-                description: 'Metodología Taimbox y sistema operativo financiero basado en tiempo para agencias. Horas computadas, Team Pulse, API.',
+                description: 'Descubre cómo Taimbox puede mejorar la eficiencia de tu empresa. Aprende a gestionar el tiempo por bloques para maximizar el enfoque y resultados de tu equipo.',
                 author: { '@type': 'Organization', name: 'Taimbox' },
                 publisher: { '@type': 'Organization', name: 'Taimbox' }
               },
@@ -25,7 +25,7 @@ export default function ArticlePage() {
                 '@type': 'SoftwareApplication',
                 name: 'Taimbox',
                 applicationCategory: 'BusinessApplication',
-                description: 'Plataforma de gestión de recursos, planificación y control financiero para agencias.'
+                description: 'Descubre cómo Taimbox puede mejorar la eficiencia de tu empresa. Aprende a gestionar el tiempo por bloques para maximizar el enfoque y resultados de tu equipo.'
               }
             ]
           })}

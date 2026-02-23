@@ -264,7 +264,7 @@ El flujo de Google Ads sigue un modelo SaaS donde la plataforma posee las creden
 
 **URIs de redirección autorizadas en Google Cloud Console:**
 - `http://localhost:8080/google-callback` (desarrollo)
-- `https://timeboxing.peypons.duckdns.org/google-callback` (producción)
+- `https://taimbox.com/google-callback` (producción)
 
 #### Variables de entorno requeridas
 

@@ -7,15 +7,15 @@ export default function IntegrationsLandingPage() {
     return (
         <>
             <Helmet>
-                <title>Integraciones — Conecta todo tu ecosistema | Taimbox</title>
-                <meta name="description" content="Integra Google Ads, Meta Ads, API REST y sistema weekly con tu planificación de recursos. Toda la información de tu agencia centralizada." />
+                <title>Integraciones: Google Ads, Meta Ads y CRM | Taimbox</title>
+                <meta name="description" content="Conecta Taimbox con las herramientas clave de tu empresa. Sincronización nativa con plataformas publicitarias para un control financiero y de gastos total." />
                 <link rel="canonical" href="/integraciones" />
                 <script type="application/ld+json">
                     {JSON.stringify({
                         '@context': 'https://schema.org',
                         '@type': 'WebPage',
                         name: 'Integraciones — Taimbox',
-                        description: 'Google Ads, Meta Ads, API REST y sistema weekly sincronizados con tu planificación de recursos.',
+                        description: 'Conecta Taimbox con las herramientas clave de tu empresa. Sincronización nativa con plataformas publicitarias para un control financiero y de gastos total.',
                     })}
                 </script>
             </Helmet>
