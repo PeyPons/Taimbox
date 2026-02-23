@@ -8,7 +8,7 @@ import { CodeBlock } from './CodeBlock';
 import { ResponseExample } from './ResponseExample';
 import type { TableDef } from '../data/types';
 
-const API_BASE_URL = 'https://tu-proyecto.supabase.co/rest/v1';
+const API_BASE_URL = 'http://supabase.peypons.duckdns.org/rest/v1';
 
 function buildDefaultCurlSelect(tableName: string): string {
   return `curl -X GET \\
@@ -90,22 +90,20 @@ export function ResourceCard({ table, defaultExpanded = false }: ResourceCardPro
                 <button
                   type="button"
                   onClick={() => setExampleLang('typescript')}
-                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                    exampleLang === 'typescript'
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${exampleLang === 'typescript'
                       ? 'bg-indigo-500/30 text-white'
                       : 'text-slate-400 hover:text-white hover:bg-white/5'
-                  }`}
+                    }`}
                 >
                   TypeScript
                 </button>
                 <button
                   type="button"
                   onClick={() => setExampleLang('curl')}
-                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                    exampleLang === 'curl'
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${exampleLang === 'curl'
                       ? 'bg-indigo-500/30 text-white'
                       : 'text-slate-400 hover:text-white hover:bg-white/5'
-                  }`}
+                    }`}
                 >
                   cURL
                 </button>

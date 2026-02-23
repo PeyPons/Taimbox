@@ -394,7 +394,7 @@ Si al vincular Google Ads o listar cuentas aparece **503 (Service Unavailable)**
   Todas las lecturas/escrituras deben acotarse a la agencia actual para no mostrar datos de una agencia en otra.
   - **Tablas con columna `agency_id`** (filtrar siempre por `agency_id` en queries e inserts): `agencies`, `employees`, `clients`, `projects`, `ad_accounts_config`, `ads_sync_logs`, `meta_sync_logs`, `meta_ads_campaigns`, `google_ads_campaigns`, `global_assignments`, `task_transfers`, `department_config`, `user_agencies`, `audit_logs`, `team_events`, `client_settings`, `segmentation_rules`.
   - **Tablas sin `agency_id` que se filtran por join**: `deadlines` (join con `projects.agency_id` vía `fetchDeadlinesForMonth(monthKey, agencyId)`), `professional_goals` (join con `employees.agency_id` en GoalsContext), `user_routines` (join con `employees.agency_id` en AppContext), `allocations` y `absences` (join con `employees.agency_id`).  
-  - **Tablas sin uso en la app** (solo API/workers o deprecadas): `google_ads_changes` (no referenciada en el codebase). La tabla `time_entries` se usa desde la UI con el módulo **Cronómetro de tareas** (RPC `log_timer_hours`); tiene constraint de máximo 12 h por entrada. La tabla `active_timers` almacena el timer activo por empleado (1 fila por empleado); se filtra por `employee_id` y RLS por `auth.uid()`.
+  - **Tablas sin uso en la app** (solo API/workers o deprecadas): `google_ads_changes` (no referenciada en el codebase). La tabla `time_entries` se usa desde la UI con el módulo **Cronómetro de tareas** (RPC `log_timer_hours`); máximo 24 h por entrada (límite efectivo por agencia). La tabla `active_timers` almacena el timer activo por empleado (1 fila por empleado); RLS por `auth.uid()`. La tabla **`timer_sessions`** (append-only) guarda cada cierre de cronómetro con `start_time`/`end_time` exactos para webhooks e integraciones (p. ej. Perfex CRM).
 
 - **Row Level Security (RLS) y tokens API**  
   En la base de datos (Supabase), **todas las tablas públicas** tienen RLS habilitado. El acceso se controla mediante la función SQL `requesting_agency_id()`, que:
@@ -415,7 +415,7 @@ Si al vincular Google Ads o listar cuentas aparece **503 (Service Unavailable)**
   | Tipo | Tablas | Política |
   |------|--------|----------|
   | `agency_id` directo | agencies, employees, clients, projects, global_assignments, task_transfers, department_config, ad_accounts_config, ads_sync_logs, meta_sync_logs, google_ads_campaigns, meta_ads_campaigns, team_events, client_settings, segmentation_rules, audit_logs, api_tokens, user_agencies | `agency_id = requesting_agency_id()` |
-  | Vía `employee_id` | allocations, absences, professional_goals, user_routines, weekly_feedback, time_entries, active_timers | allocations/absences/time_entries: por agency. active_timers: políticas por usuario (`auth.uid()` = employees.user_id). |
+  | Vía `employee_id` | allocations, absences, professional_goals, user_routines, weekly_feedback, time_entries, active_timers, timer_sessions | allocations/absences/time_entries: por agency. active_timers y timer_sessions: políticas por usuario (`auth.uid()` = employees.user_id). |
   | Vía `project_id` | deadlines, project_editing_locks | `project_id IN (SELECT id FROM projects WHERE agency_id = requesting_agency_id())` |
   | Política “no access” | google_ads_changes | Política `no_access_until_use` con USING (false) y WITH CHECK (false): nadie puede leer ni escribir. Cuando se confirme uso, sustituir por políticas por agency_id. |
 
@@ -651,7 +651,7 @@ key={`emp-${emp.employeeId}`}  // Para empleados
 
 ### 10.3 Eliminación de empleados (limpieza en BD)
 Al eliminar un empleado **debe borrarse todo rastro en la base de datos**. No se debe solo ocultar en UI.
-- **Función en BD**: `cleanup_employee_data(p_employee_id uuid)` está definida en la migración `20260221110000_cleanup_employee_data.sql`. Elimina: `active_timers`, `time_entries`, `allocations`, `absences`, `weekly_feedback`, `user_routines`, `professional_goals`, `task_transfers` (donde el empleado es origen o destino); quita la clave del empleado en `deadlines.employee_hours` y lo elimina de `team_events.affected_employee_ids` (solo cuando es un array de IDs).
+- **Función en BD**: `cleanup_employee_data(p_employee_id uuid)` está definida en `20260221110000_cleanup_employee_data.sql` y actualizada en `20260221140000_create_timer_sessions.sql`. Elimina: `active_timers`, `timer_sessions`, `time_entries`, `allocations`, `absences`, `weekly_feedback`, `user_routines`, `professional_goals`, `task_transfers`; actualiza `deadlines.employee_hours` y `team_events.affected_employee_ids`.
 - **Flujo**: En `AppContext.deleteEmployee` se llama primero a `supabase.rpc('cleanup_employee_data', { p_employee_id: id })` y después al `DELETE` en `employees`. Si la migración no está aplicada, el usuario verá un toast indicándolo.
 - **Estado local**: Tras el cleanup se actualizan también `weeklyFeedback`, `userRoutines` y `teamEvents` en el estado para que la UI no muestre datos huérfanos.
 
@@ -681,7 +681,11 @@ Para mantener la coherencia en toda la plataforma y el material de marketing, se
 - **Horas Computadas**: El término técnico para las horas validadas tras el proceso de Weekly.
 - **Team Pulse**: Nombre del sistema de métricas de salud y carga del equipo.
 
-#### 11.2 Calidad del Copy y Ortografía
+#### 11.2 Guía de funcionalidades (GuiaPage) y landings de producto
+- **Secciones de la guía**: La guía pública (`/guia`, `GuiaPage.tsx`) incluye las secciones definidas en `SECTIONS` y el contenido en `CONTENT_MAP`. Actualmente: planificador, mi-espacio, equipo, **tiempos**, clientes-proyectos, configuracion, informes, etc. La sección **Tiempos** documenta el cronómetro por tarea, la página Tiempos (Equipo), el total del día en sidebar y el flujo iniciar/parar.
+- **Consistencia con landings**: Las landings de funcionalidades (`TeamArticle`, `PlannerArticle`, `EmployeeDashboardArticle`, `ReportsArticle`) mencionan y enlazan a la guía donde procede (ej. "Ver guía: Tiempos" → `/guia/tiempos`). El menú desplegable de features (`FeaturesDropdown`) describe "Gestión de Equipos" como "Horarios, ausencias, capacidad y tiempos en vivo". Al añadir una nueva sección de guía o feature, actualizar las landings que la referencien y el dropdown si aplica.
+
+#### 11.3 Calidad del Copy y Ortografía
 Al añadir nuevas secciones a las landing pages o guías, se debe prestar especial atención a:
 - **Acentos en mayúsculas y minúsculas**: Palabras como *día, más, catálogo, módulo, verás, podrá* deben llevar siempre su tilde correspondiente.
 - **Evitar Spanglish innecesario**: Usar "cliente" en lugar de "client" y "horas" en lugar de "hours" en el contenido dirigido al usuario final.

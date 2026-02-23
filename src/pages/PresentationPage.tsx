@@ -26,16 +26,20 @@ interface SlideProps {
 function SlideWrapper({ isActive, direction, children }: SlideProps & { children: React.ReactNode }) {
     return (
         <div
-            className={`absolute inset-0 flex items-center justify-center p-3 sm:p-6 md:p-10 pb-24 sm:pb-28 transition-all duration-700 ease-out overflow-y-auto overflow-x-hidden ${isActive
-                    ? 'opacity-100 translate-x-0 scale-100'
-                    : direction === 'left'
-                        ? 'opacity-0 -translate-x-full scale-95 pointer-events-none'
-                        : direction === 'right'
-                            ? 'opacity-0 translate-x-full scale-95 pointer-events-none'
-                            : 'opacity-0 scale-95 pointer-events-none'
+            className={`absolute inset-0 w-full h-full transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] overflow-y-auto overflow-x-hidden ${isActive
+                ? 'opacity-100 translate-x-0 scale-100 z-10'
+                : direction === 'left'
+                    ? 'opacity-0 -translate-x-[100vw] scale-[0.98] pointer-events-none z-0'
+                    : direction === 'right'
+                        ? 'opacity-0 translate-x-[100vw] scale-[0.98] pointer-events-none z-0'
+                        : 'opacity-0 scale-[0.98] pointer-events-none z-0'
                 }`}
         >
-            {children}
+            <div className="min-h-full w-full flex flex-col items-center justify-center px-4 sm:px-6 md:px-12 lg:px-20 pt-10 sm:pt-14 pb-40 sm:pb-48">
+                <div className="w-full max-w-full break-words">
+                    {children}
+                </div>
+            </div>
         </div>
     );
 }
@@ -49,7 +53,7 @@ function StatCard({ value, label, color, icon: Icon }: { value: string; label: s
         orange: 'bg-orange-500/15 border-orange-400/30 text-orange-300',
     };
     return (
-        <div className={`p-3 sm:p-6 rounded-xl sm:rounded-2xl border ${map[color]} text-center`}>
+        <div className={`h-full flex flex-col items-center justify-center p-3 sm:p-6 rounded-xl sm:rounded-2xl border ${map[color]} text-center`}>
             <Icon className="h-5 w-5 sm:h-7 sm:w-7 mx-auto mb-1.5 sm:mb-2 opacity-80" />
             <p className="text-2xl sm:text-3xl md:text-4xl font-black">{value}</p>
             <p className="text-xs sm:text-base mt-1 sm:mt-1.5 opacity-80 leading-tight">{label}</p>
@@ -71,7 +75,7 @@ function CostRow({ icon: Icon, label, value }: { icon: React.ElementType; label:
 
 function PillarCard({ icon: Icon, title, description, gradient, step }: { icon: React.ElementType; title: string; description: string; gradient: string; step: string }) {
     return (
-        <div className="relative p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-white/15 bg-white/5 backdrop-blur-sm text-left group hover:bg-white/10 hover:border-white/25 transition-all duration-300">
+        <div className="h-full flex flex-col relative p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-white/15 bg-white/5 backdrop-blur-sm text-left group hover:bg-white/10 hover:border-white/25 transition-all duration-300">
             <span className="absolute top-2 right-2 sm:top-3 sm:right-3 text-[10px] sm:text-xs font-mono font-bold text-white/30">{step}</span>
             <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center mb-2 sm:mb-3 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                 <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
@@ -90,7 +94,7 @@ function ROICard({ value, label, icon: Icon, color }: { value: string; label: st
         indigo: 'bg-indigo-500/15 border-indigo-400/30 text-indigo-300',
     };
     return (
-        <div className={`p-3 sm:p-6 rounded-xl sm:rounded-2xl border ${map[color]} text-center`}>
+        <div className={`h-full flex flex-col items-center justify-center p-3 sm:p-6 rounded-xl sm:rounded-2xl border ${map[color]} text-center`}>
             <Icon className="h-5 w-5 sm:h-6 sm:w-6 mx-auto mb-1.5 sm:mb-2 opacity-80" />
             <p className="text-xl sm:text-2xl md:text-3xl font-black">{value}</p>
             <p className="text-[11px] sm:text-base mt-1 sm:mt-1.5 opacity-90 leading-snug">{label}</p>
@@ -191,7 +195,7 @@ function S02_Problema({ isActive, direction }: SlideProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5 w-full max-w-3xl">
                     <StatCard value="30%" label="de horas no se registran" color="red" icon={Clock} />
                     <StatCard value="15h" label="por empleado/mes sin planificar" color="amber" icon={Timer} />
-                    <div className="hidden sm:block">
+                    <div className="col-span-1">
                         <StatCard value="€€€" label="de rentabilidad invisible" color="orange" icon={DollarSign} />
                     </div>
                 </div>
@@ -359,7 +363,55 @@ function S08_Equipos({ isActive, direction }: SlideProps) {
     );
 }
 
-function S09_Reportes({ isActive, direction }: SlideProps) {
+function S09_Tiempos({ isActive, direction }: SlideProps) {
+    return (
+        <SlideWrapper isActive={isActive} direction={direction}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 items-center w-full max-w-6xl mx-auto px-2 sm:px-4 h-full py-3 sm:py-4">
+                <div className="text-center lg:text-left order-2 lg:order-1">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 justify-center lg:justify-start">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center shadow-xl shrink-0">
+                            <Timer className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                        </div>
+                        <div>
+                            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-teal-400">Para todo el equipo</span>
+                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white">Tiempos y cronómetro</h2>
+                        </div>
+                    </div>
+                    <div className="space-y-2 max-w-md mx-auto lg:mx-0">
+                        {['Cronómetro por tarea en planificador y Mi Día', 'Registro de horas real con precisión de segundos', 'Vista "Tiempos": quién está en qué ahora mismo', 'Parar desde sidebar o desde la página del equipo'].map((f, i) => (
+                            <div key={i} className="flex items-center gap-2 p-2 sm:p-2.5 rounded-lg bg-white/5 border border-white/10">
+                                <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400 shrink-0" />
+                                <span className="text-sm sm:text-base text-white/90">{f}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <div className="flex justify-center items-center order-1 lg:order-2">
+                    <div className="w-full max-w-sm rounded-2xl border border-white/15 bg-white/5 backdrop-blur-sm p-4 sm:p-6">
+                        <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-teal-400/80 mb-3">Vista Tiempos — En curso</p>
+                        <div className="space-y-2.5">
+                            {[
+                                { name: 'María A.', task: 'Diseño landing', client: 'Acme', time: '1h 23m' },
+                                { name: 'Carlos R.', task: 'Dev API', client: 'StartupXYZ', time: '0h 45m' },
+                            ].map((row, i) => (
+                                <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/20">
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center text-xs font-bold text-white shrink-0">{row.name.slice(0, 2)}</div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-semibold text-white truncate">{row.task}</p>
+                                        <p className="text-[10px] text-teal-300/80 truncate">{row.client} · {row.time}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <p className="text-[10px] text-white/50 mt-3 text-center">Total del día y parar en un clic</p>
+                    </div>
+                </div>
+            </div>
+        </SlideWrapper>
+    );
+}
+
+function S10_Reportes({ isActive, direction }: SlideProps) {
     return (
         <SlideWrapper isActive={isActive} direction={direction}>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 items-center w-full max-w-6xl mx-auto px-2 sm:px-4 h-full py-3 sm:py-4">
@@ -392,7 +444,7 @@ function S09_Reportes({ isActive, direction }: SlideProps) {
     );
 }
 
-function S10_Deadlines({ isActive, direction }: SlideProps) {
+function S11_Deadlines({ isActive, direction }: SlideProps) {
     return (
         <SlideWrapper isActive={isActive} direction={direction}>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 items-center w-full max-w-6xl mx-auto px-2 sm:px-4 h-full py-3 sm:py-4">
@@ -426,7 +478,7 @@ function S10_Deadlines({ isActive, direction }: SlideProps) {
     );
 }
 
-function S11_Integraciones({ isActive, direction }: SlideProps) {
+function S12_Integraciones({ isActive, direction }: SlideProps) {
     return (
         <SlideWrapper isActive={isActive} direction={direction}>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 items-center w-full max-w-6xl mx-auto px-2 sm:px-4 h-full py-3 sm:py-4">
@@ -459,7 +511,7 @@ function S11_Integraciones({ isActive, direction }: SlideProps) {
     );
 }
 
-function S12_Seguridad({ isActive, direction }: SlideProps) {
+function S13_Seguridad({ isActive, direction }: SlideProps) {
     return (
         <SlideWrapper isActive={isActive} direction={direction}>
             <div className="flex flex-col items-center justify-center h-full text-center max-w-4xl mx-auto px-2 sm:px-4">
@@ -491,20 +543,20 @@ function S12_Seguridad({ isActive, direction }: SlideProps) {
     );
 }
 
-function S13_ROI({ isActive, direction }: SlideProps) {
+function S14_ROI({ isActive, direction }: SlideProps) {
     return (
         <SlideWrapper isActive={isActive} direction={direction}>
             <div className="flex flex-col items-center justify-center h-full text-center max-w-4xl mx-auto px-2 sm:px-4">
                 <h2 className="text-2xl sm:text-4xl md:text-5xl font-black text-white mb-4 sm:mb-8">
                     Retorno de la <span className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">inversión</span>
                 </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-5 w-full max-w-3xl mb-4 sm:mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 w-full max-w-4xl mb-4 sm:mb-6">
                     <ROICard value="+25%" label="horas facturables recuperadas" icon={TrendingUp} color="emerald" />
                     <ROICard value="90%" label="precisión en estimaciones" icon={Target} color="blue" />
-                    <div className="hidden sm:block">
+                    <div className="col-span-1">
                         <ROICard value="-40%" label="tiempo en reporting" icon={PieChart} color="purple" />
                     </div>
-                    <div className="hidden sm:block">
+                    <div className="col-span-1">
                         <ROICard value="100%" label="visibilidad financiera" icon={Shield} color="indigo" />
                     </div>
                 </div>
@@ -518,7 +570,7 @@ function S13_ROI({ isActive, direction }: SlideProps) {
     );
 }
 
-function S14_CTA({ isActive, direction }: SlideProps) {
+function S15_CTA({ isActive, direction }: SlideProps) {
     return (
         <SlideWrapper isActive={isActive} direction={direction}>
             <div className="flex flex-col items-center justify-center h-full text-center max-w-3xl mx-auto px-3 sm:px-4">
@@ -565,12 +617,13 @@ const SLIDES = [
     S06_Planificador,
     S07_Dashboard,
     S08_Equipos,
-    S09_Reportes,
-    S10_Deadlines,
-    S11_Integraciones,
-    S12_Seguridad,
-    S13_ROI,
-    S14_CTA,
+    S09_Tiempos,
+    S10_Reportes,
+    S11_Deadlines,
+    S12_Integraciones,
+    S13_Seguridad,
+    S14_ROI,
+    S15_CTA,
 ];
 
 /* ─── MAIN PAGE ─── */
@@ -659,8 +712,8 @@ export default function PresentationPage() {
                     </button>
                 )}
 
-                {/* Bottom nav: fondo para que el contenido no se superponga; zonas táctiles ≥44px en móvil */}
-                <div className="absolute bottom-0 left-0 right-0 z-50 pt-4 sm:pt-6 pb-4 sm:pb-6 bg-gradient-to-t from-indigo-950 via-indigo-950/98 to-transparent pointer-events-none" aria-hidden />
+                {/* Bottom nav: franja opaca para que el contenido no se vea por detrás de los controles */}
+                <div className="absolute bottom-0 left-0 right-0 z-50 h-28 sm:h-32 bg-gradient-to-t from-indigo-950 from-40% via-indigo-950/95 to-transparent pointer-events-none" aria-hidden />
                 <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 sm:gap-4 px-3 py-2 rounded-2xl bg-indigo-950/90 backdrop-blur-md border border-white/10 shadow-lg">
                     <button onClick={prev} disabled={current === 0} className="p-3 sm:p-2.5 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-20 disabled:cursor-not-allowed transition-all text-white min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="Slide anterior">
                         <ArrowLeft className="h-5 w-5" />

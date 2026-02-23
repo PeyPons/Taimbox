@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
 import { useApp } from '@/contexts/AppContext';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -32,12 +32,15 @@ import {
   Shield,
   MessageCircle,
   Building2,
-  Plus
+  Plus,
+  Clock,
+  Square
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { useActiveTimerForSidebar } from '@/hooks/useActiveTimerForSidebar';
 import {
   Collapsible,
   CollapsibleContent,
@@ -140,8 +143,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     ppc: true,
     weeklyFeedback: true,
     professionalGoals: true,
-    deadlines: true
+    deadlines: true,
+    timeTracker: false
   };
+
+  const isTimeTrackerEnabled = (modules.timeTracker === true) && (currentUser?.user_id != null);
+  const activeTimer = useActiveTimerForSidebar(isTimeTrackerEnabled ? currentUser?.id : undefined);
 
   const isSuperior = canAccess('/planner') || canAccess('/team') || canAccess('/reports') || canAccess('/settings');
 
@@ -193,6 +200,54 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </NavLink>
           </div>
 
+          {/* Cronómetro: tarea primero, cliente debajo (UX clara) */}
+          {isTimeTrackerEnabled && (
+            <div className="mb-4 px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700/50 min-w-0">
+              <div className="flex items-start gap-2 min-w-0 mb-1.5">
+                <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <div
+                    className="text-slate-200 text-xs font-medium truncate"
+                    title={activeTimer.isActive ? (activeTimer.taskName || '') + (activeTimer.clientName ? ` · Cliente: ${activeTimer.clientName}` : '') : undefined}
+                  >
+                    {activeTimer.isActive ? (activeTimer.taskName || 'Tarea en curso') : 'Total registrado'}
+                  </div>
+                  {activeTimer.isActive && activeTimer.clientName && (
+                    <div className="text-[11px] text-slate-500 truncate mt-0.5">
+                      Cliente: {activeTimer.clientName}
+                    </div>
+                  )}
+                </div>
+              </div>
+              {activeTimer.isActive ? (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm text-emerald-400 font-mono tabular-nums">{activeTimer.formattedTime}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-red-400 hover:text-red-300 hover:bg-red-950/40 text-xs shrink-0"
+                      onClick={async () => {
+                        await activeTimer.stopCurrentTimer();
+                        onClose();
+                      }}
+                    >
+                      <Square className="h-3 w-3 fill-current mr-1" />
+                      Parar
+                    </Button>
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Hoy en total: {activeTimer.formattedTimeLabel}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-slate-400">
+                  {activeTimer.formattedTimeLabel}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Employee View: Simple & Focused */}
           {!isSuperior && (
             <>
@@ -232,14 +287,19 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
 
               {/* EQUIPO */}
-              {(canAccess('/team') || canAccess('/team-capacity') || canAccess('/okrs')) && (
+              {(canAccess('/team') || canAccess('/team-capacity') || canAccess('/okrs') || (modules.timeTracker && canAccess('/team'))) && (
                 <NavGroup
                   label="Equipo"
-                  isActive={['/team', '/team-capacity', '/okrs'].includes(location.pathname)}
+                  isActive={['/team', '/team-capacity', '/okrs', '/tiempos'].includes(location.pathname)}
                 >
                   {canAccess('/team') && (
                     <NavLink to="/team" icon={Users} active={location.pathname === '/team'}>
                       Miembros
+                    </NavLink>
+                  )}
+                  {modules.timeTracker && canAccess('/team') && (
+                    <NavLink to="/tiempos" icon={Clock} active={location.pathname === '/tiempos'}>
+                      Tiempos
                     </NavLink>
                   )}
                   {canAccess('/team-capacity') && (

@@ -410,6 +410,9 @@ export function PlannerArticle() {
                         <p className="text-indigo-100/90 max-w-2xl mx-auto">
                             No es solo un calendario. Es la única fuente de verdad de tu agencia: tiempo, dinero, personas y proyectos, todo conectado.
                         </p>
+                        <p className="text-indigo-100/80 text-sm max-w-2xl mx-auto mt-3">
+                            En vista semanal, mensual y en Mi Día puedes usar el <strong className="text-white">cronómetro por tarea</strong> para registrar las horas reales; la página Tiempos (Equipo) muestra en vivo quién está trabajando en qué.
+                        </p>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         {[

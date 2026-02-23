@@ -28,6 +28,7 @@ import { useAllocationSheet, ProjectBudgetStatus } from '@/hooks/useAllocationSh
 import { useAllocationActions } from '@/hooks/useAllocationActions';
 import { AllocationProjectHeader } from '@/components/planner/allocation/AllocationProjectHeader';
 import { AllocationTaskRow } from '@/components/planner/allocation/AllocationTaskRow';
+import { TaskTimer } from '@/components/employee/TaskTimer';
 import { BatchTaskRow } from '@/components/planner/BatchTaskRow';
 import { AllocationFormDialog } from '@/components/planner/allocation/AllocationFormDialog';
 import { useTasksImpact } from '@/hooks/useTasksImpact';
@@ -102,6 +103,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const [isLoadingTasks, setIsLoadingTasks] = useState(true); // State for internal task loading
   const loadedMonthsRef = useRef<Set<string>>(new Set());
   const autoAddTriggeredRef = useRef(false);
+
+  const handleTimeLogged = useCallback((allocationId: string, hoursLogged: number) => {
+    loadDataForMonth(viewDate);
+  }, [loadDataForMonth, viewDate]);
 
   useEffect(() => {
     if (open) {
@@ -836,11 +841,11 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
                       const load = getEmployeeLoadForWeek(employeeId, weekStartDate, week.effectiveStart, week.effectiveEnd, viewDate);
 
-                      // Calcular Est, Real, Comp para el header
+                      // Calcular Est, Real, Comp para el header (Real/Comp incluyen también horas del cronómetro en tareas pendientes)
                       const weekEst = round2(weekAllocations.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0));
                       const completedTasks = weekAllocations.filter(a => a.status === 'completed');
-                      const weekReal = round2(completedTasks.reduce((sum, a) => sum + (a.hoursActual || 0), 0));
-                      const weekComp = round2(completedTasks.reduce((sum, a) => sum + (a.hoursComputed || 0), 0));
+                      const weekReal = round2(weekAllocations.reduce((sum, a) => sum + (a.hoursActual || 0), 0));
+                      const weekComp = round2(weekAllocations.reduce((sum, a) => sum + (a.hoursComputed || 0), 0));
                       const weekBalance = round2(weekComp - weekReal);
 
                       // Fechas de la semana (solo días laborables efectivos del mes: lun-vie, excluyendo fines de semana)
@@ -904,7 +909,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                   <span className="text-slate-500 font-medium">{load.capacity}h</span>
                                 </div>
 
-                                {completedTasks.length > 0 && (
+                                {(weekReal > 0 || weekComp > 0) && (
                                   <div className="flex flex-wrap items-center gap-2">
                                     <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 rounded shrink-0">
                                       <span className="text-blue-600">Real:</span>
@@ -937,10 +942,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                 const isSelected = selectedProjectId === projId;
                                 const sortedTasks = sortTasks(projAllocations);
 
-                                // Totales del proyecto esta semana
+                                // Totales del proyecto esta semana (Real/Comp incluyen cronómetro en pendientes)
                                 const projEst = round2(projAllocations.reduce((s, a) => s + (a.hoursAssigned || 0), 0));
-                                const projReal = round2(projAllocations.filter(a => a.status === 'completed').reduce((s, a) => s + (a.hoursActual || 0), 0));
-                                const projComp = round2(projAllocations.filter(a => a.status === 'completed').reduce((s, a) => s + (a.hoursComputed || 0), 0));
+                                const projReal = round2(projAllocations.reduce((s, a) => s + (a.hoursActual || 0), 0));
+                                const projComp = round2(projAllocations.reduce((s, a) => s + (a.hoursComputed || 0), 0));
 
                                 return (
                                   <div
@@ -1003,6 +1008,13 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
                                                       <span className="shrink-0 font-mono text-base">{alloc.hoursAssigned}h</span>
                                                       <span className="shrink-0 text-slate-400">est</span>
+                                                      {isTimeTrackerEnabled && !isCompleted && (
+                                                        <TaskTimer
+                                                          employeeId={alloc.employeeId}
+                                                          allocationId={alloc.id}
+                                                          onTimeLogged={handleTimeLogged}
+                                                        />
+                                                      )}
                                                       {isCompleted && (
                                                         <>
                                                           <span className="shrink-0">·</span>
@@ -1057,6 +1069,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                               <th className="py-2 px-3 text-left font-medium w-8"></th>
                                               <th className="py-2 px-3 text-left font-medium">Tarea</th>
                                               <th className="py-2 px-3 text-center font-medium w-20">Horas</th>
+                                              {isTimeTrackerEnabled && <th className="py-2 px-2 text-center font-medium w-28">Cronómetro</th>}
                                               <th className="py-2 px-3 text-center font-medium w-24">Real</th>
                                               <th className="py-2 px-3 text-center font-medium w-24">Comp</th>
                                               <th className="py-2 px-3 text-center font-medium w-20">Balance</th>
@@ -1269,6 +1282,18 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                       })()}
                                                     </div>
                                                   </td>
+                                                  {isTimeTrackerEnabled && (
+                                                    <td className="py-2 px-2 text-center">
+                                                      {!isCompleted && (
+                                                        <TaskTimer
+                                                          employeeId={alloc.employeeId}
+                                                          allocationId={alloc.id}
+                                                          onTimeLogged={handleTimeLogged}
+                                                        />
+                                                      )}
+                                                      {isCompleted && <span className="text-slate-300 text-xs">-</span>}
+                                                    </td>
+                                                  )}
                                                   <td className="py-2 px-3 text-center">
                                                     {isCompleted ? (
                                                       <input
@@ -1593,8 +1618,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                               )}
                             </div>
 
-                            {/* Ejecución: Real → Comp (solo si hay completadas) */}
-                            {completedTasks.length > 0 && (
+                            {/* Ejecución: Real → Comp (incluye horas del cronómetro en tareas pendientes) */}
+                            {(weekReal > 0 || weekComp > 0) && (
                               <div className="flex items-center justify-between text-[11px] pt-1 border-t border-dashed">
                                 <div className="flex items-center gap-2">
                                   <span className="text-blue-600 tabular-nums">
@@ -1764,7 +1789,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                             isWeeklyEnabled={isWeeklyEnabled}
                                             isMobile={isMobile}
                                             showTaskTimer={isTimeTrackerEnabled}
-                                            onTimeLogged={() => loadDataForMonth(viewDate)}
+                                            onTimeLogged={handleTimeLogged}
                                           />
                                         ))}
                                       </div>

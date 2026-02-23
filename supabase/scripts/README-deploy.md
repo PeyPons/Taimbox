@@ -163,3 +163,9 @@ docker ps -a
 ```
 
 Busca el contenedor que ejecuta el Edge Runtime (imagen tipo `supabase/edge-runtime` o similar) y usa su nombre en `RUNTIME_CONTAINER`.
+
+---
+
+## Migraciones de base de datos
+
+Las migraciones SQL (p. ej. cronómetro de tareas, función `cleanup_employee_data`) se aplican en el contenedor de Postgres del mismo entorno. Comandos y flujo desde PC/servidor: **[docs/MIGRACIONES-SERVIDOR.md](../../docs/MIGRACIONES-SERVIDOR.md)**.

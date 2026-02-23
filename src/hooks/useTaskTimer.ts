@@ -6,7 +6,6 @@ const DEFAULT_MAX_HOURS = 12;
 const ABSOLUTE_MAX_HOURS = 24;
 
 export interface UseTaskTimerOptions {
-  /** Máximo de horas por sesión antes de auto-pausa (1–24, por defecto 12). Viene de settings.timeTrackerMaxHours. */
   maxHours?: number;
   onTimeLogged?: (allocationId: string, hoursLogged: number) => void;
 }
@@ -15,7 +14,10 @@ export interface UseTaskTimerResult {
   isRunning: boolean;
   isLoading: boolean;
   isSaving: boolean;
+  /** Tiempo total del día en formato HH:MM:SS (para crono en curso) */
   formattedTime: string;
+  /** Tiempo total del día en formato HH:MM (menos intrusivo, para "total registrado") */
+  formattedTimeShort: string;
   startTimer: () => Promise<void>;
   stopTimer: () => Promise<void>;
 }
@@ -24,6 +26,14 @@ function clampMaxHours(h: number | undefined): number {
   if (h == null || Number.isNaN(h)) return DEFAULT_MAX_HOURS;
   const n = Math.round(Number(h));
   return Math.max(1, Math.min(ABSOLUTE_MAX_HOURS, n));
+}
+
+function parseHours(v: unknown): number {
+  if (v == null) return 0;
+  if (typeof v === 'number' && !Number.isNaN(v)) return v;
+  const s = String(v).trim().replace(',', '.');
+  const n = parseFloat(s);
+  return Number.isNaN(n) ? 0 : n;
 }
 
 export function useTaskTimer(
@@ -36,216 +46,234 @@ export function useTaskTimer(
   const maxSeconds = maxHours * 3600;
   const [isRunning, setIsRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [baseSecondsToday, setBaseSecondsToday] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  /** Tras guardar, evita que un loadFromDb con datos desactualizados baje el total mostrado */
+  const optimisticBaseSecondsRef = useRef<number | null>(null);
 
   const callLogTimerHours = useCallback(
     async (pEmployeeId: string, pAllocationId: string, hoursToLog: number, notes?: string) => {
+      if (hoursToLog <= 0) return;
+      const pDate = new Date().toISOString().split('T')[0];
       const { error } = await supabase.rpc('log_timer_hours', {
         p_employee_id: pEmployeeId,
         p_allocation_id: pAllocationId,
         p_hours: hoursToLog,
         p_notes: notes ?? null,
-        p_date: new Date().toISOString().split('T')[0],
+        p_date: pDate,
       });
       if (error) throw error;
     },
     []
   );
 
-  const forceStop = useCallback(
-    async (allocationIdToClose: string, finalSeconds: number) => {
-      if (!employeeId || finalSeconds <= 0) return;
-      const hoursToLog = Number((finalSeconds / 3600).toFixed(4));
-      if (hoursToLog <= 0) {
-        await supabase.from('active_timers').delete().eq('employee_id', employeeId);
-        setElapsedSeconds(0);
-        setIsRunning(false);
-        return;
-      }
-      await callLogTimerHours(employeeId, allocationIdToClose, hoursToLog);
-      setElapsedSeconds(0);
-      setIsRunning(false);
-      onTimeLogged?.(allocationIdToClose, hoursToLog);
-    },
-    [employeeId, callLogTimerHours, onTimeLogged]
-  );
-
-  const stopTimer = useCallback(async () => {
-    if (!employeeId || isSaving) return;
-    setIsSaving(true);
-    try {
-      const hoursToLog = Number((elapsedSeconds / 3600).toFixed(4));
-      if (hoursToLog > 0) {
-        await callLogTimerHours(employeeId, allocationId, hoursToLog);
-      } else {
-        await supabase.from('active_timers').delete().eq('employee_id', employeeId);
-      }
-      setElapsedSeconds(0);
-      setIsRunning(false);
-      if (hoursToLog > 0) onTimeLogged?.(allocationId, hoursToLog);
-    } catch (err) {
-      console.error('Error stopping timer:', err);
-      toast({
-        title: 'Error de conexión',
-        description: 'El tiempo sigue corriendo. Inténtalo de nuevo cuando tengas conexión.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSaving(false);
+  const loadFromDb = useCallback(async () => {
+    if (!employeeId) {
+      setIsLoading(false);
+      return;
     }
-  }, [employeeId, allocationId, elapsedSeconds, isSaving, callLogTimerHours, onTimeLogged, toast]);
-
-  // 1. Cargar estado al montar (recuperar si hubo F5)
-  useEffect(() => {
-    let isMounted = true;
-
-    async function fetchTimer() {
-      if (!employeeId) {
-        setIsLoading(false);
-        return;
-      }
-      setIsLoading(true);
-
-      const { data, error } = await supabase
+    const today = new Date().toISOString().split('T')[0];
+    const [timerRes, entriesRes] = await Promise.all([
+      supabase
         .from('active_timers')
         .select('started_at, allocation_id')
         .eq('employee_id', employeeId)
-        .maybeSingle();
+        .maybeSingle(),
+      supabase
+        .from('time_entries')
+        .select('hours')
+        .eq('employee_id', employeeId)
+        .eq('allocation_id', allocationId)
+        .eq('date', today),
+    ]);
 
-      if (!isMounted) return;
+    const { data: timerRow, error: timerError } = timerRes;
+    const { data: entryRows } = entriesRes;
+    const totalHours = (entryRows || []).reduce((sum, row) => sum + parseHours(row?.hours), 0);
+    const fromServer = Math.round(totalHours * 3600);
+    const withOptimistic = optimisticBaseSecondsRef.current != null
+      ? Math.max(fromServer, optimisticBaseSecondsRef.current)
+      : fromServer;
+    if (optimisticBaseSecondsRef.current != null) optimisticBaseSecondsRef.current = null;
+    setBaseSecondsToday(withOptimistic);
 
-      if (error) {
-        setIsLoading(false);
-        return;
-      }
-
-      if (data && data.allocation_id === allocationId) {
-        const startedAt = new Date(data.started_at).getTime();
-        const now = Date.now();
-        const diffSeconds = Math.floor((now - startedAt) / 1000);
-
-        if (diffSeconds >= maxSeconds) {
-          toast({
-            title: 'Cronómetro auto-pausado',
-            description: `Se detectó un cronómetro abierto de más de ${maxHours}h. Ha sido pausado automáticamente.`,
-            variant: 'destructive',
-          });
-          try {
-            const hoursToLog = Number((maxSeconds / 3600).toFixed(4));
-            await callLogTimerHours(employeeId, allocationId, hoursToLog, 'Auto-cierre del sistema');
-            setElapsedSeconds(0);
-            setIsRunning(false);
-            onTimeLogged?.(allocationId, hoursToLog);
-          } catch {
-            await supabase.from('active_timers').delete().eq('employee_id', employeeId);
-            setElapsedSeconds(0);
-            setIsRunning(false);
-          }
-        } else {
-          setElapsedSeconds(diffSeconds);
-          setIsRunning(true);
-        }
-      }
+    if (timerError) {
       setIsLoading(false);
+      return;
     }
 
-    fetchTimer();
-    return () => {
-      isMounted = false;
-    };
-  }, [employeeId, allocationId, maxSeconds, callLogTimerHours, onTimeLogged, toast]);
+    if (timerRow && timerRow.allocation_id === allocationId) {
+      const startedAt = new Date(timerRow.started_at).getTime();
+      const diffSeconds = Math.floor((Date.now() - startedAt) / 1000);
+      if (diffSeconds >= maxSeconds) {
+        toast({
+          title: 'Cronómetro auto-pausado',
+          description: `Más de ${maxHours}h. Se ha pausado automáticamente.`,
+          variant: 'destructive',
+        });
+        try {
+          await callLogTimerHours(employeeId, allocationId, maxSeconds / 3600, 'Auto-cierre');
+          setBaseSecondsToday((b) => {
+            const next = b + maxSeconds;
+            optimisticBaseSecondsRef.current = next;
+            return next;
+          });
+        } catch {
+          await supabase.from('active_timers').delete().eq('employee_id', employeeId);
+        }
+        setElapsedSeconds(0);
+        setIsRunning(false);
+      } else {
+        setElapsedSeconds(diffSeconds);
+        setIsRunning(true);
+      }
+    } else {
+      setElapsedSeconds(0);
+      setIsRunning(false);
+    }
+    setIsLoading(false);
+  }, [employeeId, allocationId, maxSeconds, maxHours, callLogTimerHours, toast]);
 
-  // 2. Motor del reloj (intervalo cada segundo)
+  useEffect(() => {
+    loadFromDb();
+    const t = setTimeout(loadFromDb, 600);
+    return () => clearTimeout(t);
+  }, [loadFromDb]);
+
+  useEffect(() => {
+    const onOtherStarted = (e: Event) => {
+      const { allocationId: otherId } = (e as CustomEvent<{ allocationId: string }>).detail;
+      if (otherId !== allocationId && isRunning) {
+        setElapsedSeconds(0);
+        setIsRunning(false);
+        loadFromDb();
+      }
+    };
+    window.addEventListener('timeboxing_timer_started', onOtherStarted);
+    return () => window.removeEventListener('timeboxing_timer_started', onOtherStarted);
+  }, [allocationId, isRunning, loadFromDb]);
+
   useEffect(() => {
     if (!isRunning) return;
-
-    intervalRef.current = setInterval(() => {
+    const id = setInterval(() => {
       setElapsedSeconds((prev) => {
         const next = prev + 1;
         if (next >= maxSeconds) {
-          if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
-          }
-          forceStop(allocationId, maxSeconds).catch(() => {
-            setElapsedSeconds(maxSeconds);
-            setIsRunning(false);
+          clearInterval(id);
+          const hoursMax = maxSeconds / 3600;
+          callLogTimerHours(employeeId!, allocationId, hoursMax, 'Auto-cierre').then(() => {
+            setBaseSecondsToday((b) => {
+              const nextTotal = b + maxSeconds;
+              optimisticBaseSecondsRef.current = nextTotal;
+              return nextTotal;
+            });
+            onTimeLogged?.(allocationId, hoursMax);
+          }).catch(() => {
+            supabase.from('active_timers').delete().eq('employee_id', employeeId!);
           });
+          setElapsedSeconds(maxSeconds);
+          setIsRunning(false);
           return maxSeconds;
         }
         return next;
       });
     }, 1000);
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [isRunning, allocationId, maxSeconds, forceStop]);
+    return () => clearInterval(id);
+  }, [isRunning, allocationId, maxSeconds, employeeId, callLogTimerHours, onTimeLogged]);
 
   const startTimer = useCallback(async () => {
     if (!employeeId) return;
-
-    const { data } = await supabase
+    const { data: existing } = await supabase
       .from('active_timers')
       .select('started_at, allocation_id')
       .eq('employee_id', employeeId)
       .maybeSingle();
 
-    if (data && data.allocation_id !== allocationId) {
-      const startedAt = new Date(data.started_at).getTime();
-      const now = Date.now();
-      const diffSeconds = Math.min(maxSeconds, Math.floor((now - startedAt) / 1000));
-      const hoursToLog = Number((diffSeconds / 3600).toFixed(4));
-      if (hoursToLog > 0) {
+    if (existing && existing.allocation_id !== allocationId) {
+      const sec = Math.floor((Date.now() - new Date(existing.started_at).getTime()) / 1000);
+      const hours = Number((Math.min(sec, maxSeconds) / 3600).toFixed(4));
+      if (hours > 0) {
         try {
-          await callLogTimerHours(employeeId, data.allocation_id, hoursToLog);
-        } catch (err) {
-          toast({
-            title: 'Error',
-            description: 'No se pudo cerrar el timer anterior. Inténtalo de nuevo.',
-            variant: 'destructive',
-          });
+          await callLogTimerHours(employeeId, existing.allocation_id, hours);
+        } catch {
+          toast({ title: 'Error', description: 'No se pudo cerrar el timer anterior.', variant: 'destructive' });
           return;
         }
-      } else if (data && data.allocation_id === allocationId) {
-        setElapsedSeconds(Math.min(maxSeconds, Math.floor((Date.now() - new Date(data.started_at).getTime()) / 1000)));
-        setIsRunning(true);
-        return;
       }
+    } else if (existing?.allocation_id === allocationId) {
+      setElapsedSeconds(Math.min(maxSeconds, Math.floor((Date.now() - new Date(existing.started_at).getTime()) / 1000)));
+      setIsRunning(true);
+      return;
     }
 
     setElapsedSeconds(0);
     setIsRunning(true);
     await supabase.from('active_timers').upsert(
-      {
-        employee_id: employeeId,
-        allocation_id: allocationId,
-        started_at: new Date().toISOString(),
-      },
+      { employee_id: employeeId, allocation_id: allocationId, started_at: new Date().toISOString() },
       { onConflict: 'employee_id' }
     );
+    window.dispatchEvent(new CustomEvent('timeboxing_timer_started', { detail: { allocationId } }));
   }, [employeeId, allocationId, maxSeconds, callLogTimerHours, toast]);
 
-  const h = Math.floor(elapsedSeconds / 3600)
-    .toString()
-    .padStart(2, '0');
-  const m = Math.floor((elapsedSeconds % 3600) / 60)
-    .toString()
-    .padStart(2, '0');
-  const s = (elapsedSeconds % 60).toString().padStart(2, '0');
-  const formattedTime = `${h}:${m}:${s}`;
+  const stopTimer = useCallback(async () => {
+    if (!employeeId || isSaving) return;
+    setIsSaving(true);
+    try {
+      const { data: active } = await supabase
+        .from('active_timers')
+        .select('allocation_id, started_at')
+        .eq('employee_id', employeeId)
+        .maybeSingle();
+
+      const allocationToLog = active?.allocation_id ?? allocationId;
+      const fromDb = active?.started_at
+        ? Math.max(0, Math.floor((Date.now() - new Date(active.started_at).getTime()) / 1000))
+        : 0;
+      // Usar el mayor entre BD y estado local (evita subconteo si el intervalo no ha actualizado aún)
+      let secondsToLog = Math.max(fromDb, elapsedSeconds);
+      // Si el crono estaba en marcha, guardar al menos 1 segundo (evita 0 cuando paras muy rápido)
+      if (isRunning && secondsToLog < 1) secondsToLog = 1;
+      const hoursToLog = Number((secondsToLog / 3600).toFixed(6));
+
+      if (hoursToLog > 0) {
+        await callLogTimerHours(employeeId, allocationToLog, hoursToLog);
+        if (allocationToLog === allocationId) {
+          setBaseSecondsToday((b) => {
+            const next = b + secondsToLog;
+            optimisticBaseSecondsRef.current = next;
+            return next;
+          });
+          await loadFromDb();
+        }
+        onTimeLogged?.(allocationToLog, hoursToLog);
+      } else {
+        await supabase.from('active_timers').delete().eq('employee_id', employeeId);
+      }
+
+      setElapsedSeconds(0);
+      setIsRunning(false);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al guardar';
+      toast({ title: 'Error al guardar tiempo', description: msg, variant: 'destructive' });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [employeeId, allocationId, elapsedSeconds, isSaving, callLogTimerHours, onTimeLogged, toast, loadFromDb]);
+
+  const totalSeconds = baseSecondsToday + elapsedSeconds;
+  const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+  const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+  const s = String(totalSeconds % 60).padStart(2, '0');
 
   return {
     isRunning,
     isLoading,
     isSaving,
-    formattedTime,
+    formattedTime: `${h}:${m}:${s}`,
+    formattedTimeShort: `${h}:${m}`,
     startTimer,
     stopTimer,
   };

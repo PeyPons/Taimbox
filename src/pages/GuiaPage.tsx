@@ -45,6 +45,7 @@ import {
   FolderOpen,
   Tag,
   Activity,
+  Timer,
 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { cn } from '@/lib/utils';
@@ -58,6 +59,7 @@ const SECTIONS: { slug: string; title: string; icon: React.ElementType; short: s
   { slug: 'informes', title: 'Informes', icon: BarChart3, short: 'Reportes, métricas y exportación de datos', color: 'from-rose-500 to-pink-500' },
   { slug: 'weekly-forecast', title: 'Weekly Forecast', icon: FileText, short: 'Cierre semanal y redistribución inteligente de horas', color: 'from-violet-500 to-purple-500' },
   { slug: 'equipo', title: 'Equipo', icon: Users, short: 'Miembros, ausencias, horarios y capacidad', color: 'from-blue-500 to-cyan-500' },
+  { slug: 'tiempos', title: 'Tiempos', icon: Timer, short: 'Cronómetro por tarea y vista en vivo del equipo', color: 'from-teal-500 to-emerald-500' },
   { slug: 'clientes-proyectos', title: 'Clientes y proyectos', icon: Building2, short: 'Catálogo de clientes, proyectos y horas contratadas', color: 'from-slate-500 to-indigo-500' },
   { slug: 'configuracion', title: 'Configuración', icon: Settings, short: 'Agencia, roles, permisos e integraciones', color: 'from-slate-600 to-slate-800' },
 ];
@@ -95,7 +97,7 @@ function SectionCard({ slug, title, icon: Icon, short, color }: typeof SECTIONS[
       <Card className="border-2 border-white/15 bg-gradient-to-br from-indigo-900/90 to-purple-900/90 backdrop-blur-xl hover:border-white/40 hover:scale-[1.02] hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300 group cursor-pointer">
         <CardContent className="p-5 sm:p-6 flex items-center gap-4 relative overflow-hidden">
           {/* Glow behind icon on hover */}
-          <div className={cn("absolute -left-4 top-1/2 -translate-y-1/2 w-24 h-24 rounded-full blur-2xl opacity-0 group-hover:opacity-40 transition-opacity duration-500 bg-gradient-to-br", color)} />
+          <div className={cn("absolute -left-4 top-1/2 -translate-y-1/2 w-24 h-24 rounded-full b lur-2xl opacity-0 group-hover:opacity-40 transition-opacity duration-500 bg-gradient-to-br", color)} />
           <div className={cn("relative w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br shrink-0 shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300", color)}>
             <Icon className="h-7 w-7 text-white" />
           </div>
@@ -450,6 +452,37 @@ function EquipoContent() {
   );
 }
 
+function TiemposContent() {
+  return (
+    <>
+      <ContentBlock title="Qué es Tiempos">
+        <p>El módulo de <strong className="text-white">Tiempos</strong> permite registrar las horas reales trabajadas por tarea mediante un <strong className="text-white">cronómetro</strong>. Puedes ver en qué está cada persona del equipo ahora mismo en la página Tiempos (menú Equipo) y parar tu propio crono desde el sidebar o desde esa página. El total del día se muestra en todo momento.</p>
+        <ExampleBox>María lleva 1h 23m en "Diseño landing" (Acme). Desde la página Tiempos ves a todo el equipo; si eres tú quien tiene el crono activo, puedes pararlo con un clic sin ir al planificador.</ExampleBox>
+      </ContentBlock>
+
+      <ContentBlock title="Dónde está">
+        <div className="grid sm:grid-cols-2 gap-3">
+          <FeatureCard icon={Calendar} title="Planificador" description="Cronómetro por tarea en vista semanal y mensual. Solo ves y controlas tu propio tiempo." color="from-indigo-500 to-purple-500" />
+          <FeatureCard icon={LayoutGrid} title="Mi Día" description="En el dashboard personal, cada tarea del día puede llevar su cronómetro para registrar horas reales." color="from-purple-500 to-pink-500" />
+          <FeatureCard icon={Clock} title="Sidebar" description="Cuando tienes un crono activo, el bloque muestra la tarea, cliente, tiempo en curso y botón Parar. También el total del día." color="from-teal-500 to-emerald-500" />
+          <FeatureCard icon={Users} title="Página Tiempos" description="En Equipo → Tiempos verás en qué está cada persona: tarea, cliente y tiempo transcurrido. Parar tu crono desde ahí." color="from-blue-500 to-cyan-500" />
+        </div>
+        <div className="mt-3" />
+        <TipBox>La página Tiempos y el cronómetro solo aparecen si tu agencia tiene activado el módulo &quot;Cronómetro de tareas&quot; en Configuración.</TipBox>
+      </ContentBlock>
+
+      <ContentBlock title="Cómo usar">
+        <StepList steps={[
+          { title: 'Iniciar', description: 'En el planificador o Mi Día, pulsa Play en la tarea que quieras cronometrar. Solo puede haber un crono activo por persona.' },
+          { title: 'Parar', description: 'Pulsa Stop en la misma tarea, en el sidebar o en la página Tiempos. Las horas se guardan con precisión de segundos en time_entries.' },
+          { title: 'Cambiar de tarea', description: 'Si inicias el crono en otra tarea, el anterior se cierra automáticamente y se registran sus horas antes de empezar el nuevo.' },
+          { title: 'Total del día', description: 'El sidebar y cada cronómetro muestran el total de horas registradas hoy para esa tarea (base + sesión actual si está en marcha).' },
+        ]} />
+      </ContentBlock>
+    </>
+  );
+}
+
 function ClientesContent() {
   return (
     <>
@@ -539,6 +572,7 @@ const CONTENT_MAP: Record<string, React.FC> = {
   'informes': InformesContent,
   'weekly-forecast': WeeklyContent,
   'equipo': EquipoContent,
+  'tiempos': TiemposContent,
   'clientes-proyectos': ClientesContent,
   'configuracion': ConfiguracionContent,
 };

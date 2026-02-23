@@ -192,6 +192,7 @@ export default function LandingPage() {
               { icon: Link2, label: 'Dependencias', color: 'from-purple-500 to-pink-500', title: 'Dependencias', subtitle: 'Gestión inteligente de bloqueos', description: 'Visualiza qué tareas bloquean a otras y recibe alertas cuando una dependencia está en riesgo.', featureList: ['Mapa visual de dependencias', 'Alertas de cuellos de botella', 'Priorización automática', 'Notificaciones en cascada'], example: 'El diseño bloquea al desarrollo. Si el diseño se retrasa, automáticamente recibes alerta de que 3 tareas de desarrollo se verán afectadas.', stat: '100%', statLabel: 'visibilidad de bloqueos', landingUrl: '/planificador-recursos' },
               { icon: Target, label: 'Deadlines', color: 'from-amber-500 to-orange-500', title: 'Deadlines', subtitle: 'Objetivos mensuales por proyecto', description: 'Define metas de horas por proyecto y empleado. Compara lo planificado vs ejecutado en tiempo real.', featureList: ['Objetivos por proyecto', 'Seguimiento en tiempo real', 'Sugerencias de redistribución', 'Alertas de desviación'], example: 'Tienes 200h asignadas al proyecto X pero solo 150h disponibles. El sistema te sugiere redistribuir 50h a otro mes o empleado.', stat: '85%', statLabel: 'cumplimiento de deadlines', landingUrl: '/control-proyectos' },
               { icon: Users, label: 'Equipo', color: 'from-blue-500 to-cyan-500', title: 'Gestión de Equipo', subtitle: 'Todo sobre tu equipo en un lugar', description: 'Horarios, ausencias, vacaciones y capacidad. Cada empleado tiene su perfil completo.', featureList: ['Horarios personalizados', 'Gestión de ausencias', 'Capacidad mensual', 'Objetivos profesionales'], example: 'Juan tiene vacaciones la próxima semana. El sistema ya lo considera y no permite asignarle tareas en ese período.', stat: '0', statLabel: 'conflictos de agenda', landingUrl: '/gestion-equipos' },
+              { icon: Clock, label: 'Tiempos', color: 'from-teal-500 to-emerald-500', title: 'Tiempos y cronómetro', subtitle: 'Registro real por tarea', description: 'Cronómetro por tarea en planificador y Mi Día. Vista "Tiempos" para ver en qué está cada uno ahora mismo y parar desde un solo lugar.', featureList: ['Cronómetro por tarea', 'Horas con precisión de segundos', 'Vista equipo: quién está en qué', 'Parar desde sidebar o página Tiempos'], example: 'Ves que María lleva 1h 23m en "Diseño landing" y Carlos 45m en "Dev API". Puedes parar tu propio crono desde la página Tiempos sin cambiar de vista.', stat: 'En vivo', statLabel: 'estado del equipo', landingUrl: '/gestion-equipos' },
               { icon: FileText, label: 'Weekly', color: 'from-violet-500 to-purple-500', title: 'Weekly Reports', subtitle: 'Cierre semanal automático', description: 'Cada semana, el sistema genera un resumen con métricas, redistribuye horas no completadas a compañeros con disponibilidad y prepara la siguiente semana.', featureList: ['Resumen semanal automático', 'Redistribución inteligente', 'Métricas de productividad', 'Comparativa semanal'], example: 'Carlos no completó 15h esta semana. El sistema detecta que Laura tiene 10h libres y Pedro 5h, y les redistribuye el trabajo automáticamente.', stat: 'Auto', statLabel: 'redistribución de carga', landingUrl: '/reportes-rentabilidad' },
               { icon: Bell, label: 'Alertas', color: 'from-yellow-500 to-amber-500', title: 'Alertas Inteligentes', subtitle: 'Nunca más sorpresas', description: 'Recibe notificaciones cuando detectamos sobrecargas, dependencias en riesgo o desviaciones de presupuesto.', featureList: ['Alertas de sobrecarga', 'Notificaciones de dependencias', 'Avisos de presupuesto', 'Recordatorios de deadlines'], example: '3 días antes del deadline, recibes alerta de que el proyecto lleva solo 60% completado. Tiempo de actuar.', stat: '60%', statLabel: 'problemas detectados antes', landingUrl: '/dashboard-empleado' },
               { icon: BarChart3, label: 'Métricas', color: 'from-rose-500 to-pink-500', title: 'Métricas y Analytics', subtitle: 'Decisiones basadas en datos', description: 'Índice de fiabilidad de estimaciones, productividad por empleado y proyecto, y tendencias históricas.', featureList: ['Índice de fiabilidad', 'Productividad por equipo', 'Tendencias históricas', 'Exportación de reportes'], example: 'Tu índice de fiabilidad es del 78%. Históricamente, subestimas proyectos de diseño en un 20%. Ahora lo sabes y puedes ajustar.', stat: '+78%', statLabel: 'precisión en estimaciones', landingUrl: '/reportes-rentabilidad' },
@@ -333,7 +334,7 @@ export default function LandingPage() {
                             variant="outline"
                             size="sm"
                             className="bg-white/5 border-white/20 text-white hover:text-white hover:bg-white/10"
-                            onClick={() => setActiveFeature(prev => prev === 0 ? 6 : prev - 1)}
+                            onClick={() => setActiveFeature(prev => prev === 0 ? features.length - 1 : prev - 1)}
                           >
                             <ChevronLeft className="h-4 w-4 mr-1" />
                             Anterior
@@ -343,7 +344,7 @@ export default function LandingPage() {
                             variant="outline"
                             size="sm"
                             className="bg-white/5 border-white/20 text-white hover:text-white hover:bg-white/10"
-                            onClick={() => setActiveFeature(prev => prev === 6 ? 0 : prev + 1)}
+                            onClick={() => setActiveFeature(prev => prev === features.length - 1 ? 0 : prev + 1)}
                           >
                             Siguiente
                             <ChevronRight className="h-4 w-4 ml-1" />
@@ -395,7 +396,7 @@ export default function LandingPage() {
                               variant="outline"
                               size="lg"
                               className="bg-white/5 border-white/20 text-white hover:text-white hover:bg-white/10"
-                              onClick={() => setActiveFeature(prev => prev === 0 ? 6 : prev - 1)}
+                              onClick={() => setActiveFeature(prev => prev === 0 ? features.length - 1 : prev - 1)}
                             >
                               <ChevronLeft className="h-5 w-5" />
                             </Button>
@@ -403,7 +404,7 @@ export default function LandingPage() {
                               variant="outline"
                               size="lg"
                               className="bg-white/5 border-white/20 text-white hover:text-white hover:bg-white/10"
-                              onClick={() => setActiveFeature(prev => prev === 6 ? 0 : prev + 1)}
+                              onClick={() => setActiveFeature(prev => prev === features.length - 1 ? 0 : prev + 1)}
                             >
                               <ChevronRight className="h-5 w-5" />
                             </Button>
@@ -521,6 +522,10 @@ export default function LandingPage() {
                     <Users className="h-5 w-5 text-red-400 shrink-0" />
                     <span className="text-white/90 font-medium">Reuniones interminables</span>
                   </div>
+                  <div className="flex items-center gap-4 p-3 bg-red-500/10 rounded-xl border border-red-500/20">
+                    <Clock className="h-5 w-5 text-red-400 shrink-0" />
+                    <span className="text-white/90 font-medium">Tiempo trabajado no registrado</span>
+                  </div>
                 </div>
               </div>
 
@@ -536,6 +541,10 @@ export default function LandingPage() {
                   <div className="flex items-center gap-4 p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
                     <Zap className="h-5 w-5 text-emerald-400 shrink-0" />
                     <span className="text-white/90 font-medium">Visibilidad en tiempo real</span>
+                  </div>
+                  <div className="flex items-center gap-4 p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                    <Clock className="h-5 w-5 text-emerald-400 shrink-0" />
+                    <span className="text-white/90 font-medium">Cronómetro por tarea y vista Tiempos del equipo</span>
                   </div>
                   <div className="flex items-center gap-4 p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
                     <BarChart3 className="h-5 w-5 text-emerald-400 shrink-0" />

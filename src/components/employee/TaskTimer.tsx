@@ -19,11 +19,12 @@ export function TaskTimer({
 }: TaskTimerProps) {
   const { currentAgency } = useAgency();
   const maxHours = currentAgency?.settings?.timeTrackerMaxHours ?? 12;
-  const { isRunning, isLoading, isSaving, formattedTime, startTimer, stopTimer } = useTaskTimer(
+  const { isRunning, isLoading, isSaving, formattedTime, formattedTimeShort, startTimer, stopTimer } = useTaskTimer(
     employeeId,
     allocationId,
     { maxHours, onTimeLogged }
   );
+  const displayTime = isRunning ? formattedTime : formattedTimeShort;
 
   if (isLoading) {
     return (
@@ -43,10 +44,10 @@ export function TaskTimer({
       )}
       role="timer"
       aria-live="polite"
-      aria-label={`Tiempo transcurrido: ${formattedTime}`}
+      aria-label={isRunning ? `Cronómetro en curso: ${formattedTime}` : `Total tiempo registrado hoy: ${formattedTimeShort}`}
     >
-      <span className="font-mono text-sm font-medium w-16 text-center tabular-nums">
-        {formattedTime}
+      <span className={cn("font-mono text-sm font-medium tabular-nums", isRunning ? "w-20 text-center" : "w-14 text-center")} title={isRunning ? undefined : "Total registrado hoy (horas:minutos)"}>
+        {displayTime}
       </span>
 
       {isRunning ? (

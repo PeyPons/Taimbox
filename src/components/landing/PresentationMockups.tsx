@@ -108,9 +108,9 @@ export function MockAllocationSheet() {
 /* ─── Mockup: Employee Dashboard ─── */
 export function MockDashboard() {
     const tasks = [
-        { project: 'Acme Corp', task: 'Diseño landing', hours: '3h', status: 'emerald' },
-        { project: 'Beta Inc', task: 'Revisión copy ads', hours: '1.5h', status: 'amber' },
-        { project: 'Gamma Ltd', task: 'Informe mensual', hours: '2h', status: 'indigo' },
+        { project: 'Acme Corp', task: 'Diseño landing', hours: '3h', statusColor: 'bg-emerald-500' },
+        { project: 'Beta Inc', task: 'Revisión copy ads', hours: '1.5h', statusColor: 'bg-amber-500' },
+        { project: 'Gamma Ltd', task: 'Informe mensual', hours: '2h', statusColor: 'bg-indigo-500' },
     ];
     return (
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-sm">
@@ -127,7 +127,7 @@ export function MockDashboard() {
             <div className="space-y-2">
                 {tasks.map((t, i) => (
                     <div key={i} className="flex items-center gap-2 rounded-xl bg-slate-800/60 p-2.5 border border-slate-700/50">
-                        <div className={`w-1.5 h-8 rounded-full bg-${t.status}-500`} />
+                        <div className={`w-1.5 h-8 rounded-full ${t.statusColor}`} />
                         <div className="flex-1 min-w-0">
                             <p className="text-xs text-slate-400">{t.project}</p>
                             <p className="text-sm text-white font-medium truncate">{t.task}</p>
@@ -155,10 +155,10 @@ export function MockDashboard() {
 /* ─── Mockup: Team Capacity ─── */
 export function MockTeamCapacity() {
     const team = [
-        { name: 'María A.', role: 'Diseño', pct: 87, status: 'emerald' },
-        { name: 'Carlos R.', role: 'Desarrollo', pct: 95, status: 'amber' },
-        { name: 'Julia L.', role: 'PPC', pct: 100, status: 'red' },
-        { name: 'Pedro S.', role: 'Contenido', pct: 60, status: 'emerald' },
+        { name: 'María A.', role: 'Diseño', pct: 87, bg: 'bg-emerald-500', text: 'text-emerald-400' },
+        { name: 'Carlos R.', role: 'Desarrollo', pct: 95, bg: 'bg-amber-500', text: 'text-amber-400' },
+        { name: 'Julia L.', role: 'PPC', pct: 100, bg: 'bg-red-500', text: 'text-red-400' },
+        { name: 'Pedro S.', role: 'Contenido', pct: 60, bg: 'bg-emerald-500', text: 'text-emerald-400' },
     ];
     return (
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-sm">
@@ -176,9 +176,9 @@ export function MockTeamCapacity() {
                             <p className="text-xs text-slate-500">{m.role}</p>
                         </div>
                         <div className="flex-1 h-3.5 rounded-full bg-slate-700/50 overflow-hidden">
-                            <div className={`h-full rounded-full bg-${m.status}-500`} style={{ width: `${Math.min(m.pct, 100)}%` }} />
+                            <div className={`h-full rounded-full ${m.bg}`} style={{ width: `${Math.min(m.pct, 100)}%` }} />
                         </div>
-                        <span className={`text-sm font-bold text-${m.status}-400 w-9 text-right`}>{m.pct}%</span>
+                        <span className={`text-sm font-bold ${m.text} w-9 text-right`}>{m.pct}%</span>
                     </div>
                 ))}
             </div>
@@ -193,9 +193,9 @@ export function MockTeamCapacity() {
 /* ─── Mockup: Reports ─── */
 export function MockReportsDashboard() {
     const clients = [
-        { name: 'Acme Corp', budget: '40h', used: '35h', pct: 87, profit: '+2.400€', color: 'emerald' },
-        { name: 'Beta Inc', budget: '25h', used: '28h', pct: 112, profit: '-1.200€', color: 'red' },
-        { name: 'Gamma Ltd', budget: '60h', used: '45h', pct: 75, profit: '+5.100€', color: 'emerald' },
+        { name: 'Acme Corp', budget: '40h', used: '35h', pct: 87, profit: '+2.400€', bg: 'bg-emerald-500', text: 'text-emerald-400' },
+        { name: 'Beta Inc', budget: '25h', used: '28h', pct: 112, profit: '-1.200€', bg: 'bg-red-500', text: 'text-red-400' },
+        { name: 'Gamma Ltd', budget: '60h', used: '45h', pct: 75, profit: '+5.100€', bg: 'bg-emerald-500', text: 'text-emerald-400' },
     ];
     return (
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-md">
@@ -218,11 +218,11 @@ export function MockReportsDashboard() {
                             <div className="flex items-center gap-2 mt-1">
                                 <span className="text-xs text-slate-400">{c.used} / {c.budget}</span>
                                 <div className="flex-1 h-2 rounded-full bg-slate-700/50 overflow-hidden">
-                                    <div className={`h-full rounded-full bg-${c.color}-500`} style={{ width: `${Math.min(c.pct, 100)}%` }} />
+                                    <div className={`h-full rounded-full ${c.bg}`} style={{ width: `${Math.min(c.pct, 100)}%` }} />
                                 </div>
                             </div>
                         </div>
-                        <span className={`text-sm font-bold text-${c.color}-400`}>{c.profit}</span>
+                        <span className={`text-sm font-bold ${c.text}`}>{c.profit}</span>
                     </div>
                 ))}
             </div>
@@ -272,10 +272,10 @@ export function MockDeadlines() {
 /* ─── Mockup: Integrations ─── */
 export function MockIntegrations() {
     const integrations = [
-        { name: 'Google Ads', status: 'Sincronizado', icon: TrendingUp, color: 'emerald', lastSync: 'Hace 2h' },
-        { name: 'Meta Ads', status: 'Sincronizado', icon: BarChart3, color: 'emerald', lastSync: 'Hace 3h' },
-        { name: 'API REST', status: 'Activo', icon: Plug, color: 'blue', lastSync: '3 tokens' },
-        { name: 'Webhooks', status: 'Configurado', icon: Wifi, color: 'purple', lastSync: '2 endpoints' },
+        { name: 'Google Ads', status: 'Sincronizado', icon: TrendingUp, bg: 'bg-emerald-500/20', text: 'text-emerald-400', lastSync: 'Hace 2h' },
+        { name: 'Meta Ads', status: 'Sincronizado', icon: BarChart3, bg: 'bg-emerald-500/20', text: 'text-emerald-400', lastSync: 'Hace 3h' },
+        { name: 'API REST', status: 'Activo', icon: Plug, bg: 'bg-blue-500/20', text: 'text-blue-400', lastSync: '3 tokens' },
+        { name: 'Webhooks', status: 'Configurado', icon: Wifi, bg: 'bg-purple-500/20', text: 'text-purple-400', lastSync: '2 endpoints' },
     ];
     return (
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-sm">
@@ -290,14 +290,14 @@ export function MockIntegrations() {
                     const Icon = integ.icon;
                     return (
                         <div key={i} className="flex items-center gap-2 rounded-xl bg-slate-800/60 p-2.5 border border-slate-700/50">
-                            <div className={`w-8 h-8 rounded-lg bg-${integ.color}-500/20 flex items-center justify-center`}>
-                                <Icon className={`h-4 w-4 text-${integ.color}-400`} />
+                            <div className={`w-8 h-8 rounded-lg ${integ.bg} flex items-center justify-center`}>
+                                <Icon className={`h-4 w-4 ${integ.text}`} />
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm text-white font-medium">{integ.name}</p>
                                 <p className="text-xs text-slate-400">{integ.lastSync}</p>
                             </div>
-                            <span className={`text-xs px-2 py-1 rounded-full bg-${integ.color}-500/20 text-${integ.color}-400 font-semibold`}>{integ.status}</span>
+                            <span className={`text-xs px-2 py-1 rounded-full ${integ.bg} ${integ.text} font-semibold`}>{integ.status}</span>
                         </div>
                     );
                 })}

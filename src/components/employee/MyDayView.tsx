@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
@@ -205,6 +205,10 @@ export function MyDayView() {
         setPopoverOpenId(allocation.id);
     };
 
+    const handleTimeLogged = useCallback(() => {
+        loadDataForMonth(new Date());
+    }, [loadDataForMonth]);
+
     if (prioritizedTasks.length === 0) {
         return (
             <Card className="bg-gradient-to-r from-slate-50 to-white border-slate-200 mb-6 shadow-sm overflow-hidden relative">
@@ -219,8 +223,8 @@ export function MyDayView() {
                     <p className="text-slate-500 max-w-md mt-1 mb-4">
                         Has completado tus tareas prioritarias. ¡Buen trabajo!
                     </p>
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         className="gap-2"
                         onClick={() => {
                             // Navegar a la página de planificación según los permisos del usuario
@@ -309,7 +313,7 @@ export function MyDayView() {
                                             <TaskTimer
                                                 employeeId={currentUser.id}
                                                 allocationId={task.id}
-                                                onTimeLogged={() => loadDataForMonth(new Date())}
+                                                onTimeLogged={handleTimeLogged}
                                             />
                                         )}
                                         {isReport && (

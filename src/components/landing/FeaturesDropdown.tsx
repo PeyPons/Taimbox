@@ -33,7 +33,7 @@ const FEATURES = [
     {
         title: 'Gestión de Equipos',
         href: '/gestion-equipos',
-        description: 'Horarios, ausencias y capacidad',
+        description: 'Horarios, ausencias, capacidad y tiempos en vivo',
         badge: 'Para RRHH',
         badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
         icon: Users,

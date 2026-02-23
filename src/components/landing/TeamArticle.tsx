@@ -17,6 +17,7 @@ import {
     Moon,
     Thermometer,
     AlertTriangle,
+    Timer,
 } from 'lucide-react';
 
 /* ─── Mockup: Employee Profiles ─── */
@@ -176,6 +177,46 @@ function MockCapacity() {
     );
 }
 
+/* ─── Mockup: Vista Tiempos ─── */
+function MockTiempos() {
+    const rows = [
+        { name: 'María A.', task: 'Diseño landing', client: 'Acme', time: '1h 23m', color: 'from-indigo-400 to-purple-500', active: true },
+        { name: 'Carlos R.', task: 'Revisión SEO', client: 'StartupX', time: '0h 45m', color: 'from-blue-400 to-cyan-500', active: true },
+        { name: 'Julia L.', task: '—', client: '—', time: '—', color: 'from-pink-400 to-rose-500', active: false },
+        { name: 'Pedro S.', task: 'Bugs TechCo', client: 'TechCo', time: '2h 10m', color: 'from-emerald-400 to-teal-500', active: true },
+    ];
+    return (
+        <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-6 shadow-2xl backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-4">
+                <div className="h-8 w-8 rounded-lg bg-teal-500/30 flex items-center justify-center">
+                    <Timer className="h-4 w-4 text-teal-300" />
+                </div>
+                <span className="text-white font-semibold text-sm">Tiempos en vivo</span>
+            </div>
+
+            <div className="space-y-2">
+                {rows.map((r, i) => (
+                    <div key={i} className={`flex items-center gap-3 rounded-xl p-3 border ${r.active ? 'bg-teal-500/10 border-teal-500/20' : 'bg-slate-800/60 border-slate-700/50'}`}>
+                        <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${r.color} flex items-center justify-center text-[10px] font-bold text-white shrink-0`}>
+                            {r.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs text-white/90 font-semibold truncate">{r.task}</p>
+                            <p className="text-[10px] text-slate-400">{r.client}</p>
+                        </div>
+                        <span className="text-[10px] font-mono text-teal-400 font-semibold shrink-0">{r.time}</span>
+                    </div>
+                ))}
+            </div>
+
+            <div className="mt-3 flex items-center justify-between rounded-lg bg-slate-800/60 p-3 border border-slate-700/50">
+                <span className="text-[10px] text-slate-400">Total hoy (equipo)</span>
+                <span className="text-sm font-bold text-white font-mono">4h 18m</span>
+            </div>
+        </div>
+    );
+}
+
 /* ─── Mockup: Team Pulse ─── */
 function MockTeamPulse() {
     return (
@@ -238,10 +279,10 @@ export function TeamArticle() {
                     </span>
                 </h1>
                 <p className="text-indigo-100/90 text-base sm:text-lg lg:text-xl leading-relaxed max-w-3xl mx-auto mb-8">
-                    Horarios personalizados, ausencias, capacidad mensual y métricas de salud del equipo. Todo lo que necesitas para entender y cuidar a tu equipo en un solo lugar.
+                    Horarios personalizados, ausencias, capacidad mensual, vista de tiempos en vivo y métricas de salud del equipo. Todo lo que necesitas para entender y cuidar a tu equipo en un solo lugar.
                 </p>
                 <div className="flex flex-wrap justify-center gap-3 text-sm">
-                    {['Perfiles individuales', 'Gestión de ausencias', 'Capacidad mensual', 'Team Pulse', 'Horarios flexibles'].map((f, i) => (
+                    {['Perfiles individuales', 'Gestión de ausencias', 'Capacidad mensual', 'Tiempos en vivo', 'Team Pulse', 'Horarios flexibles'].map((f, i) => (
                         <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-indigo-200/90 text-xs font-medium">
                             <CheckCircle2 className="h-3 w-3 text-emerald-400" />
                             {f}
@@ -363,6 +404,37 @@ export function TeamArticle() {
                     </div>
                     <div>
                         <MockTeamPulse />
+                    </div>
+                </div>
+            </section>
+
+            {/* SECTION 5: Vista Tiempos y cronómetro */}
+            <section className="mb-16 sm:mb-20">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                    <div>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-teal-300/90 mb-3 block">Tiempos en vivo</span>
+                        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 leading-tight">
+                            Vista Tiempos y cronómetro por tarea
+                        </h2>
+                        <p className="text-indigo-100/90 mb-4 leading-relaxed">
+                            Cada persona puede registrar las horas reales trabajadas con el cronómetro por tarea (planificador o Mi Día). En la página <strong className="text-white">Tiempos</strong> (menú Equipo) ves en qué está cada miembro del equipo ahora mismo: tarea, cliente y tiempo transcurrido. Parar el crono desde ahí o desde el sidebar. Las horas alimentan reportes y facturación.
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            {[
+                                { icon: Timer, label: 'Cronómetro', desc: 'Play/Stop por tarea', color: 'text-teal-400' },
+                                { icon: Clock, label: 'Total del día', desc: 'Sidebar y página Tiempos', color: 'text-teal-400' },
+                                { icon: Users, label: 'Vista en vivo', desc: 'Quién trabaja en qué', color: 'text-teal-400' },
+                            ].map(({ icon: Icon, label, desc, color }, i) => (
+                                <div key={i} className="rounded-xl bg-white/5 border border-white/10 p-3">
+                                    <Icon className={`h-4 w-4 ${color} mb-1.5`} />
+                                    <p className="text-xs text-white font-semibold">{label}</p>
+                                    <p className="text-[10px] text-indigo-200/70">{desc}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div>
+                        <MockTiempos />
                     </div>
                 </div>
             </section>

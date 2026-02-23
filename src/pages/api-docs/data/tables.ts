@@ -452,15 +452,17 @@ export const TABLE_GROUPS: TableGroup[] = [
       },
       {
         name: 'time_entries',
-        description: 'Registro de horas reales trabajadas por asignacion y dia.',
-        authNote: 'Requiere autenticacion.',
+        description:
+          'Registro de horas reales trabajadas por asignacion y dia. Se puede escribir via INSERT o mediante la RPC log_timer_hours (cronómetro de la app). UNIQUE (employee_id, allocation_id, date). RLS: el usuario solo ve sus propias filas.',
+        authNote: 'Requiere autenticacion. Filtra por agency_id para listar por agencia; RLS limita a las filas del empleado vinculado al usuario.',
         columns: [
           { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Identificador unico.' },
           { name: 'allocation_id', type: 'uuid', required: true, fk: 'allocations(id)', description: 'Asignacion a la que se imputan las horas.' },
           { name: 'employee_id', type: 'uuid', required: true, fk: 'employees(id)', description: 'Empleado que registra.' },
           { name: 'date', type: 'date', required: true, description: 'Dia del registro (YYYY-MM-DD).' },
-          { name: 'hours', type: 'numeric', required: false, default: '0', check: '>= 0 AND <= 24', description: 'Horas trabajadas por entrada (0-24). El cronómetro usa un máximo configurable por agencia (timeTrackerMaxHours).' },
+          { name: 'hours', type: 'numeric', required: false, default: '0', check: '>= 0 AND <= 24', description: 'Horas trabajadas (numeric 10,6 para segundos). Máximo por sesión configurable por agencia (timeTrackerMaxHours).' },
           { name: 'notes', type: 'text', required: false, description: 'Notas sobre el trabajo realizado.' },
+          { name: 'agency_id', type: 'uuid', required: true, fk: 'agencies(id)', description: 'Agencia del empleado. Permite filtrar por agencia en API.' },
           { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Auto-generado.' },
           { name: 'updated_at', type: 'timestamptz', required: false, default: 'now()', description: 'Auto-generado.' },
         ],
@@ -468,6 +470,7 @@ export const TABLE_GROUPS: TableGroup[] = [
           select: `const { data } = await timeboxing
   .from('time_entries')
   .select('id, allocation_id, date, hours, notes')
+  .eq('agency_id', agencyId)
   .eq('employee_id', employeeId)
   .gte('date', '2026-02-17')
   .lte('date', '2026-02-23')`,
@@ -478,14 +481,15 @@ export const TABLE_GROUPS: TableGroup[] = [
     employee_id: employeeId,
     date: '2026-02-17',
     hours: 4.5,
-    notes: 'Revision de maquetas'
+    notes: 'Revision de maquetas',
+    agency_id: agencyId
   })
   .select()
   .single()`,
         },
         responses: {
           getList: `[
-  { "id": "te1-...", "allocation_id": "al1-...", "date": "2026-02-17", "hours": 4.5, "notes": "Revision de maquetas" }
+  { "id": "te1-...", "allocation_id": "al1-...", "date": "2026-02-17", "hours": 4.5, "notes": "Revision de maquetas", "agency_id": "a1b2c3d4-..." }
 ]`,
           getOne: `{
   "id": "te1-...",
@@ -494,6 +498,7 @@ export const TABLE_GROUPS: TableGroup[] = [
   "date": "2026-02-17",
   "hours": 4.5,
   "notes": "Revision de maquetas",
+  "agency_id": "a1b2c3d4-...",
   "created_at": "2026-02-17T18:00:00Z"
 }`,
           post: `{
@@ -503,8 +508,82 @@ export const TABLE_GROUPS: TableGroup[] = [
   "date": "2026-02-17",
   "hours": 4.5,
   "notes": "Revision de maquetas",
+  "agency_id": "a1b2c3d4-...",
   "created_at": "2026-02-17T18:00:00Z"
 }`,
+        },
+      },
+      {
+        name: 'active_timers',
+        description:
+          'Cronómetros activos: un registro por empleado con la tarea (allocation) y hora de inicio. La app usa esta tabla para mostrar y recuperar el timer tras F5. Escritura desde la app; lectura/consulta via API. RLS: cada usuario solo ve su propio timer.',
+        authNote: 'Requiere autenticacion. Filtra por agency_id para listar timers de la agencia. RLS limita a la fila del empleado del usuario.',
+        columns: [
+          { name: 'employee_id', type: 'uuid', required: true, pk: true, fk: 'employees(id)', description: 'Empleado (PK; un timer activo por empleado).' },
+          { name: 'allocation_id', type: 'uuid', required: true, fk: 'allocations(id)', description: 'Tarea en la que está el cronómetro.' },
+          { name: 'started_at', type: 'timestamptz', required: true, default: 'now()', description: 'Hora de inicio del cronómetro.' },
+          { name: 'agency_id', type: 'uuid', required: true, fk: 'agencies(id)', description: 'Agencia del empleado. Rellenado por trigger.' },
+        ],
+        examples: {
+          select: `const { data } = await timeboxing
+  .from('active_timers')
+  .select('employee_id, allocation_id, started_at')
+  .eq('agency_id', agencyId)
+  .maybeSingle()`,
+          insert: `// La app inserta/actualiza al iniciar el cronómetro. Para registrar horas use la RPC log_timer_hours.`,
+        },
+        responses: {
+          getList: `[
+  { "employee_id": "e1f2a3b4-...", "allocation_id": "al1-...", "started_at": "2026-02-21T10:30:00Z", "agency_id": "a1b2c3d4-..." }
+]`,
+          getOne: `{
+  "employee_id": "e1f2a3b4-...",
+  "allocation_id": "al1-...",
+  "started_at": "2026-02-21T10:30:00Z",
+  "agency_id": "a1b2c3d4-..."
+}`,
+          post: `// Use la RPC log_timer_hours para cerrar y registrar; la app gestiona active_timers al iniciar/parar.`,
+        },
+      },
+      {
+        name: 'timer_sessions',
+        description:
+          'Sesiones exactas de cronómetro (start_time, end_time) por cada "Stop". Append-only; pensada para webhooks e integraciones (p. ej. Perfex). La analítica interna está en time_entries. RLS: el usuario solo ve sus propias sesiones.',
+        authNote: 'Requiere autenticacion. Filtra por agency_id para listar sesiones de la agencia.',
+        columns: [
+          { name: 'id', type: 'uuid', required: false, default: 'gen_random_uuid()', pk: true, description: 'Identificador unico.' },
+          { name: 'employee_id', type: 'uuid', required: true, fk: 'employees(id)', description: 'Empleado que registró la sesión.' },
+          { name: 'allocation_id', type: 'uuid', required: true, fk: 'allocations(id)', description: 'Tarea imputada.' },
+          { name: 'start_time', type: 'timestamptz', required: true, description: 'Inicio de la sesión.' },
+          { name: 'end_time', type: 'timestamptz', required: true, default: 'now()', description: 'Fin de la sesión.' },
+          { name: 'hours', type: 'numeric', required: true, description: 'Horas de la sesión (numeric 10,6).' },
+          { name: 'agency_id', type: 'uuid', required: true, fk: 'agencies(id)', description: 'Agencia del empleado.' },
+          { name: 'created_at', type: 'timestamptz', required: false, default: 'now()', description: 'Auto-generado.' },
+        ],
+        examples: {
+          select: `const { data } = await timeboxing
+  .from('timer_sessions')
+  .select('id, employee_id, allocation_id, start_time, end_time, hours')
+  .eq('agency_id', agencyId)
+  .gte('start_time', '2026-02-01')
+  .order('start_time', { ascending: false })`,
+          insert: `// Solo lectura via API. Las filas se crean con la RPC log_timer_hours al parar el cronómetro.`,
+        },
+        responses: {
+          getList: `[
+  { "id": "ts1-...", "employee_id": "e1f2a3b4-...", "allocation_id": "al1-...", "start_time": "2026-02-21T09:00:00Z", "end_time": "2026-02-21T10:30:00Z", "hours": 1.5, "agency_id": "a1b2c3d4-..." }
+]`,
+          getOne: `{
+  "id": "ts1-...",
+  "employee_id": "e1f2a3b4-...",
+  "allocation_id": "al1-...",
+  "start_time": "2026-02-21T09:00:00Z",
+  "end_time": "2026-02-21T10:30:00Z",
+  "hours": 1.5,
+  "agency_id": "a1b2c3d4-...",
+  "created_at": "2026-02-21T10:30:00Z"
+}`,
+          post: `// Solo la RPC log_timer_hours escribe en timer_sessions.`,
         },
       },
     ],

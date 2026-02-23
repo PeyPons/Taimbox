@@ -97,6 +97,7 @@ const TeamCapacityPage = lazyWithRetry(() => import("./pages/TeamCapacityPage"))
 const OnboardingWizard = lazyWithRetry(() => import("./components/onboarding/OnboardingWizard"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 const TeamPulsePage = lazyWithRetry(() => import("./pages/TeamPulsePage"));
+const TiemposPage = lazyWithRetry(() => import("./pages/TiemposPage"));
 const ApiKeysPage = lazyWithRetry(() => import("./pages/ApiKeysPage"));
 const ContactSupportPage = lazyWithRetry(() => import("./pages/ContactSupportPage"));
 const GoogleCallbackPage = lazyWithRetry(() => import("./pages/GoogleCallbackPage"));
@@ -188,6 +189,7 @@ const App = () => (
                             <Route path="/planner" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/planner"><Index /></PermissionProtectedRoute></Suspense>} />
                             <Route path="/deadlines" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/deadlines"><ModuleGuard module="deadlines"><DeadlinesPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
                             <Route path="/team" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/team"><TeamPage /></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/tiempos" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/team"><ModuleGuard module="timeTracker"><TiemposPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
                             <Route path="/team/pulse" element={<Suspense fallback={<PageLoader />}><TeamPulsePage /></Suspense>} />
                             <Route path="/team-capacity" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/team-capacity"><TeamCapacityPage /></PermissionProtectedRoute></Suspense>} />
                             <Route path="/clients" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/clients"><ClientsAndProjectsPage /></PermissionProtectedRoute></Suspense>} />

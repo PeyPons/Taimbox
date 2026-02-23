@@ -81,6 +81,42 @@ export function RestSection() {
   .eq('id', allocationId)`}
         />
       </div>
+
+      <div className="mt-8 pt-6 border-t border-white/10">
+        <h4 className="text-sm font-semibold text-white mb-3">Llamadas RPC (tiempos / cronómetro)</h4>
+        <p className="text-indigo-100/85 mb-4 text-sm">
+          Para registrar horas desde un cronómetro o listar cronómetros activos del equipo se usan funciones RPC.
+        </p>
+        <EndpointBlock
+          method="POST"
+          path="/rest/v1/rpc/log_timer_hours"
+          description="Cierra el cronómetro y registra horas: UPSERT en time_entries, actualiza allocations.hours_actual, inserta en timer_sessions y borra de active_timers. Solo el empleado vinculado al usuario (auth.uid) puede invocarla. Parámetros: p_employee_id, p_allocation_id, p_hours, p_notes (opcional), p_date (opcional, default hoy)."
+          curlExample={`curl -X POST \\
+  '<BASE_URL>/rest/v1/rpc/log_timer_hours' \\
+  -H 'apikey: <TU_API_KEY>' \\
+  -H 'Authorization: Bearer <TU_API_TOKEN>' \\
+  -H 'Content-Type: application/json' \\
+  -d '{"p_employee_id":"<UUID>","p_allocation_id":"<UUID>","p_hours":1.5,"p_notes":"Revisión"}'`}
+          sdkExample={`const { error } = await timeboxing.rpc('log_timer_hours', {
+  p_employee_id: employeeId,
+  p_allocation_id: allocationId,
+  p_hours: 1.5,
+  p_notes: 'Revisión'
+})`}
+        />
+        <EndpointBlock
+          method="POST"
+          path="/rest/v1/rpc/get_team_active_timers"
+          description="Lista los cronómetros activos de todos los empleados de la agencia del usuario. Devuelve: employee_id, employee_name, allocation_id, task_name, client_name, started_at. Sin parámetros."
+          curlExample={`curl -X POST \\
+  '<BASE_URL>/rest/v1/rpc/get_team_active_timers' \\
+  -H 'apikey: <TU_API_KEY>' \\
+  -H 'Authorization: Bearer <TU_API_TOKEN>' \\
+  -H 'Content-Type: application/json' \\
+  -d '{}'`}
+          sdkExample={`const { data } = await timeboxing.rpc('get_team_active_timers')`}
+        />
+      </div>
     </section>
   );
 }

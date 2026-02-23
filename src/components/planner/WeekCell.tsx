@@ -26,12 +26,13 @@ export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, 
 
   const completedTasks = allocations.filter(a => a.status === 'completed');
   const pendingTasks = allocations.filter(a => a.status !== 'completed');
-  const totalReal = round2(completedTasks.reduce((sum, a) => sum + (a.hoursActual || 0), 0));
-  const totalComp = round2(completedTasks.reduce((sum, a) => sum + (a.hoursComputed || 0), 0));
+  const totalReal = round2(allocations.reduce((sum, a) => sum + (a.hoursActual || 0), 0));
+  const totalComp = round2(allocations.reduce((sum, a) => sum + (a.hoursComputed || 0), 0));
 
   const balance = round2(totalComp - totalReal);
   const hasActivity = allocations.length > 0;
   const hasCompleted = completedTasks.length > 0;
+  const hasRealOrComp = totalReal > 0 || totalComp > 0;
 
   // Usar el status que viene de getEmployeeLoadForWeek (ya calculado con la nueva lógica)
   // Caso especial: tareas asignadas pero capacidad 0 (vacaciones completas)
@@ -100,8 +101,8 @@ export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, 
                 <span className="font-mono font-semibold">{totalEst}h</span>
               </div>
 
-              {/* REAL y COMPUTADO - Solo si hay completadas */}
-              {hasCompleted && (
+              {/* REAL y COMPUTADO - Incluye horas del cronómetro en tareas pendientes */}
+              {hasRealOrComp && (
                 <>
                   {/* FLUJO: Real → Comp */}
                   <div className="flex items-center gap-0.5 text-[11px] py-0.5 px-1 rounded bg-blue-50/70">

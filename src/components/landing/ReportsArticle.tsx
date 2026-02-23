@@ -253,6 +253,11 @@ export function ReportsArticle() {
                                 Los informes muestran solo lo que el cliente debe ver: <strong className="text-white">horas por categoría</strong>, no los detalles internos del equipo.
                             </p>
                         </div>
+                        <div className="rounded-xl border-l-4 border-teal-400 bg-teal-500/10 border border-teal-500/20 p-4 mt-3">
+                            <p className="text-indigo-100/90 text-sm m-0">
+                                Las horas registradas con el <strong className="text-white">cronómetro por tarea</strong> alimentan los reportes y el coste real. Más precisión en rentabilidad y facturación.
+                            </p>
+                        </div>
                     </div>
                     <div>
                         <MockClientReport />

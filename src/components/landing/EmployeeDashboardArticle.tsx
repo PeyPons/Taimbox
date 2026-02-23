@@ -17,6 +17,7 @@ import {
     CheckSquare,
     FileDown,
     MoreHorizontal,
+    Timer,
 } from 'lucide-react';
 
 /* ─── Mockup Components ─── */
@@ -483,6 +484,7 @@ export function EmployeeDashboardArticle() {
                                 { label: 'Tareas internas', desc: 'Reuniones y gestiones', icon: Clock },
                                 { label: 'Presupuesto visual', desc: 'Barras de consumo en vivo', icon: BarChart3 },
                                 { label: 'Impacto previo', desc: 'Simulación antes de guardar', icon: Target },
+                                { label: 'Cronómetro por tarea', desc: 'Registra horas reales desde Mi Día', icon: Timer },
                             ].map(({ label, desc, icon: Icon }, i) => (
                                 <div key={i} className="rounded-xl bg-white/5 border border-white/10 p-3">
                                     <Icon className="h-4 w-4 text-indigo-400 mb-1.5" />
@@ -491,6 +493,9 @@ export function EmployeeDashboardArticle() {
                                 </div>
                             ))}
                         </div>
+                        <p className="text-indigo-100/80 text-sm mt-3">
+                            El total del día se muestra en el sidebar y en la página <strong className="text-white">Tiempos</strong> (menú Equipo).
+                        </p>
                     </div>
                 </div>
             </section>
