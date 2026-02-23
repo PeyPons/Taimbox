@@ -125,7 +125,7 @@ const eventHours = events?.reduce((s, e) => s + e.hours_reduction, 0) || 0
 const effectiveCapacity = Math.max(0, baseCapacity - Math.max(absenceHours, eventHours))
 
 console.log(\`Capacidad real: \${effectiveCapacity}h / \${baseCapacity}h\`)`}
-          note="Timeboxing usa Max(ausencia, evento) por día para evitar doble contabilidad. Este ejemplo simplifica el cálculo; la app usa un algoritmo diario más preciso."
+          note="Taimbox usa Max(ausencia, evento) por día para evitar doble contabilidad. Este ejemplo simplifica el cálculo; la app usa un algoritmo diario más preciso."
         />
       </div>
 

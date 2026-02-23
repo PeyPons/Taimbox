@@ -268,7 +268,7 @@ export function PlannerArticle() {
                     </span>
                 </h1>
                 <p className="text-indigo-100/90 text-base sm:text-lg lg:text-xl leading-relaxed max-w-3xl mx-auto mb-8">
-                    El planificador central de Timeboxing te muestra quién hace qué, cuándo y con qué impacto financiero. Asigna tareas, detecta sobrecargas y gestiona dependencias desde una sola vista.
+                    El planificador central de Taimbox te muestra quién hace qué, cuándo y con qué impacto financiero. Asigna tareas, detecta sobrecargas y gestiona dependencias desde una sola vista.
                 </p>
                 <div className="flex flex-wrap justify-center gap-3 text-sm">
                     {['Grid visual', 'Impacto antes de guardar', 'Dependencias', 'Semanas partidas', 'Detección de sobrecargas'].map((f, i) => (
@@ -440,7 +440,7 @@ export function PlannerArticle() {
                         Planifica con datos, no con intuición
                     </h2>
                     <p className="text-indigo-100/95 mb-6 text-base sm:text-lg leading-relaxed text-center max-w-2xl mx-auto">
-                        El planificador de Timeboxing convierte las suposiciones en certezas. Ve el impacto de cada decisión antes de tomarla.
+                        El planificador de Taimbox convierte las suposiciones en certezas. Ve el impacto de cada decisión antes de tomarla.
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
                         {[

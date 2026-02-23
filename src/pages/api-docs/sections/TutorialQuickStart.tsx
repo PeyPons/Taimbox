@@ -16,7 +16,7 @@ export function TutorialQuickStart() {
       <div className="mb-4 p-4 rounded-lg bg-white/[0.03] border border-white/5">
         <h4 className="text-white font-semibold text-sm mb-2">Prerequisitos</h4>
         <ul className="text-sm text-indigo-200/70 space-y-1 list-disc list-inside">
-          <li>Cuenta de administrador en Timeboxing</li>
+          <li>Cuenta de administrador en Taimbox</li>
           <li>Node.js 18+ instalado (para el SDK) o cualquier cliente HTTP (cURL, Postman)</li>
         </ul>
       </div>
@@ -25,7 +25,7 @@ export function TutorialQuickStart() {
         <TutorialStep
           step={1}
           title="Genera tu token API"
-          description="Accede a Configuración > API & Integraciones en Timeboxing y crea un nuevo token. Dale un nombre descriptivo como 'Mi integración' y selecciona permisos de lectura."
+          description="Accede a Configuración > API & Integraciones en Taimbox y crea un nuevo token. Dale un nombre descriptivo como 'Mi integración' y selecciona permisos de lectura."
           note="El token solo se muestra una vez. Cópialo y guárdalo en un lugar seguro (ej: variable de entorno)."
         />
         <TutorialStep

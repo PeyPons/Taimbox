@@ -116,10 +116,10 @@ export default function ApiDocsPage() {
   return (
     <>
       <Helmet>
-        <title>Documentacion API - Timeboxing</title>
+        <title>Documentacion API - Taimbox</title>
         <meta
           name="description"
-          content="Documentacion de la API de integracion de Timeboxing. Conecta tus herramientas con datos de planificacion, equipo y proyectos."
+          content="Documentacion de la API de integracion de Taimbox. Conecta tus herramientas con datos de planificacion, equipo y proyectos."
         />
       </Helmet>
 

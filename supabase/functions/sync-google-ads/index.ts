@@ -244,7 +244,7 @@ Deno.serve(async (req) => {
         async function processAgency(agency: any) {
             const integrations = agency.settings?.integrations || {};
 
-            // 1. CREDENCIALES DE LA PLATAFORMA (Timeboxing)
+            // 1. CREDENCIALES DE LA PLATAFORMA (Taimbox)
             const clientId = getSecret('GOOGLE_CLIENT_ID');
             const clientSecret = getSecret('GOOGLE_CLIENT_SECRET');
             const developerToken = getSecret('GOOGLE_DEVELOPER_TOKEN');

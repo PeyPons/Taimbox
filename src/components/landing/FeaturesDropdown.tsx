@@ -177,7 +177,7 @@ export function FeaturesDropdown() {
                             onClick={() => setIsOpen(false)}
                             className="text-xs text-slate-400 hover:text-white transition-colors"
                         >
-                            ¿Por qué Timeboxing?
+                            ¿Por qué Taimbox?
                         </Link>
                     </div>
                 </div>

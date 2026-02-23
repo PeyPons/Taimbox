@@ -173,7 +173,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
               <LayoutDashboard className="h-5 w-5 text-white" />
             </div>
-            <span className="text-slate-100">Timeboxing</span>
+            <span className="text-slate-100">Taimbox</span>
           </div>
 
           <div className="flex items-center gap-1">

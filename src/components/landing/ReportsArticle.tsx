@@ -193,7 +193,7 @@ export function ReportsArticle() {
                     </span>
                 </h1>
                 <p className="text-indigo-100/90 text-base sm:text-lg lg:text-xl leading-relaxed max-w-3xl mx-auto mb-8">
-                    Cada hora tiene un coste. Cada proyecto tiene un margen. Los reportes de Timeboxing conectan tiempo, personas y dinero para que tomes decisiones con datos reales, no con estimaciones.
+                    Cada hora tiene un coste. Cada proyecto tiene un margen. Los reportes de Taimbox conectan tiempo, personas y dinero para que tomes decisiones con datos reales, no con estimaciones.
                 </p>
                 <div className="flex flex-wrap justify-center gap-3 text-sm">
                     {['Rentabilidad en vivo', 'Informes de cliente', 'Weekly Forecast', 'Exportaciones', 'Históricos'].map((f, i) => (
@@ -330,7 +330,7 @@ export function ReportsArticle() {
                         Mide lo que importa. Actúa con datos.
                     </h2>
                     <p className="text-indigo-100/95 mb-6 text-base sm:text-lg leading-relaxed text-center max-w-2xl mx-auto">
-                        Los reportes de Timeboxing conectan tiempo, personas y dinero. Sabes exactamente cuánto cuesta y cuánto genera cada proyecto.
+                        Los reportes de Taimbox conectan tiempo, personas y dinero. Sabes exactamente cuánto cuesta y cuánto genera cada proyecto.
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
                         {[

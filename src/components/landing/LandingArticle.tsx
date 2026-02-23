@@ -60,7 +60,7 @@ export function LandingArticle() {
           </span>
         </div>
         <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-[2.75rem] font-black text-white mb-5 sm:mb-6 leading-[1.15] tracking-tight text-center">
-          Timeboxing: por qué tu lista de tareas está matando la rentabilidad de tu agencia
+          Taimbox: por qué tu lista de tareas está matando la rentabilidad de tu agencia
         </h1>
         <div className="space-y-4 text-indigo-100/95 text-base sm:text-lg leading-[1.75]">
           <p>
@@ -181,7 +181,7 @@ export function LandingArticle() {
       <section className="mb-12 sm:mb-14">
         <div className="rounded-2xl border border-indigo-500/20 bg-indigo-950/40 backdrop-blur-sm p-4 sm:p-8 mb-6">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
-            Timeboxing + inteligencia financiera: la evolución
+            Taimbox + inteligencia financiera: la evolución
           </h2>
           <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             Hemos construido una plataforma que no solo gestiona el tiempo, sino que entiende la economía de tu agencia. No es solo un calendario; es un cerebro que calcula rentabilidad en tiempo real.

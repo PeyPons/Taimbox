@@ -193,7 +193,7 @@ En AllocationSheet y MyDayView, `onTimeLogged` sirve para refrescar datos (p. ej
 - **No hay Edge Functions nuevas.** Solo migraciones SQL.
 - **Aplicar migraciones:** Ver **`docs/MIGRACIONES-SERVIDOR.md`**. Resumen:
   - **Supabase Cloud:** SQL Editor, ejecutar en orden los 4 archivos de `supabase/migrations/` (1 → 2 → 3 → 4).
-  - **Self-hosted (Docker):** Mismas rutas que en `supabase/scripts/README-deploy.md` (~/Timeboxing, ~/supabase-pi/supabase/docker). Subir `supabase/migrations/` al servidor y ejecutar con `docker compose exec` o `docker exec` sobre el contenedor de Postgres (ver comandos en MIGRACIONES-SERVIDOR.md).
+  - **Self-hosted (Docker):** Mismas rutas que en `supabase/scripts/README-deploy.md` (~/Taimbox, ~/supabase-pi/supabase/docker). Subir `supabase/migrations/` al servidor y ejecutar con `docker compose exec` o `docker exec` sobre el contenedor de Postgres (ver comandos en MIGRACIONES-SERVIDOR.md).
 
 ---
 

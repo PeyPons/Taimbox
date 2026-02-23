@@ -7,7 +7,7 @@ export default function EmployeeDashboardLandingPage() {
     return (
         <>
             <Helmet>
-                <title>Dashboard del Empleado — Tu centro de control personal | Timeboxing</title>
+                <title>Dashboard del Empleado — Tu centro de control personal | Taimbox</title>
                 <meta name="description" content="Dashboard personal para empleados: calendario semanal, prioridades inteligentes, métricas de fiabilidad, weekly feedback y colaboración con compañeros. Todo sin ruido." />
                 <link rel="canonical" href="/dashboard-empleado" />
                 <script type="application/ld+json">
@@ -16,12 +16,12 @@ export default function EmployeeDashboardLandingPage() {
                         '@graph': [
                             {
                                 '@type': 'WebPage',
-                                name: 'Dashboard del Empleado — Timeboxing',
+                                name: 'Dashboard del Empleado — Taimbox',
                                 description: 'Centro de control personal para empleados de agencia. Calendario, prioridades, métricas de fiabilidad y weekly feedback.',
                             },
                             {
                                 '@type': 'SoftwareApplication',
-                                name: 'Timeboxing',
+                                name: 'Taimbox',
                                 applicationCategory: 'BusinessApplication',
                                 description: 'Plataforma de gestión de recursos, planificación y control financiero para agencias.',
                             },

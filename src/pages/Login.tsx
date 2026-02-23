@@ -226,7 +226,7 @@ export default function Login() {
               </svg>
             </div>
           </div>
-          <CardTitle className="text-2xl text-center font-bold text-slate-900">Timeboxing</CardTitle>
+          <CardTitle className="text-2xl text-center font-bold text-slate-900">Taimbox</CardTitle>
           <CardDescription className="text-center text-slate-500">
             Gestiona tu equipo y proyectos
           </CardDescription>

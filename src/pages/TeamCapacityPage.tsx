@@ -294,7 +294,7 @@ export default function TeamCapacityPage() {
     return (
         <>
             <Helmet>
-                <title>Disponibilidad del equipo | Timeboxing</title>
+                <title>Disponibilidad del equipo | Taimbox</title>
             </Helmet>
 
             <div className="flex flex-col h-full space-y-6 p-6 md:p-8 max-w-[1600px] mx-auto w-full">

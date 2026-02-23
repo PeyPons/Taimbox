@@ -6,26 +6,26 @@
 
 ## Crear el script de deploy en el servidor (heredoc)
 
-Si en el servidor no tienes el repo de Timeboxing o quieres tener el script sin clonar, créalo pegando este bloque en la consola (todo de una vez). Crea el directorio, el archivo con el contenido y lo marca ejecutable:
+Si en el servidor no tienes el repo de Taimbox o quieres tener el script sin clonar, créalo pegando este bloque en la consola (todo de una vez). Crea el directorio, el archivo con el contenido y lo marca ejecutable:
 
 ```bash
-mkdir -p ~/Timeboxing/supabase/scripts
-cat > ~/Timeboxing/supabase/scripts/deploy-edge-functions-supabase-pi.sh << 'ENDOFFILE'
+mkdir -p ~/Taimbox/supabase/scripts
+cat > ~/Taimbox/supabase/scripts/deploy-edge-functions-supabase-pi.sh << 'ENDOFFILE'
 #!/usr/bin/env bash
 #
-# Despliegue de Edge Functions para Timeboxing cuando Supabase está en ~/supabase-pi.
+# Despliegue de Edge Functions para Taimbox cuando Supabase está en ~/supabase-pi.
 #
 
 set -e
 
-TIMBOXING_DIR="${TIMBOXING_DIR:-$HOME/Timeboxing}"
+TIMBOXING_DIR="${TIMBOXING_DIR:-$HOME/Taimbox}"
 SUPABASE_DOCKER_DIR="${SUPABASE_DOCKER_DIR:-$HOME/supabase-pi/supabase/docker}"
 COMPOSE_FILE="${SUPABASE_DOCKER_DIR}/docker-compose.yml"
 FUNCTIONS_SOURCE="${TIMBOXING_DIR}/supabase/functions"
 VOLUMES_FUNCTIONS="${SUPABASE_DOCKER_DIR}/volumes/functions"
 SERVICE_NAME="${SUPABASE_FUNCTIONS_SERVICE:-functions}"
 
-echo "[deploy] Timeboxing:    $TIMBOXING_DIR"
+echo "[deploy] Taimbox:    $TIMBOXING_DIR"
 echo "[deploy] Supabase:      $SUPABASE_DOCKER_DIR"
 echo "[deploy] Origen:        $FUNCTIONS_SOURCE"
 echo "[deploy] Destino:       $VOLUMES_FUNCTIONS"
@@ -56,34 +56,34 @@ echo "[deploy] Reiniciando $SERVICE_NAME..."
 
 echo "[deploy] Listo."
 ENDOFFILE
-chmod +x ~/Timeboxing/supabase/scripts/deploy-edge-functions-supabase-pi.sh
-echo "Script creado: ~/Timeboxing/supabase/scripts/deploy-edge-functions-supabase-pi.sh"
+chmod +x ~/Taimbox/supabase/scripts/deploy-edge-functions-supabase-pi.sh
+echo "Script creado: ~/Taimbox/supabase/scripts/deploy-edge-functions-supabase-pi.sh"
 ```
 
-Después, **asegúrate de que en el servidor** la carpeta `~/Timeboxing/supabase/functions/` **contenga todas las funciones** (incluida `add-platform-admin`). Si en el servidor no está actualizada:
+Después, **asegúrate de que en el servidor** la carpeta `~/Taimbox/supabase/functions/` **contenga todas las funciones** (incluida `add-platform-admin`). Si en el servidor no está actualizada:
 - Desde tu **PC** (en la carpeta del proyecto):  
-  `rsync -avz supabase/functions/ alex@IP_O_DOMINIO:~/Timeboxing/supabase/functions/`
-- O en el **servidor**: `cd ~/Timeboxing && git pull`  
+  `rsync -avz supabase/functions/ alex@IP_O_DOMINIO:~/Taimbox/supabase/functions/`
+- O en el **servidor**: `cd ~/Taimbox && git pull`  
 Luego ejecuta el deploy (siguiente sección).
 
 ---
 
-## Servidor con Timeboxing en ~/Timeboxing y Supabase en ~/supabase-pi
+## Servidor con Taimbox en ~/Taimbox y Supabase en ~/supabase-pi
 
 En el servidor (ya conectado por SSH):
 
 ```bash
-cd ~/Timeboxing
+cd ~/Taimbox
 chmod +x supabase/scripts/deploy-edge-functions-supabase-pi.sh
 ./supabase/scripts/deploy-edge-functions-supabase-pi.sh
 ```
 
-Eso copia `~/Timeboxing/supabase/functions/` a `~/supabase-pi/supabase/docker/volumes/functions/` y reinicia el servicio `functions` (contenedor `supabase-edge-functions`). No hace falta `sudo` si tu usuario está en el grupo `docker`.
+Eso copia `~/Taimbox/supabase/functions/` a `~/supabase-pi/supabase/docker/volumes/functions/` y reinicia el servicio `functions` (contenedor `supabase-edge-functions`). No hace falta `sudo` si tu usuario está en el grupo `docker`.
 
 Si las rutas son otras:
 
 ```bash
-export TIMBOXING_DIR=/home/alex/Timeboxing
+export TIMBOXING_DIR=/home/alex/Taimbox
 export SUPABASE_DOCKER_DIR=/home/alex/supabase-pi/supabase/docker
 ./supabase/scripts/deploy-edge-functions-supabase-pi.sh
 ```
@@ -131,7 +131,7 @@ Luego ejecuta el script (no hace falta `RUNTIME_CONTAINER`).
 Si el código está en tu máquina y quieres subir solo las funciones y reiniciar:
 
 ```bash
-# Desde la carpeta del proyecto en tu PC (Timeboxing)
+# Desde la carpeta del proyecto en tu PC (Taimbox)
 
 # 1. Subir la carpeta functions al servidor
 rsync -avz --delete supabase/functions/ usuario@TU_SERVIDOR:/ruta/proyecto/supabase/functions/

@@ -13,7 +13,7 @@ export function LandingFooter() {
           <div className="lg:col-span-1">
             <Link to="/" className="inline-flex items-center gap-2 text-white font-bold text-lg hover:text-indigo-200 transition-colors">
               <Calendar className="h-5 w-5 text-indigo-400" />
-              Timeboxing
+              Taimbox
             </Link>
             <p className="mt-2 text-xs text-indigo-200/80 max-w-xs leading-snug">
               Sistema operativo financiero basado en tiempo para agencias. Gestiona el tiempo, no solo las tareas.
@@ -80,7 +80,7 @@ export function LandingFooter() {
 
         <div className="mt-6 pt-5 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-3">
           <p className="text-xs text-indigo-200/60">
-            © {currentYear} Timeboxing. Todos los derechos reservados.
+            © {currentYear} Taimbox. Todos los derechos reservados.
           </p>
           <div className="flex gap-4 text-xs text-indigo-200/60">
             <button

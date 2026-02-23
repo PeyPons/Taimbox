@@ -80,7 +80,7 @@ serve(async (req) => {
         }
 
         if (existingEmployee) {
-            throw new Error('Este email ya está registrado en Timeboxing. Inicia sesión o usa otro email.')
+            throw new Error('Este email ya está registrado en Taimbox. Inicia sesión o usa otro email.')
         }
 
         // 6. Crear usuario en Auth
@@ -267,11 +267,11 @@ serve(async (req) => {
         console.error("Error general:", error)
         console.error("Error stack:", error?.stack)
         console.error("Error details:", JSON.stringify(error, null, 2))
-        
+
         const errorMessage = error?.message || error?.toString() || 'Error desconocido al registrar'
 
         return new Response(
-            JSON.stringify({ 
+            JSON.stringify({
                 error: errorMessage,
                 details: process.env.NODE_ENV === 'development' ? error?.stack : undefined
             }),

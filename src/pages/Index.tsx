@@ -5,7 +5,7 @@ const Index = () => {
   return (
     <>
       <Helmet>
-        <title>Timeboxing</title>
+        <title>Taimbox</title>
         <meta name="description" content="Gestiona los recursos de tu equipo SEO con el planificador visual de ResourceFlow" />
       </Helmet>
       <div className="h-screen flex flex-col">

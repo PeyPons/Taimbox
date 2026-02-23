@@ -114,7 +114,7 @@ function S00_Portada({ isActive, direction }: SlideProps) {
                         <Calendar className="h-10 w-10 sm:h-14 sm:w-14 text-white" />
                     </div>
                 </div>
-                <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-3 sm:mb-4 tracking-tight">Timeboxing</h1>
+                <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-3 sm:mb-4 tracking-tight">Taimbox</h1>
                 <p className="text-base sm:text-xl md:text-2xl lg:text-3xl text-indigo-200/90 max-w-xl font-light">
                     Sistema operativo financiero<br />
                     <span className="text-white font-semibold">basado en tiempo</span>
@@ -248,7 +248,7 @@ function S05_Solucion({ isActive, direction }: SlideProps) {
         <SlideWrapper isActive={isActive} direction={direction}>
             <div className="flex flex-col items-center justify-center h-full text-center max-w-4xl mx-auto px-2 sm:px-4">
                 <h2 className="text-2xl sm:text-4xl md:text-5xl font-black text-white mb-3 sm:mb-6">
-                    La solución: <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Timeboxing</span>
+                    La solución: <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Taimbox</span>
                 </h2>
                 <p className="text-sm sm:text-xl text-indigo-200/90 mb-4 sm:mb-8 max-w-lg">Convierte el tiempo en el activo más rentable de la agencia.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5 w-full max-w-3xl">
@@ -561,7 +561,7 @@ function S14_ROI({ isActive, direction }: SlideProps) {
                     </div>
                 </div>
                 <div className="p-4 sm:p-7 rounded-xl sm:rounded-2xl border border-emerald-400/30 bg-emerald-500/10 max-w-md w-full">
-                    <p className="text-emerald-100 font-medium text-sm sm:text-lg">Con un equipo de 20 personas, Timeboxing puede recuperar hasta</p>
+                    <p className="text-emerald-100 font-medium text-sm sm:text-lg">Con un equipo de 20 personas, Taimbox puede recuperar hasta</p>
                     <p className="text-2xl sm:text-4xl md:text-5xl font-black text-emerald-400 mt-2">180.000€/año</p>
                     <p className="text-emerald-200/80 text-sm sm:text-lg mt-1.5">en rentabilidad hoy invisible</p>
                 </div>
@@ -582,12 +582,12 @@ function S15_CTA({ isActive, direction }: SlideProps) {
                 </div>
                 <h2 className="text-2xl sm:text-4xl md:text-5xl font-black text-white mb-4 sm:mb-6">¿Empezamos?</h2>
                 <p className="text-sm sm:text-lg md:text-xl text-indigo-200/90 mb-6 sm:mb-8 max-w-lg">
-                    Timeboxing se configura en minutos. Vuestro equipo puede empezar a planificar <span className="text-white font-semibold">esta misma semana</span>.
+                    Taimbox se configura en minutos. Vuestro equipo puede empezar a planificar <span className="text-white font-semibold">esta misma semana</span>.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto max-w-xs sm:max-w-none">
                     <Link to="/login" className="w-full sm:w-auto">
                         <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 shadow-xl shadow-indigo-500/30 hover:shadow-2xl hover:scale-105 transition-all duration-300 min-h-[48px]">
-                            Acceder a Timeboxing <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
+                            Acceder a Taimbox <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
                         </Button>
                     </Link>
                     <Link to="/" className="w-full sm:w-auto">
@@ -664,7 +664,7 @@ export default function PresentationPage() {
     return (
         <>
             <Helmet>
-                <title>Timeboxing — Presentación</title>
+                <title>Taimbox — Presentación</title>
                 <meta name="robots" content="noindex, nofollow" />
             </Helmet>
             <div className="fixed inset-0 bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 overflow-hidden overflow-x-hidden select-none min-w-0">

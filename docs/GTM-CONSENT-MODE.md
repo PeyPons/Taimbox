@@ -1,4 +1,4 @@
-# Google Consent Mode v2 con GTM (Timeboxing)
+# Google Consent Mode v2 con GTM (Taimbox)
 
 El consentimiento de cookies se expone a **Google Tag Manager** de dos formas para que puedas usar Consent Mode con la mínima configuración.
 
@@ -38,7 +38,7 @@ Cada vez que el usuario acepta o cambia preferencias, se hace push con:
 
 ## Resumen de mapeo
 
-| Preferencia Timeboxing | Consent Mode |
+| Preferencia Taimbox | Consent Mode |
 |------------------------|--------------|
 | Necesarias (siempre activas) | — |
 | Analíticas | `analytics_storage` |

@@ -1,11 +1,11 @@
-# ⏳ Timeboxing - Plataforma de Gestión de Agencia
+# ⏳ Taimbox - Plataforma de Gestión de Agencia
 
 ![React](https://img.shields.io/badge/React-18-blue?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)
 ![Supabase](https://img.shields.io/badge/Supabase-Database-green?logo=supabase)
 ![Vite](https://img.shields.io/badge/Vite-Build-yellow?logo=vite)
 
-**Timeboxing** es un sistema integral para la gestión de recursos, planificación de proyectos y control financiero de agencias de marketing. Esta documentación sirve como bitácora técnica completa y mapa de dependencias.
+**Taimbox** es un sistema integral para la gestión de recursos, planificación de proyectos y control financiero de agencias de marketing. Esta documentación sirve como bitácora técnica completa y mapa de dependencias.
 
 ---
 
@@ -116,7 +116,7 @@ Archivos de lógica pura que son dependencias de todo el sistema.
 ### 3.1 `src/utils/dateUtils.ts` (Split Weeks)
 **CRÍTICO**: Implementa la lógica de "Semanas Partidas".
 
-Timeboxing fuerza una separación estricta de meses.
+Taimbox fuerza una separación estricta de meses.
 - **Problema**: La semana del 29 Dic (Lun) al 4 Ene (Dom) pertenece a dos meses fiscales diferentes.
 - **Solución (`getWeeksForMonth`)**:
     1. Genera la semana visual normal.
@@ -300,7 +300,7 @@ Todas las páginas principales de la aplicación.
 ### Otros
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
-| `LandingPage.tsx` | ~80KB | Página pública de marketing (home). Usa `LandingHeader` (header fijo unificado con mega-menú `FeaturesDropdown`, enlaces Guía/API/Login, menú hamburguesa móvil). **Footer** con enlace a "Por qué Timeboxing" (`/por-que-timeboxing`), demo, guía, API y **Cookies** (abre preferencias RGPD). **Banner de cookies** (`CookieBanner.tsx`): barra intrusiva con overlay RGPD, "Aceptar todas" / "Solo necesarias" / "Personalizar", persistencia en `localStorage` (`timeboxing_cookie_consent`), modal de preferencias. **Google Consent Mode v2 para GTM**: 4 cookies `timeboxing_gtm_analytics_storage`, `timeboxing_gtm_ad_storage`, etc. (valor `granted`/`denied`) + dataLayer evento `cookie_consent_update`. Ver `docs/GTM-CONSENT-MODE.md`. **Demo interactiva** (Planificador, Dashboard, Weekly, Deadlines): barra de navegación destacada con fondo indigo, texto "Elige qué explorar:" e iconos por módulo; responsive y usable en móvil y escritorio. Carousel de features con enlaces a landings comerciales. Schema JSON-LD SoftwareApplication en Helmet. Componentes: `LandingHeader.tsx`, `FeaturesDropdown.tsx`, `LandingFooter.tsx`, `CookieBanner.tsx`, `CalendarPreview.tsx`. Utilidad: `src/lib/cookieConsent.ts`. |
+| `LandingPage.tsx` | ~80KB | Página pública de marketing (home). Usa `LandingHeader` (header fijo unificado con mega-menú `FeaturesDropdown`, enlaces Guía/API/Login, menú hamburguesa móvil). **Footer** con enlace a "Por qué Taimbox" (`/por-que-timeboxing`), demo, guía, API y **Cookies** (abre preferencias RGPD). **Banner de cookies** (`CookieBanner.tsx`): barra intrusiva con overlay RGPD, "Aceptar todas" / "Solo necesarias" / "Personalizar", persistencia en `localStorage` (`timeboxing_cookie_consent`), modal de preferencias. **Google Consent Mode v2 para GTM**: 4 cookies `timeboxing_gtm_analytics_storage`, `timeboxing_gtm_ad_storage`, etc. (valor `granted`/`denied`) + dataLayer evento `cookie_consent_update`. Ver `docs/GTM-CONSENT-MODE.md`. **Demo interactiva** (Planificador, Dashboard, Weekly, Deadlines): barra de navegación destacada con fondo indigo, texto "Elige qué explorar:" e iconos por módulo; responsive y usable en móvil y escritorio. Carousel de features con enlaces a landings comerciales. Schema JSON-LD SoftwareApplication en Helmet. Componentes: `LandingHeader.tsx`, `FeaturesDropdown.tsx`, `LandingFooter.tsx`, `CookieBanner.tsx`, `CalendarPreview.tsx`. Utilidad: `src/lib/cookieConsent.ts`. |
 | `ArticlePage.tsx` | ~3KB | Página pública del artículo largo en `/por-que-timeboxing`. Usa `LandingHeader`. Renderiza `LandingArticle` (6 bloques: Gancho, Teoría, Problema en agencias, Solución con DemoPlanner lazy, Arquitectura/API, CTA). Schema JSON-LD Article + SoftwareApplication. Enlazada desde el footer de la home. |
 | `EmployeeDashboardLandingPage.tsx` | ~3KB | Landing comercial pública en `/dashboard-empleado`. Usa `LandingHeader`. Presenta las funcionalidades del dashboard del empleado con 6 secciones y mockups CSS. Componentes: `LandingHeader.tsx`, `EmployeeDashboardArticle.tsx`, `LandingFooter.tsx`. |
 | `PlannerLandingPage.tsx` | ~3KB | Landing comercial pública en `/planificador-recursos`. Usa `LandingHeader`. Grid de planificación semanal, asignación con vista de impacto, dependencias y semanas partidas. Componentes: `LandingHeader.tsx`, `PlannerArticle.tsx`, `LandingFooter.tsx`. |
@@ -337,8 +337,8 @@ Sistema de auditoría para cambios críticos.
 ### Edge Functions (Supabase)
 **Supabase self-hosted:** no se usa `supabase login` ni `supabase functions deploy`. Para estos casos:
 1. **Crear el script de deploy en el servidor** con un heredoc (copiar/pegar el bloque completo desde `supabase/scripts/README-deploy.md` → sección "Crear el script de deploy en el servidor (heredoc)").
-2. **Tener la carpeta** `supabase/functions/` en el servidor (p. ej. en `~/Timeboxing/supabase/functions/`, por rsync o clonando el repo).
-3. **Ejecutar el deploy:** `cd ~/Timeboxing && ./supabase/scripts/deploy-edge-functions-supabase-pi.sh`
+2. **Tener la carpeta** `supabase/functions/` en el servidor (p. ej. en `~/Taimbox/supabase/functions/`, por rsync o clonando el repo).
+3. **Ejecutar el deploy:** `cd ~/Taimbox && ./supabase/scripts/deploy-edge-functions-supabase-pi.sh`
 
 Detalle completo (rutas, variables, rsync desde PC): **`supabase/scripts/README-deploy.md`**. Resumen técnico: DOCUMENTACION.md sección 7 "Supabase self-hosted".
 
@@ -461,4 +461,4 @@ Antes de deployar cambios críticos:
 
 ---
 
-> *Documentación Generada: Febrero 2026 - Proyecto Timeboxing*
+> *Documentación Generada: Febrero 2026 - Proyecto Taimbox*

@@ -29,7 +29,7 @@ const tourSteps: TourStep[] = [
   {
     id: 'welcome',
     target: 'body',
-    title: '¡Bienvenido a Timeboxing! 🎉',
+    title: '¡Bienvenido a Taimbox! 🎉',
     description: 'Este es tu panel de control personal. Te guiaremos por las funciones principales para que empieces con buen pie.',
     icon: <Sparkles className="w-6 h-6 text-indigo-500" />,
     position: 'center'

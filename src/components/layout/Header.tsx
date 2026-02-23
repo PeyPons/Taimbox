@@ -16,7 +16,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                 <div className="h-7 w-7 rounded bg-primary flex items-center justify-center">
                     <LayoutDashboard className="h-4 w-4 text-white" />
                 </div>
-                <span>Timeboxing</span>
+                <span>Taimbox</span>
             </div>
 
             <div className="flex items-center gap-1">

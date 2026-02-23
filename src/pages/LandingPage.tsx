@@ -55,15 +55,15 @@ export default function LandingPage() {
   return (
     <>
       <Helmet>
-        <title>Timeboxing - Gestión de Recursos y Planificación</title>
+        <title>Taimbox - Gestión de Recursos y Planificación</title>
         <meta name="description" content="Plataforma de gestión de recursos y planificación para agencias digitales. Visualiza, planifica y optimiza el trabajo de tu equipo." />
         <script type="application/ld+json">
           {JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'SoftwareApplication',
-            name: 'Timeboxing',
+            name: 'Taimbox',
             applicationCategory: 'BusinessApplication',
-            description: 'Plataforma de gestión de recursos, planificación y control financiero para agencias. Timeboxing con horas computadas, deadlines, integración Ads y API.',
+            description: 'Plataforma de gestión de recursos, planificación y control financiero para agencias. Taimbox con horas computadas, deadlines, integración Ads y API.',
             offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' }
           })}
         </script>
@@ -507,7 +507,7 @@ export default function LandingPage() {
                   <div className="w-12 h-12 bg-red-500/30 rounded-xl flex items-center justify-center">
                     <AlertTriangle className="h-6 w-6 text-red-400" />
                   </div>
-                  <h3 className="text-2xl font-bold text-white">Sin Timeboxing</h3>
+                  <h3 className="text-2xl font-bold text-white">Sin Taimbox</h3>
                 </div>
                 <div className="space-y-4">
                   <div className="flex items-center gap-4 p-3 bg-red-500/10 rounded-xl border border-red-500/20">
@@ -535,7 +535,7 @@ export default function LandingPage() {
                   <div className="w-12 h-12 bg-emerald-500/30 rounded-xl flex items-center justify-center">
                     <CheckCircle2 className="h-6 w-6 text-emerald-400" />
                   </div>
-                  <h3 className="text-2xl font-bold text-white">Con Timeboxing</h3>
+                  <h3 className="text-2xl font-bold text-white">Con Taimbox</h3>
                 </div>
                 <div className="space-y-4">
                   <div className="flex items-center gap-4 p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">

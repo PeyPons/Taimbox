@@ -7,8 +7,8 @@ export default function ArticlePage() {
   return (
     <>
       <Helmet>
-        <title>Por qué tu lista de tareas mata la rentabilidad de tu agencia | Timeboxing</title>
-        <meta name="description" content="Timeboxing: metodología y plataforma para agencias. Horas computadas, Team Pulse, API. Sistema operativo financiero basado en tiempo." />
+        <title>Por qué tu lista de tareas mata la rentabilidad de tu agencia | Taimbox</title>
+        <meta name="description" content="Taimbox: metodología y plataforma para agencias. Horas computadas, Team Pulse, API. Sistema operativo financiero basado en tiempo." />
         <link rel="canonical" href="/por-que-timeboxing" />
         <script type="application/ld+json">
           {JSON.stringify({
@@ -16,14 +16,14 @@ export default function ArticlePage() {
             '@graph': [
               {
                 '@type': 'Article',
-                headline: 'Timeboxing: Por qué tu lista de tareas está matando la rentabilidad de tu agencia',
-                description: 'Metodología Timeboxing y sistema operativo financiero basado en tiempo para agencias. Horas computadas, Team Pulse, API.',
-                author: { '@type': 'Organization', name: 'Timeboxing' },
-                publisher: { '@type': 'Organization', name: 'Timeboxing' }
+                headline: 'Taimbox: Por qué tu lista de tareas está matando la rentabilidad de tu agencia',
+                description: 'Metodología Taimbox y sistema operativo financiero basado en tiempo para agencias. Horas computadas, Team Pulse, API.',
+                author: { '@type': 'Organization', name: 'Taimbox' },
+                publisher: { '@type': 'Organization', name: 'Taimbox' }
               },
               {
                 '@type': 'SoftwareApplication',
-                name: 'Timeboxing',
+                name: 'Taimbox',
                 applicationCategory: 'BusinessApplication',
                 description: 'Plataforma de gestión de recursos, planificación y control financiero para agencias.'
               }

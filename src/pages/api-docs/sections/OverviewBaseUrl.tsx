@@ -9,7 +9,7 @@ export function OverviewBaseUrl() {
         Base URL y headers
       </SectionHeading>
       <p className="text-indigo-100/85 mb-4">
-        Todas las peticiones van contra la URL de la API de Timeboxing. Necesitas la{' '}
+        Todas las peticiones van contra la URL de la API de Taimbox. Necesitas la{' '}
         <code className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-xs text-indigo-200">
           ANON_KEY
         </code>{' '}
@@ -19,7 +19,7 @@ export function OverviewBaseUrl() {
         </code>{' '}
         que puedes generar desde la seccion <strong>API & Integraciones</strong>.
       </p>
-      <CodeBlock lang="bash">{`# URL base de la API de Timeboxing
+      <CodeBlock lang="bash">{`# URL base de la API de Taimbox
 http://supabase.peypons.duckdns.org/rest/v1/
 
 # Headers obligatorios en cada petición

@@ -1,5 +1,5 @@
 /**
- * Sistema de logging estructurado para Timeboxing
+ * Sistema de logging estructurado para Taimbox
  * Reemplaza console.log/error/warn con logging estructurado
  */
 

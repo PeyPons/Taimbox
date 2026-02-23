@@ -12,7 +12,7 @@ export function OverviewIntro() {
           API de Integración
         </SectionHeading>
         <p className="text-lg text-indigo-200/90 max-w-2xl">
-          Integra los datos de planificación, equipo y proyectos de tu agencia en Timeboxing
+          Integra los datos de planificación, equipo y proyectos de tu agencia en Taimbox
           directamente con tus herramientas internas.
         </p>
       </div>

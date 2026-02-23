@@ -316,7 +316,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
 
       // Mensajes específicos para errores comunes
       if (errorMsg.includes("already been registered") || errorMsg.includes("already exists") || errorMsg.includes("duplicate")) {
-        toast.error("Este usuario ya está registrado en Timeboxing");
+        toast.error("Este usuario ya está registrado en Taimbox");
       } else if (errorMsg.includes("invalid email") || errorMsg.includes("email")) {
         toast.error("El formato del email no es válido.");
       } else if (errorMsg.includes("password") && errorMsg.includes("weak")) {

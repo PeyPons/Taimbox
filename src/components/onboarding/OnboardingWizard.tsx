@@ -401,7 +401,7 @@ export default function OnboardingWizard() {
             .single();
 
         if (existingEmployee) {
-            toast.error('Este email ya está registrado en Timeboxing. Usa otro email o inicia sesión.');
+            toast.error('Este email ya está registrado en Taimbox. Usa otro email o inicia sesión.');
             return;
         }
 

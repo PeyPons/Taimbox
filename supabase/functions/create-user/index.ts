@@ -137,7 +137,7 @@ serve(async (req) => {
       .single()
 
     if (existingEmployee) {
-      throw new Error('Este email ya está registrado en Timeboxing. Inicia sesión o usa otro email.')
+      throw new Error('Este email ya está registrado en Taimbox. Inicia sesión o usa otro email.')
     }
 
     // 6. Crear el usuario en el sistema de Auth

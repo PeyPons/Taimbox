@@ -203,7 +203,7 @@ export default function ClientReportsPage() {
 
                     {/* Pie de página */}
                     <div className="mt-8 pt-4 border-t border-slate-100 flex justify-between text-[10px] text-slate-400 uppercase tracking-wider">
-                        <span>Timeboxing App • Informe Automático</span>
+                        <span>Taimbox App • Informe Automático</span>
                         <span>Generado el {format(new Date(), "dd/MM/yyyy 'a las' HH:mm")}</span>
                     </div>
 

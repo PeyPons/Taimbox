@@ -62,7 +62,7 @@ export function OverviewAuth() {
       <h3 className="text-white font-semibold mb-3">Cómo obtener un token</h3>
       <div className="mb-6 space-y-3">
         {[
-          'Inicia sesion en Timeboxing como administrador de tu agencia.',
+          'Inicia sesion en Taimbox como administrador de tu agencia.',
           'Ve a Configuración \u2192 API & Integraciones en el menú lateral.',
           'Haz clic en Crear token, asigna un nombre descriptivo y elige los permisos (solo lectura o lectura/escritura). Los tokens de solo lectura devuelven 403 en POST, PATCH y DELETE.',
           'Copia el token JWT que se muestra. Solo se muestra una vez; guárdalo en un lugar seguro.',

@@ -7,14 +7,14 @@ export default function TeamLandingPage() {
     return (
         <>
             <Helmet>
-                <title>Gestión de Equipos — Horarios, ausencias y capacidad | Timeboxing</title>
+                <title>Gestión de Equipos — Horarios, ausencias y capacidad | Taimbox</title>
                 <meta name="description" content="Gestiona tu equipo con perfiles individuales, horarios personalizados, control de ausencias, capacidad mensual y métricas Team Pulse." />
                 <link rel="canonical" href="/gestion-equipos" />
                 <script type="application/ld+json">
                     {JSON.stringify({
                         '@context': 'https://schema.org',
                         '@type': 'WebPage',
-                        name: 'Gestión de Equipos — Timeboxing',
+                        name: 'Gestión de Equipos — Taimbox',
                         description: 'Gestión integral de equipos para agencias: perfiles, horarios, ausencias, capacidad y salud del equipo.',
                     })}
                 </script>

@@ -257,7 +257,7 @@ function PlanificadorContent() {
   return (
     <>
       <ContentBlock title="Qué es el Planificador">
-        <p>El Planificador es la <strong className="text-white">vista central</strong> de Timeboxing. Muestra qué tareas tiene asignada cada persona en cada semana del mes, con código de colores por proyecto y alertas de sobrecarga en tiempo real.</p>
+        <p>El Planificador es la <strong className="text-white">vista central</strong> de Taimbox. Muestra qué tareas tiene asignada cada persona en cada semana del mes, con código de colores por proyecto y alertas de sobrecarga en tiempo real.</p>
         <ExampleBox>María está al 120% esta semana. Con un vistazo al calendario ves que tiene 3 proyectos superpuestos y puedes redistribuir antes de que sea tarde.</ExampleBox>
       </ContentBlock>
 
@@ -588,8 +588,8 @@ export default function GuiaPage() {
 
   if (!section) {
     return (
-      <GuiaLayout title="Guía completa de Timeboxing" description="Todas las funcionalidades explicadas al detalle. Elige un apartado para leer la documentación.">
-        <Helmet><title>Guía de funcionalidades - Timeboxing</title></Helmet>
+      <GuiaLayout title="Guía completa de Taimbox" description="Todas las funcionalidades explicadas al detalle. Elige un apartado para leer la documentación.">
+        <Helmet><title>Guía de funcionalidades - Taimbox</title></Helmet>
         <div className="space-y-6">
           {SECTIONS.map((s) => (
             <SectionCard key={s.slug} {...s} />
@@ -617,7 +617,7 @@ export default function GuiaPage() {
 
   return (
     <>
-      <Helmet><title>{current.title} - Guía Timeboxing</title></Helmet>
+      <Helmet><title>{current.title} - Guía Taimbox</title></Helmet>
       <GuiaLayout>
         <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10 hover:scale-105 mb-6 -ml-2 transition-all duration-200" onClick={() => navigate('/guia')}>
           <ArrowLeft className="h-4 w-4 mr-2" /> Volver al índice

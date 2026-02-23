@@ -34,7 +34,7 @@ export function LandingHeader() {
                     {/* Logo */}
                     <Link to="/" className="flex items-center gap-2 text-white font-bold text-lg hover:text-indigo-200 transition-colors">
                         <Calendar className="h-5 w-5 text-indigo-400" />
-                        Timeboxing
+                        Taimbox
                     </Link>
 
                     {/* Desktop Nav */}

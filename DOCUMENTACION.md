@@ -1,6 +1,6 @@
-# Documentación Técnica Detallada - Timeboxing
+# Documentación Técnica Detallada - Taimbox
 
-Esta documentación ofrece una visión profunda y técnica de la plataforma Timeboxing. Incluye un **Mapa de Dependencias** (Sección 8) exhaustivo para analizar el impacto de cualquier cambio en el código.
+Esta documentación ofrece una visión profunda y técnica de la plataforma Taimbox. Incluye un **Mapa de Dependencias** (Sección 8) exhaustivo para analizar el impacto de cualquier cambio en el código.
 
 ---
 
@@ -9,7 +9,7 @@ Esta documentación ofrece una visión profunda y técnica de la plataforma Time
 El sistema sigue una arquitectura de **Single Page Application (SPA)** con un backend proporcionado por **Supabase** (BaaS) y trabajadores externos para integraciones de publicidad.
 
 - **Frontend**: React 18 con Vite y TypeScript.
-- **Backend / DB**: Supabase (PostgreSQL + Auth + Realtime). La documentación pública de la API de integración está en `/api-docs` (shell en `src/pages/ApiDocsPage.tsx`, contenido modular en `src/pages/api-docs/`). La landing pública (`LandingPage.tsx`) incluye footer (`LandingFooter`) con enlace al artículo "Por qué Timeboxing", enlace Cookies (preferencias RGPD), header sticky con Login y schema JSON-LD SoftwareApplication. El banner de cookies (`CookieBanner.tsx`) cumple RGPD (consentimiento explícito, categorías necesarias/analíticas/marketing, preferencias en `localStorage`); se monta en `App.tsx` y el footer dispara el evento `open-cookie-preferences` para reabrir el panel. **Google Consent Mode v2 para GTM**: al guardar consentimiento se escriben 4 cookies (`timeboxing_gtm_analytics_storage`, `timeboxing_gtm_ad_storage`, `timeboxing_gtm_ad_user_data`, `timeboxing_gtm_ad_personalization`) con valor `granted`/`denied` y se hace push al dataLayer con evento `cookie_consent_update`. Ver `src/lib/cookieConsent.ts` y `docs/GTM-CONSENT-MODE.md`. El artículo largo está en página aparte `/por-que-timeboxing` (`ArticlePage.tsx`, renderiza `LandingArticle`) con schema Article + SoftwareApplication; solo se enlaza desde el footer de la home. Es una **API selectiva** (no open-source): expone solo 17 tablas de planificación, equipo y proyectos. Excluye tablas internas (ads, audit_logs, user_agencies). La documentación incluye 4 grupos (Overview, Tutoriales, SDK/REST, Referencia de Recursos), 5 tutoriales paso a paso, changelog, búsqueda (Ctrl+K), sidebar con grupos colapsables, y ResponseExample JSON por recurso. Estructura de archivos: `api-docs/data/` (types, tables, toc, changelog), `api-docs/components/` (CodeBlock, SidebarTOC, SearchBar, ResourceCard, TutorialStep, ResponseExample, etc.), `api-docs/sections/` (15 secciones). Consultarla para integraciones externas o partners.
+- **Backend / DB**: Supabase (PostgreSQL + Auth + Realtime). La documentación pública de la API de integración está en `/api-docs` (shell en `src/pages/ApiDocsPage.tsx`, contenido modular en `src/pages/api-docs/`). La landing pública (`LandingPage.tsx`) incluye footer (`LandingFooter`) con enlace al artículo "Por qué Taimbox", enlace Cookies (preferencias RGPD), header sticky con Login y schema JSON-LD SoftwareApplication. El banner de cookies (`CookieBanner.tsx`) cumple RGPD (consentimiento explícito, categorías necesarias/analíticas/marketing, preferencias en `localStorage`); se monta en `App.tsx` y el footer dispara el evento `open-cookie-preferences` para reabrir el panel. **Google Consent Mode v2 para GTM**: al guardar consentimiento se escriben 4 cookies (`timeboxing_gtm_analytics_storage`, `timeboxing_gtm_ad_storage`, `timeboxing_gtm_ad_user_data`, `timeboxing_gtm_ad_personalization`) con valor `granted`/`denied` y se hace push al dataLayer con evento `cookie_consent_update`. Ver `src/lib/cookieConsent.ts` y `docs/GTM-CONSENT-MODE.md`. El artículo largo está en página aparte `/por-que-timeboxing` (`ArticlePage.tsx`, renderiza `LandingArticle`) con schema Article + SoftwareApplication; solo se enlaza desde el footer de la home. Es una **API selectiva** (no open-source): expone solo 17 tablas de planificación, equipo y proyectos. Excluye tablas internas (ads, audit_logs, user_agencies). La documentación incluye 4 grupos (Overview, Tutoriales, SDK/REST, Referencia de Recursos), 5 tutoriales paso a paso, changelog, búsqueda (Ctrl+K), sidebar con grupos colapsables, y ResponseExample JSON por recurso. Estructura de archivos: `api-docs/data/` (types, tables, toc, changelog), `api-docs/components/` (CodeBlock, SidebarTOC, SearchBar, ResourceCard, TutorialStep, ResponseExample, etc.), `api-docs/sections/` (15 secciones). Consultarla para integraciones externas o partners.
 - **Estilos**: Tailwind CSS con componentes de Shadcn UI. El color primario por defecto (`--primary` en `src/index.css`) es indigo, alineado con la landing y la página de login/registro; modificar ahí para cambiar botones, acentos y sidebar en toda la app.
 - **Texto en navegación por mes**: En vistas que trabajan por mes (dashboard, reportes, proyectos, planificador, Gantt), el botón para volver al mes actual se etiqueta **"Mes actual"** (no "Hoy"), para mantener consistencia con el modelo mensual de la herramienta. Archivos afectados: `EmployeeDashboard.tsx`, `ReportsPage.tsx`, `ProjectsPage.tsx`, `ClientsAndProjectsPage.tsx`, `PlannerGrid.tsx`, `GanttView.tsx`.
 - **Estado Global**: React Context API con persistencia reactiva.
@@ -287,7 +287,7 @@ VITE_GOOGLE_CLIENT_ID=<mismo_client_id>.apps.googleusercontent.com
 El entorno usa Supabase self-hosted con Docker. El contenedor `supabase-edge-functions` lee las funciones desde un volumen montado:
 
 ```
-~/Timeboxing/supabase/functions/          ← código fuente (repo git)
+~/Taimbox/supabase/functions/          ← código fuente (repo git)
         ↓  cp
 ~/supabase-pi/supabase/docker/volumes/functions/  ← volumen que lee el contenedor
         ↓  docker restart
@@ -297,7 +297,7 @@ supabase-edge-functions                   ← recarga el código
 **Comandos para desplegar:**
 ```bash
 # 1. Copiar todas las funciones al volumen
-cp -r ~/Timeboxing/supabase/functions/* ~/supabase-pi/supabase/docker/volumes/functions/
+cp -r ~/Taimbox/supabase/functions/* ~/supabase-pi/supabase/docker/volumes/functions/
 
 # 2. Reiniciar el edge runtime
 docker restart supabase-edge-functions
@@ -308,7 +308,7 @@ docker logs supabase-edge-functions --tail 5
 
 **Para una sola función (más rápido):**
 ```bash
-cp -r ~/Timeboxing/supabase/functions/<nombre-funcion> \
+cp -r ~/Taimbox/supabase/functions/<nombre-funcion> \
       ~/supabase-pi/supabase/docker/volumes/functions/ \
    && docker restart supabase-edge-functions
 ```
@@ -428,14 +428,14 @@ Si al vincular Google Ads o listar cuentas aparece **503 (Service Unavailable)**
   **Importante**: El `service_role` key bypasea RLS. Las edge functions y workers que usan `SUPABASE_SERVICE_ROLE_KEY` no se ven afectados.
 
   **Supabase self-hosted (sin Supabase Cloud)**  
-  No se usa `supabase login` ni `supabase functions deploy`: el login es solo para la cuenta de Supabase Cloud. **Convención del proyecto para self-hosted:** generar el script de deploy en el servidor con un **heredoc** (crear el archivo pegando el bloque en la consola) y luego ejecutar ese script para copiar `supabase/functions/` al volumen del Edge Runtime y reiniciar el servicio. Documentación completa (bloque heredoc listo para pegar, rutas, variables): **`supabase/scripts/README-deploy.md`** (secciones "Crear el script de deploy en el servidor (heredoc)" y "Servidor con Timeboxing en ~/Timeboxing y Supabase en ~/supabase-pi"). Script: `supabase/scripts/deploy-edge-functions-supabase-pi.sh`; rutas por defecto: Timeboxing `$HOME/Timeboxing`, Supabase docker `$HOME/supabase-pi/supabase/docker`, servicio `functions`. Flujo: (1) Crear el script en el servidor con el heredoc de README-deploy.md; (2) Tener `supabase/functions/` en el servidor (p. ej. `~/Timeboxing/supabase/functions/`); (3) Ejecutar `./supabase/scripts/deploy-edge-functions-supabase-pi.sh` desde `~/Timeboxing`.
+  No se usa `supabase login` ni `supabase functions deploy`: el login es solo para la cuenta de Supabase Cloud. **Convención del proyecto para self-hosted:** generar el script de deploy en el servidor con un **heredoc** (crear el archivo pegando el bloque en la consola) y luego ejecutar ese script para copiar `supabase/functions/` al volumen del Edge Runtime y reiniciar el servicio. Documentación completa (bloque heredoc listo para pegar, rutas, variables): **`supabase/scripts/README-deploy.md`** (secciones "Crear el script de deploy en el servidor (heredoc)" y "Servidor con Taimbox en ~/Taimbox y Supabase en ~/supabase-pi"). Script: `supabase/scripts/deploy-edge-functions-supabase-pi.sh`; rutas por defecto: Taimbox `$HOME/Taimbox`, Supabase docker `$HOME/supabase-pi/supabase/docker`, servicio `functions`. Flujo: (1) Crear el script en el servidor con el heredoc de README-deploy.md; (2) Tener `supabase/functions/` en el servidor (p. ej. `~/Taimbox/supabase/functions/`); (3) Ejecutar `./supabase/scripts/deploy-edge-functions-supabase-pi.sh` desde `~/Taimbox`.
   Alternativa manual: (1) Copiar la carpeta `supabase/functions/` al host del Edge Runtime; (2) Arrancar el Edge Runtime con esa ruta (p. ej. Docker: `docker run ... -v /ruta/functions:/usr/services supabase/edge-runtime start --main-service /usr/services` o script [edge-runtime](https://github.com/supabase/edge-runtime)); (3) Configurar el proxy para `.../functions/v1/<nombre-funcion>`; (4) Definir `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`. Tras cambios, actualizar archivos y reiniciar el contenedor.
 
   **Página de gestión**: `src/pages/ApiKeysPage.tsx` (ruta `/api-keys`, requiere permiso `can_access_api_keys`). Permite crear, listar y revocar tokens API. Enlace en Sidebar bajo "Configuración" (visible solo si el rol tiene ese permiso). La ruta `/soporte` (ContactSupportPage) requiere `can_access_support`. Ambos permisos son configurables por rol en Configuración de agencia → Equipo y permisos → sección "Configuración y soporte" (junto con Configuración de Agencia).
   **Menú Configuración (Sidebar)**: El grupo "Configuración" del Sidebar (`Sidebar.tsx`) unifica todo lo relacionado con la agencia: Mis Agencias, Gestionar miembros, Configuración de agencia, API & Integraciones, Contactar soporte, Crear nueva agencia (los tres primeros y el último solo si `can_access_agency_settings`). **Footer del Sidebar**: Con una sola agencia no hay dropdown de agencia; el nombre de la agencia y el selector "Vista por departamento" (Vista Global / departamentos) van en un único bloque integrado (nombre + vista en la misma línea; el nombre es enlace a `/agency` si el usuario tiene `can_access_agency_settings`). Con varias agencias, `AgencySelectorCompact` muestra solo la lista para cambiar de agencia (sin menú "Ir a Configuración"). `DepartmentViewSelector` admite prop `inline` para integrarse en esa fila cuando hay una sola agencia.
 
 - **Área administrativa de plataforma (God Mode)**  
-  Panel interno para la empresa (Timeboxing), no para las agencias cliente.
+  Panel interno para la empresa (Taimbox), no para las agencias cliente.
   - **Tabla `platform_admins`**: `user_id` (PK), `role`, `created_at`. RLS habilitado pero **sin políticas** de lectura/escritura para `authenticated`/`anon`; nadie puede listar ni escribirse como admin desde el cliente. Solo accesible vía RPC con SECURITY DEFINER o con service_role.
   - **Semilla platform admin**: La tabla `platform_admins` y la RPC `is_platform_admin` deben existir en la BD. El primer admin se añade insertando su `auth.users.id` en `platform_admins` (INSERT idempotente con `ON CONFLICT (user_id) DO NOTHING`).
   - **AdminLayout**: Layout independiente que **no** usa AgencyContext ni AppContext. Rutas `/admin/*` se sirven con este layout y el guard `PlatformAdminRoute` (sesión + RPC `is_platform_admin`). No reutilizar componentes de la app principal que usen `useAgency()` en el área admin sin refactor presentacional.

@@ -304,7 +304,7 @@ export function IntegrationsArticle() {
                             API REST: haz lo que quieras
                         </h2>
                         <p className="text-indigo-100/90 mb-4 leading-relaxed">
-                            API completa con autenticación JWT, webhooks para eventos en tiempo real y SDK para las integraciones más comunes. Conecta Timeboxing con cualquier herramienta de tu stack.
+                            API completa con autenticación JWT, webhooks para eventos en tiempo real y SDK para las integraciones más comunes. Conecta Taimbox con cualquier herramienta de tu stack.
                         </p>
                         <div className="grid grid-cols-2 gap-3">
                             {[
@@ -388,7 +388,7 @@ export function IntegrationsArticle() {
             <section className="mb-0">
                 <div className="rounded-3xl border-2 border-cyan-500/30 bg-gradient-to-br from-cyan-600/20 via-blue-600/20 to-cyan-600/20 p-6 sm:p-10">
                     <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4 text-center">
-                        Tu stack, potenciado por Timeboxing
+                        Tu stack, potenciado por Taimbox
                     </h2>
                     <p className="text-indigo-100/95 mb-6 text-base sm:text-lg leading-relaxed text-center max-w-2xl mx-auto">
                         Conecta Google Ads, Meta Ads y cualquier herramienta de tu stack. Toda la información de tu agencia centralizada y sincronizada.

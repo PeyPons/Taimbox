@@ -132,7 +132,7 @@ const App = () => (
                         {/* Página de inicio (Landing) */}
                         <Route path="/" element={<LandingPage />} />
 
-                        {/* Artículo: por qué Timeboxing (página pública) */}
+                        {/* Artículo: por qué Taimbox (página pública) */}
                         <Route path="/por-que-timeboxing" element={<ArticlePage />} />
 
                         {/* Landing comercial: Dashboard del Empleado (página pública) */}

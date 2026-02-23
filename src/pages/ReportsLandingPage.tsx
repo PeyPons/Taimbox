@@ -7,14 +7,14 @@ export default function ReportsLandingPage() {
     return (
         <>
             <Helmet>
-                <title>Reportes y Rentabilidad — Mide lo que importa | Timeboxing</title>
+                <title>Reportes y Rentabilidad — Mide lo que importa | Taimbox</title>
                 <meta name="description" content="Dashboard de rentabilidad por proyecto, informes de cliente exportables, weekly forecast y análisis financiero en tiempo real para agencias." />
                 <link rel="canonical" href="/reportes-rentabilidad" />
                 <script type="application/ld+json">
                     {JSON.stringify({
                         '@context': 'https://schema.org',
                         '@type': 'WebPage',
-                        name: 'Reportes y Rentabilidad — Timeboxing',
+                        name: 'Reportes y Rentabilidad — Taimbox',
                         description: 'Rentabilidad por proyecto al céntimo. Informes de cliente, weekly forecast y exportaciones.',
                     })}
                 </script>

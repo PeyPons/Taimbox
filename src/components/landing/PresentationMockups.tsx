@@ -353,7 +353,7 @@ export function MockBeforeAfter() {
                     <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-red-500/40 flex items-center justify-center shrink-0">
                         <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-red-300" />
                     </div>
-                    <span className="text-base sm:text-xl font-bold text-red-200">Sin Timeboxing</span>
+                    <span className="text-base sm:text-xl font-bold text-red-200">Sin Taimbox</span>
                 </div>
                 <ul className="space-y-2 sm:space-y-3">
                     {beforeItems.map((t, i) => (
@@ -370,7 +370,7 @@ export function MockBeforeAfter() {
                     <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-emerald-500/40 flex items-center justify-center shrink-0">
                         <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-300" />
                     </div>
-                    <span className="text-base sm:text-xl font-bold text-emerald-200">Con Timeboxing</span>
+                    <span className="text-base sm:text-xl font-bold text-emerald-200">Con Taimbox</span>
                 </div>
                 <ul className="space-y-2 sm:space-y-3">
                     {afterItems.map((t, i) => (
