@@ -31,6 +31,7 @@ import AdminDocsPage from "./pages/admin/AdminDocsPage";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import LandingPage from "./pages/LandingPage";
 import ArticlePage from "./pages/ArticlePage";
+import WhatIsTimeboxingPage from "./pages/WhatIsTimeboxingPage";
 import EmployeeDashboardLandingPage from "./pages/EmployeeDashboardLandingPage";
 import PlannerLandingPage from "./pages/PlannerLandingPage";
 import TeamLandingPage from "./pages/TeamLandingPage";
@@ -134,6 +135,9 @@ const App = () => (
 
                         {/* Artículo: por qué Taimbox (página pública) */}
                         <Route path="/por-que-timeboxing" element={<ArticlePage />} />
+
+                        {/* Artículo: qué es Timeboxing (página pública) */}
+                        <Route path="/que-es-timeboxing" element={<WhatIsTimeboxingPage />} />
 
                         {/* Landing comercial: Dashboard del Empleado (página pública) */}
                         <Route path="/dashboard-empleado" element={<EmployeeDashboardLandingPage />} />
