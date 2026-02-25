@@ -86,7 +86,7 @@ export function useDashboardView() {
         }
     }, [currentUser?.preferredView]);
 
-    // Estado derivado (modo Zen eliminado: siempre vista semanal)
+    // Estado derivado (modo Zen/daily eliminado: convertir a weekly; kanban pasa limpio)
     const isStrict = departmentConfig?.isViewStrict ?? false;
     const deptViewRaw = departmentConfig?.defaultView ?? 'weekly';
     const deptView: ViewMode = deptViewRaw === 'daily' ? 'weekly' : deptViewRaw;

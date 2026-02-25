@@ -395,7 +395,7 @@ Si al vincular Google Ads o listar cuentas aparece **503 (Service Unavailable)**
 
 - **Aislamiento por agencia (multi-tenant)**  
   Todas las lecturas/escrituras deben acotarse a la agencia actual para no mostrar datos de una agencia en otra.
-  - **Tablas con columna `agency_id`** (filtrar siempre por `agency_id` en queries e inserts): `agencies`, `employees`, `clients`, `projects`, `ad_accounts_config`, `ads_sync_logs`, `meta_sync_logs`, `meta_ads_campaigns`, `google_ads_campaigns`, `global_assignments`, `task_transfers`, `department_config`, `user_agencies`, `audit_logs`, `team_events`, `client_settings`, `segmentation_rules`.
+  - **Tablas con columna `agency_id`** (filtrar siempre por `agency_id` en queries e inserts): `agencies`, `employees`, `clients`, `projects`, `ad_accounts_config`, `ads_sync_logs`, `meta_sync_logs`, `meta_ads_campaigns`, `google_ads_campaigns`, `global_assignments`, `task_transfers`, `department_config`, `user_agencies`, `audit_logs`, `team_events`, `client_settings`, `segmentation_rules`, `kanban_tasks`, `sop_templates`.
   - **Tablas sin `agency_id` que se filtran por join**: `deadlines` (join con `projects.agency_id` vía `fetchDeadlinesForMonth(monthKey, agencyId)`), `professional_goals` (join con `employees.agency_id` en GoalsContext), `user_routines` (join con `employees.agency_id` en AppContext), `allocations` y `absences` (join con `employees.agency_id`).  
   - **Tablas sin uso en la app** (solo API/workers o deprecadas): `google_ads_changes` (no referenciada en el codebase). La tabla `time_entries` se usa desde la UI con el módulo **Cronómetro de tareas** (RPC `log_timer_hours`); máximo 24 h por entrada (límite efectivo por agencia). La tabla `active_timers` almacena el timer activo por empleado (1 fila por empleado); RLS por `auth.uid()`. La tabla **`timer_sessions`** (append-only) guarda cada cierre de cronómetro con `start_time`/`end_time` exactos para webhooks e integraciones (p. ej. Perfex CRM).
 
@@ -507,6 +507,7 @@ Si modificas una interface, revisa estos consumidores:
 | `TaskTransfer` | `useTaskTransfers.ts`, `TaskTransferComponents.tsx`, `AppContext.tsx` |
 | `UserPermissions` | `usePermissions.ts`, `src/types/permissions.ts`, `PermissionProtectedRoute` en `App.tsx` |
 | `OKR` / `ProfessionalGoal` | `GoalsContext.tsx`, `OkrsPage.tsx`, `ProfessionalGoalsSheet.tsx`, `EmployeeDashboard.tsx` |
+| `KanbanTask` / `SOPTemplate` | `useKanbanTasks.ts`, `useSOPTemplates.ts`, `KanbanDashboard.tsx`, `KanbanBoard.tsx`, `KanbanTaskCard.tsx`, `KanbanTaskModal.tsx` |
 
 ### 8.2 Dependencias de Contexts
 
@@ -676,7 +677,7 @@ key={`emp-${emp.employeeId}`}  // Para empleados
 
 ### 10.3 Eliminación de empleados (limpieza en BD)
 Al eliminar un empleado **debe borrarse todo rastro en la base de datos**. No se debe solo ocultar en UI.
-- **Función en BD**: `cleanup_employee_data(p_employee_id uuid)` está definida en `20260221110000_cleanup_employee_data.sql` y actualizada en `20260221140000_create_timer_sessions.sql`. Elimina: `active_timers`, `timer_sessions`, `time_entries`, `allocations`, `absences`, `weekly_feedback`, `user_routines`, `professional_goals`, `task_transfers`; actualiza `deadlines.employee_hours` y `team_events.affected_employee_ids`.
+- **Función en BD**: `cleanup_employee_data(p_employee_id uuid)` está definida en `20260221110000_cleanup_employee_data.sql`, actualizada en `20260221140000_create_timer_sessions.sql` y en `20260226000000_kanban_tasks.sql`. Elimina: `kanban_tasks`, `active_timers`, `timer_sessions`, `time_entries`, `allocations`, `absences`, `weekly_feedback`, `user_routines`, `professional_goals`, `task_transfers`; actualiza `deadlines.employee_hours` y `team_events.affected_employee_ids`.
 - **Flujo**: En `AppContext.deleteEmployee` se llama primero a `supabase.rpc('cleanup_employee_data', { p_employee_id: id })` y después al `DELETE` en `employees`. Si la migración no está aplicada, el usuario verá un toast indicándolo.
 - **Estado local**: Tras el cleanup se actualizan también `weeklyFeedback`, `userRoutines` y `teamEvents` en el estado para que la UI no muestre datos huérfanos.
 

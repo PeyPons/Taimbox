@@ -850,7 +850,9 @@ export default function AgencySettingsPage() {
                             />
                             {config && (
                               <div className="flex items-center gap-1">
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">Semanal</Badge>
+                                <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 h-5", config.defaultView === 'kanban' ? "bg-indigo-50 text-indigo-700 border-indigo-200" : "")}>
+                                  {config.defaultView === 'kanban' ? 'Kanban' : 'Semanal'}
+                                </Badge>
                                 {config.isViewStrict && (
                                   <TooltipProvider delayDuration={300}>
                                     <Tooltip>

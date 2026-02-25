@@ -50,7 +50,9 @@ import { useIntegration } from '@/hooks/useIntegration';
 import { PendingTransfersPanel } from '@/components/transfers/TaskTransferComponents';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
+import { useDashboardView } from '@/hooks/useDashboardView';
 import { Link } from 'react-router-dom';
+import KanbanDashboard from '@/components/employee/kanban/KanbanDashboard';
 
 const INTERNAL_CLIENT_NAME = 'Interno';
 const INTERNAL_PROJECT_NAME = 'Gestiones internas';
@@ -59,6 +61,16 @@ const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 
 export default function EmployeeDashboard() {
+  const { activeView, isLoading: isViewLoading } = useDashboardView();
+
+  if (!isViewLoading && activeView === 'kanban') {
+    return <KanbanDashboard />;
+  }
+
+  return <WeeklyEmployeeDashboard />;
+}
+
+function WeeklyEmployeeDashboard() {
   const { employees, projects, clients, allocations, absences, teamEvents, getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading, ensureMonthLoaded, weeklyFeedback, getEmployeeMonthlyLoad, currentUser: appCurrentUser } = useApp();
 
   const { currentAgency } = useAgency();

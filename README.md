@@ -189,7 +189,9 @@ Lógica reutilizable de UI.
 - **`useTaskTransfers`**: Máquina de estados para transferencias (`pending` -> `accepted/rejected`).
 - **`use-mobile.tsx`**: Detecta viewport (mobile vs desktop) para Layouts adaptativos.
 - **`useAppOrDemo`**: Selecciona contexto real o demo automáticamente.
-- **`useDashboardView`**: Gestiona la configuración de vista del dashboard del empleado por departamento (siempre vista semanal; modo Zen eliminado).
+- **`useDashboardView`**: Gestiona la configuración de vista del dashboard del empleado por departamento. Soporta `'weekly'` (timeboxing clásico) y `'kanban'` (tablero operativo). Si el departamento configura `is_view_strict = true`, el empleado no puede cambiar de vista.
+- **`useKanbanTasks`**: CRUD de tareas Kanban (`kanban_tasks`). Carga, crea, actualiza, elimina y mueve tareas entre columnas. Agrupa por status para renderizar el tablero.
+- **`useSOPTemplates`**: CRUD de plantillas SOP (`sop_templates`). Permite crear y reutilizar checklists de calidad para tareas tipo PROJECT.
 - **`useDeadlines`**: Lógica de carga y gestión de deadlines. Acepta `{ agencyId }` para multi-tenant; usa `fetchDeadlinesForMonth()` de `utils/deadlineUtils.ts` para filtrar por agencia cuando varias comparten el mismo Supabase.
 - **`useIntegration`**: Detecta integraciones habilitadas por agencia.
 - **`useProjectFilters`**: Filtros personalizados de proyectos por agencia.
