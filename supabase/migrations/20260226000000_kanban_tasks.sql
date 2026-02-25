@@ -1,15 +1,10 @@
 -- Extend view_mode_type enum to include 'kanban'
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_enum
-    WHERE enumlabel = 'kanban'
-    AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'view_mode_type')
-  ) THEN
-    ALTER TYPE view_mode_type ADD VALUE 'kanban';
-  END IF;
-END
-$$;
+-- NOTE: Must run OUTSIDE a transaction if PostgreSQL < 12.
+-- For Supabase (PG 15), this works inside a transaction.
+-- After running, restart PostgREST to refresh schema cache:
+--   NOTIFY pgrst, 'reload schema';  (from psql)
+--   OR: docker restart supabase-rest
+ALTER TYPE view_mode_type ADD VALUE IF NOT EXISTS 'kanban';
 
 -- Kanban tasks table
 CREATE TABLE IF NOT EXISTS public.kanban_tasks (

@@ -48,15 +48,14 @@ export function useDashboardView() {
                 .select('*')
                 .eq('agency_id', currentAgency.id)
                 .eq('department_name', currentUser.department)
-                .single();
+                .limit(1);
 
-            if (error && error.code !== 'PGRST116') {
-                // PGRST116 = no rows returned (not an error, just no config)
+            if (error) {
                 console.error('[useDashboardView] Error loading department config:', error);
             }
 
-            if (data) {
-                const row = data as DepartmentConfigRow;
+            if (data && data.length > 0) {
+                const row = data[0] as DepartmentConfigRow;
                 setDepartmentConfig({
                     id: row.id,
                     agencyId: row.agency_id,
