@@ -83,6 +83,11 @@ Permite renombrar proyectos automáticamente según patrones configurables:
   - Utilidad compartida: `src/utils/planningPrecisionUtils.ts` → `getExcludedProjectIds(projects, exclusions)`.
 - **Configuración**: En Configuración de agencia (`AgencySettingsPage`), pestaña **Módulos y métricas** → bloque "Precisión de planificación": selectores con búsqueda para elegir proyectos y clientes a excluir. La página está organizada en secciones (General, Equipo, Departamentos, Proyectos, Módulos y métricas, Integraciones, Apariencia) para facilitar la localización de opciones.
 
+#### Radar operativo: exclusión del riesgo «Poco avance»
+- `AgencySettings.radarLowProgressExcludeKeywords`: Opcional. Lista de palabras clave (strings). Si el **nombre del proyecto** contiene alguna de estas palabras (comparación insensible a mayúsculas), el proyecto **no** se marcará como riesgo «Poco avance» en el Radar operativo al final de mes (cuando el avance es &lt; 35%).
+- **Dónde se aplica**: `src/pages/OperationsRadarPage.tsx` → cálculo de `atRiskProjectsRaw` (exclusión en la condición de riesgo `lowProgress`).
+- **Configuración**: En Configuración de agencia, pestaña **Módulos y métricas** → bloque "Radar operativo": input para añadir/quitar palabras clave (ej. off-page, linkbuilding). Sin palabras configuradas, todos los proyectos pueden recibir la alerta «Poco avance» si aplica.
+
 #### Vistas por Departamento
 - **Propósito**: Permitir a los managers filtrar la plataforma por área (ej. Marketing, Desarrollo) sin perder la vista global.
 - **Configuración**: En Configuración de agencia, pestaña **Departamentos**: listado con nombre y color por departamento. El color se usa en la barra de aviso cuando el filtro está activo.

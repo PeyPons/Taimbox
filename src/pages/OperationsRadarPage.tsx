@@ -133,10 +133,9 @@ export default function OperationsRadarPage() {
             const hoursOverBudget = p.actual - p.budget;
             const completionRate = p.budget > 0 ? (p.actual / p.budget) * 100 : 0;
             const projectNameLower = p.projectName.toLowerCase();
-            const isOffPageOrLinkbuilding = projectNameLower.includes('off-page') ||
-                projectNameLower.includes('offpage') ||
-                projectNameLower.includes('linkbuilding') ||
-                projectNameLower.includes('link building');
+            const excludeKeywords = currentAgency?.settings?.radarLowProgressExcludeKeywords ?? [];
+            const isExcludedFromLowProgress = excludeKeywords.length > 0 &&
+                excludeKeywords.some(kw => projectNameLower.includes(kw.trim().toLowerCase()));
 
             if (hoursOverBudget > 0) {
                 risks.push({
@@ -145,7 +144,7 @@ export default function OperationsRadarPage() {
                     riskReason: `Supera presupuesto en ${hoursOverBudget.toFixed(1)}h`,
                     riskType: 'overBudget'
                 });
-            } else if (isEndOfMonth && completionRate < 35 && p.budget > 0 && !isOffPageOrLinkbuilding) {
+            } else if (isEndOfMonth && completionRate < 35 && p.budget > 0 && !isExcludedFromLowProgress) {
                 risks.push({
                     ...p,
                     riskLevel: completionRate < 20 ? 'critical' : 'high',
@@ -167,7 +166,7 @@ export default function OperationsRadarPage() {
             const riskOrder: Record<string, number> = { critical: 0, high: 1, medium: 2 };
             return (riskOrder[a.riskLevel] || 2) - (riskOrder[b.riskLevel] || 2);
         });
-    }, [projectMetrics, isEndOfMonth]);
+    }, [projectMetrics, isEndOfMonth, currentAgency?.settings?.radarLowProgressExcludeKeywords]);
 
     // Empleados y proyectos relevantes para la vista por departamento actual
     const employeesForView = useMemo(() => {

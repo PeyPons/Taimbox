@@ -34,7 +34,7 @@ El archivo más importante para contratos de datos.
 | **`Deadline`** | `projectId`, `month`, `employeeHours`, `budgetOverride` | Configuración mensual por proyecto (distribución y ajuste de budget). En multi-tenant se cargan filtrando por agencia vía join con `projects`. |
 | **`Employee`** | `id`, `defaultWeeklyCapacity`, `workSchedule`, `role`, `department` | Define horario base (horas por día); la capacidad semanal se deriva del horario, no es campo editable en la UI. `department`: id del departamento principal. |
 | **`Project`** | `id`, `budgetHours`, `monthlyFee`, `status`, `responsibleDepartmentId` | Contenedor de asignaciones. `responsibleDepartmentId` opcional para filtrado en reportes por departamento. |
-| **`AgencySettings`** | `roles`, `modules`, `departments`, `integrations`, `projectAliasingRules`, `planningPrecisionExclusions` | Configuración multi-tenant. `departments`: lista de áreas (id, nombre, color) para **Vistas por Departamento**. Exclusiones para precisión de planificación. |
+| **`AgencySettings`** | `roles`, `modules`, `departments`, `integrations`, `projectAliasingRules`, `planningPrecisionExclusions`, `radarLowProgressExcludeKeywords` | Configuración multi-tenant. `departments`: lista de áreas (id, nombre, color) para **Vistas por Departamento**. Exclusiones para precisión de planificación. Palabras clave para excluir proyectos del riesgo «Poco avance» en Radar operativo. |
 | **`RolePermissions`** | `name`, `is_system_role`, `permissions` | Rol con permisos configurables por agencia. |
 | **`ProjectAliasingRule`** | `displayPrefix`, `matchPatterns`, `virtualClientName` | Regla para renombrar proyectos (ej: Kit Digital → KD:). |
 | **`WorkSchedule`** | `monday`...`sunday` | Horas laborables por día (0-24). |
@@ -400,7 +400,7 @@ Define las integraciones disponibles para activar por agencia.
 | **`Allocation`** | `AppContext`, `AllocationSheet`, `useAllocationSheet`, `PlannerGrid`, `useProjectMetrics` |
 | **`Employee`** | `AppContext`, `AgencyContext`, `EmployeeRow`, `TeamPage`, `capacityUtils` |
 | **`Project`** | `AppContext`, `ProjectsPage`, `useProjectMetrics`, `ClientProjectPage` |
-| **`AgencySettings`** | `AgencyContext`, `usePermissions`, `AgencySettingsPage`, `ReliabilityIndexCard`, `planningPrecisionUtils` (planningPrecisionExclusions) |
+| **`AgencySettings`** | `AgencyContext`, `usePermissions`, `AgencySettingsPage`, `ReliabilityIndexCard`, `planningPrecisionUtils` (planningPrecisionExclusions), `OperationsRadarPage` (radarLowProgressExcludeKeywords) |
 
 ### 8.2 Dependencias de Lógica Core (Contexts & Utils)
 

@@ -16,7 +16,7 @@ import {
   Building2, Settings, Users, Palette, Save, Loader2,
   Filter, Plus, Trash2, HelpCircle, Info, X,
   Rocket, Facebook, Megaphone, PlusCircle, ShieldCheck, GitBranch, Database, AlertTriangle,
-  Eye, Lock, Unlock, Calendar, Check, ChevronDown, BarChart2, Layers, ExternalLink
+  Eye, Lock, Unlock, Calendar, Check, ChevronDown, BarChart2, Layers, ExternalLink, Activity
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -200,6 +200,12 @@ export default function AgencySettingsPage() {
   /** Objetivo Precio Hora Efectivo (€/h) en Rentabilidad. Por defecto 75. */
   const [ehrTarget, setEhrTarget] = useState(currentAgency?.settings?.ehrTarget ?? 75);
 
+  /** Palabras clave en nombre de proyecto que excluyen del riesgo "Poco avance" en Radar operativo. */
+  const [radarLowProgressExcludeKeywords, setRadarLowProgressExcludeKeywords] = useState<string[]>(
+    currentAgency?.settings?.radarLowProgressExcludeKeywords ?? []
+  );
+  const [radarKeywordInput, setRadarKeywordInput] = useState('');
+
   // Department view configuration
   const [deptConfigDialogOpen, setDeptConfigDialogOpen] = useState(false);
   const [selectedDeptForConfig, setSelectedDeptForConfig] = useState<string>('');
@@ -250,6 +256,7 @@ export default function AgencySettingsPage() {
         clientIds: currentAgency.settings?.planningPrecisionExclusions?.clientIds ?? []
       });
       setEhrTarget(currentAgency.settings?.ehrTarget ?? 75);
+      setRadarLowProgressExcludeKeywords(currentAgency.settings?.radarLowProgressExcludeKeywords ?? []);
       fetchConnectedAccounts();
     }
   }, [currentAgency]);
@@ -352,7 +359,8 @@ export default function AgencySettingsPage() {
         weeklyCloseDay,
         planningPrecisionExclusions,
         timeTrackerMaxHours,
-        ehrTarget
+        ehrTarget,
+        radarLowProgressExcludeKeywords
       });
 
       // Si el nombre ha cambiado, actualizarlo por separado
@@ -1131,6 +1139,71 @@ export default function AgencySettingsPage() {
                     )}
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Radar operativo: excluir riesgo "Poco avance" por palabras en nombre del proyecto */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-emerald-600" />
+                  Radar operativo
+                </CardTitle>
+                <CardDescription>
+                  Si el nombre del proyecto contiene alguna de estas palabras, no se marcará como riesgo «Poco avance» al final de mes. Ej.: off-page, linkbuilding.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex flex-wrap gap-2 items-center">
+                  <Input
+                    placeholder="Añadir palabra clave (ej. off-page)"
+                    value={radarKeywordInput}
+                    onChange={(e) => setRadarKeywordInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const v = radarKeywordInput.trim().toLowerCase();
+                        if (v && !radarLowProgressExcludeKeywords.includes(v)) {
+                          setRadarLowProgressExcludeKeywords([...radarLowProgressExcludeKeywords, v]);
+                          setRadarKeywordInput('');
+                        }
+                      }
+                    }}
+                    className="max-w-[220px]"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      const v = radarKeywordInput.trim().toLowerCase();
+                      if (v && !radarLowProgressExcludeKeywords.includes(v)) {
+                        setRadarLowProgressExcludeKeywords([...radarLowProgressExcludeKeywords, v]);
+                        setRadarKeywordInput('');
+                      }
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Añadir
+                  </Button>
+                </div>
+                {radarLowProgressExcludeKeywords.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {radarLowProgressExcludeKeywords.map((kw) => (
+                      <Badge key={kw} variant="secondary" className="text-xs gap-1">
+                        {kw}
+                        <button
+                          type="button"
+                          onClick={() => setRadarLowProgressExcludeKeywords(radarLowProgressExcludeKeywords.filter((k) => k !== kw))}
+                          className="rounded-full hover:bg-muted p-0.5"
+                          aria-label={`Quitar ${kw}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

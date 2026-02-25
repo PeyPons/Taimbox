@@ -117,6 +117,8 @@ export interface AgencySettings {
   timeTrackerMaxHours?: number;
   /** Objetivo de Precio Hora Efectivo (?/h) en Salud financiera. Si no se define, se usa 75 ?/h o la media de coste por hora si es superior. */
   ehrTarget?: number;
+  /** Palabras clave en el nombre del proyecto que excluyen de la alerta "Poco avance" en el Radar operativo (fin de mes). Ej.: off-page, linkbuilding. */
+  radarLowProgressExcludeKeywords?: string[];
 }
 
 export type AgencyStatus = 'active' | 'suspended';
