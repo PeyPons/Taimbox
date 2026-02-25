@@ -19,6 +19,11 @@ export const CONSTANTS = {
   LIMITS: {
     MAX_LOGS: 50,
     TOP_CAMPAIGNS: 10,
+    /** Proyectos en alerta (Seguimiento operativo): elementos por página */
+    RADAR_ALERTS_PAGE_SIZE: 15,
+    /** Coherencia planificación: proyectos por página; si hay más, no se expanden todos por defecto */
+    COHERENCE_PAGE_SIZE: 12,
+    COHERENCE_AUTO_EXPAND_MAX: 15,
     MAX_TIPS: 3,
     MAX_HISTORICAL_MONTHS: 12,
     MAX_CHANGE_LOGS: 50,

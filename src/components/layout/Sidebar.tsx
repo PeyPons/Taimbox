@@ -34,7 +34,10 @@ import {
   Building2,
   Plus,
   Clock,
-  Square
+  Square,
+  Activity,
+  DollarSign,
+  FileText
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from '@/lib/utils';
@@ -150,7 +153,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const isTimeTrackerEnabled = (modules.timeTracker === true) && (currentUser?.user_id != null);
   const activeTimer = useActiveTimerForSidebar(isTimeTrackerEnabled ? currentUser?.id : undefined);
 
-  const isSuperior = canAccess('/planner') || canAccess('/team') || canAccess('/reports') || canAccess('/settings');
+  const isSuperior = canAccess('/planner') || canAccess('/team') || canAccess('/reports') || canAccess('/operaciones') || canAccess('/finanzas') || canAccess('/settings');
 
   return (
     <>
@@ -262,11 +265,40 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           {/* Superior View: Grouped Command Center */}
           {isSuperior && (
             <div className="space-y-4">
+              {/* SEGUIMIENTO */}
+              {(canAccess('/operaciones') || canAccess('/finanzas') || canAccess('/reports') || canAccess('/team-capacity')) && (
+                <NavGroup
+                  label="Seguimiento"
+                  isActive={['/operaciones', '/finanzas', '/capacidad', '/weekly-forecast'].includes(location.pathname)}
+                >
+                  {canAccess('/operaciones') && (
+                    <NavLink to="/operaciones" icon={Activity} active={location.pathname === '/operaciones'}>
+                      Seguimiento operativo
+                    </NavLink>
+                  )}
+                  {canAccess('/finanzas') && (
+                    <NavLink to="/finanzas" icon={DollarSign} active={location.pathname === '/finanzas'}>
+                      Rentabilidad
+                    </NavLink>
+                  )}
+                  {canAccess('/team-capacity') && (
+                    <NavLink to="/capacidad" icon={Users} active={location.pathname === '/capacidad'}>
+                      Capacidad de Equipo
+                    </NavLink>
+                  )}
+                  {canAccess('/team-capacity') && (
+                    <NavLink to="/weekly-forecast" icon={FileText} active={location.pathname === '/weekly-forecast'}>
+                      Weekly Forecast
+                    </NavLink>
+                  )}
+                </NavGroup>
+              )}
+
               {/* PLANIFICACIÓN */}
-              {(canAccess('/planner') || (modules.deadlines && canAccess('/deadlines')) || (modules.weeklyFeedback && canAccess('/weekly-forecast'))) && (
+              {(canAccess('/planner') || (modules.deadlines && canAccess('/deadlines'))) && (
                 <NavGroup
                   label="Planificación"
-                  isActive={location.pathname === '/planner' || location.pathname === '/deadlines' || location.pathname === '/weekly-forecast'}
+                  isActive={location.pathname === '/planner' || location.pathname === '/deadlines'}
                 >
                   {canAccess('/planner') && (
                     <NavLink to="/planner" icon={LayoutDashboard} active={location.pathname === '/planner'}>
@@ -278,19 +310,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       Deadlines
                     </NavLink>
                   )}
-                  {modules.weeklyFeedback && canAccess('/weekly-forecast') && (
-                    <NavLink to="/weekly-forecast" icon={TrendingUp} active={location.pathname === '/weekly-forecast'}>
-                      Weekly
-                    </NavLink>
-                  )}
                 </NavGroup>
               )}
 
               {/* EQUIPO */}
-              {(canAccess('/team') || canAccess('/team-capacity') || canAccess('/okrs') || (modules.timeTracker && canAccess('/team'))) && (
+              {(canAccess('/team') || canAccess('/okrs') || (modules.timeTracker && canAccess('/team'))) && (
                 <NavGroup
                   label="Equipo"
-                  isActive={['/team', '/team-capacity', '/okrs', '/tiempos'].includes(location.pathname)}
+                  isActive={['/team', '/okrs', '/tiempos'].includes(location.pathname)}
                 >
                   {canAccess('/team') && (
                     <NavLink to="/team" icon={Users} active={location.pathname === '/team'}>
@@ -300,11 +327,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   {modules.timeTracker && canAccess('/team') && (
                     <NavLink to="/tiempos" icon={Clock} active={location.pathname === '/tiempos'}>
                       Tiempos
-                    </NavLink>
-                  )}
-                  {canAccess('/team-capacity') && (
-                    <NavLink to="/team-capacity" icon={TrendingUp} active={location.pathname === '/team-capacity'}>
-                      Capacidad
                     </NavLink>
                   )}
                   {canAccess('/okrs') && (
@@ -350,15 +372,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </NavGroup>
               )}
 
-              {/* ANÁLISIS */}
+              {/* ANÁLISIS: solo Reportes clásicos e Informes clientes (Seguimiento operativo y Rentabilidad están en Seguimiento) */}
               {(canAccess('/reports') || canAccess('/informes-clientes')) && (
                 <NavGroup
                   label="Análisis"
-                  isActive={['/reports', '/informes-clientes'].includes(location.pathname)}
+                  isActive={['/informes-clientes', '/reportes-clasicos'].includes(location.pathname)}
                 >
                   {canAccess('/reports') && (
-                    <NavLink to="/reports" icon={BarChart3} active={location.pathname === '/reports'}>
-                      Reportes
+                    <NavLink to="/reportes-clasicos" icon={TrendingUp} active={location.pathname === '/reportes-clasicos'}>
+                      Reportes clásicos
                     </NavLink>
                   )}
                   {canAccess('/informes-clientes') && (

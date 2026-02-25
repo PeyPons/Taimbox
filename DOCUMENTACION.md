@@ -30,6 +30,7 @@ El núcleo del modelo **multi-tenant**. Cada usuario pertenece a una o más agen
     - `modules`: Módulos habilitados (Ads/PPC, etc.).
     - `branding`: Colores y logotipos personalizados.
     - `projectAliasingRules`: Reglas para renombrado automático de proyectos.
+    - `ehrTarget`: Opcional. Objetivo de Precio Hora Efectivo (€/h) en **Rentabilidad**. Si no se define, se usa 75 €/h o la media de coste por hora de la agencia si es superior. Se edita en Configuración de agencia → General → Rentabilidad.
 
 #### Sistema de Roles Dinámicos
 Cada agencia define sus propios roles con permisos granulares:
@@ -72,6 +73,7 @@ Permite renombrar proyectos automáticamente según patrones configurables:
 | ClientReportsPage | `src/pages/ClientReportsPage.tsx` | ~160 |
 | WeeklyForecastPage | `src/pages/WeeklyForecastPage.tsx` | ~380 |
 | EmployeeDashboard | `src/pages/EmployeeDashboard.tsx` | ~220 |
+| OperationsRadarPage | `src/pages/OperationsRadarPage.tsx` | ~540 (nombre en fila de proyecto; búsqueda por nombre formateado o crudo) |
 
 > **⚠️ IMPORTANTE**: Si creas un nuevo componente que muestra nombres de proyectos, DEBES usar `useProjectAliasing().formatName()` para mantener consistencia.
 
@@ -96,7 +98,8 @@ Permite renombrar proyectos automáticamente según patrones configurables:
 Representa a los miembros del equipo.
 - `role`: Nombre del rol que determina los permisos.
 - `department`: ID (o nombre legacy) del departamento principal para filtrado en vistas por departamento.
-- `defaultWeeklyCapacity`: Horas base de trabajo por semana (ej. 40).
+- `hourlyRate`: En la UI (Team, EmployeeDialog) se edita como "Coste mensual (nómina) €" y se persiste en BD en `hourly_rate`. **En el módulo Salud Financiera** (`FinancialHealthPage`) este valor se interpreta como **coste por hora (€/h)** para la fórmula F1: Coste laboral = Σ (horas reales del empleado en proyecto × coste/h del empleado). No se calcula €/h dividiendo nómina entre horas del mes; es un dato fijo por empleado. En otros reportes puede usarse de forma distinta; ver documentación de cada módulo.
+- `defaultWeeklyCapacity`: Horas base de trabajo por semana; **se calcula automáticamente** a partir del horario por día (`workSchedule`). No existe campo editable "Capacidad (h/sem)" en la configuración de empleados: la capacidad se deriva de las horas por día (L–D). Utilidad: `getWeeklyHoursFromSchedule()` en `dateUtils.ts`.
 - `workSchedule`: Objeto que define las horas por día (`monday`: 8, `friday`: 6, etc.).
 - `user_id`: Enlace con `auth.users` de Supabase para autenticación.
 
@@ -450,14 +453,36 @@ Si al vincular Google Ads o listar cuentas aparece **503 (Service Unavailable)**
 
   - **Acceder como agencia:** Para soporte o debugging, un platform admin puede "entrar" en la app con el contexto de una agencia. Columna `is_impersonation` en `user_agencies`; RPCs `admin_impersonate_agency(p_agency_id)` (añade/actualiza fila con `is_primary = true` para que `requesting_agency_id()` devuelva esa agencia) y `admin_stop_impersonate(p_agency_id)` (borra la fila de impersonación y restaura `is_primary` en otra). En Admin → Agencias, botón "Entrar" llama a la RPC y redirige a `/dashboard?agency=<id>`. **AgencyContext** prioriza la agencia con `is_primary` en `user_agencies` y, si no hay empleado para esa agencia, carga la agencia solo por `user_agencies` (y opcionalmente `?agency=` en la URL). **ImpersonationBanner** (`src/components/admin/ImpersonationBanner.tsx`) en AppLayout muestra "Viendo la app como agencia: [nombre]" y "Salir de vista" (llama a `admin_stop_impersonate` y redirige a `/admin/agencies`). La tabla `user_agencies` debe tener UNIQUE (user_id, agency_id). RPC `repair_user_agencies_from_employees()` repara membresías perdidas recreando filas desde la tabla `employees`. **Ver datos sin perfil de empleado:** Si el platform admin no tiene perfil en esa agencia (`currentUser` indefinido), **PermissionProtectedRoute** permite el acceso (no redirige a dashboard): se considera `isPlatformAdmin` y se deja pasar a Planificador, Deadlines, Weekly, etc. Los datos se cargan por `currentAgency.id`. En **usePlannerData**, el filtro "Solo yo" solo se aplica cuando existe `currentUser`; si no hay empleado vinculado, se muestran todos los empleados de la agencia. En **WeeklyForecastPage**, la carga de transferencias usa `currentUser?.agencyId ?? currentAgency?.id` cuando el usuario es platform admin para poder ver datos de la agencia actual.
 
+- **Seguimiento operativo (`OperationsRadarPage.tsx`)**
+  - **Filtro por departamento (una sola fuente de verdad)**: Usa exclusivamente **DepartmentViewContext** (el mismo que el Sidebar "Vista por departamento"). No hay override local en la página ni selectores adicionales de departamento en Coherencia. La selección en el Sidebar afecta tanto a la card de Coherencia como a Proyectos en alerta. Opcionalmente se puede abrir la página con `?depto=<id|nombre>` para inicializar la vista, pero Seguimiento operativo no escribe de vuelta ese parámetro.
+  - **Navegación por mes**: Estado `viewDate` inicializado desde `?mes=YYYY-MM`; cabecera con anterior / "Mes actual" (MMM yyyy) / siguiente. Al montar y al cambiar mes se llama **`ensureMonthLoaded(viewDate)`** desde `useApp()` para que AppContext tenga las asignaciones de ese mes en memoria.
+  - **URL persistente**: `?mes=` se lee al montar y se actualiza al cambiar de mes; el enlace es compartible y se restaura al recargar. `?depto=` solo se lee en el arranque para ajustar `DepartmentViewContext`, pero no se mantiene sincronizado automáticamente.
+  - **Departamentos**: Lista desde `normalizeDepartments(currentAgency?.settings?.departments)`. Al seleccionar un departamento se aplican **dos criterios**: (1) solo se consideran proyectos con asignaciones del mes de **empleados de ese departamento** (`employeeBelongsToDepartment`); (2) de esos, solo se muestran proyectos cuyo **`responsibleDepartmentId`** coincide con el departamento seleccionado (id o nombre). Los proyectos **sin** `responsibleDepartmentId` sí se muestran si tienen horas de empleados del departamento (para no ocultar proyectos aún no asignados a un área). Así, al filtrar por SEO solo aparecen proyectos de SEO (y no de SEM u otros).
+  - **Búsqueda global única (UX unificada)**: En la cabecera hay una sola barra **"Buscar proyecto o cliente..."** (Input con icono de lupa). No hay dropdown de proyecto: el usuario escribe directamente y la búsqueda aplica a **ambos paneles** (Coherencia y Estado de proyectos). Así se evita tener filtros dispersos y se alinea con el patrón de búsqueda por texto.
+  - **Coherencia**: `GlobalPlanningInconsistencies` recibe `viewDate`, **`searchQuery`** y **`hideProjectSearch`**. En Seguimiento operativo se pasa `hideProjectSearch={true}`: no se muestran búsqueda ni dropdown de proyecto (evita redundancia con la barra global); solo el **filtro por empleado**, con control tipo combobox (campo "Filtrar por empleado..." clicable en toda el área, se abre lista con búsqueda). La búsqueda global filtra por nombre de proyecto o cliente. **Sin paginación**. "Expandir todo" / "Colapsar todo". Si hay más de `COHERENCE_AUTO_EXPAND_MAX` proyectos no se expanden todos por defecto.
+  - **Estado de proyectos** (panel derecho): Título "Estado de proyectos". **Filtros al estilo cartera** (mismo diseño que Cartera/Proyectos): **Todos** | **Sin actividad** | **Falta planificar** | **Retrasados** | **Exceso horas** | **En regla**, con iconos y tooltips. Cada proyecto tiene **un único estado** (excluyentes, prioridad: exceso horas > retrasados > falta planificar > sin actividad > en regla). **"En regla"** solo cuando está realmente al día: sin exceso de presupuesto, sin retraso (ritmo/avance), **sin tareas pendientes de planificar** (si hay "X sin planificar" no puede estar En regla) y no "sin actividad". Lista con desplegables (Collapsible): trigger con nombre, cliente, badge del estado (Exceso horas, Retrasados, Falta planificar, Sin actividad, En regla), métricas (Contratadas, Computadas, Por computar), barra de avance y opcionalmente "X sin planificar". Al expandir: proyección, barras Estimado/Real/Computado, frase accionable. **Sin paginación**.
+  - **Diferencia con otros reportes**: Reportes clásicos, Team Pulse y otros módulos también respetan `DepartmentViewContext`, pero Seguimiento operativo se centra en **riesgos operativos diarios** (coherencia planificación vs ejecución y proyectos en alerta) con explicaciones accionables en una sola vista.
+
 - **Reportes (`ReportsPage.tsx`)**  
   - **Alertas del equipo**: Las horas planificadas y capacidad en alertas se formatean con `round2()` para evitar decimales flotantes largos (ej. 158.41 en lugar de 158.4100000000002).
   - **Predicción de carga**: La sección "Predicción de carga - Mes siguiente" prioriza el **mes siguiente** (objetivo: ver cómo puede estar el mes que viene). El "mes actual" se muestra como "Contexto: mes actual" en la segunda columna. Descripción de la card: "El objetivo es ver cómo puede estar el mes que viene."
   - **Mes actual sin doble conteo**: El "mes actual" (y la inercia/histórico para la estimación) usa **solo** `allocations` + `global_assignments`. No se suman las horas de **deadlines**, porque los deadlines son el objetivo por proyecto que ya queda reflejado en las tareas planificadas (allocations); sumar ambos producía doble conteo y cifras irreales (ej. 282h para 150h de capacidad).
   - **Vacaciones y eventos**: Tanto el **mes actual** como el **mes siguiente** usan capacidad **neta**: se resta de la capacidad base las ausencias (`getAbsenceHoursInRange`) y los eventos de equipo (`getTeamEventHoursInRange`) en ese mes, de modo que el porcentaje y las "horas libres" reflejan la realidad (vacaciones, bajas, formaciones, etc.).
 
+- **Rentabilidad / Salud Financiera (`FinancialHealthPage.tsx`, ruta `/finanzas`)**
+  - Lógica inquebrantable (contabilidad analítica, no fiscal): **F1** Coste laboral = Σ (horas reales del empleado en proyecto × coste/h del empleado). **F2** Ingreso = `monthly_fee` del proyecto (no se prorratea). **F3** Margen = Ingreso − Coste laboral (y − ads si aplica); margen % = (Margen € / Ingreso) × 100. **F4** EHR = Ingreso / Total horas reales del proyecto; si horas = 0 se muestra "Sin datos" o "--- €/h". Las fórmulas se documentan también en la landing `/reportes-rentabilidad` (sección "Cómo calculamos la rentabilidad", id `#formulas`).
+  - **Buscador** único en cabecera; **toggle** "Incluir todos los proyectos"; vista por departamento aplicada. **Horas**: selector Real / Computada (horas trackeadas = computed).
+  - **Coste**: En esta página el campo del empleado `hourly_rate` se usa como **coste por hora (€/h)**. El coste por proyecto es F1 (suma por empleado de horas en proyecto × su €/h). El KPI "Coste interno" global es la suma F1 de todos los empleados en vista (no la suma de nóminas).
+  - **KPIs**: EHR efectivo global, Margen neto global (F3). **Radar de hemorragias**: proyectos facturables con actividad; columnas Coste (F1) y Margen (€); desglose expandible por empleado: solo **Horas (reales)** y **Coste laboral (€)** (F1 por fila). **Inversión interna**: proyectos con fee 0 € (horas, coste).
+  - **Tabs**: **Resumen** (KPIs, Radar, Inversión interna, Rentabilidad por departamento, lista Rentabilidad por empleado), **Proyectos** (tabla con Ingreso F2, horas, EHR F4, Coste F1, Margen F3; desglose por empleado: horas + coste), **Empleados** (tabla: Horas, Coste laboral F1; desglose por proyecto: horas + coste). No hay "ingreso atribuido" por empleado (F2 es a nivel proyecto).
+  - **EHR** se calcula a nivel proyecto (F4). Proyectos internos (fee 0): margen negativo en rojo; EHR 0 o "Sin datos".
+
 - **Modificar permisos**:
-    - Editar `src/hooks/usePermissions.ts` y añadir la nueva clave de permiso al objeto `RESTRICTED_PERMISSIONS`.
+    - Añadir el flag en `UserPermissions` y en `ROUTE_PERMISSIONS` (si protege una ruta) en `src/types/permissions.ts`.
+    - Añadir etiqueta en `PERMISSION_LABELS` y valor por defecto en `DEFAULT_PERMISSIONS`.
+    - Editar `src/hooks/usePermissions.ts`: añadir la clave en `RESTRICTED_PERMISSIONS` y, si aplica, lógica de compatibilidad para roles ya guardados (ej. nuevos permisos que se derivan de uno existente hasta que se edite el rol).
+    - Añadir el permiso en la lista por sección en Configuración de agencia → Equipo (`AgencySettingsPage.tsx`).
+    - **Seguimiento operativo** (`/operaciones`) y **Rentabilidad** (`/finanzas`) tienen permisos propios: `can_access_operations_radar` y `can_access_financial_health`. El permiso "Reportes" pasó a etiquetarse como "Reportes clásicos" y solo controla `/reportes-clasicos`.
 - **Actualizar Workers**:
     - Los workers consumen tokens de `ad_accounts_config`. Si falla el refresco de token, el worker registrará el error en `ads_sync_logs`.
 
@@ -489,7 +514,7 @@ Si modificas una interface, revisa estos consumidores:
 |-----------------|-------------------|
 | `AppContext.tsx` (fetchData) | Todos los componentes que usan `useApp()` - especialmente `AllocationSheet`, `PlannerGrid`, `EmployeeDashboard` |
 | `AppContext.tsx` (getEmployeeLoadForWeek) | `WeekCell.tsx`, `EmployeeRow.tsx`, `usePlannerData.ts` |
-| `AppContext.tsx` (ensureMonthLoaded) | `usePlannerData.ts`, `AllocationSheet.tsx` |
+| `AppContext.tsx` (ensureMonthLoaded) | `usePlannerData.ts`, `AllocationSheet.tsx`, `OperationsRadarPage.tsx` |
 | `AgencyContext.tsx` (currentAgency) | `AppContext.tsx`, `usePermissions.ts`, `AgencySettingsPage.tsx` |
 | `GoalsContext.tsx` | `OkrsPage.tsx`, `ProfessionalGoalsSheet.tsx` |
 
@@ -657,6 +682,7 @@ Al eliminar un empleado **debe borrarse todo rastro en la base de datos**. No se
 
 ### 10.4 Informe de coherencia (GlobalPlanningInconsistencies)
 - **Un empleado, una fila por proyecto**: La lista "Empleados afectados" se construye con un `Map` por `employeeId` por proyecto, de modo que cada persona aparece como máximo una vez por proyecto (evita duplicados donde en una fila salía "en deadline" y en otra "no en deadline").
+- **Uso en Seguimiento operativo**: Si se pasa **`hideProjectSearch={true}`** (y opcionalmente **`searchQuery`**), el componente no muestra la sección "Filtros y búsqueda" (input de búsqueda y dropdown de proyecto); solo el **filtro por empleado** con control tipo combobox (área clicable, lista con búsqueda). La búsqueda global de Seguimiento operativo se aplica vía `searchQuery`. Así se evita redundancia y el desplegable que obligaba a usar la flecha.
 - **Empleados inexistentes**: Si por datos antiguos o fallo de migración quedara algún `employee_id` sin correspondencia en `employees`, no se muestra "Desconocido": se excluyen esas filas (red de seguridad; la solución correcta es la limpieza en BD, ver 10.3).
 
 ### 10.5 Robustez en mapeos y búsquedas (find/map)

@@ -8,6 +8,8 @@ export interface UserPermissions {
   can_access_team?: boolean;
   can_access_team_capacity?: boolean;
   can_access_reports?: boolean;
+  can_access_operations_radar?: boolean;
+  can_access_financial_health?: boolean;
   can_access_client_reports?: boolean;
   can_access_google_ads?: boolean;
   can_access_meta_ads?: boolean;
@@ -33,6 +35,8 @@ export const ROUTE_PERMISSIONS: Record<string, keyof UserPermissions> = {
   '/team': 'can_access_team',
   '/team-capacity': 'can_access_team_capacity',
   '/reports': 'can_access_reports',
+  '/operaciones': 'can_access_operations_radar',
+  '/finanzas': 'can_access_financial_health',
   '/informes-clientes': 'can_access_client_reports',
   '/ads': 'can_access_google_ads',
   '/meta-ads': 'can_access_meta_ads',
@@ -56,6 +60,8 @@ export const DEFAULT_PERMISSIONS: UserPermissions = {
   can_access_team: true,
   can_access_team_capacity: true,
   can_access_reports: true,
+  can_access_operations_radar: true,
+  can_access_financial_health: true,
   can_access_client_reports: true,
   can_access_google_ads: true,
   can_access_meta_ads: true,
@@ -80,7 +86,9 @@ export const PERMISSION_LABELS: Record<keyof UserPermissions, string> = {
   can_access_clients: 'Clientes',
   can_access_team: 'Equipo',
   can_access_team_capacity: 'Capacidad del equipo',
-  can_access_reports: 'Reportes',
+  can_access_reports: 'Reportes clásicos',
+  can_access_operations_radar: 'Seguimiento operativo',
+  can_access_financial_health: 'Rentabilidad',
   can_access_client_reports: 'Informes de clientes',
   can_access_google_ads: 'Google Ads',
   can_access_meta_ads: 'Meta Ads',

@@ -32,7 +32,7 @@ El archivo más importante para contratos de datos.
 |-----------|--------------|-------------|
 | **`Allocation`** | `id`, `employeeId`, `projectId`, `hoursAssigned`, `hoursActual`, `status` | **CORE**: Tarea asignada. Unidad atómica del calendario. |
 | **`Deadline`** | `projectId`, `month`, `employeeHours`, `budgetOverride` | Configuración mensual por proyecto (distribución y ajuste de budget). En multi-tenant se cargan filtrando por agencia vía join con `projects`. |
-| **`Employee`** | `id`, `defaultWeeklyCapacity`, `workSchedule`, `role`, `department` | Define capacidad y horario base. `department`: id del departamento principal (para filtrado por vista). |
+| **`Employee`** | `id`, `defaultWeeklyCapacity`, `workSchedule`, `role`, `department` | Define horario base (horas por día); la capacidad semanal se deriva del horario, no es campo editable en la UI. `department`: id del departamento principal. |
 | **`Project`** | `id`, `budgetHours`, `monthlyFee`, `status`, `responsibleDepartmentId` | Contenedor de asignaciones. `responsibleDepartmentId` opcional para filtrado en reportes por departamento. |
 | **`AgencySettings`** | `roles`, `modules`, `departments`, `integrations`, `projectAliasingRules`, `planningPrecisionExclusions` | Configuración multi-tenant. `departments`: lista de áreas (id, nombre, color) para **Vistas por Departamento**. Exclusiones para precisión de planificación. |
 | **`RolePermissions`** | `name`, `is_system_role`, `permissions` | Rol con permisos configurables por agencia. |
@@ -263,6 +263,8 @@ Todas las páginas principales de la aplicación.
 ### Reportes y Analytics
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
+| `FinancialHealthPage.tsx` | ~35KB | Rentabilidad (ruta `/finanzas`): Buscador "Buscar proyecto o cliente...", toggle incluir proyectos sin actividad, KPIs y Radar de hemorragias (solo facturables), bloque Inversión interna (fee 0), tabs Resumen / Proyectos / Empleados, rentabilidad por empleado (lista completa en €) y desglose por proyecto con ingreso atribuido y margen. |
+| `OperationsRadarPage.tsx` | — | Seguimiento operativo: **una sola búsqueda** en cabecera (aplica a ambos paneles). Coherencia sin filtros locales de proyecto (solo filtro por empleado tipo combobox). Estado de proyectos: **por defecto Todos**; modos Todos | Aviso bajo y en regla | Solo con avisos; desplegables con ritmo necesario (h/día) y enlace a Deadlines. Vista por departamento del Sidebar. |
 | `ReportsPage.tsx` | 105KB | Dashboard de métricas de rentabilidad |
 | `ClientReportsPage.tsx` | 11KB | Reportes orientados al cliente |
 

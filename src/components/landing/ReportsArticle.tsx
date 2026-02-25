@@ -16,6 +16,9 @@ import {
     FileSpreadsheet,
     Zap,
     Shield,
+    Calculator,
+    Clock,
+    Percent,
 } from 'lucide-react';
 
 /* ─── Mockup: Profitability Dashboard ─── */
@@ -217,12 +220,12 @@ export function ReportsArticle() {
                             ¿Ganas o pierdes dinero en cada proyecto?
                         </h2>
                         <p className="text-indigo-100/90 mb-4 leading-relaxed">
-                            El dashboard de rentabilidad cruza ingresos del proyecto con el coste real de las horas asignadas (basado en el coste/hora de cada empleado). Ves el margen de cada proyecto en tiempo real.
+                            El dashboard de Rentabilidad muestra el valor planificado por proyecto, las horas reales computadas y el avance operativo. Ves la rentabilidad y el progreso de cada proyecto en tiempo real.
                         </p>
                         <ul className="space-y-3">
                             {[
-                                { icon: DollarSign, text: 'Margen por proyecto automático', color: 'text-emerald-400' },
-                                { icon: Users, text: 'Coste real por empleado involucrado', color: 'text-indigo-400' },
+                                { icon: DollarSign, text: 'Valor planificado y mensualidad por proyecto', color: 'text-emerald-400' },
+                                { icon: Users, text: 'Horas reales vs presupuesto y avance operativo', color: 'text-indigo-400' },
                                 { icon: TrendingUp, text: 'Tendencias: ¿mejora o empeora?', color: 'text-amber-400' },
                             ].map(({ icon: Icon, text, color }, i) => (
                                 <li key={i} className="flex items-center gap-3 text-indigo-100/90 text-sm">
@@ -246,7 +249,7 @@ export function ReportsArticle() {
                             Informes profesionales, listos para enviar
                         </h2>
                         <p className="text-indigo-100/90 mb-4 leading-relaxed">
-                            Genera informes por cliente con el desglose de horas por categoría, proyecto y empleado. Exporta en PDF o Excel con un clic. Tu cliente ve exactamente en qué se invirtió su presupuesto.
+                            Genera informes por cliente con el desglose de horas por proyecto y empleado. Exporta en PDF con un clic; integración vía API para otros formatos. Tu cliente ve exactamente en qué se invirtió su presupuesto.
                         </p>
                         <div className="rounded-xl border-l-4 border-purple-400 bg-purple-500/10 border border-purple-500/20 p-4">
                             <p className="text-indigo-100/90 text-sm m-0">
@@ -255,7 +258,7 @@ export function ReportsArticle() {
                         </div>
                         <div className="rounded-xl border-l-4 border-teal-400 bg-teal-500/10 border border-teal-500/20 p-4 mt-3">
                             <p className="text-indigo-100/90 text-sm m-0">
-                                Las horas registradas con el <strong className="text-white">cronómetro por tarea</strong> alimentan los reportes y el coste real. Más precisión en rentabilidad y facturación.
+                                Las horas registradas con el <strong className="text-white">cronómetro por tarea</strong> alimentan los reportes y el avance real. Más precisión en rentabilidad y facturación.
                             </p>
                         </div>
                     </div>
@@ -295,21 +298,59 @@ export function ReportsArticle() {
                 </div>
             </section>
 
+            {/* SECTION: Lógica financiera (F1–F4 y EHR) */}
+            <section className="mb-16 sm:mb-20" id="formulas">
+                <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-slate-800/80 to-slate-900/80 p-6 sm:p-10">
+                    <div className="flex items-center gap-2 mb-6">
+                        <div className="h-10 w-10 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+                            <Calculator className="h-5 w-5 text-cyan-300" />
+                        </div>
+                        <div>
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-cyan-300/90 block">Contabilidad analítica</span>
+                            <h2 className="text-xl sm:text-2xl font-bold text-white">Cómo calculamos la rentabilidad</h2>
+                        </div>
+                    </div>
+                    <p className="text-indigo-100/90 text-sm mb-6 max-w-3xl">
+                        Taimbox no hace contabilidad fiscal; hace <strong className="text-white">contabilidad analítica (Unit Economics)</strong> para que el CEO tome decisiones en tiempo real. Todas las cifras del dashboard de Salud Financiera se basan en estas cuatro reglas.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        {[
+                            { icon: Clock, title: 'F1 — Coste laboral', formula: 'Σ (horas reales × coste/h del empleado)', desc: 'Cuánto nos ha costado el trabajo en el proyecto. Cada empleado tiene un coste por hora (€/h); se multiplica por las horas trackeadas en ese proyecto y se suma.' },
+                            { icon: DollarSign, title: 'F2 — Ingreso atribuido', formula: 'Iguala mensual del proyecto', desc: 'El ingreso del proyecto es el fee mensual (monthly_fee). No se prorratea: si el cliente paga 1.500 €/mes, el ingreso es 1.500 € desde el día 1.' },
+                            { icon: Percent, title: 'F3 — Margen neto', formula: 'Ingreso − Coste laboral (− Ads si aplica)', desc: 'Margen en € y en %. Indica cuánto dinero líquido deja el proyecto. Proyectos internos (sin fee) tendrán margen negativo; se muestran en rojo.' },
+                            { icon: BarChart3, title: 'F4 — Precio hora efectivo (EHR)', formula: 'Ingreso ÷ Total horas reales del proyecto', desc: 'La métrica estrella: eficiencia real. Ej: 1.500 € / 10 h = 150 €/h (excelente). Si hay 0 horas, se muestra "Sin datos" para evitar divisiones por cero.' },
+                        ].map(({ icon: Icon, title, formula, desc }, i) => (
+                            <div key={i} className="rounded-xl bg-slate-900/60 border border-white/10 p-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Icon className="h-4 w-4 text-cyan-400 shrink-0" />
+                                    <span className="text-sm font-bold text-white">{title}</span>
+                                </div>
+                                <p className="text-xs font-mono text-cyan-200/90 mb-2 bg-slate-800/60 px-2 py-1.5 rounded border border-white/5">{formula}</p>
+                                <p className="text-[11px] text-indigo-200/80">{desc}</p>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="rounded-xl border-l-4 border-amber-500/50 bg-amber-500/10 border border-amber-500/20 p-4">
+                        <p className="text-indigo-100/90 text-sm m-0">
+                            <strong className="text-white">Origen de los datos:</strong> Fee y horas por proyecto; coste por hora (€/h) por empleado; horas reales del cronómetro (time entries). El coste del empleado es un valor fijo por hora, no se calcula dividiendo la nómina entre las horas del mes.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
             {/* SECTION 4: Exportaciones */}
             <section className="mb-16 sm:mb-20">
                 <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-6 sm:p-10">
                     <div className="text-center mb-8">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-300/90 mb-3 block">Exporta todo</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-300/90 mb-3 block">Exporta e integra</span>
                         <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-                            Tus datos, en el formato que quieras
+                            PDF listo para enviar; API para tus sistemas
                         </h2>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {[
-                            { icon: FileSpreadsheet, label: 'Excel', desc: 'Hojas de cálculo con gráficos.', color: 'from-emerald-500 to-teal-500' },
-                            { icon: FileDown, label: 'CSV', desc: 'Datos tabulados para BI/analytics.', color: 'from-blue-500 to-cyan-500' },
-                            { icon: Eye, label: 'PDF', desc: 'Informes listos para enviar.', color: 'from-purple-500 to-pink-500' },
-                            { icon: Shield, label: 'JSON/API', desc: 'Integración directa con tus sistemas.', color: 'from-amber-500 to-orange-500' },
+                            { icon: Eye, label: 'PDF', desc: 'Informes de cliente listos para enviar con un clic (imprimir a PDF).', color: 'from-purple-500 to-pink-500' },
+                            { icon: Shield, label: 'API REST', desc: 'Integración directa: exporta datos en CSV, JSON o el formato que necesites.', color: 'from-amber-500 to-orange-500' },
                         ].map(({ icon: Icon, label, desc, color }, i) => (
                             <div key={i} className="rounded-xl bg-slate-900/60 border border-white/10 p-4 text-center">
                                 <div className={`w-12 h-12 mx-auto rounded-xl bg-gradient-to-br ${color} flex items-center justify-center mb-3`}>
@@ -334,9 +375,9 @@ export function ReportsArticle() {
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
                         {[
-                            { num: '100%', label: 'trazabilidad de costes' },
-                            { num: '1 clic', label: 'para exportar informes' },
-                            { num: '∞', label: 'datos históricos' },
+                            { num: '100%', label: 'trazabilidad de horas' },
+                            { num: '1 clic', label: 'informe PDF para cliente' },
+                            { num: '∞', label: 'datos históricos vía API' },
                         ].map(({ num, label }, i) => (
                             <div key={i} className="text-center p-3 rounded-xl bg-white/5 border border-white/10">
                                 <p className="text-xl sm:text-2xl font-bold text-white">{num}</p>
@@ -352,10 +393,16 @@ export function ReportsArticle() {
                             </Button>
                         </Link>
                         <p className="mt-3 text-sm text-indigo-200/80">Sin tarjeta de crédito. Tus primeros reportes en 5 minutos.</p>
-                        <Link to="/guia/informes" className="inline-flex items-center gap-1.5 mt-4 text-sm font-medium text-indigo-300/80 hover:text-white transition-colors">
-                            📖 Ver guía técnica de reportes
-                            <ArrowRight className="h-3.5 w-3.5" />
-                        </Link>
+                        <div className="flex flex-wrap justify-center gap-4 mt-4">
+                            <Link to="/guia/informes" className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-300/80 hover:text-white transition-colors">
+                                📖 Ver guía técnica de reportes
+                                <ArrowRight className="h-3.5 w-3.5" />
+                            </Link>
+                            <Link to="/reportes-rentabilidad#formulas" className="inline-flex items-center gap-1.5 text-sm font-medium text-cyan-300/80 hover:text-white transition-colors">
+                                🧮 Cómo calculamos la rentabilidad (F1–F4 y EHR)
+                                <ArrowRight className="h-3.5 w-3.5" />
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </section>

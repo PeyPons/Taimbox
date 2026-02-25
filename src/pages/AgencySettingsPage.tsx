@@ -194,6 +194,9 @@ export default function AgencySettingsPage() {
   const [openExcludeProjects, setOpenExcludeProjects] = useState(false);
   const [openExcludeClients, setOpenExcludeClients] = useState(false);
 
+  /** Objetivo Precio Hora Efectivo (€/h) en Rentabilidad. Por defecto 75. */
+  const [ehrTarget, setEhrTarget] = useState(currentAgency?.settings?.ehrTarget ?? 75);
+
   // Department view configuration
   const [deptConfigDialogOpen, setDeptConfigDialogOpen] = useState(false);
   const [selectedDeptForConfig, setSelectedDeptForConfig] = useState<string>('');
@@ -243,6 +246,7 @@ export default function AgencySettingsPage() {
         projectIds: currentAgency.settings?.planningPrecisionExclusions?.projectIds ?? [],
         clientIds: currentAgency.settings?.planningPrecisionExclusions?.clientIds ?? []
       });
+      setEhrTarget(currentAgency.settings?.ehrTarget ?? 75);
       fetchConnectedAccounts();
     }
   }, [currentAgency]);
@@ -344,7 +348,8 @@ export default function AgencySettingsPage() {
         enabledIntegrations,
         weeklyCloseDay,
         planningPrecisionExclusions,
-        timeTrackerMaxHours
+        timeTrackerMaxHours,
+        ehrTarget
       });
 
       // Si el nombre ha cambiado, actualizarlo por separado
@@ -605,6 +610,41 @@ export default function AgencySettingsPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Rentabilidad */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart2 className="h-5 w-5 text-primary" />
+                  Rentabilidad
+                </CardTitle>
+                <CardDescription>
+                  Objetivo de precio hora efectivo usado en la página Rentabilidad para KPIs y alertas
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="max-w-xs space-y-2">
+                  <Label htmlFor="ehr-target">Objetivo Precio Hora Efectivo (€/h)</Label>
+                  <Input
+                    id="ehr-target"
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={ehrTarget}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      if (raw === '') {
+                        setEhrTarget(75);
+                        return;
+                      }
+                      const v = parseInt(raw, 10);
+                      if (!Number.isNaN(v) && v >= 1) setEhrTarget(v);
+                    }}
+                  />
+                  <p className="text-xs text-slate-500">Valor mínimo considerado saludable. Por defecto 75 €/h.</p>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="team" className="mt-0 space-y-6">
@@ -691,7 +731,7 @@ export default function AgencySettingsPage() {
                           <Separator />
                           <div className="space-y-2">
                             <Label className="text-xs font-semibold text-slate-500 uppercase">Otros</Label>
-                            {(['can_access_reports', 'can_access_client_reports', 'can_access_deadlines', 'can_access_okrs', 'can_access_team_capacity', 'can_assign_tasks_to_others', 'can_access_weekly_forecast'] as const).map(p => (
+                            {(['can_access_reports', 'can_access_operations_radar', 'can_access_financial_health', 'can_access_client_reports', 'can_access_deadlines', 'can_access_okrs', 'can_access_team_capacity', 'can_assign_tasks_to_others', 'can_access_weekly_forecast'] as const).map(p => (
                               <div key={p} className="flex items-center justify-between py-1 px-2 rounded hover:bg-white">
                                 <Label htmlFor={`role-${index}-${p}`} className="text-sm font-normal cursor-pointer flex-1">{PERMISSION_LABELS[p]}</Label>
                                 <Switch

@@ -1,27 +1,35 @@
-import { useMemo, memo, useState, useEffect } from 'react';
+import { useMemo, memo, useState, useEffect, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
+import { useDepartmentView } from '@/contexts/DepartmentViewContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
+import { Command, CommandGroup, CommandItem, CommandList, CommandInput, CommandEmpty } from '@/components/ui/command';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   AlertTriangle, CheckCircle2, Users, TrendingUp, TrendingDown,
-  Info, ChevronDown, ChevronUp, Filter, Check
+  Info, ChevronDown, ChevronUp, Filter, Check, Search
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CONSTANTS } from '@/config/constants';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { Deadline } from '@/types';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { format, isSameMonth, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
+import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 
 interface GlobalPlanningInconsistenciesProps {
   viewDate: Date;
+  /** Búsqueda global desde Seguimiento operativo: filtra por proyecto/cliente */
+  searchQuery?: string | null;
+  /** Si true (Seguimiento operativo), no se muestran búsqueda ni dropdown de proyecto; solo filtro por empleado */
+  hideProjectSearch?: boolean;
 }
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
@@ -48,16 +56,44 @@ interface Inconsistency {
 }
 
 export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsistencies({
-  viewDate
+  viewDate,
+  searchQuery: searchQueryProp = null,
+  hideProjectSearch = false
 }: GlobalPlanningInconsistenciesProps) {
-  const { allocations, projects, employees } = useApp();
+  const { allocations, projects, employees, clients } = useApp();
   const { currentAgency } = useAgency();
+  const { selectedDepartmentId } = useDepartmentView();
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all');
   const [openFilterEmployee, setOpenFilterEmployee] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
+  const [openFilterProject, setOpenFilterProject] = useState(false);
+  const [coherenceSearchQuery, setCoherenceSearchQuery] = useState('');
+  const listTopRef = useRef<HTMLDivElement>(null);
   const { formatName: formatProjectName } = useProjectAliasing();
+
+  const showLocalProjectSearch = !hideProjectSearch;
+
+  const coherenceAutoExpandMax = CONSTANTS.LIMITS.COHERENCE_AUTO_EXPAND_MAX;
+
+  const departments = useMemo(
+    () => normalizeDepartments(currentAgency?.settings?.departments),
+    [currentAgency?.settings?.departments]
+  );
+
+  const employeesForView = useMemo(() => {
+    if (!selectedDepartmentId || !departments.length) return employees;
+    const dept = departments.find(d => d.id === selectedDepartmentId || d.name === selectedDepartmentId);
+    if (!dept) return employees;
+    return employees.filter(e => employeeBelongsToDepartment(e.department, dept.id, dept.name));
+  }, [employees, selectedDepartmentId, departments]);
+
+  const allowedEmployeeIds = useMemo(() => {
+    if (!employeesForView || employeesForView.length === 0) return null as Set<string> | null;
+    return new Set(employeesForView.map(e => e.id));
+  }, [employeesForView]);
 
   const monthKey = format(viewDate, 'yyyy-MM');
 
@@ -84,9 +120,10 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
     const monthStart = startOfMonth(viewDate);
     const monthEnd = endOfMonth(viewDate);
 
-    // Obtener allocations del mes para todos los empleados
+    // Obtener allocations del mes filtradas por la vista de departamento (si aplica)
     const monthAllocations = allocations.filter(a =>
-      isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
+      isAllocationInEffectiveMonth(a.weekStartDate, viewDate) &&
+      (!allowedEmployeeIds || allowedEmployeeIds.has(a.employeeId))
     );
 
     // Agrupar allocations por proyecto y empleado
@@ -126,10 +163,11 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
       let totalPlanned = 0;
       let totalComputed = 0;
 
-      // Procesar cada empleado en el deadline (solo si sigue existiendo en la agencia)
+      // Procesar cada empleado en el deadline (solo si sigue existiendo en la agencia y pasa el filtro de departamento)
       Object.entries(deadline.employeeHours).forEach(([empId, deadlineHrs]) => {
         const emp = employees.find(e => e.id === empId);
         if (!emp) return; // Omitir empleados eliminados para no mostrar "Desconocido"
+        if (allowedEmployeeIds && !allowedEmployeeIds.has(empId)) return;
         const empAllocs = allocationsByProjectAndEmployee[projectId]?.[empId] || { planned: 0, computed: 0 };
         const total = empAllocs.planned + empAllocs.computed;
         const diff = round2(total - deadlineHrs);
@@ -155,6 +193,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
         if (!deadline.employeeHours[empId] && (allocs.planned > 0 || allocs.computed > 0)) {
           const emp = employees.find(e => e.id === empId);
           if (!emp) return; // Omitir empleados eliminados
+          if (allowedEmployeeIds && !allowedEmployeeIds.has(empId)) return;
           const total = allocs.planned + allocs.computed;
 
           employeeMap.set(empId, {
@@ -211,6 +250,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
         if (total > 0) {
           const emp = employees.find(e => e.id === empId);
           if (!emp) return; // Omitir empleados eliminados (no mostrar "Desconocido")
+          if (allowedEmployeeIds && !allowedEmployeeIds.has(empId)) return;
           employeeInconsistencies.push({
             employeeId: empId,
             employeeName: emp.name,
@@ -244,8 +284,10 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
     // Filtrar por empleado si está seleccionado
     let filtered = Object.values(projectInconsistencies);
 
-    // Excluir proyectos sin empleados con inconsistencias (proyectos "OK" que solo registramos para evitar duplicados)
-    filtered = filtered.filter(proj => proj.employees.length > 0);
+    // Filtro de proyecto solo cuando mostramos el selector local (no en Seguimiento operativo)
+    if (!hideProjectSearch && selectedProjectId !== 'all') {
+      filtered = filtered.filter(proj => proj.projectId === selectedProjectId);
+    }
 
     if (selectedEmployeeId !== 'all') {
       filtered = filtered.map(proj => ({
@@ -255,14 +297,16 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
     }
 
     return filtered.sort((a, b) => Math.abs(b.totalDifference) - Math.abs(a.totalDifference));
-  }, [deadlines, allocations, projects, employees, viewDate, isLoading, selectedEmployeeId]);
+  }, [deadlines, allocations, projects, employees, viewDate, isLoading, selectedEmployeeId, selectedProjectId, hideProjectSearch, allowedEmployeeIds]);
 
-  // Expandir todos los proyectos por defecto cuando cambian las inconsistencias
+  // Expandir todos solo si hay pocos; con muchos (ej. 100+) mantener colapsados para rendimiento
   useEffect(() => {
-    if (inconsistencies.length > 0) {
+    if (inconsistencies.length > 0 && inconsistencies.length <= coherenceAutoExpandMax) {
       setExpandedProjects(new Set(inconsistencies.map(inc => inc.projectId)));
+    } else if (inconsistencies.length > coherenceAutoExpandMax) {
+      setExpandedProjects(new Set());
     }
-  }, [inconsistencies]);
+  }, [inconsistencies, coherenceAutoExpandMax]);
 
   const toggleProject = (projectId: string) => {
     setExpandedProjects(prev => {
@@ -275,6 +319,22 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
       return newSet;
     });
   };
+
+  const filteredBySearch = useMemo(() => {
+    const q = (hideProjectSearch ? (searchQueryProp ?? '').trim() : coherenceSearchQuery.trim()).toLowerCase();
+    if (!q) return inconsistencies;
+    return inconsistencies.filter(inc => {
+      const proj = projects.find(p => p.id === inc.projectId);
+      const clientName = proj ? (clients || []).find(c => c.id === proj.clientId)?.name ?? '' : '';
+      const projectName = formatProjectName(inc.projectName);
+      return projectName.toLowerCase().includes(q) || (clientName && clientName.toLowerCase().includes(q));
+    });
+  }, [inconsistencies, hideProjectSearch, searchQueryProp, coherenceSearchQuery, projects, clients, formatProjectName]);
+
+  const expandAll = () => setExpandedProjects(new Set(filteredBySearch.map(inc => inc.projectId)));
+  const collapseAll = () => setExpandedProjects(new Set());
+  const allExpanded = filteredBySearch.length > 0 && filteredBySearch.every(inc => expandedProjects.has(inc.projectId));
+  const noneExpanded = expandedProjects.size === 0;
 
   if (isLoading) {
     return (
@@ -330,45 +390,120 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                 </TooltipContent>
               </Tooltip>
             </CardTitle>
-            <div className="flex items-center gap-2 w-full sm:w-auto min-w-0">
-              <Filter className="h-4 w-4 text-slate-400 shrink-0" />
-              <Popover open={openFilterEmployee} onOpenChange={setOpenFilterEmployee}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full sm:w-[180px] h-9 sm:h-8 min-h-[44px] sm:min-h-0 text-xs justify-between font-normal">
-                    <span className="truncate">{selectedEmployeeId === 'all' ? 'Todos los empleados' : employees.find(e => e.id === selectedEmployeeId)?.name ?? 'Filtrar empleado'}</span>
-                    <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                  <Command>
-                    <CommandList className="max-h-[280px]">
-                      <CommandGroup>
-                        <CommandItem value="Todos los empleados" onSelect={() => { setSelectedEmployeeId('all'); setOpenFilterEmployee(false); }}>
-                          <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedEmployeeId === 'all' ? 'opacity-100' : 'opacity-0')} />
-                          Todos los empleados
-                        </CommandItem>
-                        {employees.filter(e => e.isActive).map(emp => (
-                          <CommandItem key={emp.id} value={emp.name || ''} onSelect={() => { setSelectedEmployeeId(emp.id); setOpenFilterEmployee(false); }}>
-                            <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedEmployeeId === emp.id ? 'opacity-100' : 'opacity-0')} />
-                            {emp.name}
+            <div className="flex flex-col gap-2 w-full sm:w-auto min-w-0">
+              {showLocalProjectSearch && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 text-slate-400 shrink-0" />
+                    <span className="text-xs text-slate-600">Filtros y búsqueda</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="relative min-w-[200px] w-full sm:w-auto">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar por proyecto o cliente..."
+                        value={coherenceSearchQuery}
+                        onChange={(e) => setCoherenceSearchQuery(e.target.value)}
+                        className="pl-9 h-10"
+                        aria-label="Buscar en coherencia"
+                      />
+                    </div>
+                    <Popover open={openFilterProject} onOpenChange={setOpenFilterProject}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="min-w-[220px] h-10 text-sm justify-between font-normal">
+                          <span className="truncate">{selectedProjectId === 'all' ? 'Todos los proyectos' : formatProjectName(projects.find(p => p.id === selectedProjectId)?.name ?? '')}</span>
+                          <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="min-w-[300px] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Buscar proyecto..." />
+                          <CommandList className="max-h-[320px]">
+                            <CommandEmpty>No se encontraron proyectos.</CommandEmpty>
+                            <CommandGroup>
+                              <CommandItem value="Todos los proyectos" className="py-2.5" onSelect={() => { setSelectedProjectId('all'); setOpenFilterProject(false); }}>
+                                <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedProjectId === 'all' ? 'opacity-100' : 'opacity-0')} />
+                                Todos los proyectos
+                              </CommandItem>
+                              {projects.map(proj => (
+                                <CommandItem key={proj.id} value={formatProjectName(proj.name || '')} className="py-2.5" onSelect={() => { setSelectedProjectId(proj.id); setOpenFilterProject(false); }}>
+                                  <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedProjectId === proj.id ? 'opacity-100' : 'opacity-0')} />
+                                  <span className="truncate">{formatProjectName(proj.name)}</span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </>
+              )}
+              <div className={cn('flex flex-wrap items-center gap-3', !showLocalProjectSearch && 'mt-0')}>
+                <Popover open={openFilterEmployee} onOpenChange={setOpenFilterEmployee}>
+                  <PopoverTrigger asChild>
+                    <div className="relative min-w-[220px] cursor-pointer" role="button" tabIndex={0} onClick={() => setOpenFilterEmployee(true)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenFilterEmployee(true); } }}>
+                      <Input
+                        readOnly
+                        value={selectedEmployeeId === 'all' ? '' : employees.find(e => e.id === selectedEmployeeId)?.name ?? ''}
+                        placeholder="Filtrar por empleado..."
+                        className="pr-9 h-10 cursor-pointer bg-background"
+                        aria-label="Filtrar por empleado"
+                      />
+                      <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="min-w-[300px] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Buscar empleado..." />
+                      <CommandList className="max-h-[320px]">
+                        <CommandEmpty>No se encontraron empleados.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem value="Todos los empleados" className="py-2.5" onSelect={() => { setSelectedEmployeeId('all'); setOpenFilterEmployee(false); }}>
+                            <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedEmployeeId === 'all' ? 'opacity-100' : 'opacity-0')} />
+                            Todos los empleados
                           </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+                          {employees.filter(e => e.isActive).map(emp => (
+                            <CommandItem key={emp.id} value={emp.name || ''} className="py-2.5" onSelect={() => { setSelectedEmployeeId(emp.id); setOpenFilterEmployee(false); }}>
+                              <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedEmployeeId === emp.id ? 'opacity-100' : 'opacity-0')} />
+                              {emp.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3" ref={listTopRef}>
           <p className="text-sm text-slate-600">
-            Se han detectado <strong>{inconsistencies.length}</strong> proyecto{inconsistencies.length !== 1 ? 's' : ''}
-            {' '}con variaciones en {format(viewDate, 'MMMM yyyy', { locale: es })}.
+            Se han detectado <strong>{filteredBySearch.length}</strong> proyecto{filteredBySearch.length !== 1 ? 's' : ''}
+            {' '}con variaciones en {format(viewDate, 'MMMM yyyy', { locale: es })}
+            {(coherenceSearchQuery.trim() || (searchQueryProp ?? '').trim()) && inconsistencies.length !== filteredBySearch.length && ' (filtrado por búsqueda)'}.
           </p>
 
+          {filteredBySearch.length === 0 && inconsistencies.length > 0 ? (
+            <p className="text-sm text-slate-500 py-4 text-center">Ningún resultado con la búsqueda actual.</p>
+          ) : null}
+
+          {filteredBySearch.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" size="sm" className="h-8 text-xs" onClick={expandAll} disabled={allExpanded}>
+                <ChevronDown className="h-3.5 w-3.5 mr-1" />
+                Expandir todo
+              </Button>
+              <Button variant="outline" size="sm" className="h-8 text-xs" onClick={collapseAll} disabled={noneExpanded}>
+                <ChevronUp className="h-3.5 w-3.5 mr-1" />
+                Colapsar todo
+              </Button>
+            </div>
+          )}
+
           <div className="space-y-2">
-            {inconsistencies.map(inc => {
+            {filteredBySearch.map(inc => {
               const isExpanded = expandedProjects.has(inc.projectId);
               const hasEmployees = inc.employees.length > 0;
               const isPositive = inc.totalDifference > 0;

@@ -80,6 +80,9 @@ const lazyWithRetry = (importFn: () => Promise<{ default: React.ComponentType<un
 
 // Páginas con lazy loading (carga diferida para mejor rendimiento)
 // Usando lazyWithRetry para manejar errores de carga de módulos
+const OperationsRadarPage = lazyWithRetry(() => import("./pages/OperationsRadarPage"));
+const FinancialHealthPage = lazyWithRetry(() => import("./pages/FinancialHealthPage"));
+const TeamCapacityDashboard = lazyWithRetry(() => import("./pages/TeamCapacityDashboard"));
 const ClientReportsPage = lazyWithRetry(() => import("@/pages/ClientReportsPage"));
 const Index = lazyWithRetry(() => import("./pages/Index"));
 const TeamPage = lazyWithRetry(() => import("./pages/TeamPage"));
@@ -196,10 +199,22 @@ const App = () => (
                             <Route path="/tiempos" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/team"><ModuleGuard module="timeTracker"><TiemposPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
                             <Route path="/team/pulse" element={<Suspense fallback={<PageLoader />}><TeamPulsePage /></Suspense>} />
                             <Route path="/team-capacity" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/team-capacity"><TeamCapacityPage /></PermissionProtectedRoute></Suspense>} />
+
+                            {/* Nuevas vistas del Manager Hub */}
+                            <Route path="/operaciones" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/operaciones"><OperationsRadarPage /></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/finanzas" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/finanzas"><FinancialHealthPage /></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/capacidad" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/team-capacity"><TeamCapacityDashboard /></PermissionProtectedRoute></Suspense>} />
+
                             <Route path="/clients" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/clients"><ClientsAndProjectsPage /></PermissionProtectedRoute></Suspense>} />
                             <Route path="/projects" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/projects"><ClientsAndProjectsPage /></PermissionProtectedRoute></Suspense>} />
                             <Route path="/okrs" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/okrs"><OkrsPage /></PermissionProtectedRoute></Suspense>} />
-                            <Route path="/reports" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/reports"><ReportsPage /></PermissionProtectedRoute></Suspense>} />
+
+                            {/* Reportes clásicos: índice de fiabilidad, predicción de carga, etc. (acceso explícito) */}
+                            <Route path="/reportes-clasicos" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/reports"><ReportsPage /></PermissionProtectedRoute></Suspense>} />
+                            {/* Ruta legacy /reports redirige a Seguimiento operativo; reportes clásicos en /reportes-clasicos */}
+                            <Route path="/reports" element={<Navigate to="/operaciones" replace />} />
+                            {/* Weekly Forecast: cierre semanal y redistribución (acceso restaurado) */}
+                            <Route path="/weekly-forecast" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/team-capacity"><WeeklyForecastPage /></PermissionProtectedRoute></Suspense>} />
                             <Route path="/informes-clientes" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/informes-clientes"><ClientReportsPage /></PermissionProtectedRoute></Suspense>} />
                             <Route path="/settings" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><SettingsPage /></PermissionProtectedRoute></Suspense>} />
                             <Route path="/agency" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/agency"><AgencySettingsPage /></PermissionProtectedRoute></Suspense>} />
@@ -207,7 +222,6 @@ const App = () => (
                             <Route path="/agencies/:id/manage" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><AgencyManagementPage /></PermissionProtectedRoute></Suspense>} />
                             <Route path="/ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/ads"><ModuleGuard module="ppc"><AdsPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
                             <Route path="/meta-ads" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/meta-ads"><ModuleGuard module="ppc"><MetaAdsPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
-                            <Route path="/weekly-forecast" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/weekly-forecast"><ModuleGuard module="weeklyFeedback"><WeeklyForecastPage /></ModuleGuard></PermissionProtectedRoute></Suspense>} />
                             <Route path="/api-keys" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/api-keys"><ApiKeysPage /></PermissionProtectedRoute></Suspense>} />
                             <Route path="/soporte" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/soporte"><ContactSupportPage /></PermissionProtectedRoute></Suspense>} />
                           </Route>

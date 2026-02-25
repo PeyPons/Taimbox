@@ -50,7 +50,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 export default function DeadlinesPage() {
   const { projects, clients, employees, absences, teamEvents, currentUser } = useApp();
   const { canAccess } = usePermissions();
-  const isManager = canAccess('/planner') || canAccess('/reports');
+  const isManager = canAccess('/planner') || canAccess('/reports') || canAccess('/operaciones') || canAccess('/finanzas');
   const canEditDeadlines = isManager || canAccess('/deadlines');
   const { currentAgency } = useAgency();
   const { selectedDepartmentId } = useDepartmentView();

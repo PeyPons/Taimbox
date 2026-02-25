@@ -16,6 +16,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
 import { normalizeDepartments } from '@/utils/departmentUtils';
+import { getWeeklyHoursFromSchedule } from '@/utils/dateUtils';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Briefcase, CalendarClock, Target, Lock, Clock, ShieldCheck, Hash, Key } from 'lucide-react';
@@ -43,8 +44,7 @@ const employeeFormSchema = z.object({
   password: z.string().optional(),
   role: z.string().min(1, 'El rol es obligatorio'),
   department: z.string().min(1, 'El departamento es obligatorio'),
-  capacity: z.number().min(1, 'La capacidad debe ser mayor a 0').max(168, 'La capacidad no puede exceder 168 horas'),
-  hourlyRate: z.number().min(0, 'El coste por hora no puede ser negativo'),
+  monthlyCost: z.number().min(0, 'El coste mensual no puede ser negativo'),
   crmUserId: z.number().optional().or(z.literal('')),
   workSchedule: z.object({
     monday: z.number().min(0).max(24),
@@ -98,8 +98,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
       password: '',
       role: availableRoles[0] || '',
       department: availableDepartments[0]?.id ?? '',
-      capacity: 40,
-      hourlyRate: 0,
+      monthlyCost: 0,
       crmUserId: '',
       workSchedule: defaultSchedule,
     },
@@ -120,8 +119,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
           password: '',
           role: employeeToEdit.role || availableRoles[0] || '',
           department: departmentValue,
-          capacity: employeeToEdit.defaultWeeklyCapacity,
-          hourlyRate: employeeToEdit.hourlyRate || 0,
+          monthlyCost: employeeToEdit.hourlyRate || 0,
           crmUserId: employeeToEdit.crmUserId || '',
           workSchedule: employeeToEdit.workSchedule || defaultSchedule,
         });
@@ -136,8 +134,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
           password: '',
           role: availableRoles[0] || '',
           department: defaultDeptId,
-          capacity: 40,
-          hourlyRate: 0,
+          monthlyCost: 0,
           crmUserId: '',
           workSchedule: defaultSchedule,
         });
@@ -285,8 +282,8 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
         user_id: authUserId,
         role: data.role,
         department: data.department,
-        defaultWeeklyCapacity: data.capacity,
-        hourlyRate: data.hourlyRate,
+        defaultWeeklyCapacity: getWeeklyHoursFromSchedule(data.workSchedule as WorkSchedule),
+        hourlyRate: data.monthlyCost,
         crmUserId: data.crmUserId !== '' ? Number(data.crmUserId) : undefined,
         workSchedule: data.workSchedule as WorkSchedule,
         // permissions: Removed, handled by role now
@@ -341,7 +338,10 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent
+          className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>{isEditing ? 'Editar empleado' : 'Nuevo empleado'}</DialogTitle>
             <DialogDescription>Modifica datos, acceso y horario.</DialogDescription>
@@ -495,43 +495,29 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="capacity"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Capacidad (h/sem)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="hourlyRate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Coste/Hora (€)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  <FormField
+                    control={form.control}
+                    name="monthlyCost"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel>Coste mensual (nómina) €</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="Ej: 2500"
+                            className="max-w-xs"
+                            {...field}
+                            onChange={(e) => field.onChange(Number(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormDescription className="text-xs text-muted-foreground max-w-md">
+                          Importe mensual que cobra el empleado. En reportes se reparte entre proyectos en proporción a las horas trabajadas en cada uno.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
                   {/* Campo CRM User ID */}
                   {isCrmUserIdEnabled && (

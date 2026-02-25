@@ -66,7 +66,7 @@ export default function EmployeeDashboard() {
   const isLoadingProfile = isGlobalLoading;
   const { canAccess } = usePermissions();
   const { isPlatformAdmin, isLoading: isPlatformAdminLoading } = usePlatformAdmin();
-  const isManager = canAccess('/planner') || canAccess('/reports');
+  const isManager = canAccess('/planner') || canAccess('/reports') || canAccess('/operaciones') || canAccess('/finanzas');
 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isLoadingMonth, setIsLoadingMonth] = useState(false);

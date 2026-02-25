@@ -120,6 +120,12 @@ export const getMonthlyCapacity = (year: number, month: number, schedule: WorkSc
   return getWorkingDaysInRange(start, end, schedule).totalHours;
 };
 
+/** Horas semanales según el horario (suma L–D). Usado para derivar defaultWeeklyCapacity del empleado. */
+export const getWeeklyHoursFromSchedule = (schedule: WorkSchedule): number => {
+  return schedule.monday + schedule.tuesday + schedule.wednesday + schedule.thursday
+    + schedule.friday + schedule.saturday + schedule.sunday;
+};
+
 // ✅ Función helper para verificar si una allocation está en el mes efectivo
 // SOLO incluye si el weekStartDate está en el mes efectivo (NO incluye semanas que cruzan meses)
 // Esto asegura que las tareas de diciembre no aparezcan en enero, incluso si la semana cruza meses

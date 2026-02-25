@@ -113,8 +113,10 @@ export interface AgencySettings {
     projectIds?: string[];
     clientIds?: string[];
   };
-  /** Cronómetro de tareas: máximo de horas por sesión antes de auto-pausa (1–24, por defecto 12). */
+  /** Cronómetro de tareas: máximo de horas por sesión antes de auto-pausa (1���24, por defecto 12). */
   timeTrackerMaxHours?: number;
+  /** Objetivo de Precio Hora Efectivo (?/h) en Salud financiera. Si no se define, se usa 75 ?/h o la media de coste por hora si es superior. */
+  ehrTarget?: number;
 }
 
 export type AgencyStatus = 'active' | 'suspended';
@@ -149,6 +151,7 @@ export interface Employee {
   workSchedule: WorkSchedule;
   department?: string;         // Legacy field, use departmentId
   departmentId?: string;       // FK to department_config
+  /** Coste mensual (n?mina) en ?. Se reparte a proyectos en proporci?n horas en proyecto / total horas del empleado. Persistido en API como hourly_rate. */
   hourlyRate?: number;
   isActive: boolean;
   user_id?: string;

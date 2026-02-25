@@ -10,6 +10,8 @@ const RESTRICTED_PERMISSIONS: UserPermissions = {
   can_access_team: false,
   can_access_team_capacity: false,
   can_access_reports: false,
+  can_access_operations_radar: false,
+  can_access_financial_health: false,
   can_access_client_reports: false,
   can_access_google_ads: false,
   can_access_meta_ads: false,
@@ -54,7 +56,13 @@ export function usePermissions() {
 
     // 2. Si encontramos configuración de rol, usar esos permisos
     if (roleConfig && typeof roleConfig !== 'string' && roleConfig.permissions) {
-      return roleConfig.permissions;
+      const p = roleConfig.permissions as UserPermissions;
+      // Compatibilidad: roles que tenían "Reportes" siguen teniendo Seguimiento operativo y Rentabilidad hasta que se editen
+      return {
+        ...p,
+        can_access_operations_radar: p.can_access_operations_radar ?? p.can_access_reports ?? false,
+        can_access_financial_health: p.can_access_financial_health ?? p.can_access_reports ?? false,
+      };
     }
 
     // 3. No role configuration found - log warning and return restricted permissions

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { parseISO, isSameMonth, isBefore, isAfter, startOfMonth, endOfMonth, getDay, format, eachDayOfInterval, isWeekend } from 'date-fns';
 import { useApp } from '../contexts/AppContext';
 import { Allocation, Project, Employee } from '../types';
+import { getEffectiveBudget } from '@/utils/budgetUtils';
 
 /**
  * Central metrics calculation hook.
@@ -55,11 +56,20 @@ export interface EmployeeMetrics {
     projectBreakdown: { projectId: string; projectName: string; hours: number }[];
 }
 
+/** Deadline mínimo para presupuesto efectivo (budgetOverride del mes) */
+export interface ProjectMetricsDeadline {
+    projectId: string;
+    month: string;
+    budgetOverride?: number;
+}
+
 export interface UseProjectMetricsOptions {
     month: Date;
     projectId?: string;
     employeeId?: string;
     clientId?: string;
+    /** Si se pasa, se usa getEffectiveBudget(project, deadline) para el objetivo del mes (coherente con Deadlines/Coherencia) */
+    deadlines?: ProjectMetricsDeadline[];
 }
 
 export interface UseProjectMetricsResult {
@@ -132,11 +142,12 @@ function prorateHoursForMonth(
 
 export function useProjectMetrics(options: UseProjectMetricsOptions): UseProjectMetricsResult {
     const { allocations, projects, clients, employees, isLoading } = useApp();
-    const { month, projectId, employeeId, clientId } = options;
+    const { month, projectId, employeeId, clientId, deadlines } = options;
 
     const result = useMemo(() => {
         const monthStart = startOfMonth(month);
         const monthEnd = endOfMonth(month);
+        const monthKey = format(month, 'yyyy-MM');
 
         // Filter allocations for the month (with proration for split weeks)
         const monthAllocations = allocations.filter(a => {
@@ -182,7 +193,8 @@ export function useProjectMetrics(options: UseProjectMetricsOptions): UseProject
                 totalComputed += prorated.computed;
             }
 
-            const budget = project.budgetHours || 0;
+            const deadlineForMonth = deadlines?.find(d => d.projectId === project.id && d.month === monthKey);
+            const budget = getEffectiveBudget(project, deadlineForMonth);
             const minimum = project.minimumHours || 0;
             const monthlyFee = project.monthlyFee || 0;
             const hourlyRate = budget > 0 ? monthlyFee / budget : 0;
@@ -299,7 +311,7 @@ export function useProjectMetrics(options: UseProjectMetricsOptions): UseProject
             getProjectMetrics: (id: string) => projectMetricsMap.get(id),
             getEmployeeMetrics: (id: string) => employeeMetricsMap.get(id)
         };
-    }, [allocations, projects, clients, employees, month, projectId, employeeId, clientId]);
+    }, [allocations, projects, clients, employees, month, projectId, employeeId, clientId, deadlines]);
 
     return {
         ...result,
