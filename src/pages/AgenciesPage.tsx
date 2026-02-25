@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAgency } from '@/contexts/AgencyContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Settings, Loader2, Check, Users, Shield } from 'lucide-react';
+import { Building2, Settings, Loader2, Check, Users, Shield, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -48,7 +48,7 @@ export default function AgenciesPage() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Mis Agencias</h1>
           <p className="text-slate-600 mt-1">
@@ -58,6 +58,12 @@ export default function AgenciesPage() {
             }
           </p>
         </div>
+        {hasPermission('can_access_agency_settings') && (
+          <Button onClick={() => navigate('/agencies?action=create')} className="gap-2 shrink-0">
+            <Plus className="h-4 w-4" />
+            Crear nueva agencia
+          </Button>
+        )}
       </div>
 
       {!hasMultipleAgencies ? (

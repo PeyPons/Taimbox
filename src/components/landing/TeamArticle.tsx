@@ -385,14 +385,14 @@ export function TeamArticle() {
                             Team Pulse: el termómetro de tu equipo
                         </h2>
                         <p className="text-indigo-100/90 mb-4 leading-relaxed">
-                            Métricas en tiempo real sobre la salud de tu equipo: carga media, fiabilidad promedio, tendencias y alertas. Detecta problemas antes de que se conviertan en crisis.
+                            Métricas en tiempo real sobre la salud de tu equipo: carga media, fiabilidad promedio, tendencias e indicadores visuales de sobrecarga. Detecta problemas antes de que se conviertan en crisis.
                         </p>
                         <div className="grid grid-cols-2 gap-3">
                             {[
                                 { label: 'Carga media', desc: 'Nivel de ocupación global', icon: Activity },
                                 { label: 'Fiabilidad', desc: 'Cumplimiento de planificación', icon: Shield },
                                 { label: 'Tendencias', desc: 'Evolución vs mes anterior', icon: TrendingUp },
-                                { label: 'Alertas', desc: 'Infra/sobre utilización', icon: AlertTriangle },
+                                { label: 'Indicadores', desc: 'Visuales de sobrecarga y desviación', icon: AlertTriangle },
                             ].map(({ label, desc, icon: Icon }, i) => (
                                 <div key={i} className="rounded-xl bg-white/5 border border-white/10 p-3">
                                     <Icon className="h-4 w-4 text-pink-400 mb-1.5" />

@@ -151,7 +151,7 @@ function MockAPI() {
             <div className="grid grid-cols-3 gap-2">
                 {[
                     { icon: Shield, label: 'Auth JWT', color: 'text-emerald-400' },
-                    { icon: Webhook, label: 'Webhooks', color: 'text-purple-400' },
+                    { icon: Webhook, label: 'CRM/ERP', color: 'text-purple-400' },
                     { icon: FileDown, label: 'SDK', color: 'text-indigo-400' },
                 ].map(({ icon: Icon, label, color }, i) => (
                     <div key={i} className="rounded-lg bg-slate-800/60 p-2 text-center border border-slate-700/50">
@@ -228,7 +228,7 @@ export function IntegrationsArticle() {
                     Google Ads, Meta Ads, API REST y sistema weekly — todo sincronizado con tu planificación de recursos. Los datos de tus campañas y tu equipo en un solo lugar.
                 </p>
                 <div className="flex flex-wrap justify-center gap-3 text-sm">
-                    {['Google Ads', 'Meta Ads', 'API REST', 'Webhooks', 'Weekly Feedback'].map((f, i) => (
+                    {['Google Ads', 'Meta Ads', 'API REST', 'Sincronización CRM/ERP', 'Weekly Feedback'].map((f, i) => (
                         <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-indigo-200/90 text-xs font-medium">
                             <CheckCircle2 className="h-3 w-3 text-emerald-400" />
                             {f}
@@ -304,12 +304,12 @@ export function IntegrationsArticle() {
                             API REST: haz lo que quieras
                         </h2>
                         <p className="text-indigo-100/90 mb-4 leading-relaxed">
-                            API completa con autenticación JWT, webhooks para eventos en tiempo real y SDK para las integraciones más comunes. Conecta Taimbox con cualquier herramienta de tu stack.
+                            API completa con autenticación JWT, sincronización de tiempos con tu CRM/ERP y exportación directa a sistemas externos (sujeto a integración). Conecta Taimbox con cualquier herramienta de tu stack.
                         </p>
                         <div className="grid grid-cols-2 gap-3">
                             {[
                                 { label: 'REST', desc: 'Endpoints documentados', icon: Code2 },
-                                { label: 'Webhooks', desc: 'Eventos en tiempo real', icon: Webhook },
+                                { label: 'CRM/ERP', desc: 'Sincronización de tiempos; exportación a sistemas externos', icon: Webhook },
                                 { label: 'Auth JWT', desc: 'Tokens seguros', icon: Shield },
                                 { label: 'SDK', desc: 'Node.js y Python', icon: Plug },
                             ].map(({ label, desc, icon: Icon }, i) => (

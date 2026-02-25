@@ -3,10 +3,8 @@ import { useApp } from '@/contexts/AppContext';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp } from 'lucide-react';
-import { format, startOfMonth, subMonths, addMonths } from 'date-fns';
+import { format, subMonths, addMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { MonthlyEvolutionChart } from '@/components/employee/MonthlyEvolutionChart';
-import { getWeeksForMonth } from '@/utils/dateUtils';
 
 interface WeeklyForecastSheetProps {
   open: boolean;
@@ -32,8 +30,6 @@ export function WeeklyForecastSheet({ open, onOpenChange, initialViewDate }: Wee
   useEffect(() => {
     localStorage.setItem('forecast_date', currentMonth.toISOString());
   }, [currentMonth]);
-
-  const weeks = getWeeksForMonth(currentMonth);
 
   const handlePrevMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
   const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
@@ -73,15 +69,6 @@ export function WeeklyForecastSheet({ open, onOpenChange, initialViewDate }: Wee
               </Button>
             </div>
           </div>
-
-          {/* Gráfico de Evolución Mensual */}
-          <MonthlyEvolutionChart
-            currentMonth={currentMonth}
-            weeks={weeks}
-            allocations={allocations}
-            projects={projects}
-            employees={employees}
-          />
 
           <div className="bg-white rounded-lg border p-4">
             <p className="text-sm text-slate-600">

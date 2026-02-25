@@ -184,7 +184,7 @@ export function MockTeamCapacity() {
             </div>
             <div className="mt-3 flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-2.5 py-2">
                 <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
-                <p className="text-xs text-amber-200/90">Carlos está al 95%. Julia sobrecargada (100%). Considera reasignar.</p>
+                <p className="text-xs text-amber-200/90">Carlos al 95%, Julia al 100%. El asistente te sugiere a quién pasarle la carga (nombre y proyectos en común).</p>
             </div>
         </div>
     );
@@ -275,7 +275,7 @@ export function MockIntegrations() {
         { name: 'Google Ads', status: 'Sincronizado', icon: TrendingUp, bg: 'bg-emerald-500/20', text: 'text-emerald-400', lastSync: 'Hace 2h' },
         { name: 'Meta Ads', status: 'Sincronizado', icon: BarChart3, bg: 'bg-emerald-500/20', text: 'text-emerald-400', lastSync: 'Hace 3h' },
         { name: 'API REST', status: 'Activo', icon: Plug, bg: 'bg-blue-500/20', text: 'text-blue-400', lastSync: '3 tokens' },
-        { name: 'Webhooks', status: 'Configurado', icon: Wifi, bg: 'bg-purple-500/20', text: 'text-purple-400', lastSync: '2 endpoints' },
+        { name: 'CRM/ERP', status: 'Sincronización', icon: Wifi, bg: 'bg-purple-500/20', text: 'text-purple-400', lastSync: 'Exportación externa' },
     ];
     return (
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-sm">
@@ -344,7 +344,7 @@ export function MockWeeklyForecast() {
 /* ─── Mockup: Before/After comparison ─── */
 export function MockBeforeAfter() {
     const beforeItems = ['Excel y hojas sueltas', 'Horas sin registrar', 'Desvíos invisibles', 'Reporting manual', 'Estimaciones a ojo'];
-    const afterItems = ['Plataforma centralizada', '100% horas planificadas', 'Alertas automáticas', 'Informes en 1 clic', 'Datos reales por proyecto'];
+    const afterItems = ['Plataforma centralizada', '100% horas planificadas', 'Indicadores visuales de sobrecarga', 'Salud Financiera en 1 vista', 'Datos reales por proyecto'];
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 w-full max-w-2xl">
             {/* Before */}

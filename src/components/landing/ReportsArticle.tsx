@@ -170,7 +170,7 @@ function MockForecast() {
 
             <div className="mt-3 flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2">
                 <Zap className="h-3.5 w-3.5 text-amber-400 mt-0.5 shrink-0" />
-                <p className="text-[10px] text-amber-200/80">S3 tuvo un <strong className="text-amber-200">86%</strong> de cumplimiento. 15h redistribuidas automáticamente a S4.</p>
+                <p className="text-[10px] text-amber-200/80">S3 tuvo un <strong className="text-amber-200">86%</strong> de cumplimiento. El sistema te muestra quién tiene horas libres para que redistribuyas el trabajo en segundos.</p>
             </div>
         </div>
     );
@@ -199,7 +199,7 @@ export function ReportsArticle() {
                     Cada hora tiene un coste. Cada proyecto tiene un margen. Los reportes de Taimbox conectan tiempo, personas y dinero para que tomes decisiones con datos reales, no con estimaciones.
                 </p>
                 <div className="flex flex-wrap justify-center gap-3 text-sm">
-                    {['Rentabilidad en vivo', 'Informes de cliente', 'Weekly Forecast', 'Exportaciones', 'Históricos'].map((f, i) => (
+                    {['Rentabilidad en vivo', 'Ingreso devengado y ritmo', 'Coste operativo/dinámico', 'Presupuesto por deadline', 'Weekly Forecast', 'Exportaciones'].map((f, i) => (
                         <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-indigo-200/90 text-xs font-medium">
                             <CheckCircle2 className="h-3 w-3 text-emerald-400" />
                             {f}
@@ -220,13 +220,13 @@ export function ReportsArticle() {
                             ¿Ganas o pierdes dinero en cada proyecto?
                         </h2>
                         <p className="text-indigo-100/90 mb-4 leading-relaxed">
-                            El dashboard de Rentabilidad muestra el valor planificado por proyecto, las horas reales computadas y el avance operativo. Ves la rentabilidad y el progreso de cada proyecto en tiempo real.
+                            El dashboard de Rentabilidad muestra ingresos, costes y margen por proyecto y empleado. En mes en curso, el ingreso devengado (prorrateo por días) evita la ilusión de mitad de mes; si un proyecto ya ha cumplido el 100 % de las horas, se muestra el fee total. Las horas objetivo respetan los ajustes del Deadline (presupuesto efectivo del mes).
                         </p>
                         <ul className="space-y-3">
                             {[
-                                { icon: DollarSign, text: 'Valor planificado y mensualidad por proyecto', color: 'text-emerald-400' },
-                                { icon: Users, text: 'Horas reales vs presupuesto y avance operativo', color: 'text-indigo-400' },
-                                { icon: TrendingUp, text: 'Tendencias: ¿mejora o empeora?', color: 'text-amber-400' },
+                                { icon: DollarSign, text: 'Ingreso devengado en mes en curso; fee total al 100 % horas', color: 'text-emerald-400' },
+                                { icon: Users, text: 'Ritmo (pacing): % presupuesto consumido vs % mes transcurrido', color: 'text-indigo-400' },
+                                { icon: TrendingUp, text: 'Coste operativo o dinámico; margen en rojo si pérdida', color: 'text-amber-400' },
                             ].map(({ icon: Icon, text, color }, i) => (
                                 <li key={i} className="flex items-center gap-3 text-indigo-100/90 text-sm">
                                     <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
@@ -240,35 +240,7 @@ export function ReportsArticle() {
                 </div>
             </section>
 
-            {/* SECTION 2: Informes de cliente */}
-            <section className="mb-16 sm:mb-20">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-                    <div>
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-purple-300/90 mb-3 block">Para tus clientes</span>
-                        <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 leading-tight">
-                            Informes profesionales, listos para enviar
-                        </h2>
-                        <p className="text-indigo-100/90 mb-4 leading-relaxed">
-                            Genera informes por cliente con el desglose de horas por proyecto y empleado. Exporta en PDF con un clic; integración vía API para otros formatos. Tu cliente ve exactamente en qué se invirtió su presupuesto.
-                        </p>
-                        <div className="rounded-xl border-l-4 border-purple-400 bg-purple-500/10 border border-purple-500/20 p-4">
-                            <p className="text-indigo-100/90 text-sm m-0">
-                                Los informes muestran solo lo que el cliente debe ver: <strong className="text-white">horas por categoría</strong>, no los detalles internos del equipo.
-                            </p>
-                        </div>
-                        <div className="rounded-xl border-l-4 border-teal-400 bg-teal-500/10 border border-teal-500/20 p-4 mt-3">
-                            <p className="text-indigo-100/90 text-sm m-0">
-                                Las horas registradas con el <strong className="text-white">cronómetro por tarea</strong> alimentan los reportes y el avance real. Más precisión en rentabilidad y facturación.
-                            </p>
-                        </div>
-                    </div>
-                    <div>
-                        <MockClientReport />
-                    </div>
-                </div>
-            </section>
-
-            {/* SECTION 3: Weekly Forecast */}
+            {/* SECTION 2: Weekly Forecast */}
             <section className="mb-16 sm:mb-20">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
                     <div className="order-2 lg:order-1">
@@ -280,12 +252,13 @@ export function ReportsArticle() {
                             Forecast: predice antes de que sea tarde
                         </h2>
                         <p className="text-indigo-100/90 mb-4 leading-relaxed">
-                            El Weekly Forecast compara lo planificado con lo ejecutado cada semana. Si una semana queda por debajo del objetivo, el sistema redistribuye automáticamente las horas restantes a la siguiente.
+                            El Weekly Forecast compara lo planificado con lo ejecutado cada semana. Asistente de redistribución rápida: el sistema te muestra quién tiene horas libres para que redistribuyas el trabajo en segundos. La misma lógica inteligente — solo entre quien comparte proyectos y con límites de carga — está en Deadlines para la asignación mensual por proyecto.
                         </p>
                         <ul className="space-y-3">
                             {[
                                 'Comparativa semanal planificado vs ejecutado',
-                                'Redistribución automática de horas no completadas',
+                                'Asistente de redistribución: ves quién tiene horas libres',
+                                'Misma lógica en Deadlines: sugerencias con condicionantes y impacto',
                                 'Tendencias históricas de cumplimiento',
                             ].map((text, i) => (
                                 <li key={i} className="flex items-center gap-3 text-indigo-100/90 text-sm">
@@ -315,8 +288,8 @@ export function ReportsArticle() {
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         {[
-                            { icon: Clock, title: 'F1 — Coste laboral', formula: 'Σ (horas reales × coste/h del empleado)', desc: 'Cuánto nos ha costado el trabajo en el proyecto. Cada empleado tiene un coste por hora (€/h); se multiplica por las horas trackeadas en ese proyecto y se suma.' },
-                            { icon: DollarSign, title: 'F2 — Ingreso atribuido', formula: 'Iguala mensual del proyecto', desc: 'El ingreso del proyecto es el fee mensual (monthly_fee). No se prorratea: si el cliente paga 1.500 €/mes, el ingreso es 1.500 € desde el día 1.' },
+                            { icon: Clock, title: 'F1 — Coste laboral', formula: 'Operativo: horas × coste/h estándar. Dinámico: prorrateo nómina', desc: 'Dos modelos: Operativo (coste/h fijo por capacidad teórica) o Dinámico (nómina repartida entre horas reales del mes). El presupuesto de horas (objetivo Xh / Yh) usa el del Deadline si hay ajuste para ese mes.' },
+                            { icon: DollarSign, title: 'F2 — Ingreso (devengado o total)', formula: 'Mes en curso: prorrateo por días; si ≥100 % horas → fee total', desc: 'En mes cerrado se usa el fee mensual. En mes en curso, el ingreso devengado es el prorrateo (fee × día/días del mes). Si el proyecto ya ha cumplido o superado el 100 % de las horas del presupuesto, se muestra el fee total.' },
                             { icon: Percent, title: 'F3 — Margen neto', formula: 'Ingreso − Coste laboral (− Ads si aplica)', desc: 'Margen en € y en %. Indica cuánto dinero líquido deja el proyecto. Proyectos internos (sin fee) tendrán margen negativo; se muestran en rojo.' },
                             { icon: BarChart3, title: 'F4 — Precio hora efectivo (EHR)', formula: 'Ingreso ÷ Total horas reales del proyecto', desc: 'La métrica estrella: eficiencia real. Ej: 1.500 € / 10 h = 150 €/h (excelente). Si hay 0 horas, se muestra "Sin datos" para evitar divisiones por cero.' },
                         ].map(({ icon: Icon, title, formula, desc }, i) => (
@@ -332,7 +305,7 @@ export function ReportsArticle() {
                     </div>
                     <div className="rounded-xl border-l-4 border-amber-500/50 bg-amber-500/10 border border-amber-500/20 p-4">
                         <p className="text-indigo-100/90 text-sm m-0">
-                            <strong className="text-white">Origen de los datos:</strong> Fee y horas por proyecto; coste por hora (€/h) por empleado; horas reales del cronómetro (time entries). El coste del empleado es un valor fijo por hora, no se calcula dividiendo la nómina entre las horas del mes.
+                            <strong className="text-white">Origen de los datos:</strong> Fee y horas por proyecto (presupuesto efectivo del mes desde Deadlines si hay ajuste); coste por hora por empleado (modelo Operativo o Dinámico); horas reales/computadas. Badge «Mes en curso» o «Mes cerrado» para contexto. Pérdidas (margen negativo) en rojo.
                         </p>
                     </div>
                 </div>
@@ -344,12 +317,12 @@ export function ReportsArticle() {
                     <div className="text-center mb-8">
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-300/90 mb-3 block">Exporta e integra</span>
                         <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-                            PDF listo para enviar; API para tus sistemas
+                            Salud Financiera de la Agencia; API para tus sistemas
                         </h2>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {[
-                            { icon: Eye, label: 'PDF', desc: 'Informes de cliente listos para enviar con un clic (imprimir a PDF).', color: 'from-purple-500 to-pink-500' },
+                            { icon: BarChart3, label: 'Salud Financiera', desc: 'Panel de rentabilidad por proyecto: ingreso devengado, ritmo (pacing), coste operativo/dinámico y margen al céntimo.', color: 'from-purple-500 to-pink-500' },
                             { icon: Shield, label: 'API REST', desc: 'Integración directa: exporta datos en CSV, JSON o el formato que necesites.', color: 'from-amber-500 to-orange-500' },
                         ].map(({ icon: Icon, label, desc, color }, i) => (
                             <div key={i} className="rounded-xl bg-slate-900/60 border border-white/10 p-4 text-center">
@@ -376,7 +349,7 @@ export function ReportsArticle() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
                         {[
                             { num: '100%', label: 'trazabilidad de horas' },
-                            { num: '1 clic', label: 'informe PDF para cliente' },
+                            { num: '1 vista', label: 'Salud Financiera de la agencia' },
                             { num: '∞', label: 'datos históricos vía API' },
                         ].map(({ num, label }, i) => (
                             <div key={i} className="text-center p-3 rounded-xl bg-white/5 border border-white/10">

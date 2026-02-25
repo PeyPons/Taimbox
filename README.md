@@ -205,7 +205,7 @@ Lógica reutilizable de UI.
 const { formatName: formatProjectName } = useProjectAliasing();
 // Usar: formatProjectName(project.name)
 ```
-- **Consumidores**: `DeadlinesPage`, `ReportsPage`, `ClientReportsPage`, `EmployeeDashboard`, `AllocationSheet`, `WeeklyForecastPage`, y todos los componentes que muestran nombres de proyectos.
+- **Consumidores**: `DeadlinesPage`, `EmployeeDashboard`, `AllocationSheet`, `WeeklyForecastPage`, y todos los componentes que muestran nombres de proyectos.
 
 </details>
 
@@ -246,7 +246,7 @@ Todas las páginas principales de la aplicación.
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
 | `EmployeeDashboard.tsx` | 40KB | Vista personal del empleado ("Mi Semana"). **Móvil**: Dialog→Sheet para "Gestión interna" y "Añadir tareas"; navegación mes con botones ≥44px. |
-| `DeadlinesPage.tsx` | 106KB | Gestión de fechas límite mensuales. **Móvil**: filtros en Sheet "Filtros", edición de proyecto en Sheet desde abajo; selector de mes sticky con botones grandes. |
+| `DeadlinesPage.tsx` | ~3500 líneas | Gestión de fechas límite mensuales. **Sugerencias de redistribución**: panel compacto (3) en sidebar y popup ampliable (Dialog desktop / Sheet móvil) con hasta 20 sugerencias; solo entre empleados que comparten proyectos. **Condicionantes**: quién puede ceder horas (switches), carga máx. receptor (%) y carga mín. quien cede (%); resumen propuesto por receptor (transferencias y cargas resultantes). Algoritmo documentado en `docs/ALGORITMO-REDISTRIBUCION-RESUMEN-PATENTES.md`. **Móvil**: filtros en Sheet, edición en Sheet; selector de mes sticky. |
 | `WeeklyForecastPage.tsx` | 94KB | Previsión y confirmación semanal |
 | `TeamCapacityPage.tsx` | 26KB | Vista de carga del equipo completo |
 | `TeamPage.tsx` | 4KB | Listado de empleados |
@@ -263,11 +263,8 @@ Todas las páginas principales de la aplicación.
 ### Reportes y Analytics
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
-| `FinancialHealthPage.tsx` | ~35KB | Rentabilidad (ruta `/finanzas`): Buscador "Buscar proyecto o cliente...", toggle incluir proyectos sin actividad, KPIs y Radar de hemorragias (solo facturables), bloque Inversión interna (fee 0), tabs Resumen / Proyectos / Empleados, rentabilidad por empleado (lista completa en €) y desglose por proyecto con ingreso atribuido y margen. |
+| `FinancialHealthPage.tsx` | ~35KB | Rentabilidad (ruta `/finanzas`): Buscador, KPIs, Radar de hemorragias, tabs Resumen/Proyectos/Empleados. Incluye **contexto mes** (badge Mes en curso / Mes cerrado), **ingreso devengado** en mes en curso, columna **Ritmo (pacing)** y fallback de coste dinámico cuando &lt;25% del mes. |
 | `OperationsRadarPage.tsx` | — | Seguimiento operativo: **una sola búsqueda** en cabecera (aplica a ambos paneles). Coherencia sin filtros locales de proyecto (solo filtro por empleado tipo combobox). Estado de proyectos: **por defecto Todos**; modos Todos | Aviso bajo y en regla | Solo con avisos; desplegables con ritmo necesario (h/día) y enlace a Deadlines. Vista por departamento del Sidebar. |
-| `ReportsPage.tsx` | 105KB | Dashboard de métricas de rentabilidad |
-| `ClientReportsPage.tsx` | 11KB | Reportes orientados al cliente |
-
 ### Publicidad (Ads)
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
@@ -403,7 +400,7 @@ Define las integraciones disponibles para activar por agencia.
 | **`Allocation`** | `AppContext`, `AllocationSheet`, `useAllocationSheet`, `PlannerGrid`, `useProjectMetrics` |
 | **`Employee`** | `AppContext`, `AgencyContext`, `EmployeeRow`, `TeamPage`, `capacityUtils` |
 | **`Project`** | `AppContext`, `ProjectsPage`, `useProjectMetrics`, `ClientProjectPage` |
-| **`AgencySettings`** | `AgencyContext`, `usePermissions`, `AgencySettingsPage`, `ReliabilityIndexCard`, `ReportsPage`, `planningPrecisionUtils` (planningPrecisionExclusions) |
+| **`AgencySettings`** | `AgencyContext`, `usePermissions`, `AgencySettingsPage`, `ReliabilityIndexCard`, `planningPrecisionUtils` (planningPrecisionExclusions) |
 
 ### 8.2 Dependencias de Lógica Core (Contexts & Utils)
 

@@ -83,11 +83,9 @@ const lazyWithRetry = (importFn: () => Promise<{ default: React.ComponentType<un
 const OperationsRadarPage = lazyWithRetry(() => import("./pages/OperationsRadarPage"));
 const FinancialHealthPage = lazyWithRetry(() => import("./pages/FinancialHealthPage"));
 const TeamCapacityDashboard = lazyWithRetry(() => import("./pages/TeamCapacityDashboard"));
-const ClientReportsPage = lazyWithRetry(() => import("@/pages/ClientReportsPage"));
 const Index = lazyWithRetry(() => import("./pages/Index"));
 const TeamPage = lazyWithRetry(() => import("./pages/TeamPage"));
 const ClientsAndProjectsPage = lazyWithRetry(() => import("./pages/ClientsAndProjectsPage"));
-const ReportsPage = lazyWithRetry(() => import("./pages/ReportsPage"));
 const SettingsPage = lazyWithRetry(() => import("./pages/SettingsPage"));
 const MetaAdsPage = lazyWithRetry(() => import("./pages/MetaAdsPage"));
 const AdsPage = lazyWithRetry(() => import("@/pages/AdsPage"));
@@ -209,13 +207,10 @@ const App = () => (
                             <Route path="/projects" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/projects"><ClientsAndProjectsPage /></PermissionProtectedRoute></Suspense>} />
                             <Route path="/okrs" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/okrs"><OkrsPage /></PermissionProtectedRoute></Suspense>} />
 
-                            {/* Reportes clásicos: índice de fiabilidad, predicción de carga, etc. (acceso explícito) */}
-                            <Route path="/reportes-clasicos" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/reports"><ReportsPage /></PermissionProtectedRoute></Suspense>} />
-                            {/* Ruta legacy /reports redirige a Seguimiento operativo; reportes clásicos en /reportes-clasicos */}
+                            {/* Ruta legacy /reports redirige a Seguimiento operativo */}
                             <Route path="/reports" element={<Navigate to="/operaciones" replace />} />
                             {/* Weekly Forecast: cierre semanal y redistribución (acceso restaurado) */}
                             <Route path="/weekly-forecast" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/team-capacity"><WeeklyForecastPage /></PermissionProtectedRoute></Suspense>} />
-                            <Route path="/informes-clientes" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/informes-clientes"><ClientReportsPage /></PermissionProtectedRoute></Suspense>} />
                             <Route path="/settings" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><SettingsPage /></PermissionProtectedRoute></Suspense>} />
                             <Route path="/agency" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/agency"><AgencySettingsPage /></PermissionProtectedRoute></Suspense>} />
                             <Route path="/agencies" element={<Suspense fallback={<PageLoader />}><AgenciesPage /></Suspense>} />

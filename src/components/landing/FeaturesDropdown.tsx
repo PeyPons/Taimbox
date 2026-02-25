@@ -42,7 +42,7 @@ const FEATURES = [
     {
         title: 'Reportes y Rentabilidad',
         href: '/reportes-rentabilidad',
-        description: 'Rentabilidad al céntimo',
+        description: 'Ingreso devengado, ritmo por proyecto y margen al céntimo',
         badge: 'Para financieros',
         badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
         icon: BarChart3,
@@ -51,7 +51,7 @@ const FEATURES = [
     {
         title: 'Proyectos y Deadlines',
         href: '/control-proyectos',
-        description: 'Del briefing al deadline',
+        description: 'Objetivos mensuales y sugerencias de redistribución',
         badge: 'Para project managers',
         badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
         icon: FolderKanban,

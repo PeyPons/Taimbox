@@ -99,7 +99,7 @@ const tourSteps: TourStep[] = [
     id: 'suggestions',
     target: '[data-tour="suggestions"]',
     title: 'Sugerencias inteligentes',
-    description: 'El sistema analiza la carga de trabajo y sugiere redistribuciones. Te muestra qué empleados están sobrecargados y con quién comparten proyectos para facilitar la redistribución.',
+    description: 'Asistente inteligente de reasignación: el sistema detecta quién está saturado y te sugiere con nombre y apellido a quién pasarle la carga, cruzando los proyectos que tienen en común.',
     icon: <TrendingUp className="w-6 h-6 text-amber-500" />,
     position: 'left',
     highlight: true

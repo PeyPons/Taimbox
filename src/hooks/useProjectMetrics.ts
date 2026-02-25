@@ -52,8 +52,8 @@ export interface EmployeeMetrics {
     loadPercentage: number;
     status: 'empty' | 'healthy' | 'warning' | 'overload';
 
-    // Projects breakdown
-    projectBreakdown: { projectId: string; projectName: string; hours: number }[];
+    // Projects breakdown (hours = computed, actual = real/tracked)
+    projectBreakdown: { projectId: string; projectName: string; hours: number; actual: number }[];
 }
 
 /** Deadline mínimo para presupuesto efectivo (budgetOverride del mes) */
@@ -242,10 +242,11 @@ export function useProjectMetrics(options: UseProjectMetricsOptions): UseProject
             let totalPlanned = 0;
             let totalActual = 0;
             let totalComputed = 0;
-            const projectBreakdown: { projectId: string; projectName: string; hours: number }[] = [];
+            const projectBreakdown: { projectId: string; projectName: string; hours: number; actual: number }[] = [];
 
-            // Group by project
-            const projectHours = new Map<string, number>();
+            // Group by project: computed and actual (real) hours
+            const projectComputed = new Map<string, number>();
+            const projectActual = new Map<string, number>();
 
             for (const allocation of empAllocations) {
                 const prorated = prorateHoursForMonth(allocation, month);
@@ -253,16 +254,20 @@ export function useProjectMetrics(options: UseProjectMetricsOptions): UseProject
                 totalActual += prorated.actual;
                 totalComputed += prorated.computed;
 
-                const current = projectHours.get(allocation.projectId) || 0;
-                projectHours.set(allocation.projectId, current + prorated.computed);
+                const curC = projectComputed.get(allocation.projectId) || 0;
+                projectComputed.set(allocation.projectId, curC + prorated.computed);
+                const curA = projectActual.get(allocation.projectId) || 0;
+                projectActual.set(allocation.projectId, curA + prorated.actual);
             }
 
-            for (const [projId, hours] of projectHours) {
+            const allProjIds = new Set([...projectComputed.keys(), ...projectActual.keys()]);
+            for (const projId of allProjIds) {
                 const project = projects.find(p => p.id === projId);
                 projectBreakdown.push({
                     projectId: projId,
                     projectName: project?.name || 'Unknown',
-                    hours: Math.round(hours * 100) / 100
+                    hours: Math.round((projectComputed.get(projId) || 0) * 100) / 100,
+                    actual: Math.round((projectActual.get(projId) || 0) * 100) / 100
                 });
             }
 

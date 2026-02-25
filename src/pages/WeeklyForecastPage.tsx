@@ -28,7 +28,6 @@ import { getStorageKey, getWeeksForMonth, getMonthlyCapacity, isAllocationInEffe
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
-import { MonthlyEvolutionChart } from '@/components/employee/MonthlyEvolutionChart';
 import { ActivityLogSection } from '@/components/shared/ActivityLogSection';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { Deadline } from '@/types';
@@ -893,15 +892,6 @@ export default function WeeklyForecastPage() {
           </Button>
         </div>
       </div>
-
-      {/* Gráfico de Evolución Mensual */}
-      <MonthlyEvolutionChart
-        currentMonth={currentMonth}
-        weeks={weeks}
-        allocations={allocations}
-        projects={selectedDepartmentId ? filteredProjectsForView : projects}
-        employees={employeesForView}
-      />
 
       {/* TABS */}
       <Tabs defaultValue="traffic" className="space-y-4">

@@ -8,7 +8,6 @@ import { es } from 'date-fns/locale';
 import { AlertCircle, TrendingUp, CheckCircle2, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getWeeksForMonth } from '@/utils/dateUtils';
-import { MonthlyEvolutionChart } from '@/components/employee/MonthlyEvolutionChart';
 
 export function DemoWeeklyForecastPage() {
     const {
@@ -94,26 +93,7 @@ export function DemoWeeklyForecastPage() {
     return (
         <div className="space-y-6 lg:space-y-8 pb-20 p-3 sm:p-4 md:p-6 bg-slate-50 min-h-screen">
 
-            {/* 1. CHART DE EVOLUCIÓN MENSUAL */}
-            <Card className="border-indigo-100 shadow-md overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-indigo-50 to-white pb-2">
-                    <CardTitle className="flex items-center gap-2 text-lg sm:text-xl font-bold text-indigo-900">
-                        <TrendingUp className="h-5 w-5 text-primary" />
-                        Evolución mensual (planificado vs real)
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
-                    <MonthlyEvolutionChart
-                        currentMonth={currentMonth}
-                        weeks={weeks}
-                        allocations={allocations}
-                        projects={projects}
-                        employees={employees}
-                    />
-                </CardContent>
-            </Card>
-
-            {/* 2. SEMÁFORO DE PROYECTOS */}
+            {/* 1. SEMÁFORO DE PROYECTOS */}
             <Card className="border-indigo-100 shadow-md">
                 <CardHeader className="flex flex-row items-center justify-between bg-gradient-to-r from-indigo-50 to-white pb-2">
                     <div className="flex items-center gap-2">

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -9,12 +10,13 @@ import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import { useAgency } from '@/contexts/AgencyContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { toast } from 'sonner';
 import {
   Building2, Settings, Users, Palette, Save, Loader2,
   Filter, Plus, Trash2, HelpCircle, Info, X,
   Rocket, Facebook, Megaphone, PlusCircle, ShieldCheck, GitBranch, Database, AlertTriangle,
-  Eye, Lock, Unlock, Calendar, Check, ChevronDown, BarChart2, Layers
+  Eye, Lock, Unlock, Calendar, Check, ChevronDown, BarChart2, Layers, ExternalLink
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -108,6 +110,7 @@ function GoogleAdsAccountSelect({
 
 export default function AgencySettingsPage() {
   const { currentAgency, refreshAgency, updateSettings, updateAgencyName, isLoading: isAgencyLoading } = useAgency();
+  const { hasPermission } = usePermissions();
   const { projects, clients } = useApp();
   const [saving, setSaving] = useState(false);
 
@@ -648,6 +651,22 @@ export default function AgencySettingsPage() {
           </TabsContent>
 
           <TabsContent value="team" className="mt-0 space-y-6">
+            {hasPermission('can_access_agency_settings') && currentAgency && (
+              <Card className="border-slate-200 bg-slate-50/50">
+                <CardContent className="py-3 px-4 flex items-center justify-between gap-3 flex-wrap">
+                  <p className="text-sm text-slate-600">
+                    Invitar usuarios, asignar roles y gestionar administradores de la agencia.
+                  </p>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to={`/agencies/${currentAgency.id}/manage`} className="gap-2">
+                      <Users className="h-4 w-4" />
+                      Gestionar miembros y administradores
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
             {/* Roles y Departamentos */}
             <div className="grid gap-6 md:grid-cols-2">
               {/* Roles y Permisos */}

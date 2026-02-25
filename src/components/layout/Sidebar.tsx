@@ -17,11 +17,9 @@ import {
   Settings,
   Megaphone,
   Facebook,
-  FileDown,
   LogOut,
   Home,
   Calendar,
-  TrendingUp,
   Rocket,
   ChevronRight,
   ChevronDown,
@@ -32,12 +30,11 @@ import {
   Shield,
   MessageCircle,
   Building2,
-  Plus,
   Clock,
   Square,
   Activity,
   DollarSign,
-  FileText
+  FileText,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from '@/lib/utils';
@@ -153,7 +150,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const isTimeTrackerEnabled = (modules.timeTracker === true) && (currentUser?.user_id != null);
   const activeTimer = useActiveTimerForSidebar(isTimeTrackerEnabled ? currentUser?.id : undefined);
 
-  const isSuperior = canAccess('/planner') || canAccess('/team') || canAccess('/reports') || canAccess('/operaciones') || canAccess('/finanzas') || canAccess('/settings');
+  const isSuperior = canAccess('/planner') || canAccess('/team') || canAccess('/operaciones') || canAccess('/finanzas') || canAccess('/settings');
 
   return (
     <>
@@ -266,7 +263,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           {isSuperior && (
             <div className="space-y-4">
               {/* SEGUIMIENTO */}
-              {(canAccess('/operaciones') || canAccess('/finanzas') || canAccess('/reports') || canAccess('/team-capacity')) && (
+              {(canAccess('/operaciones') || canAccess('/finanzas') || canAccess('/team-capacity')) && (
                 <NavGroup
                   label="Seguimiento"
                   isActive={['/operaciones', '/finanzas', '/capacidad', '/weekly-forecast'].includes(location.pathname)}
@@ -372,51 +369,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </NavGroup>
               )}
 
-              {/* ANÁLISIS: solo Reportes clásicos e Informes clientes (Seguimiento operativo y Rentabilidad están en Seguimiento) */}
-              {(canAccess('/reports') || canAccess('/informes-clientes')) && (
-                <NavGroup
-                  label="Análisis"
-                  isActive={['/informes-clientes', '/reportes-clasicos'].includes(location.pathname)}
-                >
-                  {canAccess('/reports') && (
-                    <NavLink to="/reportes-clasicos" icon={TrendingUp} active={location.pathname === '/reportes-clasicos'}>
-                      Reportes clásicos
-                    </NavLink>
-                  )}
-                  {canAccess('/informes-clientes') && (
-                    <NavLink to="/informes-clientes" icon={FileDown} active={location.pathname === '/informes-clientes'}>
-                      Informes clientes
-                    </NavLink>
-                  )}
-                </NavGroup>
-              )}
-
-              {/* CONFIGURACIÓN: unificado (agencia, miembros, ajustes, API, soporte) */}
+              {/* CONFIGURACIÓN: reducido (agencia, ajustes, API, soporte); miembros y crear agencia desde sus páginas) */}
               {canAccess('/settings') && (
                 <NavGroup
                   label="Configuración"
                   icon={Settings}
                   isActive={['/agency', '/settings', '/api-keys', '/soporte', '/agencies'].includes(location.pathname) || hasAgencyPaths}
                 >
-                  {hasPermission('can_access_agency_settings') && (
-                    <>
-                      <NavLink to="/agencies" icon={Building2} active={location.pathname === '/agencies' && !isAgenciesCreate}>
-                        Mis Agencias
-                      </NavLink>
-                      {currentAgency && (
-                        <NavLink
-                          to={`/agencies/${currentAgency.id}/manage`}
-                          icon={Users}
-                          active={location.pathname === `/agencies/${currentAgency.id}/manage`}
-                        >
-                          Gestionar miembros
-                        </NavLink>
-                      )}
-                    </>
-                  )}
                   {canAccess('/agency') && (
                     <NavLink to="/agency" icon={Settings} active={location.pathname === '/agency'}>
                       Configuración de agencia
+                    </NavLink>
+                  )}
+                  {hasPermission('can_access_agency_settings') && (
+                    <NavLink to="/agencies" icon={Building2} active={location.pathname === '/agencies' && !isAgenciesCreate}>
+                      Mis Agencias
                     </NavLink>
                   )}
                   {canAccess('/api-keys') && (
@@ -427,11 +394,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   {canAccess('/soporte') && (
                     <NavLink to="/soporte" icon={MessageCircle} active={location.pathname === '/soporte'}>
                       Soporte
-                    </NavLink>
-                  )}
-                  {hasPermission('can_access_agency_settings') && (
-                    <NavLink to="/agencies?action=create" icon={Plus} active={isAgenciesCreate}>
-                      Crear nueva agencia
                     </NavLink>
                   )}
                 </NavGroup>

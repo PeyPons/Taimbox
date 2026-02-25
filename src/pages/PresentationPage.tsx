@@ -278,7 +278,7 @@ function S06_Planificador({ isActive, direction }: SlideProps) {
                         </div>
                     </div>
                     <div className="space-y-2 max-w-md mx-auto lg:mx-0">
-                        {['Vista semanal del equipo completo', 'Barras de carga en tiempo real', 'Asignación con vista de impacto', 'Alertas de sobrecarga automáticas'].map((f, i) => (
+                        {['Vista semanal del equipo completo', 'Barras de carga en tiempo real', 'Asignación con vista de impacto', 'Indicadores visuales de sobrecarga'].map((f, i) => (
                             <div key={i} className={`flex items-center gap-2 p-2 sm:p-2.5 rounded-lg bg-white/5 border border-white/10 ${i >= 2 ? 'hidden sm:flex' : ''}`}>
                                 <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400 shrink-0" />
                                 <span className="text-sm sm:text-base text-white/90">{f}</span>
@@ -431,7 +431,7 @@ function S10_Reportes({ isActive, direction }: SlideProps) {
                         </div>
                     </div>
                     <div className="space-y-2 max-w-md mx-auto lg:mx-0">
-                        {['Rentabilidad por cliente en tiempo real', 'Exportar Excel/CSV/JSON en 1 clic', 'Coherencia global: alertas de desvío', 'Alias de proyectos para el cliente'].map((f, i) => (
+                        {['Rentabilidad por proyecto con ingreso devengado y ritmo (pacing)', 'Exportar Excel/CSV/JSON en 1 clic', 'Coherencia global: alertas de desvío', 'Presupuesto por deadline y coste operativo/dinámico'].map((f, i) => (
                             <div key={i} className={`flex items-center gap-2 p-2 sm:p-2.5 rounded-lg bg-white/5 border border-white/10 ${i >= 2 ? 'hidden sm:flex' : ''}`}>
                                 <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400 shrink-0" />
                                 <span className="text-sm sm:text-base text-white/90">{f}</span>
@@ -459,7 +459,7 @@ function S11_Deadlines({ isActive, direction }: SlideProps) {
                         </div>
                     </div>
                     <div className="space-y-2 max-w-md mx-auto lg:mx-0">
-                        {['Objetivos de horas por proyecto/mes', 'Override de presupuesto al cambiar scope', 'Alertas de coherencia automáticas', 'Weekly Forecast con redistribución'].map((f, i) => (
+                        {['Objetivos de horas por proyecto/mes', 'Override de presupuesto al cambiar scope', 'Indicadores de coherencia y desviación', 'Weekly Forecast con asistente de redistribución rápida'].map((f, i) => (
                             <div key={i} className={`flex items-center gap-2 p-2 sm:p-2.5 rounded-lg bg-white/5 border border-white/10 ${i >= 2 ? 'hidden sm:flex' : ''}`}>
                                 <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400 shrink-0" />
                                 <span className="text-sm sm:text-base text-white/90">{f}</span>
@@ -498,7 +498,7 @@ function S12_Integraciones({ isActive, direction }: SlideProps) {
                         </div>
                     </div>
                     <div className="space-y-2 max-w-md mx-auto lg:mx-0">
-                        {['Google Ads y Meta Ads sincronizados', 'API REST con documentación completa', 'SDK JavaScript para custom', 'Webhooks Realtime para CRM/ERP'].map((f, i) => (
+                        {['Google Ads y Meta Ads sincronizados', 'API REST con documentación completa', 'SDK JavaScript para custom', 'Sincronización de tiempos con CRM/ERP (sujeto a integración)'].map((f, i) => (
                             <div key={i} className={`flex items-center gap-2 p-2 sm:p-2.5 rounded-lg bg-white/5 border border-white/10 ${i >= 2 ? 'hidden sm:flex' : ''}`}>
                                 <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400 shrink-0" />
                                 <span className="text-sm sm:text-base text-white/90">{f}</span>

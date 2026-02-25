@@ -8,14 +8,14 @@ export default function ReportsLandingPage() {
         <>
             <Helmet>
                 <title>Informes de Rentabilidad y Margen Neto para Empresas | Taimbox</title>
-                <meta name="description" content="Mide la rentabilidad real de cada proyecto empresarial. Cruza costes laborales con ingresos para obtener márgenes netos automáticos basados en datos." />
+                <meta name="description" content="Rentabilidad por proyecto y empleado: ingreso devengado en mes en curso, ritmo (pacing), coste operativo o dinámico y presupuesto por deadline. Márgenes netos y EHR con datos reales." />
                 <link rel="canonical" href="/reportes-rentabilidad" />
                 <script type="application/ld+json">
                     {JSON.stringify({
                         '@context': 'https://schema.org',
                         '@type': 'WebPage',
                         name: 'Reportes y Rentabilidad — Taimbox',
-                        description: 'Mide la rentabilidad real de cada proyecto empresarial. Cruza costes laborales con ingresos para obtener márgenes netos automáticos basados en datos.',
+                        description: 'Rentabilidad por proyecto y empleado: ingreso devengado, ritmo (pacing), coste operativo/dinámico y presupuesto por deadline. Márgenes netos y EHR con datos reales.',
                     })}
                 </script>
             </Helmet>

@@ -1,4 +1,4 @@
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameMonth, addDays, format, eachDayOfInterval, isWeekend, parseISO } from 'date-fns';
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameMonth, addDays, format, eachDayOfInterval, isWeekend, parseISO, isBefore, isAfter } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { WorkSchedule } from '@/types';
 
@@ -155,3 +155,29 @@ export const getWeekEndDate = (weekStartDate: Date, closeDay: number = 4): Date 
  * Default week close day (Friday = 4 days from Monday)
  */
 export const DEFAULT_WEEKLY_CLOSE_DAY = 4;
+
+/**
+ * Número de días laborables (L–V) en un mes.
+ * Usado para pacing: % del mes transcurrido.
+ */
+export function getWorkingDaysInMonth(month: Date): number {
+  const start = startOfMonth(month);
+  const end = endOfMonth(month);
+  const days = eachDayOfInterval({ start, end });
+  return days.filter(d => !isWeekend(d)).length;
+}
+
+/**
+ * Días laborables transcurridos en el mes hasta hoy (solo tiene sentido para el mes actual).
+ * Si el mes es futuro → 0. Si es el mes actual → días laborables desde inicio de mes hasta hoy (inclusive).
+ * Si es un mes pasado → se devuelve el total del mes (100% transcurrido).
+ */
+export function getWorkingDaysElapsedInMonth(month: Date): number {
+  const now = new Date();
+  const start = startOfMonth(month);
+  const end = endOfMonth(month);
+  if (isBefore(now, start)) return 0;
+  const endCap = isAfter(now, end) ? end : now;
+  const days = eachDayOfInterval({ start, end: endCap });
+  return days.filter(d => !isWeekend(d)).length;
+}

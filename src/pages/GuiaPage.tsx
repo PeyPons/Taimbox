@@ -376,25 +376,17 @@ function InformesContent() {
   return (
     <>
       <ContentBlock title="Qué son los Informes">
-        <p>Los informes se organizan en la <strong className="text-white">Seguimiento</strong> (Seguimiento operativo, Rentabilidad, Capacidad de Equipo), en <strong className="text-white">Reportes clásicos</strong> (índice de fiabilidad, predicción de carga) y en <strong className="text-white">Informes por cliente</strong>. Permiten exportar en PDF y consultar datos históricos vía API.</p>
+        <p>Los informes se organizan en <strong className="text-white">Seguimiento</strong>: Seguimiento operativo, Rentabilidad y Capacidad de Equipo. Permiten consultar datos históricos y exportar vía API.</p>
       </ContentBlock>
 
       <ContentBlock title="Secciones disponibles">
         <div className="grid sm:grid-cols-2 gap-3">
           <FeatureCard icon={Activity} title="Seguimiento operativo" description="Coherencia planificación vs deadlines por proyecto, filtros por proyecto y empleado, navegación por mes y proyectos en alerta que explican por qué estás en riesgo." color="from-indigo-500 to-blue-500" />
-          <FeatureCard icon={BarChart3} title="Rentabilidad" description="Valor planificado, horas computadas y avance operativo por proyecto. Navegación por mes." color="from-emerald-500 to-teal-500" />
+          <FeatureCard icon={BarChart3} title="Rentabilidad" description="Ingreso devengado en mes en curso, ritmo (pacing), coste operativo o dinámico, presupuesto efectivo por deadline y margen por proyecto/empleado. Navegación por mes con badge Mes en curso/Mes cerrado." color="from-emerald-500 to-teal-500" />
           <FeatureCard icon={BarChart3} title="Capacidad de Equipo" description="Mapa de calor semanal, ocupación media y tareas bloqueadas por dependencias." color="from-blue-500 to-cyan-500" />
-          <FeatureCard icon={Activity} title="Reportes clásicos" description="Índice de fiabilidad de estimaciones, predicción de carga y métricas detalladas. Acceso desde Análisis en el menú." color="from-amber-500 to-orange-500" />
-          <FeatureCard icon={Download} title="Exportación" description="Informes de cliente en PDF con un clic. Datos históricos e integración vía API REST para otros formatos." color="from-emerald-500 to-teal-500" />
+          <FeatureCard icon={Download} title="Exportación" description="Datos históricos e integración vía API REST para otros formatos." color="from-emerald-500 to-teal-500" />
           <FeatureCard icon={Filter} title="Filtros" description="En Coherencia: por proyecto y empleado (respetando la vista por departamento del Sidebar). En el resto de vistas: por período y contexto." color="from-purple-500 to-pink-500" />
         </div>
-      </ContentBlock>
-
-      <ContentBlock title="Informes por cliente">
-        <p>Existe un apartado específico de <strong className="text-white">informes por cliente</strong> para generar reportes orientados a facturación o entrega a cliente, con las horas y el desglose que necesites.</p>
-        <ExampleBox>Al final de mes generas un informe para &quot;Cliente X&quot; con el desglose de horas por proyecto: SEO 35h, Paid Media 20h, Contenido 15h. Lo exportas en PDF y se lo envías directamente.</ExampleBox>
-        <div className="mt-3" />
-        <TipBox>Los informes por cliente respetan el aliasing de proyectos: si tienes reglas de renombrado (ej. Kit Digital → KD:), se aplican automáticamente en los reportes.</TipBox>
       </ContentBlock>
     </>
   );

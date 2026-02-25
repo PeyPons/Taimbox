@@ -78,7 +78,7 @@ function MockPlanningGrid() {
 
             <div className="mt-2 flex items-start gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2">
                 <AlertTriangle className="h-3.5 w-3.5 text-red-400 mt-0.5 shrink-0" />
-                <p className="text-[10px] text-red-200/80">Julia está al <strong className="text-red-200">100%</strong> en S1 y S2. Redistribuye antes de que sea un cuello de botella.</p>
+                <p className="text-[10px] text-red-200/80">Julia está al <strong className="text-red-200">100%</strong> en S1 y S2. Reasignación ágil en 1 clic o usa el asistente para que te sugiera a quién pasarle la carga.</p>
             </div>
         </div>
     );
@@ -200,7 +200,7 @@ function MockDependencies() {
 
             <div className="mt-3 flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2">
                 <Zap className="h-3.5 w-3.5 text-amber-400 mt-0.5 shrink-0" />
-                <p className="text-[10px] text-amber-200/80">Si la maquetación se retrasa, <strong className="text-amber-200">Testing QA</strong> se moverá automáticamente.</p>
+                <p className="text-[10px] text-amber-200/80">Identifica al instante qué tareas impiden avanzar. Si la maquetación se retrasa, ves que <strong className="text-amber-200">Testing QA</strong> está bloqueada.</p>
             </div>
         </div>
     );
@@ -271,7 +271,7 @@ export function PlannerArticle() {
                     El planificador central de Taimbox te muestra quién hace qué, cuándo y con qué impacto financiero. Asigna tareas, detecta sobrecargas y gestiona dependencias desde una sola vista.
                 </p>
                 <div className="flex flex-wrap justify-center gap-3 text-sm">
-                    {['Grid visual', 'Impacto antes de guardar', 'Dependencias', 'Semanas partidas', 'Detección de sobrecargas'].map((f, i) => (
+                    {['Grid visual', 'Reasignación ágil en 1 clic', 'Impacto antes de guardar', 'Dependencias', 'Semanas partidas', 'Indicadores de sobrecarga'].map((f, i) => (
                         <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-indigo-200/90 text-xs font-medium">
                             <CheckCircle2 className="h-3 w-3 text-emerald-400" />
                             {f}
@@ -298,7 +298,7 @@ export function PlannerArticle() {
                             {[
                                 { icon: Eye, text: 'Vista global de todo el equipo' },
                                 { icon: Calendar, text: 'Navegación por meses con un clic' },
-                                { icon: AlertTriangle, text: 'Alertas visuales de sobrecarga instantáneas' },
+                                { icon: AlertTriangle, text: 'Indicadores visuales de sobrecarga al instante' },
                             ].map(({ icon: Icon, text }, i) => (
                                 <li key={i} className="flex items-center gap-3 text-indigo-100/90 text-sm">
                                     <div className="w-7 h-7 rounded-lg bg-indigo-500/20 flex items-center justify-center shrink-0">
@@ -321,13 +321,13 @@ export function PlannerArticle() {
                             Sabes lo que va a pasar antes de que pase
                         </h2>
                         <p className="text-indigo-100/90 mb-4 leading-relaxed">
-                            Antes de guardar una asignación, ves exactamente el impacto: cómo afecta al presupuesto del proyecto, a la carga del empleado y si genera conflictos. Decisiones informadas, no a ciegas.
+                            Antes de guardar una asignación, ves exactamente el impacto. Además, el asistente inteligente de reasignación detecta quién está saturado y te sugiere con nombre y apellido a quién pasarle la carga, cruzando automáticamente los proyectos que tienen en común. En Deadlines tienes las mismas sugerencias con condicionantes: quién puede ceder, límites de carga para quien recibe y resumen de impacto antes de aplicar. Decisiones informadas en segundos.
                         </p>
                         <div className="grid grid-cols-2 gap-3">
                             {[
                                 { label: 'Presupuesto', desc: 'Consumo del proyecto en vivo', icon: BarChart3 },
                                 { label: 'Carga', desc: 'Horas del empleado esa semana', icon: Users },
-                                { label: 'Conflictos', desc: 'Sobrecargas y bloqueos', icon: AlertTriangle },
+                                { label: 'Conflictos', desc: 'Indicadores de sobrecarga y bloqueos', icon: AlertTriangle },
                                 { label: 'Deadlines', desc: 'Fechas límite afectadas', icon: Target },
                             ].map(({ label, desc, icon: Icon }, i) => (
                                 <div key={i} className="rounded-xl bg-white/5 border border-white/10 p-3">
@@ -353,16 +353,16 @@ export function PlannerArticle() {
                     <div className="order-1 lg:order-2">
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-300/90 mb-3 block">Gestión de bloqueos</span>
                         <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 leading-tight">
-                            Dependencias visibles, bloqueos controlados
+                            Control estricto de bloqueos
                         </h2>
                         <p className="text-indigo-100/90 mb-4 leading-relaxed">
-                            Conecta tareas entre sí para crear cadenas de dependencia. Si una tarea se retrasa, el sistema alerta automáticamente de todas las tareas afectadas aguas abajo. Nunca más un cuello de botella invisible.
+                            Identifica al instante qué tareas impiden avanzar a tu equipo. Gestión de dependencias integrada: Taimbox te avisa si una tarea está bloqueando a otra, para que actúes a tiempo.
                         </p>
                         <ul className="space-y-3">
                             {[
-                                { icon: GitBranch, text: 'Cadenas de dependencia visual', color: 'text-amber-400' },
-                                { icon: AlertTriangle, text: 'Alertas automáticas de bloqueo', color: 'text-red-400' },
-                                { icon: Zap, text: 'Redistribución automática si hay retrasos', color: 'text-emerald-400' },
+                                { icon: GitBranch, text: 'Gestión de dependencias integrada', color: 'text-amber-400' },
+                                { icon: AlertTriangle, text: 'Identifica qué tareas impiden avanzar', color: 'text-red-400' },
+                                { icon: Zap, text: 'Control estricto de bloqueos', color: 'text-emerald-400' },
                             ].map(({ icon: Icon, text, color }, i) => (
                                 <li key={i} className="flex items-center gap-3 text-indigo-100/90 text-sm">
                                     <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
@@ -445,7 +445,7 @@ export function PlannerArticle() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
                         {[
                             { num: '100%', label: 'visibilidad de carga' },
-                            { num: '< 30s', label: 'para detectar sobrecargas' },
+                            { num: '< 30s', label: 'para detectar sobrecargas (indicadores visuales)' },
                             { num: '0', label: 'sorpresas de presupuesto' },
                         ].map(({ num, label }, i) => (
                             <div key={i} className="text-center p-3 rounded-xl bg-white/5 border border-white/10">

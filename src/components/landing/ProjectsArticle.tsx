@@ -233,7 +233,7 @@ export function ProjectsArticle() {
                     Gestiona clientes, proyectos, presupuestos, deadlines y OKRs desde un único punto. Con control de coherencia automática que detecta inconsistencias antes de que lleguen al reporte.
                 </p>
                 <div className="flex flex-wrap justify-center gap-3 text-sm">
-                    {['Clientes y proyectos', 'Presupuestos en vivo', 'Deadlines mensuales', 'OKRs', 'Control de coherencia'].map((f, i) => (
+                    {['Clientes y proyectos', 'Presupuestos en vivo', 'Deadlines mensuales', 'Sugerencias de redistribución', 'OKRs', 'Control de coherencia'].map((f, i) => (
                         <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-indigo-200/90 text-xs font-medium">
                             <CheckCircle2 className="h-3 w-3 text-emerald-400" />
                             {f}
@@ -283,13 +283,21 @@ export function ProjectsArticle() {
                             Deadlines: cumple cada compromiso
                         </h2>
                         <p className="text-indigo-100/90 mb-4 leading-relaxed">
-                            Define cuántas horas deberían completarse cada mes por proyecto. El sistema compara en tiempo real lo ejecutado vs lo planificado y sugiere redistribuciones si detecta riesgo de incumplimiento.
+                            Define cuántas horas deberían completarse cada mes por proyecto. El sistema compara en tiempo real lo ejecutado vs lo planificado. Cuando detecta desequilibrios de carga en el equipo, genera <strong className="text-white">sugerencias de redistribución</strong> solo entre empleados que comparten proyectos — con límites configurables para no sobrecargar a quien recibe ni dejar a quien cede por debajo de un mínimo.
                         </p>
-                        <div className="rounded-xl border-l-4 border-amber-400 bg-amber-500/10 border border-amber-500/20 p-4">
+                        <div className="rounded-xl border-l-4 border-amber-400 bg-amber-500/10 border border-amber-500/20 p-4 mb-4">
                             <p className="text-indigo-100/90 text-sm m-0">
-                                Si un proyecto va justo de horas, el sistema <strong className="text-white">sugiere empleados con disponibilidad</strong> para asignar el trabajo restante.
+                                <strong className="text-white">Sugerencias inteligentes:</strong> quién puede ceder horas, a quién pasarlas y cuántas — por proyecto. Ves el impacto (cargas resultantes) antes de aplicar. Tú decides en segundos.
                             </p>
                         </div>
+                        <ul className="space-y-2 text-sm text-indigo-100/90">
+                            {['Solo entre quien comparte proyectos', 'Límite de carga máximo para quien recibe', 'Carga mínima para quien cede (no dejarlos vacíos)', 'Resumen propuesto con cargas resultantes'].map((t, i) => (
+                                <li key={i} className="flex items-center gap-2">
+                                    <CheckCircle2 className="h-4 w-4 text-amber-400 shrink-0" />
+                                    {t}
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                     <div>
                         <MockDeadlines />

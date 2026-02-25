@@ -527,6 +527,15 @@ export default function ClientsAndProjectsPage() {
         const filteredProjects = stats.projects.filter(({ project, analysis }) => {
           if (!analysis) return false;
 
+          // Filtro de búsqueda: si hay término, solo proyectos cuyo nombre (o nombre formateado) coincida
+          if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase().trim();
+            const rawMatch = project.name.toLowerCase().includes(query);
+            const formattedName = formatProjectName(project.name);
+            const formattedMatch = formattedName.toLowerCase().includes(query);
+            if (!rawMatch && !formattedMatch) return false;
+          }
+
           // Filtro de estado
           if (statusFilter !== 'all') {
             if (statusFilter === 'active' && (project.status !== 'active' || project.isHidden)) return false;

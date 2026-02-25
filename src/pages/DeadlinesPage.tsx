@@ -30,7 +30,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Plus, Pencil, Trash2, Save, Search, Eye, EyeOff, ChevronDown, ChevronRight, ChevronLeft,
-  Calendar, Users, AlertTriangle, CheckCircle2, XCircle, Copy, Filter, Sparkles, Edit, HelpCircle, PanelRight, Check
+  Calendar, Users, AlertTriangle, CheckCircle2, XCircle, Copy, Filter, Sparkles, Edit, HelpCircle, PanelRight, Check, Maximize2, ChevronUp, FolderKanban, ArrowRight, Inbox, Share2
 } from 'lucide-react';
 import { DeadlinesTour, useDeadlinesTour } from '@/components/deadlines/DeadlinesTour';
 import { toast } from 'sonner';
@@ -72,6 +72,17 @@ export default function DeadlinesPage() {
   const [isGlobalDialogOpen, setIsGlobalDialogOpen] = useState(false);
   const [editingDeadline, setEditingDeadline] = useState<Deadline | null>(null);
   const [editingGlobal, setEditingGlobal] = useState<GlobalAssignment | null>(null);
+  const [isSuggestionsExpandedOpen, setIsSuggestionsExpandedOpen] = useState(false);
+  const [expandedSuggestionsProjects, setExpandedSuggestionsProjects] = useState<Set<string>>(new Set()); // keys: `${toId}-${fromId}`
+  const [expandedSuggestionsEmployees, setExpandedSuggestionsEmployees] = useState<Set<string>>(new Set());
+  // Condicionantes de sugerencias: quién puede ceder y techo de carga del receptor
+  const [excludedDonorIds, setExcludedDonorIds] = useState<string[]>([]);
+  const [maxReceiverLoadPct, setMaxReceiverLoadPct] = useState<number>(100);
+  const [maxReceiverLoadPctInput, setMaxReceiverLoadPctInput] = useState<string>('100');
+  const [minSenderLoadPct, setMinSenderLoadPct] = useState<number>(30);
+  const [minSenderLoadPctInput, setMinSenderLoadPctInput] = useState<string>('30');
+  const [suggestionsCondicionantesOpen, setSuggestionsCondicionantesOpen] = useState(false);
+  const [rightPanelPorProyectoOpen, setRightPanelPorProyectoOpen] = useState(false);
 
   // Estados de filtros y vista
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
@@ -112,7 +123,7 @@ export default function DeadlinesPage() {
     budgetOverride: undefined as number | undefined
   });
 
-  const [confirmAction, setConfirmAction] = useState<{ type: 'delete_deadline' | 'delete_allocation' | 'copy_month', id?: string, data?: any } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ type: 'delete_deadline' | 'delete_allocation' | 'copy_month' | 'delete_month', id?: string, data?: any } | null>(null);
   const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
   const [openFilterType, setOpenFilterType] = useState(false);
   const [openFilterEmployee, setOpenFilterEmployee] = useState(false);
@@ -1550,17 +1561,9 @@ export default function DeadlinesPage() {
     return new Date(year, month - 1, 1);
   }, [selectedMonth]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-slate-400">Cargando deadlines...</div>
-      </div>
-    );
-  }
-
-  // Calcular tips inteligentes de redistribución
-  const getRedistributionTips = () => {
-    const tips: { from: string; to: string; reason: string; projects: string[]; impact: number }[] = [];
+  // Calcular tips inteligentes de redistribución (con ids para avatar y agrupación). Todo este bloque debe ejecutarse antes del early return (Rules of Hooks).
+  const getRedistributionTips = (): { from: string; to: string; fromId: string; toId: string; reason: string; projects: string[]; projectIds: string[] }[] => {
+    const tips: { from: string; to: string; fromId: string; toId: string; reason: string; projects: string[]; projectIds: string[]; impact: number }[] = [];
     const employeeLoads: { id: string; name: string; percentage: number; projects: string[] }[] = [];
 
     // Calcular carga y proyectos de cada empleado
@@ -1618,59 +1621,187 @@ export default function DeadlinesPage() {
 
       if (aboveRelaxed.length === 0 || belowRelaxed.length === 0) return [];
 
-      // Usar los grupos relajados
+      // Usar los grupos relajados: solo sugerir si comparten al menos un proyecto
       aboveRelaxed.forEach(over => {
         belowRelaxed.forEach(avail => {
-          // Buscar proyectos compartidos
           const sharedProjects = over.projects.filter(p => avail.projects.includes(p));
+          if (sharedProjects.length === 0) return;
 
-          // Calcular impacto
           const currentGap = (over.percentage - averageLoad) + (averageLoad - avail.percentage);
-          const impact = sharedProjects.length > 0 ? currentGap * 1.5 : currentGap; // Priorizar si comparten proyectos
-
+          const impact = currentGap * 1.5;
           tips.push({
             from: over.name,
             to: avail.name,
+            fromId: over.id,
+            toId: avail.id,
             reason: `${over.name} está al ${over.percentage}% (media: ${averageLoad}%), ${avail.name} al ${avail.percentage}%`,
-            projects: sharedProjects.length > 0
-              ? sharedProjects.map(pid => projects.find(p => p.id === pid)?.name || '').filter(Boolean)
-              : ['Considera redistribuir horas de proyectos comunes'],
+            projects: sharedProjects.map(pid => { const p = projects.find(proj => proj.id === pid); return p ? formatProjectName(p.name) : ''; }).filter(Boolean),
+            projectIds: sharedProjects,
             impact
           });
         });
       });
     } else {
-      // Generar sugerencias con el umbral normal
+      // Generar sugerencias con el umbral normal: solo si comparten al menos un proyecto
       aboveAverage.forEach(over => {
         belowAverage.forEach(avail => {
-          // Buscar proyectos compartidos
           const sharedProjects = over.projects.filter(p => avail.projects.includes(p));
+          if (sharedProjects.length === 0) return;
 
-          // Calcular impacto: priorizar si comparten proyectos, pero también sugerir si no
           const currentGap = (over.percentage - averageLoad) + (averageLoad - avail.percentage);
-          const impact = sharedProjects.length > 0 ? currentGap * 1.5 : currentGap * 0.8; // Priorizar si comparten proyectos
-
+          const impact = currentGap * 1.5;
           tips.push({
             from: over.name,
             to: avail.name,
+            fromId: over.id,
+            toId: avail.id,
             reason: `${over.name} está al ${over.percentage}% (media: ${averageLoad}%), ${avail.name} al ${avail.percentage}%`,
-            projects: sharedProjects.length > 0
-              ? sharedProjects.map(pid => projects.find(p => p.id === pid)?.name || '').filter(Boolean)
-              : ['Considera redistribuir horas de proyectos comunes'],
+            projects: sharedProjects.map(pid => { const p = projects.find(proj => proj.id === pid); return p ? formatProjectName(p.name) : ''; }).filter(Boolean),
+            projectIds: sharedProjects,
             impact
           });
         });
       });
     }
 
-    // Ordenar por impacto (mayor impacto primero) y devolver las top 3
+    // Ordenar por impacto (mayor impacto primero); devolver hasta MAX para el popup ampliable
+    const MAX_SUGGESTIONS = 20;
     return tips
       .sort((a, b) => b.impact - a.impact)
-      .slice(0, 3)
+      .slice(0, MAX_SUGGESTIONS)
       .map(({ impact, ...tip }) => tip); // Remover impact del resultado final
   };
 
   const redistributionTips = getRedistributionTips();
+
+  // Horas de un empleado en un proyecto (este mes)
+  const getHoursOnProject = useCallback((projectId: string, employeeId: string) => {
+    const d = deadlines.find(dl => dl.projectId === projectId);
+    return (d?.employeeHours?.[employeeId] ?? 0) as number;
+  }, [deadlines]);
+
+  // Lista de posibles donantes (orígenes) para el selector de condicionantes
+  const suggestionDonors = useMemo(() => {
+    const ids = [...new Set(redistributionTips.map(t => t.fromId))];
+    return ids.map(id => {
+      const emp = (employees ?? []).find(e => e.id === id);
+      return { id, name: emp?.first_name || emp?.name || id, avatarUrl: emp?.avatarUrl };
+    }).filter(d => d.name);
+  }, [redistributionTips, employees]);
+
+  // Recomendaciones por empleado → por proyecto → quién puede pasar horas (con horas asignadas y sugeridas). Diseño premium.
+  type ProjectRecommendation = { projectId: string; projectName: string; transfers: { fromId: string; fromName: string; fromAvatar?: string; hoursOnProject: number; suggestedHours: number; reason: string }[] };
+  type EmployeeRecommendation = { employeeId: string; employeeName: string; employeeAvatar?: string; deficitHours: number; projects: ProjectRecommendation[] };
+  const suggestionsByEmployeeAndProject = useMemo((): EmployeeRecommendation[] => {
+    const excludedSet = new Set(excludedDonorIds);
+    const filteredTips = excludedSet.size > 0 ? redistributionTips.filter(tip => !excludedSet.has(tip.fromId)) : redistributionTips;
+
+    // Carga media del equipo (misma lógica que getRedistributionTips)
+    const active = activeEmployees ?? [];
+    if (active.length === 0) return [];
+    let totalPercentage = 0;
+    active.forEach(emp => {
+      const capacityData = getMonthlyCapacity(emp.id);
+      const assigned = getEmployeeAssignedHours(emp.id);
+      const pct = capacityData.available > 0 ? (assigned / capacityData.available) * 100 : 0;
+      totalPercentage += pct;
+    });
+    const averageLoad = totalPercentage / active.length;
+    // Objetivo de carga: no superar el máximo elegido (p. ej. 100%, 95%, 90%)
+    const targetLoadPct = Math.min(averageLoad, maxReceiverLoadPct);
+
+    // Déficit por destino: horas que podría recibir hasta targetLoadPct
+    const getShortfall = (toId: string) => {
+      const cap = getMonthlyCapacity(toId);
+      const assigned = getEmployeeAssignedHours(toId);
+      const targetHours = cap.available * (targetLoadPct / 100);
+      return Math.max(0, targetHours - assigned);
+    };
+
+    const byEmployee = new Map<string, Map<string, ProjectRecommendation>>();
+    const shortfallByToId = new Map<string, number>();
+
+    filteredTips.forEach(tip => {
+      if (!tip.projectIds?.length) return;
+      const toId = tip.toId;
+      if (!shortfallByToId.has(toId)) shortfallByToId.set(toId, getShortfall(toId));
+      const shortfall = shortfallByToId.get(toId)!;
+      if (!byEmployee.has(toId)) byEmployee.set(toId, new Map());
+      const byProject = byEmployee.get(toId)!;
+      tip.projectIds.forEach((projectId, i) => {
+        const projectName = tip.projects[i] ?? '';
+        if (!byProject.has(projectId)) byProject.set(projectId, { projectId, projectName, transfers: [] });
+        const proj = byProject.get(projectId)!;
+        const hoursOnProject = getHoursOnProject(projectId, tip.fromId);
+        // No dejar al que cede por debajo de minSenderLoadPct: max horas que podemos quitarle
+        const fromCap = getMonthlyCapacity(tip.fromId).available;
+        const fromAssigned = getEmployeeAssignedHours(tip.fromId);
+        const minSenderHours = fromCap * (minSenderLoadPct / 100);
+        const maxHoursFromSender = Math.max(0, fromAssigned - minSenderHours);
+        const suggestedHours = Math.round(Math.min(hoursOnProject, shortfall, maxHoursFromSender) * 2) / 2; // redondeo a 0.5
+        if (!proj.transfers.some(t => t.fromId === tip.fromId)) {
+          proj.transfers.push({
+            fromId: tip.fromId,
+            fromName: tip.from,
+            fromAvatar: (employees ?? []).find(e => e.id === tip.fromId)?.avatarUrl,
+            hoursOnProject,
+            suggestedHours,
+            reason: tip.reason
+          });
+        }
+      });
+    });
+
+    // Escalar por receptor para que el total sugerido no supere el déficit (receptor nunca > 100%)
+    return Array.from(byEmployee.entries()).map(([employeeId, byProject]) => {
+      const emp = (employees ?? []).find(e => e.id === employeeId);
+      const rawProjects = Array.from(byProject.values()).filter(p => p.transfers.length > 0);
+      const shortfall = shortfallByToId.get(employeeId) ?? 0;
+      const totalSuggested = rawProjects.reduce((sum, p) => sum + p.transfers.reduce((s, t) => s + t.suggestedHours, 0), 0);
+      const factor = shortfall > 0 && totalSuggested > shortfall ? shortfall / totalSuggested : 1;
+      const projects = rawProjects.map(p => ({
+        ...p,
+        transfers: p.transfers.map(t => ({
+          ...t,
+          suggestedHours: factor === 1 ? t.suggestedHours : Math.round((t.suggestedHours * factor) * 2) / 2
+        }))
+      })).sort((a, b) => b.transfers.length - a.transfers.length);
+      return {
+        employeeId,
+        employeeName: emp?.first_name || emp?.name || 'Desconocido',
+        employeeAvatar: emp?.avatarUrl,
+        deficitHours: shortfall,
+        projects
+      };
+    }).filter(g => g.employeeName !== 'Desconocido' && g.projects.length > 0).sort((a, b) => b.projects.length - a.projects.length);
+  }, [redistributionTips, employees, getHoursOnProject, activeEmployees, getMonthlyCapacity, getEmployeeAssignedHours, excludedDonorIds, maxReceiverLoadPct, minSenderLoadPct]);
+
+  // Mantener para panel compacto (resumen por empleado)
+  const suggestionsByEmployee = useMemo(() => {
+    const byId = new Map<string, typeof redistributionTips>();
+    redistributionTips.forEach(tip => {
+      const list = byId.get(tip.toId) || [];
+      list.push(tip);
+      byId.set(tip.toId, list);
+    });
+    return Array.from(byId.entries()).map(([employeeId, tips]) => {
+      const emp = (employees ?? []).find(e => e.id === employeeId);
+      return {
+        employeeId,
+        employeeName: emp?.first_name || emp?.name || 'Desconocido',
+        employeeAvatar: emp?.avatarUrl,
+        tips
+      };
+    }).filter(g => g.employeeName !== 'Desconocido').sort((a, b) => b.tips.length - a.tips.length);
+  }, [redistributionTips, employees]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-slate-400">Cargando deadlines...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col md:flex-row gap-4 md:gap-6 p-4 md:p-6 min-h-screen bg-slate-50">
@@ -2588,49 +2719,77 @@ export default function DeadlinesPage() {
                 </div>
               </div>
 
-              {/* Tips de redistribución */}
-              {redistributionTips.length > 0 && (
-                <div className="bg-orange-50 border border-orange-200 rounded-xl p-3" data-tour="suggestions">
-                  <h3 className="text-xs font-semibold text-orange-800 uppercase tracking-wide mb-2 flex items-center gap-1">
-                    <Sparkles className="h-3 w-3" />
-                    Sugerencias
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-3 w-3 text-orange-600 cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent side="right" className="max-w-xs z-[100]">
-                          <div className="text-xs space-y-2">
-                            <p className="font-semibold">Cálculo de sugerencias:</p>
-                            <ul className="list-disc list-inside space-y-1 text-slate-600">
-                              <li>Se calcula la carga promedio del equipo</li>
-                              <li>Se identifican empleados por encima y por debajo de la media</li>
-                              <li>Umbral: 3 puntos si el rango es estrecho (≤15 puntos), o 1.5× desviación estándar si es amplio</li>
-                              <li>Solo se sugieren transferencias entre empleados que comparten proyectos</li>
-                              <li>Se priorizan las sugerencias que más equilibran el equipo</li>
-                            </ul>
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </h3>
-                  <div className="space-y-2">
-                    {redistributionTips.map((tip, i) => (
-                      <div key={i} className="text-xs bg-white border border-orange-100 rounded p-2">
-                        <div className="font-medium text-slate-800 mb-0.5">
-                          {tip.from} → {tip.to}
-                        </div>
-                        <div className="text-slate-500 text-[10px]">
-                          {tip.reason}
-                        </div>
-                        {tip.projects.length > 0 && (
-                          <div className="text-[10px] text-orange-600 mt-1">
-                            En común: {tip.projects.slice(0, 2).join(', ')}
-                          </div>
-                        )}
-                      </div>
+              {/* Recomendaciones por proyecto: vista compacta (anzuelo) */}
+              {suggestionsByEmployeeAndProject.length > 0 && (
+                <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm" data-tour="suggestions">
+                  <div className="flex items-center gap-1 mb-2">
+                    <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide flex items-center gap-1">
+                      <Sparkles className="h-3 w-3 text-primary" />
+                      Recomendaciones
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="h-3 w-3 text-slate-400 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-[260px] z-[100] p-0 border-slate-200/90 bg-gradient-to-br from-slate-50 to-white shadow-lg rounded-xl overflow-hidden">
+                            <div className="p-3.5">
+                              <div className="flex items-center gap-2 mb-2.5 pb-2 border-b border-slate-200/80">
+                                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                  <Sparkles className="h-3.5 w-3.5" />
+                                </div>
+                                <p className="font-semibold text-slate-800 text-sm">Recomendaciones por proyecto</p>
+                              </div>
+                              <ul className="space-y-2 text-xs text-slate-600">
+                                <li className="flex items-start gap-2">
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                                  <span>Quién puede recibir horas y en qué proyecto</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                                  <span>Horas asignadas por origen para decidir transferencias</span>
+                                </li>
+                                <li className="flex items-start gap-2">
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                                  <span>Solo empleados que comparten proyectos</span>
+                                </li>
+                              </ul>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </h3>
+                  </div>
+                  <div className="space-y-1.5">
+                    {suggestionsByEmployeeAndProject.slice(0, 3).map((group) => (
+                      <button
+                        key={group.employeeId}
+                        type="button"
+                        onClick={() => setIsSuggestionsExpandedOpen(true)}
+                        className="w-full flex items-center gap-2 p-2 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-100/80 text-left transition-colors"
+                      >
+                        <Avatar className="h-7 w-7 border-2 border-white shadow-sm shrink-0">
+                          <AvatarImage src={group.employeeAvatar} alt={group.employeeName} />
+                          <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-semibold">
+                            {group.employeeName.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium text-slate-800 text-xs truncate flex-1">{group.employeeName}</span>
+                        <Badge variant="secondary" className="text-[10px] bg-slate-200/80 text-slate-600 shrink-0">
+                          {group.projects.length} {group.projects.length === 1 ? 'proyecto' : 'proy.'}
+                        </Badge>
+                        <ChevronRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      </button>
                     ))}
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full mt-2 h-8 text-slate-600 hover:bg-slate-100 text-xs"
+                    onClick={() => setIsSuggestionsExpandedOpen(true)}
+                  >
+                    <Maximize2 className="h-3 w-3 mr-1" />
+                    Ver desglose por proyecto
+                  </Button>
                 </div>
               )}
 
@@ -2803,6 +2962,552 @@ export default function DeadlinesPage() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Popup ampliable de sugerencias de redistribución */}
+      {isMobile ? (
+        <Sheet open={isSuggestionsExpandedOpen} onOpenChange={(open) => { setIsSuggestionsExpandedOpen(open); if (!open) { setExpandedSuggestionsProjects(new Set()); setExpandedSuggestionsEmployees(new Set()); } }}>
+          <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl flex flex-col">
+            <SheetHeader className="text-left">
+              <SheetTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-orange-500" />
+                Sugerencias de redistribución
+              </SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 overflow-hidden flex flex-col mt-2">
+              <p className="text-xs text-slate-500 mb-3">
+                Recomendaciones por proyecto. Quién puede recibir horas y desde qué proyecto transferir. Ajusta los condicionantes para afinar.
+              </p>
+              {/* Condicionantes (móvil) - premium */}
+              <Collapsible open={suggestionsCondicionantesOpen} onOpenChange={setSuggestionsCondicionantesOpen}>
+                <CollapsibleTrigger asChild>
+                  <button type="button" className="flex items-center gap-2 text-xs font-medium text-slate-600 hover:text-slate-800 mb-2">
+                    {suggestionsCondicionantesOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                    Condicionantes
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="space-y-3 py-2 pb-3 border border-slate-200 rounded-xl bg-slate-50/80 px-3 mb-2">
+                    <p className="text-[11px] font-semibold text-slate-500 uppercase">Quién puede ceder</p>
+                    <div className="grid grid-cols-1 gap-2">
+                      {suggestionDonors.map((d) => {
+                        const allowed = !excludedDonorIds.includes(d.id);
+                        return (
+                          <div key={d.id} className={cn('flex items-center gap-2 rounded-lg border p-2 min-h-[2.25rem]', allowed ? 'bg-white border-slate-200' : 'bg-slate-100/80 border-slate-100 opacity-75')}>
+                            <Avatar className="h-6 w-6 shrink-0 border border-slate-200">
+                              <AvatarImage src={d.avatarUrl} alt={d.name} />
+                              <AvatarFallback className="text-[10px]">{d.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <span className="flex-1 truncate text-xs font-medium min-w-0" title={d.name}>{d.name}</span>
+                            <Switch checked={allowed} onCheckedChange={(c) => setExcludedDonorIds(prev => c ? prev.filter(id => id !== d.id) : [...prev, d.id])} className="shrink-0" />
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="space-y-2 pt-2 border-t border-slate-200">
+                      <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Inbox className="h-4 w-4 text-primary shrink-0" />
+                          <div>
+                            <p className="text-xs font-semibold text-slate-800">Quien recibe</p>
+                            <p className="text-[11px] text-slate-500">No superará este %</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Input type="number" min={1} max={100} value={maxReceiverLoadPctInput} onChange={(e) => { const v = e.target.value; setMaxReceiverLoadPctInput(v); const n = parseInt(v, 10); if (v !== '' && !isNaN(n) && n >= 1 && n <= 100) setMaxReceiverLoadPct(n); }} onBlur={() => { const n = parseInt(maxReceiverLoadPctInput, 10); const clamped = (maxReceiverLoadPctInput === '' || isNaN(n) || n < 1) ? 100 : Math.min(100, Math.max(1, n)); setMaxReceiverLoadPct(clamped); setMaxReceiverLoadPctInput(String(clamped)); }} className="h-8 w-12 text-center text-xs font-mono font-semibold" />
+                          <span className="text-xs text-slate-500">%</span>
+                        </div>
+                      </div>
+                      <div className="rounded-lg border border-amber-200/80 bg-amber-50/50 p-2.5 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Share2 className="h-4 w-4 text-amber-700 shrink-0" />
+                          <div>
+                            <p className="text-xs font-semibold text-slate-800">Quien cede</p>
+                            <p className="text-[11px] text-slate-500">No bajará de este %</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Input type="number" min={0} max={100} value={minSenderLoadPctInput} onChange={(e) => { const v = e.target.value; setMinSenderLoadPctInput(v); const n = parseInt(v, 10); if (v !== '' && !isNaN(n) && n >= 0 && n <= 100) setMinSenderLoadPct(n); }} onBlur={() => { const n = parseInt(minSenderLoadPctInput, 10); const clamped = (minSenderLoadPctInput === '' || isNaN(n) || n < 0) ? 30 : Math.min(100, Math.max(0, n)); setMinSenderLoadPct(clamped); setMinSenderLoadPctInput(String(clamped)); }} className="h-8 w-12 text-center text-xs font-mono font-semibold" />
+                          <span className="text-xs text-slate-500">%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+              <div className="flex-1 overflow-y-auto space-y-3 pr-2 -mr-2">
+                {suggestionsByEmployeeAndProject.map((group) => {
+                  const isEmployeeOpen = expandedSuggestionsEmployees.has(group.employeeId);
+                  return (
+                    <div key={group.employeeId} className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                      <Collapsible open={isEmployeeOpen} onOpenChange={(open) => setExpandedSuggestionsEmployees(prev => { const next = new Set(prev); if (open) next.add(group.employeeId); else next.delete(group.employeeId); return next; })}>
+                        <CollapsibleTrigger asChild>
+                          <button type="button" className="w-full flex items-center gap-3 p-3.5 text-left hover:bg-slate-50/80 transition-colors">
+                            <Avatar className="h-10 w-10 border-2 border-slate-200 shrink-0 ring-1 ring-slate-100">
+                              <AvatarImage src={group.employeeAvatar} alt={group.employeeName} />
+                              <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                                {group.employeeName.substring(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-slate-900 truncate">{group.employeeName}</p>
+                              <p className="text-xs text-slate-500">Puede recibir horas en {group.projects.length} {group.projects.length === 1 ? 'proyecto' : 'proyectos'}</p>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <Badge variant="secondary" className="text-xs bg-amber-50 text-amber-800 border border-amber-200 font-medium">
+                                Déficit: {Math.round(group.deficitHours * 2) / 2}h
+                              </Badge>
+                              <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-700 font-medium">
+                                {group.projects.length}
+                              </Badge>
+                            </div>
+                            {isEmployeeOpen ? <ChevronUp className="h-4 w-4 text-slate-400 shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />}
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="border-t border-slate-100 bg-slate-50/30 px-2 pb-2 pt-1 space-y-2">
+                            {group.projects.map((proj) => {
+                              const projectKey = `${group.employeeId}-${proj.projectId}`;
+                              const isProjectOpen = expandedSuggestionsProjects.has(projectKey);
+                              return (
+                                <div key={projectKey} className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+                                  <Collapsible open={isProjectOpen} onOpenChange={(open) => setExpandedSuggestionsProjects(prev => { const n = new Set(prev); if (open) n.add(projectKey); else n.delete(projectKey); return n; })}>
+                                    <CollapsibleTrigger asChild>
+                                      <button type="button" className="w-full flex items-center gap-2.5 p-2.5 text-left hover:bg-slate-50 transition-colors">
+                                        <FolderKanban className="h-4 w-4 text-slate-400 shrink-0" />
+                                        <span className="font-medium text-slate-800 text-sm truncate flex-1">{proj.projectName}</span>
+                                        <span className="text-[11px] text-slate-500 shrink-0">{proj.transfers.length} {proj.transfers.length === 1 ? 'origen' : 'orígenes'}</span>
+                                        {isProjectOpen ? <ChevronUp className="h-3.5 w-3.5 text-slate-400" /> : <ChevronDown className="h-3.5 w-3.5 text-slate-400" />}
+                                      </button>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent>
+                                      <div className="border-t border-slate-100 bg-slate-50/50 px-2 py-2 space-y-2">
+                                        {proj.transfers.map((t) => (
+                                          <div key={t.fromId} className="flex items-start gap-3 p-2.5 rounded-md bg-white border border-slate-100 shadow-sm">
+                                            <Avatar className="h-8 w-8 border border-slate-200 shrink-0">
+                                              <AvatarImage src={t.fromAvatar} alt={t.fromName} />
+                                              <AvatarFallback className="bg-slate-100 text-slate-600 text-xs font-medium">
+                                                {t.fromName.substring(0, 2).toUpperCase()}
+                                              </AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex-1 min-w-0">
+                                              <p className="font-medium text-slate-900 text-sm">{t.fromName}</p>
+                                              <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
+                                                <span className="font-mono font-semibold text-primary">{t.hoursOnProject}h</span>
+                                                <span>asignadas en este proyecto</span>
+                                              </p>
+                                              <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                                                <ArrowRight className="h-3 w-3 text-slate-400" />
+                                                {t.suggestedHours > 0 ? (
+                                                  <>Pasar hasta {t.suggestedHours}h a {group.employeeName}</>
+                                                ) : (
+                                                  <>Sin margen sugerido; revisar en tabla</>
+                                                )}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </CollapsibleContent>
+                                    </Collapsible>
+                                </div>
+                              );
+                            })}
+                            {/* Resumen propuesto (móvil): mismo diseño premium que el panel derecho en desktop */}
+                            {(() => {
+                              const byFrom = new Map<string, { fromName: string; fromAvatar?: string; hours: number }>();
+                              const byProject: { projectName: string; items: { fromName: string; hours: number }[] }[] = [];
+                              let totalToReceptor = 0;
+                              group.projects.forEach(p => {
+                                const projectItems: { fromName: string; hours: number }[] = [];
+                                p.transfers.forEach(t => {
+                                  if (t.suggestedHours <= 0) return;
+                                  if (!byFrom.has(t.fromId)) byFrom.set(t.fromId, { fromName: t.fromName, fromAvatar: t.fromAvatar, hours: 0 });
+                                  byFrom.get(t.fromId)!.hours += t.suggestedHours;
+                                  totalToReceptor += t.suggestedHours;
+                                  projectItems.push({ fromName: t.fromName, hours: t.suggestedHours });
+                                });
+                                if (projectItems.length) byProject.push({ projectName: p.projectName, items: projectItems });
+                              });
+                              if (totalToReceptor <= 0) return null;
+                              const receptorCap = getMonthlyCapacity(group.employeeId).available;
+                              const receptorAssigned = getEmployeeAssignedHours(group.employeeId);
+                              const receptorNewPct = receptorCap > 0 ? Math.round(((receptorAssigned + totalToReceptor) / receptorCap) * 100) : 0;
+                              const originLoads = Array.from(byFrom.entries()).map(([fromId, { fromName, hours }]) => {
+                                const cap = getMonthlyCapacity(fromId).available;
+                                const assigned = getEmployeeAssignedHours(fromId);
+                                const pct = cap > 0 ? Math.round(((assigned - hours) / cap) * 100) : 0;
+                                return { fromId, fromName, pct };
+                              });
+                              return (
+                                <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 mt-3 space-y-3 shadow-sm">
+                                  <p className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide">Resumen propuesto</p>
+                                  <div className="space-y-2">
+                                    <p className="text-[11px] font-medium text-slate-500">Quitar horas a</p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {Array.from(byFrom.entries()).map(([fromId, { fromName, fromAvatar, hours }]) => (
+                                        <div key={fromId} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 shadow-sm">
+                                          <Avatar className="h-7 w-7 border border-slate-200 shrink-0">
+                                            <AvatarImage src={fromAvatar} alt={fromName} />
+                                            <AvatarFallback className="bg-slate-100 text-slate-600 text-[10px] font-medium">{fromName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                          </Avatar>
+                                          <span className="text-xs font-medium text-slate-800 truncate max-w-[100px]">{fromName}</span>
+                                          <Badge variant="secondary" className="shrink-0 bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-mono">−{hours}h</Badge>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex-1 h-px bg-slate-200" />
+                                    <ArrowRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                                    <div className="flex-1 h-px bg-slate-200" />
+                                  </div>
+                                  <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-2.5">
+                                    <div className="flex items-center gap-2.5">
+                                      <Avatar className="h-9 w-9 border-2 border-primary/30 shrink-0">
+                                        <AvatarImage src={group.employeeAvatar} alt={group.employeeName} />
+                                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{group.employeeName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                      </Avatar>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-[11px] text-slate-500">Añadir horas a</p>
+                                        <p className="font-semibold text-slate-900 text-sm truncate">{group.employeeName}</p>
+                                      </div>
+                                      <Badge className="shrink-0 bg-primary text-primary-foreground text-xs font-mono">+{totalToReceptor}h</Badge>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <p className="text-[11px] font-medium text-slate-500 mb-1.5">Cargas resultantes</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {originLoads.map(o => (
+                                        <span key={o.fromId} className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium', o.pct > 100 ? 'bg-red-50 border-red-200 text-red-700' : o.pct >= 80 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-white border-slate-200 text-slate-700')}>{o.fromName} {o.pct}%</span>
+                                      ))}
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[11px] font-medium text-primary">{group.employeeName} {receptorNewPct}%</span>
+                                    </div>
+                                  </div>
+                                  {byProject.length > 0 && (
+                                    <div>
+                                      <p className="text-[11px] font-medium text-slate-500 mb-1">Por proyecto</p>
+                                      <div className="space-y-1.5">
+                                        {byProject.map((proj, i) => (
+                                          <div key={i} className="rounded border border-slate-200 bg-white px-2 py-1.5">
+                                            <p className="text-[11px] font-medium text-slate-700 truncate">{proj.projectName}</p>
+                                            <div className="flex flex-wrap gap-1 mt-0.5">
+                                              {proj.items.map((item, j) => (
+                                                <span key={j} className="text-[10px] text-slate-600 bg-slate-100 rounded px-1 font-mono">{item.fromName} −{item.hours}h</span>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+      ) : (
+        <Dialog open={isSuggestionsExpandedOpen} onOpenChange={(open) => { setIsSuggestionsExpandedOpen(open); if (!open) { setExpandedSuggestionsProjects(new Set()); setExpandedSuggestionsEmployees(new Set()); } }}>
+          <DialogContent className="max-w-[95vw] sm:max-w-[640px] md:max-w-4xl lg:max-w-5xl xl:max-w-6xl max-h-[90vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-orange-500" />
+                Sugerencias de redistribución
+              </DialogTitle>
+              <DialogDescription>
+                Recomendaciones por proyecto: quién puede recibir horas y desde qué proyecto transferir. Expande un empleado y revisa el panel de la derecha. Ajusta los condicionantes para afinar el reparto.
+              </DialogDescription>
+            </DialogHeader>
+            {/* Condicionantes: quién puede ceder, carga máx. receptor y mín. del que cede (premium) */}
+            <Collapsible open={suggestionsCondicionantesOpen} onOpenChange={setSuggestionsCondicionantesOpen}>
+              <CollapsibleTrigger asChild>
+                <button type="button" className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-slate-900 py-1.5">
+                  {suggestionsCondicionantesOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  Condicionantes (quién cede, cargas máx. receptor y mín. quien cede)
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr,auto] gap-6 py-4 px-4 border border-slate-200 rounded-xl bg-gradient-to-br from-slate-50 to-white shadow-sm">
+                  <div>
+                    <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-3">Quién puede ceder horas</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {suggestionDonors.map((d) => {
+                        const allowed = !excludedDonorIds.includes(d.id);
+                        return (
+                          <div
+                            key={d.id}
+                            className={cn(
+                              'flex items-center gap-2 rounded-lg border p-2 transition-colors min-h-[2.25rem]',
+                              allowed ? 'border-slate-200 bg-white shadow-sm' : 'border-slate-100 bg-slate-100/80 opacity-75'
+                            )}
+                          >
+                            <Avatar className="h-6 w-6 border border-slate-200 shrink-0">
+                              <AvatarImage src={d.avatarUrl} alt={d.name} />
+                              <AvatarFallback className="bg-slate-100 text-slate-600 text-[10px] font-medium">{d.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <span className="flex-1 truncate text-sm font-medium text-slate-800 min-w-0" title={d.name}>{d.name}</span>
+                            <Switch
+                              checked={allowed}
+                              onCheckedChange={(checked) => setExcludedDonorIds(prev => checked ? prev.filter(id => id !== d.id) : [...prev, d.id])}
+                              className="shrink-0"
+                            />
+                          </div>
+                        );
+                      })}
+                      {suggestionDonors.length === 0 && <span className="text-xs text-slate-500 col-span-full">No hay orígenes en las sugerencias</span>}
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-3 border-l border-slate-200 pl-6 lg:pl-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 shadow-sm">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                            <Inbox className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-800">Quien recibe horas</p>
+                            <p className="text-[11px] text-slate-500">No superará este % de carga</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Input type="number" min={1} max={100} value={maxReceiverLoadPctInput} onChange={(e) => { const v = e.target.value; setMaxReceiverLoadPctInput(v); const n = parseInt(v, 10); if (v !== '' && !isNaN(n) && n >= 1 && n <= 100) setMaxReceiverLoadPct(n); }} onBlur={() => { const n = parseInt(maxReceiverLoadPctInput, 10); const clamped = (maxReceiverLoadPctInput === '' || isNaN(n) || n < 1) ? 100 : Math.min(100, Math.max(1, n)); setMaxReceiverLoadPct(clamped); setMaxReceiverLoadPctInput(String(clamped)); }} className="h-9 w-14 text-center font-mono text-sm font-semibold" />
+                          <span className="text-sm font-medium text-slate-500">%</span>
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-amber-200/80 bg-amber-50/50 p-3 shadow-sm">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                            <Share2 className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-800">Quien cede horas</p>
+                            <p className="text-[11px] text-slate-500">No bajará de este % de carga</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Input type="number" min={0} max={100} value={minSenderLoadPctInput} onChange={(e) => { const v = e.target.value; setMinSenderLoadPctInput(v); const n = parseInt(v, 10); if (v !== '' && !isNaN(n) && n >= 0 && n <= 100) setMinSenderLoadPct(n); }} onBlur={() => { const n = parseInt(minSenderLoadPctInput, 10); const clamped = (minSenderLoadPctInput === '' || isNaN(n) || n < 0) ? 30 : Math.min(100, Math.max(0, n)); setMinSenderLoadPct(clamped); setMinSenderLoadPctInput(String(clamped)); }} className="h-9 w-14 text-center font-mono text-sm font-semibold" />
+                          <span className="text-sm font-medium text-slate-500">%</span>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">Las sugerencias se recalculan al cambiar cualquier valor.</p>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+            {/* Layout dos columnas en desktop: lista izquierda + panel resumen derecha */}
+            <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr,minmax(320px,400px)] gap-4 min-h-0">
+              <div className="overflow-y-auto min-h-0 py-1 space-y-3 pr-1 border-r-0 lg:border-r lg:border-slate-200 lg:pr-4">
+              {suggestionsByEmployeeAndProject.map((group) => {
+                const isEmployeeOpen = expandedSuggestionsEmployees.has(group.employeeId);
+                return (
+                  <div key={group.employeeId} className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                    <Collapsible open={isEmployeeOpen} onOpenChange={(open) => setExpandedSuggestionsEmployees(prev => { const next = new Set(prev); if (open) next.add(group.employeeId); else next.delete(group.employeeId); return next; })}>
+                      <CollapsibleTrigger asChild>
+                        <button type="button" className="w-full flex items-center gap-3 p-3.5 text-left hover:bg-slate-50/80 transition-colors">
+                          <Avatar className="h-10 w-10 border-2 border-slate-200 shrink-0 ring-1 ring-slate-100">
+                            <AvatarImage src={group.employeeAvatar} alt={group.employeeName} />
+                            <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                              {group.employeeName.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-slate-900 truncate">{group.employeeName}</p>
+                            <p className="text-xs text-slate-500">Puede recibir horas en {group.projects.length} {group.projects.length === 1 ? 'proyecto' : 'proyectos'}</p>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <Badge variant="secondary" className="text-xs bg-amber-50 text-amber-800 border border-amber-200 font-medium">
+                              Déficit: {Math.round(group.deficitHours * 2) / 2}h
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-700 font-medium">
+                              {group.projects.length}
+                            </Badge>
+                          </div>
+                          {isEmployeeOpen ? <ChevronUp className="h-4 w-4 text-slate-400 shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />}
+                        </button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="border-t border-slate-100 bg-slate-50/30 px-2 pb-2 pt-1 space-y-2">
+                          {group.projects.map((proj) => {
+                            const projectKey = `${group.employeeId}-${proj.projectId}`;
+                            const isProjectOpen = expandedSuggestionsProjects.has(projectKey);
+                            return (
+                              <div key={projectKey} className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+                                <Collapsible open={isProjectOpen} onOpenChange={(open) => setExpandedSuggestionsProjects(prev => { const n = new Set(prev); if (open) n.add(projectKey); else n.delete(projectKey); return n; })}>
+                                  <CollapsibleTrigger asChild>
+                                    <button type="button" className="w-full flex items-center gap-2.5 p-2.5 text-left hover:bg-slate-50 transition-colors">
+                                      <FolderKanban className="h-4 w-4 text-slate-400 shrink-0" />
+                                      <span className="font-medium text-slate-800 text-sm truncate flex-1">{proj.projectName}</span>
+                                      <span className="text-[11px] text-slate-500 shrink-0">{proj.transfers.length} {proj.transfers.length === 1 ? 'origen' : 'orígenes'}</span>
+                                      {isProjectOpen ? <ChevronUp className="h-3.5 w-3.5 text-slate-400" /> : <ChevronDown className="h-3.5 w-3.5 text-slate-400" />}
+                                    </button>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent>
+                                    <div className="border-t border-slate-100 bg-slate-50/50 px-2 py-2 space-y-2">
+                                      {proj.transfers.map((t) => (
+                                        <div key={t.fromId} className="flex items-start gap-3 p-2.5 rounded-md bg-white border border-slate-100 shadow-sm">
+                                          <Avatar className="h-8 w-8 border border-slate-200 shrink-0">
+                                            <AvatarImage src={t.fromAvatar} alt={t.fromName} />
+                                            <AvatarFallback className="bg-slate-100 text-slate-600 text-xs font-medium">
+                                              {t.fromName.substring(0, 2).toUpperCase()}
+                                            </AvatarFallback>
+                                          </Avatar>
+                                          <div className="flex-1 min-w-0">
+                                            <p className="font-medium text-slate-900 text-sm">{t.fromName}</p>
+                                            <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
+                                              <span className="font-mono font-semibold text-primary">{t.hoursOnProject}h</span>
+                                              <span>asignadas en este proyecto</span>
+                                            </p>
+                                            <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                                              <ArrowRight className="h-3 w-3 text-slate-400" />
+                                              {t.suggestedHours > 0 ? (
+                                                <>Pasar hasta {t.suggestedHours}h a {group.employeeName}</>
+                                              ) : (
+                                                <>Sin margen sugerido; revisar en tabla</>
+                                              )}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              </div>
+                            );
+                          })}
+                          {/* Resumen en desktop se muestra en el panel de la derecha */}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </div>
+                );
+              })}
+              </div>
+              {/* Panel derecho: resumen propuesto; scroll solo dentro del panel para no desplazar todo el modal */}
+              <div className="hidden lg:flex flex-col min-h-0 overflow-y-auto overflow-x-hidden bg-slate-50/50 rounded-lg border border-slate-200 p-3">
+                {(() => {
+                  const group = suggestionsByEmployeeAndProject.find(g => expandedSuggestionsEmployees.has(g.employeeId));
+                  if (!group) {
+                    return (
+                      <div className="flex flex-col items-center justify-center gap-2 text-slate-500 py-8 px-4">
+                        <PanelRight className="h-10 w-10 text-slate-300" />
+                        <p className="text-sm font-medium">Selecciona un empleado</p>
+                        <p className="text-xs text-center">Expande una fila para ver aquí el resumen.</p>
+                      </div>
+                    );
+                  }
+                  const byFrom = new Map<string, { fromName: string; fromAvatar?: string; hours: number }>();
+                  const byProject: { projectName: string; items: { fromName: string; hours: number }[] }[] = [];
+                  let totalToReceptor = 0;
+                  group.projects.forEach(p => {
+                    const projectItems: { fromName: string; hours: number }[] = [];
+                    p.transfers.forEach(t => {
+                      if (t.suggestedHours <= 0) return;
+                      if (!byFrom.has(t.fromId)) byFrom.set(t.fromId, { fromName: t.fromName, fromAvatar: t.fromAvatar, hours: 0 });
+                      byFrom.get(t.fromId)!.hours += t.suggestedHours;
+                      totalToReceptor += t.suggestedHours;
+                      projectItems.push({ fromName: t.fromName, hours: t.suggestedHours });
+                    });
+                    if (projectItems.length) byProject.push({ projectName: p.projectName, items: projectItems });
+                  });
+                  if (totalToReceptor <= 0) {
+                    return (
+                      <div className="text-sm text-slate-500 py-4">Sin horas sugeridas para este empleado con la opción actual.</div>
+                    );
+                  }
+                  const receptorCap = getMonthlyCapacity(group.employeeId).available;
+                  const receptorAssigned = getEmployeeAssignedHours(group.employeeId);
+                  const receptorNewPct = receptorCap > 0 ? Math.round(((receptorAssigned + totalToReceptor) / receptorCap) * 100) : 0;
+                  const originLoads = Array.from(byFrom.entries()).map(([fromId, { fromName, hours }]) => {
+                    const cap = getMonthlyCapacity(fromId).available;
+                    const assigned = getEmployeeAssignedHours(fromId);
+                    const pct = cap > 0 ? Math.round(((assigned - hours) / cap) * 100) : 0;
+                    return { fromId, fromName, fromAvatar: byFrom.get(fromId)?.fromAvatar, hours, pct };
+                  });
+                  return (
+                    <>
+                      <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-2">Resumen propuesto</h4>
+                      {/* 1) Cargas resultantes primero */}
+                      <div className="mb-2">
+                        <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wide mb-1">Cargas resultantes</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {originLoads.map(o => (
+                            <span key={o.fromId} className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium', o.pct > 100 ? 'bg-red-50 border-red-200 text-red-700' : o.pct >= 80 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-white border-slate-200 text-slate-700')}>
+                              <span className="truncate max-w-[72px]">{o.fromName}</span>
+                              <span className="font-mono font-semibold">{o.pct}%</span>
+                            </span>
+                          ))}
+                          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[11px] font-medium text-primary">
+                            <span className="truncate max-w-[72px]">{group.employeeName}</span>
+                            <span className="font-mono font-semibold">{receptorNewPct}%</span>
+                          </span>
+                        </div>
+                      </div>
+                      {/* 2) Transferencias compactas */}
+                      <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                        <p className="text-[11px] font-medium text-slate-500 uppercase w-full">Transferencias</p>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {Array.from(byFrom.entries()).map(([fromId, { fromName, fromAvatar, hours }]) => (
+                            <div key={fromId} className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white pl-1 pr-2 py-1 shadow-sm">
+                              <Avatar className="h-6 w-6 border border-slate-200 shrink-0">
+                                <AvatarImage src={fromAvatar} alt={fromName} />
+                                <AvatarFallback className="text-[10px]">{fromName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                              </Avatar>
+                              <span className="text-[11px] font-medium text-slate-700 truncate max-w-[70px]">{fromName}</span>
+                              <span className="text-[11px] font-mono text-rose-600 font-semibold">−{hours}h</span>
+                            </div>
+                          ))}
+                        </div>
+                        <ArrowRight className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                        <div className="flex items-center gap-2 rounded-lg border-2 border-primary/30 bg-primary/5 pl-2 pr-2.5 py-1.5">
+                          <Avatar className="h-7 w-7 border-2 border-primary/30 shrink-0">
+                            <AvatarImage src={group.employeeAvatar} alt={group.employeeName} />
+                            <AvatarFallback className="text-xs font-semibold text-primary">{group.employeeName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <span className="text-xs font-semibold text-slate-800 truncate max-w-[90px]">{group.employeeName}</span>
+                          <Badge className="shrink-0 bg-primary text-primary-foreground text-[11px] font-mono">+{totalToReceptor}h</Badge>
+                        </div>
+                      </div>
+                      {/* 3) Por proyecto colapsable */}
+                      {byProject.length > 0 && (
+                        <Collapsible open={rightPanelPorProyectoOpen} onOpenChange={setRightPanelPorProyectoOpen}>
+                          <CollapsibleTrigger asChild>
+                            <button type="button" className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 hover:text-slate-700 py-0.5 mt-0.5">
+                              {rightPanelPorProyectoOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                              Por proyecto ({byProject.length})
+                            </button>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <div className="space-y-1.5 pt-1">
+                              {byProject.map((proj, i) => (
+                                <div key={i} className="rounded border border-slate-200 bg-white px-2 py-1.5">
+                                  <p className="text-[11px] font-medium text-slate-700 truncate">{proj.projectName}</p>
+                                  <div className="flex flex-wrap gap-1 mt-0.5">
+                                    {proj.items.map((item, j) => (
+                                      <span key={j} className="text-[10px] text-slate-600 bg-slate-100 rounded px-1 font-mono">{item.fromName} −{item.hours}h</span>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
         <AlertDialogContent>
