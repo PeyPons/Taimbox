@@ -48,14 +48,15 @@ export function useDashboardView() {
                 .select('*')
                 .eq('agency_id', currentAgency.id)
                 .eq('department_name', currentUser.department)
-                .limit(1);
+                .single();
 
-            if (error) {
+            if (error && error.code !== 'PGRST116') {
+                // PGRST116 = no rows returned (not an error, just no config)
                 console.error('[useDashboardView] Error loading department config:', error);
             }
 
-            if (data && data.length > 0) {
-                const row = data[0] as DepartmentConfigRow;
+            if (data) {
+                const row = data as DepartmentConfigRow;
                 setDepartmentConfig({
                     id: row.id,
                     agencyId: row.agency_id,
@@ -85,7 +86,7 @@ export function useDashboardView() {
         }
     }, [currentUser?.preferredView]);
 
-    // Estado derivado (modo Zen/daily eliminado: convertir a weekly; kanban pasa limpio)
+    // Estado derivado (modo Zen eliminado: siempre vista semanal)
     const isStrict = departmentConfig?.isViewStrict ?? false;
     const deptViewRaw = departmentConfig?.defaultView ?? 'weekly';
     const deptView: ViewMode = deptViewRaw === 'daily' ? 'weekly' : deptViewRaw;

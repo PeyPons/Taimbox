@@ -12,8 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useDepartmentConfigs } from '@/hooks/useDashboardView';
-import { ViewMode } from '@/types';
-import { Calendar, Columns3, Lock, Unlock, Loader2, Settings } from 'lucide-react';
+import { ViewMode, DepartmentConfig } from '@/types';
+import { Calendar, Lock, Unlock, Loader2, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface DepartmentViewConfigDialogProps {
@@ -21,11 +21,6 @@ interface DepartmentViewConfigDialogProps {
     onOpenChange: (open: boolean) => void;
     departmentName: string;
 }
-
-const VIEW_OPTIONS: { value: ViewMode; label: string; description: string; icon: typeof Calendar }[] = [
-    { value: 'weekly', label: 'Semanal', description: 'Vista clásica de timeboxing por semana', icon: Calendar },
-    { value: 'kanban', label: 'Kanban', description: 'Tablero operativo con columnas de estado', icon: Columns3 },
-];
 
 export function DepartmentViewConfigDialog({
     open,
@@ -37,11 +32,12 @@ export function DepartmentViewConfigDialog({
     const [defaultView, setDefaultView] = useState<ViewMode>('weekly');
     const [isStrict, setIsStrict] = useState(false);
 
+    // Cargar configuración existente cuando se abre el diálogo
     useEffect(() => {
         if (open && departmentName) {
             const config = getConfigForDepartment(departmentName);
             if (config) {
-                setDefaultView(config.defaultView === 'daily' ? 'weekly' : config.defaultView);
+                setDefaultView(config.defaultView);
                 setIsStrict(config.isViewStrict);
             } else {
                 setDefaultView('weekly');
@@ -51,13 +47,11 @@ export function DepartmentViewConfigDialog({
     }, [open, departmentName, getConfigForDepartment]);
 
     const handleSave = async () => {
-        const success = await saveDepartmentConfig(departmentName, defaultView, isStrict);
+        const success = await saveDepartmentConfig(departmentName, 'weekly', isStrict);
         if (success) {
             onOpenChange(false);
         }
     };
-
-    const selectedOption = VIEW_OPTIONS.find(o => o.value === defaultView) || VIEW_OPTIONS[0];
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -73,33 +67,15 @@ export function DepartmentViewConfigDialog({
                 </DialogHeader>
 
                 <div className="space-y-6 py-4">
-                    {/* Vista por defecto */}
+                    {/* Vista por defecto: solo semanal (modo Zen eliminado) */}
                     <div className="space-y-3">
                         <Label className="text-sm font-medium">Vista por defecto del equipo</Label>
-                        <div className="grid grid-cols-2 gap-3">
-                            {VIEW_OPTIONS.map(option => {
-                                const Icon = option.icon;
-                                const isSelected = defaultView === option.value;
-                                return (
-                                    <button
-                                        key={option.value}
-                                        type="button"
-                                        onClick={() => setDefaultView(option.value)}
-                                        className={cn(
-                                            "flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all text-left",
-                                            isSelected
-                                                ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                                                : "border-slate-200 bg-slate-50/50 hover:border-slate-300"
-                                        )}
-                                    >
-                                        <Icon className={cn("h-7 w-7", isSelected ? "text-primary" : "text-slate-400")} />
-                                        <div className="text-center">
-                                            <span className={cn("font-medium text-sm", isSelected ? "text-primary" : "text-slate-700")}>{option.label}</span>
-                                            <span className="text-[11px] text-slate-500 block mt-0.5">{option.description}</span>
-                                        </div>
-                                    </button>
-                                );
-                            })}
+                        <div className="flex items-center gap-2 rounded-lg border-2 border-slate-200 p-4 bg-slate-50/50">
+                            <Calendar className="h-8 w-8 text-primary" />
+                            <div>
+                                <span className="font-medium">Semanal</span>
+                                <span className="text-xs text-slate-500 block">Vista completa de la semana</span>
+                            </div>
                         </div>
                     </div>
 
@@ -114,7 +90,7 @@ export function DepartmentViewConfigDialog({
                                 )}
                                 <div>
                                     <Label className="font-medium cursor-pointer" htmlFor="strict-toggle">
-                                        Forzar esta vista para todos
+                                        🔒 Forzar esta vista para todos
                                     </Label>
                                     <p className="text-xs text-slate-500 mt-0.5">
                                         {isStrict
@@ -142,20 +118,17 @@ export function DepartmentViewConfigDialog({
                                 {isStrict ? "Modo estricto" : "Modo flexible"}
                             </Badge>
                             <Badge variant="outline" className="text-xs">
-                                Vista: {selectedOption.label}
+                                Vista: Semanal
                             </Badge>
                         </div>
                     </div>
 
                     {/* Info box */}
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
-                        <p className="font-medium mb-1">¿Cómo funciona?</p>
+                        <p className="font-medium mb-1">ℹ️ ¿Cómo funciona?</p>
                         <ul className="space-y-1 text-blue-700">
                             <li>• <strong>Flexible:</strong> Sugieres una vista, pero el empleado puede cambiarla.</li>
                             <li>• <strong>Estricto:</strong> Obligas la vista. El selector se oculta al empleado.</li>
-                            {defaultView === 'kanban' && (
-                                <li>• <strong>Kanban:</strong> El empleado gestiona sus operaciones en un tablero. Las horas se asignan desde el Planificador.</li>
-                            )}
                         </ul>
                     </div>
                 </div>

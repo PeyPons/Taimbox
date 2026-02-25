@@ -2,7 +2,7 @@
 // View Mode Types
 // ============================================
 
-export type ViewMode = 'weekly' | 'daily' | 'kanban';
+export type ViewMode = 'weekly' | 'daily';
 
 /** Departamento/área para filtrado de vistas (ej: Marketing, Desarrollo). Definido en Configuración de Agencia. */
 export interface DepartmentDefinition {
@@ -355,54 +355,3 @@ export interface TaskTransfer {
   projectName?: string; // We might need to fetch this or derive it
   originalWeek?: string;
 }
-
-// ============================================
-// Kanban Types
-// ============================================
-
-export type KanbanTaskType = 'ROUTINE' | 'PROJECT' | 'FIRE';
-export type KanbanTaskStatus = 'backlog' | 'todo' | 'in-progress' | 'review' | 'done';
-export type KanbanTaskPriority = 'low' | 'medium' | 'high' | 'urgent';
-
-export interface SOPItem {
-  id: string;
-  text: string;
-  isCompleted: boolean;
-}
-
-export interface SOPTemplate {
-  id: string;
-  agencyId: string;
-  name: string;
-  platform?: string;
-  items: Omit<SOPItem, 'isCompleted'>[];
-  createdAt?: string;
-}
-
-export interface KanbanTask {
-  id: string;
-  agencyId: string;
-  employeeId: string;
-  clientId: string;
-  allocationId?: string | null;
-  title: string;
-  taskType: KanbanTaskType;
-  status: KanbanTaskStatus;
-  priority: KanbanTaskPriority;
-  platform?: string;
-  sopChecklist?: SOPItem[];
-  sopTemplateId?: string | null;
-  dueDate?: string;
-  weekStartDate: string;
-  completedAt?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export const KANBAN_COLUMNS: { key: KanbanTaskStatus; label: string }[] = [
-  { key: 'backlog', label: 'Backlog' },
-  { key: 'todo', label: 'To Do' },
-  { key: 'in-progress', label: 'En Progreso' },
-  { key: 'review', label: 'Revisi?n' },
-  { key: 'done', label: 'Hecho' },
-];
