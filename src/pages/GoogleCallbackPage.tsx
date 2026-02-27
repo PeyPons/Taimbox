@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 export default function GoogleCallbackPage() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const { currentAgency } = useAgency();
+    const { currentAgency, refreshAgency } = useAgency();
     const processedRef = useRef(false);
 
     useEffect(() => {
@@ -51,6 +51,7 @@ export default function GoogleCallbackPage() {
                 if (data?.error) throw new Error(data.error);
 
                 toast.success('¡Google Ads vinculado correctamente!');
+                await refreshAgency();
                 navigate('/agency?tab=integrations');
 
             } catch (err: any) {
@@ -61,7 +62,7 @@ export default function GoogleCallbackPage() {
         };
 
         handleCallback();
-    }, [searchParams, navigate, currentAgency]);
+    }, [searchParams, navigate, currentAgency, refreshAgency]);
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
