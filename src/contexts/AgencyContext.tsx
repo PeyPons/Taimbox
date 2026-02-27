@@ -13,6 +13,8 @@ interface SupabaseAgency {
   status?: string;
   created_at: string;
   updated_at: string;
+  google_ads_refresh_token?: string | null;
+  google_ads_customer_id?: string | null;
 }
 
 // Tipo exportado para miembros de agencia
@@ -168,7 +170,9 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       setupCompleted: data.setup_completed ?? true,
       status,
       createdAt: data.created_at,
-      updatedAt: data.updated_at
+      updatedAt: data.updated_at,
+      google_ads_refresh_token: data.google_ads_refresh_token ?? undefined,
+      google_ads_customer_id: data.google_ads_customer_id ?? undefined,
     };
   }, [migrateIntegrations]);
 
@@ -402,13 +406,14 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
 
       const agency = await mapSupabaseAgency(agencyData);
 
-      // Solo actualizar si la agencia cambió para evitar loops infinitos
+      // Solo actualizar si la agencia cambió para evitar loops infinitos (incl. token Google Ads)
       setCurrentAgency(prev => {
-        if (prev?.id === agency.id && JSON.stringify(prev.settings) === JSON.stringify(agency.settings)) {
-          // La agencia no cambió, no actualizar para evitar re-renders innecesarios
+        if (prev?.id === agency.id &&
+            JSON.stringify(prev.settings) === JSON.stringify(agency.settings) &&
+            prev.google_ads_refresh_token === agency.google_ads_refresh_token &&
+            prev.google_ads_customer_id === agency.google_ads_customer_id) {
           return prev;
         }
-        // Agencia cargada exitosamente
         return agency;
       });
 
