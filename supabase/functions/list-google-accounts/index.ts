@@ -116,8 +116,8 @@ Deno.serve(async (req) => {
             throw new Error('Error de configuración: Falta GOOGLE_DEVELOPER_TOKEN en variables de entorno.')
         }
 
-        // 4. Listar clientes accesibles (Google Ads API v23)
-        const listResponse = await fetch(`https://googleads.googleapis.com/v23/customers:listAccessibleCustomers`, {
+        // 4. Listar clientes accesibles (Google Ads API v22)
+        const listResponse = await fetch(`https://googleads.googleapis.com/v22/customers:listAccessibleCustomers`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
@@ -149,10 +149,10 @@ Deno.serve(async (req) => {
         const customers = listData.resourceNames || []
         const customerIds = customers.map((r: string) => r.replace('customers/', ''))
 
-        // 6. Obtener nombre descriptivo de cada cuenta (searchStream por customer)
-        const API_VERSION = 'v23'
+        // 6. Obtener nombre descriptivo de cada cuenta (Search en v22)
+        const API_VERSION = 'v22'
         const runSearch = async (customerId: string, loginCustomerId: string): Promise<string | null> => {
-            const searchUrl = `https://googleads.googleapis.com/${API_VERSION}/customers/${customerId}/googleAds:searchStream`
+            const searchUrl = `https://googleads.googleapis.com/${API_VERSION}/customers/${customerId}/googleAds:search`
             const searchRes = await fetch(searchUrl, {
                 method: 'POST',
                 headers: {
@@ -165,19 +165,30 @@ Deno.serve(async (req) => {
                     query: 'SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1'
                 }),
             })
-            if (!searchRes.ok) return null
-            const searchJson = await searchRes.json()
-            const batch = Array.isArray(searchJson) ? searchJson[0] : searchJson
-            const row = batch?.results?.[0]
-            return row?.customer?.descriptiveName ?? row?.customer?.descriptive_name ?? null
+            if (!searchRes.ok) {
+                const errText = await searchRes.text()
+                console.warn(`[list-google-accounts] search ${customerId} login=${loginCustomerId} status=${searchRes.status}: ${errText.slice(0, 200)}`)
+                return null
+            }
+            const searchText = await searchRes.text()
+            try {
+                const parsed = JSON.parse(searchText)
+                const results = parsed.results || (Array.isArray(parsed) ? parsed[0]?.results : undefined)
+                const row = results?.[0]
+                return row?.customer?.descriptiveName ?? row?.customer?.descriptive_name ?? null
+            } catch {
+                console.warn(`[list-google-accounts] search ${customerId} respuesta no JSON: ${searchText.slice(0, 150)}`)
+                return null
+            }
         }
 
+        const mccId = customerIds[0]
         const accounts = await Promise.all(customerIds.map(async (customerId: string) => {
             let descriptiveName: string | null = null
             try {
                 descriptiveName = await runSearch(customerId, customerId)
-                if (descriptiveName == null && customerIds[0] !== customerId)
-                    descriptiveName = await runSearch(customerId, customerIds[0])
+                if (descriptiveName == null && customerId !== mccId)
+                    descriptiveName = await runSearch(customerId, mccId)
             } catch (e) {
                 console.warn(`[list-google-accounts] No se pudo obtener nombre para ${customerId}:`, (e as Error).message)
             }
