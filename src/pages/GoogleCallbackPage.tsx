@@ -32,7 +32,10 @@ export default function GoogleCallbackPage() {
                 return;
             }
 
-            if (!currentAgency?.id) {
+            // agency_id: del state de OAuth (enviado al iniciar el flujo) o del contexto
+            const stateAgencyId = searchParams.get('state');
+            const agencyId = currentAgency?.id || stateAgencyId || null;
+            if (!agencyId) {
                 toast.error('No se pudo identificar la agencia.');
                 navigate('/agency?tab=integrations');
                 return;
@@ -41,7 +44,7 @@ export default function GoogleCallbackPage() {
             try {
                 const redirectUri = window.location.origin + '/google-callback';
                 const { data, error: fnError } = await supabase.functions.invoke('oauth-google-ads', {
-                    body: { code, redirect_uri: redirectUri, agency_id: currentAgency.id },
+                    body: { code, redirect_uri: redirectUri, agency_id: agencyId },
                 });
 
                 if (fnError) throw fnError;

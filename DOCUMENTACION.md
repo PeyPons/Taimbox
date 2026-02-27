@@ -261,13 +261,16 @@ El flujo de Google Ads sigue un modelo SaaS donde la plataforma posee las creden
 
 **Flujo OAuth completo:**
 1. Cliente entra en Configuración → Integraciones → Google Ads.
-2. Introduce el MCC Customer ID y hace clic en "Conectar con Google".
-3. El frontend redirige a Google con `VITE_GOOGLE_CLIENT_ID` → pantalla de consentimiento.
-4. Google redirige a `/google-callback?code=...` → `GoogleCallbackPage.tsx` captura el código.
+2. Hace clic en "Conectar con Google" (el MCC/Customer ID se elige después de vincular, con el selector de cuentas).
+3. El frontend redirige a Google con `VITE_GOOGLE_CLIENT_ID`, `scope=adwords`, y `state=agency_id` (para recuperar la agencia en el callback).
+4. Google redirige a `/google-callback?code=...&state=agency_id` → `GoogleCallbackPage.tsx` captura el código y usa `agency_id` del `state` o del contexto.
 5. El frontend invoca `oauth-google-ads` con `{ code, redirect_uri, agency_id }`.
 6. La Edge Function intercambia el código por tokens usando `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`.
 7. Guarda el `refresh_token` en la columna `agencies.google_ads_refresh_token`.
-8. `sync-google-ads` usa `GOOGLE_DEVELOPER_TOKEN` + credenciales plataforma + `refresh_token` (columna) + `customer_id` (columna) para sincronizar.
+8. El usuario selecciona la cuenta (MCC o subcuenta) en el desplegable; se guarda en `agencies.google_ads_customer_id`.
+9. `sync-google-ads` y `list-google-accounts` usan `GOOGLE_DEVELOPER_TOKEN` + credenciales plataforma + `refresh_token` (columna) + `customer_id` (columna cuando aplica).
+
+**Con la API de Google Ads aprobada:** El flujo de conexión está listo para producción. Asegúrate de tener `GOOGLE_DEVELOPER_TOKEN` aprobado en la cuenta de desarrollador de Google Ads; sin ello, `list-google-accounts` y `sync-google-ads` pueden devolver HTML de error en lugar de JSON. Ver sección "Solución de problemas: Google OAuth y API Google Ads" más abajo.
 
 **URIs de redirección autorizadas en Google Cloud Console:**
 - `http://localhost:8080/google-callback` (desarrollo)
