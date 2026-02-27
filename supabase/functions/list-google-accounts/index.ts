@@ -145,12 +145,47 @@ Deno.serve(async (req) => {
             throw new Error(`Error de Google Ads API: ${listData.error.message}`)
         }
 
-        // 5. Procesar y devolver lista
+        // 5. Lista base (id + resourceName)
         const customers = listData.resourceNames || []
-        // resourceNames viene como "customers/1234567890" -> extraer ID
-        const accounts = customers.map((resource: string) => ({
-            id: resource.replace('customers/', ''),
-            resourceName: resource
+        const customerIds = customers.map((r: string) => r.replace('customers/', ''))
+
+        // 6. Obtener nombre descriptivo de cada cuenta (searchStream por customer)
+        const API_VERSION = 'v23'
+        const runSearch = async (customerId: string, loginCustomerId: string): Promise<string | null> => {
+            const searchUrl = `https://googleads.googleapis.com/${API_VERSION}/customers/${customerId}/googleAds:searchStream`
+            const searchRes = await fetch(searchUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'developer-token': developerToken,
+                    'Content-Type': 'application/json',
+                    'login-customer-id': loginCustomerId,
+                },
+                body: JSON.stringify({
+                    query: 'SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1'
+                }),
+            })
+            if (!searchRes.ok) return null
+            const searchJson = await searchRes.json()
+            const batch = Array.isArray(searchJson) ? searchJson[0] : searchJson
+            const row = batch?.results?.[0]
+            return row?.customer?.descriptiveName ?? row?.customer?.descriptive_name ?? null
+        }
+
+        const accounts = await Promise.all(customerIds.map(async (customerId: string) => {
+            let descriptiveName: string | null = null
+            try {
+                descriptiveName = await runSearch(customerId, customerId)
+                if (descriptiveName == null && customerIds[0] !== customerId)
+                    descriptiveName = await runSearch(customerId, customerIds[0])
+            } catch (e) {
+                console.warn(`[list-google-accounts] No se pudo obtener nombre para ${customerId}:`, (e as Error).message)
+            }
+            return {
+                id: customerId,
+                resourceName: `customers/${customerId}`,
+                descriptiveName: descriptiveName || null
+            }
         }))
 
         return new Response(

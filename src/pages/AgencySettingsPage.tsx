@@ -64,7 +64,7 @@ function GoogleAdsAccountSelect({
   value: string;
   onValueChange: (v: string) => void;
 }) {
-  const [accounts, setAccounts] = useState<{ id: string; resourceName: string }[]>([]);
+  const [accounts, setAccounts] = useState<{ id: string; resourceName: string; descriptiveName?: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -101,7 +101,7 @@ function GoogleAdsAccountSelect({
     <>
       {accounts.map(acc => (
         <SelectItem key={acc.id} value={acc.id}>
-          {acc.resourceName} ({acc.id})
+          {acc.descriptiveName ? `${acc.descriptiveName} (${acc.id})` : `Cuenta ${acc.id}`}
         </SelectItem>
       ))}
     </>
