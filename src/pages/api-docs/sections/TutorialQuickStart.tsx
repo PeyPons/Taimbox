@@ -42,7 +42,7 @@ export function TutorialQuickStart() {
           code={`import { createClient } from '@supabase/supabase-js'
 
 const timeboxing = createClient(
-  'http://supabase.peypons.duckdns.org',
+  'https://api.taimbox.com',
   process.env.SUPABASE_ANON_KEY!,
   {
     global: {
@@ -75,7 +75,7 @@ if (error) {
           title="También funciona con cURL"
           description="Si no usas JavaScript, puedes verificar la conexión con una petición HTTP directa."
           code={`curl -s \\
-  'http://supabase.peypons.duckdns.org/rest/v1/employees?is_active=eq.true&limit=5&select=id,name,role' \\
+  'https://api.taimbox.com/rest/v1/employees?is_active=eq.true&limit=5&select=id,name,role' \\
   -H 'apikey: TU_ANON_KEY' \\
   -H 'Authorization: Bearer TU_API_TOKEN' | json_pp`}
           lang="bash"

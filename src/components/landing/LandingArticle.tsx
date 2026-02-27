@@ -346,7 +346,7 @@ const report = projects?.map(p => {
             <TabsContent value="curl" className="m-0 p-3 sm:p-5">
               <p className="text-xs text-slate-400 mb-2 font-medium">Ejemplo de consulta a la API (allocations + hours_computed). Base URL y tokens: <Link to="/api-docs" className="text-indigo-300 hover:text-white underline">ver documentación</Link>.</p>
               <pre className="p-3 sm:p-4 rounded-lg bg-slate-900 text-xs sm:text-sm text-slate-200 overflow-x-auto font-mono leading-relaxed border border-white/5 min-w-0">
-                <code>{`curl -X GET "http://supabase.peypons.duckdns.org/rest/v1/allocations?week_start_date=gte.2026-02-01&week_start_date=lte.2026-02-28&select=project_id,hours_assigned,hours_actual,hours_computed" \\
+                <code>{`curl -X GET "https://api.taimbox.com/rest/v1/allocations?week_start_date=gte.2026-02-01&week_start_date=lte.2026-02-28&select=project_id,hours_assigned,hours_actual,hours_computed" \\
   -H "apikey: <ANON_KEY>" \\
   -H "Authorization: Bearer <TU_API_TOKEN>" \\
   -H "Content-Type: application/json"`}</code>

@@ -18,7 +18,7 @@ export function RestSection() {
           path="/rest/v1/{recurso}?select=col1,col2&filtro=eq.valor"
           description="Listar recursos con filtros opcionales. Soporta select, filtros, paginacion y orden."
           curlExample={`curl -X GET \\
-  'http://supabase.peypons.duckdns.org/rest/v1/employees?is_active=eq.true&order=name.asc' \\
+  'https://api.taimbox.com/rest/v1/employees?is_active=eq.true&order=name.asc' \\
   -H 'apikey: <TU_API_KEY>' \\
   -H 'Authorization: Bearer <TU_API_TOKEN>'`}
           sdkExample={`const { data, error } = await timeboxing
@@ -32,7 +32,7 @@ export function RestSection() {
           path="/rest/v1/{recurso}"
           description="Crear un nuevo recurso. Envia el body como JSON."
           curlExample={`curl -X POST \\
-  'http://supabase.peypons.duckdns.org/rest/v1/allocations' \\
+  'https://api.taimbox.com/rest/v1/allocations' \\
   -H 'apikey: <TU_API_KEY>' \\
   -H 'Authorization: Bearer <TU_API_TOKEN>' \\
   -H 'Content-Type: application/json' \\
@@ -54,7 +54,7 @@ export function RestSection() {
           path="/rest/v1/{recurso}?id=eq.{uuid}"
           description="Actualizar uno o varios campos de un recurso existente."
           curlExample={`curl -X PATCH \\
-  'http://supabase.peypons.duckdns.org/rest/v1/allocations?id=eq.<UUID>' \\
+  'https://api.taimbox.com/rest/v1/allocations?id=eq.<UUID>' \\
   -H 'apikey: <TU_API_KEY>' \\
   -H 'Authorization: Bearer <TU_API_TOKEN>' \\
   -H 'Content-Type: application/json' \\
@@ -72,7 +72,7 @@ export function RestSection() {
           path="/rest/v1/{recurso}?id=eq.{uuid}"
           description="Eliminar un recurso. No se puede deshacer."
           curlExample={`curl -X DELETE \\
-  'http://supabase.peypons.duckdns.org/rest/v1/allocations?id=eq.<UUID>' \\
+  'https://api.taimbox.com/rest/v1/allocations?id=eq.<UUID>' \\
   -H 'apikey: <TU_API_KEY>' \\
   -H 'Authorization: Bearer <TU_API_TOKEN>'`}
           sdkExample={`const { error } = await timeboxing

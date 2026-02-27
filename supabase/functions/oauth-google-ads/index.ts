@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
         const finalRedirectUri = redirect_uri || (
             (req.headers.get('origin') || '').includes('localhost')
                 ? 'http://localhost:8080/google-callback'
-                : 'https://timeboxing.peypons.duckdns.org/google-callback'
+                : 'https://taimbox.com/google-callback'
         )
 
         console.log(`[oauth-google-ads] Final Redirect URI used: ${finalRedirectUri}`)

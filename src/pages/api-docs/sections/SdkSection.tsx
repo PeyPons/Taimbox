@@ -18,7 +18,7 @@ export function SdkSection() {
       <CodeBlock lang="typescript">{`import { createClient } from '@supabase/supabase-js'
 
 // URL de tu instancia Supabase + clave anonima (la misma que usa la app)
-const SUPABASE_URL = 'http://supabase.peypons.duckdns.org'
+const SUPABASE_URL = 'https://api.taimbox.com'
 const ANON_KEY = process.env.SUPABASE_ANON_KEY
 
 // Token API generado desde API & Integraciones

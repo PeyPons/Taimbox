@@ -81,7 +81,7 @@ export function OverviewAuth() {
 
       <h3 className="text-white font-semibold mb-3">Ejemplo de peticion autenticada</h3>
       <CodeBlock lang="bash">{`curl -X GET \\
-  'http://supabase.peypons.duckdns.org/rest/v1/employees?is_active=eq.true' \\
+  'https://api.taimbox.com/rest/v1/employees?is_active=eq.true' \\
   -H 'apikey: <ANON_KEY>' \\
   -H 'Authorization: Bearer <TU_API_TOKEN>' \\
   -H 'Content-Type: application/json'`}</CodeBlock>

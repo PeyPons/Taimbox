@@ -142,7 +142,7 @@ ssh usuario@TU_SERVIDOR "export PROJECT_DIR=/ruta/proyecto && export RUNTIME_CON
 
 Sustituye:
 - `usuario` → tu usuario SSH en el servidor
-- `TU_SERVIDOR` → IP o dominio (ej. `supabase.peypons.duckdns.org` o la IP)
+- `TU_SERVIDOR` → IP o dominio (ej. `api.taimbox.com` o la IP)
 - `/ruta/proyecto` → ruta real del proyecto en el servidor (ej. `/opt/timeboxing`)
 
 Si no tienes `rsync`, usa `scp`:

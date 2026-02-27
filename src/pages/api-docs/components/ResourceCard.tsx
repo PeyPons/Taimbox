@@ -8,7 +8,7 @@ import { CodeBlock } from './CodeBlock';
 import { ResponseExample } from './ResponseExample';
 import type { TableDef } from '../data/types';
 
-const API_BASE_URL = 'http://supabase.peypons.duckdns.org/rest/v1';
+const API_BASE_URL = 'https://api.taimbox.com/rest/v1';
 
 function buildDefaultCurlSelect(tableName: string): string {
   return `curl -X GET \\

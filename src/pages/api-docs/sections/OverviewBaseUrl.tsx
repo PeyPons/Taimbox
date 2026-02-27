@@ -20,7 +20,7 @@ export function OverviewBaseUrl() {
         que puedes generar desde la seccion <strong>API & Integraciones</strong>.
       </p>
       <CodeBlock lang="bash">{`# URL base de la API de Taimbox
-http://supabase.peypons.duckdns.org/rest/v1/
+https://api.taimbox.com/rest/v1/
 
 # Headers obligatorios en cada petición
 apikey: <ANON_KEY>                      # Clave anonima de tu instancia Supabase
