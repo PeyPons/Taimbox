@@ -1,6 +1,5 @@
 // Edge Function: crear sesión de Stripe Checkout para suscripción (Pro o Business)
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-// @deno-types="npm:@types/stripe@14.0.0"
 import Stripe from "npm:stripe@14.21.0";
 
 const corsHeaders = {
