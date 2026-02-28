@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,7 @@ import {
   Building2, Settings, Users, Palette, Save, Loader2,
   Filter, Plus, Trash2, HelpCircle, Info, X,
   Rocket, Facebook, Megaphone, PlusCircle, ShieldCheck, GitBranch, Database, AlertTriangle,
-  Eye, Lock, Unlock, Calendar, Check, ChevronDown, BarChart2, Layers, ExternalLink, Activity
+  Eye, Lock, Unlock, Calendar, Check, ChevronDown, BarChart2, Layers, ExternalLink, Activity, CreditCard
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -42,6 +42,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DepartmentViewConfigDialog } from '@/components/agencies/DepartmentViewConfigDialog';
+import { AgencyBillingTab } from '@/components/agencies/AgencyBillingTab';
 import { useDepartmentConfigs } from '@/hooks/useDashboardView';
 import { useApp } from '@/contexts/AppContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -108,7 +109,13 @@ function GoogleAdsAccountSelect({
   );
 }
 
+const TAB_VALUES = ['general', 'team', 'projects', 'modules', 'integrations', 'departments', 'appearance', 'billing'] as const;
+
 export default function AgencySettingsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab') ?? 'general';
+  const activeTab = TAB_VALUES.includes(tabParam as typeof TAB_VALUES[number]) ? tabParam : 'general';
+
   const { currentAgency, refreshAgency, updateSettings, updateAgencyName, isLoading: isAgencyLoading } = useAgency();
   const { hasPermission } = usePermissions();
   const { projects, clients } = useApp();
@@ -559,7 +566,7 @@ export default function AgencySettingsPage() {
         </Badge>
       </div>
 
-      <Tabs defaultValue="general" className="mt-6 flex flex-col lg:flex-row gap-6">
+      <Tabs value={activeTab} onValueChange={(v) => setSearchParams({ tab: v })} className="mt-6 flex flex-col lg:flex-row gap-6">
         <TabsList className="flex flex-row lg:flex-col lg:w-52 h-auto p-2 rounded-xl bg-slate-100 border border-slate-200 shrink-0 lg:sticky lg:top-4 self-start w-full overflow-x-auto flex-nowrap">
           <TabsTrigger value="general" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
             <Settings className="h-4 w-4 shrink-0" /> <span className="truncate">General</span>
@@ -581,6 +588,9 @@ export default function AgencySettingsPage() {
           </TabsTrigger>
           <TabsTrigger value="appearance" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
             <Palette className="h-4 w-4 shrink-0" /> <span className="truncate">Apariencia</span>
+          </TabsTrigger>
+          <TabsTrigger value="billing" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
+            <CreditCard className="h-4 w-4 shrink-0" /> <span className="truncate">Plan y facturación</span>
           </TabsTrigger>
         </TabsList>
 
@@ -1938,6 +1948,10 @@ export default function AgencySettingsPage() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="billing" className="mt-0 space-y-6">
+            <AgencyBillingTab />
           </TabsContent>
         </div>
       </Tabs>

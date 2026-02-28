@@ -19,7 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Search, Pause, Play, LogIn } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Loader2, Search, Pause, Play, LogIn, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 
 interface AgencyRow {
@@ -31,6 +37,9 @@ interface AgencyRow {
   created_at: string;
   employees_count: number;
   projects_count: number;
+  plan_id?: string;
+  subscription_status?: string | null;
+  trial_ends_at?: string | null;
 }
 
 export default function AdminAgenciesPage() {
@@ -38,8 +47,10 @@ export default function AdminAgenciesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [planFilter, setPlanFilter] = useState<string>("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
+  const [settingPlanId, setSettingPlanId] = useState<string | null>(null);
 
   const fetchAgencies = useCallback(async () => {
     setLoading(true);
@@ -58,6 +69,32 @@ export default function AdminAgenciesPage() {
       setLoading(false);
     }
   }, [search, statusFilter]);
+
+  const filteredAgencies = planFilter === "all"
+    ? agencies
+    : agencies.filter((a) => (a.plan_id ?? "starter") === planFilter);
+
+  const setAgencyPlan = async (agencyId: string, planId: "starter" | "pro" | "business") => {
+    setSettingPlanId(agencyId);
+    try {
+      const { error } = await supabase.rpc("admin_set_agency_plan", {
+        p_agency_id: agencyId,
+        p_plan_id: planId,
+      });
+      if (error) throw error;
+      toast.success(`Plan actualizado a ${planId}`);
+      setAgencies((prev) =>
+        prev.map((a) =>
+          a.id === agencyId ? { ...a, plan_id: planId, subscription_status: planId === "starter" ? "active" : a.subscription_status, trial_ends_at: planId === "starter" ? null : a.trial_ends_at } : a
+        )
+      );
+    } catch (e: unknown) {
+      console.error("[AdminAgenciesPage] Error setting plan:", e);
+      toast.error("Error al cambiar plan");
+    } finally {
+      setSettingPlanId(null);
+    }
+  };
 
   useEffect(() => {
     fetchAgencies();
@@ -111,6 +148,37 @@ export default function AdminAgenciesPage() {
     }
   };
 
+  const formatTrialEnd = (dateStr: string | null | undefined) => {
+    if (!dateStr) return "—";
+    try {
+      return new Date(dateStr).toLocaleDateString("es-ES", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const planLabel = (planId: string | undefined) => {
+    const p = planId ?? "starter";
+    return p === "business" ? "Business" : p === "pro" ? "Pro" : "Starter";
+  };
+
+  const subscriptionLabel = (s: string | null | undefined) => {
+    if (!s) return "—";
+    const map: Record<string, string> = {
+      active: "Activa",
+      trialing: "Prueba",
+      past_due: "Pago pendiente",
+      canceled: "Cancelada",
+      incomplete: "Incompleta",
+      incomplete_expired: "Expirada",
+    };
+    return map[s] ?? s;
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -143,6 +211,17 @@ export default function AdminAgenciesPage() {
                   <SelectItem value="suspended">Suspendidas</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={planFilter} onValueChange={setPlanFilter}>
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue placeholder="Plan" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los planes</SelectItem>
+                  <SelectItem value="starter">Starter</SelectItem>
+                  <SelectItem value="pro">Pro</SelectItem>
+                  <SelectItem value="business">Business</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <Button variant="outline" size="sm" onClick={fetchAgencies} disabled={loading}>
               Actualizar
@@ -156,6 +235,8 @@ export default function AdminAgenciesPage() {
             </div>
           ) : agencies.length === 0 ? (
             <p className="text-slate-500 text-center py-8">No hay agencias que coincidan.</p>
+          ) : filteredAgencies.length === 0 ? (
+            <p className="text-slate-500 text-center py-8">Ninguna agencia con el plan seleccionado.</p>
           ) : (
             <Table>
               <TableHeader>
@@ -163,6 +244,9 @@ export default function AdminAgenciesPage() {
                   <TableHead>Nombre</TableHead>
                   <TableHead>Slug</TableHead>
                   <TableHead>Estado</TableHead>
+                  <TableHead>Plan</TableHead>
+                  <TableHead>Suscripción</TableHead>
+                  <TableHead>Trial hasta</TableHead>
                   <TableHead>Setup</TableHead>
                   <TableHead>Empleados</TableHead>
                   <TableHead>Proyectos</TableHead>
@@ -171,7 +255,7 @@ export default function AdminAgenciesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {agencies.map((agency) => (
+                {filteredAgencies.map((agency) => (
                   <TableRow key={agency.id}>
                     <TableCell className="font-medium">{agency.name}</TableCell>
                     <TableCell className="text-slate-600">{agency.slug}</TableCell>
@@ -179,6 +263,15 @@ export default function AdminAgenciesPage() {
                       <Badge variant={agency.status === "suspended" ? "destructive" : "default"}>
                         {agency.status === "suspended" ? "Suspendida" : "Activa"}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{planLabel(agency.plan_id)}</Badge>
+                    </TableCell>
+                    <TableCell className="text-slate-600 text-sm">
+                      {subscriptionLabel(agency.subscription_status)}
+                    </TableCell>
+                    <TableCell className="text-slate-600 text-sm">
+                      {formatTrialEnd(agency.trial_ends_at)}
                     </TableCell>
                     <TableCell>
                       {agency.setup_completed ? (
@@ -192,6 +285,34 @@ export default function AdminAgenciesPage() {
                     <TableCell className="text-slate-500">{formatDate(agency.created_at)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0"
+                              disabled={settingPlanId === agency.id}
+                              title="Forzar plan (soporte)"
+                            >
+                              {settingPlanId === agency.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <CreditCard className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setAgencyPlan(agency.id, "starter")}>
+                              Forzar Starter
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setAgencyPlan(agency.id, "pro")}>
+                              Forzar Pro
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setAgencyPlan(agency.id, "business")}>
+                              Forzar Business
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                         <Button
                           size="sm"
                           variant="default"

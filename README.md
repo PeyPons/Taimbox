@@ -274,7 +274,7 @@ Todas las páginas principales de la aplicación.
 ### Configuración
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
-| `AgencySettingsPage.tsx` | 60KB+ | Configuración de agencia por secciones: General, Equipo (roles), **Departamentos** (nombre + color por área), Proyectos (filtros/aliasing), Módulos, Integraciones (Google Ads OAuth + Meta Ads), Apariencia. Navegación lateral. |
+| `AgencySettingsPage.tsx` | 60KB+ | Configuración de agencia por secciones: General, Equipo (roles), **Departamentos** (nombre + color por área), Proyectos (filtros/aliasing), Módulos, Integraciones (Google Ads OAuth + Meta Ads), Apariencia, **Plan y facturación** (Stripe). Navegación lateral; pestaña activa por `?tab=`. |
 | `SettingsPage.tsx` | 6KB | Preferencias de usuario |
 | `AgenciesPage.tsx` | 8KB | Selector de agencias |
 | `AgencyManagementPage.tsx` | 19KB | Administración avanzada de agencia |
@@ -285,7 +285,7 @@ Todas las páginas principales de la aplicación.
 | Página / Ruta | Descripción |
 |---------------|-------------|
 | `/admin` | Redirige a `/admin/agencies`. Solo accesible si el usuario está en `platform_admins` (RPC `is_platform_admin`). |
-| `/admin/agencies` | Listado de agencias, filtros, Suspender/Reactivar. Botón **Entrar**: acceder a la app como esa agencia (ver deadlines, planner, etc. con su contexto). |
+| `/admin/agencies` | Listado de agencias con columnas Plan, Suscripción y Trial hasta; filtros por estado y por plan (Starter/Pro/Business). Suspender/Reactivar. **Forzar plan**: menú por fila (icono tarjeta) para asignar Starter/Pro/Business (RPC `admin_set_agency_plan`). Botón **Entrar**: acceder a la app como esa agencia (ver deadlines, planner, etc. con su contexto). |
 | `/admin/admins` | **Administradores de plataforma**: listado de usuarios con acceso a /admin (no vinculados a agencia). Añadir por email (el usuario debe existir en el sistema), quitar acceso. No se puede quitar al último admin. |
 | `/admin/support` | Tickets de soporte: listado, filtros, crear ticket, cambiar estado. Botón "Ver" abre detalle con comentarios internos y formulario para añadir respuestas. |
 | `/admin/metrics` | Métricas de plataforma: total agencias (activas/suspendidas), empleados, usuarios con agencia, tickets por estado. |
@@ -299,6 +299,7 @@ Todas las páginas principales de la aplicación.
 ### Otros
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
+| `PreciosPage.tsx` | — | Página pública de precios (`/precios`): planes Starter, Pro y Business con CTAs a registro. |
 | `LandingPage.tsx` | ~80KB | Página pública de marketing (home). Usa `LandingHeader` (header fijo unificado con mega-menú `FeaturesDropdown`, enlaces Guía/API/Login, menú hamburguesa móvil). **Footer** con enlace a "Por qué Taimbox" (`/por-que-timeboxing`), demo, guía, API y **Cookies** (abre preferencias RGPD). **Banner de cookies** (`CookieBanner.tsx`): barra intrusiva con overlay RGPD, "Aceptar todas" / "Solo necesarias" / "Personalizar", persistencia en `localStorage` (`timeboxing_cookie_consent`), modal de preferencias. **Google Consent Mode v2 para GTM**: 4 cookies `timeboxing_gtm_analytics_storage`, `timeboxing_gtm_ad_storage`, etc. (valor `granted`/`denied`) + dataLayer evento `cookie_consent_update`. Ver `docs/GTM-CONSENT-MODE.md`. **Demo interactiva** (Planificador, Dashboard, Weekly, Deadlines): barra de navegación destacada con fondo indigo, texto "Elige qué explorar:" e iconos por módulo; responsive y usable en móvil y escritorio. Carousel de features con enlaces a landings comerciales. Schema JSON-LD SoftwareApplication en Helmet. Componentes: `LandingHeader.tsx`, `FeaturesDropdown.tsx`, `LandingFooter.tsx`, `CookieBanner.tsx`, `CalendarPreview.tsx`. Utilidad: `src/lib/cookieConsent.ts`. |
 | `ArticlePage.tsx` | ~3KB | Página pública del artículo largo en `/por-que-timeboxing`. Usa `LandingHeader`. Renderiza `LandingArticle` (6 bloques: Gancho, Teoría, Problema en agencias, Solución con DemoPlanner lazy, Arquitectura/API, CTA). Schema JSON-LD Article + SoftwareApplication. Enlazada desde el footer de la home. |
 | `EmployeeDashboardLandingPage.tsx` | ~3KB | Landing comercial pública en `/dashboard-empleado`. Usa `LandingHeader`. Presenta las funcionalidades del dashboard del empleado con 6 secciones y mockups CSS. Componentes: `LandingHeader.tsx`, `EmployeeDashboardArticle.tsx`, `LandingFooter.tsx`. |
@@ -353,9 +354,15 @@ Detalle completo (rutas, variables, rsync desde PC): **`supabase/scripts/README-
 | **`generate-api-token`** | `supabase/functions/generate-api-token/index.ts` | Genera JWT firmado con claim `agency_id` para acceso API. Verifica permisos admin. Guarda hash en `api_tokens`. |
 | **`revoke-api-token`** | `supabase/functions/revoke-api-token/index.ts` | Revoca un token API (`is_active = false`). Verifica permisos admin. |
 | **`add-platform-admin`** | `supabase/functions/add-platform-admin/index.ts` | Añade un administrador de plataforma (body: email, role; opc. password, name). Si se envía contraseña, crea el usuario en Auth y lo añade a `platform_admins`; si no, el usuario debe existir. Verifica caller con `is_platform_admin`. Usado desde `/admin/admins`. |
+| **`create-checkout-session`** | `supabase/functions/create-checkout-session/index.ts` | Crea sesión de Stripe Checkout para suscripción (Pro/Business). Requiere `STRIPE_SECRET_KEY`. Crea o recupera Customer en Stripe, devuelve URL de pago. Ver **Suscripciones (Stripe)** en DOCUMENTACION.md. |
+| **`stripe-webhook`** | `supabase/functions/stripe-webhook/index.ts` | Webhook de Stripe: actualiza `agencies` (plan_id, subscription_status, trial_ends_at) según eventos de suscripción. Requiere `STRIPE_WEBHOOK_SECRET`. |
+
+### Suscripciones (Stripe)
+- Planes **Starter** (gratis), **Pro** (49 €/mes) y **Business** (149 €/mes). Nuevos registros reciben trial Business 14 días. Límites por plan (empleados, histórico 30 días en Starter), soft lock al exceder. Flujo: Checkout Stripe → webhook actualiza `agencies`. Ver **DOCUMENTACION.md** sección Suscripciones y `docs/PLAN-SUSCRIPCIONES-IMPLEMENTACION-COMPLETO.md`.
 
 ### Base de datos (Supabase)
 - **RLS**: Todas las tablas públicas usan Row Level Security con la función `requesting_agency_id()` (JWT o `user_agencies`). Si añades una tabla, definir política coherente.
+- **Suscripciones**: tabla `agencies` incluye `plan_id`, `subscription_status`, `stripe_customer_id`, `stripe_subscription_id`, `trial_ends_at` (migración `20260228120000_add_agency_billing.sql`).
 - **api_tokens**: Tabla para tokens API por agencia; gestión en `/api-keys` (ApiKeysPage). Edge functions: `generate-api-token`, `revoke-api-token`.
 - **Limpieza empleado**: La app llama a `cleanup_employee_data(uuid)` antes de borrar un empleado. La función (en `20260221110000_cleanup_employee_data.sql` y actualizada en `20260221140000_create_timer_sessions.sql`) elimina active_timers, **timer_sessions**, time_entries, allocations, absences, feedback, rutinas, professional_goals, task_transfers y actualiza deadlines/team_events. **Comandos para aplicar migraciones:** [docs/MIGRACIONES-SERVIDOR.md](docs/MIGRACIONES-SERVIDOR.md). **Informe del módulo Cronómetro** (plan, BD, timer_sessions para webhooks, frontend): [docs/INFORME-CRONOMETRO-TAREAS.md](docs/INFORME-CRONOMETRO-TAREAS.md).
 

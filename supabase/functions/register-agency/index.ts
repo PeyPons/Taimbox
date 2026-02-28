@@ -177,7 +177,10 @@ serve(async (req) => {
                     features: {},
                     integrations: {} // Objeto para claves API
                 },
-                setup_completed: false
+                setup_completed: false,
+                plan_id: 'business',
+                subscription_status: 'trialing',
+                trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
             })
             .select()
             .single()

@@ -15,6 +15,11 @@ interface SupabaseAgency {
   updated_at: string;
   google_ads_refresh_token?: string | null;
   google_ads_customer_id?: string | null;
+  plan_id?: string | null;
+  subscription_status?: string | null;
+  stripe_customer_id?: string | null;
+  stripe_subscription_id?: string | null;
+  trial_ends_at?: string | null;
 }
 
 // Tipo exportado para miembros de agencia
@@ -162,6 +167,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
     const migratedSettings = await migrateIntegrations(data.id, settings);
 
     const status = (data.status === 'suspended' ? 'suspended' : 'active') as Agency['status'];
+    const planId = (data.plan_id === 'pro' || data.plan_id === 'business' ? data.plan_id : 'starter') as Agency['planId'];
     return {
       id: data.id,
       name: data.name,
@@ -173,6 +179,11 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       updatedAt: data.updated_at,
       google_ads_refresh_token: data.google_ads_refresh_token ?? undefined,
       google_ads_customer_id: data.google_ads_customer_id ?? undefined,
+      planId,
+      subscriptionStatus: data.subscription_status ?? undefined,
+      stripeCustomerId: data.stripe_customer_id ?? undefined,
+      stripeSubscriptionId: data.stripe_subscription_id ?? undefined,
+      trialEndsAt: data.trial_ends_at ?? undefined,
     };
   }, [migrateIntegrations]);
 

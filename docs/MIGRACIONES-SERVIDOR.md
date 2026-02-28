@@ -11,6 +11,8 @@ Para que el **cronómetro de tareas** y la **función cleanup_employee_data** fu
 7. `20260221160000_time_entries_unique_per_employee.sql` — UNIQUE por (employee_id, allocation_id, date) y RPC actualizada; así cada empleado tiene su fila y el UPSERT no pisa la de otro (evita ver horas en 0 tras guardar)
 8. `20260221170000_log_timer_hours_conflict_employee.sql` — **Solo** reemplaza la función `log_timer_hours` para ON CONFLICT (employee_id, allocation_id, date).
 9. `20260221180000_drop_time_entries_allocation_date_key.sql` — **Elimina** `time_entries_allocation_id_date_key` (allocation_id, date). Si sigue existiendo junto con el unique por empleado, solo puede haber una fila por tarea/día y las horas se guardan en la fila equivocada; al recargar se ve 0.
+10. `20260228120000_add_agency_billing.sql` — Añade a `agencies` las columnas de facturación Stripe: `plan_id`, `subscription_status`, `stripe_customer_id`, `stripe_subscription_id`, `trial_ends_at`. Necesaria para el sistema de suscripciones (ver docs/PLAN-SUSCRIPCIONES-IMPLEMENTACION-COMPLETO.md).
+11. `20260228130000_admin_agencies_billing.sql` — Redefine `admin_list_agencies` para devolver `plan_id`, `subscription_status`, `trial_ends_at` y añade RPC `admin_set_agency_plan(p_agency_id, p_plan_id)` para que los platform admins puedan forzar el plan desde /admin/agencies. Aplicar después de la 10.
 
 **Convención del proyecto (self-hosted):** Mismas rutas y variables que en [supabase/scripts/README-deploy.md](../supabase/scripts/README-deploy.md) para Edge Functions: Taimbox en `~/Taimbox`, Supabase en `~/supabase-pi/supabase/docker`. Las migraciones se aplican conectando por `psql` al contenedor de Postgres de ese mismo entorno.
 

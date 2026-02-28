@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner';
 import { DepartmentViewBanner } from '@/components/layout/DepartmentViewBanner';
+import { SubscriptionSoftLockBanner } from '@/components/layout/SubscriptionSoftLockBanner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +25,7 @@ export function AppLayout() {
       <ImpersonationBanner />
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
       <DepartmentViewBanner />
+      <SubscriptionSoftLockBanner />
 
       <div className="flex flex-1">
         <Sidebar

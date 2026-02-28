@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, Fragment } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useProjectMetrics, type ProjectMetricsDeadline } from '@/hooks/useProjectMetrics';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,7 +27,7 @@ import {
     Flame,
     CheckCircle2
 } from 'lucide-react';
-import { format, startOfMonth, subMonths, addMonths, endOfMonth, isSameMonth } from 'date-fns';
+import { format, startOfMonth, subMonths, addMonths, endOfMonth, isSameMonth, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,6 +90,13 @@ export default function FinancialHealthPage() {
     const { projects, clients, employees, allocations, ensureMonthLoaded } = useApp();
     const { currentAgency } = useAgency();
     const { selectedDepartmentId } = useDepartmentView();
+    const { maxReportingDays } = useSubscriptionLimits();
+
+    const minReportingMonth = useMemo(() => {
+        if (maxReportingDays == null) return null;
+        const minDate = subDays(new Date(), maxReportingDays);
+        return startOfMonth(minDate);
+    }, [maxReportingDays]);
 
     useEffect(() => {
         ensureMonthLoaded(currentMonth);
@@ -135,9 +143,19 @@ export default function FinancialHealthPage() {
         return ids;
     }, [allocations, employeesForView, selectedDepartmentId, currentMonth]);
 
-    const handlePrevMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
+    const handlePrevMonth = () => setCurrentMonth(prev => {
+        const next = subMonths(prev, 1);
+        if (minReportingMonth && next < minReportingMonth) return minReportingMonth;
+        return next;
+    });
     const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
     const handleToday = () => setCurrentMonth(startOfMonth(new Date()));
+
+    useEffect(() => {
+        if (minReportingMonth && currentMonth < minReportingMonth) {
+            setCurrentMonth(minReportingMonth);
+        }
+    }, [minReportingMonth]);
 
     const {
         projectMetrics,
@@ -624,12 +642,22 @@ export default function FinancialHealthPage() {
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     <div className="flex items-center gap-2">
                         <div className="flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white p-0.5 shadow-sm">
-                            <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-9 w-9 text-slate-600 hover:bg-slate-100" aria-label="Mes anterior">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handlePrevMonth}
+                                disabled={minReportingMonth != null && isSameMonth(currentMonth, minReportingMonth)}
+                                className="h-9 w-9 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                                aria-label="Mes anterior"
+                            >
                                 <ChevronRight className="h-4 w-4 rotate-180" />
                             </Button>
                             <Button variant="ghost" onClick={handleToday} className="h-9 px-3 text-sm font-medium text-slate-800 capitalize min-w-[100px]">
                                 {format(currentMonth, 'MMM yyyy', { locale: es })}
                             </Button>
+                            {minReportingMonth != null && (
+                                <span className="text-xs text-slate-500 hidden sm:inline">Plan Starter: últimos 30 días</span>
+                            )}
                             <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-9 w-9 text-slate-600 hover:bg-slate-100" aria-label="Mes siguiente">
                                 <ChevronRight className="h-4 w-4" />
                             </Button>

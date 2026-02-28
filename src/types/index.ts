@@ -123,6 +123,9 @@ export interface AgencySettings {
 
 export type AgencyStatus = 'active' | 'suspended';
 
+/** Plan de suscripci?n (Stripe) */
+export type PlanId = 'starter' | 'pro' | 'business';
+
 export interface Agency {
   id: string;
   name: string;
@@ -134,6 +137,14 @@ export interface Agency {
   updatedAt?: string;
   google_ads_refresh_token?: string;
   google_ads_customer_id?: string;
+  /** Plan actual (Stripe) */
+  planId?: PlanId;
+  /** Estado de la suscripci?n en Stripe */
+  subscriptionStatus?: string;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  /** Fin del trial (14 d?as para Business) */
+  trialEndsAt?: string;
 }
 
 // ============================================

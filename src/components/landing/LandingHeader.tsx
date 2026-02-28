@@ -40,6 +40,9 @@ export function LandingHeader() {
                     {/* Desktop Nav */}
                     <div className="hidden sm:flex items-center gap-4">
                         <FeaturesDropdown />
+                        <Link to="/precios" className="text-sm text-indigo-200 hover:text-white transition-colors">
+                            Precios
+                        </Link>
                         <Link to="/guia" className="text-sm text-indigo-200 hover:text-white transition-colors">
                             Guía
                         </Link>
@@ -90,18 +93,25 @@ export function LandingHeader() {
                 {/* Panel */}
                 <div className="relative mx-3 mt-2 rounded-2xl border border-white/15 bg-slate-900/98 backdrop-blur-2xl shadow-2xl shadow-black/50 overflow-hidden max-h-[70vh] overflow-y-auto">
                     {/* Quick links */}
-                    <div className="px-4 py-3 border-b border-white/10 flex gap-3">
+                    <div className="px-4 py-3 border-b border-white/10 flex flex-wrap gap-2">
+                        <Link
+                            to="/precios"
+                            onClick={() => setMobileOpen(false)}
+                            className="flex-1 min-w-[80px] text-center text-sm font-medium text-indigo-200 hover:text-white py-2 rounded-lg bg-white/5 border border-white/10 transition-colors"
+                        >
+                            Precios
+                        </Link>
                         <Link
                             to="/guia"
                             onClick={() => setMobileOpen(false)}
-                            className="flex-1 text-center text-sm font-medium text-indigo-200 hover:text-white py-2 rounded-lg bg-white/5 border border-white/10 transition-colors"
+                            className="flex-1 min-w-[80px] text-center text-sm font-medium text-indigo-200 hover:text-white py-2 rounded-lg bg-white/5 border border-white/10 transition-colors"
                         >
                             Guía
                         </Link>
                         <Link
                             to="/api-docs"
                             onClick={() => setMobileOpen(false)}
-                            className="flex-1 text-center text-sm font-medium text-indigo-200 hover:text-white py-2 rounded-lg bg-white/5 border border-white/10 transition-colors"
+                            className="flex-1 min-w-[80px] text-center text-sm font-medium text-indigo-200 hover:text-white py-2 rounded-lg bg-white/5 border border-white/10 transition-colors"
                         >
                             API
                         </Link>

@@ -143,6 +143,9 @@ export default function LandingPage() {
                   </Button>
                 </Link>
               </div>
+              <p className="text-center text-sm text-indigo-200/80">
+                <Link to="/precios" className="hover:text-white underline underline-offset-2">Ver planes y precios</Link>
+              </p>
 
               {/* Preview visual - Calendario completo (scroll interno en móvil) */}
               <div className="relative mt-4 sm:mt-8 md:mt-10 max-w-5xl mx-auto px-2 sm:px-0 overflow-hidden">

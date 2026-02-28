@@ -24,6 +24,7 @@ export function LandingFooter() {
           <div className="lg:col-span-1">
             <h4 className="text-white font-semibold text-sm mb-3">Producto</h4>
             <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+              <li><Link to="/precios" className={linkClass}>Precios</Link></li>
               <li><Link to="/pitch" className={linkClass}><Presentation className="h-3.5 w-3.5 shrink-0" /> ROI (3 min)</Link></li>
               <li><Link to="/por-que-timeboxing" className={linkClass}><BookOpen className="h-3.5 w-3.5 shrink-0" /> Por qué</Link></li>
               <li><Link to="/dashboard-empleado" className={linkClass}><LayoutDashboard className="h-3.5 w-3.5 shrink-0" /> Dashboard</Link></li>

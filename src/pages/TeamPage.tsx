@@ -2,20 +2,23 @@ import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { EmployeeCard } from '@/components/team/EmployeeCard';
 import { TeamEventManager } from '@/components/team/TeamEventManager';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Search, CalendarOff, UserPlus } from 'lucide-react';
-import { EmployeeDialog } from '@/components/team/EmployeeDialog'; // Importamos el diálogo completo
+import { Plus, Search, CalendarOff } from 'lucide-react';
+import { EmployeeDialog } from '@/components/team/EmployeeDialog';
 import { Employee } from '@/types';
+import { toast } from 'sonner';
 
 export default function TeamPage() {
   const { employees } = useApp();
   const { currentAgency } = useAgency();
   const { selectedDepartmentId } = useDepartmentView();
+  const { canAddEmployee, isSoftLocked } = useSubscriptionLimits();
   const [searchTerm, setSearchTerm] = useState('');
 
   const departments = useMemo(() => normalizeDepartments(currentAgency?.settings?.departments), [currentAgency?.settings?.departments]);
@@ -40,8 +43,16 @@ export default function TeamPage() {
   };
 
   const handleNewEmployee = () => {
-      setSelectedEmployee(null);
-      setDialogOpen(true);
+    if (!canAddEmployee) {
+      if (isSoftLocked) {
+        toast.error('Tu agencia supera el límite del Plan Starter. Pasa a Pro o Business para añadir más empleados.');
+      } else {
+        toast.error('Has alcanzado el límite de empleados de tu plan. Actualiza tu plan en Plan y facturación.');
+      }
+      return;
+    }
+    setSelectedEmployee(null);
+    setDialogOpen(true);
   };
 
   return (
@@ -73,8 +84,13 @@ export default function TeamPage() {
                 </DialogContent>
             </Dialog>
 
-            <Button onClick={handleNewEmployee} className="bg-primary hover:bg-primary/90 gap-2">
-                <Plus className="h-4 w-4" /> Nuevo empleado
+            <Button
+              onClick={handleNewEmployee}
+              disabled={!canAddEmployee}
+              className="bg-primary hover:bg-primary/90 gap-2"
+              title={!canAddEmployee ? 'Límite de empleados alcanzado. Ve a Plan y facturación.' : undefined}
+            >
+              <Plus className="h-4 w-4" /> Nuevo empleado
             </Button>
         </div>
       </div>
