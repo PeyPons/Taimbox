@@ -191,7 +191,7 @@ export default function AdsPage() {
   const now = new Date();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const currentDay = now.getDate();
-  const daysRemaining = daysInMonth - currentDay;
+  const daysRemaining = Math.max(1, daysInMonth - currentDay + 1);
 
   const fetchData = async () => {
     if (!currentAgency?.id) return;
