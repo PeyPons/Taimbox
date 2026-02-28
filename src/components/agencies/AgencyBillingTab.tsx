@@ -6,7 +6,7 @@ import { useAgency } from '@/contexts/AgencyContext';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { CreditCard, Loader2, ExternalLink, Check, Calendar } from 'lucide-react';
+import { CreditCard, Loader2, ExternalLink, Check, Calendar, XCircle } from 'lucide-react';
 import { PLAN_LIMITS } from '@/config/plans';
 import type { PlanId } from '@/types';
 import { format } from 'date-fns';
@@ -31,7 +31,7 @@ const PRICE_ID_PRO = import.meta.env.VITE_STRIPE_PRICE_ID_PRO ?? '';
 const PRICE_ID_BUSINESS = import.meta.env.VITE_STRIPE_PRICE_ID_BUSINESS ?? '';
 
 export function AgencyBillingTab() {
-  const { currentAgency } = useAgency();
+  const { currentAgency, refreshAgency } = useAgency();
   const {
     planId,
     currentEmployees,
@@ -44,6 +44,7 @@ export function AgencyBillingTab() {
     daysRemainingPeriod,
   } = useSubscriptionLimits();
   const [loadingCheckout, setLoadingCheckout] = useState<string | null>(null);
+  const [loadingPortal, setLoadingPortal] = useState(false);
 
   const handleCheckout = async (priceId: string, plan: PlanId) => {
     if (!currentAgency?.id) return;
@@ -66,6 +67,11 @@ export function AgencyBillingTab() {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+      if (data?.updated) {
+        toast.success('Plan actualizado. Los cambios se reflejan en unos segundos.');
+        refreshAgency();
+        return;
+      }
       if (data?.url) {
         window.location.href = data.url;
         return;
@@ -78,7 +84,39 @@ export function AgencyBillingTab() {
     }
   };
 
+  const handleOpenBillingPortal = async () => {
+    if (!currentAgency?.id) return;
+    setLoadingPortal(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        toast.error('Debes iniciar sesión');
+        setLoadingPortal(false);
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke('create-billing-portal-session', {
+        body: { agency_id: currentAgency.id },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.url) {
+        window.location.href = data.url;
+        return;
+      }
+      toast.error('No se recibió URL del portal');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error al abrir el portal de facturación');
+    } finally {
+      setLoadingPortal(false);
+    }
+  };
+
   if (!currentAgency) return null;
+
+  const hasPaidPlan = planId === 'pro' || planId === 'business';
+  const canManageSubscription = hasPaidPlan && !!currentAgency.stripeCustomerId;
 
   const limits = PLAN_LIMITS[planId];
   const trialEndDate = trialEndsAt ? format(new Date(trialEndsAt), "d 'de' MMMM yyyy", { locale: es }) : null;
@@ -191,6 +229,31 @@ export function AgencyBillingTab() {
               )}
             </div>
           </div>
+
+          {canManageSubscription && (
+            <div className="flex flex-col gap-2 pt-4 border-t">
+              <p className="text-sm font-medium">Gestionar o cancelar suscripción</p>
+              <p className="text-xs text-slate-500">
+                Abre el portal de Stripe para actualizar el método de pago, ver facturas o cancelar la suscripción. Al cancelar, pasarás a plan Starter al final del periodo facturado.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={loadingPortal}
+                onClick={handleOpenBillingPortal}
+                className="w-fit"
+              >
+                {loadingPortal ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <XCircle className="h-4 w-4 mr-1" />
+                    Gestionar suscripción / Cancelar
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

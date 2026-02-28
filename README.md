@@ -355,6 +355,7 @@ Detalle completo (rutas, variables, rsync desde PC): **`supabase/scripts/README-
 | **`revoke-api-token`** | `supabase/functions/revoke-api-token/index.ts` | Revoca un token API (`is_active = false`). Verifica permisos admin. |
 | **`add-platform-admin`** | `supabase/functions/add-platform-admin/index.ts` | Añade un administrador de plataforma (body: email, role; opc. password, name). Si se envía contraseña, crea el usuario en Auth y lo añade a `platform_admins`; si no, el usuario debe existir. Verifica caller con `is_platform_admin`. Usado desde `/admin/admins`. |
 | **`create-checkout-session`** | `supabase/functions/create-checkout-session/index.ts` | Crea sesión de Stripe Checkout para suscripción (Pro/Business). Requiere `STRIPE_SECRET_KEY`. Crea o recupera Customer en Stripe, devuelve URL de pago. Ver **Suscripciones (Stripe)** en DOCUMENTACION.md. |
+| **`create-billing-portal-session`** | `supabase/functions/create-billing-portal-session/index.ts` | Crea sesión del Customer Portal de Stripe (body: `agency_id`). El usuario puede gestionar método de pago, facturas o cancelar la suscripción. Requiere `STRIPE_SECRET_KEY`. Redirige de vuelta a `/agency?tab=billing`. |
 | **`stripe-webhook`** | `supabase/functions/stripe-webhook/index.ts` | Webhook de Stripe: actualiza `agencies` (plan_id, subscription_status, trial_ends_at) según eventos de suscripción. Requiere `STRIPE_WEBHOOK_SECRET`. |
 
 ### Suscripciones (Stripe)

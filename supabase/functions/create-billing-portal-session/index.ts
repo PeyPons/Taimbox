@@ -1,4 +1,4 @@
-// Edge Function: crear sesión de Stripe Checkout para suscripción (Pro o Business)
+// Edge Function: crea sesión del Customer Portal de Stripe (gestionar/cancelar suscripción)
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "npm:stripe@14.21.0";
 
@@ -6,8 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-const TRIAL_DAYS_BUSINESS = 14;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -43,7 +41,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    let body: { agency_id?: string; price_id?: string; plan_id?: string; success_url?: string; cancel_url?: string };
+    let body: { agency_id?: string };
     try {
       body = await req.json();
     } catch {
@@ -54,21 +52,16 @@ Deno.serve(async (req) => {
     }
 
     const agencyId = body.agency_id;
-    const priceId = body.price_id;
-    const planId = body.plan_id === "business" ? "business" : "pro";
-    if (!agencyId || !priceId) {
+    if (!agencyId) {
       return new Response(
-        JSON.stringify({ error: "Faltan agency_id o price_id." }),
+        JSON.stringify({ error: "Falta agency_id." }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
 
-    const successUrl = body.success_url || `${baseUrl}/agency?tab=billing`;
-    const cancelUrl = body.cancel_url || `${baseUrl}/agency?tab=billing`;
-
     const { data: agency, error: agencyError } = await supabase
       .from("agencies")
-      .select("id, name, stripe_customer_id, stripe_subscription_id, plan_id")
+      .select("id, stripe_customer_id")
       .eq("id", agencyId)
       .single();
 
@@ -76,6 +69,13 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Agencia no encontrada." }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
+      );
+    }
+
+    if (!agency.stripe_customer_id) {
+      return new Response(
+        JSON.stringify({ error: "No hay suscripción activa que gestionar. Contrata un plan para acceder al portal de facturación." }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
     }
 
@@ -106,75 +106,21 @@ Deno.serve(async (req) => {
     }
 
     const stripe = new Stripe(stripeSecret, { apiVersion: "2024-11-20.acacia" });
-    let customerId = agency.stripe_customer_id;
+    const returnUrl = `${baseUrl}/agency?tab=billing`;
 
-    // Si ya tiene una suscripción activa o en trial, actualizamos el plan en lugar de crear otra (evita doble suscripción)
-    if (agency.stripe_subscription_id) {
-      try {
-        const existingSub = await stripe.subscriptions.retrieve(agency.stripe_subscription_id);
-        if (existingSub.status === "active" || existingSub.status === "trialing") {
-          const itemId = existingSub.items.data[0]?.id;
-          if (!itemId) {
-            return new Response(
-              JSON.stringify({ error: "Suscripción sin ítem válido. Contacta con soporte." }),
-              { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-            );
-          }
-          const updateParams: Stripe.SubscriptionUpdateParams = {
-            items: [{ id: itemId, price: priceId }],
-            metadata: { agency_id: agencyId, plan_id: planId },
-            proration_behavior: "create_prorations",
-          };
-          // Si cambia a Pro (no Business), terminar el trial para cobrar desde ya
-          if (planId !== "business" && existingSub.status === "trialing") {
-            updateParams.trial_end = "now";
-          }
-          await stripe.subscriptions.update(agency.stripe_subscription_id, updateParams);
-          // El webhook subscription.updated actualizará plan_id y estado en agencies
-          return new Response(JSON.stringify({ updated: true }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          });
-        }
-      } catch (e) {
-        console.warn("Could not update existing subscription, falling back to checkout:", e);
-        // Si la suscripción ya no existe o falla, seguimos con Checkout
-      }
-    }
-
-    if (!customerId) {
-      const customer = await stripe.customers.create({
-        name: agency.name,
-        metadata: { agency_id: agencyId },
-      });
-      customerId = customer.id;
-      await supabase.from("agencies").update({ stripe_customer_id: customerId }).eq("id", agencyId);
-    }
-
-    const isBusiness = planId === "business";
-    const sessionParams: Stripe.Checkout.SessionCreateParams = {
-      mode: "subscription",
-      customer: customerId,
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      metadata: { agency_id: agencyId, plan_id: planId },
-      subscription_data: {
-        metadata: { agency_id: agencyId, plan_id: planId },
-        ...(isBusiness ? { trial_period_days: TRIAL_DAYS_BUSINESS } : {}),
-      },
-    };
-
-    const session = await stripe.checkout.sessions.create(sessionParams);
+    const session = await stripe.billingPortal.sessions.create({
+      customer: agency.stripe_customer_id,
+      return_url: returnUrl,
+    });
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (err) {
-    console.error("create-checkout-session error:", err);
+    console.error("create-billing-portal-session error:", err);
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : "Error al crear la sesión de pago." }),
+      JSON.stringify({ error: err instanceof Error ? err.message : "Error al abrir el portal de facturación." }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }

@@ -218,4 +218,35 @@ No aplicar este filtro en: Planner, Deadlines, listados de tareas/proyectos, Wee
 
 ---
 
+## 9. Comportamiento: una suscripción, cancelación y trial
+
+### 9.1 Una sola suscripción activa (cambio de plan)
+
+Si un usuario con Business (o Pro) hace clic en "Pasarse a Pro" (o a Business), **no** se crea una segunda suscripción. La Edge Function `create-checkout-session` comprueba si la agencia tiene ya `stripe_subscription_id` con estado `active` o `trialing`. En ese caso:
+
+- Se llama a **Stripe Subscription Update API**: se actualiza el ítem de la suscripción al nuevo `price_id` (Pro o Business), con prorrateo.
+- Si pasaba de Business (en trial) a Pro, se fuerza `trial_end: 'now'` para que se cobre Pro desde ese momento.
+- Se devuelve `{ updated: true }`; el frontend muestra un toast y refresca la agencia. El webhook `customer.subscription.updated` actualiza `plan_id`, `subscription_status` y `subscription_period_ends_at` en la BD.
+
+Así se evita tener dos suscripciones activas a la vez.
+
+### 9.2 Cancelar en Stripe → se refleja en la plataforma
+
+Sí. Cuando el usuario cancela la suscripción en el **Customer Portal de Stripe** (o si se cancela por cualquier medio), Stripe envía el evento **`customer.subscription.deleted`**. El webhook `stripe-webhook` lo maneja y actualiza la agencia:
+
+- `plan_id = 'starter'`
+- `subscription_status = 'canceled'`
+- `stripe_subscription_id`, `trial_ends_at`, `subscription_period_ends_at` a `null`
+
+No hace falta ningún job ni polling: la fuente de verdad es Stripe y el webhook sincroniza el estado en Taimbox.
+
+### 9.3 Trial: quién avisa y qué pasa al final
+
+- **Durante el trial:** Stripe mantiene la suscripción con `status: trialing` y `trial_end` (fecha fin). El webhook ya guardó ese estado en `agencies` al crear/actualizar la suscripción.
+- **Al finalizar el trial:** Stripe intenta cobrar automáticamente la primera factura. Si hay método de pago y el cobro va bien, Stripe envía **`customer.subscription.updated`** con `status: active` y sin trial; el webhook actualiza `subscription_status` y `trial_ends_at` (null). Si el cobro falla o no hay tarjeta, la suscripción puede pasar a `past_due`, `unpaid` o ser cancelada; Stripe envía **`customer.subscription.updated`** o **`customer.subscription.deleted`**, y el webhook actualiza (o hace downgrade a Starter).
+
+Taimbox **no** tiene que comprobar fechas ni enviar avisos: Stripe es quien gestiona el ciclo de vida del trial y del cobro, y los webhooks son los que notifican a la plataforma. Basta con tener configurados los eventos `customer.subscription.created`, `customer.subscription.updated` y `customer.subscription.deleted` en el webhook.
+
+---
+
 Cuando quieras ejecutar, este plan y [PLAN-SUSCRIPCIONES-DECISIONES-ESTRATEGICAS.md](./PLAN-SUSCRIPCIONES-DECISIONES-ESTRATEGICAS.md) son la referencia única. Si necesitas que te pida explícitamente la API key o el webhook secret en algún paso, lo indico en la tarea correspondiente; si ya están en Supabase, no hace falta compartirlos en el chat.
