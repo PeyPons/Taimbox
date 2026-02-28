@@ -68,17 +68,22 @@ Deno.serve(async (req) => {
     const trialEnd = sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null;
     const periodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null;
     const cancelAtPeriodEnd = !!sub.cancel_at_period_end;
+    const updates: Record<string, unknown> = {
+      plan_id: planId,
+      subscription_status: status,
+      stripe_subscription_id: sub.id,
+      trial_ends_at: trialEnd,
+      subscription_period_ends_at: periodEnd,
+      subscription_cancel_at_period_end: cancelAtPeriodEnd,
+      updated_at: new Date().toISOString(),
+    };
+    // Marcar que esta agencia ya usó el trial (una sola vez por agencia)
+    if (status === "trialing") {
+      updates.trial_used_at = new Date().toISOString();
+    }
     const { error } = await supabase
       .from("agencies")
-      .update({
-        plan_id: planId,
-        subscription_status: status,
-        stripe_subscription_id: sub.id,
-        trial_ends_at: trialEnd,
-        subscription_period_ends_at: periodEnd,
-        subscription_cancel_at_period_end: cancelAtPeriodEnd,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updates)
       .eq("id", agencyId);
     if (error) {
       console.error("Error updating agency subscription:", error);

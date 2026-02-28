@@ -14,6 +14,8 @@ Para que el **cronómetro de tareas** y la **función cleanup_employee_data** fu
 10. `20260228120000_add_agency_billing.sql` — Añade a `agencies` las columnas de facturación Stripe: `plan_id`, `subscription_status`, `stripe_customer_id`, `stripe_subscription_id`, `trial_ends_at`. Necesaria para el sistema de suscripciones (ver docs/PLAN-SUSCRIPCIONES-IMPLEMENTACION-COMPLETO.md).
 11. `20260228130000_admin_agencies_billing.sql` — Redefine `admin_list_agencies` para devolver `plan_id`, `subscription_status`, `trial_ends_at` y añade RPC `admin_set_agency_plan(p_agency_id, p_plan_id)` para que los platform admins puedan forzar el plan desde /admin/agencies. Aplicar después de la 10.
 12. `20260228140000_agency_subscription_period_end.sql` — Añade `subscription_period_ends_at` a `agencies` para mostrar días restantes y próxima facturación en Plan y facturación. El webhook `stripe-webhook` actualiza este campo desde `current_period_end`. Aplicar después de la 11.
+13. `20260228150000_agency_subscription_cancel_at_period_end.sql` — Añade `subscription_cancel_at_period_end` para mostrar "Se cancela el X" cuando el usuario cancela al final del periodo (ver plan de suscripciones §9.5). Aplicar después de la 12.
+14. `20260228160000_agency_trial_used_at.sql` — Añade `trial_used_at` para limitar a un solo trial por agencia; si ya usó la prueba, al volver a Business no se ofrece trial (ver plan §9.4). Aplicar después de la 13.
 
 **Convención del proyecto (self-hosted):** Mismas rutas y variables que en [supabase/scripts/README-deploy.md](../supabase/scripts/README-deploy.md) para Edge Functions: Taimbox en `~/Taimbox`, Supabase en `~/supabase-pi/supabase/docker`. Las migraciones se aplican conectando por `psql` al contenedor de Postgres de ese mismo entorno.
 

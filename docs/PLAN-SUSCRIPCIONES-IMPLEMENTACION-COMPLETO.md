@@ -247,7 +247,16 @@ No hace falta ningún job ni polling: la fuente de verdad es Stripe y el webhook
 
 Taimbox **no** tiene que comprobar fechas ni enviar avisos: Stripe es quien gestiona el ciclo de vida del trial y del cobro, y los webhooks son los que notifican a la plataforma. Basta con tener configurados los eventos `customer.subscription.created`, `customer.subscription.updated` y `customer.subscription.deleted` en el webhook.
 
-### 9.4 Cancelar al final del periodo
+### 9.4 Un solo trial por agencia
+
+**Regla:** La misma agencia no puede volver a tener la prueba gratuita de 14 días. Si ya la usó (por registro con trial Business o por una suscripción Stripe en trial), al volver a contratar Business se cobra desde el primer día.
+
+- **BD:** Columna `agencies.trial_used_at` (timestamptz, nullable). Migración: `20260228160000_agency_trial_used_at.sql`.
+- **Webhook:** En `customer.subscription.updated` o `created`, si `status === 'trialing'`, se guarda `trial_used_at = now()` para esa agencia.
+- **register-agency:** Al crear agencia con plan Business y trial 14 días, se setea `trial_used_at = now()`.
+- **create-checkout-session:** Solo se añade `trial_period_days: 14` para Business cuando `trial_used_at` es null. Si la agencia ya tiene `trial_used_at`, el Checkout es sin trial (cobro desde el primer día).
+
+### 9.5 Cancelar al final del periodo
 
 Cuando el usuario cancela en el portal de Stripe con la opción "al final del periodo", Stripe mantiene la suscripción **activa** hasta `current_period_end` y envía **`customer.subscription.updated`** con `cancel_at_period_end: true` (no envía `subscription.deleted` hasta que termina el periodo).
 

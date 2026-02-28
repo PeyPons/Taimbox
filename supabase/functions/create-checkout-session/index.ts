@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
 
     const { data: agency, error: agencyError } = await supabase
       .from("agencies")
-      .select("id, name, stripe_customer_id, stripe_subscription_id, plan_id")
+      .select("id, name, stripe_customer_id, stripe_subscription_id, plan_id, trial_used_at")
       .eq("id", agencyId)
       .single();
 
@@ -152,6 +152,7 @@ Deno.serve(async (req) => {
     }
 
     const isBusiness = planId === "business";
+    const allowTrial = isBusiness && !agency.trial_used_at;
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: "subscription",
       customer: customerId,
@@ -161,7 +162,7 @@ Deno.serve(async (req) => {
       metadata: { agency_id: agencyId, plan_id: planId },
       subscription_data: {
         metadata: { agency_id: agencyId, plan_id: planId },
-        ...(isBusiness ? { trial_period_days: TRIAL_DAYS_BUSINESS } : {}),
+        ...(allowTrial ? { trial_period_days: TRIAL_DAYS_BUSINESS } : {}),
       },
     };
 
