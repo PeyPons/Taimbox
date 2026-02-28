@@ -155,6 +155,7 @@ export default function AdsPage() {
   const [segmentationRules, setSegmentationRules] = useState<SegmentationRule[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showHidden, setShowHidden] = useState(false);
+  const [showZeroSpend, setShowZeroSpend] = useState(false);
   const [expandedSubAccounts, setExpandedSubAccounts] = useState<Record<string, boolean>>({});
 
   // Modales
@@ -549,13 +550,14 @@ export default function AdsPage() {
 
     let filtered = report;
     if (!showHidden) filtered = filtered.filter(c => !c.isHidden);
+    if (!showZeroSpend) filtered = filtered.filter(c => c.spent > 0);
     if (searchTerm) {
       const lower = searchTerm.toLowerCase();
       filtered = filtered.filter(c => c.client_name.toLowerCase().includes(lower) || c.campaigns.some(camp => camp.campaign_name.toLowerCase().includes(lower)));
     }
 
     return filtered.sort((a, b) => b.spent - a.spent);
-  }, [rawData, clientSettings, registeredAccounts, searchTerm, showHidden, segmentationRules, now, currentDay, daysInMonth, daysRemaining]);
+  }, [rawData, clientSettings, registeredAccounts, searchTerm, showHidden, showZeroSpend, segmentationRules, now, currentDay, daysInMonth, daysRemaining]);
 
   // Estadísticas globales
   const globalStats = useMemo(() => {
@@ -691,6 +693,12 @@ export default function AdsPage() {
               <Label htmlFor="show-hidden" className="text-sm text-slate-600 cursor-pointer flex items-center gap-1">
                 {showHidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                 Ocultos
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch id="show-zero-spend" checked={showZeroSpend} onCheckedChange={setShowZeroSpend} />
+              <Label htmlFor="show-zero-spend" className="text-sm text-slate-600 cursor-pointer flex items-center gap-1">
+                Sin inversión (0 €)
               </Label>
             </div>
             <span className="text-sm text-slate-500">{reportData.length} cuentas</span>

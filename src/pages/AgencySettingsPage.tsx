@@ -1815,7 +1815,8 @@ export default function AgencySettingsPage() {
                                 if (!currentAgency?.id) return;
                                 const redirectUri = window.location.origin + '/google-callback';
                                 const scope = 'https://www.googleapis.com/auth/adwords';
-                                const state = currentAgency.id;
+                                const state = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+                                sessionStorage.setItem('google_oauth_state', JSON.stringify({ state, agencyId: currentAgency.id }));
                                 const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(googleClientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent&state=${encodeURIComponent(state)}`;
                                 window.location.href = authUrl;
                               }}
@@ -1873,7 +1874,8 @@ export default function AgencySettingsPage() {
                                 }
                                 const redirectUri = window.location.origin + '/google-callback';
                                 const scope = 'https://www.googleapis.com/auth/adwords';
-                                const state = currentAgency.id;
+                                const state = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+                                sessionStorage.setItem('google_oauth_state', JSON.stringify({ state, agencyId: currentAgency.id }));
                                 const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(googleClientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent&state=${encodeURIComponent(state)}`;
                                 window.location.href = authUrl;
                               }}

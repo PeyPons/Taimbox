@@ -32,11 +32,23 @@ export default function GoogleCallbackPage() {
                 return;
             }
 
-            // agency_id: del state de OAuth (enviado al iniciar el flujo) o del contexto
-            const stateAgencyId = searchParams.get('state');
-            const agencyId = currentAgency?.id || stateAgencyId || null;
+            const stateFromUrl = searchParams.get('state');
+            let agencyId: string | null = null;
+            try {
+                const stored = sessionStorage.getItem('google_oauth_state');
+                if (stored && stateFromUrl) {
+                    const { state, agencyId: savedAgencyId } = JSON.parse(stored);
+                    if (state === stateFromUrl && savedAgencyId) {
+                        agencyId = savedAgencyId;
+                        sessionStorage.removeItem('google_oauth_state');
+                    }
+                }
+            } catch (_) {
+                // ignore parse error
+            }
+            if (!agencyId) agencyId = currentAgency?.id || stateFromUrl || null;
             if (!agencyId) {
-                toast.error('No se pudo identificar la agencia.');
+                toast.error('No se pudo identificar la agencia. Vuelve a intentar desde Integraciones.');
                 navigate('/agency?tab=integrations');
                 return;
             }
