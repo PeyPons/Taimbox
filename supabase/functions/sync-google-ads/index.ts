@@ -84,6 +84,41 @@ Deno.serve(async (req) => {
             return { firstDay, today };
         }
 
+        // --- Obtener subcuentas del MCC (customer_client) ---
+        async function fetchChildAccounts(accessToken: string, mccId: string, developerToken: string): Promise<{ account_id: string; account_name: string }[]> {
+            const query = `
+                SELECT customer_client.id, customer_client.descriptive_name, customer_client.level
+                FROM customer_client
+                WHERE customer_client.level <= 1`;
+            const url = `https://googleads.googleapis.com/${API_VERSION}/customers/${mccId}/googleAds:searchStream`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'developer-token': developerToken,
+                    'Content-Type': 'application/json',
+                    'login-customer-id': mccId,
+                },
+                body: JSON.stringify({ query }),
+            });
+            const clients: { account_id: string; account_name: string }[] = [];
+            if (!response.ok) return clients;
+            const data = await response.json();
+            const processBatch = (batch: any) => {
+                if (!batch?.results) return;
+                batch.results.forEach((row: any) => {
+                    const cc = row.customerClient || row.customer_client;
+                    if (!cc) return;
+                    const id = String(cc.id ?? cc.clientCustomer?.replace?.(/^customers\//, '') ?? '');
+                    const name = cc.descriptiveName || cc.descriptive_name || `Cuenta ${id}`;
+                    if (id) clients.push({ account_id: id, account_name: name });
+                });
+            };
+            if (Array.isArray(data)) data.forEach(processBatch);
+            else if (data && typeof data === 'object') processBatch(data);
+            return clients;
+        }
+
         // --- FETCH CAMPAIGNS ---
         async function fetchCampaigns(accessToken, customerId, clientSecret, clientId, developerToken, refreshToken, mccId) {
             const dateRange = getDateRange();
@@ -101,8 +136,7 @@ Deno.serve(async (req) => {
                   segments.date
                 FROM campaign 
                 WHERE 
-                  segments.date BETWEEN '${dateRange.firstDay}' AND '${dateRange.today}'
-                  AND metrics.cost_micros > 0`;
+                  segments.date BETWEEN '${dateRange.firstDay}' AND '${dateRange.today}'`;
 
             const url = `https://googleads.googleapis.com/${API_VERSION}/customers/${customerId}/googleAds:searchStream`;
 
@@ -121,47 +155,45 @@ Deno.serve(async (req) => {
 
             if (response.ok) {
                 const data = await response.json();
-                if (data && Array.isArray(data)) {
-                    data.forEach((batch: any) => {
-                        if (batch.results) {
-                            batch.results.forEach((row: any) => {
-                                const rawCostMicros = row.metrics?.costMicros || row.metrics?.cost_micros || 0;
-                                const costDollars = parseInt(rawCostMicros) / 1000000;
-                                const campaignId = String(row.campaign?.id || '');
-                                const campaignName = row.campaign?.name || '';
-                                const campaignStatus = row.campaign?.status || '';
+                const processBatch = (batch: any) => {
+                    if (!batch?.results) return;
+                    batch.results.forEach((row: any) => {
+                        const rawCostMicros = row.metrics?.costMicros ?? row.metrics?.cost_micros ?? 0;
+                        const costDollars = Number(rawCostMicros) / 1000000;
+                        const campaignId = String(row.campaign?.id ?? row.campaign?.id ?? '');
+                        const campaignName = row.campaign?.name ?? '';
+                        const campaignStatus = row.campaign?.status ?? '';
 
-                                const key = campaignId;
+                        const key = campaignId;
+                        if (!key) return;
 
-                                if (!aggregator.has(key)) {
-                                    const budgetMicros = row.campaignBudget?.amountMicros || row.campaign_budget?.amount_micros || '0';
-                                    const dailyBudget = parseInt(budgetMicros) / 1000000;
-
-                                    aggregator.set(key, {
-                                        client_id: customerId,
-                                        campaign_id: campaignId,
-                                        campaign_name: campaignName,
-                                        status: campaignStatus,
-                                        date: dateRange.firstDay,
-                                        cost: 0,
-                                        daily_budget: dailyBudget,
-                                        conversions_value: 0,
-                                        conversions: 0,
-                                        clicks: 0,
-                                        impressions: 0
-                                    });
-                                }
-
-                                const entry = aggregator.get(key);
-                                entry.cost += costDollars;
-                                entry.conversions_value += parseFloat(row.metrics?.conversionsValue || row.metrics?.conversions_value || 0);
-                                entry.conversions += parseFloat(row.metrics?.conversions || 0);
-                                entry.clicks += parseInt(row.metrics?.clicks || 0);
-                                entry.impressions += parseInt(row.metrics?.impressions || 0);
+                        if (!aggregator.has(key)) {
+                            const budgetMicros = row.campaignBudget?.amountMicros ?? row.campaign_budget?.amount_micros ?? '0';
+                            const dailyBudget = Number(budgetMicros) / 1000000;
+                            aggregator.set(key, {
+                                client_id: customerId,
+                                campaign_id: campaignId,
+                                campaign_name: campaignName,
+                                status: campaignStatus,
+                                date: dateRange.firstDay,
+                                cost: 0,
+                                daily_budget: dailyBudget,
+                                conversions_value: 0,
+                                conversions: 0,
+                                clicks: 0,
+                                impressions: 0
                             });
                         }
+                        const entry = aggregator.get(key);
+                        entry.cost += costDollars;
+                        entry.conversions_value += parseFloat(String(row.metrics?.conversionsValue ?? row.metrics?.conversions_value ?? 0));
+                        entry.conversions += parseFloat(String(row.metrics?.conversions ?? 0));
+                        entry.clicks += parseInt(String(row.metrics?.clicks ?? 0), 10);
+                        entry.impressions += parseInt(String(row.metrics?.impressions ?? 0), 10);
                     });
-                }
+                };
+                if (Array.isArray(data)) data.forEach(processBatch);
+                else if (data && typeof data === 'object') processBatch(data);
             } else {
                 const errorText = await response.text();
                 // await log(`⚠️ Aviso cuenta ${customerId}: ${response.status} - ${errorText.substring(0, 100)}...`);
@@ -288,8 +320,15 @@ Deno.serve(async (req) => {
                 await log(`    🔍 Encontradas ${clients.length} cuentas ACTIVAS en configuración.`);
 
                 if (clients.length === 0 && loginCustomerId) {
-                    await log(`    ℹ️ Sin filas en ad_accounts_config; usando cuenta seleccionada en la agencia (${loginCustomerId}).`);
-                    clients = [{ account_id: loginCustomerId, account_name: `Cuenta ${loginCustomerId}` }];
+                    await log(`    ℹ️ Sin filas en ad_accounts_config; obteniendo MCC y subcuentas (${loginCustomerId})...`);
+                    const childAccounts = await fetchChildAccounts(accessToken, loginCustomerId, developerToken);
+                    if (childAccounts.length > 0) {
+                        clients = childAccounts;
+                        await log(`    ✅ Encontradas ${clients.length} cuentas (MCC + subcuentas).`);
+                    } else {
+                        await log(`    ℹ️ No se obtuvieron subcuentas; usando solo cuenta MCC (${loginCustomerId}).`);
+                        clients = [{ account_id: loginCustomerId, account_name: `Cuenta ${loginCustomerId}` }];
+                    }
                 }
                 if (clients.length === 0) {
                     await log(`    ℹ️ Sin cuentas en ad_accounts_config ni cuenta seleccionada en la agencia.`);
@@ -301,18 +340,18 @@ Deno.serve(async (req) => {
                 for (const client of clients) {
                     const campaigns = await fetchCampaigns(accessToken, client.account_id, clientSecret, clientId, developerToken, refreshToken, loginCustomerId);
 
+                    const dateRange = getDateRange();
                     if (campaigns.length > 0) {
-                        const dateRange = getDateRange();
                         const upsertData = campaigns.map(c => ({
                             client_id: c.client_id,
-                            client_name: client.account_name, // Usar nombre de base de datos
+                            client_name: client.account_name,
                             campaign_id: c.campaign_id,
                             campaign_name: c.campaign_name,
                             status: c.status,
                             date: c.date,
                             cost: c.cost,
                             daily_budget: c.daily_budget,
-                            currency: 'EUR', // Hardcoded or fetch from customer details
+                            currency: 'EUR',
                             agency_id: agency.id,
                             conversions: c.conversions,
                             conversions_value: c.conversions_value,
@@ -320,16 +359,18 @@ Deno.serve(async (req) => {
                             clicks: c.clicks
                         }));
 
-                        // Clean current month data for this client
                         await supabase.from('google_ads_campaigns')
                             .delete()
+                            .eq('agency_id', agency.id)
                             .eq('client_id', client.account_id)
                             .gte('date', dateRange.firstDay)
                             .lte('date', dateRange.today);
 
                         const { error } = await supabase.from('google_ads_campaigns').upsert(upsertData, { onConflict: 'campaign_id, date' });
-                        if (error) await log(`    ❌ Error guardando datos ${client.account_name}: ${error.message}`);
-                        // else await log(`    ✅ ${client.account_name}: ${campaigns.length} campañas actualizadas.`);
+                        if (error) await log(`    ❌ Error guardando ${client.account_name}: ${error.message}`);
+                        else await log(`    ✅ ${client.account_name}: ${campaigns.length} campañas.`);
+                    } else {
+                        await log(`    ⏭️ ${client.account_name}: 0 campañas con datos en el rango.`);
                     }
                 }
 

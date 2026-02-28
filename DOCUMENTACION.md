@@ -234,7 +234,7 @@ Funciones serverless que corren en Deno dentro del contenedor `supabase-edge-fun
 
 | Función | Archivo | Descripción |
 |---------|---------|-------------|
-| `sync-google-ads` | `supabase/functions/sync-google-ads/index.ts` | Sincroniza campañas. Usa credenciales plataforma (env vars) + refresh token (DB/JSON). |
+| `sync-google-ads` | `supabase/functions/sync-google-ads/index.ts` | Sincroniza campañas. Usa credenciales plataforma + refresh token (DB). Si no hay filas en `ad_accounts_config`, obtiene MCC y todas las subcuentas vía `customer_client` y sincroniza cada una; si hay filas, solo esas cuentas. Escribe en `google_ads_campaigns` con `agency_id`. |
 | `oauth-google-ads` | `supabase/functions/oauth-google-ads/index.ts` | **(Nuevo)** Intercambia código OAuth y guarda `refresh_token` en columna de agencia. |
 | `exchange-google-token` | `supabase/functions/exchange-google-token/index.ts` | *(Legacy)* Versión anterior que guardaba en JSON. |
 | `sync-meta-ads` | `supabase/functions/sync-meta-ads/index.ts` | Sincroniza campañas y costes de Meta/Facebook Ads. |
@@ -268,7 +268,7 @@ El flujo de Google Ads sigue un modelo SaaS donde la plataforma posee las creden
 6. La Edge Function intercambia el código por tokens usando `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`.
 7. Guarda el `refresh_token` en la columna `agencies.google_ads_refresh_token`.
 8. El usuario selecciona la cuenta (MCC o subcuenta) en el desplegable; se guarda en `agencies.google_ads_customer_id`.
-9. `sync-google-ads` y `list-google-accounts` usan `GOOGLE_DEVELOPER_TOKEN` + credenciales plataforma + `refresh_token` (columna) + `customer_id` (columna cuando aplica).
+9. `sync-google-ads` y `list-google-accounts` usan `GOOGLE_DEVELOPER_TOKEN` + credenciales plataforma + `refresh_token` (columna) + `customer_id` (columna cuando aplica). **MCC:** si la agencia no tiene cuentas en `ad_accounts_config`, la sync consulta la jerarquía (`customer_client`, nivel ≤ 1) del MCC seleccionado y sincroniza campañas del MCC y de todas sus subcuentas; los datos se guardan en `google_ads_campaigns` con el mismo `agency_id`.
 
 **Con la API de Google Ads aprobada:** El flujo de conexión está listo para producción. Asegúrate de tener `GOOGLE_DEVELOPER_TOKEN` aprobado en la cuenta de desarrollador de Google Ads; sin ello, `list-google-accounts` y `sync-google-ads` pueden devolver HTML de error en lugar de JSON. Ver sección "Solución de problemas: Google OAuth y API Google Ads" más abajo.
 
@@ -363,7 +363,7 @@ Si al vincular Google Ads o listar cuentas aparece **503 (Service Unavailable)**
 - **"Google devolvió una página HTML" / "Unexpected token '<', \"<!DOCTYPE\"..."**  
   La llamada a Google (intercambio de token o Google Ads API) está devolviendo una página de error HTML en lugar de JSON. Posibles causas:
   - **Intercambio de token**: mismo origen que `unauthorized_client`; desvincular y vincular de nuevo.
-  - **Google Ads API (listAccessibleCustomers)**: comprueba que `GOOGLE_DEVELOPER_TOKEN` sea el token de **cuenta de desarrollador de Google Ads** (aprobado o en modo test) y que la cuenta de Google que vinculaste tenga acceso a la API. Si usas cuenta Manager (MCC), puede ser necesario configurar el header `login-customer-id` en la función (no implementado por defecto).
+  - **Google Ads API**: comprueba que `GOOGLE_DEVELOPER_TOKEN` sea el token de **cuenta de desarrollador de Google Ads** (aprobado o en modo test). Con cuenta MCC, la sync usa `login-customer-id` y obtiene MCC + subcuentas vía `customer_client`; si no ves datos, revisa los logs de la sync (cada cuenta muestra "X campañas" o "0 campañas con datos en el rango").
 
 #### Crear una nueva Edge Function
 
