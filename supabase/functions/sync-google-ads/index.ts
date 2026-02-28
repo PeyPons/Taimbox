@@ -397,7 +397,30 @@ Deno.serve(async (req) => {
                         if (error) await log(`    ❌ Error guardando ${client.account_name}: ${error.message}`);
                         else await log(`    ✅ ${client.account_name}: ${campaigns.length} campañas.`);
                     } else {
-                        await log(`    ⏭️ ${client.account_name}: 0 campañas con datos en el rango.`);
+                        await supabase.from('google_ads_campaigns')
+                            .delete()
+                            .eq('agency_id', agency.id)
+                            .eq('client_id', client.account_id)
+                            .gte('date', dateRange.firstDay)
+                            .lte('date', dateRange.today);
+                        const placeholderRow = {
+                            client_id: client.account_id,
+                            client_name: client.account_name,
+                            campaign_id: `__no_campaigns_${client.account_id}`,
+                            campaign_name: client.account_name,
+                            status: 'NONE',
+                            date: dateRange.firstDay,
+                            cost: 0,
+                            daily_budget: 0,
+                            agency_id: agency.id,
+                            conversions: 0,
+                            conversions_value: 0,
+                            impressions: 0,
+                            clicks: 0
+                        };
+                        const { error: placeErr } = await supabase.from('google_ads_campaigns').upsert(placeholderRow, { onConflict: 'campaign_id, date' });
+                        if (placeErr) await log(`    ⚠️ Placeholder ${client.account_name}: ${placeErr.message}`);
+                        await log(`    ⏭️ ${client.account_name}: 0 campañas (registrada con 0 €).`);
                     }
                 }
 
