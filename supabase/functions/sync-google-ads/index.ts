@@ -284,11 +284,15 @@ Deno.serve(async (req) => {
                     return;
                 }
 
-                const clients = accountsRaw || [];
+                let clients = accountsRaw || [];
                 await log(`    🔍 Encontradas ${clients.length} cuentas ACTIVAS en configuración.`);
 
+                if (clients.length === 0 && loginCustomerId) {
+                    await log(`    ℹ️ Sin filas en ad_accounts_config; usando cuenta seleccionada en la agencia (${loginCustomerId}).`);
+                    clients = [{ account_id: loginCustomerId, account_name: `Cuenta ${loginCustomerId}` }];
+                }
                 if (clients.length === 0) {
-                    await log(`    ℹ️ Sin cuentas activas en 'ad_accounts_config' para esta agencia.`);
+                    await log(`    ℹ️ Sin cuentas en ad_accounts_config ni cuenta seleccionada en la agencia.`);
                     return;
                 }
 
@@ -335,8 +339,8 @@ Deno.serve(async (req) => {
         }
 
 
-        // 5. Query Agencies
-        let query = supabase.from('agencies').select('id, name, settings')
+        // 5. Query Agencies (incluir columnas de Google Ads para modo SaaS)
+        let query = supabase.from('agencies').select('id, name, settings, google_ads_refresh_token, google_ads_customer_id')
         if (agency_id) {
             query = query.eq('id', agency_id)
         }
