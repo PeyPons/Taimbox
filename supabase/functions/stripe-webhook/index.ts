@@ -1,7 +1,6 @@
 // Edge Function: webhook de Stripe para actualizar agencies (suscripción)
 // Configurar en Stripe Dashboard la URL: https://<project>.supabase.co/functions/v1/stripe-webhook
 // Eventos: customer.subscription.created, customer.subscription.updated, customer.subscription.deleted
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "npm:stripe@14.21.0";
 
@@ -10,7 +9,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   const stripeSecret = Deno.env.get("STRIPE_SECRET_KEY");
