@@ -247,6 +247,14 @@ No hace falta ningún job ni polling: la fuente de verdad es Stripe y el webhook
 
 Taimbox **no** tiene que comprobar fechas ni enviar avisos: Stripe es quien gestiona el ciclo de vida del trial y del cobro, y los webhooks son los que notifican a la plataforma. Basta con tener configurados los eventos `customer.subscription.created`, `customer.subscription.updated` y `customer.subscription.deleted` en el webhook.
 
+### 9.4 Cancelar al final del periodo
+
+Cuando el usuario cancela en el portal de Stripe con la opción "al final del periodo", Stripe mantiene la suscripción **activa** hasta `current_period_end` y envía **`customer.subscription.updated`** con `cancel_at_period_end: true` (no envía `subscription.deleted` hasta que termina el periodo).
+
+- **BD:** La tabla `agencies` tiene la columna `subscription_cancel_at_period_end` (boolean). Migración: `20260228150000_agency_subscription_cancel_at_period_end.sql`.
+- **Webhook:** En `customer.subscription.updated` (y `created`) se guarda `subscription_cancel_at_period_end` desde `sub.cancel_at_period_end`. En `customer.subscription.deleted` se pone a `false` junto con el resto del reset.
+- **Taimbox (UI):** Aunque el plan siga activo hasta el fin del periodo, en Plan y facturación se muestra de cara al usuario que ya está cancelada: badge "Se cancela el {fecha}" y texto "Tu servicio finalizará el {fecha}. Después pasarás a Starter." El acceso no se quita hasta que Stripe envíe `subscription.deleted` y el webhook haga el downgrade a Starter.
+
 ---
 
 Cuando quieras ejecutar, este plan y [PLAN-SUSCRIPCIONES-DECISIONES-ESTRATEGICAS.md](./PLAN-SUSCRIPCIONES-DECISIONES-ESTRATEGICAS.md) son la referencia única. Si necesitas que te pida explícitamente la API key o el webhook secret en algún paso, lo indico en la tarea correspondiente; si ya están en Supabase, no hace falta compartirlos en el chat.

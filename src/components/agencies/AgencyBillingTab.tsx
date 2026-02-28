@@ -40,6 +40,7 @@ export function AgencyBillingTab() {
     trialEndsAt,
     subscriptionStatus,
     subscriptionPeriodEndsAt,
+    cancelAtPeriodEnd,
     daysRemainingTrial,
     daysRemainingPeriod,
   } = useSubscriptionLimits();
@@ -123,6 +124,9 @@ export function AgencyBillingTab() {
   const periodEndDate = subscriptionPeriodEndsAt
     ? format(new Date(subscriptionPeriodEndsAt), "d 'de' MMMM yyyy", { locale: es })
     : null;
+  const periodEndShort = subscriptionPeriodEndsAt
+    ? format(new Date(subscriptionPeriodEndsAt), 'd MMM', { locale: es })
+    : null;
   const statusLabel = subscriptionStatus ? STATUS_LABELS[subscriptionStatus] ?? subscriptionStatus : null;
 
   return (
@@ -143,11 +147,15 @@ export function AgencyBillingTab() {
             <Badge variant={planId === 'business' ? 'default' : planId === 'pro' ? 'secondary' : 'outline'}>
               {PLAN_NAMES[planId]}
             </Badge>
-            {statusLabel && (
+            {cancelAtPeriodEnd && periodEndShort ? (
+              <Badge variant="outline" className="text-slate-600 bg-slate-100">
+                Se cancela el {periodEndShort}
+              </Badge>
+            ) : statusLabel ? (
               <Badge variant="outline" className="text-slate-600">
                 {statusLabel}
               </Badge>
-            )}
+            ) : null}
           </div>
 
           {(subscriptionStatus === 'trialing' || daysRemainingTrial !== null) && (
@@ -168,12 +176,25 @@ export function AgencyBillingTab() {
 
           {(subscriptionStatus === 'active' && (planId === 'pro' || planId === 'business') && periodEndDate) && (
             <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
-              <Calendar className="h-4 w-4 text-slate-500" />
-              <span>Próxima facturación: {periodEndDate}</span>
-              {daysRemainingPeriod !== null && daysRemainingPeriod > 0 && (
-                <span className="text-slate-600">
-                  ({daysRemainingPeriod} {daysRemainingPeriod === 1 ? 'día' : 'días'} restantes en el periodo actual)
-                </span>
+              <Calendar className="h-4 w-4 text-slate-500 shrink-0" />
+              {cancelAtPeriodEnd ? (
+                <>
+                  <span>Tu servicio finalizará el {periodEndDate}. Después pasarás a Starter.</span>
+                  {daysRemainingPeriod !== null && daysRemainingPeriod > 0 && (
+                    <span className="text-slate-600">
+                      ({daysRemainingPeriod} {daysRemainingPeriod === 1 ? 'día' : 'días'} restantes)
+                    </span>
+                  )}
+                </>
+              ) : (
+                <>
+                  <span>Próxima facturación: {periodEndDate}</span>
+                  {daysRemainingPeriod !== null && daysRemainingPeriod > 0 && (
+                    <span className="text-slate-600">
+                      ({daysRemainingPeriod} {daysRemainingPeriod === 1 ? 'día' : 'días'} restantes en el periodo actual)
+                    </span>
+                  )}
+                </>
               )}
             </div>
           )}

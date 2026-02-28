@@ -147,6 +147,8 @@ export interface Agency {
   trialEndsAt?: string;
   /** Fin del periodo de facturaci?n actual (pr?xima facturaci?n) */
   subscriptionPeriodEndsAt?: string;
+  /** True si el usuario cancel? en Stripe "al final del periodo"; el plan sigue activo hasta subscriptionPeriodEndsAt */
+  subscriptionCancelAtPeriodEnd?: boolean;
 }
 
 // ============================================

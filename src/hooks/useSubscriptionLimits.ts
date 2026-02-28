@@ -40,6 +40,7 @@ export function useSubscriptionLimits() {
   const trialEndsAt = currentAgency?.trialEndsAt;
   const subscriptionPeriodEndsAt = currentAgency?.subscriptionPeriodEndsAt;
   const subscriptionStatus = currentAgency?.subscriptionStatus;
+  const cancelAtPeriodEnd = currentAgency?.subscriptionCancelAtPeriodEnd ?? false;
   const daysRemainingTrial = useMemo(
     () => (subscriptionStatus === 'trialing' ? daysUntil(trialEndsAt) : null),
     [subscriptionStatus, trialEndsAt]
@@ -69,6 +70,7 @@ export function useSubscriptionLimits() {
     trialEndsAt,
     subscriptionPeriodEndsAt,
     subscriptionStatus,
+    cancelAtPeriodEnd,
     daysRemainingTrial,
     daysRemainingPeriod,
   };

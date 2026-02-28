@@ -21,6 +21,7 @@ interface SupabaseAgency {
   stripe_subscription_id?: string | null;
   trial_ends_at?: string | null;
   subscription_period_ends_at?: string | null;
+  subscription_cancel_at_period_end?: boolean | null;
 }
 
 // Tipo exportado para miembros de agencia
@@ -186,6 +187,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       stripeSubscriptionId: data.stripe_subscription_id ?? undefined,
       trialEndsAt: data.trial_ends_at ?? undefined,
       subscriptionPeriodEndsAt: data.subscription_period_ends_at ?? undefined,
+      subscriptionCancelAtPeriodEnd: data.subscription_cancel_at_period_end ?? false,
     };
   }, [migrateIntegrations]);
 
