@@ -6,7 +6,7 @@ import { useAgency } from '@/contexts/AgencyContext';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { CreditCard, Loader2, ExternalLink, Check } from 'lucide-react';
+import { CreditCard, Loader2, ExternalLink, Check, Calendar } from 'lucide-react';
 import { PLAN_LIMITS } from '@/config/plans';
 import type { PlanId } from '@/types';
 import { format } from 'date-fns';
@@ -16,6 +16,15 @@ const PLAN_NAMES: Record<PlanId, string> = {
   starter: 'Starter',
   pro: 'Pro',
   business: 'Business',
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  active: 'Activa',
+  trialing: 'En prueba',
+  past_due: 'Pago pendiente',
+  canceled: 'Cancelada',
+  incomplete: 'Incompleta',
+  incomplete_expired: 'Expirada',
 };
 
 const PRICE_ID_PRO = import.meta.env.VITE_STRIPE_PRICE_ID_PRO ?? '';
@@ -30,6 +39,9 @@ export function AgencyBillingTab() {
     isOverLimit,
     trialEndsAt,
     subscriptionStatus,
+    subscriptionPeriodEndsAt,
+    daysRemainingTrial,
+    daysRemainingPeriod,
   } = useSubscriptionLimits();
   const [loadingCheckout, setLoadingCheckout] = useState<string | null>(null);
 
@@ -70,6 +82,10 @@ export function AgencyBillingTab() {
 
   const limits = PLAN_LIMITS[planId];
   const trialEndDate = trialEndsAt ? format(new Date(trialEndsAt), "d 'de' MMMM yyyy", { locale: es }) : null;
+  const periodEndDate = subscriptionPeriodEndsAt
+    ? format(new Date(subscriptionPeriodEndsAt), "d 'de' MMMM yyyy", { locale: es })
+    : null;
+  const statusLabel = subscriptionStatus ? STATUS_LABELS[subscriptionStatus] ?? subscriptionStatus : null;
 
   return (
     <div className="space-y-6">
@@ -89,12 +105,40 @@ export function AgencyBillingTab() {
             <Badge variant={planId === 'business' ? 'default' : planId === 'pro' ? 'secondary' : 'outline'}>
               {PLAN_NAMES[planId]}
             </Badge>
-            {subscriptionStatus === 'trialing' && trialEndDate && (
-              <span className="text-sm text-slate-600">
-                Trial hasta el {trialEndDate}
-              </span>
+            {statusLabel && (
+              <Badge variant="outline" className="text-slate-600">
+                {statusLabel}
+              </Badge>
             )}
           </div>
+
+          {(subscriptionStatus === 'trialing' || daysRemainingTrial !== null) && (
+            <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
+              <Calendar className="h-4 w-4 text-slate-500" />
+              {trialEndDate && (
+                <>
+                  <span>Prueba hasta el {trialEndDate}</span>
+                  {daysRemainingTrial !== null && daysRemainingTrial > 0 && (
+                    <span className="font-medium">
+                      ({daysRemainingTrial} {daysRemainingTrial === 1 ? 'día' : 'días'} restantes)
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {(subscriptionStatus === 'active' && (planId === 'pro' || planId === 'business') && periodEndDate) && (
+            <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
+              <Calendar className="h-4 w-4 text-slate-500" />
+              <span>Próxima facturación: {periodEndDate}</span>
+              {daysRemainingPeriod !== null && daysRemainingPeriod > 0 && (
+                <span className="text-slate-600">
+                  ({daysRemainingPeriod} {daysRemainingPeriod === 1 ? 'día' : 'días'} restantes en el periodo actual)
+                </span>
+              )}
+            </div>
+          )}
 
           <div className="text-sm">
             <strong>Uso:</strong> {currentEmployees} de {limits.maxEmployees} empleados

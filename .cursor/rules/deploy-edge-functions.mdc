@@ -1,0 +1,35 @@
+---
+description: Al dar instrucciones de actualizar/desplegar Edge Functions, dar siempre estos comandos listos para copiar y pegar
+globs: supabase/functions/**/*.ts,supabase/scripts/**/*,docs/COMANDOS-DEPLOY-FUNCIONES.md
+alwaysApply: false
+---
+
+# Desplegar Edge Functions en el servidor
+
+Cuando el usuario pida instrucciones para actualizar las Edge Functions en el servidor, o comandos para desplegar funciones, responde con los comandos listos para copiar y pegar. Usa la documentación del proyecto como referencia.
+
+**Documento de referencia:** [docs/COMANDOS-DEPLOY-FUNCIONES.md](docs/COMANDOS-DEPLOY-FUNCIONES.md)
+
+**Comandos estándar para dar al usuario (servidor SSH):**
+
+```bash
+cd ~/Timeboxing
+git pull
+chmod +x supabase/scripts/deploy-edge-functions-supabase-pi.sh
+./supabase/scripts/deploy-edge-functions-supabase-pi.sh
+```
+
+Si el usuario indica otra ruta del proyecto en el servidor (por ejemplo `/home/alex/Timeboxing`), usa esa ruta en el `cd`. Si indica rutas distintas para Supabase, incluir también:
+
+```bash
+export TIMBOXING_DIR=/home/alex/Timeboxing
+export SUPABASE_DOCKER_DIR=/home/alex/supabase-pi/supabase/docker
+```
+
+**Resumen una línea (opcional):**
+
+```bash
+cd ~/Timeboxing && git pull && chmod +x supabase/scripts/deploy-edge-functions-supabase-pi.sh && ./supabase/scripts/deploy-edge-functions-supabase-pi.sh
+```
+
+**Para ver logs tras el deploy:** `docker logs supabase-edge-functions --tail 50`

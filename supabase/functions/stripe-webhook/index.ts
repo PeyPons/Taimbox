@@ -66,6 +66,7 @@ Deno.serve(async (req) => {
     }
     const status = sub.status;
     const trialEnd = sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null;
+    const periodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null;
     const { error } = await supabase
       .from("agencies")
       .update({
@@ -73,6 +74,7 @@ Deno.serve(async (req) => {
         subscription_status: status,
         stripe_subscription_id: sub.id,
         trial_ends_at: trialEnd,
+        subscription_period_ends_at: periodEnd,
         updated_at: new Date().toISOString(),
       })
       .eq("id", agencyId);
@@ -99,6 +101,7 @@ Deno.serve(async (req) => {
         subscription_status: "canceled",
         stripe_subscription_id: null,
         trial_ends_at: null,
+        subscription_period_ends_at: null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", agencyId);

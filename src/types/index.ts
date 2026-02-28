@@ -4,7 +4,7 @@
 
 export type ViewMode = 'weekly' | 'daily';
 
-/** Departamento/área para filtrado de vistas (ej: Marketing, Desarrollo). Definido en Configuración de Agencia. */
+/** Departamento/?rea para filtrado de vistas (ej: Marketing, Desarrollo). Definido en Configuraci?n de Agencia. */
 export interface DepartmentDefinition {
   id: string;
   name: string;
@@ -85,7 +85,7 @@ export interface RolePermissions {
 export interface AgencySettings {
   modules?: AgencyModules;
   roles?: RolePermissions[];
-  /** Lista de departamentos/áreas (nombre + color). Legacy: puede ser string[]; normalizar a DepartmentDefinition[] en la UI. */
+  /** Lista de departamentos/?reas (nombre + color). Legacy: puede ser string[]; normalizar a DepartmentDefinition[] en la UI. */
   departments?: (string | DepartmentDefinition)[];
   branding?: AgencyBranding;
   features?: Record<string, boolean>;
@@ -102,18 +102,18 @@ export interface AgencySettings {
   };
   enabledIntegrations?: {
     weekly_feedback?: boolean;       // Sistema de cierre semanal (Weekly Reports)
-    crm_export?: boolean;            // Exportación de tareas al CRM
+    crm_export?: boolean;            // Exportaci?n de tareas al CRM
     crm_user_id?: boolean;           // Campo ID Usuario CRM en perfiles
     // Futuras integraciones: google_ads, meta_ads, etc.
   };
   // Weekly system configuration
   weeklyCloseDay?: number; // Days from week start for weekly close (0-6, default 4 = Friday)
-  // Excluir tareas de estos proyectos o clientes del cálculo de precisión de planificación (índice de fiabilidad)
+  // Excluir tareas de estos proyectos o clientes del c?lculo de precisi?n de planificaci?n (?ndice de fiabilidad)
   planningPrecisionExclusions?: {
     projectIds?: string[];
     clientIds?: string[];
   };
-  /** Cronómetro de tareas: máximo de horas por sesión antes de auto-pausa (1���24, por defecto 12). */
+  /** Cron?metro de tareas: m?ximo de horas por sesi?n antes de auto-pausa (1���24, por defecto 12). */
   timeTrackerMaxHours?: number;
   /** Objetivo de Precio Hora Efectivo (?/h) en Salud financiera. Si no se define, se usa 75 ?/h o la media de coste por hora si es superior. */
   ehrTarget?: number;
@@ -145,6 +145,8 @@ export interface Agency {
   stripeSubscriptionId?: string;
   /** Fin del trial (14 d?as para Business) */
   trialEndsAt?: string;
+  /** Fin del periodo de facturaci?n actual (pr?xima facturaci?n) */
+  subscriptionPeriodEndsAt?: string;
 }
 
 // ============================================
@@ -171,9 +173,9 @@ export interface Employee {
   first_name?: string;
   last_name?: string;
   crmUserId?: number;  // ID del usuario en el CRM
-  welcomeTourCompleted?: boolean;  // Si el usuario completó el tour de bienvenida
-  deadlinesTourCompleted?: boolean;  // Si el usuario completó el tour de deadlines
-  plannerTourCompleted?: boolean;  // Si el usuario completó el tour del planificador
+  welcomeTourCompleted?: boolean;  // Si el usuario complet? el tour de bienvenida
+  deadlinesTourCompleted?: boolean;  // Si el usuario complet? el tour de deadlines
+  plannerTourCompleted?: boolean;  // Si el usuario complet? el tour del planificador
   permissions?: UserPermissions;  // Permisos de acceso a diferentes secciones
   preferredView?: ViewMode | null;  // Vista preferida del usuario (solo usada si el departamento no es estricto)
 }
@@ -208,8 +210,8 @@ export interface Project {
   deliverables_log?: Record<string, string[]>;
   externalId?: number;    // ID del proyecto en el CRM
   projectType?: string;   // 'PPC' | 'Entregable' | 'Mensual'
-  isHidden?: boolean;     // Si el proyecto está oculto
-  /** ID del departamento responsable (para filtrado en reportes por área). */
+  isHidden?: boolean;     // Si el proyecto est? oculto
+  /** ID del departamento responsable (para filtrado en reportes por ?rea). */
   responsibleDepartmentId?: string | null;
 }
 
@@ -233,11 +235,11 @@ export interface Allocation {
   taskName?: string;
   dependencyId?: string | null;
   transferredFromAllocationId?: string; // ID de la tarea original de la que proviene esta transferencia
-  distributionSourceAllocationId?: string; // ID de la tarea transferida de la que proviene esta distribución
+  distributionSourceAllocationId?: string; // ID de la tarea transferida de la que proviene esta distribuci?n
   parentAllocationId?: string | null; // ID de la tarea padre cuando se hace rollover
   originalTransferredTaskName?: string; // Nombre original de la tarea transferida (snapshot)
   transferSourceEmployeeId?: string; // ID del empleado origen de la transferencia
-  userPriority?: number | null; // Prioridad personal del usuario (menor = más prioritario)
+  userPriority?: number | null; // Prioridad personal del usuario (menor = m?s prioritario)
   isLocked?: boolean; // When true, only admins can edit
 }
 
@@ -302,18 +304,18 @@ export interface Deadline {
   month: string; // Formato: 'YYYY-MM' (ej: '2024-03')
   notes?: string;
   employeeHours: Record<string, number>; // employeeId -> hours
-  isHidden?: boolean; // Si el proyecto está oculto este mes
-  budgetOverride?: number; // Override del budget mensual para regularización (null = usar project.budgetHours)
+  isHidden?: boolean; // Si el proyecto est? oculto este mes
+  budgetOverride?: number; // Override del budget mensual para regularizaci?n (null = usar project.budgetHours)
 }
 
 export interface GlobalAssignment {
   id: string;
   month: string; // Formato: 'YYYY-MM'
-  name: string; // Ej: "Deadline afecta a todos", "Creación timeboxing"
+  name: string; // Ej: "Deadline afecta a todos", "Creaci?n timeboxing"
   hours: number;
   affectsAll: boolean; // Si afecta a todos los empleados
   affectedEmployeeIds?: string[]; // Si no afecta a todos, lista de IDs
-  employeeId?: string; // ID del empleado que creó la asignación
+  employeeId?: string; // ID del empleado que cre? la asignaci?n
 }
 
 export interface WeeklyFeedback {
