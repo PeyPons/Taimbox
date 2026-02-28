@@ -351,7 +351,6 @@ Deno.serve(async (req) => {
                             date: c.date,
                             cost: c.cost,
                             daily_budget: c.daily_budget,
-                            currency: 'EUR',
                             agency_id: agency.id,
                             conversions: c.conversions,
                             conversions_value: c.conversions_value,
