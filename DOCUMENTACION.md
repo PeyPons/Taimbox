@@ -234,7 +234,7 @@ Funciones serverless que corren en Deno dentro del contenedor `supabase-edge-fun
 
 | Función | Archivo | Descripción |
 |---------|---------|-------------|
-| `sync-google-ads` | `supabase/functions/sync-google-ads/index.ts` | Sincroniza campañas. Usa credenciales plataforma + refresh token (DB). Si no hay filas en `ad_accounts_config`, obtiene MCC y todas las subcuentas vía `customer_client` y sincroniza cada una; si hay filas, solo esas cuentas. Escribe en `google_ads_campaigns` con `agency_id`. |
+| `sync-google-ads` | `supabase/functions/sync-google-ads/index.ts` | Sincroniza campañas. Usa credenciales plataforma + refresh token (DB). Si no hay filas en `ad_accounts_config`, obtiene toda la jerarquía del MCC (MCC + sub-MCCs + subcuentas) vía `customer_client` recursivo y sincroniza cada cuenta; si hay filas, solo esas. Escribe en `google_ads_campaigns` con `agency_id`. |
 | `oauth-google-ads` | `supabase/functions/oauth-google-ads/index.ts` | **(Nuevo)** Intercambia código OAuth y guarda `refresh_token` en columna de agencia. |
 | `exchange-google-token` | `supabase/functions/exchange-google-token/index.ts` | *(Legacy)* Versión anterior que guardaba en JSON. |
 | `sync-meta-ads` | `supabase/functions/sync-meta-ads/index.ts` | Sincroniza campañas y costes de Meta/Facebook Ads. |
@@ -268,7 +268,13 @@ El flujo de Google Ads sigue un modelo SaaS donde la plataforma posee las creden
 6. La Edge Function intercambia el código por tokens usando `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`.
 7. Guarda el `refresh_token` en la columna `agencies.google_ads_refresh_token`.
 8. El usuario selecciona la cuenta (MCC o subcuenta) en el desplegable; se guarda en `agencies.google_ads_customer_id`.
-9. `sync-google-ads` y `list-google-accounts` usan `GOOGLE_DEVELOPER_TOKEN` + credenciales plataforma + `refresh_token` (columna) + `customer_id` (columna cuando aplica). **MCC:** si la agencia no tiene cuentas en `ad_accounts_config`, la sync consulta la jerarquía (`customer_client`, nivel ≤ 1) del MCC seleccionado y sincroniza campañas del MCC y de todas sus subcuentas; los datos se guardan en `google_ads_campaigns` con el mismo `agency_id`.
+9. `sync-google-ads` y `list-google-accounts` usan `GOOGLE_DEVELOPER_TOKEN` + credenciales plataforma + `refresh_token` (columna) + `customer_id` (columna cuando aplica). **MCC:** si la agencia no tiene cuentas en `ad_accounts_config`, la sync obtiene **toda la jerarquía** del MCC seleccionado (consultando `customer_client` de forma recursiva: MCC raíz, sub-MCCs y todas sus subcuentas) y sincroniza campañas de cada cuenta; los datos se guardan en `google_ads_campaigns` con el mismo `agency_id`.
+
+**Comportamiento de datos al desvincular / cambiar cuenta / re-sincronizar:**
+- **Desvincular:** Al desvincular Google Ads (Configuración → Integraciones), se borran todos los registros de `google_ads_campaigns` de esa agencia, para no dejar datos huérfanos.
+- **Cambiar de cuenta (selector):** Al elegir otro MCC/cuenta en el desplegable, se borran todos los datos de Google Ads de la agencia; la próxima sincronización rellenará solo con la nueva cuenta.
+- **Volver a sincronizar:** La sync **sobrescribe** los datos del mes en curso por cuenta: para cada cuenta, borra filas en el rango de fechas del mes y hace upsert con lo que devuelve la API. No se suman ni se duplican importes; el gasto proviene siempre de la API (coste en micros convertido a unidad), por lo que no se pierden decimales por doble escritura. Tras cada sync se eliminan filas de la agencia cuyo `client_id` ya no está en la lista sincronizada (p. ej. al haber cambiado de MCC).
+- **Cuentas con muchas campañas:** La sync hace una petición por cuenta y carga la respuesta en memoria. Con cuentas que tengan decenas de miles de campañas puede acercarse al límite de memoria o tiempo del Edge Runtime. Si aparecen timeouts o errores de memoria, se puede valorar paginar por rango de fechas o limitar campañas por petición.
 
 **Con la API de Google Ads aprobada:** El flujo de conexión está listo para producción. Asegúrate de tener `GOOGLE_DEVELOPER_TOKEN` aprobado en la cuenta de desarrollador de Google Ads; sin ello, `list-google-accounts` y `sync-google-ads` pueden devolver HTML de error en lugar de JSON. Ver sección "Solución de problemas: Google OAuth y API Google Ads" más abajo.
 

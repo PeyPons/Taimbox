@@ -1760,15 +1760,18 @@ export default function AgencySettingsPage() {
                           <div className="space-y-2">
                             <Select
                               value={currentAgency?.google_ads_customer_id || integrations.googleAdsCustomerId || ''}
-                              onValueChange={(value) => {
+                              onValueChange={async (value) => {
                                 setIntegrations(prev => ({ ...prev, googleAdsCustomerId: value }));
-                                supabase.from('agencies')
+                                const { error } = await supabase.from('agencies')
                                   .update({ google_ads_customer_id: value })
-                                  .eq('id', currentAgency.id!)
-                                  .then(({ error }) => {
-                                    if (error) toast.error('Error guardando la cuenta seleccionada');
-                                    else toast.success('Cuenta de Google Ads actualizada');
-                                  });
+                                  .eq('id', currentAgency.id!);
+                                if (error) {
+                                  toast.error('Error guardando la cuenta seleccionada');
+                                  return;
+                                }
+                                await supabase.from('google_ads_campaigns').delete().eq('agency_id', currentAgency.id!);
+                                await refreshAgency();
+                                toast.success('Cuenta de Google Ads actualizada. Sincroniza de nuevo para cargar los datos.');
                               }}
                             >
                               <SelectTrigger className="w-full bg-white">
@@ -1841,6 +1844,7 @@ export default function AgencySettingsPage() {
                                     })
                                     .eq('id', currentAgency.id);
                                   if (error) throw error;
+                                  await supabase.from('google_ads_campaigns').delete().eq('agency_id', currentAgency.id);
                                   setIntegrations(prev => ({ ...prev, googleRefreshToken: undefined, googleAdsCustomerId: '' }));
                                   await refreshAgency();
                                   toast.success('Cuenta de Google Ads desvinculada');

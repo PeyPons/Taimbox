@@ -84,25 +84,31 @@ Deno.serve(async (req) => {
             return { firstDay, today };
         }
 
-        // --- Obtener subcuentas del MCC (customer_client) ---
-        async function fetchChildAccounts(accessToken: string, mccId: string, developerToken: string): Promise<{ account_id: string; account_name: string }[]> {
+        // --- Obtener todas las cuentas (MCC + sub-MCCs + subcuentas) recursivamente ---
+        type CustomerClientRow = { id: string; descriptive_name: string; level: number; manager: boolean };
+        async function runCustomerClientQuery(
+            accessToken: string,
+            loginMccId: string,
+            customerId: string,
+            developerToken: string
+        ): Promise<CustomerClientRow[]> {
             const query = `
-                SELECT customer_client.id, customer_client.descriptive_name, customer_client.level
+                SELECT customer_client.id, customer_client.descriptive_name, customer_client.level, customer_client.manager
                 FROM customer_client
                 WHERE customer_client.level <= 1`;
-            const url = `https://googleads.googleapis.com/${API_VERSION}/customers/${mccId}/googleAds:searchStream`;
+            const url = `https://googleads.googleapis.com/${API_VERSION}/customers/${customerId}/googleAds:searchStream`;
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
                     'developer-token': developerToken,
                     'Content-Type': 'application/json',
-                    'login-customer-id': mccId,
+                    'login-customer-id': loginMccId,
                 },
                 body: JSON.stringify({ query }),
             });
-            const clients: { account_id: string; account_name: string }[] = [];
-            if (!response.ok) return clients;
+            const rows: CustomerClientRow[] = [];
+            if (!response.ok) return rows;
             const data = await response.json();
             const processBatch = (batch: any) => {
                 if (!batch?.results) return;
@@ -110,13 +116,35 @@ Deno.serve(async (req) => {
                     const cc = row.customerClient || row.customer_client;
                     if (!cc) return;
                     const id = String(cc.id ?? cc.clientCustomer?.replace?.(/^customers\//, '') ?? '');
-                    const name = cc.descriptiveName || cc.descriptive_name || `Cuenta ${id}`;
-                    if (id) clients.push({ account_id: id, account_name: name });
+                    if (!id) return;
+                    rows.push({
+                        id,
+                        descriptive_name: cc.descriptiveName || cc.descriptive_name || `Cuenta ${id}`,
+                        level: Number(cc.level ?? 0),
+                        manager: !!(cc.manager ?? false),
+                    });
                 });
             };
             if (Array.isArray(data)) data.forEach(processBatch);
             else if (data && typeof data === 'object') processBatch(data);
-            return clients;
+            return rows;
+        }
+
+        async function fetchChildAccounts(accessToken: string, mccId: string, developerToken: string): Promise<{ account_id: string; account_name: string }[]> {
+            const clientsMap = new Map<string, { account_id: string; account_name: string }>();
+            const seenIds = new Set<string>();
+            const queue: string[] = [mccId];
+            while (queue.length > 0) {
+                const customerId = queue.shift()!;
+                if (seenIds.has(customerId)) continue;
+                seenIds.add(customerId);
+                const rows = await runCustomerClientQuery(accessToken, mccId, customerId, developerToken);
+                for (const row of rows) {
+                    clientsMap.set(row.id, { account_id: row.id, account_name: row.descriptive_name });
+                    if (row.manager && row.level === 1) queue.push(row.id);
+                }
+            }
+            return Array.from(clientsMap.values());
         }
 
         // --- FETCH CAMPAIGNS ---
@@ -324,7 +352,7 @@ Deno.serve(async (req) => {
                     const childAccounts = await fetchChildAccounts(accessToken, loginCustomerId, developerToken);
                     if (childAccounts.length > 0) {
                         clients = childAccounts;
-                        await log(`    ✅ Encontradas ${clients.length} cuentas (MCC + subcuentas).`);
+                        await log(`    ✅ Encontradas ${clients.length} cuentas (MCC + sub-MCCs + subcuentas).`);
                     } else {
                         await log(`    ℹ️ No se obtuvieron subcuentas; usando solo cuenta MCC (${loginCustomerId}).`);
                         clients = [{ account_id: loginCustomerId, account_name: `Cuenta ${loginCustomerId}` }];
@@ -371,6 +399,16 @@ Deno.serve(async (req) => {
                     } else {
                         await log(`    ⏭️ ${client.account_name}: 0 campañas con datos en el rango.`);
                     }
+                }
+
+                const syncedClientIds = clients.map((c: { account_id: string }) => c.account_id);
+                if (syncedClientIds.length > 0) {
+                    const { error: delErr } = await supabase
+                        .from('google_ads_campaigns')
+                        .delete()
+                        .eq('agency_id', agency.id)
+                        .not('client_id', 'in', syncedClientIds);
+                    if (delErr) await log(`    ⚠️ Aviso limpieza cuentas antiguas: ${delErr.message}`);
                 }
 
             } catch (e: any) {
