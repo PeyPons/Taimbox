@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Calendar, FileText, Code, HelpCircle, Mail, BookOpen, PlayCircle, LayoutDashboard, CalendarRange, Users, BarChart3, FolderKanban, Plug, Presentation, Shield } from 'lucide-react';
+import { Calendar, FileText, Code, HelpCircle, Mail, BookOpen, PlayCircle, LayoutDashboard, CalendarRange, Users, BarChart3, FolderKanban, Plug, Presentation, Shield, Scale } from 'lucide-react';
 
 export function LandingFooter() {
   const currentYear = new Date().getFullYear();
@@ -89,7 +89,15 @@ export function LandingFooter() {
           <p className="text-xs text-indigo-200/60">
             © {currentYear} Taimbox. Todos los derechos reservados.
           </p>
-          <div className="flex gap-4 text-xs text-indigo-200/60">
+          <div className="flex flex-wrap gap-4 text-xs text-indigo-200/60 justify-center sm:justify-end">
+            <Link to="/privacidad" className="hover:text-white flex items-center gap-1.5 transition-colors">
+              <Shield className="h-3.5 w-3.5" />
+              Privacidad
+            </Link>
+            <Link to="/condiciones" className="hover:text-white flex items-center gap-1.5 transition-colors">
+              <Scale className="h-3.5 w-3.5" />
+              Condiciones
+            </Link>
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent("open-cookie-preferences"))}

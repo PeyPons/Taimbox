@@ -40,6 +40,8 @@ import ProjectsLandingPage from "./pages/ProjectsLandingPage";
 import IntegrationsLandingPage from "./pages/IntegrationsLandingPage";
 import PpcMonitorLandingPage from "./pages/PpcMonitorLandingPage";
 import SecurityLandingPage from "./pages/SecurityLandingPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsOfServicePage from "./pages/TermsOfServicePage";
 import PreciosPage from "./pages/PreciosPage";
 import GuiaPage from "./pages/GuiaPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
@@ -107,6 +109,7 @@ const TiemposPage = lazyWithRetry(() => import("./pages/TiemposPage"));
 const ApiKeysPage = lazyWithRetry(() => import("./pages/ApiKeysPage"));
 const ContactSupportPage = lazyWithRetry(() => import("./pages/ContactSupportPage"));
 const GoogleCallbackPage = lazyWithRetry(() => import("./pages/GoogleCallbackPage"));
+const ResetPasswordPage = lazyWithRetry(() => import("./pages/ResetPasswordPage"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -155,6 +158,8 @@ const App = () => (
                         <Route path="/integraciones" element={<IntegrationsLandingPage />} />
                         <Route path="/monitor-ppc" element={<PpcMonitorLandingPage />} />
                         <Route path="/seguridad" element={<SecurityLandingPage />} />
+                        <Route path="/privacidad" element={<PrivacyPolicyPage />} />
+                        <Route path="/condiciones" element={<TermsOfServicePage />} />
                         <Route path="/precios" element={<PreciosPage />} />
 
                         {/* Guía de funcionalidades (páginas públicas detalladas) */}
@@ -169,6 +174,9 @@ const App = () => (
 
                         {/* Ruta pública Login */}
                         <Route path="/login" element={<Login />} />
+
+                        {/* Ruta pública: restablecer contraseña */}
+                        <Route path="/reset-password" element={<Suspense fallback={<PageLoader />}><ResetPasswordPage /></Suspense>} />
 
                         {/* Rutas Protegidas */}
                         <Route element={<ProtectedRoute />}>

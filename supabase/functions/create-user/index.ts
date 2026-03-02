@@ -168,7 +168,34 @@ serve(async (req) => {
 
     console.log(`Usuario creado exitosamente: ${user.user.id}`)
 
-    // 7. Devolver el ID del usuario creado al frontend
+    // 7b. Enviar email de bienvenida (fire-and-forget)
+    try {
+      // Obtener nombre de la agencia
+      const { data: agencyForEmail } = await supabaseAdmin
+        .from('agencies')
+        .select('name')
+        .eq('id', callerEmployee.agency_id)
+        .single()
+
+      await fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+        },
+        body: JSON.stringify({
+          email: cleanEmail,
+          name: name || cleanEmail,
+          agencyName: agencyForEmail?.name || 'tu agencia',
+          type: 'invitation',
+        }),
+      })
+      console.log(`Email de bienvenida enviado a ${cleanEmail}`)
+    } catch (emailError) {
+      console.warn(`No se pudo enviar email de bienvenida a ${cleanEmail}:`, emailError)
+    }
+
+    // 8. Devolver el ID del usuario creado al frontend
     return new Response(
       JSON.stringify({ user: user.user }),
       {

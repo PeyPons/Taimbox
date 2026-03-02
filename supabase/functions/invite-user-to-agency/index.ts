@@ -86,7 +86,7 @@ serve(async (req) => {
       .eq('agency_id', agencyId)
       .maybeSingle()
 
-    const finalIsAdmin = isInviterAdmin || 
+    const finalIsAdmin = isInviterAdmin ||
       (inviterUserAgency?.role && MANAGER_KEYWORDS.some(k => inviterUserAgency.role.toLowerCase().includes(k)))
 
     if (!finalIsAdmin) {
@@ -382,7 +382,48 @@ serve(async (req) => {
 
     console.log(`Usuario ${cleanEmail} invitado exitosamente a agencia ${agencyId}`)
 
-    // 9. Devolver respuesta
+    // 9b. Enviar email de invitación (fire-and-forget)
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+      // Obtener nombre de la agencia
+      const { data: agencyForEmail } = await supabaseAdmin
+        .from('agencies')
+        .select('name')
+        .eq('id', agencyId)
+        .single()
+
+      // Obtener nombre del empleado invitado
+      let inviteeName = cleanEmail.split('@')[0]
+      if (employeeId) {
+        const { data: emp } = await supabaseAdmin
+          .from('employees')
+          .select('name')
+          .eq('id', employeeId)
+          .single()
+        if (emp?.name) inviteeName = emp.name
+      }
+
+      await fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseServiceKey}`,
+        },
+        body: JSON.stringify({
+          email: cleanEmail,
+          name: inviteeName,
+          agencyName: agencyForEmail?.name || 'tu agencia',
+          type: 'invitation',
+        }),
+      })
+      console.log(`Email de invitación enviado a ${cleanEmail}`)
+    } catch (emailError) {
+      console.warn(`No se pudo enviar email de invitación a ${cleanEmail}:`, emailError)
+    }
+
+    // 10. Devolver respuesta
     return new Response(
       JSON.stringify({
         success: true,

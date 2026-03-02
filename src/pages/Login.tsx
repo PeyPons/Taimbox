@@ -40,6 +40,10 @@ export default function Login() {
   const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState<'login' | 'register'>(tabParam === 'register' ? 'register' : 'login');
   const [isRegistering, setIsRegistering] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [isSendingReset, setIsSendingReset] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   // Obtener la ruta de origen desde el state de navegación
   const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || "/dashboard";
@@ -90,6 +94,26 @@ export default function Login() {
       setTimeout(() => {
         navigate(from, { replace: true });
       }, 100);
+    }
+  };
+
+  const onForgotPassword = async () => {
+    if (!forgotEmail || !forgotEmail.trim()) {
+      toast.error('Introduce tu email');
+      return;
+    }
+
+    setIsSendingReset(true);
+    try {
+      await supabase.functions.invoke('request-password-reset', {
+        body: { email: forgotEmail.trim() },
+      });
+      setResetSent(true);
+      toast.success('Si el email existe en nuestro sistema, recibirás un enlace de recuperación.');
+    } catch {
+      toast.success('Si el email existe en nuestro sistema, recibirás un enlace de recuperación.');
+    } finally {
+      setIsSendingReset(false);
     }
   };
 
@@ -293,6 +317,67 @@ export default function Login() {
                   </Button>
                 </form>
               </Form>
+
+              {/* Olvidé mi contraseña */}
+              <div className="mt-4 text-center">
+                {!showForgotPassword ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-sm text-primary hover:text-primary/80 hover:underline transition-colors"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </button>
+                ) : resetSent ? (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800">
+                    <p className="font-medium mb-1">Revisa tu bandeja de entrada</p>
+                    <p className="text-green-600 text-xs">
+                      Si el email está registrado, recibirás un enlace para restablecer tu contraseña.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => { setShowForgotPassword(false); setResetSent(false); setForgotEmail(''); }}
+                      className="mt-2 text-xs text-primary hover:underline"
+                    >
+                      Volver al inicio de sesión
+                    </button>
+                  </div>
+                ) : (
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+                    <p className="text-sm text-slate-600">
+                      Introduce tu email y te enviaremos un enlace para restablecer tu contraseña.
+                    </p>
+                    <Input
+                      type="email"
+                      placeholder="tu@empresa.com"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      className="bg-white border-slate-200 focus:border-indigo-500"
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onForgotPassword(); } }}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => { setShowForgotPassword(false); setForgotEmail(''); }}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="flex-1 bg-primary hover:bg-primary/90 text-white"
+                        onClick={onForgotPassword}
+                        disabled={isSendingReset}
+                      >
+                        {isSendingReset ? "Enviando..." : "Enviar enlace"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             {/* Tab Registro */}

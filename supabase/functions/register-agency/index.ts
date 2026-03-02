@@ -253,7 +253,29 @@ serve(async (req) => {
             console.log(`Relación user_agencies creada para usuario ${userId} y agencia ${agencyData.id}`)
         }
 
-        // 9. Retornar datos para auto-login
+        // 10. Enviar email de bienvenida (fire-and-forget)
+        try {
+            const functionsUrl = supabaseUrl.replace('://kong:8000', '://kong:8000')
+            await fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabaseServiceKey}`,
+                },
+                body: JSON.stringify({
+                    email: cleanEmail,
+                    name: cleanName,
+                    agencyName: cleanAgencyName,
+                    type: 'registration',
+                }),
+            })
+            console.log(`Email de bienvenida enviado a ${cleanEmail}`)
+        } catch (emailError) {
+            console.warn(`No se pudo enviar email de bienvenida a ${cleanEmail}:`, emailError)
+            // No falla el registro si el email no se envía
+        }
+
+        // 11. Retornar datos para auto-login
         return new Response(
             JSON.stringify({
                 success: true,
