@@ -9,6 +9,8 @@ import {
     FolderKanban,
     Plug,
     ArrowRight,
+    DollarSign,
+    Shield,
 } from 'lucide-react';
 
 const FEATURES = [
@@ -66,6 +68,24 @@ const FEATURES = [
         icon: Plug,
         gradient: 'from-cyan-500 to-blue-500',
     },
+    {
+        title: 'Monitor de presupuestos',
+        href: '/monitor-ppc',
+        description: 'Controla el gasto publicitario de tus clientes',
+        badge: 'Plan Business',
+        badgeColor: 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/30',
+        icon: DollarSign,
+        gradient: 'from-fuchsia-500 to-pink-500',
+    },
+    {
+        title: 'Seguridad y Privacidad',
+        href: '/seguridad',
+        description: 'Infraestructura, cifrado AES-256 y aislamiento RLS',
+        badge: 'Grado Enterprise',
+        badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+        icon: Shield,
+        gradient: 'from-emerald-500 to-teal-500',
+    },
 ];
 
 export function FeaturesDropdown() {
@@ -112,8 +132,8 @@ export function FeaturesDropdown() {
             {/* Dropdown */}
             <div
                 className={`absolute top-full right-0 sm:right-auto sm:left-1/2 sm:-translate-x-1/2 mt-3 transition-all duration-300 origin-top ${isOpen
-                        ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
-                        : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
+                    ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
+                    : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
                     }`}
             >
                 {/* Arrow */}

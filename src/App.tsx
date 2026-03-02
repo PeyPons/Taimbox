@@ -38,6 +38,8 @@ import TeamLandingPage from "./pages/TeamLandingPage";
 import ReportsLandingPage from "./pages/ReportsLandingPage";
 import ProjectsLandingPage from "./pages/ProjectsLandingPage";
 import IntegrationsLandingPage from "./pages/IntegrationsLandingPage";
+import PpcMonitorLandingPage from "./pages/PpcMonitorLandingPage";
+import SecurityLandingPage from "./pages/SecurityLandingPage";
 import PreciosPage from "./pages/PreciosPage";
 import GuiaPage from "./pages/GuiaPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
@@ -151,6 +153,8 @@ const App = () => (
                         <Route path="/reportes-rentabilidad" element={<ReportsLandingPage />} />
                         <Route path="/control-proyectos" element={<ProjectsLandingPage />} />
                         <Route path="/integraciones" element={<IntegrationsLandingPage />} />
+                        <Route path="/monitor-ppc" element={<PpcMonitorLandingPage />} />
+                        <Route path="/seguridad" element={<SecurityLandingPage />} />
                         <Route path="/precios" element={<PreciosPage />} />
 
                         {/* Guía de funcionalidades (páginas públicas detalladas) */}

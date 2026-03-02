@@ -113,7 +113,7 @@ export interface AgencySettings {
     projectIds?: string[];
     clientIds?: string[];
   };
-  /** Cron?metro de tareas: m?ximo de horas por sesi?n antes de auto-pausa (1ÿÿÿ24, por defecto 12). */
+  /** Cron?metro de tareas: m?ximo de horas por sesi?n antes de auto-pausa (1ï¿½ï¿½ï¿½24, por defecto 12). */
   timeTrackerMaxHours?: number;
   /** Objetivo de Precio Hora Efectivo (?/h) en Salud financiera. Si no se define, se usa 75 ?/h o la media de coste por hora si es superior. */
   ehrTarget?: number;
@@ -124,7 +124,7 @@ export interface AgencySettings {
 export type AgencyStatus = 'active' | 'suspended';
 
 /** Plan de suscripci?n (Stripe) */
-export type PlanId = 'starter' | 'pro' | 'business';
+export type PlanId = 'starter' | 'pro' | 'business' | 'enterprise';
 
 export interface Agency {
   id: string;
@@ -149,6 +149,8 @@ export interface Agency {
   subscriptionPeriodEndsAt?: string;
   /** True si el usuario cancel? en Stripe "al final del periodo"; el plan sigue activo hasta subscriptionPeriodEndsAt */
   subscriptionCancelAtPeriodEnd?: boolean;
+  /** Fecha en que la agencia uso el trial. Si existe, no se ofrece trial de nuevo */
+  trialUsedAt?: string;
 }
 
 // ============================================

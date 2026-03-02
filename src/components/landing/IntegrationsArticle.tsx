@@ -215,7 +215,7 @@ export function IntegrationsArticle() {
             <section className="mb-16 sm:mb-20 text-center">
                 <div className="mb-6">
                     <span className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider text-cyan-300 bg-cyan-500/20 border border-cyan-400/30">
-                        Para equipos técnicos y ads
+                        Para agencias performance
                     </span>
                 </div>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 leading-[1.1] tracking-tight">
@@ -225,7 +225,7 @@ export function IntegrationsArticle() {
                     </span>
                 </h1>
                 <p className="text-indigo-100/90 text-base sm:text-lg lg:text-xl leading-relaxed max-w-3xl mx-auto mb-8">
-                    Google Ads, Meta Ads, API REST y sistema weekly — todo sincronizado con tu planificación de recursos. Los datos de tus campañas y tu equipo en un solo lugar.
+                    Google Ads, Meta Ads, API REST y sistema weekly — todo sincronizado con tu planificación de recursos. Controla los presupuestos de las campañas de todos tus clientes desde un solo lugar.
                 </p>
                 <div className="flex flex-wrap justify-center gap-3 text-sm">
                     {['Google Ads', 'Meta Ads', 'API REST', 'Sincronización CRM/ERP', 'Weekly Feedback'].map((f, i) => (
@@ -249,13 +249,13 @@ export function IntegrationsArticle() {
                             Campañas de Google, datos en tiempo real
                         </h2>
                         <p className="text-indigo-100/90 mb-4 leading-relaxed">
-                            Conecta tus cuentas de Google Ads y visualiza gasto, conversiones, CPA y ROAS directamente en el dashboard. Cruza el rendimiento publicitario con el coste real de las horas de tu equipo.
+                            Conecta las cuentas de Google Ads de tus clientes y monitoriza el consumo de sus campañas en tiempo real. Detecta sobrecostes antes de que ocurran y ahorra a tus gestores PPC la revisión manual diaria de presupuestos.
                         </p>
                         <ul className="space-y-3">
                             {[
-                                { icon: DollarSign, text: 'Gasto por campaña en tiempo real', color: 'text-emerald-400' },
-                                { icon: Target, text: 'Conversiones y CPA automáticos', color: 'text-blue-400' },
-                                { icon: TrendingUp, text: 'ROAS conectado con costes de equipo', color: 'text-amber-400' },
+                                { icon: DollarSign, text: 'Monitor de presupuesto por cliente en tiempo real', color: 'text-emerald-400' },
+                                { icon: Target, text: 'Alertas anti-despistes: evita sobrepasar el presupuesto pactado', color: 'text-blue-400' },
+                                { icon: TrendingUp, text: 'Ahorra 1h diaria a tus gestores PPC', color: 'text-amber-400' },
                             ].map(({ icon: Icon, text, color }, i) => (
                                 <li key={i} className="flex items-center gap-3 text-indigo-100/90 text-sm">
                                     <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
@@ -278,7 +278,7 @@ export function IntegrationsArticle() {
                             Facebook e Instagram, unificados
                         </h2>
                         <p className="text-indigo-100/90 mb-4 leading-relaxed">
-                            Sincroniza tus campañas de Meta Ads (Facebook e Instagram) para ver gasto, alcance y CTR en un único dashboard. Ideal para agencias que gestionan múltiples cuentas publicitarias.
+                            Sincroniza las campañas de Meta Ads (Facebook e Instagram) de tus clientes para vigilar consumos, alcance y CTR en un único dashboard. Evita que un error humano haga que la agencia pague de su bolsillo los sobrecostes de una campaña.
                         </p>
                         <div className="rounded-xl border-l-4 border-indigo-400 bg-indigo-500/10 border border-indigo-500/20 p-4">
                             <p className="text-indigo-100/90 text-sm m-0">
@@ -289,6 +289,20 @@ export function IntegrationsArticle() {
                     <div>
                         <MockMetaAds />
                     </div>
+                </div>
+            </section>
+
+            {/* PPC Monitor CTA */}
+            <section className="mb-16 sm:mb-20">
+                <div className="rounded-2xl border border-amber-400/20 bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-amber-500/10 p-5 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="text-center sm:text-left">
+                        <p className="text-white font-semibold text-base mb-1">¿Quieres saber cómo proteger los márgenes de tus campañas?</p>
+                        <p className="text-amber-200/70 text-sm m-0">Descubre el Monitor de presupuestos PPC — exclusivo del plan Business.</p>
+                    </div>
+                    <Link to="/monitor-ppc" className="shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white text-sm font-bold transition-colors shadow-lg shadow-amber-500/20">
+                        Saber más sobre el control de presupuestos
+                        <ArrowRight className="h-4 w-4" />
+                    </Link>
                 </div>
             </section>
 
@@ -365,8 +379,8 @@ export function IntegrationsArticle() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {[
-                            { icon: Globe, label: 'Google Ads', desc: 'Campañas, gasto, conversiones', color: 'from-blue-500 to-cyan-500' },
-                            { icon: MessageSquare, label: 'Meta Ads', desc: 'Facebook e Instagram ads', color: 'from-indigo-500 to-purple-500' },
+                            { icon: Globe, label: 'Google Ads', desc: 'Monitor presupuestos clientes', color: 'from-blue-500 to-cyan-500' },
+                            { icon: MessageSquare, label: 'Meta Ads', desc: 'Prevención de sobrecostes', color: 'from-indigo-500 to-purple-500' },
                             { icon: Code2, label: 'API REST', desc: 'Integraciones custom', color: 'from-purple-500 to-pink-500' },
                             { icon: Calendar, label: 'Weekly System', desc: 'Cierre semanal automático', color: 'from-teal-500 to-emerald-500' },
                             { icon: ArrowLeftRight, label: 'Importar/Exportar', desc: 'Excel, CSV, JSON', color: 'from-amber-500 to-orange-500' },
@@ -391,7 +405,7 @@ export function IntegrationsArticle() {
                         Tu stack, potenciado por Taimbox
                     </h2>
                     <p className="text-indigo-100/95 mb-6 text-base sm:text-lg leading-relaxed text-center max-w-2xl mx-auto">
-                        Conecta Google Ads, Meta Ads y cualquier herramienta de tu stack. Toda la información de tu agencia centralizada y sincronizada.
+                        Conecta Google Ads, Meta Ads y cualquier herramienta de tu stack. Controla los presupuestos de las campañas de tus clientes y toda la información de tu agencia centralizada.
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
                         {[

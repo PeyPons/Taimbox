@@ -120,6 +120,8 @@ Deno.serve(async (req) => {
         status: 500,
       });
     }
+  } else {
+    console.log("Unhandled Stripe event type:", event.type);
   }
 
   return new Response(JSON.stringify({ received: true }), {

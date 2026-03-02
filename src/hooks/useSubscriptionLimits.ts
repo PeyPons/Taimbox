@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { startOfMonth, subMonths } from 'date-fns';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useApp } from '@/contexts/AppContext';
 import {
@@ -24,18 +25,35 @@ export function useSubscriptionLimits() {
   const { currentAgency } = useAgency();
   const { employees } = useApp();
 
-  const planId: PlanId = currentAgency?.planId ?? 'starter';
+  // Safety net: if subscription is 'trialing' but trial_ends_at is in the past, treat as Starter
+  const rawPlanId: PlanId = currentAgency?.planId ?? 'starter';
+  const rawStatus = currentAgency?.subscriptionStatus;
+  const isTrialExpired =
+    rawStatus === 'trialing' &&
+    currentAgency?.trialEndsAt &&
+    new Date(currentAgency.trialEndsAt).getTime() <= Date.now();
+  const planId: PlanId = isTrialExpired ? 'starter' : rawPlanId;
   const limits = getPlanLimit(planId);
   const currentEmployees = useMemo(
     () => employees.filter((e) => e.isActive !== false).length,
     [employees]
   );
-  const isOverLimit = currentEmployees > limits.maxEmployees;
+  // maxEmployees is null for enterprise (unlimited)
+  const isOverLimit = limits.maxEmployees !== null && currentEmployees > limits.maxEmployees;
   const isSoftLocked = isOverLimit && planId === 'starter';
-  const maxReportingDays = limits.maxReportingDays;
+
+  /**
+   * Fecha mínima de histórico para el plan actual.
+   * Si limitHistoryToTwoMonths === true → 1 del mes anterior (ej: hoy 15 marzo → 1 febrero 00:00:00)
+   * Si false → null (sin límite)
+   */
+  const historyMinDate = useMemo<Date | null>(() => {
+    if (!limits.limitHistoryToTwoMonths) return null;
+    return startOfMonth(subMonths(new Date(), 1));
+  }, [limits.limitHistoryToTwoMonths]);
 
   const canAccessRouteByPlan = (path: string) => canAccessRoute(planId, path);
-  const canAddEmployee = !isSoftLocked && currentEmployees < limits.maxEmployees;
+  const canAddEmployee = !isSoftLocked && (limits.maxEmployees === null || currentEmployees < limits.maxEmployees);
 
   const trialEndsAt = currentAgency?.trialEndsAt;
   const subscriptionPeriodEndsAt = currentAgency?.subscriptionPeriodEndsAt;
@@ -47,7 +65,7 @@ export function useSubscriptionLimits() {
   );
   const daysRemainingPeriod = useMemo(
     () =>
-      subscriptionStatus === 'active' && (planId === 'pro' || planId === 'business')
+      subscriptionStatus === 'active' && planId !== 'starter'
         ? daysUntil(subscriptionPeriodEndsAt)
         : null,
     [subscriptionStatus, planId, subscriptionPeriodEndsAt]
@@ -59,7 +77,7 @@ export function useSubscriptionLimits() {
     currentEmployees,
     isOverLimit,
     isSoftLocked,
-    maxReportingDays,
+    historyMinDate,
     canAccessRouteByPlan,
     canAddEmployee,
     planIncludesAds: planIncludesAds(planId),

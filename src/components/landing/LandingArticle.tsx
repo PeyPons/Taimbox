@@ -252,11 +252,11 @@ export function LandingArticle() {
             <div className="flex items-center gap-3 mb-3 sm:mb-4">
               <Megaphone className="h-6 w-6 shrink-0 text-indigo-400" />
               <h3 className="text-lg sm:text-xl font-bold text-white m-0 min-w-0">
-                3. Integración nativa con publicidad (Ads)
+                3. Monitor de presupuestos de clientes (PPC)
               </h3>
             </div>
             <p className="text-indigo-100/90 m-0">
-              El tiempo de tu equipo no es el único coste. Integramos vía API los datos de Meta Ads y Google Ads. Resultado: un dashboard unificado donde ves el coste de personal + inversión publicitaria vs. ingresos del cliente. Rentabilidad real, sin mentiras.
+              Integramos vía API los datos de Meta Ads y Google Ads de tus clientes. Resultado: un panel donde controlas el consumo de las campañas de todos tus clientes en un solo lugar. Detecta sobrecostes antes de que ocurran y evita que la agencia pague de su bolsillo los errores humanos en presupuestos.
             </p>
           </div>
         </div>

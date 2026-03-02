@@ -144,6 +144,7 @@ Deno.serve(async (req) => {
 
     if (!customerId) {
       const customer = await stripe.customers.create({
+        email: user.email ?? undefined,
         name: agency.name,
         metadata: { agency_id: agencyId },
       });

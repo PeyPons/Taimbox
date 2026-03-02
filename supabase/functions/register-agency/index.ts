@@ -277,7 +277,7 @@ serve(async (req) => {
         return new Response(
             JSON.stringify({
                 error: errorMessage,
-                details: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+                details: Deno.env.get('NODE_ENV') === 'development' ? error?.stack : undefined
             }),
             {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },

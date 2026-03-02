@@ -4,11 +4,22 @@ import { Allocation, NewTaskRow } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { getWeekEndDate } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { toast } from 'sonner';
 
 export function useAllocationActions(employeeId: string, weeks: { weekStart: Date }[], canAssignToOthers: boolean, isWeeklyEnabled: boolean = true) {
     const { addAllocation, updateAllocation, deleteAllocation } = useApp();
     const weeklyCloseDay = useWeeklyCloseDay();
+    const { isSoftLocked } = useSubscriptionLimits();
+
+    // Guard: block all write operations when agency exceeds plan limits
+    const guardSoftLock = (): boolean => {
+        if (isSoftLocked) {
+            toast.error('Tu agencia excede los límites del Plan Starter. Pasa a Pro o Business para editar.');
+            return true;
+        }
+        return false;
+    };
 
     // Estado para nuevas tareas (filas temporales)
     const [newTasks, setNewTasks] = useState<NewTaskRow[]>([]);
@@ -32,6 +43,7 @@ export function useAllocationActions(employeeId: string, weeks: { weekStart: Dat
     const [editDependencyId, setEditDependencyId] = useState('none');
 
     const addTaskRow = (weekDate?: string) => {
+        if (guardSoftLock()) return;
         const lastTask = newTasks.length > 0 ? newTasks[newTasks.length - 1] : null;
         const defaultKey = weeks.length > 0 ? format(weeks[0].weekStart, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
         const targetDate = weekDate || (lastTask ? lastTask.weekDate : defaultKey);
@@ -66,7 +78,7 @@ export function useAllocationActions(employeeId: string, weeks: { weekStart: Dat
     };
 
     const handleSave = async () => {
-        if (isSaving) return;
+        if (isSaving || guardSoftLock()) return;
 
         setIsSaving(true);
         try {
@@ -115,6 +127,7 @@ export function useAllocationActions(employeeId: string, weeks: { weekStart: Dat
     };
 
     const startEditFull = (allocation: Allocation) => {
+        if (guardSoftLock()) return;
         if (isWeeklyEnabled) {
             try {
                 const taskWeekDate = parseISO(allocation.weekStartDate);
@@ -146,7 +159,7 @@ export function useAllocationActions(employeeId: string, weeks: { weekStart: Dat
     };
 
     const confirmDelete = async () => {
-        if (!editingAllocation) return;
+        if (!editingAllocation || guardSoftLock()) return;
         await deleteAllocation(editingAllocation.id);
         setShowDeleteConfirm(false);
         setIsFormOpen(false);
@@ -156,6 +169,7 @@ export function useAllocationActions(employeeId: string, weeks: { weekStart: Dat
     const [recentlyToggled, setRecentlyToggled] = useState<Set<string>>(new Set());
 
     const toggleTaskCompletion = (allocation: Allocation) => {
+        if (guardSoftLock()) return;
         const isCompleting = allocation.status !== 'completed';
         setRecentlyToggled(prev => { const newSet = new Set(prev); newSet.add(allocation.id); return newSet; });
         updateAllocation({
@@ -168,6 +182,7 @@ export function useAllocationActions(employeeId: string, weeks: { weekStart: Dat
     };
 
     const startInlineEdit = (allocation: Allocation) => {
+        if (guardSoftLock()) return;
         if (isWeeklyEnabled) {
             try {
                 const taskWeekDate = parseISO(allocation.weekStartDate);
@@ -202,6 +217,7 @@ export function useAllocationActions(employeeId: string, weeks: { weekStart: Dat
     };
 
     const moveTaskToWeek = (allocation: Allocation, targetWeekStartReal: Date) => {
+        if (guardSoftLock()) return;
         const targetKey = format(targetWeekStartReal, 'yyyy-MM-dd');
         updateAllocation({ ...allocation, weekStartDate: targetKey });
     };

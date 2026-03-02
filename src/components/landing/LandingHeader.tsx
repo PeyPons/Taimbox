@@ -12,6 +12,8 @@ import {
     BarChart3,
     FolderKanban,
     Plug,
+    DollarSign,
+    Shield,
 } from 'lucide-react';
 import { FeaturesDropdown } from './FeaturesDropdown';
 
@@ -22,6 +24,8 @@ const MOBILE_FEATURES = [
     { title: 'Reportes y Rentabilidad', href: '/reportes-rentabilidad', badge: 'Para financieros', icon: BarChart3, gradient: 'from-emerald-500 to-teal-500' },
     { title: 'Proyectos y Deadlines', href: '/control-proyectos', badge: 'Para PMs', icon: FolderKanban, gradient: 'from-amber-500 to-orange-500' },
     { title: 'Integraciones', href: '/integraciones', badge: 'Para técnicos', icon: Plug, gradient: 'from-cyan-500 to-blue-500' },
+    { title: 'Monitor de presupuestos', href: '/monitor-ppc', badge: 'Plan Business', icon: DollarSign, gradient: 'from-fuchsia-500 to-pink-500' },
+    { title: 'Seguridad', href: '/seguridad', badge: 'Grado Enterprise', icon: Shield, gradient: 'from-emerald-500 to-teal-500' },
 ];
 
 export function LandingHeader() {
@@ -115,13 +119,6 @@ export function LandingHeader() {
                         >
                             API
                         </Link>
-                        <Link
-                            to="/por-que-timeboxing"
-                            onClick={() => setMobileOpen(false)}
-                            className="flex-1 text-center text-sm font-medium text-indigo-200 hover:text-white py-2 rounded-lg bg-white/5 border border-white/10 transition-colors"
-                        >
-                            ¿Por qué?
-                        </Link>
                     </div>
 
                     {/* Features list */}
@@ -144,7 +141,7 @@ export function LandingHeader() {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm text-white font-medium truncate">{feature.title}</p>
-                                            <p className="text-[10px] text-slate-400">{feature.badge}</p>
+                                            <p className="text-[10px] text-white/50">{feature.badge}</p>
                                         </div>
                                         <ArrowRight className="h-3.5 w-3.5 text-slate-500" />
                                     </Link>
@@ -153,7 +150,7 @@ export function LandingHeader() {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div >
         </>
     );
 }

@@ -498,10 +498,8 @@ export default function LandingPage() {
             </div>
 
             <div className="grid md:grid-cols-2 gap-6 md:gap-8 mb-10 relative">
-              <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-                <div className="bg-gradient-to-r from-red-500 to-emerald-500 rounded-full p-3 shadow-xl">
-                  <ArrowRight className="h-6 w-6 text-white" />
-                </div>
+              <div className="hidden md:flex absolute left-1/2 top-[55%] -translate-x-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-indigo-500/20 rounded-full border border-indigo-500/30 items-center justify-center backdrop-blur-md">
+                <ArrowRight className="h-5 w-5 text-indigo-300" />
               </div>
 
               <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-950/60 via-red-900/40 to-gray-900/60 border border-red-500/30 p-6 sm:p-8">
@@ -597,44 +595,44 @@ export default function LandingPage() {
             </div>
 
             {/* Horizontal Flow - 3 Steps */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-4 mb-12 relative">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 relative items-stretch">
               {/* Connecting lines (desktop) */}
-              <div className="hidden md:block absolute top-1/2 left-[22%] right-[22%] h-1 bg-gradient-to-r from-amber-500/40 via-orange-500/40 to-amber-500/40 rounded-full" />
+              <div className="hidden md:block absolute top-[45%] left-[22%] right-[22%] h-1 bg-gradient-to-r from-amber-500/40 via-orange-500/40 to-amber-500/40 rounded-full" />
 
               {/* Step 1: Define */}
-              <div className="relative group">
-                <div className="bg-gradient-to-br from-amber-600/20 to-orange-600/20 backdrop-blur-xl rounded-3xl p-6 sm:p-8 text-center border border-amber-500/30 hover:border-amber-400/50 transition-all">
-                  <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-amber-500/40">
+              <div className="relative group flex">
+                <div className="w-full bg-gradient-to-br from-amber-600/20 to-orange-600/20 backdrop-blur-xl rounded-3xl p-6 sm:p-8 text-center border border-amber-500/30 hover:border-amber-400/50 transition-all flex flex-col items-center justify-start">
+                  <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center mb-4 shadow-xl shadow-amber-500/40 shrink-0">
                     <Target className="h-8 w-8 text-white" />
                   </div>
                   <h3 className="text-xl font-bold text-white mb-2">Define</h3>
-                  <p className="text-amber-200/70 text-sm">
+                  <p className="text-amber-200/70 text-sm m-0">
                     Objetivos mensuales por proyecto y empleado
                   </p>
                 </div>
               </div>
 
               {/* Step 2: Track */}
-              <div className="relative group md:-mt-4">
-                <div className="bg-gradient-to-br from-orange-600/25 to-amber-600/25 backdrop-blur-xl rounded-3xl p-6 sm:p-8 text-center border border-orange-500/40 hover:border-orange-400/50 transition-all">
-                  <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-orange-500/40">
+              <div className="relative group flex">
+                <div className="w-full bg-gradient-to-br from-orange-600/25 to-amber-600/25 backdrop-blur-xl rounded-3xl p-6 sm:p-8 text-center border border-orange-500/40 hover:border-orange-400/50 transition-all flex flex-col items-center justify-start">
+                  <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center mb-4 shadow-xl shadow-orange-500/40 shrink-0">
                     <Activity className="h-8 w-8 text-white" />
                   </div>
                   <h3 className="text-xl font-bold text-white mb-2">Rastrea</h3>
-                  <p className="text-orange-200/70 text-sm">
+                  <p className="text-orange-200/70 text-sm m-0">
                     Compara planificado vs ejecutado en tiempo real
                   </p>
                 </div>
               </div>
 
               {/* Step 3: Achieve */}
-              <div className="relative group">
-                <div className="bg-gradient-to-br from-amber-600/20 to-orange-600/20 backdrop-blur-xl rounded-3xl p-6 sm:p-8 text-center border border-amber-500/30 hover:border-amber-400/50 transition-all">
-                  <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-amber-500/40">
+              <div className="relative group flex">
+                <div className="w-full bg-gradient-to-br from-amber-600/20 to-orange-600/20 backdrop-blur-xl rounded-3xl p-6 sm:p-8 text-center border border-amber-500/30 hover:border-amber-400/50 transition-all flex flex-col items-center justify-start">
+                  <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center mb-4 shadow-xl shadow-amber-500/40 shrink-0">
                     <TrendingUp className="h-8 w-8 text-white" />
                   </div>
                   <h3 className="text-xl font-bold text-white mb-2">Logra</h3>
-                  <p className="text-amber-200/70 text-sm">
+                  <p className="text-amber-200/70 text-sm m-0">
                     Sugerencias inteligentes de redistribución
                   </p>
                 </div>

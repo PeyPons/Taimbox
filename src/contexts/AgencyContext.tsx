@@ -22,6 +22,7 @@ interface SupabaseAgency {
   trial_ends_at?: string | null;
   subscription_period_ends_at?: string | null;
   subscription_cancel_at_period_end?: boolean | null;
+  trial_used_at?: string | null;
 }
 
 // Tipo exportado para miembros de agencia
@@ -188,6 +189,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       trialEndsAt: data.trial_ends_at ?? undefined,
       subscriptionPeriodEndsAt: data.subscription_period_ends_at ?? undefined,
       subscriptionCancelAtPeriodEnd: data.subscription_cancel_at_period_end ?? false,
+      trialUsedAt: data.trial_used_at ?? undefined,
     };
   }, [migrateIntegrations]);
 
@@ -424,9 +426,9 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       // Solo actualizar si la agencia cambió para evitar loops infinitos (incl. token Google Ads)
       setCurrentAgency(prev => {
         if (prev?.id === agency.id &&
-            JSON.stringify(prev.settings) === JSON.stringify(agency.settings) &&
-            prev.google_ads_refresh_token === agency.google_ads_refresh_token &&
-            prev.google_ads_customer_id === agency.google_ads_customer_id) {
+          JSON.stringify(prev.settings) === JSON.stringify(agency.settings) &&
+          prev.google_ads_refresh_token === agency.google_ads_refresh_token &&
+          prev.google_ads_customer_id === agency.google_ads_customer_id) {
           return prev;
         }
         return agency;

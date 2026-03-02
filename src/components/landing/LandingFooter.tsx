@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Calendar, FileText, Code, HelpCircle, Mail, BookOpen, PlayCircle, LayoutDashboard, CalendarRange, Users, BarChart3, FolderKanban, Plug, Presentation } from 'lucide-react';
+import { Calendar, FileText, Code, HelpCircle, Mail, BookOpen, PlayCircle, LayoutDashboard, CalendarRange, Users, BarChart3, FolderKanban, Plug, Presentation, Shield } from 'lucide-react';
 
 export function LandingFooter() {
   const currentYear = new Date().getFullYear();
@@ -39,10 +39,16 @@ export function LandingFooter() {
             </ul>
           </div>
 
-          {/* Soporte */}
+          {/* Soporte y Seguridad */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-3">Soporte</h4>
+            <h4 className="text-white font-semibold text-sm mb-3">Empresa</h4>
             <ul className="space-y-1.5">
+              <li>
+                <Link to="/seguridad" className={linkClass}>
+                  <Shield className="h-3.5 w-3.5 shrink-0" />
+                  Seguridad
+                </Link>
+              </li>
               <li>
                 <Link to="/soporte" className={linkClass}>
                   <HelpCircle className="h-3.5 w-3.5 shrink-0" />

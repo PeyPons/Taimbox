@@ -6,16 +6,34 @@ import { useAgency } from '@/contexts/AgencyContext';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { CreditCard, Loader2, ExternalLink, Check, Calendar, XCircle } from 'lucide-react';
+import { CreditCard, Loader2, ExternalLink, Check, Calendar, XCircle, AlertTriangle } from 'lucide-react';
 import { PLAN_LIMITS } from '@/config/plans';
 import type { PlanId } from '@/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const PLAN_NAMES: Record<PlanId, string> = {
   starter: 'Starter',
   pro: 'Pro',
   business: 'Business',
+  enterprise: 'Enterprise',
+};
+
+const PLAN_PRICES: Record<PlanId, string> = {
+  starter: '0',
+  pro: '49',
+  business: '149',
+  enterprise: 'Personalizado',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -46,6 +64,17 @@ export function AgencyBillingTab() {
   } = useSubscriptionLimits();
   const [loadingCheckout, setLoadingCheckout] = useState<string | null>(null);
   const [loadingPortal, setLoadingPortal] = useState(false);
+  // Confirmation dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    targetPlan: PlanId;
+    priceId: string;
+    loseTrial: boolean;
+  }>({ open: false, targetPlan: 'pro', priceId: '', loseTrial: false });
+
+  const trialUsedAt = currentAgency?.trialUsedAt;
+  const isTrialing = subscriptionStatus === 'trialing';
+  const isPastDue = subscriptionStatus === 'past_due';
 
   const handleCheckout = async (priceId: string, plan: PlanId) => {
     if (!currentAgency?.id) return;
@@ -83,6 +112,26 @@ export function AgencyBillingTab() {
     } finally {
       setLoadingCheckout(null);
     }
+  };
+
+  /** Show confirmation dialog before changing plan if there's an active subscription */
+  const handlePlanChangeClick = (priceId: string, plan: PlanId) => {
+    const hasActiveSubscription = currentAgency?.stripeSubscriptionId &&
+      (subscriptionStatus === 'active' || subscriptionStatus === 'trialing');
+
+    if (hasActiveSubscription) {
+      // The user will lose their trial if switching from Business trial to Pro
+      const loseTrial = isTrialing && planId === 'business' && plan === 'pro';
+      setConfirmDialog({ open: true, targetPlan: plan, priceId, loseTrial });
+    } else {
+      // No existing subscription — go directly to checkout
+      handleCheckout(priceId, plan);
+    }
+  };
+
+  const handleConfirmPlanChange = () => {
+    setConfirmDialog(prev => ({ ...prev, open: false }));
+    handleCheckout(confirmDialog.priceId, confirmDialog.targetPlan);
   };
 
   const handleOpenBillingPortal = async () => {
@@ -129,8 +178,40 @@ export function AgencyBillingTab() {
     : null;
   const statusLabel = subscriptionStatus ? STATUS_LABELS[subscriptionStatus] ?? subscriptionStatus : null;
 
+  // Business button label: show trial only if not used yet
+  const businessLabel = trialUsedAt
+    ? 'Business (149 €/mes)'
+    : 'Business (149 €/mes, 14 días de prueba)';
+
   return (
     <div className="space-y-6">
+      {/* past_due warning banner */}
+      {isPastDue && (
+        <div
+          className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm"
+          role="alert"
+        >
+          <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />
+          <div className="flex-1">
+            <p className="font-medium">Pago pendiente</p>
+            <p className="text-amber-700 mt-0.5">
+              No hemos podido procesar tu último pago. Actualiza tu método de pago para evitar la interrupción del servicio.
+            </p>
+          </div>
+          {canManageSubscription && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleOpenBillingPortal}
+              disabled={loadingPortal}
+              className="shrink-0 border-amber-300 text-amber-800 hover:bg-amber-100"
+            >
+              {loadingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Actualizar pago'}
+            </Button>
+          )}
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -215,7 +296,7 @@ export function AgencyBillingTab() {
                 <Button
                   variant="outline"
                   disabled={!!loadingCheckout}
-                  onClick={() => handleCheckout(PRICE_ID_PRO, 'pro')}
+                  onClick={() => handlePlanChangeClick(PRICE_ID_PRO, 'pro')}
                 >
                   {loadingCheckout === 'pro' ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -231,14 +312,14 @@ export function AgencyBillingTab() {
                 <Button
                   variant="default"
                   disabled={!!loadingCheckout}
-                  onClick={() => handleCheckout(PRICE_ID_BUSINESS, 'business')}
+                  onClick={() => handlePlanChangeClick(PRICE_ID_BUSINESS, 'business')}
                 >
                   {loadingCheckout === 'business' ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
                       <Check className="h-4 w-4 mr-1" />
-                      Business (149 €/mes, 14 días de prueba)
+                      {businessLabel}
                     </>
                   )}
                 </Button>
@@ -277,6 +358,46 @@ export function AgencyBillingTab() {
           )}
         </CardContent>
       </Card>
+
+      {/* Confirmation dialog for plan changes */}
+      <AlertDialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Cambiar a {PLAN_NAMES[confirmDialog.targetPlan]}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  Vas a cambiar de <strong>{PLAN_NAMES[planId]}</strong> a{' '}
+                  <strong>{PLAN_NAMES[confirmDialog.targetPlan]}</strong> ({PLAN_PRICES[confirmDialog.targetPlan]} €/mes).
+                </p>
+
+                {confirmDialog.loseTrial && (
+                  <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800 text-sm">
+                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+                    <span>
+                      Estás en periodo de prueba Business. Al cambiar a Pro, <strong>la prueba terminará inmediatamente</strong> y se cobrará Pro (49 €/mes) desde hoy.
+                    </span>
+                  </div>
+                )}
+
+                {!confirmDialog.loseTrial && (
+                  <p className="text-sm text-muted-foreground">
+                    Se aplicará un prorrateo sobre la diferencia de precio en tu próxima factura.
+                  </p>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmPlanChange}>
+              Confirmar cambio
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
