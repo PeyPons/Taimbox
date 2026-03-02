@@ -86,42 +86,42 @@ export default function PrivacyPolicyPage() {
                 {/* ─── SECTIONS ─── */}
                 <div className="px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto space-y-6 relative z-10">
 
-                    <SectionCard icon={UserCheck} iconColor="indigo" title="1. Responsable del tratamiento">
+                    <SectionCard icon={UserCheck} iconColor="indigo" title="1. Responsable del Tratamiento">
                         <p>
                             El responsable del tratamiento de tus datos personales es <strong className="text-slate-200">Taimbox</strong> (en adelante, «Taimbox», «nosotros» o «la Plataforma»).
                         </p>
                         <p>
                             Para cualquier consulta relacionada con la privacidad, puedes contactarnos en:{' '}
-                            <a href="mailto:privacidad@taimbox.com" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">privacidad@taimbox.com</a>.
+                            <a href="mailto:hola@taimbox.com" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">hola@taimbox.com</a>.
                         </p>
                     </SectionCard>
 
-                    <SectionCard icon={Database} iconColor="emerald" title="2. Datos que recopilamos">
-                        <p><strong className="text-slate-200">Datos de cuenta:</strong> nombre, dirección de correo electrónico y contraseña (almacenada con hash seguro) necesarios para crear tu cuenta y acceder al servicio.</p>
-                        <p><strong className="text-slate-200">Datos de la agencia:</strong> nombre de la agencia, empleados, proyectos, clientes, asignaciones, horas y configuración operativa que introduces en la plataforma para gestionar tu flujo de trabajo.</p>
-                        <p><strong className="text-slate-200">Datos de pago:</strong> no almacenamos datos de tarjeta de crédito. Toda la información de pago es procesada directamente por <strong className="text-slate-200">Stripe</strong> (PCI-DSS Level 1). Solo almacenamos el identificador del cliente de Stripe y el estado de la suscripción.</p>
-                        <p><strong className="text-slate-200">Datos de integraciones:</strong> si conectas Google Ads o Meta Ads, almacenamos tokens OAuth2 de solo lectura para sincronizar métricas de campañas. Nunca almacenamos tus contraseñas de estas plataformas.</p>
-                        <p><strong className="text-slate-200">Datos de uso:</strong> registros de acceso, navegación dentro de la aplicación y cookies de análisis (sujetas a tu consentimiento). Ver sección de Cookies.</p>
+                    <SectionCard icon={Database} iconColor="emerald" title="2. Datos que Recopilamos">
+                        <p><strong className="text-slate-200">Datos de la Cuenta:</strong> Nombre, dirección de correo electrónico y contraseña (almacenada con hash seguro) necesarios para crear tu cuenta y acceder al servicio.</p>
+                        <p><strong className="text-slate-200">Datos de la Agencia:</strong> Nombre de la agencia, empleados, proyectos, clientes, asignaciones, horas y configuración operativa que introduces en la plataforma para gestionar tu flujo de trabajo.</p>
+                        <p><strong className="text-slate-200">Datos de Pago:</strong> No almacenamos datos de tarjeta de crédito. Toda la información de pago es procesada directamente por <strong className="text-slate-200">Stripe</strong> (PCI-DSS Level 1). Solo almacenamos el identificador del cliente de Stripe y el estado de la suscripción.</p>
+                        <p><strong className="text-slate-200">Datos de Integraciones:</strong> Si conectas Google Ads o Meta Ads, almacenamos tokens OAuth2 de solo lectura para sincronizar métricas de campañas. Nunca almacenamos tus contraseñas de estas plataformas.</p>
+                        <p><strong className="text-slate-200">Datos de Uso:</strong> Registros de acceso, navegación dentro de la aplicación y cookies de análisis (sujetas a tu consentimiento). Ver sección de Cookies.</p>
                     </SectionCard>
 
-                    <SectionCard icon={FileText} iconColor="blue" title="3. Finalidad y base legal del tratamiento">
+                    <SectionCard icon={FileText} iconColor="blue" title="3. Finalidad y Base Legal del Tratamiento">
                         <p>Tratamos tus datos con las siguientes finalidades y bases legales:</p>
                         <ul className="space-y-2 ml-1">
                             <li className="flex items-start gap-2">
                                 <span className="text-blue-400 mt-1.5 shrink-0">•</span>
-                                <span><strong className="text-slate-200">Prestación del servicio</strong> (ejecución del contrato): gestionar tu cuenta, procesar pagos, proporcionar las funcionalidades de la plataforma y atender tus solicitudes de soporte.</span>
+                                <span><strong className="text-slate-200">Prestación del servicio</strong> (ejecución del contrato): Gestionar tu cuenta, procesar pagos, proporcionar las funcionalidades de la plataforma y atender tus solicitudes de soporte.</span>
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="text-blue-400 mt-1.5 shrink-0">•</span>
-                                <span><strong className="text-slate-200">Seguridad y mantenimiento</strong> (interés legítimo): proteger la plataforma frente a accesos no autorizados, detectar fraudes y mantener la estabilidad del servicio.</span>
+                                <span><strong className="text-slate-200">Seguridad y mantenimiento</strong> (interés legítimo): Proteger la plataforma frente a accesos no autorizados, detectar fraudes y mantener la estabilidad del servicio.</span>
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="text-blue-400 mt-1.5 shrink-0">•</span>
-                                <span><strong className="text-slate-200">Mejora del producto</strong> (interés legítimo): análisis agregado y anonimizado del uso de la plataforma para mejorar la experiencia de usuario.</span>
+                                <span><strong className="text-slate-200">Mejora del producto</strong> (interés legítimo): Análisis agregado y anonimizado del uso de la plataforma para mejorar la experiencia de usuario.</span>
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="text-blue-400 mt-1.5 shrink-0">•</span>
-                                <span><strong className="text-slate-200">Cookies analíticas y de marketing</strong> (consentimiento): solo se activan si aceptas cookies no esenciales en el banner de consentimiento.</span>
+                                <span><strong className="text-slate-200">Cookies analíticas y de marketing</strong> (consentimiento): Solo se activan si aceptas cookies no esenciales en el banner de consentimiento.</span>
                             </li>
                         </ul>
                     </SectionCard>
@@ -133,7 +133,7 @@ export default function PrivacyPolicyPage() {
                         <ul className="space-y-2 ml-1">
                             <li className="flex items-start gap-2">
                                 <span className="text-orange-400 mt-1.5 shrink-0">•</span>
-                                <span><strong className="text-slate-200">Cookies necesarias:</strong> autenticación, preferencias de sesión y seguridad. No se pueden desactivar.</span>
+                                <span><strong className="text-slate-200">Cookies necesarias:</strong> Autenticación, preferencias de sesión y seguridad. No se pueden desactivar.</span>
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="text-orange-400 mt-1.5 shrink-0">•</span>
@@ -141,7 +141,7 @@ export default function PrivacyPolicyPage() {
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="text-orange-400 mt-1.5 shrink-0">•</span>
-                                <span><strong className="text-slate-200">Cookies de marketing:</strong> seguimiento para medir la efectividad de campañas. Requieren consentimiento.</span>
+                                <span><strong className="text-slate-200">Cookies de marketing:</strong> Seguimiento para medir la efectividad de campañas. Requieren consentimiento.</span>
                             </li>
                         </ul>
                         <p>
@@ -155,7 +155,7 @@ export default function PrivacyPolicyPage() {
                         </p>
                     </SectionCard>
 
-                    <SectionCard icon={Server} iconColor="teal" title="5. Subencargados del tratamiento">
+                    <SectionCard icon={Server} iconColor="teal" title="5. Subencargados del Tratamiento">
                         <p>
                             Para ofrecer un servicio seguro y escalable, nos apoyamos en los siguientes proveedores (subencargados):
                         </p>
@@ -199,7 +199,7 @@ export default function PrivacyPolicyPage() {
                         </div>
                     </SectionCard>
 
-                    <SectionCard icon={Globe} iconColor="cyan" title="6. Transferencias internacionales de datos">
+                    <SectionCard icon={Globe} iconColor="cyan" title="6. Transferencias Internacionales de Datos">
                         <p>
                             Alojamos la infraestructura principal de Taimbox en centros de datos de <strong className="text-slate-200">Amazon Web Services en Frankfurt (UE)</strong>, garantizando que tus datos permanecen dentro de la Unión Europea.
                         </p>
@@ -208,7 +208,7 @@ export default function PrivacyPolicyPage() {
                         </p>
                     </SectionCard>
 
-                    <SectionCard icon={Clock} iconColor="amber" title="7. Plazos de conservación">
+                    <SectionCard icon={Clock} iconColor="amber" title="7. Plazos de Conservación">
                         <p>
                             Conservamos tus datos personales mientras mantengas una cuenta activa en Taimbox y sean necesarios para prestarte el servicio.
                         </p>
@@ -220,7 +220,7 @@ export default function PrivacyPolicyPage() {
                         </p>
                     </SectionCard>
 
-                    <SectionCard icon={Lock} iconColor="violet" title="8. Tus derechos">
+                    <SectionCard icon={Lock} iconColor="violet" title="8. Tus Derechos">
                         <p>
                             Conforme al RGPD, tienes los siguientes derechos sobre tus datos personales:
                         </p>
@@ -241,14 +241,14 @@ export default function PrivacyPolicyPage() {
                         </ul>
                         <p>
                             Para ejercer cualquiera de estos derechos, envía un correo a{' '}
-                            <a href="mailto:privacidad@taimbox.com" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">privacidad@taimbox.com</a> indicando tu nombre, correo de la cuenta y el derecho que deseas ejercer.
+                            <a href="mailto:hola@taimbox.com" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">hola@taimbox.com</a> indicando tu nombre, correo de la cuenta y el derecho que deseas ejercer.
                         </p>
                     </SectionCard>
 
-                    <SectionCard icon={Mail} iconColor="rose" title="9. Contacto y reclamaciones">
+                    <SectionCard icon={Mail} iconColor="rose" title="9. Contacto y Reclamaciones">
                         <p>
                             Si tienes dudas sobre el tratamiento de tus datos o deseas presentar una reclamación, puedes contactarnos en{' '}
-                            <a href="mailto:privacidad@taimbox.com" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">privacidad@taimbox.com</a>.
+                            <a href="mailto:hola@taimbox.com" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">hola@taimbox.com</a>.
                         </p>
                         <p>
                             Asimismo, tienes derecho a presentar una reclamación ante la autoridad de protección de datos competente. En España, la autoridad es la{' '}
@@ -258,7 +258,7 @@ export default function PrivacyPolicyPage() {
                         </p>
                     </SectionCard>
 
-                    <SectionCard icon={CreditCard} iconColor="fuchsia" title="10. Modificaciones de esta política">
+                    <SectionCard icon={CreditCard} iconColor="fuchsia" title="10. Modificaciones de esta Política">
                         <p>
                             Nos reservamos el derecho de actualizar esta Política de Privacidad para reflejar cambios en nuestras prácticas o en la legislación aplicable. En caso de cambios sustanciales, te notificaremos a través de la plataforma o por correo electrónico.
                         </p>

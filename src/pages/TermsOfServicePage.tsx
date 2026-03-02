@@ -92,19 +92,19 @@ export default function TermsOfServicePage() {
                         <ul className="space-y-2 ml-1">
                             <li className="flex items-start gap-2">
                                 <span className="text-indigo-400 mt-1.5 shrink-0">•</span>
-                                <span><strong className="text-slate-200">"Taimbox" o el "Servicio":</strong> la plataforma SaaS de gestión operativa y financiera para agencias accesible a través de app.taimbox.com.</span>
+                                <span><strong className="text-slate-200">"Taimbox" o el "Servicio":</strong> La plataforma SaaS de gestión operativa y financiera para agencias accesible a través de app.taimbox.com.</span>
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="text-indigo-400 mt-1.5 shrink-0">•</span>
-                                <span><strong className="text-slate-200">"Agencia" o "Cliente":</strong> la entidad legal o profesional autónomo que contrata el Servicio.</span>
+                                <span><strong className="text-slate-200">"Agencia" o "Cliente":</strong> La entidad legal o profesional autónomo que contrata el Servicio.</span>
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="text-indigo-400 mt-1.5 shrink-0">•</span>
-                                <span><strong className="text-slate-200">"Usuario":</strong> cualquier empleado, manager o administrador con acceso a la cuenta de la Agencia.</span>
+                                <span><strong className="text-slate-200">"Usuario":</strong> Cualquier empleado, manager o administrador con acceso a la cuenta de la Agencia.</span>
                             </li>
                             <li className="flex items-start gap-2">
                                 <span className="text-indigo-400 mt-1.5 shrink-0">•</span>
-                                <span><strong className="text-slate-200">"Datos de la Agencia":</strong> la información operativa introducida o generada mediante el Servicio por parte de los Usuarios.</span>
+                                <span><strong className="text-slate-200">"Datos de la Agencia":</strong> La información operativa introducida o generada mediante el Servicio por parte de los Usuarios.</span>
                             </li>
                         </ul>
                     </SectionCard>
@@ -215,7 +215,7 @@ export default function TermsOfServicePage() {
                         <Link to="/seguridad" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">
                             Seguridad de Datos
                         </Link>
-                        <a href="mailto:soporte@taimbox.com" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">
+                        <a href="mailto:hola@taimbox.com" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">
                             Contactar Soporte Legal
                         </a>
                     </div>

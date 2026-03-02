@@ -46,7 +46,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
         const data = await response.json();
         console.log(`[Resend] Email enviado exitosamente. ID: ${data.id}`);
         return { success: true, id: data.id };
-    } catch (err) {
+    } catch (err: any) {
         console.error('[Resend] Error enviando email:', err);
         return { success: false, error: err?.message || 'Error desconocido' };
     }
