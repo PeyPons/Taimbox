@@ -258,6 +258,12 @@ Funciones serverless que corren en Deno dentro del contenedor `supabase-edge-fun
 | `send-welcome-email` | `supabase/functions/send-welcome-email/index.ts` | Envía email de bienvenida (registro) o invitación (añadido a agencia) vía Resend. Body: `{ email, name, agencyName, type }`. Usa `_shared/resend.ts`. Requiere `RESEND_API_KEY`. |
 | `request-password-reset` | `supabase/functions/request-password-reset/index.ts` | Genera enlace de recuperación de contraseña y lo envía por email vía Resend. Body: `{ email }`. Funciona para cualquier usuario en `auth.users` (empleados, admins de plataforma, etc.). Siempre devuelve 200 (previene enumeración). No requiere autenticación. |
 
+#### Integración: Modo demostración (ocultar datos sensibles en Ads)
+
+En Configuración → Integraciones → Privacidad y demostración, la opción **"Modo demostración (ocultar datos sensibles)"** sustituye nombres reales de cuentas y campañas por **nombres semánticos genéricos** (ej: "Cliente A - Retail", "Cliente B - Tecnología", "Campaña Ecommerce 01") en las páginas Google Ads y Meta Ads. Los **IDs numéricos** (Google Ads: 123-456-7890, Meta: act_123...) permanecen visibles para demostrar que la integración es real y obtiene registros únicos de la API. Útil para grabaciones de vídeo o verificaciones ante Google Trust & Safety. Se muestra un badge "Datos protegidos" cuando está activo.
+
+**Implementación**: `AnonymizedContent` (con prop `placeholder`), `useAnonymizeAds` (anonymizer con `account(id)` y `campaign(id)`), aplicado en `AdsPage.tsx` y `MetaAdsPage.tsx`.
+
 #### Módulo compartido `_shared/resend.ts`
 Módulo reutilizable que exporta `sendEmail({ to, subject, html })`. Usa la API HTTP de Resend (`https://api.resend.com/emails`). Variables: `RESEND_API_KEY` (obligatoria), `RESEND_FROM_EMAIL` (default: `Taimbox <onboarding@resend.dev>`). Sin dependencias externas.
 

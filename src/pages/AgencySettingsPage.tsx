@@ -1676,6 +1676,46 @@ export default function AgencySettingsPage() {
                     })}
                 </div>
 
+                {/* Otras integraciones (modo demostración, etc.) */}
+                {Object.values(AVAILABLE_INTEGRATIONS).filter(i => i.category === 'other').length > 0 && (
+                  <>
+                    <Separator />
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 mb-3">
+                        <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                        <h3 className="font-semibold text-sm text-slate-700 uppercase">Privacidad y demostración</h3>
+                      </div>
+                      {Object.values(AVAILABLE_INTEGRATIONS)
+                        .filter(integration => integration.category === 'other')
+                        .map(integration => {
+                          const isEnabled = enabledIntegrations[integration.id] ?? false;
+                          return (
+                            <div key={integration.id} className="p-4 rounded-lg border bg-white">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1 space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <Label className="font-medium text-slate-900">{integration.name}</Label>
+                                    <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">
+                                      {integration.category}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-slate-600">{integration.description}</p>
+                                </div>
+                                <Switch
+                                  checked={isEnabled}
+                                  onCheckedChange={(checked) => {
+                                    setEnabledIntegrations(prev => ({ ...prev, [integration.id]: checked }));
+                                  }}
+                                  className="ml-4"
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </>
+                )}
+
                 <Separator />
 
                 <div className="space-y-6 mt-6 pt-6 ">

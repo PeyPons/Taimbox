@@ -102,9 +102,9 @@ export interface AgencySettings {
   };
   enabledIntegrations?: {
     weekly_feedback?: boolean;       // Sistema de cierre semanal (Weekly Reports)
-    crm_export?: boolean;            // Exportaci?n de tareas al CRM
+    crm_export?: boolean;            // Exportación de tareas al CRM
     crm_user_id?: boolean;           // Campo ID Usuario CRM en perfiles
-    // Futuras integraciones: google_ads, meta_ads, etc.
+    anonymize_ads_for_video?: boolean; // Modo demostración: oculta nombres en Ads
   };
   // Weekly system configuration
   weeklyCloseDay?: number; // Days from week start for weekly close (0-6, default 4 = Friday)

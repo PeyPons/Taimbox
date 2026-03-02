@@ -11,10 +11,13 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { RefreshCw, Clock, Search, Settings, Layers, TrendingUp, TrendingDown, Scissors, Plus, Trash2, AlertTriangle, CheckCircle2, Calendar, Target, ArrowDownRight, Eye, EyeOff, X, Facebook, Check, ChevronDown } from 'lucide-react';
+import { RefreshCw, Clock, Search, Settings, Layers, TrendingUp, TrendingDown, Scissors, Plus, Trash2, AlertTriangle, CheckCircle2, Calendar, Target, ArrowDownRight, Eye, EyeOff, X, Facebook, Check, ChevronDown, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency, cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
+import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
+import { AnonymizedBanner } from '@/components/ads/AnonymizedBanner';
 
 interface MetaCampaignData { campaign_id: string; campaign_name: string; status: string; cost: number; conversions_value?: number; conversions?: number; clicks?: number; impressions?: number; daily_budget?: number; original_client_name?: string; original_client_id?: string; date?: string; client_id?: string; client_name?: string; created_at?: string; }
 interface SegmentationRule { id: string; account_id: string; keyword: string; virtual_name: string; platform: string; }
@@ -50,6 +53,7 @@ interface RegisteredAccount {
 
 export default function MetaAdsPage() {
   const { currentAgency } = useAgency();
+  const { isActive: isAnonymized, anonymizer } = useAnonymizeAds();
   const [rawData, setRawData] = useState<MetaCampaignData[]>([]);
   const [clientSettings, setClientSettings] = useState<ClientSettingsMap>({});
   const [registeredAccounts, setRegisteredAccounts] = useState<RegisteredAccount[]>([]);
@@ -277,13 +281,15 @@ export default function MetaAdsPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg shadow-blue-500/20"><Facebook className="w-6 h-6 text-white" /></div>
-            <div><h1 className="text-2xl font-bold text-slate-900">Meta Ads</h1><div className="flex items-center gap-3 mt-1"><span className="text-sm text-slate-500 flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{lastSyncTime ? lastSyncTime.toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Sin sincronizar'}</span><Badge variant="outline" className="text-xs"><Calendar className="w-3 h-3 mr-1" />Día {currentDay} de {daysInMonth}</Badge></div></div>
+            <div><h1 className="text-2xl font-bold text-slate-900">Meta Ads</h1><div className="flex items-center gap-3 mt-1"><span className="text-sm text-slate-500 flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{lastSyncTime ? lastSyncTime.toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Sin sincronizar'}</span><Badge variant="outline" className="text-xs"><Calendar className="w-3 h-3 mr-1" />Día {currentDay} de {daysInMonth}</Badge>{isAnonymized && <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200"><ShieldCheck className="w-3 h-3 mr-1" />Datos protegidos</Badge>}</div></div>
           </div>
           <div className="flex gap-2 w-full md:w-auto">
             <Button variant="outline" onClick={() => setIsSplitModalOpen(true)} className="flex-1 md:flex-none"><Scissors className="w-4 h-4 mr-2" /> Dividir</Button>
             <Button onClick={handleStartSync} disabled={isSyncing} className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700"><RefreshCw className={cn("w-4 h-4 mr-2", isSyncing && "animate-spin")} /> Sincronizar</Button>
           </div>
         </div>
+
+        {isAnonymized && <AnonymizedBanner isActive={isAnonymized} />}
 
         {/* Stats Cards - Optimizadas para Meta (sin daily_budget disponible) */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -313,7 +319,17 @@ export default function MetaAdsPage() {
                     <div className="flex items-center gap-3 min-w-[200px]">
                       <div className={cn("w-1.5 h-12 rounded-full", statusConfig.color)} />
                       <div className="text-left">
-                        <div className="flex items-center gap-2 flex-wrap"><span className="font-bold text-lg text-slate-900">{formatProjectName(client.client_name)}</span>{client.is_group && <Badge variant="secondary" className="text-[10px] gap-1"><Layers className="w-3 h-3" /> GRUPO</Badge>}<Badge variant="outline" className={cn("text-[10px]", statusConfig.badgeClass)}>{statusConfig.text}</Badge></div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div>
+                            <AnonymizedContent isActive={isAnonymized} className="font-bold text-lg text-slate-900" asBlock placeholder={anonymizer.account(client.client_id)}>{formatProjectName(client.client_name)}</AnonymizedContent>
+                            {isAnonymized && (client.realIdsList[0]?.id || client.client_id) && (
+                              <div className="text-[10px] font-mono text-slate-400 mt-0.5">ID: {client.realIdsList[0]?.id || client.client_id}</div>
+                            )}
+                          </div>
+                          {client.is_group && <Badge variant="secondary" className="text-[10px] gap-1"><Layers className="w-3 h-3" /> GRUPO</Badge>}
+                          <Badge variant="outline" className={cn("text-[10px]", statusConfig.badgeClass)}>{statusConfig.text}</Badge>
+                          {isAnonymized && <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200"><ShieldCheck className="w-3 h-3 mr-1" />Datos protegidos</Badge>}
+                        </div>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">{client.isSalesAccount && client.globalRoas > 0 && <Badge variant="outline" className={cn("text-[10px] h-5", getRoasColor(client.globalRoas))}>ROAS {client.globalRoas.toFixed(2)}</Badge>}{client.isHidden && <Badge variant="outline" className="text-[10px] h-5 gap-1"><EyeOff className="w-3 h-3" /> Oculto</Badge>}</div>
                       </div>
                     </div>
@@ -353,7 +369,7 @@ export default function MetaAdsPage() {
                         {isOverspending && dailyDiff > 5 && <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800"><AlertTriangle className="w-4 h-4 shrink-0" /><span>Reduce el presupuesto diario en <strong>{formatCurrency(dailyDiff)}</strong> para ajustarte.</span></div>}
                         <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"><span className="text-sm text-slate-600">Proyección fin de mes</span><span className={cn("font-bold", client.forecast > client.budget ? "text-red-600" : "text-slate-700")}>{formatCurrency(client.forecast)}</span></div>
                       </div>
-                      <div className="bg-white rounded-lg border overflow-hidden"><div className="max-h-[350px] overflow-y-auto"><table className="w-full text-xs"><thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b"><tr><th className="px-3 py-2.5 text-left">Campaña</th><th className="px-2 py-2.5 text-right">Gasto</th><th className="px-2 py-2.5 text-right">Valor</th>{client.isSalesAccount && <th className="px-2 py-2.5 text-center">ROAS</th>}</tr></thead><tbody className="divide-y divide-slate-100">{client.campaigns.map((camp, idx) => { const roas = camp.cost > 0 ? (camp.conversions_value || 0) / camp.cost : 0; return <tr key={idx} className="hover:bg-slate-50"><td className="px-3 py-2.5"><div className="font-medium text-slate-700 line-clamp-2" title={camp.campaign_name}>{camp.campaign_name}</div><div className="flex items-center gap-2 mt-1 text-[10px] text-slate-400"><span className="flex items-center gap-1"><span className={cn("w-1.5 h-1.5 rounded-full", camp.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-slate-300')} />{camp.status === 'ENABLED' ? 'Activa' : 'Pausada'}</span>{client.is_group && camp.original_client_name && <span className="truncate max-w-[100px]">| {formatProjectName(camp.original_client_name)}</span>}</div></td><td className="px-2 py-2.5 text-right font-medium text-slate-900">{formatCurrency(camp.cost)}</td><td className="px-2 py-2.5 text-right text-emerald-600">{formatCurrency(camp.conversions_value || 0)}</td>{client.isSalesAccount && <td className="px-2 py-2.5 text-center"><Badge variant="outline" className={cn("text-[10px]", getRoasColor(roas))}>{roas.toFixed(2)}</Badge></td>}</tr>; })}{client.campaigns.length === 0 && <tr><td colSpan={4} className="px-3 py-8 text-center text-slate-400">Sin campañas</td></tr>}</tbody></table></div></div>
+                      <div className="bg-white rounded-lg border overflow-hidden"><div className="max-h-[350px] overflow-y-auto"><table className="w-full text-xs"><thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b"><tr><th className="px-3 py-2.5 text-left">Campaña</th><th className="px-2 py-2.5 text-right">Gasto</th><th className="px-2 py-2.5 text-right">Valor</th>{client.isSalesAccount && <th className="px-2 py-2.5 text-center">ROAS</th>}</tr></thead><tbody className="divide-y divide-slate-100">{client.campaigns.map((camp, idx) => { const roas = camp.cost > 0 ? (camp.conversions_value || 0) / camp.cost : 0; return <tr key={idx} className="hover:bg-slate-50"><td className="px-3 py-2.5"><div className="space-y-1"><AnonymizedContent isActive={isAnonymized} className="font-medium text-slate-700 line-clamp-2" placeholder={anonymizer.campaign(camp.campaign_id)}>{camp.campaign_name}</AnonymizedContent><div className="flex items-center gap-2 text-[10px] text-slate-400"><span className="flex items-center gap-1"><span className={cn("w-1.5 h-1.5 rounded-full", camp.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-slate-300')} />{camp.status === 'ENABLED' ? 'Activa' : 'Pausada'}</span>{client.is_group && (camp.original_client_name || camp.original_client_id) && <AnonymizedContent isActive={isAnonymized} className="truncate max-w-[100px]" placeholder={anonymizer.account(camp.original_client_id || camp.client_id || '')}>| {formatProjectName(camp.original_client_name || '')}</AnonymizedContent>}</div></div></td><td className="px-2 py-2.5 text-right font-medium text-slate-900">{formatCurrency(camp.cost)}</td><td className="px-2 py-2.5 text-right text-emerald-600">{formatCurrency(camp.conversions_value || 0)}</td>{client.isSalesAccount && <td className="px-2 py-2.5 text-center"><Badge variant="outline" className={cn("text-[10px]", getRoasColor(roas))}>{roas.toFixed(2)}</Badge></td>}</tr>; })}{client.campaigns.length === 0 && <tr><td colSpan={4} className="px-3 py-8 text-center text-slate-400">Sin campañas</td></tr>}</tbody></table></div></div>
                     </div>
 
                     {/* Cuentas vinculadas - Tabla de desglose */}
@@ -392,7 +408,12 @@ export default function MetaAdsPage() {
                                       <td className="px-3 py-2.5 text-slate-400">
                                         {isExpanded ? <TrendingDown className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                                       </td>
-                                      <td className="px-3 py-2.5 font-medium text-slate-700">{formatProjectName(sub.name)}</td>
+                                      <td className="px-3 py-2.5 font-medium text-slate-700">
+                                        <div>
+                                          <AnonymizedContent isActive={isAnonymized} placeholder={anonymizer.account(sub.id)}>{formatProjectName(sub.name)}</AnonymizedContent>
+                                          {isAnonymized && <div className="text-[10px] font-mono text-slate-400 mt-0.5">ID: {sub.id}</div>}
+                                        </div>
+                                      </td>
                                       <td className="px-2 py-2.5 text-right font-medium text-slate-900">{formatCurrency(subSpent)}</td>
                                       <td className="px-2 py-2.5 text-right text-slate-500">{pctOfGroup.toFixed(1)}%</td>
                                       <td className="px-2 py-2.5 text-right text-emerald-600">{subConv.toFixed(0)}</td>
@@ -424,8 +445,10 @@ export default function MetaAdsPage() {
                                                   const campRoas = camp.cost > 0 ? (camp.conversions_value || 0) / camp.cost : 0;
                                                   return (
                                                     <tr key={camp.campaign_id} className="border-b last:border-0 hover:bg-slate-50">
-                                                      <td className="px-3 py-2 font-medium text-slate-600 truncate max-w-[200px]" title={camp.campaign_name}>
-                                                        {camp.campaign_name}
+                                                      <td className="px-3 py-2 font-medium text-slate-600 truncate max-w-[200px]">
+                                                        <AnonymizedContent isActive={isAnonymized} placeholder={anonymizer.campaign(camp.campaign_id)}>
+                                                          {camp.campaign_name}
+                                                        </AnonymizedContent>
                                                       </td>
                                                       <td className="px-2 py-2 text-right font-medium text-slate-700">
                                                         {formatCurrency(camp.cost)}

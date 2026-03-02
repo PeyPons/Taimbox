@@ -30,8 +30,12 @@ export const AVAILABLE_INTEGRATIONS: Record<string, IntegrationDefinition> = {
     category: 'crm',
     requiresConfig: false,
   },
-  // Futuras integraciones:
-  // google_ads: { ... },
-  // meta_ads: { ... },
+  anonymize_ads_for_video: {
+    id: 'anonymize_ads_for_video',
+    name: 'Modo demostración (ocultar datos sensibles)',
+    description: 'Sustituye nombres por etiquetas genéricas (Cliente A - Retail, Campaña Ecommerce 01) y mantiene los IDs visibles. Útil para grabaciones de vídeo o verificaciones ante Google Trust & Safety.',
+    category: 'other',
+    requiresConfig: false,
+  },
 };
 

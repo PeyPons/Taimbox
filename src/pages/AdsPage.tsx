@@ -20,11 +20,14 @@ import {
   RefreshCw, Clock, Search, Settings, Layers,
   TrendingUp, TrendingDown, Scissors, Plus, Trash2,
   AlertTriangle, CheckCircle2, Calendar, Target,
-  ArrowUpRight, ArrowDownRight, Eye, EyeOff, X, Check, ChevronDown
+  ArrowUpRight, ArrowDownRight, Eye, EyeOff, X, Check, ChevronDown, ShieldCheck
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency, cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
+import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
+import { AnonymizedBanner } from '@/components/ads/AnonymizedBanner';
 
 const GoogleIcon = () => (
   <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -147,6 +150,7 @@ const StatCard = memo(function StatCard({ icon: Icon, label, value, subValue, co
 
 export default function AdsPage() {
   const { currentAgency } = useAgency();
+  const { isActive: isAnonymized, anonymizer } = useAnonymizeAds();
   const [rawData, setRawData] = useState<CampaignData[]>([]);
   const [clientSettings, setClientSettings] = useState<Record<string, { budget: number; group_name: string; is_hidden: boolean; is_sales_account: boolean }>>({});
   const [registeredAccounts, setRegisteredAccounts] = useState<RegisteredAccount[]>([]);
@@ -610,6 +614,12 @@ export default function AdsPage() {
                   <Calendar className="w-3 h-3 mr-1" />
                   Del 1 al {daysInMonth}
                 </Badge>
+                {isAnonymized && (
+                  <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">
+                    <ShieldCheck className="w-3 h-3 mr-1" />
+                    Datos protegidos
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
@@ -624,6 +634,8 @@ export default function AdsPage() {
             </Button>
           </div>
         </div>
+
+        {isAnonymized && <AnonymizedBanner isActive={isAnonymized} />}
 
         {/* Stats Cards - Reorganized for PPC */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -730,7 +742,16 @@ export default function AdsPage() {
                       <div className={cn("w-1.5 h-12 rounded-full", statusConfig.color)} />
                       <div className="text-left">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-lg text-slate-900">{formatProjectName(client.client_name)}</span>
+                          <div>
+                            <AnonymizedContent isActive={isAnonymized} className="font-bold text-lg text-slate-900" asBlock placeholder={anonymizer.account(client.client_id)}>
+                              {formatProjectName(client.client_name)}
+                            </AnonymizedContent>
+                            {isAnonymized && (client.realIdsList[0]?.id || client.client_id) && (
+                              <div className="text-[10px] font-mono text-slate-400 mt-0.5">
+                                ID: {client.realIdsList[0]?.id || client.client_id}
+                              </div>
+                            )}
+                          </div>
                           {client.is_group && (
                             <Badge variant="secondary" className="text-[10px] gap-1">
                               <Layers className="w-3 h-3" /> GRUPO
@@ -944,22 +965,24 @@ export default function AdsPage() {
                                 return (
                                   <tr key={idx} className="hover:bg-slate-50">
                                     <td className="px-3 py-2.5">
-                                      <div className="font-medium text-slate-700 line-clamp-2" title={camp.campaign_name}>
-                                        {camp.campaign_name}
-                                      </div>
-                                      <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-400">
-                                        <span className="flex items-center gap-1">
-                                          <span className={cn(
-                                            "w-1.5 h-1.5 rounded-full",
-                                            camp.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-slate-300'
-                                          )} />
-                                          {camp.status === 'ENABLED' ? 'Activa' : 'Pausada'}
-                                        </span>
-                                        {client.is_group && camp.original_client_name && (
-                                          <span className="truncate max-w-[100px]">
-                                            | {formatProjectName(camp.original_client_name)}
+                                      <div className="space-y-1">
+                                        <AnonymizedContent isActive={isAnonymized} className="font-medium text-slate-700 line-clamp-2" placeholder={anonymizer.campaign(camp.campaign_id)}>
+                                          {camp.campaign_name}
+                                        </AnonymizedContent>
+                                        <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                                          <span className="flex items-center gap-1">
+                                            <span className={cn(
+                                              "w-1.5 h-1.5 rounded-full",
+                                              camp.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-slate-300'
+                                            )} />
+                                            {camp.status === 'ENABLED' ? 'Activa' : 'Pausada'}
                                           </span>
-                                        )}
+                                          {client.is_group && (camp.original_client_name || camp.original_client_id) && (
+                                            <AnonymizedContent isActive={isAnonymized} className="truncate max-w-[100px]" placeholder={anonymizer.account(camp.original_client_id || camp.client_id)}>
+                                              | {formatProjectName(camp.original_client_name || '')}
+                                            </AnonymizedContent>
+                                          )}
+                                        </div>
                                       </div>
                                     </td>
                                     <td className="px-2 py-2.5 text-right font-mono text-slate-500">
@@ -1042,7 +1065,14 @@ export default function AdsPage() {
                                         {isExpanded ? <TrendingDown className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                                       </td>
                                       <td className="px-3 py-2.5 font-medium text-slate-700">
-                                        {formatProjectName(sub.name)}
+                                        <div>
+                                          <AnonymizedContent isActive={isAnonymized} placeholder={anonymizer.account(sub.id)}>
+                                            {formatProjectName(sub.name)}
+                                          </AnonymizedContent>
+                                          {isAnonymized && (
+                                            <div className="text-[10px] font-mono text-slate-400 mt-0.5">ID: {sub.id}</div>
+                                          )}
+                                        </div>
                                       </td>
                                       <td className="px-2 py-2.5 text-right font-medium text-slate-900">
                                         {formatCurrency(subSpent)}
@@ -1094,8 +1124,10 @@ export default function AdsPage() {
 
                                                   return (
                                                     <tr key={camp.campaign_id} className="border-b last:border-0 hover:bg-slate-50">
-                                                      <td className="px-3 py-2 font-medium text-slate-600 truncate max-w-[200px]" title={camp.campaign_name}>
-                                                        {camp.campaign_name}
+                                                      <td className="px-3 py-2 font-medium text-slate-600 truncate max-w-[200px]">
+                                                        <AnonymizedContent isActive={isAnonymized} placeholder={anonymizer.campaign(camp.campaign_id)}>
+                                                          {camp.campaign_name}
+                                                        </AnonymizedContent>
                                                       </td>
                                                       <td className="px-2 py-2 text-right text-slate-500 font-mono">
                                                         {camp.daily_budget ? formatCurrency(camp.daily_budget) : '-'}
