@@ -256,7 +256,7 @@ Funciones serverless que corren en Deno dentro del contenedor `supabase-edge-fun
 | `create-billing-portal-session` | `supabase/functions/create-billing-portal-session/index.ts` | Crea sesión del Stripe Customer Portal (body: `agency_id`). Redirige al portal para gestionar tarjeta, facturas o cancelar suscripción. Requiere `STRIPE_SECRET_KEY`. |
 | `stripe-webhook` | `supabase/functions/stripe-webhook/index.ts` | Webhook Stripe: actualiza `agencies` (plan_id, subscription_status, trial_ends_at) según eventos de suscripción. Requiere `STRIPE_WEBHOOK_SECRET`. |
 | `send-welcome-email` | `supabase/functions/send-welcome-email/index.ts` | Envía email de bienvenida (registro) o invitación (añadido a agencia) vía Resend. Body: `{ email, name, agencyName, type }`. Usa `_shared/resend.ts`. Requiere `RESEND_API_KEY`. |
-| `request-password-reset` | `supabase/functions/request-password-reset/index.ts` | Genera enlace de recuperación de contraseña y lo envía por email vía Resend. Body: `{ email }`. Siempre devuelve 200 (previene enumeración de usuarios). No requiere autenticación. |
+| `request-password-reset` | `supabase/functions/request-password-reset/index.ts` | Genera enlace de recuperación de contraseña y lo envía por email vía Resend. Body: `{ email }`. Funciona para cualquier usuario en `auth.users` (empleados, admins de plataforma, etc.). Siempre devuelve 200 (previene enumeración). No requiere autenticación. |
 
 #### Módulo compartido `_shared/resend.ts`
 Módulo reutilizable que exporta `sendEmail({ to, subject, html })`. Usa la API HTTP de Resend (`https://api.resend.com/emails`). Variables: `RESEND_API_KEY` (obligatoria), `RESEND_FROM_EMAIL` (default: `Taimbox <onboarding@resend.dev>`). Sin dependencias externas.
@@ -265,7 +265,17 @@ Módulo reutilizable que exporta `sendEmail({ to, subject, html })`. Usa la API 
 - **Registro**: Al registrar una agencia (`register-agency`), se envía email de bienvenida (fire-and-forget).
 - **Crear usuario**: Al crear un usuario desde la app (`create-user`), se envía email de invitación (fire-and-forget).
 - **Invitar usuario**: Al invitar a un usuario existente (`invite-user-to-agency`), se envía email de invitación (fire-and-forget).
-- **Olvidé mi contraseña**: El frontend (`Login.tsx`) llama a `request-password-reset` que genera un enlace de recuperación (`supabase.auth.admin.generateLink`) y lo envía por email. El usuario recibe un enlace a `/reset-password?token_hash=...&type=recovery`. La página `ResetPasswordPage.tsx` verifica el token con `supabase.auth.verifyOtp()` y permite establecer nueva contraseña con `supabase.auth.updateUser()`.
+- **Olvidé mi contraseña**: El frontend (`Login.tsx`) llama a `request-password-reset` que genera un enlace de recuperación (`supabase.auth.admin.generateLink`) y lo envía por email. Funciona para cualquier usuario en `auth.users` (empleados, admins de plataforma). El usuario recibe un enlace a `/reset-password?token_hash=...&type=recovery`. La página `ResetPasswordPage.tsx` verifica el token con `supabase.auth.verifyOtp()` y permite establecer nueva contraseña con `supabase.auth.updateUser()`.
+
+#### Solución de problemas: Emails (Resend)
+
+| Problema | Causa | Solución |
+|----------|-------|----------|
+| **No llegan emails** (bienvenida, invitación, reset contraseña) | `RESEND_API_KEY` no configurada o faltante en el contenedor | Añadir en `.env`: `RESEND_API_KEY=re_xxxxxxxx` (obtener en [resend.com](https://resend.com) → API Keys). Si usas el contenedor manual, incluir `-e RESEND_API_KEY="$RESEND_API_KEY"` en el `docker run`. |
+| **Emails van a spam** | Dominio no verificado en Resend | En Resend Dashboard verificar el dominio (p. ej. `taimbox.com`) y añadir los registros DNS que indique. |
+| **Emails con remitente genérico** | `RESEND_FROM_EMAIL` no configurada | Añadir en `.env`: `RESEND_FROM_EMAIL=Taimbox <no-reply@taimbox.com>`. El dominio debe estar verificado en Resend. |
+| **"Olvidé mi contraseña" no envía email** | Usuario no existe en `auth.users` o error en Resend | La función siempre devuelve 200 (previene enumeración). Revisar logs: `docker logs functions --tail 50` y buscar `[request-password-reset]` o `[Resend]`. |
+| **Contenedor manual sin emails** | Variables Resend no pasadas al `docker run` | Incluir `-e RESEND_API_KEY="$RESEND_API_KEY"` y `-e RESEND_FROM_EMAIL="${RESEND_FROM_EMAIL:-Taimbox <no-reply@taimbox.com>}"` en el comando. Ver sección "Workaround: usar contenedor manual". |
 
 #### Arquitectura Google Ads OAuth (Modelo SaaS)
 
@@ -395,6 +405,116 @@ Si al vincular Google Ads o listar cuentas aparece **503 (Service Unavailable)**
 - Que existan las carpetas `oauth-google-ads` y `list-google-accounts` dentro del volumen de functions.
 - Que el contenedor tenga las variables anteriores (`docker inspect ... | grep GOOGLE` y comprobar SUPABASE_*).
 - Reproducir el error y ejecutar `docker logs supabase-edge-functions --tail 100` para ver el error exacto.
+
+#### Solución de problemas: HTTP 000, 404 y 301 al probar Edge Functions
+
+Al hacer `curl` a las funciones, los códigos indican lo siguiente:
+
+| Código | Significado | Acción |
+|--------|-------------|--------|
+| **HTTP:000** | Conexión fallida (timeout, conexión rechazada). El Edge Runtime no responde. | 1) Verificar IP del contenedor: `docker inspect supabase-edge-functions --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'`. 2) Comprobar que el contenedor está levantado: `docker ps \| grep edge-functions`. 3) Revisar logs: `docker logs supabase-edge-functions --tail 100` — si hay `shutdown signal received: 15` en bucle, el contenedor se reinicia; revisar que exista la carpeta `main` en `volumes/functions/` (el Edge Runtime la requiere). |
+| **HTTP:404** | Kong responde pero la ruta no existe. | Verificar que Kong enruta a `/functions/v1/` y que el puerto expuesto es el correcto (típicamente 8000). Probar también contra la URL pública con HTTPS. |
+| **HTTP:301** | Redirección (p. ej. HTTP → HTTPS). | Usar **HTTPS** en la URL: `https://api.taimbox.com/functions/v1/oauth-google-ads` en lugar de `http://`. |
+
+**Prueba recomendada con HTTPS y anon key real:**
+
+```bash
+curl -s -w "\nHTTP:%{http_code}" -X POST \
+  https://api.taimbox.com/functions/v1/oauth-google-ads \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer TU_ANON_KEY_REAL" \
+  -d '{"code":"x","redirect_uri":"https://taimbox.com/google-callback","agency_id":"60eb6a6f-c3ec-4b52-b9bb-3cb1886ad892"}'
+```
+
+- Si devuelve **400** con mensaje de error (p. ej. "Falta el código" o "Google devolvió...") → la función **sí está alcanzable**; el problema es el flujo OAuth o los datos enviados.
+- Si devuelve **503** → Kong no puede alcanzar el Edge Runtime; revisar que el contenedor `supabase-edge-functions` esté estable y que Kong tenga la ruta correcta a `functions:9000`.
+
+#### Solución de problemas: Edge Runtime reiniciándose en bucle (SIGTERM → 503)
+
+Si los logs muestran `main function started` seguido de `shutdown signal received: 15` en bucle, el contenedor se reinicia continuamente y no llega a servir peticiones. Kong devuelve 503 porque el upstream no responde.
+
+**Síntomas:** `docker logs supabase-edge-functions --tail 50` muestra el patrón repetido; `docker ps` indica "Up X minutes" (el contenedor lleva poco tiempo reiniciado).
+
+**Causas habituales y soluciones:**
+
+1. **Health check fallando**  
+   El docker-compose oficial de Supabase no define healthcheck para `functions`, pero si usas una variante (p. ej. supabase-pi) que sí lo tenga, puede estar fallando. Comprobar:
+   ```bash
+   docker inspect supabase-edge-functions --format '{{json .Config.Healthcheck}}'
+   ```
+   Si hay healthcheck y falla, opciones:
+   - Aumentar `start_period` y `interval` en el docker-compose del servicio `functions`.
+   - Comentar o eliminar el healthcheck temporalmente para verificar si el contenedor se estabiliza.
+
+2. **Memoria insuficiente (Raspberry Pi / máquinas con poca RAM)**  
+   El Edge Runtime usa ~150 MB por worker. En un Pi con varios servicios Supabase, la memoria puede agotarse y el sistema puede terminar el proceso.
+   - Revisar RAM libre: `free -h`
+   - Reducir servicios que no uses (p. ej. analytics, storage) si es posible.
+   - Aumentar swap: `sudo dphys-swapfile swapoff && sudo nano /etc/dphys-swapfile` (cambiar `CONF_SWAPSIZE` a 2048) y `sudo dphys-swapfile setup && sudo dphys-swapfile swapon`.
+
+3. **Probar sin healthcheck (diagnóstico)**  
+   Editar el `docker-compose.yml` del servicio `functions` y comentar o eliminar el bloque `healthcheck` si existe. Luego:
+   ```bash
+   cd ~/supabase-pi/supabase/docker
+   docker compose up -d functions
+   docker logs supabase-edge-functions -f
+   ```
+   Si el contenedor deja de reiniciarse, el problema era el healthcheck.
+
+4. **Verificar que el main responde**  
+   Con el contenedor estable, desde el host:
+   ```bash
+   FUNC_IP=$(docker inspect supabase-edge-functions --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')
+   curl -s -w "\nHTTP:%{http_code}" -m 5 "http://${FUNC_IP}:9000/_internal/health"
+   ```
+   Debe devolver `{"message":"ok"}` y HTTP:200.
+
+5. **Workaround: usar contenedor manual**  
+   Si el contenedor de Compose sigue en bucle y las causas anteriores no aplican, levantar el Edge Runtime manualmente. Kong enruta a `functions:9000`, así que el contenedor debe llamarse `functions` para que resuelva en la red.
+
+   **Importante:** No usar `--env-file .env` porque el `.env` tiene nombres como `SERVICE_ROLE_KEY` y la función espera `SUPABASE_SERVICE_ROLE_KEY`. Hay que pasar las variables explícitamente:
+
+   ```bash
+   cd /home/alex/supabase-pi/supabase/docker
+   docker stop supabase-edge-functions 2>/dev/null
+   docker rm -f functions 2>/dev/null
+
+   set -a
+   source .env
+   set +a
+
+   docker run -d --name functions \
+     -v /home/alex/supabase-pi/supabase/docker/volumes/functions:/home/deno/functions:Z \
+     --network supabase_default \
+     -e SUPABASE_URL=http://kong:8000 \
+     -e SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
+     -e SUPABASE_ANON_KEY="$ANON_KEY" \
+     -e JWT_SECRET="$JWT_SECRET" \
+     -e SUPABASE_DB_URL="postgresql://postgres:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}" \
+     -e GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
+     -e GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
+     -e GOOGLE_DEVELOPER_TOKEN="$GOOGLE_DEVELOPER_TOKEN" \
+     -e STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY" \
+     -e STRIPE_WEBHOOK_SECRET="$STRIPE_WEBHOOK_SECRET" \
+     -e RESEND_API_KEY="$RESEND_API_KEY" \
+     -e RESEND_FROM_EMAIL="${RESEND_FROM_EMAIL:-Taimbox <no-reply@taimbox.com>}" \
+     -e VERIFY_JWT="${FUNCTIONS_VERIFY_JWT:-true}" \
+     supabase/edge-runtime:v1.69.28 \
+     start --main-service /home/deno/functions/main
+   ```
+
+   Ajustar la ruta `/home/alex/` si el usuario o la instalación son distintos.
+
+   Verificar que responde: `curl -s https://api.taimbox.com/functions/v1/hello -H "Authorization: Bearer ANON_KEY"` debe devolver algo distinto de 503. O probar `oauth-google-ads` con un código de prueba: si devuelve 400 con "Google Error: Malformed auth code" → la función está operativa.
+
+   Para volver al contenedor de Compose:
+   ```bash
+   docker stop functions
+   docker rm functions
+   docker compose up -d functions
+   ```
+
+   Si tras volver a Compose el bucle reaparece, mantener el contenedor manual como solución estable. Puedes crear un script `start-functions-manual.sh` con el bloque anterior para ejecutarlo tras reinicios del servidor.
 
 #### Solución de problemas: Google OAuth y API Google Ads
 

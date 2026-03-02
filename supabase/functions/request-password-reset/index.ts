@@ -1,5 +1,4 @@
 // supabase/functions/request-password-reset/index.ts
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { sendEmail } from "../_shared/resend.ts"
 
@@ -125,7 +124,7 @@ function resetPasswordTemplate(name: string, resetUrl: string): string {
 </html>`.trim()
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
@@ -158,27 +157,17 @@ serve(async (req) => {
 
         console.log(`[request-password-reset] Solicitud para: ${cleanEmail}`)
 
-        // Buscar si el email existe en employees (sin revelar al caller)
+        // Obtener nombre del usuario (employees o fallback al email)
+        let userName = cleanEmail.split('@')[0]
         const { data: employee } = await supabaseAdmin
             .from('employees')
             .select('name, user_id')
             .eq('email', cleanEmail)
             .limit(1)
             .maybeSingle()
+        if (employee?.name) userName = employee.name
 
-        if (!employee || !employee.user_id) {
-            // No revelamos si el email existe o no — devolvemos 200 igualmente
-            console.log(`[request-password-reset] Email no encontrado o sin user_id: ${cleanEmail}`)
-            return new Response(
-                JSON.stringify({ success: true }),
-                {
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                    status: 200,
-                }
-            )
-        }
-
-        // Generar enlace de recuperación usando Supabase Auth admin
+        // Generar enlace de recuperación (funciona para cualquier usuario en auth.users)
         const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
             type: 'recovery',
             email: cleanEmail,
@@ -188,7 +177,7 @@ serve(async (req) => {
         })
 
         if (linkError) {
-            console.error('[request-password-reset] Error generando link:', linkError)
+            console.log('[request-password-reset] Error generando link (email puede no existir en auth):', linkError?.message ?? linkError)
             // Devolver 200 igualmente para no revelar info
             return new Response(
                 JSON.stringify({ success: true }),
@@ -233,7 +222,7 @@ serve(async (req) => {
         const emailResult = await sendEmail({
             to: cleanEmail,
             subject: 'Restablecer tu contraseña de Taimbox',
-            html: resetPasswordTemplate(employee.name || cleanEmail, resetUrl),
+            html: resetPasswordTemplate(userName, resetUrl),
         })
 
         if (!emailResult.success) {

@@ -1,5 +1,4 @@
 // supabase/functions/send-welcome-email/index.ts
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { sendEmail } from "../_shared/resend.ts"
 
 const corsHeaders = {
@@ -155,7 +154,7 @@ function invitationContent(name: string, agencyName: string): string {
 }
 
 // ─── Handler principal ───────────────────────────────────────────
-serve(async (req) => {
+Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
