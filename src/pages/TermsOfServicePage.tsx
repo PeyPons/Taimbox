@@ -159,6 +159,13 @@ export default function TermsOfServicePage() {
                         <p>
                             <strong>Rol de solo lectura:</strong> Taimbox utiliza tokens OAuth2 restrictivos y limitados ('readonly scopes') y no puede ni intentará modificar, pausar ni alterar las campañas de la Agencia. En ningún caso Taimbox asumirá responsabilidad por el rendimiento publicitario, gasto o funcionamiento interno de estas plataformas de terceros.
                         </p>
+                        <p>
+                            <strong className="text-slate-200">Uso de APIs de Google (Limited Use):</strong> El uso y la transferencia por parte de Taimbox a cualquier otra aplicación de la información recibida de las API de Google se ajustarán a la{' '}
+                            <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">
+                                Política de datos del usuario de los servicios API de Google
+                            </a>
+                            , incluidos los requisitos de Uso Limitado (Limited Use).
+                        </p>
                     </SectionCard>
 
                     <SectionCard icon={LayoutTemplate} iconColor="teal" title="6. Propiedad Intelectual">
