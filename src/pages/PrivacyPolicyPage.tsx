@@ -102,6 +102,13 @@ export default function PrivacyPolicyPage() {
                         <p><strong className="text-slate-200">Datos de Pago:</strong> No almacenamos datos de tarjeta de crédito. Toda la información de pago es procesada directamente por <strong className="text-slate-200">Stripe</strong> (PCI-DSS Level 1). Solo almacenamos el identificador del cliente de Stripe y el estado de la suscripción.</p>
                         <p><strong className="text-slate-200">Datos de Integraciones:</strong> Si conectas Google Ads o Meta Ads, almacenamos tokens OAuth2 de solo lectura para sincronizar métricas de campañas. Nunca almacenamos tus contraseñas de estas plataformas.</p>
                         <p><strong className="text-slate-200">Datos de Uso:</strong> Registros de acceso, navegación dentro de la aplicación y cookies de análisis (sujetas a tu consentimiento). Ver sección de Cookies.</p>
+                        <p>
+                            <strong className="text-slate-200">Uso de APIs de Google (Limited Use):</strong> El uso y la transferencia por parte de Taimbox a cualquier otra aplicación de la información recibida de las API de Google se ajustarán a la{' '}
+                            <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">
+                                Política de datos del usuario de los servicios API de Google
+                            </a>
+                            , incluidos los requisitos de Uso Limitado (Limited Use).
+                        </p>
                     </SectionCard>
 
                     <SectionCard icon={FileText} iconColor="blue" title="3. Finalidad y Base Legal del Tratamiento">
