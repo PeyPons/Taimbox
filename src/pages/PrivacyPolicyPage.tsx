@@ -14,6 +14,7 @@ import {
     CreditCard,
     FileText,
     Lock,
+    KeyRound,
 } from 'lucide-react';
 
 function SectionCard({ icon: Icon, iconColor, title, children }: {
@@ -100,18 +101,82 @@ export default function PrivacyPolicyPage() {
                         <p><strong className="text-slate-200">Datos de la Cuenta:</strong> Nombre, dirección de correo electrónico y contraseña (almacenada con hash seguro) necesarios para crear tu cuenta y acceder al servicio.</p>
                         <p><strong className="text-slate-200">Datos de la Agencia:</strong> Nombre de la agencia, empleados, proyectos, clientes, asignaciones, horas y configuración operativa que introduces en la plataforma para gestionar tu flujo de trabajo.</p>
                         <p><strong className="text-slate-200">Datos de Pago:</strong> No almacenamos datos de tarjeta de crédito. Toda la información de pago es procesada directamente por <strong className="text-slate-200">Stripe</strong> (PCI-DSS Level 1). Solo almacenamos el identificador del cliente de Stripe y el estado de la suscripción.</p>
-                        <p><strong className="text-slate-200">Datos de Integraciones:</strong> Si conectas Google Ads o Meta Ads, almacenamos tokens OAuth2 de solo lectura para sincronizar métricas de campañas. Nunca almacenamos tus contraseñas de estas plataformas.</p>
+                        <p><strong className="text-slate-200">Datos de Integraciones:</strong> Si conectas Google Ads o Meta Ads, almacenamos tokens OAuth2 de solo lectura (cifrados en reposo) para sincronizar métricas de campañas como impresiones, clics, coste y conversiones. Nunca almacenamos tus contraseñas de estas plataformas. Para más información sobre los datos de Google específicamente, consulta la sección 3.</p>
                         <p><strong className="text-slate-200">Datos de Uso:</strong> Registros de acceso, navegación dentro de la aplicación y cookies de análisis (sujetas a tu consentimiento). Ver sección de Cookies.</p>
+                    </SectionCard>
+
+                    <SectionCard icon={KeyRound} iconColor="emerald" title="3. Datos de Google API Services (Uso Limitado)">
                         <p>
-                            <strong className="text-slate-200">Uso de APIs de Google (Limited Use):</strong> El uso y la transferencia por parte de Taimbox a cualquier otra aplicación de la información recibida de las API de Google se ajustarán a la{' '}
+                            Taimbox utiliza las API de Google Ads para proporcionar sus funcionalidades de integración PPC. Esta sección detalla de forma específica cómo tratamos la información recibida a través de estas API, en cumplimiento de la{' '}
                             <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">
                                 Política de datos del usuario de los servicios API de Google
                             </a>
-                            , incluidos los requisitos de Uso Limitado (Limited Use).
+                            , incluidos los requisitos de uso limitado (<em>Limited Use</em>).
+                        </p>
+
+                        <p><strong className="text-slate-200">3.1 Datos de Google que accedemos y almacenamos:</strong></p>
+                        <ul className="space-y-2 ml-1">
+                            <li className="flex items-start gap-2">
+                                <span className="text-emerald-400 mt-1.5 shrink-0">•</span>
+                                <span>Estructura de la cuenta publicitaria: campañas, grupos de anuncios y anuncios (nombres, estados e identificadores).</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-emerald-400 mt-1.5 shrink-0">•</span>
+                                <span>Métricas de rendimiento: impresiones, clics, coste, conversiones y métricas derivadas (CTR, CPC, CPA) agregadas por campaña y periodo.</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-emerald-400 mt-1.5 shrink-0">•</span>
+                                <span>Tokens OAuth2 de actualización (<em>refresh tokens</em>) necesarios para mantener la conexión, almacenados con cifrado en reposo.</span>
+                            </li>
+                        </ul>
+
+                        <p><strong className="text-slate-200">3.2 Cómo utilizamos los datos de Google:</strong> Estos datos se utilizan <strong className="text-slate-200">exclusivamente</strong> para mostrar informes de rendimiento de campañas publicitarias dentro del panel de Taimbox, permitiéndote monitorizar el gasto y retorno de inversión (ROI) de tus clientes. No utilizamos estos datos para ningún otro fin más allá de proporcionar y mejorar las funcionalidades de la aplicación directamente visibles para el usuario.</p>
+
+                        <p><strong className="text-slate-200">3.3 No vendemos datos de Google:</strong> En ningún caso vendemos, cedemos ni facilitamos a terceros datos obtenidos a través de las API de Google, ya sea de forma gratuita o por contraprestación económica.</p>
+
+                        <p><strong className="text-slate-200">3.4 Compartición con terceros:</strong> No compartimos, transferimos ni divulgamos datos de Google a terceros, salvo cuando sea estrictamente necesario para la prestación del servicio (por ejemplo, el almacenamiento cifrado en nuestra infraestructura de Supabase/AWS dentro de la UE) o cuando así lo requiera la legislación aplicable mediante orden judicial o gubernamental.</p>
+
+                        <p><strong className="text-slate-200">3.5 Usos prohibidos:</strong> Los datos recibidos de las API de Google <strong className="text-slate-200">nunca</strong> se utilizarán para:</p>
+                        <ul className="space-y-2 ml-1">
+                            <li className="flex items-start gap-2">
+                                <span className="text-emerald-400 mt-1.5 shrink-0">•</span>
+                                <span>Publicidad dirigida, segmentada, personalizada o retargeting.</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-emerald-400 mt-1.5 shrink-0">•</span>
+                                <span>Venta a intermediarios de datos (<em>data brokers</em>) o revendedores de información.</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-emerald-400 mt-1.5 shrink-0">•</span>
+                                <span>Determinación de solvencia crediticia o fines de préstamo.</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-emerald-400 mt-1.5 shrink-0">•</span>
+                                <span>Entrenamiento de modelos de inteligencia artificial o aprendizaje automático.</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-emerald-400 mt-1.5 shrink-0">•</span>
+                                <span>Creación de bases de datos independientes o perfiles de usuario.</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                                <span className="text-emerald-400 mt-1.5 shrink-0">•</span>
+                                <span>Cualquier otro fin no relacionado directamente con las funcionalidades visibles para el usuario dentro de Taimbox.</span>
+                            </li>
+                        </ul>
+
+                        <p><strong className="text-slate-200">3.6 Protección de los datos de Google:</strong> Los tokens OAuth2 se almacenan con cifrado en reposo en nuestra base de datos. Todas las comunicaciones con las API de Google se realizan a través de HTTPS/TLS 1.2+. El acceso a estos datos está restringido mediante políticas de seguridad a nivel de fila (<em>Row Level Security</em>), garantizando que solo la agencia propietaria puede acceder a su información.</p>
+
+                        <p><strong className="text-slate-200">3.7 Retención y eliminación:</strong> Los datos de Google Ads se conservan mientras la integración esté activa. La Agencia puede desconectar su cuenta de Google Ads en cualquier momento desde los ajustes de la plataforma, lo que provocará la eliminación inmediata de los tokens de acceso y los datos sincronizados. Al cancelar la cuenta de Taimbox, todos los datos de Google se eliminan en cascada como parte del proceso de supresión descrito en la sección 8.</p>
+
+                        <p>
+                            <strong className="text-slate-200">3.8 Revocación del acceso:</strong> Además de desconectar la integración desde Taimbox, puedes revocar el acceso de Taimbox a tus datos de Google en cualquier momento visitando la página de{' '}
+                            <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">
+                                permisos de tu cuenta de Google
+                            </a>.
                         </p>
                     </SectionCard>
 
-                    <SectionCard icon={FileText} iconColor="blue" title="3. Finalidad y Base Legal del Tratamiento">
+                    <SectionCard icon={FileText} iconColor="blue" title="4. Finalidad y Base Legal del Tratamiento">
                         <p>Tratamos tus datos con las siguientes finalidades y bases legales:</p>
                         <ul className="space-y-2 ml-1">
                             <li className="flex items-start gap-2">
@@ -133,7 +198,7 @@ export default function PrivacyPolicyPage() {
                         </ul>
                     </SectionCard>
 
-                    <SectionCard icon={Cookie} iconColor="orange" title="4. Cookies">
+                    <SectionCard icon={Cookie} iconColor="orange" title="5. Cookies">
                         <p>
                             Utilizamos cookies para el funcionamiento del servicio y, con tu consentimiento, para análisis y marketing. Puedes gestionar tus preferencias en cualquier momento:
                         </p>
@@ -162,7 +227,7 @@ export default function PrivacyPolicyPage() {
                         </p>
                     </SectionCard>
 
-                    <SectionCard icon={Server} iconColor="teal" title="5. Subencargados del Tratamiento">
+                    <SectionCard icon={Server} iconColor="teal" title="6. Subencargados del Tratamiento">
                         <p>
                             Para ofrecer un servicio seguro y escalable, nos apoyamos en los siguientes proveedores (subencargados):
                         </p>
@@ -206,7 +271,7 @@ export default function PrivacyPolicyPage() {
                         </div>
                     </SectionCard>
 
-                    <SectionCard icon={Globe} iconColor="cyan" title="6. Transferencias Internacionales de Datos">
+                    <SectionCard icon={Globe} iconColor="cyan" title="7. Transferencias Internacionales de Datos">
                         <p>
                             Alojamos la infraestructura principal de Taimbox en centros de datos de <strong className="text-slate-200">Amazon Web Services en Frankfurt (UE)</strong>, garantizando que tus datos permanecen dentro de la Unión Europea.
                         </p>
@@ -215,7 +280,7 @@ export default function PrivacyPolicyPage() {
                         </p>
                     </SectionCard>
 
-                    <SectionCard icon={Clock} iconColor="amber" title="7. Plazos de Conservación">
+                    <SectionCard icon={Clock} iconColor="amber" title="8. Plazos de Conservación">
                         <p>
                             Conservamos tus datos personales mientras mantengas una cuenta activa en Taimbox y sean necesarios para prestarte el servicio.
                         </p>
@@ -227,7 +292,7 @@ export default function PrivacyPolicyPage() {
                         </p>
                     </SectionCard>
 
-                    <SectionCard icon={Lock} iconColor="violet" title="8. Tus Derechos">
+                    <SectionCard icon={Lock} iconColor="violet" title="9. Tus Derechos">
                         <p>
                             Conforme al RGPD, tienes los siguientes derechos sobre tus datos personales:
                         </p>
@@ -252,7 +317,7 @@ export default function PrivacyPolicyPage() {
                         </p>
                     </SectionCard>
 
-                    <SectionCard icon={Mail} iconColor="rose" title="9. Contacto y Reclamaciones">
+                    <SectionCard icon={Mail} iconColor="rose" title="10. Contacto y Reclamaciones">
                         <p>
                             Si tienes dudas sobre el tratamiento de tus datos o deseas presentar una reclamación, puedes contactarnos en{' '}
                             <a href="mailto:hola@taimbox.com" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2">hola@taimbox.com</a>.
@@ -265,7 +330,7 @@ export default function PrivacyPolicyPage() {
                         </p>
                     </SectionCard>
 
-                    <SectionCard icon={CreditCard} iconColor="fuchsia" title="10. Modificaciones de esta Política">
+                    <SectionCard icon={CreditCard} iconColor="fuchsia" title="11. Modificaciones de esta Política">
                         <p>
                             Nos reservamos el derecho de actualizar esta Política de Privacidad para reflejar cambios en nuestras prácticas o en la legislación aplicable. En caso de cambios sustanciales, te notificaremos a través de la plataforma o por correo electrónico.
                         </p>
