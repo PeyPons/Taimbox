@@ -544,24 +544,25 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
           const newProjectMonthTotal = projectMonthHours + totalDistributed;
 
           if (projectBudget > 0 && newProjectMonthTotal > projectBudget) {
-            toast.error(`No se puede guardar: Proyecto excede horas contratadas (${newProjectMonthTotal.toFixed(1)}h / ${projectBudget.toFixed(1)}h)`);
-            continue;
+            toast.warning(`Proyecto excede horas contratadas (${newProjectMonthTotal.toFixed(1)}h / ${projectBudget.toFixed(1)}h). Se creará de todas formas.`);
           }
 
-          // Validar capacidad por semana
+          // Avisar si alguna semana excede capacidad (sin bloquear)
+          const checkedWeeks = new Set<string>();
           for (const distTask of validTasks) {
+            if (checkedWeeks.has(distTask.weekDate)) continue;
+            checkedWeeks.add(distTask.weekDate);
+
             const weekLoad = getEmployeeLoadForWeek(employeeId, distTask.weekDate, undefined, undefined, viewDate);
             const currentWeekHours = weekLoad?.hours || 0;
             const weekCapacity = weekLoad?.capacity || 0;
 
-            // Sumar todas las tareas de esta semana
             const weekTasks = validTasks.filter(t => t.weekDate === distTask.weekDate);
             const weekTotalHours = weekTasks.reduce((sum, t) => sum + parseHours(t.hours), 0);
             const newWeekTotal = currentWeekHours + weekTotalHours;
 
             if (newWeekTotal > weekCapacity) {
-              toast.error(`No se puede guardar: Semana ${format(parseISO(distTask.weekDate), 'd MMM')} excede capacidad (${newWeekTotal.toFixed(1)}h / ${weekCapacity.toFixed(1)}h)`);
-              continue;
+              toast.warning(`Semana ${format(parseISO(distTask.weekDate), 'd MMM')} excede capacidad (${newWeekTotal.toFixed(1)}h / ${weekCapacity.toFixed(1)}h). Se creará de todas formas.`);
             }
           }
 
@@ -1325,6 +1326,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                 // Validar que todas las tareas con acción "distribute" tengan la suma correcta
                 let canSubmit = true;
                 const validationErrors: string[] = [];
+                const capacityWarnings: string[] = [];
 
                 for (const task of allTasks) {
                   const action = taskActions[task.id];
@@ -1380,8 +1382,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                       const newWeekTotal = currentWeekHours + weekTotalHours;
 
                       if (newWeekTotal > weekCapacity) {
-                        canSubmit = false;
-                        validationErrors.push(`"${task.taskName}": semana ${format(parseISO(distTask.weekDate), 'd MMM')} excede capacidad (${newWeekTotal.toFixed(1)}h / ${weekCapacity.toFixed(1)}h)`);
+                        capacityWarnings.push(`"${task.taskName}": semana ${format(parseISO(distTask.weekDate), 'd MMM')} excede capacidad (${newWeekTotal.toFixed(1)}h / ${weekCapacity.toFixed(1)}h)`);
                       }
                     }
                   } else if (action === 'keep') {
@@ -1440,8 +1441,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                         const newWeekTotal = currentWeekHours + remainingHours;
 
                         if (newWeekTotal > weekCapacity) {
-                          canSubmit = false;
-                          validationErrors.push(`"${task.taskName}": excede tu capacidad en esa semana (${newWeekTotal.toFixed(1)}h / ${weekCapacity.toFixed(1)}h)`);
+                          capacityWarnings.push(`"${task.taskName}": excede tu capacidad en esa semana (${newWeekTotal.toFixed(1)}h / ${weekCapacity.toFixed(1)}h)`);
                         }
                       }
                     }
@@ -1467,8 +1467,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
 
                         const targetEmployee = employees.find(e => e.id === targetEmployeeId);
                         if (targetEmployee && newTargetTotal > targetCapacity) {
-                          canSubmit = false;
-                          validationErrors.push(`"${task.taskName}": ${targetEmployee.name} excedería su capacidad (${newTargetTotal.toFixed(1)}h / ${targetCapacity.toFixed(1)}h)`);
+                          capacityWarnings.push(`"${task.taskName}": ${targetEmployee.name} excedería su capacidad (${newTargetTotal.toFixed(1)}h / ${targetCapacity.toFixed(1)}h)`);
                         }
                       }
                     }
@@ -1480,7 +1479,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                     onClick={handleCloseWeek}
                     className="bg-primary hover:bg-primary/90"
                     disabled={!canSubmit || isSubmitting}
-                    title={!canSubmit ? validationErrors.join('; ') : ''}
+                    title={!canSubmit ? validationErrors.join('; ') : capacityWarnings.length > 0 ? `⚠️ ${capacityWarnings.join('; ')}` : ''}
                   >
                     {isSubmitting ? (
                       <>

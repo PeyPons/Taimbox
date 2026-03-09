@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
@@ -11,6 +12,7 @@ interface ImpersonationRow {
 }
 
 export function ImpersonationBanner() {
+  const navigate = useNavigate();
   const [info, setInfo] = useState<ImpersonationRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [exiting, setExiting] = useState(false);
@@ -46,7 +48,7 @@ export function ImpersonationBanner() {
       });
       if (error) throw error;
       setInfo(null);
-      window.location.href = "/admin/agencies";
+      navigate("/admin/agencies");
     } catch (e) {
       console.error("[ImpersonationBanner] Error:", e);
     } finally {
