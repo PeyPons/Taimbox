@@ -93,6 +93,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
   const [userAgencies, setUserAgencies] = useState<UserAgency[]>([]);
   const isInitialLoadRef = useRef(true);
   const repairAttemptedRef = useRef(false);
+  const prevUserIdRef = useRef<string | null>(null);
 
   // Migración automática de integraciones para agencias existentes (definida primero para usarse en mapSupabaseAgency)
   const migrateIntegrations = useCallback(async (agencyId: string, settings: AgencySettings): Promise<AgencySettings> => {
@@ -449,13 +450,20 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, mapSupabaseAgency]);
 
-  // Cargar agencia cuando el usuario esté autenticado
+  // Cargar agencia cuando el usuario esté autenticado. Guarda con prevUserIdRef evita recargas
+  // masivas cuando Supabase refresca el token o re-emite sesión al cambiar de pestaña.
   useEffect(() => {
-    if (isAuthInitialized) {
-      repairAttemptedRef.current = false;
-      fetchAgencyForUser();
+    if (!isAuthInitialized) return;
+    if (user?.id != null && currentAgency != null && user.id === prevUserIdRef.current) {
+      return;
     }
-  }, [isAuthInitialized, fetchAgencyForUser]);
+    if (!user?.id) {
+      prevUserIdRef.current = null;
+    }
+    repairAttemptedRef.current = false;
+    fetchAgencyForUser();
+    prevUserIdRef.current = user?.id ?? null;
+  }, [isAuthInitialized, fetchAgencyForUser, user?.id, currentAgency]);
 
   const refreshAgency = useCallback(async () => {
     await fetchAgencyForUser();

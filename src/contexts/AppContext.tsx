@@ -194,6 +194,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Ref para evitar vinculaciones duplicadas - DEBE estar ANTES de los useEffects
   const hasLinkedUserRef = useRef<string | null>(null);
+  // Ref para evitar cascadas al cambiar de pestaña (Supabase refresca token y re-emite authUser con nueva ref)
+  const prevAuthUserIdRef = useRef<string | null>(null);
   // Ref para acceder a employees sin trigger re-renders
   const employeesRef = useRef<Employee[]>([]);
   // Ref para trackear meses cargados globalmente (centralizado)
@@ -804,19 +806,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => { supabase.removeChannel(channel); };
   }, [currentAgency?.id]);
 
-  // Reaccionar a cambios de usuario (login/logout) - SOLO cuando employees esté cargado
+  // Reaccionar a cambios de usuario (login/logout) - SOLO cuando employees esté cargado.
+  // Guarda con prevAuthUserIdRef evita cascadas cuando Supabase refresca el token al cambiar de pestaña.
   useEffect(() => {
-    // No hacer nada si auth no está inicializado
     if (!isAuthInitialized) return;
-
-    // No hacer nada si aún estamos cargando datos iniciales
     if (isLoading) return;
-
-    // No hacer nada si employees aún no se ha cargado (usar ref para evitar dependencia)
     if (employeesRef.current.length === 0) return;
 
+    if (authUser?.id != null && authUser.id === prevAuthUserIdRef.current && hasLinkedUserRef.current != null) {
+      return;
+    }
+    if (!authUser?.id) {
+      prevAuthUserIdRef.current = null;
+    }
+
     if (authUser) {
-      // Evitar vincular múltiples veces al mismo usuario
       if (hasLinkedUserRef.current === authUser.id) {
         return;
       }
@@ -862,10 +866,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } else {
       // Usuario deslogueado - resetear
       hasLinkedUserRef.current = null;
+      prevAuthUserIdRef.current = null;
       setCurrentUser(undefined);
     }
-    // Usamos employeesRef para acceder al valor actual sin trigger re-renders
-    // El efecto se ejecutará cuando authUser cambie o cuando isLoading pase de true a false
+    prevAuthUserIdRef.current = authUser?.id ?? null;
   }, [authUser, isAuthInitialized, isLoading]);
 
   const addEmployee = useCallback(async (employee: Omit<Employee, 'id'>) => {
