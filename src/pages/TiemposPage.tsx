@@ -52,14 +52,21 @@ export default function TiemposPage() {
     }
     setIsLoading(true);
     fetchTeamTimers().finally(() => setIsLoading(false));
-    const t = setInterval(fetchTeamTimers, 5000);
+    const t = setInterval(fetchTeamTimers, 60000);
     return () => clearInterval(t);
   }, [isTimeTrackerEnabled, fetchTeamTimers]);
 
   useEffect(() => {
-    const onTimerStarted = () => fetchTeamTimers();
-    window.addEventListener('timeboxing_timer_started', onTimerStarted);
-    return () => window.removeEventListener('timeboxing_timer_started', onTimerStarted);
+    const handleUpdate = () => fetchTeamTimers();
+    window.addEventListener('timeboxing_timer_started', handleUpdate);
+    window.addEventListener('timeboxing_timer_stopped', handleUpdate);
+    const bc = new BroadcastChannel('timer_sync');
+    bc.onmessage = handleUpdate;
+    return () => {
+      window.removeEventListener('timeboxing_timer_started', handleUpdate);
+      window.removeEventListener('timeboxing_timer_stopped', handleUpdate);
+      bc.close();
+    };
   }, [fetchTeamTimers]);
 
   useEffect(() => {
