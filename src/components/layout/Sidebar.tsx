@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
 import { useApp } from '@/contexts/AppContext';
@@ -150,6 +150,29 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const isTimeTrackerEnabled = (modules.timeTracker === true) && (currentUser?.user_id != null);
   const activeTimer = useActiveTimerForSidebar(isTimeTrackerEnabled ? currentUser?.id : undefined);
 
+  // Tiempo mostrado en tiempo real (cada 1s) sin tocar el polling del hook (60s)
+  const startedAtRef = useRef<number>(0);
+  const [displayElapsedSeconds, setDisplayElapsedSeconds] = useState(0);
+  useEffect(() => {
+    if (activeTimer.isActive && activeTimer.elapsedSeconds >= 0) {
+      startedAtRef.current = Date.now() - activeTimer.elapsedSeconds * 1000;
+      setDisplayElapsedSeconds(activeTimer.elapsedSeconds);
+    }
+  }, [activeTimer.isActive, activeTimer.elapsedSeconds]);
+  useEffect(() => {
+    if (!activeTimer.isActive) return;
+    const tick = () => setDisplayElapsedSeconds(Math.max(0, Math.floor((Date.now() - startedAtRef.current) / 1000)));
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [activeTimer.isActive]);
+  const formattedLiveTime = (() => {
+    const s = displayElapsedSeconds;
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+  })();
+
   const isSuperior = canAccess('/planner') || canAccess('/team') || canAccess('/operaciones') || canAccess('/finanzas') || canAccess('/settings');
 
   return (
@@ -222,7 +245,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               {activeTimer.isActive ? (
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm text-emerald-400 font-mono tabular-nums">{activeTimer.formattedTime}</span>
+                    <span className="text-sm text-emerald-400 font-mono tabular-nums">{formattedLiveTime}</span>
                     <Button
                       variant="ghost"
                       size="sm"
