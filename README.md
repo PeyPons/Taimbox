@@ -10,7 +10,7 @@
 ---
 
 > [!IMPORTANT]
-> **Para Agentes de IA y Desarrolladores**: Este archivo es un resumen de alto nivel. Para detalles técnicos profundos, flujos de datos complejos y guías de implementación, **consultar obligatoriamente** [`DOCUMENTACION.md`](./DOCUMENTACION.md).
+> **Para Agentes de IA y Desarrolladores**: Este archivo es un resumen de alto nivel. Para detalles técnicos profundos, flujos de datos complejos y guías de implementación, **consultar obligatoriamente** [`DOCUMENTACION.md`](./DOCUMENTACION.md). **Documentación del proyecto:** solo estos dos archivos (README.md y DOCUMENTACION.md); no hay otros `.md` de documentación en el repo — mantener toda la información aquí o en DOCUMENTACION para evitar documentación dispersa.
 
 ---
 
@@ -246,7 +246,7 @@ Todas las páginas principales de la aplicación.
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
 | `EmployeeDashboard.tsx` | 40KB | Vista personal del empleado ("Mi Semana"). **Móvil**: Dialog→Sheet para "Gestión interna" y "Añadir tareas"; navegación mes con botones ≥44px. |
-| `DeadlinesPage.tsx` | ~3500 líneas | Gestión de fechas límite mensuales. **Sugerencias de redistribución**: panel compacto (3) en sidebar y popup ampliable (Dialog desktop / Sheet móvil) con hasta 20 sugerencias; solo entre empleados que comparten proyectos. **Condicionantes**: quién puede ceder horas (switches), carga máx. receptor (%) y carga mín. quien cede (%); resumen propuesto por receptor (transferencias y cargas resultantes). Algoritmo documentado en `docs/ALGORITMO-REDISTRIBUCION-RESUMEN-PATENTES.md`. **Móvil**: filtros en Sheet, edición en Sheet; selector de mes sticky. |
+| `DeadlinesPage.tsx` | ~3500 líneas | Gestión de fechas límite mensuales. **Sugerencias de redistribución**: panel compacto (3) en sidebar y popup ampliable (Dialog desktop / Sheet móvil) con hasta 20 sugerencias; solo entre empleados que comparten proyectos. **Condicionantes**: quién puede ceder horas (switches), carga máx. receptor (%) y carga mín. quien cede (%); resumen propuesto por receptor (transferencias y cargas resultantes). Ver DOCUMENTACION.md (Deadlines, sugerencias de redistribución). **Móvil**: filtros en Sheet, edición en Sheet; selector de mes sticky. |
 | `WeeklyForecastPage.tsx` | 94KB | Previsión y confirmación semanal |
 | `TeamCapacityPage.tsx` | 26KB | Vista de carga del equipo completo |
 | `TeamPage.tsx` | 4KB | Listado de empleados |
@@ -302,7 +302,7 @@ Todas las páginas principales de la aplicación.
 | `PreciosPage.tsx` | — | Página pública de precios (`/precios`): planes Starter, Pro y Business con CTAs a registro. |
 | `PrivacyPolicyPage.tsx` | ~11KB | Página pública de Política de Privacidad (`/privacidad`). |
 | `TermsOfServicePage.tsx` | ~12KB | Página pública de Condiciones del Servicio (`/condiciones`). |
-| `LandingPage.tsx` | ~80KB | Página pública de marketing (home). Usa `LandingHeader` (header fijo unificado con mega-menú `FeaturesDropdown`, enlaces Guía/API/Login, menú hamburguesa móvil). **Footer** con enlace a "Por qué Taimbox" (`/por-que-timeboxing`), demo, guía, API y **Cookies** (abre preferencias RGPD). **Banner de cookies** (`CookieBanner.tsx`): barra intrusiva con overlay RGPD, "Aceptar todas" / "Solo necesarias" / "Personalizar", persistencia en `localStorage` (`timeboxing_cookie_consent`), modal de preferencias. **Google Consent Mode v2 para GTM**: 4 cookies `timeboxing_gtm_analytics_storage`, `timeboxing_gtm_ad_storage`, etc. (valor `granted`/`denied`) + dataLayer evento `cookie_consent_update`. Ver `docs/GTM-CONSENT-MODE.md`. **Demo interactiva** (Planificador, Dashboard, Weekly, Deadlines): barra de navegación destacada con fondo indigo, texto "Elige qué explorar:" e iconos por módulo; responsive y usable en móvil y escritorio. Carousel de features con enlaces a landings comerciales. Schema JSON-LD SoftwareApplication en Helmet. Componentes: `LandingHeader.tsx`, `FeaturesDropdown.tsx`, `LandingFooter.tsx`, `CookieBanner.tsx`, `CalendarPreview.tsx`. Utilidad: `src/lib/cookieConsent.ts`. |
+| `LandingPage.tsx` | ~80KB | Página pública de marketing (home). Usa `LandingHeader` (header fijo unificado con mega-menú `FeaturesDropdown`, enlaces Guía/API/Login, menú hamburguesa móvil). **Footer** con enlace a "Por qué Taimbox" (`/por-que-timeboxing`), demo, guía, API y **Cookies** (abre preferencias RGPD). **Banner de cookies** (`CookieBanner.tsx`): barra intrusiva con overlay RGPD, "Aceptar todas" / "Solo necesarias" / "Personalizar", persistencia en `localStorage` (`timeboxing_cookie_consent`), modal de preferencias. **Google Consent Mode v2 para GTM**: 4 cookies `timeboxing_gtm_analytics_storage`, `timeboxing_gtm_ad_storage`, etc. (valor `granted`/`denied`) + dataLayer evento `cookie_consent_update`. Ver DOCUMENTACION.md (Google Consent Mode v2). **Demo interactiva** (Planificador, Dashboard, Weekly, Deadlines): barra de navegación destacada con fondo indigo, texto "Elige qué explorar:" e iconos por módulo; responsive y usable en móvil y escritorio. Carousel de features con enlaces a landings comerciales. Schema JSON-LD SoftwareApplication en Helmet. Componentes: `LandingHeader.tsx`, `FeaturesDropdown.tsx`, `LandingFooter.tsx`, `CookieBanner.tsx`, `CalendarPreview.tsx`. Utilidad: `src/lib/cookieConsent.ts`. |
 | `ArticlePage.tsx` | ~3KB | Página pública del artículo largo en `/por-que-timeboxing`. Usa `LandingHeader`. Renderiza `LandingArticle` (6 bloques: Gancho, Teoría, Problema en agencias, Solución con DemoPlanner lazy, Arquitectura/API, CTA). Schema JSON-LD Article + SoftwareApplication. Enlazada desde el footer de la home. |
 | `EmployeeDashboardLandingPage.tsx` | ~3KB | Landing comercial pública en `/dashboard-empleado`. Usa `LandingHeader`. Presenta las funcionalidades del dashboard del empleado con 6 secciones y mockups CSS. Componentes: `LandingHeader.tsx`, `EmployeeDashboardArticle.tsx`, `LandingFooter.tsx`. |
 | `PlannerLandingPage.tsx` | ~3KB | Landing comercial pública en `/planificador-recursos`. Usa `LandingHeader`. Grid de planificación semanal, asignación con vista de impacto, dependencias y semanas partidas. Componentes: `LandingHeader.tsx`, `PlannerArticle.tsx`, `LandingFooter.tsx`. |
@@ -338,11 +338,11 @@ Sistema de auditoría para cambios críticos.
 
 ### Edge Functions (Supabase)
 **Supabase self-hosted:** no se usa `supabase login` ni `supabase functions deploy`. Para estos casos:
-1. **Crear el script de deploy en el servidor** con un heredoc (copiar/pegar el bloque completo desde `supabase/scripts/README-deploy.md` → sección "Crear el script de deploy en el servidor (heredoc)").
+1. **Crear el script de deploy en el servidor** con un heredoc (copiar/pegar el bloque completo ver DOCUMENTACION.md, sección Despliegue de Edge Functions (self-hosted)).
 2. **Tener la carpeta** `supabase/functions/` en el servidor (p. ej. en `~/Taimbox/supabase/functions/`, por rsync o clonando el repo).
 3. **Ejecutar el deploy:** `cd ~/Taimbox && ./supabase/scripts/deploy-edge-functions-supabase-pi.sh`
 
-Detalle completo (rutas, variables, rsync desde PC): **`supabase/scripts/README-deploy.md`**. Resumen técnico: DOCUMENTACION.md sección 7 "Supabase self-hosted".
+Detalle completo: DOCUMENTACION.md (sección 7 "Supabase self-hosted" y subsección Despliegue de Edge Functions).
 
 | Función | Archivo | Descripción |
 |---------|---------|-------------|
@@ -361,13 +361,13 @@ Detalle completo (rutas, variables, rsync desde PC): **`supabase/scripts/README-
 | **`stripe-webhook`** | `supabase/functions/stripe-webhook/index.ts` | Webhook de Stripe: actualiza `agencies` (plan_id, subscription_status, trial_ends_at) según eventos de suscripción. Requiere `STRIPE_WEBHOOK_SECRET`. |
 
 ### Suscripciones (Stripe)
-- Planes **Starter** (gratis), **Pro** (49 €/mes) y **Business** (149 €/mes). Nuevos registros reciben trial Business 14 días. Límites por plan (empleados, histórico 30 días en Starter), soft lock al exceder. Flujo: Checkout Stripe → webhook actualiza `agencies`. Ver **DOCUMENTACION.md** sección Suscripciones y `docs/PLAN-SUSCRIPCIONES-IMPLEMENTACION-COMPLETO.md`.
+- Planes **Starter** (gratis), **Pro** (49 €/mes) y **Business** (149 €/mes). Nuevos registros reciben trial Business 14 días. Límites por plan (empleados, histórico 30 días en Starter), soft lock al exceder. Flujo: Checkout Stripe → webhook actualiza `agencies`. Ver DOCUMENTACION.md sección Suscripciones (Stripe).
 
 ### Base de datos (Supabase)
 - **RLS**: Todas las tablas públicas usan Row Level Security con la función `requesting_agency_id()` (JWT o `user_agencies`). Si añades una tabla, definir política coherente.
-- **Suscripciones**: tabla `agencies` incluye `plan_id`, `subscription_status`, `stripe_customer_id`, `stripe_subscription_id`, `trial_ends_at` (migración `20260228120000_add_agency_billing.sql`).
+- **Suscripciones**: tabla `agencies` incluye `plan_id`, `subscription_status`, `stripe_customer_id`, `stripe_subscription_id`, `trial_ends_at`.
 - **api_tokens**: Tabla para tokens API por agencia; gestión en `/api-keys` (ApiKeysPage). Edge functions: `generate-api-token`, `revoke-api-token`.
-- **Limpieza empleado**: La app llama a `cleanup_employee_data(uuid)` antes de borrar un empleado. La función (en `20260221110000_cleanup_employee_data.sql` y actualizada en `20260221140000_create_timer_sessions.sql`) elimina active_timers, **timer_sessions**, time_entries, allocations, absences, feedback, rutinas, professional_goals, task_transfers y actualiza deadlines/team_events. **Comandos para aplicar migraciones:** [docs/MIGRACIONES-SERVIDOR.md](docs/MIGRACIONES-SERVIDOR.md). **Informe del módulo Cronómetro** (plan, BD, timer_sessions para webhooks, frontend): [docs/INFORME-CRONOMETRO-TAREAS.md](docs/INFORME-CRONOMETRO-TAREAS.md).
+- **Limpieza empleado**: La app llama a `cleanup_employee_data(uuid)` antes de borrar un empleado. La función elimina active_timers, **timer_sessions**, time_entries, allocations, absences, feedback, rutinas, professional_goals, task_transfers y actualiza deadlines/team_events. Módulo Cronómetro (plan, BD, timer_sessions, frontend): ver DOCUMENTACION.md (Cronómetro / limpieza empleado).
 
 </details>
 
@@ -462,7 +462,7 @@ Antes de deployar cambios críticos:
 - [ ] **RLS**: Todas las tablas públicas tienen RLS con `requesting_agency_id()`. Si añades una tabla, habilitar RLS y crear política. El `service_role` bypasea RLS.
 - [ ] **Tokens API**: Los tokens se gestionan desde `/api-keys` (ApiKeysPage). Edge functions: `generate-api-token` (firma JWT con claim `agency_id` y `permissions`) y `revoke-api-token`. Para que los permisos `readonly`/`readwrite` funcionen correctamente, la BD debe tener la función `can_write_via_api()` y políticas RLS que la usen. Ver DOCUMENTACION.md sección 7 para detalles de la arquitectura.
 - [ ] **Overlays (Select/Dialog)**: Para evitar el desplazamiento del contenido al abrir desplegables, las **páginas** usan **Popover + Command** en lugar de Select (Radix). Patrón de referencia: DeadlinesPage (filtros), BatchTaskRow (selector de proyecto). Si añades un nuevo filtro o selector en una página, usa Popover+Command. Los componentes compartidos (EmployeeDialog, AbsencesSheet, etc.) pueden seguir usando Select dentro de Dialogs/Sheets; si en algún caso se aprecia el mismo salto, aplicar el mismo patrón.
-- [ ] **Edge Functions (self-hosted)**: Si añadiste o modificaste una Edge Function y el backend es Supabase self-hosted, desplegar siguiendo la convención del proyecto: crear el script en el servidor con el heredoc de `supabase/scripts/README-deploy.md` (si no existe), tener `supabase/functions/` en el servidor, ejecutar `./supabase/scripts/deploy-edge-functions-supabase-pi.sh`. No usar `supabase login` ni `supabase functions deploy`.
+- [ ] **Edge Functions (self-hosted)**: Si añadiste o modificaste una Edge Function y el backend es Supabase self-hosted, desplegar siguiendo la convención del proyecto: crear el script en el servidor (ver DOCUMENTACION.md, Despliegue Edge Functions) si no existe, tener `supabase/functions/` en el servidor, ejecutar `./supabase/scripts/deploy-edge-functions-supabase-pi.sh`. No usar `supabase login` ni `supabase functions deploy`.
 - [ ] **Emails (Resend)**: Si no llegan bienvenidas, invitaciones o reset de contraseña, verificar `RESEND_API_KEY` y `RESEND_FROM_EMAIL` en el contenedor. Ver DOCUMENTACION.md → "Solución de problemas: Emails (Resend)".
 
 ### Limpieza de base de datos
