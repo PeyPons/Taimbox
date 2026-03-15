@@ -56,9 +56,15 @@ export function LandingFooter() {
                 </Link>
               </li>
               <li>
-                <a href="mailto:soporte@timeboxing.app" className={linkClass}>
+                <Link to="/contacto" className={linkClass}>
                   <Mail className="h-3.5 w-3.5 shrink-0" />
-                  Correo
+                  Contacto
+                </Link>
+              </li>
+              <li>
+                <a href="mailto:hola@taimbox.com" className={linkClass}>
+                  <Mail className="h-3.5 w-3.5 shrink-0" />
+                  hola@taimbox.com
                 </a>
               </li>
             </ul>

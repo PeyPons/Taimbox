@@ -46,6 +46,7 @@ import PreciosPage from "./pages/PreciosPage";
 import GuiaPage from "./pages/GuiaPage";
 import ApiDocsPage from "./pages/ApiDocsPage";
 import PresentationPage from "./pages/PresentationPage";
+import ContactoPage from "./pages/ContactoPage";
 import { ModuleGuard } from "./components/auth/ModuleGuard";
 import { PlanGuard } from "./components/auth/PlanGuard";
 import { BrandingEffect } from "./components/layout/BrandingEffect";
@@ -165,6 +166,8 @@ const App = () => (
                         {/* Guía de funcionalidades (páginas públicas detalladas) */}
                         <Route path="/guia" element={<GuiaPage />} />
                         <Route path="/guia/:section" element={<GuiaPage />} />
+
+                        <Route path="/contacto" element={<ContactoPage />} />
 
                         {/* Documentación API (pública) */}
                         <Route path="/api-docs" element={<ApiDocsPage />} />

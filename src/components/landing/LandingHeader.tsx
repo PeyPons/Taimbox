@@ -53,6 +53,9 @@ export function LandingHeader() {
                         <Link to="/api-docs" className="text-sm text-indigo-200 hover:text-white transition-colors">
                             API
                         </Link>
+                        <Link to="/contacto" className="text-sm text-indigo-200 hover:text-white transition-colors">
+                            Contacto
+                        </Link>
                         <Link to="/login">
                             <Button size="sm" className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white">
                                 Login

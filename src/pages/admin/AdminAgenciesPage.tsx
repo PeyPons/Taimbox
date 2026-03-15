@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ interface AgencyRow {
 }
 
 export default function AdminAgenciesPage() {
+  const navigate = useNavigate();
   const [agencies, setAgencies] = useState<AgencyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -128,7 +130,7 @@ export default function AdminAgenciesPage() {
       });
       if (error) throw error;
       toast.success("Redirigiendo a la app con la agencia seleccionada");
-      window.location.href = `/dashboard?agency=${agencyId}`;
+      navigate(`/dashboard?agency=${agencyId}`);
     } catch (e: unknown) {
       console.error("[AdminAgenciesPage] Error accediendo como agencia:", e);
       toast.error("No se pudo acceder como esta agencia");
