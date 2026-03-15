@@ -17,7 +17,7 @@ export interface ActiveTimerSidebarState {
   stopCurrentTimer: () => Promise<void>;
 }
 
-const POLL_INTERVAL_MS = 5000;
+const POLL_INTERVAL_MS = 60000;
 
 function formatTotalAsLabel(totalSeconds: number): string {
   if (totalSeconds === 0) return '0 min';
@@ -123,7 +123,8 @@ export function useActiveTimerForSidebar(employeeId: string | undefined): Active
       p_date: pDate,
     });
     if (!error) {
-      window.dispatchEvent(new CustomEvent('timeboxing_timer_started', { detail: { allocationId: active.allocation_id } }));
+      window.dispatchEvent(new CustomEvent('timeboxing_timer_stopped'));
+      new BroadcastChannel('timer_sync').postMessage('update');
       await fetchAndCompute();
     }
   }, [employeeId, fetchAndCompute]);
@@ -135,9 +136,21 @@ export function useActiveTimerForSidebar(employeeId: string | undefined): Active
   }, [fetchAndCompute]);
 
   useEffect(() => {
-    const onTimerStarted = () => fetchAndCompute();
-    window.addEventListener('timeboxing_timer_started', onTimerStarted);
-    return () => window.removeEventListener('timeboxing_timer_started', onTimerStarted);
+    const handleUpdate = () => fetchAndCompute();
+
+    // Eventos de la misma pestaña
+    window.addEventListener('timeboxing_timer_started', handleUpdate);
+    window.addEventListener('timeboxing_timer_stopped', handleUpdate);
+
+    // Eventos de otras pestañas del mismo navegador
+    const bc = new BroadcastChannel('timer_sync');
+    bc.onmessage = handleUpdate;
+
+    return () => {
+      window.removeEventListener('timeboxing_timer_started', handleUpdate);
+      window.removeEventListener('timeboxing_timer_stopped', handleUpdate);
+      bc.close();
+    };
   }, [fetchAndCompute]);
 
   return { ...state, stopCurrentTimer };

@@ -51,6 +51,8 @@ export function useTaskTimer(
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  /** Marca de tiempo absoluta (Date.now()) del momento en que el timer empezó a correr */
+  const absoluteStartTimeRef = useRef<number>(0);
   /** Tras guardar, evita que un loadFromDb con datos desactualizados baje el total mostrado */
   const optimisticBaseSecondsRef = useRef<number | null>(null);
 
@@ -127,6 +129,8 @@ export function useTaskTimer(
         setElapsedSeconds(0);
         setIsRunning(false);
       } else {
+        // Anclar el origen absoluto para que el intervalo calcule por diferencia real
+        absoluteStartTimeRef.current = Date.now() - diffSeconds * 1000;
         setElapsedSeconds(diffSeconds);
         setIsRunning(true);
       }
@@ -159,27 +163,27 @@ export function useTaskTimer(
   useEffect(() => {
     if (!isRunning) return;
     const id = setInterval(() => {
-      setElapsedSeconds((prev) => {
-        const next = prev + 1;
-        if (next >= maxSeconds) {
-          clearInterval(id);
-          const hoursMax = maxSeconds / 3600;
-          callLogTimerHours(employeeId!, allocationId, hoursMax, 'Auto-cierre').then(() => {
-            setBaseSecondsToday((b) => {
-              const nextTotal = b + maxSeconds;
-              optimisticBaseSecondsRef.current = nextTotal;
-              return nextTotal;
-            });
-            onTimeLogged?.(allocationId, hoursMax);
-          }).catch(() => {
-            supabase.from('active_timers').delete().eq('employee_id', employeeId!);
+      const now = Date.now();
+      const next = Math.floor((now - absoluteStartTimeRef.current) / 1000);
+
+      if (next >= maxSeconds) {
+        clearInterval(id);
+        const hoursMax = maxSeconds / 3600;
+        callLogTimerHours(employeeId!, allocationId, hoursMax, 'Auto-cierre').then(() => {
+          setBaseSecondsToday((b) => {
+            const nextTotal = b + maxSeconds;
+            optimisticBaseSecondsRef.current = nextTotal;
+            return nextTotal;
           });
-          setElapsedSeconds(maxSeconds);
-          setIsRunning(false);
-          return maxSeconds;
-        }
-        return next;
-      });
+          onTimeLogged?.(allocationId, hoursMax);
+        }).catch(() => {
+          supabase.from('active_timers').delete().eq('employee_id', employeeId!);
+        });
+        setElapsedSeconds(maxSeconds);
+        setIsRunning(false);
+      } else {
+        setElapsedSeconds(next);
+      }
     }, 1000);
     return () => clearInterval(id);
   }, [isRunning, allocationId, maxSeconds, employeeId, callLogTimerHours, onTimeLogged]);
@@ -209,6 +213,7 @@ export function useTaskTimer(
       return;
     }
 
+    absoluteStartTimeRef.current = Date.now();
     setElapsedSeconds(0);
     setIsRunning(true);
     await supabase.from('active_timers').upsert(
@@ -216,6 +221,7 @@ export function useTaskTimer(
       { onConflict: 'employee_id' }
     );
     window.dispatchEvent(new CustomEvent('timeboxing_timer_started', { detail: { allocationId } }));
+    new BroadcastChannel('timer_sync').postMessage('update');
   }, [employeeId, allocationId, maxSeconds, callLogTimerHours, toast]);
 
   const stopTimer = useCallback(async () => {
@@ -255,6 +261,8 @@ export function useTaskTimer(
 
       setElapsedSeconds(0);
       setIsRunning(false);
+      window.dispatchEvent(new CustomEvent('timeboxing_timer_stopped'));
+      new BroadcastChannel('timer_sync').postMessage('update');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al guardar';
       toast({ title: 'Error al guardar tiempo', description: msg, variant: 'destructive' });

@@ -5,7 +5,8 @@
  * from PlannerGrid component into a reusable hook.
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { format } from 'date-fns';
 import { useApp } from '@/contexts/AppContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
 import { getWeeksForMonth, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
@@ -54,6 +55,8 @@ export function usePlannerData(options: UsePlannerDataOptions = {}) {
     });
 
     const [isLoadingMonth, setIsLoadingMonth] = useState(false);
+    // Meses que ya hemos cargado en esta instancia del hook (evita el flash del spinner al volver a la pestaña)
+    const loadedLocallyRef = useRef<Set<string>>(new Set());
 
     // Persist current month to localStorage
     useEffect(() => {
@@ -63,9 +66,15 @@ export function usePlannerData(options: UsePlannerDataOptions = {}) {
     // Load data for current month using centralized ensureMonthLoaded
     useEffect(() => {
         if (!isGlobalLoading) {
-            setIsLoadingMonth(true);
+            const monthKey = format(currentMonth, 'yyyy-MM');
+            // Solo mostrar spinner si este mes aún no ha sido cargado (evita flash al cambiar de pestaña)
+            const needsLoad = !loadedLocallyRef.current.has(monthKey);
+            if (needsLoad) setIsLoadingMonth(true);
             ensureMonthLoaded(currentMonth)
-                .finally(() => setIsLoadingMonth(false));
+                .finally(() => {
+                    loadedLocallyRef.current.add(monthKey);
+                    setIsLoadingMonth(false);
+                });
         }
     }, [currentMonth, isGlobalLoading, ensureMonthLoaded]);
 
