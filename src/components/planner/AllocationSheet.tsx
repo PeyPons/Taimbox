@@ -700,7 +700,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                   <div className="h-6 w-px bg-slate-200 mx-1" />
 
                   {/* Vistas: Semanal / Mensual - botones táctiles en móvil */}
-                  <div className="flex bg-slate-100/80 p-1 rounded-lg gap-1">
+                  <div className="flex bg-slate-100/80 p-1 rounded-lg gap-1" data-tour="planner-view-toggle">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
@@ -750,7 +750,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                   {/* Menú de Acciones (Configuración) */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="h-9 px-2 gap-2 text-slate-600 border-dashed">
+                      <Button variant="outline" size="sm" className="h-9 px-2 gap-2 text-slate-600 border-dashed" data-tour="planner-sort">
                         <SlidersHorizontal className="h-3.5 w-3.5" />
                         <span className="hidden lg:inline text-xs">Vistas</span>
                         <ChevronDown className="h-3 w-3 opacity-50" />
@@ -881,7 +881,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                           <div key={weekStr} className="flex-1 min-w-0 overflow-x-hidden w-full max-w-full">
                             {/* Header compacto de la semana */}
                             <div className="flex flex-col gap-4 mb-4 pb-3 border-b">
-                              <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center justify-between w-full" data-tour="planner-week-nav">
                                 <div className="flex items-center gap-2 xs:gap-3">
                                   <Button variant="outline" size="sm" className={cn("h-8 w-8 p-0", isMobile && "h-11 w-11 min-h-[44px]")} onClick={goToPrevWeek} disabled={activeWeekIndex === 0}>
                                     <ChevronLeft className="h-4 w-4" />

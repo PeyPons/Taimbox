@@ -246,7 +246,7 @@ Todas las páginas principales de la aplicación.
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
 | `EmployeeDashboard.tsx` | 40KB | Vista personal del empleado ("Mi Semana"). **Móvil**: Dialog→Sheet para "Gestión interna" y "Añadir tareas"; navegación mes con botones ≥44px. |
-| `DeadlinesPage.tsx` | ~3500 líneas | Gestión de fechas límite mensuales. **Sugerencias de redistribución**: panel compacto (3) en sidebar y popup ampliable (Dialog desktop / Sheet móvil) con hasta 20 sugerencias; solo entre empleados que comparten proyectos. **Condicionantes**: quién puede ceder horas (switches), carga máx. receptor (%) y carga mín. quien cede (%); resumen propuesto por receptor (transferencias y cargas resultantes). Ver DOCUMENTACION.md (Deadlines, sugerencias de redistribución). **Móvil**: filtros en Sheet, edición en Sheet; selector de mes sticky. |
+| `DeadlinesPage.tsx` | ~670 líneas | Gestión de fechas límite mensuales. **Datos**: `useDeadlinesPageData.ts` (carga, Realtime, locks, filtros, capacidad). **Edición inline**: `useDeadlinesEditing.ts` (locks, formulario inline, autoSave). **Sugerencias**: `useDeadlinesRedistribution.ts`. **Filtros** en `DeadlinesFilters.tsx`; **listado** en `DeadlinesProjectList.tsx`. **Extraídos**: `DeadlinesPageHeader.tsx`, `DeadlinesSidebar.tsx`, `DeadlinesProjectEditSheet.tsx`, `DeadlinesConfirmDialog.tsx`. Ver DOCUMENTACION.md. **Móvil**: filtros y edición en Sheet. |
 | `WeeklyForecastPage.tsx` | 94KB | Previsión y confirmación semanal |
 | `TeamCapacityPage.tsx` | 26KB | Vista de carga del equipo completo |
 | `TeamPage.tsx` | 4KB | Listado de empleados |
@@ -255,7 +255,7 @@ Todas las páginas principales de la aplicación.
 ### Clientes y Proyectos
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
-| `ClientsAndProjectsPage.tsx` | **116KB** | Página más grande. Gestión dual cliente/proyecto |
+| `ClientsAndProjectsPage.tsx` | ~2280 líneas | Gestión dual cliente/proyecto. **Filtros** en `ClientsAndProjectsFilters.tsx` (búsqueda, estado, tipo, empleado, análisis); página usa `filterSnapshot` vía `onFiltersChange`. |
 | `ProjectsPage.tsx` | 58KB | Gestión de proyectos con OKRs |
 | `ClientsPage.tsx` | 38KB | CRUD de clientes |
 | `OkrsPage.tsx` | 41KB | Objetivos y resultados clave |

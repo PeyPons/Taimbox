@@ -48,7 +48,7 @@ const tourSteps: TourStep[] = [
     id: 'filters',
     target: '[data-tour="filters"]',
     title: 'Filtros y búsqueda',
-    description: 'Busca proyectos por nombre o cliente, filtra solo proyectos SEO, muestra ocultos o encuentra proyectos sin asignar. Útil para encontrar rápidamente lo que necesitas.',
+    description: 'Busca por nombre de proyecto o cliente, filtra por tipo (por ejemplo solo SEO), muestra proyectos ocultos o solo los que aún no tienen asignación. El orden se puede cambiar por cliente o por empleado.',
     icon: <Filter className="w-6 h-6 text-purple-500" />,
     position: 'bottom',
     highlight: true,
@@ -81,7 +81,7 @@ const tourSteps: TourStep[] = [
     id: 'inline-editing',
     target: '[data-tour="inline-editing"]',
     title: 'Edición inline',
-    description: 'Al hacer clic en un proyecto, se despliega el editor. Asigna horas a cada empleado, añade notas y oculta proyectos que no trabajas este mes. Todo se guarda automáticamente al escribir.',
+    description: 'Al hacer clic en un proyecto se abre el editor. Asigna horas por empleado, ajusta la regularización de presupuesto del mes si hace falta y oculta proyectos que no trabajes. Los cambios se guardan automáticamente.',
     icon: <FileText className="w-6 h-6 text-orange-500" />,
     position: 'bottom',
     highlight: true
@@ -98,8 +98,8 @@ const tourSteps: TourStep[] = [
   {
     id: 'suggestions',
     target: '[data-tour="suggestions"]',
-    title: 'Sugerencias inteligentes',
-    description: 'Asistente inteligente de reasignación: el sistema detecta quién está saturado y te sugiere con nombre y apellido a quién pasarle la carga, cruzando los proyectos que tienen en común.',
+    title: 'Sugerencias de redistribución',
+    description: 'El sistema detecta empleados sobrecargados y te sugiere a quién reasignar horas, teniendo en cuenta los proyectos en común. Puedes abrir el panel completo para aplicar cambios o excluir personas.',
     icon: <TrendingUp className="w-6 h-6 text-amber-500" />,
     position: 'left',
     highlight: true

@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import {
   X, ChevronLeft, ChevronRight, Calendar, Edit, Check,
   Sparkles, CheckCircle2, Clock, Link, LayoutGrid,
-  FoldVertical, ArrowUpDown, MousePointerClick, Palette
+  ArrowUpDown, MousePointerClick, Palette
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
@@ -37,16 +37,16 @@ const tourSteps: TourStep[] = [
     id: 'view-toggle',
     target: '[data-tour="planner-view-toggle"]',
     title: 'Cambiar vista',
-    description: 'Alterna entre la vista semanal (tareas de una semana) y mensual (todas las tareas del mes en una tabla compacta). Cada vista tiene sus ventajas.',
+    description: 'Alterna entre la vista semanal (tareas de una semana) y la vista mensual (todas las semanas del mes). En vista mensual puedes expandir o colapsar cada proyecto para ver sus tareas.',
     icon: <LayoutGrid className="w-6 h-6 text-white" />,
     position: 'bottom',
     highlight: true
   },
   {
-    id: 'month-navigator',
-    target: '[data-tour="planner-month-nav"]',
-    title: 'Navegar entre meses',
-    description: 'Cambia de mes para ver tareas pasadas o planificar el futuro. Las flechas te llevan al mes anterior o siguiente.',
+    id: 'week-nav',
+    target: '[data-tour="planner-week-nav"]',
+    title: 'Navegar entre semanas',
+    description: 'Cambia de semana para ver tareas pasadas o planificar la siguiente. Las flechas te llevan a la semana anterior o siguiente dentro del mes.',
     icon: <Calendar className="w-6 h-6 text-white" />,
     position: 'bottom',
     highlight: true
@@ -55,18 +55,9 @@ const tourSteps: TourStep[] = [
     id: 'project-list',
     target: '[data-tour="planner-projects"]',
     title: 'Tus proyectos',
-    description: 'Cada proyecto muestra un resumen: horas asignadas, computadas, planificadas y el estado de las horas contratadas. Los colores te indican si vas bien (verde), ajustado (amarillo) o pasado (rojo).',
+    description: 'Cada proyecto muestra un resumen: horas estimadas, reales y computadas, y el estado de las horas contratadas. Los colores indican si vas bien (verde), ajustado (amarillo) o pasado (rojo). Haz clic en un proyecto para ver el detalle.',
     icon: <Palette className="w-6 h-6 text-white" />,
     position: 'right',
-    highlight: true
-  },
-  {
-    id: 'collapse-expand',
-    target: '[data-tour="planner-collapse"]',
-    title: 'Expandir/Colapsar',
-    description: 'Haz clic en un proyecto para ver sus tareas. Usa el botón de expandir/colapsar todo para gestionar la vista rápidamente.',
-    icon: <FoldVertical className="w-6 h-6 text-white" />,
-    position: 'bottom',
     highlight: true
   },
   {
@@ -117,8 +108,8 @@ const tourSteps: TourStep[] = [
   {
     id: 'sort-options',
     target: '[data-tour="planner-sort"]',
-    title: 'Ordenar proyectos',
-    description: 'Ordena los proyectos por horas contratadas usadas, tus horas o nombre. Encuentra rápidamente lo más urgente o lo que más tiempo te lleva.',
+    title: 'Vistas y orden',
+    description: 'Abre el menú "Vistas" para ordenar proyectos por horas contratadas o por tus horas, y activar "Proyectos expandidos" para ver todas las tareas desplegadas por defecto.',
     icon: <ArrowUpDown className="w-6 h-6 text-white" />,
     position: 'bottom',
     highlight: true

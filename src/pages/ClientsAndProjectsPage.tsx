@@ -40,6 +40,7 @@ import { getEffectiveBudget } from '@/utils/budgetUtils';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { supabase } from '@/lib/supabase';
+import { ClientsAndProjectsFilters, type ClientsAndProjectsFiltersValues, type FilterType, type StatusFilter } from '@/components/clients-projects/ClientsAndProjectsFilters';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -47,9 +48,6 @@ const colorOptions = [
   '#0d9488', '#dc2626', '#7c3aed', '#ea580c', '#0284c7', '#16a34a',
   '#db2777', '#9333ea', '#f59e0b', '#06b6d4', '#84cc16', '#6366f1'
 ];
-
-type FilterType = 'all' | 'needs-planning' | 'behind-schedule' | 'over-budget' | 'no-activity';
-type StatusFilter = 'all' | 'active' | 'completed' | 'archived' | 'hidden';
 
 // Componente para estadísticas del header
 function StatCard({
@@ -130,7 +128,6 @@ export default function ClientsAndProjectsPage() {
   }, [employees, selectedDepartmentId, departmentOptions]);
 
   // Estados
-  const [searchQuery, setSearchQuery] = useState('');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isAddingClient, setIsAddingClient] = useState(false);
   const [isAddingProject, setIsAddingProject] = useState(false);
@@ -153,13 +150,13 @@ export default function ClientsAndProjectsPage() {
 
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState('all');
-  const [openEmployeeCombo, setOpenEmployeeCombo] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<FilterType>('all'); // Por defecto mostrar todos los proyectos
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('active'); // Por defecto solo activos
-  const [projectTypeFilter, setProjectTypeFilter] = useState<string>('all');
-  const [openStatusFilter, setOpenStatusFilter] = useState(false);
-  const [openProjectTypeFilter, setOpenProjectTypeFilter] = useState(false);
+  const [filterSnapshot, setFilterSnapshot] = useState<ClientsAndProjectsFiltersValues>({
+    searchQuery: '',
+    statusFilter: 'active',
+    projectTypeFilter: 'all',
+    selectedEmployeeId: 'all',
+    activeFilter: 'all',
+  });
   const [openEditTaskProject, setOpenEditTaskProject] = useState(false);
   const [openEditTaskEmployee, setOpenEditTaskEmployee] = useState(false);
   const [openEditTaskDependency, setOpenEditTaskDependency] = useState(false);
@@ -486,11 +483,11 @@ export default function ClientsAndProjectsPage() {
     return regularClients;
   }, [clients, projects, projectsAnalysis, allocations, employees, currentMonth, prevMonth, getProjectHoursForMonth]);
 
-  // Filtrar clientes y proyectos
+  // Filtrar clientes y proyectos (valores de filtro desde ClientsAndProjectsFilters vía filterSnapshot)
   const filteredClients = useMemo(() => {
+    const { searchQuery, statusFilter, selectedEmployeeId, projectTypeFilter, activeFilter } = filterSnapshot;
     return clientsWithProjects
       .filter(({ client, stats }) => {
-        // Filtro de búsqueda (cliente o proyecto)
         if (searchQuery) {
           const query = searchQuery.toLowerCase();
           const clientMatch = client.name.toLowerCase().includes(query);
@@ -499,8 +496,6 @@ export default function ClientsAndProjectsPage() {
           );
           if (!clientMatch && !projectMatch) return false;
         }
-
-        // Filtro de estado
         if (statusFilter !== 'all') {
           const hasMatchingStatus = stats.projects.some(p => {
             if (statusFilter === 'active') return p.project.status === 'active' && !p.project.isHidden;
@@ -511,23 +506,17 @@ export default function ClientsAndProjectsPage() {
           });
           if (!hasMatchingStatus) return false;
         }
-
-        // Filtro de empleado
         if (selectedEmployeeId !== 'all') {
           const hasEmployee = stats.projects.some(p =>
             p.analysis?.involvedEmployees.includes(selectedEmployeeId)
           );
           if (!hasEmployee) return false;
         }
-
         return true;
       })
       .map(({ client, stats, prevStats, employees }) => {
-        // Filtrar proyectos dentro de cada cliente
         const filteredProjects = stats.projects.filter(({ project, analysis }) => {
           if (!analysis) return false;
-
-          // Filtro de búsqueda: si hay término, solo proyectos cuyo nombre (o nombre formateado) coincida
           if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase().trim();
             const rawMatch = project.name.toLowerCase().includes(query);
@@ -535,26 +524,17 @@ export default function ClientsAndProjectsPage() {
             const formattedMatch = formattedName.toLowerCase().includes(query);
             if (!rawMatch && !formattedMatch) return false;
           }
-
-          // Filtro de estado
           if (statusFilter !== 'all') {
             if (statusFilter === 'active' && (project.status !== 'active' || project.isHidden)) return false;
             if (statusFilter === 'completed' && project.status !== 'completed') return false;
             if (statusFilter === 'archived' && project.status !== 'archived') return false;
             if (statusFilter === 'hidden' && !project.isHidden) return false;
           } else {
-            // Por defecto (statusFilter === 'all'), excluir ocultos a menos que se busque específicamente
             if (project.isHidden) return false;
           }
-
-          // Filtro de tipo de proyecto (dinámico desde configuración de agencia)
           if (projectTypeFilter !== 'all') {
-            if (!filterProject(project, projectTypeFilter)) {
-              return false;
-            }
+            if (!filterProject(project, projectTypeFilter)) return false;
           }
-
-          // Filtro de análisis
           switch (activeFilter) {
             case 'needs-planning':
               return analysis.needsPlanning && !analysis.noActivity;
@@ -638,7 +618,7 @@ export default function ClientsAndProjectsPage() {
         // Si tienen las mismas horas, ordenar alfabéticamente
         return a.client.name.localeCompare(b.client.name);
       });
-  }, [clientsWithProjects, searchQuery, statusFilter, selectedEmployeeId, activeFilter, projectTypeFilter]);
+  }, [clientsWithProjects, filterSnapshot]);
 
   // Estadísticas globales
   const globalStats = useMemo(() => {
@@ -902,11 +882,6 @@ export default function ClientsAndProjectsPage() {
     const currentOkrs = projectForm.getValues('okrs') || [];
     projectForm.setValue('okrs', currentOkrs.filter(o => o.id !== id));
   };
-
-  const getSelectedEmployeeName = () =>
-    selectedEmployeeId === 'all'
-      ? "Todos los empleados"
-      : employees.find(e => e.id === selectedEmployeeId)?.name || "Seleccionar...";
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -1364,222 +1339,12 @@ export default function ClientsAndProjectsPage() {
         />
       </div>
 
-      {/* Filtros - Rediseñado */}
-      <div className="space-y-3">
-        {/* Primera fila: Búsqueda y filtros principales */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Buscador */}
-          <div className="relative flex-1 min-w-[200px] max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar cliente o proyecto..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-9"
-            />
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                onClick={() => setSearchQuery('')}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            )}
-          </div>
-
-          {/* Filtro de estado */}
-          <Popover open={openStatusFilter} onOpenChange={setOpenStatusFilter}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-[160px] h-9 justify-between font-normal">
-                <span className="truncate">{statusFilter === 'all' ? 'Todos los estados' : statusFilter === 'active' ? 'Solo activos' : statusFilter === 'completed' ? 'Solo completados' : statusFilter === 'archived' ? 'Solo archivados' : 'Solo ocultos'}</span>
-                <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-              <Command>
-                <CommandList className="max-h-[280px]">
-                  <CommandGroup>
-                    {(['all', 'active', 'completed', 'archived', 'hidden'] as const).map(val => (
-                      <CommandItem key={val} value={val === 'all' ? 'Todos los estados' : val === 'active' ? 'Solo activos' : val === 'completed' ? 'Solo completados' : val === 'archived' ? 'Solo archivados' : 'Solo ocultos'} onSelect={() => { setStatusFilter(val); setOpenStatusFilter(false); }}>
-                        <Check className={cn('mr-2 h-4 w-4 shrink-0', statusFilter === val ? 'opacity-100' : 'opacity-0')} />
-                        {val === 'all' ? 'Todos los estados' : val === 'active' ? 'Solo activos' : val === 'completed' ? 'Solo completados' : val === 'archived' ? 'Solo archivados' : 'Solo ocultos'}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-
-          {/* Filtro de tipo de proyecto (dinámico desde configuración de agencia) */}
-          <Popover open={openProjectTypeFilter} onOpenChange={setOpenProjectTypeFilter}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-[140px] h-9 justify-between font-normal">
-                <span className="truncate">{projectTypeFilter === 'all' ? 'Todos los tipos' : activeFilters.find(f => f.id === projectTypeFilter)?.displayName ?? 'Tipo'}</span>
-                <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-              <Command>
-                <CommandList className="max-h-[280px]">
-                  <CommandEmpty>No hay tipos.</CommandEmpty>
-                  <CommandGroup>
-                    <CommandItem value="Todos los tipos" onSelect={() => { setProjectTypeFilter('all'); setOpenProjectTypeFilter(false); }}>
-                      <Check className={cn('mr-2 h-4 w-4 shrink-0', projectTypeFilter === 'all' ? 'opacity-100' : 'opacity-0')} />
-                      Todos los tipos
-                    </CommandItem>
-                    {activeFilters.map(filter => (
-                      <CommandItem key={filter.id} value={filter.displayName} onSelect={() => { setProjectTypeFilter(filter.id); setOpenProjectTypeFilter(false); }}>
-                        <Check className={cn('mr-2 h-4 w-4 shrink-0', projectTypeFilter === filter.id ? 'opacity-100' : 'opacity-0')} />
-                        {filter.displayName}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-
-          {/* Filtro de empleado */}
-          <Popover open={openEmployeeCombo} onOpenChange={setOpenEmployeeCombo}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" role="combobox" className="w-[180px] h-9 justify-between bg-white shrink-0">
-                <span className="flex items-center gap-2 truncate">
-                  <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                  <span className="truncate">{getSelectedEmployeeName()}</span>
-                </span>
-                <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50 shrink-0" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[180px] p-0">
-              <Command>
-                <CommandInput placeholder="Buscar..." />
-                <CommandList>
-                  <CommandEmpty>No se encontró el empleado.</CommandEmpty>
-                  <CommandGroup>
-                    <CommandItem onSelect={() => { setSelectedEmployeeId('all'); setOpenEmployeeCombo(false); }}>
-                      Todos los empleados
-                    </CommandItem>
-                    {employeesForView.filter(e => e.isActive).map(e => (
-                      <CommandItem key={e.id} onSelect={() => { setSelectedEmployeeId(e.id); setOpenEmployeeCombo(false); }}>
-                        {e.name}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        {/* Segunda fila: Filtros de análisis - Todos en una línea */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium text-slate-500 mr-1">Filtros:</span>
-          <Button
-            variant={activeFilter === 'all' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setActiveFilter('all')}
-            className={cn(
-              "h-8 text-xs gap-1.5",
-              activeFilter === 'all' ? "bg-slate-900" : "bg-white"
-            )}
-          >
-            <LayoutGrid className="h-3.5 w-3.5" />
-            Todos
-          </Button>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={activeFilter === 'no-activity' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setActiveFilter('no-activity')}
-                  className={cn(
-                    "h-8 text-xs gap-1.5",
-                    activeFilter === 'no-activity' ? "bg-slate-700" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                  )}
-                >
-                  <Ban className="h-3.5 w-3.5" />
-                  Sin actividad
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="text-xs">Proyectos sin tareas planificadas este mes</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={activeFilter === 'needs-planning' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setActiveFilter('needs-planning')}
-                  className={cn(
-                    "h-8 text-xs gap-1.5",
-                    activeFilter === 'needs-planning' ? "bg-amber-600 hover:bg-amber-700" : "bg-white border-amber-200 text-amber-700 hover:bg-amber-50"
-                  )}
-                >
-                  <CircleDashed className="h-3.5 w-3.5" />
-                  Falta planificar
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="text-xs">
-                  Proyectos que no han planificado todas sus horas asignadas o mínimas
-                </p>
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Si tiene horas asignadas, debe planificar todas. Si solo tiene mínimas, debe planificar al menos esas.
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={activeFilter === 'behind-schedule' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setActiveFilter('behind-schedule')}
-                  className={cn(
-                    "h-8 text-xs gap-1.5",
-                    activeFilter === 'behind-schedule' ? "bg-orange-600 hover:bg-orange-700" : "bg-white border-orange-200 text-orange-700 hover:bg-orange-50"
-                  )}
-                >
-                  <Clock className="h-3.5 w-3.5" />
-                  Retrasados
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="text-xs">Ejecución por debajo del progreso del mes</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={activeFilter === 'over-budget' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setActiveFilter('over-budget')}
-                  className={cn(
-                    "h-8 text-xs gap-1.5",
-                    activeFilter === 'over-budget' ? "bg-red-600 hover:bg-red-700" : "bg-white border-red-200 text-red-700 hover:bg-red-50"
-                  )}
-                >
-                  <AlertOctagon className="h-3.5 w-3.5" />
-                  Exceso horas
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="text-xs">Proyectos con más horas planificadas que asignadas</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      </div>
+      {/* Filtros: estado interno en ClientsAndProjectsFilters; página usa filterSnapshot vía onFiltersChange */}
+      <ClientsAndProjectsFilters
+        activeFilters={activeFilters}
+        employees={employeesForView}
+        onFiltersChange={setFilterSnapshot}
+      />
 
       {/* Acciones de lista */}
       <div className="flex items-center justify-between">
@@ -2174,9 +1939,9 @@ export default function ClientsAndProjectsPage() {
                       })
                     ) : (
                       <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-                        {statusFilter === 'all'
+                        {filterSnapshot.statusFilter === 'all'
                           ? 'Sin proyectos (incluye todos los estados)'
-                          : `Sin proyectos ${statusFilter === 'active' ? 'activos' : statusFilter === 'completed' ? 'completados' : 'archivados'}`}
+                          : `Sin proyectos ${filterSnapshot.statusFilter === 'active' ? 'activos' : filterSnapshot.statusFilter === 'completed' ? 'completados' : 'archivados'}`}
                       </div>
                     )}
 
