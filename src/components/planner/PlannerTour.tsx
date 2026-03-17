@@ -108,8 +108,8 @@ const tourSteps: TourStep[] = [
   {
     id: 'sort-options',
     target: '[data-tour="planner-sort"]',
-    title: 'Vistas y orden',
-    description: 'Abre el menú "Vistas" para ordenar proyectos por horas contratadas o por tus horas, y activar "Proyectos expandidos" para ver todas las tareas desplegadas por defecto.',
+    title: 'Orden y visualización',
+    description: 'En vista semanal, este menú se usa para ordenar proyectos (horas contratadas o tus horas). En vista mensual también permite activar "Proyectos expandidos".',
     icon: <ArrowUpDown className="w-6 h-6 text-white" />,
     position: 'bottom',
     highlight: true

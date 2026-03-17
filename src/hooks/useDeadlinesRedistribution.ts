@@ -52,6 +52,10 @@ export interface UseDeadlinesRedistributionParams {
   maxReceiverLoadPct: number;
   minSenderLoadPct: number;
   employees: EmployeeLike[] | null;
+  /** Si true, solo se sugieren transferencias en proyectos que donante y receptor comparten. */
+  onlySharedProjects?: boolean;
+  /** Si tiene elementos, solo se consideran estos proyectos para las sugerencias. Vacío/null = todos. */
+  includedProjectIds?: Set<string> | null;
 }
 
 export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionParams) {
@@ -67,9 +71,13 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
     maxReceiverLoadPct,
     minSenderLoadPct,
     employees,
+    onlySharedProjects = false,
+    includedProjectIds = null,
   } = params;
 
-  const getRedistributionTips = useCallback((): RedistributionTip[] => {
+  /** Tips de redistribución. Cedentes = quienes tienen carga >= minSenderLoadPct y al menos un proyecto.
+   * Receptores = quienes tienen carga < maxReceiverLoadPct. Así "Quién puede ceder" incluye a todos los que pueden (p. ej. Alexander al 70%). */
+  const redistributionResult = useMemo(() => {
     const tips: (RedistributionTip & { impact: number })[] = [];
     const employeeLoads: { id: string; name: string; percentage: number; projects: string[] }[] = [];
 
@@ -89,7 +97,7 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
       employeeLoads.push({ id: emp.id, name: emp.first_name || emp.name, percentage, projects: empProjects });
     });
 
-    if (employeeLoads.length < 2) return [];
+    if (employeeLoads.length < 2) return { tips: [] as RedistributionTip[], donorIds: [] as string[] };
 
     const totalPercentage = employeeLoads.reduce((sum, e) => sum + e.percentage, 0);
     const averageLoad = Math.round(totalPercentage / employeeLoads.length);
@@ -97,60 +105,54 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
     const minLoad = Math.min(...employeeLoads.map((e) => e.percentage));
     const range = maxLoad - minLoad;
 
-    if (range < 5) return [];
+    const cap = Math.min(100, Math.max(0, maxReceiverLoadPct));
+    const below = employeeLoads.filter((e) => e.percentage < cap);
+    const minSenderPct = Math.min(100, Math.max(0, minSenderLoadPct));
+    const donors = employeeLoads.filter(
+      (e) => e.percentage >= minSenderPct && e.projects.length > 0
+    );
 
-    const variance =
-      employeeLoads.reduce((sum, e) => sum + Math.pow(e.percentage - averageLoad, 2), 0) / employeeLoads.length;
-    const standardDeviation = Math.sqrt(variance);
-    const deviationThreshold =
-      range <= 15 ? 2 : Math.max(2, Math.round(standardDeviation * 1.2));
+    if (donors.length === 0 || below.length === 0) return { tips: [] as RedistributionTip[], donorIds: donors.map((d) => d.id) };
 
-    const aboveAverage = employeeLoads.filter((e) => e.percentage > averageLoad + deviationThreshold);
-    const belowAverage = employeeLoads.filter((e) => e.percentage < averageLoad - deviationThreshold);
+    const filterByIncluded = (projectIds: string[]) =>
+      includedProjectIds && includedProjectIds.size > 0
+        ? projectIds.filter((pid) => includedProjectIds.has(pid))
+        : projectIds;
 
-    const pushTips = (
-      above: typeof employeeLoads,
-      below: typeof employeeLoads
-    ) => {
-      above.forEach((over) => {
-        below.forEach((avail) => {
-          const sharedProjects = over.projects.filter((p) => avail.projects.includes(p));
-          if (sharedProjects.length === 0) return;
-          const impact = (over.percentage - averageLoad) + (averageLoad - avail.percentage);
-          tips.push({
-            from: over.name,
-            to: avail.name,
-            fromId: over.id,
-            toId: avail.id,
-            reason: `${over.name} está al ${over.percentage}% (media: ${averageLoad}%), ${avail.name} al ${avail.percentage}%`,
-            projects: sharedProjects
-              .map((pid) => {
-                const p = projects.find((proj) => proj.id === pid);
-                return p ? formatProjectName(p.name) : '';
-              })
-              .filter(Boolean),
-            projectIds: sharedProjects,
-            impact: impact * 1.5,
-          });
+    donors.forEach((over) => {
+      const candidateProjects = filterByIncluded(over.projects);
+      if (candidateProjects.length === 0) return;
+      below.forEach((avail) => {
+        if (avail.id === over.id) return;
+        const projectIds = onlySharedProjects
+          ? filterByIncluded(candidateProjects.filter((p) => avail.projects.includes(p)))
+          : candidateProjects;
+        if (projectIds.length === 0) return;
+        const impact = (over.percentage - averageLoad) + (averageLoad - avail.percentage);
+        tips.push({
+          from: over.name,
+          to: avail.name,
+          fromId: over.id,
+          toId: avail.id,
+          reason: `${over.name} está al ${over.percentage}% (media: ${averageLoad}%), ${avail.name} al ${avail.percentage}%`,
+          projects: projectIds
+            .map((pid) => {
+              const p = projects.find((proj) => proj.id === pid);
+              return p ? formatProjectName(p.name) : '';
+            })
+            .filter(Boolean),
+          projectIds,
+          impact: impact * 1.5,
         });
       });
-    };
+    });
 
-    if (aboveAverage.length === 0 || belowAverage.length === 0) {
-      const relaxedThreshold = 5;
-      const aboveRelaxed = employeeLoads.filter((e) => e.percentage > averageLoad + relaxedThreshold);
-      const belowRelaxed = employeeLoads.filter((e) => e.percentage < averageLoad - relaxedThreshold);
-      if (aboveRelaxed.length === 0 || belowRelaxed.length === 0) return [];
-      pushTips(aboveRelaxed, belowRelaxed);
-    } else {
-      pushTips(aboveAverage, belowAverage);
-    }
-
-    const MAX_SUGGESTIONS = 20;
-    return tips
+    const MAX_SUGGESTIONS = 500;
+    const sortedTips = tips
       .sort((a, b) => b.impact - a.impact)
       .slice(0, MAX_SUGGESTIONS)
       .map(({ impact, ...tip }) => tip);
+    return { tips: sortedTips, donorIds: donors.map((d) => d.id) };
   }, [
     activeEmployees,
     deadlines,
@@ -159,9 +161,14 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
     getMonthlyCapacity,
     getEmployeeAssignedHours,
     formatProjectName,
+    maxReceiverLoadPct,
+    minSenderLoadPct,
+    onlySharedProjects,
+    includedProjectIds,
   ]);
 
-  const redistributionTips = useMemo(() => getRedistributionTips(), [getRedistributionTips]);
+  const redistributionTips = redistributionResult.tips;
+  const donorIdsFromHook = redistributionResult.donorIds;
 
   const getHoursOnProject = useCallback(
     (projectId: string, employeeId: string) => {
@@ -172,14 +179,13 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
   );
 
   const suggestionDonors = useMemo(() => {
-    const ids = [...new Set(redistributionTips.map((t) => t.fromId))];
-    return ids
+    return donorIdsFromHook
       .map((id) => {
         const emp = (employees ?? []).find((e) => e.id === id);
         return { id, name: emp?.first_name || emp?.name || id, avatarUrl: emp?.avatarUrl };
       })
       .filter((d) => d.name);
-  }, [redistributionTips, employees]);
+  }, [donorIdsFromHook, employees]);
 
   const suggestionsByEmployeeAndProject = useMemo((): EmployeeRecommendation[] => {
     const excludedSet = new Set(excludedDonorIds);
@@ -237,7 +243,7 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
       });
     });
 
-    return Array.from(byEmployee.entries())
+    const rawGroups = Array.from(byEmployee.entries())
       .map(([employeeId, byProject]) => {
         const emp = (employees ?? []).find((e) => e.id === employeeId);
         const rawProjects = Array.from(byProject.values()).filter((p) => p.transfers.length > 0);
@@ -264,8 +270,37 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
           projects: projectList,
         };
       })
-      .filter((g) => g.employeeName !== 'Desconocido' && g.projects.length > 0)
-      .sort((a, b) => b.projects.length - a.projects.length);
+      .filter((g) => g.employeeName !== 'Desconocido' && g.projects.length > 0);
+
+    const totalGivenByDonor = new Map<string, number>();
+    rawGroups.forEach((group) => {
+      group.projects.forEach((p) => {
+        p.transfers.forEach((t) => {
+          totalGivenByDonor.set(t.fromId, (totalGivenByDonor.get(t.fromId) ?? 0) + t.suggestedHours);
+        });
+      });
+    });
+
+    const donorFactor = new Map<string, number>();
+    totalGivenByDonor.forEach((total, fromId) => {
+      const fromCap = getMonthlyCapacity(fromId).available;
+      const fromAssigned = getEmployeeAssignedHours(fromId);
+      const minSenderHours = fromCap * (minSenderLoadPct / 100);
+      const maxGive = Math.max(0, fromAssigned - minSenderHours);
+      if (total > maxGive && total > 0) donorFactor.set(fromId, maxGive / total);
+      else donorFactor.set(fromId, 1);
+    });
+
+    rawGroups.forEach((group) => {
+      group.projects.forEach((p) => {
+        p.transfers.forEach((t) => {
+          const f = donorFactor.get(t.fromId) ?? 1;
+          t.suggestedHours = Math.round(t.suggestedHours * f * 2) / 2;
+        });
+      });
+    });
+
+    return rawGroups.sort((a, b) => b.projects.length - a.projects.length);
   }, [
     redistributionTips,
     employees,

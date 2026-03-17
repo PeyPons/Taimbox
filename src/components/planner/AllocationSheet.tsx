@@ -217,6 +217,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
   const isMobile = useIsMobile();
   const effectiveShowAllWeeks = showAllWeeks; // Permitir vista mensual en móvil si el usuario lo activa
+  const sortMenuLabel = effectiveShowAllWeeks ? 'Vistas' : 'Ordenar';
 
   // Inicializar selectedWeekIndex como null para que use currentWeekIndex del hook por defecto
   const [selectedWeekIndex, setSelectedWeekIndex] = useState<number | null>(null);
@@ -232,6 +233,16 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     const saved = localStorage.getItem('planner_sortOption');
     return (saved as SortOption) || 'budget_desc';
   });
+
+  const sortOptionLabels: Record<SortOption, string> = {
+    budget_desc: 'Horas contratadas (Mayor)',
+    budget_asc: 'Horas contratadas (Menor)',
+    my_hours_desc: 'Mis horas (Mayor)',
+    my_hours_asc: 'Mis horas (Menor)',
+    name_asc: 'Nombre (A-Z)',
+    name_desc: 'Nombre (Z-A)',
+  };
+  const sortButtonLabel = effectiveShowAllWeeks ? sortMenuLabel : `${sortMenuLabel}: ${sortOptionLabels[sortOption]}`;
 
   // Proyecto seleccionado para mostrar detalles en panel lateral
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -335,6 +346,15 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     if (weeks.length === 0 || activeWeekIndex < 0 || activeWeekIndex >= weeks.length) return [];
     return [weeks[activeWeekIndex]];
   }, [weeks, showAllWeeks, activeWeekIndex]);
+
+  const toolbarContextLine = useMemo(() => {
+    if (effectiveShowAllWeeks) return `Viendo todo el mes · ${weeks.length} semanas`;
+    if (weeks.length === 0 || activeWeekIndex < 0 || activeWeekIndex >= weeks.length) return null;
+    const w = weeks[activeWeekIndex];
+    const start = w.effectiveStart || w.weekStart;
+    const end = w.effectiveEnd || addDays(w.weekStart, 6);
+    return `Viendo la semana del ${format(start, 'd', { locale: es })} al ${format(end, 'd MMM', { locale: es })}`;
+  }, [effectiveShowAllWeeks, weeks, activeWeekIndex]);
 
   // Navegación entre semanas
   const goToPrevWeek = () => {
@@ -684,36 +704,41 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 {/* 3. SECCIÓN DERECHA: HERRAMIENTAS */}
                 <div className="flex items-center gap-2 z-10 ml-auto order-2 xl:order-3">
                   {/* Búsqueda Colapsable */}
-                  <div className={cn("relative transition-all duration-300 ease-in-out", searchTerm ? "w-48" : "w-9 focus-within:w-48")}>
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                    <Input
-                      placeholder="Buscar..."
-                      className={cn(
-                        "pl-9 h-9 text-xs bg-white/50 focus:bg-white transition-all",
-                        !searchTerm && "cursor-pointer"
-                      )}
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className={cn("relative transition-all duration-300 ease-in-out", searchTerm ? "w-48" : "w-9 focus-within:w-48")}>
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        <Input
+                          placeholder="Buscar tarea o proyecto..."
+                          className={cn(
+                            "pl-9 h-9 text-xs bg-white/50 focus:bg-white transition-all",
+                            !searchTerm && "cursor-pointer"
+                          )}
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">Filtra por nombre de tarea o de proyecto</TooltipContent>
+                  </Tooltip>
 
                   <div className="h-6 w-px bg-slate-200 mx-1" />
 
-                  {/* Vistas: Semanal / Mensual - botones táctiles en móvil */}
+                  {/* Vista Semana / Mes: texto visible en desktop (premium = sin depender solo de iconos) */}
                   <div className="flex bg-slate-100/80 p-1 rounded-lg gap-1" data-tour="planner-view-toggle">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className={cn("h-7 px-2", isMobile && "h-11 min-h-[44px] px-3", effectiveShowAllWeeks && "bg-white shadow-sm text-indigo-600")}
+                          className={cn("h-7 px-2 gap-1.5", isMobile && "h-11 min-h-[44px] px-3", effectiveShowAllWeeks && "bg-white shadow-sm text-indigo-600")}
                           onClick={() => setShowAllWeeks(!showAllWeeks)}
                         >
-                          {effectiveShowAllWeeks ? <LayoutGrid className="h-3.5 w-3.5" /> : <Calendar className="h-3.5 w-3.5" />}
-                          {isMobile && <span className="ml-1.5 text-xs">{effectiveShowAllWeeks ? 'Mes' : 'Semana'}</span>}
+                          {effectiveShowAllWeeks ? <LayoutGrid className="h-3.5 w-3.5 shrink-0" /> : <Calendar className="h-3.5 w-3.5 shrink-0" />}
+                          <span className="text-xs font-medium">{effectiveShowAllWeeks ? 'Mes' : 'Semana'}</span>
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent side="bottom">Vista: {effectiveShowAllWeeks ? "mes completo" : "semana actual"}</TooltipContent>
+                      <TooltipContent side="bottom">Vista: {effectiveShowAllWeeks ? "mes completo (todas las semanas)" : "semana actual"}</TooltipContent>
                     </Tooltip>
 
                     <Tooltip>
@@ -727,7 +752,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                           <GanttChart className="h-3.5 w-3.5" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent side="bottom">Ver Timeline</TooltipContent>
+                      <TooltipContent side="bottom" className="max-w-[220px]">
+                        <p className="font-medium">Timeline</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Todas las semanas del mes en una línea para comparar cargas de un vistazo.</p>
+                      </TooltipContent>
                     </Tooltip>
 
                     <Tooltip>
@@ -741,32 +769,41 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                           <TrendingUp className="h-3.5 w-3.5" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent side="bottom">Ver Weekly Forecast</TooltipContent>
+                      <TooltipContent side="bottom" className="max-w-[220px]">
+                        <p className="font-medium">Previsión semanal</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Resumen de cierre de semana y tareas pendientes de revisar.</p>
+                      </TooltipContent>
                     </Tooltip>
                   </div>
 
                   <div className="h-6 w-px bg-slate-200 mx-1" />
 
-                  {/* Menú de Acciones (Configuración) */}
+                  {/* Menú contextual: en semanal muestra criterio actual (premium = estado visible sin abrir) */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="h-9 px-2 gap-2 text-slate-600 border-dashed" data-tour="planner-sort">
-                        <SlidersHorizontal className="h-3.5 w-3.5" />
-                        <span className="hidden lg:inline text-xs">Vistas</span>
-                        <ChevronDown className="h-3 w-3 opacity-50" />
+                      <Button variant="outline" size="sm" className="h-9 px-2 gap-2 text-slate-600 border-slate-200 min-w-0" data-tour="planner-sort">
+                        <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
+                        <span className="text-xs truncate max-w-[140px] sm:max-w-[200px]">{sortButtonLabel}</span>
+                        <ChevronDown className="h-3 w-3 opacity-50 shrink-0" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
+                      {effectiveShowAllWeeks && (
+                        <>
+                          <div className="p-2">
+                            <p className="text-xs font-semibold text-slate-500 mb-2 px-1">VISUALIZACIÓN</p>
+                            <div className="flex items-center justify-between px-2 py-1.5 hover:bg-slate-50 rounded cursor-pointer" onClick={() => setAutoExpand(!autoExpand)}>
+                              <span className="text-sm">Proyectos expandidos</span>
+                              {autoExpand && <Check className="h-3.5 w-3.5 text-indigo-600" />}
+                            </div>
+                          </div>
+                          <div className="h-px bg-slate-100 my-1" />
+                        </>
+                      )}
                       <div className="p-2">
-                        <p className="text-xs font-semibold text-slate-500 mb-2 px-1">VISUALIZACIÓN</p>
-                        <div className="flex items-center justify-between px-2 py-1.5 hover:bg-slate-50 rounded cursor-pointer" onClick={() => setAutoExpand(!autoExpand)}>
-                          <span className="text-sm">Proyectos expandidos</span>
-                          {autoExpand && <Check className="h-3.5 w-3.5 text-indigo-600" />}
-                        </div>
-                      </div>
-                      <div className="h-px bg-slate-100 my-1" />
-                      <div className="p-2">
-                        <p className="text-xs font-semibold text-slate-500 mb-2 px-1">ORDENAR POR</p>
+                        <p className="text-xs font-semibold text-slate-500 mb-2 px-1">
+                          {effectiveShowAllWeeks ? 'ORDENAR POR' : 'ORDENAR PROYECTOS'}
+                        </p>
                         <DropdownMenuItem onClick={() => setSortOption('budget_desc')} className="text-xs">
                           {sortOption === 'budget_desc' && <Check className="h-3 w-3 mr-2 text-indigo-600" />} Horas contratadas (Mayor)
                         </DropdownMenuItem>
@@ -776,12 +813,19 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                         <DropdownMenuItem onClick={() => setSortOption('my_hours_desc')} className="text-xs">
                           {sortOption === 'my_hours_desc' && <Check className="h-3 w-3 mr-2 text-indigo-600" />} Mis horas (Mayor)
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setSortOption('my_hours_asc')} className="text-xs">
+                          {sortOption === 'my_hours_asc' && <Check className="h-3 w-3 mr-2 text-indigo-600" />} Mis horas (Menor)
+                        </DropdownMenuItem>
                       </div>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
               </div>
-
+              {toolbarContextLine && (
+                <p className="text-xs text-slate-500 mt-1 px-0.5" aria-live="polite">
+                  {toolbarContextLine}
+                </p>
+              )}
             </SheetHeader>
           </TooltipProvider>
 
@@ -1579,20 +1623,20 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                   className={cn(
                                     "h-full transition-all duration-700 ease-out rounded-full",
                                     load.percentage > 110 ? "bg-gradient-to-r from-red-400 to-red-500" :
-                                      load.percentage > 100 ? "bg-gradient-to-r from-amber-400 to-amber-500" :
-                                        load.percentage >= 85 ? "bg-gradient-to-r from-emerald-400 to-emerald-500" : "bg-gradient-to-r from-emerald-300 to-emerald-400"
+                                      load.percentage < 90 ? "bg-gradient-to-r from-amber-400 to-amber-500" :
+                                        "bg-gradient-to-r from-emerald-400 to-emerald-500"
                                   )}
                                   style={{ width: `${Math.min(load.percentage, 100)}%` }}
                                 />
                               </div>
-                              {/* Porcentaje a la derecha */}
+                              {/* Porcentaje a la derecha (leyenda: verde 90-110%, amarillo <90%, rojo >110%) */}
                               <div className={cn(
                                 "absolute right-0 -top-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-                                load.percentage > 100
+                                load.percentage > 110
                                   ? "text-white bg-red-500"
-                                  : load.percentage >= 85
-                                    ? "text-white bg-emerald-500"
-                                    : "text-slate-600 bg-slate-200"
+                                  : load.percentage < 90
+                                    ? "text-amber-900 bg-amber-400"
+                                    : "text-white bg-emerald-500"
                               )}>
                                 {Math.round(load.percentage)}%
                               </div>

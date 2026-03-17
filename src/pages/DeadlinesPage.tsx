@@ -154,8 +154,10 @@ export default function DeadlinesPage() {
   const [maxReceiverLoadPctInput, setMaxReceiverLoadPctInput] = useState<string>('100');
   const [minSenderLoadPct, setMinSenderLoadPct] = useState<number>(30);
   const [minSenderLoadPctInput, setMinSenderLoadPctInput] = useState<string>('30');
-  const [suggestionsCondicionantesOpen, setSuggestionsCondicionantesOpen] = useState(false);
+  const [suggestionsCondicionantesOpen, setSuggestionsCondicionantesOpen] = useState(true);
   const [rightPanelPorProyectoOpen, setRightPanelPorProyectoOpen] = useState(false);
+  const [onlySharedProjects, setOnlySharedProjects] = useState(false);
+  const [includedProjectIds, setIncludedProjectIds] = useState<Set<string>>(new Set());
 
   const [confirmAction, setConfirmAction] = useState<{ type: 'delete_deadline' | 'delete_allocation' | 'copy_month' | 'delete_month', id?: string, data?: any } | null>(null);
 
@@ -487,6 +489,8 @@ export default function DeadlinesPage() {
     maxReceiverLoadPct,
     minSenderLoadPct,
     employees,
+    onlySharedProjects,
+    includedProjectIds: includedProjectIds.size > 0 ? includedProjectIds : null,
   });
 
   if (isLoading) {
@@ -656,6 +660,11 @@ export default function DeadlinesPage() {
         suggestionsByEmployeeAndProject={suggestionsByEmployeeAndProject}
         getMonthlyCapacity={getMonthlyCapacity}
         getEmployeeAssignedHours={getEmployeeAssignedHours}
+        onlySharedProjects={onlySharedProjects}
+        setOnlySharedProjects={setOnlySharedProjects}
+        includedProjectIds={includedProjectIds}
+        setIncludedProjectIds={setIncludedProjectIds}
+        filteredProjects={filteredProjects}
       />
 
       <DeadlinesConfirmDialog

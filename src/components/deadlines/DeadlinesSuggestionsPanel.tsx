@@ -13,6 +13,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useState } from 'react';
 import {
   Sparkles,
   ChevronDown,
@@ -22,6 +25,7 @@ import {
   Inbox,
   Share2,
   PanelRight,
+  Search,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -85,6 +89,11 @@ export interface DeadlinesSuggestionsPanelProps {
   suggestionsByEmployeeAndProject: EmployeeRecommendation[];
   getMonthlyCapacity: (employeeId: string) => CapacityResult;
   getEmployeeAssignedHours: (employeeId: string) => number;
+  onlySharedProjects: boolean;
+  setOnlySharedProjects: (v: boolean) => void;
+  includedProjectIds: Set<string>;
+  setIncludedProjectIds: (v: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
+  filteredProjects: { id: string; name: string }[];
 }
 
 function handleClose(
@@ -97,7 +106,7 @@ function handleClose(
   onOpenChange(false);
 }
 
-/** Bloque condicionantes: quién puede ceder + inputs % receptor y % quien cede */
+/** Bloque condicionantes: quién puede ceder, % receptor/cedente, solo proyectos compartidos, proyectos a considerar */
 function CondicionantesBlock({
   suggestionDonors,
   excludedDonorIds,
@@ -110,6 +119,11 @@ function CondicionantesBlock({
   setMinSenderLoadPct,
   suggestionsCondicionantesOpen,
   setSuggestionsCondicionantesOpen,
+  onlySharedProjects,
+  setOnlySharedProjects,
+  includedProjectIds,
+  setIncludedProjectIds,
+  filteredProjects,
   compact,
 }: {
   suggestionDonors: SuggestionDonor[];
@@ -123,8 +137,18 @@ function CondicionantesBlock({
   setMinSenderLoadPct: (v: number) => void;
   suggestionsCondicionantesOpen: boolean;
   setSuggestionsCondicionantesOpen: (v: boolean) => void;
+  onlySharedProjects: boolean;
+  setOnlySharedProjects: (v: boolean) => void;
+  includedProjectIds: Set<string>;
+  setIncludedProjectIds: (v: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
+  filteredProjects: { id: string; name: string }[];
   compact?: boolean;
 }) {
+  const [projectSearch, setProjectSearch] = useState('');
+  const projectsFilteredBySearch = projectSearch.trim()
+    ? filteredProjects.filter((p) => p.name.toLowerCase().includes(projectSearch.trim().toLowerCase()))
+    : filteredProjects;
+
   const triggerLabel = compact
     ? 'Condicionantes'
     : 'Condicionantes (quién cede, cargas máx. receptor y mín. quien cede)';
@@ -134,16 +158,22 @@ function CondicionantesBlock({
         <button
           type="button"
           className={cn(
-            'flex items-center gap-2 font-medium hover:text-slate-900 py-1.5',
-            compact ? 'text-xs text-slate-600 hover:text-slate-800 mb-2' : 'text-sm text-slate-700'
+            'flex items-center gap-2 w-full text-left font-medium rounded-lg transition-colors',
+            compact
+              ? 'text-xs text-slate-600 hover:text-slate-800 hover:bg-slate-100 py-2 px-2 mb-2'
+              : 'text-sm text-slate-700 hover:text-slate-900 hover:bg-slate-100 py-2.5 px-3 border border-slate-200 bg-slate-50/50 hover:border-slate-300'
           )}
+          title="Clic para ver o ocultar opciones: quién puede ceder, % receptor y quien cede, proyectos"
         >
           {suggestionsCondicionantesOpen ? (
-            <ChevronUp className={compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
+            <ChevronUp className={cn(compact ? 'h-3.5 w-3.5' : 'h-4 w-4', 'shrink-0')} />
           ) : (
-            <ChevronDown className={compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
+            <ChevronDown className={cn(compact ? 'h-3.5 w-3.5' : 'h-4 w-4', 'shrink-0')} />
           )}
-          {triggerLabel}
+          <span className="flex-1">{triggerLabel}</span>
+          {!suggestionsCondicionantesOpen && !compact && (
+            <span className="text-xs font-normal text-slate-500">Clic para ajustar</span>
+          )}
         </button>
       </CollapsibleTrigger>
       <CollapsibleContent>
@@ -180,15 +210,17 @@ function CondicionantesBlock({
               })}
             </div>
             <div className="space-y-2 pt-2 border-t border-slate-200">
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Inbox className="h-4 w-4 text-primary shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold text-slate-800">Quien recibe</p>
-                    <p className="text-[11px] text-slate-500">No superará este %</p>
+              <div className="rounded-xl border border-primary/20 bg-primary/5 px-3 py-3 flex items-center justify-between gap-3 min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Inbox className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-800">Quien recibe horas</p>
+                    <p className="text-xs text-slate-500">No superará este % de carga</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   <Input
                     type="number"
                     min={1}
@@ -209,20 +241,22 @@ function CondicionantesBlock({
                       setMaxReceiverLoadPct(clamped);
                       setMaxReceiverLoadPctInput(String(clamped));
                     }}
-                    className="h-8 w-12 text-center text-xs font-mono font-semibold"
+                    className="h-9 w-14 text-center text-base font-mono font-bold tabular-nums"
                   />
-                  <span className="text-xs text-slate-500">%</span>
+                  <span className="text-sm font-semibold text-slate-600 w-5">%</span>
                 </div>
               </div>
-              <div className="rounded-lg border border-amber-200/80 bg-amber-50/50 p-2.5 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Share2 className="h-4 w-4 text-amber-700 shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold text-slate-800">Quien cede</p>
-                    <p className="text-[11px] text-slate-500">No bajará de este %</p>
+              <div className="rounded-xl border border-amber-200/80 bg-amber-50/50 px-3 py-3 flex items-center justify-between gap-3 min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                    <Share2 className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-800">Quien cede horas</p>
+                    <p className="text-xs text-slate-500">No bajará de este % de carga</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   <Input
                     type="number"
                     min={0}
@@ -243,11 +277,70 @@ function CondicionantesBlock({
                       setMinSenderLoadPct(clamped);
                       setMinSenderLoadPctInput(String(clamped));
                     }}
-                    className="h-8 w-12 text-center text-xs font-mono font-semibold"
+                    className="h-9 w-14 text-center text-base font-mono font-bold tabular-nums"
                   />
-                  <span className="text-xs text-slate-500">%</span>
+                  <span className="text-sm font-semibold text-slate-600 w-5">%</span>
                 </div>
               </div>
+            </div>
+            <div className="space-y-2 pt-2 border-t border-slate-200">
+              <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white p-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <FolderKanban className="h-4 w-4 text-slate-500 shrink-0" />
+                  <span className="text-xs font-medium text-slate-700">Solo proyectos en común</span>
+                </div>
+                <Switch checked={onlySharedProjects} onCheckedChange={setOnlySharedProjects} className="shrink-0" />
+              </div>
+              {filteredProjects.length > 0 && (
+                <Popover onOpenChange={(open) => !open && setProjectSearch('')}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="w-full justify-start text-xs h-8">
+                      <FolderKanban className="h-3.5 w-3.5 mr-1.5" />
+                      {includedProjectIds.size === 0 ? 'Todos los proyectos' : `${includedProjectIds.size} proyecto(s) seleccionados`}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-2 max-h-56 overflow-auto" align="start">
+                    <p className="text-[11px] font-semibold text-slate-500 uppercase mb-2">Solo considerar estos proyectos</p>
+                    <div className="relative mb-2">
+                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                      <Input
+                        placeholder="Buscar proyecto..."
+                        value={projectSearch}
+                        onChange={(e) => setProjectSearch(e.target.value)}
+                        className="pl-8 h-8 text-xs"
+                      />
+                    </div>
+                    <div className="max-h-44 overflow-auto">
+                      {projectsFilteredBySearch.slice(0, 50).map((p) => (
+                        <label key={p.id} className="flex items-center gap-2 py-1.5 cursor-pointer text-xs">
+                          <Checkbox
+                            checked={includedProjectIds.has(p.id)}
+                            onCheckedChange={(checked) => {
+                              setIncludedProjectIds((prev) => {
+                                const next = new Set(prev);
+                                if (checked) next.add(p.id);
+                                else next.delete(p.id);
+                                return next;
+                              });
+                            }}
+                          />
+                          <span className="truncate">{p.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {(projectsFilteredBySearch.length > 50 || filteredProjects.length > 50) && (
+                      <p className="text-[10px] text-slate-400 pt-1">
+                        {projectSearch.trim() ? `${projectsFilteredBySearch.length} de ${filteredProjects.length}` : `Mostrando 50 de ${filteredProjects.length}`}
+                      </p>
+                    )}
+                    {includedProjectIds.size > 0 && (
+                      <Button variant="ghost" size="sm" className="mt-1 w-full text-[10px] h-7" onClick={() => setIncludedProjectIds(new Set())}>
+                        Usar todos
+                      </Button>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
           </div>
         ) : (
@@ -296,19 +389,19 @@ function CondicionantesBlock({
                 )}
               </div>
             </div>
-            <div className="flex flex-col gap-3 border-l border-slate-200 pl-6 lg:pl-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 shadow-sm">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Inbox className="h-4 w-4" />
+            <div className="flex flex-col gap-4 border-l border-slate-200 pl-6 lg:pl-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 shadow-sm min-w-0">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <Inbox className="h-5 w-5" />
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-800">Quien recibe horas</p>
-                      <p className="text-[11px] text-slate-500">No superará este % de carga</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-base font-semibold text-slate-800 leading-tight">Quien recibe horas</p>
+                      <p className="text-sm text-slate-500 mt-0.5">No superará este % de carga</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-2">
                     <Input
                       type="number"
                       min={1}
@@ -329,22 +422,22 @@ function CondicionantesBlock({
                         setMaxReceiverLoadPct(clamped);
                         setMaxReceiverLoadPctInput(String(clamped));
                       }}
-                      className="h-9 w-14 text-center font-mono text-sm font-semibold"
+                      className="h-10 w-16 text-center font-mono text-lg font-bold tabular-nums"
                     />
-                    <span className="text-sm font-medium text-slate-500">%</span>
+                    <span className="text-base font-semibold text-slate-600">%</span>
                   </div>
                 </div>
-                <div className="rounded-xl border border-amber-200/80 bg-amber-50/50 p-3 shadow-sm">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
-                      <Share2 className="h-4 w-4" />
+                <div className="rounded-xl border border-amber-200/80 bg-amber-50/50 p-4 shadow-sm min-w-0">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                      <Share2 className="h-5 w-5" />
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-800">Quien cede horas</p>
-                      <p className="text-[11px] text-slate-500">No bajará de este % de carga</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-base font-semibold text-slate-800 leading-tight">Quien cede horas</p>
+                      <p className="text-sm text-slate-500 mt-0.5">No bajará de este % de carga</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-2">
                     <Input
                       type="number"
                       min={0}
@@ -365,11 +458,74 @@ function CondicionantesBlock({
                         setMinSenderLoadPct(clamped);
                         setMinSenderLoadPctInput(String(clamped));
                       }}
-                      className="h-9 w-14 text-center font-mono text-sm font-semibold"
+                      className="h-10 w-16 text-center font-mono text-lg font-bold tabular-nums"
                     />
-                    <span className="text-sm font-medium text-slate-500">%</span>
+                    <span className="text-base font-semibold text-slate-600">%</span>
                   </div>
                 </div>
+              </div>
+              <div className="flex flex-col gap-3 pt-2 border-t border-slate-200">
+                <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50/50 p-2.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FolderKanban className="h-4 w-4 text-slate-500 shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800">Solo proyectos en común</p>
+                      <p className="text-[11px] text-slate-500">Sugerir solo en proyectos que donante y receptor comparten</p>
+                    </div>
+                  </div>
+                  <Switch checked={onlySharedProjects} onCheckedChange={setOnlySharedProjects} className="shrink-0" />
+                </div>
+                {filteredProjects.length > 0 && (
+                  <Popover onOpenChange={(open) => !open && setProjectSearch('')}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-full justify-start text-sm h-9">
+                        <FolderKanban className="h-4 w-4 mr-2" />
+                        {includedProjectIds.size === 0 ? 'Todos los proyectos' : `Solo ${includedProjectIds.size} proyecto(s) seleccionados`}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-72 p-2 max-h-80 overflow-hidden flex flex-col" align="start">
+                      <p className="text-[11px] font-semibold text-slate-500 uppercase mb-2">Solo considerar estos proyectos</p>
+                      <p className="text-[11px] text-slate-500 mb-2">Vacío = todos. Selecciona para limitar.</p>
+                      <div className="relative mb-2">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Input
+                          placeholder="Buscar proyecto..."
+                          value={projectSearch}
+                          onChange={(e) => setProjectSearch(e.target.value)}
+                          className="pl-9 h-9 text-sm"
+                        />
+                      </div>
+                      <div className="overflow-auto max-h-52 min-h-0">
+                        {projectsFilteredBySearch.slice(0, 100).map((p) => (
+                          <label key={p.id} className="flex items-center gap-2 py-1.5 cursor-pointer text-sm">
+                            <Checkbox
+                              checked={includedProjectIds.has(p.id)}
+                              onCheckedChange={(checked) => {
+                                setIncludedProjectIds((prev) => {
+                                  const next = new Set(prev);
+                                  if (checked) next.add(p.id);
+                                  else next.delete(p.id);
+                                  return next;
+                                });
+                              }}
+                            />
+                            <span className="truncate">{p.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {(projectsFilteredBySearch.length > 100 || filteredProjects.length > 100) && (
+                        <p className="text-[10px] text-slate-400 pt-1">
+                          {projectSearch.trim() ? `${projectsFilteredBySearch.length} de ${filteredProjects.length}` : `Mostrando 100 de ${filteredProjects.length}`}
+                        </p>
+                      )}
+                      {includedProjectIds.size > 0 && (
+                        <Button variant="ghost" size="sm" className="mt-2 w-full text-xs" onClick={() => setIncludedProjectIds(new Set())}>
+                          Usar todos los proyectos
+                        </Button>
+                      )}
+                    </PopoverContent>
+                  </Popover>
+                )}
               </div>
               <p className="text-[11px] text-slate-500 leading-relaxed">
                 Las sugerencias se recalculan al cambiar cualquier valor.
@@ -636,6 +792,11 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
     suggestionsByEmployeeAndProject,
     getMonthlyCapacity,
     getEmployeeAssignedHours,
+    onlySharedProjects,
+    setOnlySharedProjects,
+    includedProjectIds,
+    setIncludedProjectIds,
+    filteredProjects,
   } = props;
 
   const onClose = () => handleClose(onOpenChange, setExpandedProjects, setExpandedEmployees);
@@ -659,6 +820,11 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
     setMinSenderLoadPct,
     suggestionsCondicionantesOpen,
     setSuggestionsCondicionantesOpen,
+    onlySharedProjects,
+    setOnlySharedProjects,
+    includedProjectIds,
+    setIncludedProjectIds,
+    filteredProjects,
   };
 
   const listContent = (
