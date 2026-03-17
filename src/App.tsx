@@ -32,6 +32,8 @@ import EmployeeDashboard from "./pages/EmployeeDashboard";
 import LandingPage from "./pages/LandingPage";
 import ArticlePage from "./pages/ArticlePage";
 import WhatIsTimeboxingPage from "./pages/WhatIsTimeboxingPage";
+import BlogPage from "./pages/BlogPage";
+import PlanificacionProyectosCronogramaRecursosPage from "./pages/blog/PlanificacionProyectosCronogramaRecursosPage";
 import EmployeeDashboardLandingPage from "./pages/EmployeeDashboardLandingPage";
 import PlannerLandingPage from "./pages/PlannerLandingPage";
 import TeamLandingPage from "./pages/TeamLandingPage";
@@ -145,8 +147,12 @@ const App = () => (
                         {/* Artículo: por qué Taimbox (página pública) */}
                         <Route path="/por-que-timeboxing" element={<ArticlePage />} />
 
-                        {/* Artículo: qué es Timeboxing (página pública) */}
-                        <Route path="/que-es-timeboxing" element={<WhatIsTimeboxingPage />} />
+                        {/* Blog (índice y artículos; solo enlazado desde footer) */}
+                        <Route path="/blog" element={<BlogPage />} />
+                        <Route path="/blog/que-es-timeboxing" element={<WhatIsTimeboxingPage />} />
+                        <Route path="/blog/planificacion-proyectos-cronograma-recursos" element={<PlanificacionProyectosCronogramaRecursosPage />} />
+                        {/* Redirección 301: URL antigua del artículo */}
+                        <Route path="/que-es-timeboxing" element={<Navigate to="/blog/que-es-timeboxing" replace />} />
 
                         {/* Landing comercial: Dashboard del Empleado (página pública) */}
                         <Route path="/dashboard-empleado" element={<EmployeeDashboardLandingPage />} />

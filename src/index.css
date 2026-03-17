@@ -313,6 +313,32 @@
   }
 }
 
+/* Blog: reveal on scroll (artículo planificación proyectos) */
+@keyframes blogRevealUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.blog-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.blog-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+  animation: blogRevealUp 0.6s ease-out forwards;
+}
+.blog-reveal-delay-1 { transition-delay: 0.1s; }
+.blog-reveal-delay-2 { transition-delay: 0.2s; }
+.blog-reveal-delay-3 { transition-delay: 0.3s; }
+.blog-reveal-delay-4 { transition-delay: 0.4s; }
+
 /* Placeholder del editor de soporte (Tiptap) */
 .ProseMirror[data-placeholder]:before {
   content: attr(data-placeholder);

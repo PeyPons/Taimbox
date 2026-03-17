@@ -14,17 +14,27 @@ import {
     CheckCircle2,
     ChevronRight
 } from 'lucide-react';
+import { BlogReadingTime } from '@/components/landing/blog/BlogReadingTime';
+import { BlogTOC, type BlogTOCItem } from '@/components/landing/blog/BlogTOC';
+import { BlogRelatedPost } from '@/components/landing/blog/BlogRelatedPost';
 
-export function WhatIsTimeboxingArticle() {
+export interface WhatIsTimeboxingArticleProps {
+  readingMinutes?: number;
+  tocItems?: BlogTOCItem[];
+  relatedPost?: { title: string; description: string; href: string };
+}
+
+export function WhatIsTimeboxingArticle({ readingMinutes, tocItems, relatedPost }: WhatIsTimeboxingArticleProps = {}) {
     return (
         <article id="que-es-timeboxing" className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14 md:py-16 text-left overflow-x-hidden">
 
             {/* Gancho y Título Principal */}
             <section className="mb-12 sm:mb-14">
-                <div className="mb-6 text-center">
+                <div className="mb-6 text-center flex flex-col sm:flex-row items-center justify-center gap-3">
                     <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-indigo-300 bg-indigo-500/20 border border-indigo-400/30">
                         Guía Definitiva
                     </span>
+                    {readingMinutes != null && <BlogReadingTime minutes={readingMinutes} />}
                 </div>
                 <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-[2.75rem] font-black text-white mb-5 sm:mb-6 leading-[1.15] tracking-tight text-center">
                     Qué es el Timeboxing: La Guía Definitiva de Productividad para Empresas
@@ -42,10 +52,15 @@ export function WhatIsTimeboxingArticle() {
                         En esta guía definitiva, desglosaremos qué es exactamente el Timeboxing, cómo implementarlo paso a paso en tu día a día, cómo escalarlo a todo tu equipo y, lo más importante, cómo convertir esta técnica de productividad en <strong>rentabilidad real para tu empresa</strong>.
                     </p>
                 </div>
+                {tocItems != null && tocItems.length > 0 && (
+                    <div className="mt-8">
+                        <BlogTOC items={tocItems} />
+                    </div>
+                )}
             </section>
 
             {/* 1. Qué es el Timeboxing */}
-            <section className="mb-12 sm:mb-16">
+            <section id="que-es-timeboxing-diferencia" className="mb-12 sm:mb-16 scroll-mt-24">
                 <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-4">
                     1. ¿Qué es el Timeboxing y en qué se diferencia?
                 </h2>
@@ -83,7 +98,7 @@ export function WhatIsTimeboxingArticle() {
             </section>
 
             {/* 2. Bloques de Tiempo Rígidos vs. Flexibles */}
-            <section className="mb-12 sm:mb-16">
+            <section id="bloques-rigidos-flexibles" className="mb-12 sm:mb-16 scroll-mt-24">
                 <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6">
                     2. Bloques de Tiempo Rígidos vs. Flexibles
                 </h2>
@@ -139,7 +154,7 @@ export function WhatIsTimeboxingArticle() {
             </section>
 
             {/* 3. Neurociencia */}
-            <section className="mb-12 sm:mb-16">
+            <section id="neurociencia" className="mb-12 sm:mb-16 scroll-mt-24">
                 <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6">
                     3. La Neurociencia: ¿Por qué funciona el Timeboxing?
                 </h2>
@@ -166,7 +181,7 @@ export function WhatIsTimeboxingArticle() {
             </section>
 
             {/* 4. Implementación paso a paso */}
-            <section className="mb-12 sm:mb-16">
+            <section id="implementacion-paso-a-paso" className="mb-12 sm:mb-16 scroll-mt-24">
                 <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6">
                     4. Cómo aplicar el Timeboxing paso a paso
                 </h2>
@@ -222,7 +237,7 @@ export function WhatIsTimeboxingArticle() {
             </section>
 
             {/* 5. Equipos y Rentabilidad */}
-            <section className="mb-12 sm:mb-16">
+            <section id="equipos-rentabilidad" className="mb-12 sm:mb-16 scroll-mt-24">
                 <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6">
                     5. Timeboxing para Equipos: De la Tarea a la Rentabilidad
                 </h2>
@@ -270,7 +285,7 @@ export function WhatIsTimeboxingArticle() {
             </section>
 
             {/* 6. Reuniones */}
-            <section className="mb-12 sm:mb-16">
+            <section id="timeboxing-reuniones" className="mb-12 sm:mb-16 scroll-mt-24">
                 <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6">
                     6. Timeboxing en reuniones empresariales
                 </h2>
@@ -295,7 +310,7 @@ export function WhatIsTimeboxingArticle() {
 
             {/* FAQ y Conclusión */}
             <section className="mb-12">
-                <div className="rounded-3xl border border-indigo-500/30 bg-indigo-950/40 p-6 sm:p-10 mb-10">
+                <div id="preguntas-frecuentes" className="rounded-3xl border border-indigo-500/30 bg-indigo-950/40 p-6 sm:p-10 mb-10 scroll-mt-24">
                     <h2 className="text-xl sm:text-2xl font-bold text-white mb-5 text-center">
                         Preguntas Frecuentes sobre Timeboxing
                     </h2>
@@ -317,7 +332,12 @@ export function WhatIsTimeboxingArticle() {
                     </div>
                 </div>
 
-                <div className="text-center mt-12 mb-8">
+                {relatedPost != null && (
+                    <div className="mb-10">
+                        <BlogRelatedPost title={relatedPost.title} description={relatedPost.description} href={relatedPost.href} />
+                    </div>
+                )}
+                <div id="cta-rentabilidad" className="text-center mt-12 mb-8 scroll-mt-24">
                     <h2 className="text-2xl sm:text-4xl font-bold text-white mb-4">
                         Empezar a ganar rentabilidad real
                     </h2>

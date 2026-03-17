@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Calendar, FileText, Code, HelpCircle, Mail, BookOpen, PlayCircle, LayoutDashboard, CalendarRange, Users, BarChart3, FolderKanban, Plug, Presentation, Shield, Scale } from 'lucide-react';
+import { Calendar, FileText, Code, HelpCircle, Mail, BookOpen, PlayCircle, LayoutDashboard, CalendarRange, Users, BarChart3, FolderKanban, Plug, Presentation, Shield, Scale, Newspaper, Tag } from 'lucide-react';
 
 export function LandingFooter() {
   const currentYear = new Date().getFullYear();
@@ -24,9 +24,10 @@ export function LandingFooter() {
           <div className="lg:col-span-1">
             <h4 className="text-white font-semibold text-sm mb-3">Producto</h4>
             <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-              <li><Link to="/precios" className={linkClass}>Precios</Link></li>
+              <li><Link to="/precios" className={linkClass}><Tag className="h-3.5 w-3.5 shrink-0" /> Precios</Link></li>
               <li><Link to="/pitch" className={linkClass}><Presentation className="h-3.5 w-3.5 shrink-0" /> ROI (3 min)</Link></li>
               <li><Link to="/por-que-timeboxing" className={linkClass}><BookOpen className="h-3.5 w-3.5 shrink-0" /> Por qué</Link></li>
+              <li><Link to="/blog" className={linkClass}><Newspaper className="h-3.5 w-3.5 shrink-0" /> Blog</Link></li>
               <li><Link to="/dashboard-empleado" className={linkClass}><LayoutDashboard className="h-3.5 w-3.5 shrink-0" /> Dashboard</Link></li>
               <li><Link to="/planificador-recursos" className={linkClass}><CalendarRange className="h-3.5 w-3.5 shrink-0" /> Planificador</Link></li>
               <li><Link to="/gestion-equipos" className={linkClass}><Users className="h-3.5 w-3.5 shrink-0" /> Equipos</Link></li>
