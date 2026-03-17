@@ -29,4 +29,13 @@ export const blogPosts: BlogPost[] = [
     readingMinutes: 12,
     relatedSlug: 'planificacion-proyectos-cronograma-recursos',
   },
+  {
+    slug: 'ley-parkinson',
+    title: 'Ley de Parkinson: qué es, ejemplos y cómo combatirla',
+    description: 'Guía completa sobre la Ley de Parkinson: origen, formulación, evidencia, consecuencias en negocio y antídotos (timeboxing, plazos y gestión del tiempo).',
+    date: '2025-03-18',
+    href: '/blog/ley-parkinson',
+    readingMinutes: 18,
+    relatedSlug: 'que-es-timeboxing',
+  },
 ];
