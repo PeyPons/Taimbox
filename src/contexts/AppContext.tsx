@@ -1143,8 +1143,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     try {
       if (Object.keys(updatePayload).length > 0) {
-        const { error } = await supabase.from('allocations').update(updatePayload).eq('id', patch.id);
+        const { data, error } = await supabase
+          .from('allocations')
+          .update(updatePayload)
+          .eq('id', patch.id)
+          .select('id');
         if (error) throw error;
+        if (!data || data.length === 0) {
+          setAllocations(prev => prev.map(a => a.id === patch.id ? previousAllocation : a));
+          toast.error('No se pudo guardar la tarea. Comprueba que tienes permiso para editarla.');
+          return;
+        }
       }
 
       if (currentAgency?.id) {

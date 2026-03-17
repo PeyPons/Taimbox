@@ -583,9 +583,11 @@ Si los logs muestran `main function started` seguido de `shutdown signal receive
   Al cambiar de pestaña del navegador, Supabase Auth puede refrescar el token o re-emitir el evento de sesión (`onAuthStateChange`), lo que actualiza el objeto `user`/`session` en memoria (nueva referencia). Si los contextos reaccionan a esa referencia, se disparan fetches masivos (user_agencies, employees, agencies, etc.) sin necesidad. **AuthContext** se deja intacto: debe seguir recibiendo y guardando la nueva sesión para que el JWT esté siempre fresco y las peticiones con RLS no fallen con 401. Para evitar la cascada de fetching, en **AgencyContext** se usa un `prevUserIdRef`: en el `useEffect` que llama a `fetchAgencyForUser`, si `user.id` es igual a `prevUserIdRef.current` y ya existe `currentAgency`, se hace un return temprano y no se ejecuta el fetch. En **AppContext** se usa un `prevAuthUserIdRef` en el `useEffect` que vincula empleado con usuario Auth: si el id del usuario actual ya fue procesado y hay usuario vinculado, se hace return temprano. Así se evitan recargas masivas al cambiar de pestaña sin interferir con la actualización del token en AuthContext.
 
 - **Row Level Security (RLS) y tokens API**  
-  En la base de datos (Supabase), **todas las tablas públicas** tienen RLS habilitado. El acceso se controla mediante la función SQL `requesting_agency_id()`, que:
-  1. Primero intenta leer el claim `agency_id` del JWT (para tokens API generados por agencia).
-  2. Si no existe, busca la agencia primaria del usuario en `user_agencies`.
+  En la base de datos (Supabase), **todas las tablas públicas** tienen RLS habilitado. El acceso se controla mediante la función SQL `user_agency_ids()` (reemplaza a la anterior `requesting_agency_id()`), que:
+  1. Si la petición lleva un JWT de **API** con claim `agency_id` → devuelve solo esa agencia.
+  2. Si es un **usuario normal** (sin ese claim) → devuelve **todas** las agencias del usuario desde `user_agencies` (sin depender de `is_primary`).
+  
+  La función anterior `requesting_agency_id()` solo devolvía **una** agencia (la primaria), lo que causaba que usuarios con múltiples agencias o con `is_primary = false` no pudieran operar en la agencia correcta. `user_agency_ids()` devuelve un `SETOF uuid` con todas las agencias, y las políticas RLS usan `IN (SELECT user_agency_ids())` en lugar de `= requesting_agency_id()`. El campo `is_primary` solo afecta a la UI (agencia por defecto al login), no a la seguridad.
 
   **Tabla `api_tokens`**: Almacena metadatos de tokens API emitidos (hash SHA-256, permisos, expiración). El JWT real solo se muestra una vez al crearlo.
 
@@ -600,9 +602,10 @@ Si los logs muestran `main function started` seguido de `shutdown signal receive
   **Políticas RLS por tipo de tabla**:
   | Tipo | Tablas | Política |
   |------|--------|----------|
-  | `agency_id` directo | agencies, employees, clients, projects, global_assignments, task_transfers, department_config, ad_accounts_config, ads_sync_logs, meta_sync_logs, google_ads_campaigns, meta_ads_campaigns, team_events, client_settings, segmentation_rules, audit_logs, api_tokens, user_agencies | `agency_id = requesting_agency_id()` |
-  | Vía `employee_id` | allocations, absences, professional_goals, user_routines, weekly_feedback, time_entries, active_timers, timer_sessions | allocations/absences/time_entries: por agency. active_timers y timer_sessions: políticas por usuario (`auth.uid()` = employees.user_id). |
-  | Vía `project_id` | deadlines, project_editing_locks | `project_id IN (SELECT id FROM projects WHERE agency_id = requesting_agency_id())` |
+  | `agency_id` directo | agencies, employees, clients, projects, global_assignments, task_transfers, department_config, ad_accounts_config, ads_sync_logs, meta_sync_logs, google_ads_campaigns, meta_ads_campaigns, team_events, client_settings, segmentation_rules, audit_logs, api_tokens, user_agencies | `agency_id IN (SELECT user_agency_ids())` |
+  | Vía `employee_id` (por agencia) | allocations, absences, professional_goals, time_entries | `employee_id IN (SELECT e.id FROM employees e WHERE e.agency_id IN (SELECT user_agency_ids()))` |
+  | Vía `employee_id` (por usuario) | active_timers, timer_sessions | Políticas por `auth.uid()` = `employees.user_id`. No dependen de agencia. |
+  | Vía `project_id` | deadlines, project_editing_locks | `project_id IN (SELECT p.id FROM projects p WHERE p.agency_id IN (SELECT user_agency_ids()))` |
   | Política “no access” | google_ads_changes | Política `no_access_until_use` con USING (false) y WITH CHECK (false): nadie puede leer ni escribir. Cuando se confirme uso, sustituir por políticas por agency_id. |
 
   **Tabla `agencies` (solo lectura vía API)**: Para impedir que integradores creen agencias por API, conviene revocar `INSERT` en `public.agencies` para los roles `anon` y `authenticated`. La creación de agencias debe hacerse desde la app (registro/onboarding) o con service_role.
@@ -612,6 +615,22 @@ Si los logs muestran `main function started` seguido de `shutdown signal receive
   **Índices**: Las claves foráneas sin índice pueden generar "Unindexed foreign keys" en auditorías; conviene añadir índices donde haga falta. Revisar también índices duplicados por tabla.
 
   **Importante**: El `service_role` key bypasea RLS. Las edge functions y workers que usan `SUPABASE_SERVICE_ROLE_KEY` no se ven afectados.
+
+  **Solución de problemas: Un usuario no puede guardar cambios al editar tareas (allocations)**  
+  Si como administrador los cambios se ven al momento pero para un usuario concreto (p. ej. un empleado) el valor no persiste (vuelve al anterior al guardar o al refetch), la causa suele ser RLS o la vinculación usuario–empleado.
+
+  1. **Revisar políticas RLS UPDATE de `allocations`**  
+     En Supabase → SQL Editor: `SELECT * FROM pg_policies WHERE tablename = 'allocations' AND cmd = 'UPDATE'`. La política debe usar `employee_id IN (SELECT e.id FROM employees e WHERE e.agency_id IN (SELECT user_agency_ids()))`. Si sigue usando `requesting_agency_id()`, actualizarla.
+
+  2. **Comprobar vinculación usuario → agencia**  
+     La tabla `user_agencies` debe tener al menos una fila con `user_id` = UUID de Auth del usuario afectado y `agency_id` de la agencia en la que trabaja. La función `user_agency_ids()` devuelve todas las `agency_id` de `user_agencies` para el usuario autenticado. El empleado asociado a la tarea (`allocations.employee_id`) debe pertenecer a una agencia que aparezca en `user_agency_ids()`.  
+     **Consulta útil**: `SELECT ua.user_id, ua.agency_id, ua.is_primary FROM user_agencies ua JOIN auth.users u ON u.id = ua.user_id WHERE u.email = 'correo@ejemplo.com';`. Comprobar que existe al menos una fila para la agencia correcta.
+
+  3. **Comportamiento en el frontend**  
+     En `AppContext.updateAllocation` se hace `.update(...).eq('id', patch.id).select('id')`. Si la respuesta devuelve 0 filas (RLS impidió el update), se revierte el estado local y se muestra el mensaje: "No se pudo guardar la tarea. Comprueba que tienes permiso para editarla." Así el usuario no ve un cambio que desaparece sin explicación.
+
+  4. **Tipo de columna `hours_assigned` (solo si los decimales no se guardan para todos)**  
+     Si en el futuro se reporta que las horas decimales (p. ej. 4,5) se truncan a entero para todos los usuarios, comprobar en la BD que `allocations.hours_assigned` es de tipo `numeric` (o `decimal`), no `integer`. Si es integer, cambiar con `ALTER TABLE allocations ALTER COLUMN hours_assigned TYPE numeric USING hours_assigned::numeric;`.
 
   **Supabase self-hosted (sin Supabase Cloud)**  
   No se usa `supabase login` ni `supabase functions deploy`: el login es solo para la cuenta de Supabase Cloud. **Convención del proyecto:** script `supabase/scripts/deploy-edge-functions-supabase-pi.sh`; rutas por defecto: Taimbox `$HOME/Taimbox`, Supabase docker `$HOME/supabase-pi/supabase/docker`, servicio `functions`. Flujo: (1) Crear el script en el servidor (heredoc más abajo); (2) Tener `supabase/functions/` en el servidor (p. ej. `~/Taimbox/supabase/functions/`); (3) Ejecutar `./supabase/scripts/deploy-edge-functions-supabase-pi.sh` desde `~/Taimbox`. **Comandos listos para pegar (en el servidor):** `cd ~/Taimbox && git pull && chmod +x supabase/scripts/deploy-edge-functions-supabase-pi.sh && ./supabase/scripts/deploy-edge-functions-supabase-pi.sh`. Si las rutas son distintas: `export TIMBOXING_DIR=/ruta/Taimbox` y `export SUPABASE_DOCKER_DIR=/ruta/supabase-pi/supabase/docker` antes de ejecutar el script. **Crear el script la primera vez (heredoc):** en el servidor, pegar el bloque que crea `~/Taimbox/supabase/scripts/deploy-edge-functions-supabase-pi.sh` (mkdir -p, cat > ... << 'ENDOFFILE', contenido del script bash que hace rsync de `FUNCTIONS_SOURCE` a `VOLUMES_FUNCTIONS` y `docker compose restart functions`, ENDOFFILE, chmod +x); el script está versionado en el repo en `supabase/scripts/deploy-edge-functions-supabase-pi.sh`, por lo que normalmente basta con `git pull` y ejecutarlo.

@@ -51,7 +51,7 @@ export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, 
   return (
     <TooltipProvider>
       <div onClick={onClick} className={cn(
-        "h-full p-2 transition-all cursor-pointer border rounded-lg relative flex flex-col group tabular-nums touch-manipulation",
+        "h-full min-w-0 p-2 transition-all cursor-pointer border rounded-lg relative flex flex-col group tabular-nums touch-manipulation overflow-hidden",
         touchTarget ? "min-h-[44px] min-w-[44px]" : "min-h-[140px]",
         // HEATMAP DE FONDO
         isOverload ? "bg-red-50/80 border-red-200 hover:bg-red-50 hover:border-red-300" :
@@ -64,7 +64,7 @@ export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, 
 
         {/* SECCIÓN PRINCIPAL */}
         {hasActivity ? (
-          <div className="flex flex-col gap-1 flex-1">
+          <div className="flex flex-col gap-1 flex-1 min-w-0 overflow-hidden">
 
             {/* BARRA DE PROGRESO DE EJECUCIÓN */}
             {allocations.length > 0 && (
@@ -105,34 +105,40 @@ export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, 
               {hasRealOrComp && (
                 <>
                   {/* FLUJO: Real → Comp */}
-                  <div className="flex items-center gap-0.5 text-[11px] py-0.5 px-1 rounded bg-blue-50/70">
-                    <div className="flex items-center gap-1 text-blue-700 flex-1">
-                      <span className="font-medium">Real</span>
-                      <span className="font-mono font-bold">{totalReal}h</span>
+                  <div className="space-y-0.5 text-[11px] py-0.5 px-1 rounded bg-blue-50/70">
+                    <div className="flex items-center justify-between gap-1 text-blue-700 min-w-0">
+                      <span className="font-medium shrink-0">Real</span>
+                      <span className="font-mono font-bold whitespace-nowrap">{totalReal}h</span>
                     </div>
-                    <ArrowRight className="h-3 w-3 text-slate-400" />
-                    <div className="flex items-center gap-1 text-emerald-700 flex-1 justify-end">
-                      <span className="font-medium">Comp.</span>
-                      <span className="font-mono font-bold">{totalComp}h</span>
+                    <div className="flex items-center justify-between gap-1 text-emerald-700 min-w-0">
+                      <span className="font-medium shrink-0">Comp.</span>
+                      <span className="font-mono font-bold whitespace-nowrap">{totalComp}h</span>
                     </div>
                   </div>
 
                   {/* BALANCE - Destacado */}
                   {Math.abs(balance) > 0.01 && (
-                    <div className={cn(
-                      "flex justify-between items-center text-[11px] px-2 py-1 rounded-md font-medium",
-                      balance >= 0
-                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                        : "bg-red-100 text-red-800 border border-red-300"
-                    )}>
-                      <span className="flex items-center gap-1">
-                        {balance >= 0 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-                        {balance >= 0 ? "Ganancia" : "Pérdida"}
-                      </span>
-                      <span className="font-mono font-bold text-[12px]">
-                        {balance > 0 ? '+' : ''}{balance}h
-                      </span>
-                    </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className={cn(
+                          "flex justify-between items-center gap-1 text-[11px] px-2 py-1 rounded-md font-medium w-full",
+                          balance >= 0
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                            : "bg-red-100 text-red-800 border border-red-300"
+                        )}>
+                          <span className="flex items-center gap-1 shrink-0">
+                            {balance >= 0 ? <TrendingUp className="h-3.5 w-3.5 shrink-0" /> : <TrendingDown className="h-3.5 w-3.5 shrink-0" />}
+                            <span className="whitespace-nowrap">{balance >= 0 ? 'Gan.' : 'Pérd.'}</span>
+                          </span>
+                          <span className="font-mono font-bold text-[12px] whitespace-nowrap">
+                            {balance > 0 ? '+' : ''}{balance}h
+                          </span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        {balance >= 0 ? 'Ganancia' : 'Pérdida'}: {balance > 0 ? '+' : ''}{balance}h
+                      </TooltipContent>
+                    </Tooltip>
                   )}
 
                   {/* Balance neutro */}
@@ -175,9 +181,9 @@ export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, 
                       ? "bg-amber-100 text-amber-800 border border-amber-300"
                       : "bg-blue-100 text-blue-800 border border-blue-300"
                   )}>
-                    <span className="flex items-center gap-1 truncate max-w-[85px]">
+                    <span className="flex items-center gap-1 min-w-0 flex-1">
                       {item.type === 'absence' ? <Palmtree className="h-3 w-3 flex-shrink-0" /> : <CalendarOff className="h-3 w-3 flex-shrink-0" />}
-                      <span className="truncate font-medium">
+                      <span className="line-clamp-2 font-medium break-words text-[10px] leading-tight">
                         {item.reason.replace('Ausencia: ', '').replace('Evento: ', '')}
                       </span>
                     </span>
@@ -204,7 +210,7 @@ export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, 
             </div>
           )}
           <div className={cn(
-            "flex items-center justify-between font-bold",
+            "flex items-center justify-between gap-1 font-bold min-w-0",
             "text-[11px]",
             touchTarget && "text-base",
             isOverload ? "text-red-600" :
@@ -212,12 +218,12 @@ export function WeekCell({ allocations, hours, capacity, status, isCurrentWeek, 
                 isHealthy ? "text-emerald-600" :
                   "text-slate-400"
           )}>
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 shrink-0">
               {isOverload && <><AlertTriangle className="h-4 w-4 flex-shrink-0" /><AlertCircle className="h-3.5 w-3.5 flex-shrink-0" /></>}
               {isWarning && <AlertTriangle className="h-3.5 w-3.5" />}
               {isHealthy && <CheckCircle2 className="h-3.5 w-3.5" />}
             </span>
-            <span className="font-mono text-base">{hours}/{capacity}h</span>
+            <span className="font-mono text-base tabular-nums whitespace-nowrap">{hours}/{capacity}h</span>
           </div>
         </div>
       </div>

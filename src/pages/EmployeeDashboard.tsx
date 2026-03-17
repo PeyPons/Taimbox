@@ -473,7 +473,9 @@ export default function EmployeeDashboard() {
     );
   }
 
-  const gridTemplate = `${isMobile ? '100px' : '180px'} repeat(${weeks.length}, minmax(0, 1fr)) 90px`;
+  // Columnas de semana: ancho mínimo para que el contenido quepa sin truncar (experiencia premium, scroll horizontal si hace falta)
+  const weekColMin = 140;
+  const gridTemplate = `${isMobile ? '100px' : '200px'} repeat(${weeks.length}, minmax(${weekColMin}px, 1fr)) 100px`;
   const monthlyLoad = getEmployeeMonthlyLoad(myEmployeeProfile.id, currentMonth.getFullYear(), currentMonth.getMonth());
 
   return (
@@ -631,20 +633,20 @@ export default function EmployeeDashboard() {
 
           {/* 4. VISTA DETALLADA POR PESTAÑAS */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full justify-start h-auto p-1 bg-white border border-slate-200 flex-nowrap overflow-x-auto custom-scrollbar gap-2 min-w-0">
-              <TabsTrigger value="dependencies" className="px-4 py-2 min-h-[44px] data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700 shrink-0">
-                <AlertCircle className="h-4 w-4 mr-2" /> Prioridades
+            <TabsList className="w-full justify-start h-auto p-1 bg-white border border-slate-200 flex-nowrap overflow-x-auto custom-scrollbar gap-2 min-w-0 pr-2">
+              <TabsTrigger value="dependencies" className="px-4 py-2 min-h-[44px] min-w-[7rem] whitespace-nowrap data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700 shrink-0">
+                <AlertCircle className="h-4 w-4 mr-2 shrink-0" /> Prioridades
               </TabsTrigger>
-              <TabsTrigger value="projects" className="px-4 py-2 min-h-[44px] data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 shrink-0">
-                <ListPlus className="h-4 w-4 mr-2" /> Mis proyectos
+              <TabsTrigger value="projects" className="px-4 py-2 min-h-[44px] min-w-[7rem] whitespace-nowrap data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 shrink-0">
+                <ListPlus className="h-4 w-4 mr-2 shrink-0" /> Mis proyectos
               </TabsTrigger>
-              <TabsTrigger value="coherence" className="px-4 py-2 min-h-[44px] data-[state=active]:bg-red-50 data-[state=active]:text-red-700 shrink-0">
-                <CheckCircle2 className="h-4 w-4 mr-2" /> Control de planificación
+              <TabsTrigger value="coherence" className="px-4 py-2 min-h-[44px] min-w-[9rem] whitespace-nowrap data-[state=active]:bg-red-50 data-[state=active]:text-red-700 shrink-0">
+                <CheckCircle2 className="h-4 w-4 mr-2 shrink-0" /> Control de planificación
               </TabsTrigger>
-              <TabsTrigger value="teammates" className="px-4 py-2 min-h-[44px] shrink-0">
+              <TabsTrigger value="teammates" className="px-4 py-2 min-h-[44px] min-w-[7rem] whitespace-nowrap shrink-0">
                 <div className="flex items-center gap-2">Compañeros</div>
               </TabsTrigger>
-              <TabsTrigger value="metrics" className="px-4 py-2 min-h-[44px] shrink-0">
+              <TabsTrigger value="metrics" className="px-4 py-2 min-h-[44px] min-w-[7.5rem] whitespace-nowrap shrink-0">
                 <div className="flex items-center gap-2">Mis métricas</div>
               </TabsTrigger>
             </TabsList>

@@ -51,9 +51,9 @@ export function EmployeeRow({
               employee.name.substring(0, 2).toUpperCase()
             )}
           </div>
-          <div className="flex flex-col min-w-0">
-            <span className="font-semibold text-sm text-foreground truncate">{employee.name}</span>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider truncate">{displayRole}</span>
+          <div className="flex flex-col min-w-0 flex-1">
+            <span className="font-semibold text-sm text-foreground line-clamp-2 break-words leading-tight">{employee.name}</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{displayRole}</span>
           </div>
         </div>
       </div>
