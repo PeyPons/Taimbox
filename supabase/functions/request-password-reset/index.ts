@@ -52,7 +52,13 @@ function resetPasswordTemplate(name: string, resetUrl: string): string {
                     vertical-align: middle;
                     padding-right: 12px;
                   ">
-                    <span style="font-size: 22px; font-weight: 700; color: #ffffff; line-height: 40px;">T</span>
+                    <!-- Icono "Calendar" (approx) en HTML/CSS para evitar SVG/imagenes -->
+                    <div style="width: 22px; height: 20px; border: 2px solid #ffffff; border-radius: 4px; box-sizing: border-box; position: relative; margin: 0 auto;">
+                      <div style="position: absolute; top: -6px; left: 3px; width: 6px; height: 6px; border: 2px solid #ffffff; border-radius: 999px; box-sizing: border-box;"></div>
+                      <div style="position: absolute; top: -6px; right: 3px; width: 6px; height: 6px; border: 2px solid #ffffff; border-radius: 999px; box-sizing: border-box;"></div>
+                      <div style="position: absolute; top: 3px; left: 4px; right: 4px; height: 2px; background: #ffffff;"></div>
+                      <div style="position: absolute; left: 0; right: 0; top: 6px; height: 2px; background: transparent;"></div>
+                    </div>
                   </td>
                   <td style="
                     font-size: 24px;
