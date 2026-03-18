@@ -53,11 +53,12 @@ function baseTemplate(content: string, ctaUrl: string, ctaText: string): string 
                     padding-right: 12px;
                   ">
                     <!-- Icono "Calendar" (approx) en HTML/CSS para evitar SVG/imagenes -->
-                    <div style="width: 22px; height: 20px; border: 2px solid #ffffff; border-radius: 4px; box-sizing: border-box; position: relative; margin: 0 auto;">
-                      <div style="position: absolute; top: -6px; left: 3px; width: 6px; height: 6px; border: 2px solid #ffffff; border-radius: 999px; box-sizing: border-box;"></div>
-                      <div style="position: absolute; top: -6px; right: 3px; width: 6px; height: 6px; border: 2px solid #ffffff; border-radius: 999px; box-sizing: border-box;"></div>
-                      <div style="position: absolute; top: 3px; left: 4px; right: 4px; height: 2px; background: #ffffff;"></div>
-                      <div style="position: absolute; left: 0; right: 0; top: 6px; height: 2px; background: transparent;"></div>
+                    <div style="width: 22px; height: 20px; border: 2px solid #ffffff; border-radius: 4px; box-sizing: border-box; position: relative; margin: 10px auto 0;">
+                      <!-- Rings de la cabecera (estilo Lucide Calendar aprox.) -->
+                      <div style="position: absolute; left: 4px; top: 1px; width: 6px; height: 6px; border: 2px solid #ffffff; border-radius: 999px; box-sizing: border-box; background: transparent;"></div>
+                      <div style="position: absolute; right: 4px; top: 1px; width: 6px; height: 6px; border: 2px solid #ffffff; border-radius: 999px; box-sizing: border-box; background: transparent;"></div>
+                      <!-- Barra superior -->
+                      <div style="position: absolute; left: 3px; right: 3px; top: 5px; height: 2px; background: #ffffff;"></div>
                     </div>
                   </td>
                   <td style="
