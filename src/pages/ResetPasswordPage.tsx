@@ -20,7 +20,9 @@ export default function ResetPasswordPage() {
 
     useEffect(() => {
         const verifyToken = async () => {
-            const tokenHash = searchParams.get('token_hash');
+            // Supabase (y/o el parser del action_link) puede exponer el valor bajo `token_hash` o bajo `token`.
+            // La UI de este proyecto llama a `verifyOtp` con `token_hash`, así que normalizamos aquí.
+            const tokenHash = searchParams.get('token_hash') || searchParams.get('token');
             const type = searchParams.get('type') as 'recovery' | undefined;
 
             if (!tokenHash || type !== 'recovery') {

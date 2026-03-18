@@ -208,7 +208,8 @@ Deno.serve(async (req) => {
                     // El formato puede variar según la versión de Supabase
                     const token = url.searchParams.get('token') || url.hash?.match(/access_token=([^&]+)/)?.[1]
                     if (token) {
-                        resetUrl = `${siteUrl}/reset-password?token=${token}&type=recovery`
+                        // La UI espera `token_hash`, pero algunos formatos del action_link exponen el valor bajo `token`.
+                        resetUrl = `${siteUrl}/reset-password?token_hash=${token}&type=recovery`
                     }
                 }
             } catch (urlError) {
