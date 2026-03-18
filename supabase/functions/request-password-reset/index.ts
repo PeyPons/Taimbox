@@ -225,6 +225,12 @@ Deno.serve(async (req) => {
             html: resetPasswordTemplate(userName, resetUrl),
         })
 
+        console.log('[request-password-reset] sendEmail result:', {
+            success: emailResult.success,
+            id: emailResult.id,
+            error: emailResult.error,
+        })
+
         if (!emailResult.success) {
             console.error(`[request-password-reset] Error enviando email: ${emailResult.error}`)
             // Aún devolvemos 200 para no revelar info al cliente

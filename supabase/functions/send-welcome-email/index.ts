@@ -208,7 +208,7 @@ Deno.serve(async (req) => {
         }
 
         return new Response(
-            JSON.stringify({ success: result.success, id: result.id }),
+            JSON.stringify({ success: result.success, id: result.id, error: result.error }),
             {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 status: 200,

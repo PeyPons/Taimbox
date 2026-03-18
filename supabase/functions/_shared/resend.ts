@@ -39,8 +39,12 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
 
         if (!response.ok) {
             const errorBody = await response.text();
-            console.error(`[Resend] Error ${response.status}: ${errorBody}`);
-            return { success: false, error: `Resend API error: ${response.status}` };
+            const errorBodyTrimmed = (errorBody || '').slice(0, 2000);
+            console.error(`[Resend] Error ${response.status}: ${errorBodyTrimmed}`);
+            return {
+                success: false,
+                error: `Resend API error: ${response.status}${errorBodyTrimmed ? ` - ${errorBodyTrimmed}` : ''}`,
+            };
         }
 
         const data = await response.json();

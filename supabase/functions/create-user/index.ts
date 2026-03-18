@@ -177,7 +177,7 @@ serve(async (req) => {
         .eq('id', callerEmployee.agency_id)
         .single()
 
-      await fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
+      const emailRes = await fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -190,7 +190,24 @@ serve(async (req) => {
           type: 'invitation',
         }),
       })
-      console.log(`Email de bienvenida enviado a ${cleanEmail}`)
+
+      let emailBody: any = null
+      try {
+        emailBody = await emailRes.json()
+      } catch {
+        // Respuesta no-JSON; no bloqueamos el registro, pero lo dejamos en logs.
+        emailBody = await emailRes.text().catch(() => null)
+      }
+
+      if (!emailRes.ok) {
+        console.warn(`No se pudo enviar email de bienvenida a ${cleanEmail} (HTTP ${emailRes.status})`, {
+          body: emailBody,
+        })
+      } else if (emailBody?.success === false) {
+        console.warn(`Resend rechazó el email de bienvenida a ${cleanEmail}`, emailBody)
+      } else {
+        console.log(`Email de bienvenida enviado a ${cleanEmail}`)
+      }
     } catch (emailError) {
       console.warn(`No se pudo enviar email de bienvenida a ${cleanEmail}:`, emailError)
     }

@@ -405,7 +405,7 @@ serve(async (req) => {
         if (emp?.name) inviteeName = emp.name
       }
 
-      await fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
+      const emailRes = await fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -418,7 +418,24 @@ serve(async (req) => {
           type: 'invitation',
         }),
       })
-      console.log(`Email de invitación enviado a ${cleanEmail}`)
+
+      let emailBody: any = null
+      try {
+        emailBody = await emailRes.json()
+      } catch {
+        // Respuesta no-JSON; no bloqueamos la invitación, pero lo dejamos en logs.
+        emailBody = await emailRes.text().catch(() => null)
+      }
+
+      if (!emailRes.ok) {
+        console.warn(`No se pudo enviar email de invitación a ${cleanEmail} (HTTP ${emailRes.status})`, {
+          body: emailBody,
+        })
+      } else if (emailBody?.success === false) {
+        console.warn(`Resend rechazó el email de invitación a ${cleanEmail}`, emailBody)
+      } else {
+        console.log(`Email de invitación enviado a ${cleanEmail}`)
+      }
     } catch (emailError) {
       console.warn(`No se pudo enviar email de invitación a ${cleanEmail}:`, emailError)
     }
