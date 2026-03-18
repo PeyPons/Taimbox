@@ -287,7 +287,7 @@ Funciones serverless que corren en Deno dentro del contenedor `supabase-edge-fun
 | `create-billing-portal-session` | `supabase/functions/create-billing-portal-session/index.ts` | Crea sesión del Stripe Customer Portal (body: `agency_id`). Redirige al portal para gestionar tarjeta, facturas o cancelar suscripción. Requiere `STRIPE_SECRET_KEY`. |
 | `stripe-webhook` | `supabase/functions/stripe-webhook/index.ts` | Webhook Stripe: actualiza `agencies` (plan_id, subscription_status, trial_ends_at) según eventos de suscripción. Requiere `STRIPE_WEBHOOK_SECRET`. |
 | `send-welcome-email` | `supabase/functions/send-welcome-email/index.ts` | Envía email de bienvenida (registro) o invitación (añadido a agencia) vía Resend. Body: `{ email, name, agencyName, type }`. Usa `_shared/resend.ts`. Requiere `RESEND_API_KEY`. |
-| `send-contact-email` | `supabase/functions/send-contact-email/index.ts` | Envía email interno a `CONTACT_TO_EMAIL` desde el formulario público `/contacto` vía Resend. Body: `{ name, email, subject, message }`. Requiere `RESEND_API_KEY`. |
+| `send-contact-email` | `supabase/functions/send-contact-email/index.ts` | Envía email interno a `CONTACT_TO_EMAIL` (default `hello@taimbox.com`) desde el formulario público `/contacto` vía Resend. Body: `{ name, email, subject, message }`. Requiere `RESEND_API_KEY`. |
 | `request-password-reset` | `supabase/functions/request-password-reset/index.ts` | Genera enlace de recuperación de contraseña y lo envía por email vía Resend. Body: `{ email }`. Funciona para cualquier usuario en `auth.users` (empleados, admins de plataforma, etc.). Siempre devuelve 200 (previene enumeración). No requiere autenticación. |
 
 #### Integración: Modo demostración (ocultar datos sensibles en Ads)

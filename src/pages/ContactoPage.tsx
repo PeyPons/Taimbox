@@ -120,8 +120,8 @@ export default function ContactoPage() {
                                             </div>
                                             <div>
                                                 <p className="text-sm font-medium text-slate-400 mb-1">Email directo</p>
-                                                <a href="mailto:hola@taimbox.com" className="text-base font-semibold text-white hover:text-indigo-400 transition-colors">
-                                                    hola@taimbox.com
+                                                <a href="mailto:hello@taimbox.com" className="text-base font-semibold text-white hover:text-indigo-400 transition-colors">
+                                                    hello@taimbox.com
                                                 </a>
                                             </div>
                                         </div>

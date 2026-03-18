@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    const toEmail = Deno.env.get('CONTACT_TO_EMAIL') || 'hola@taimbox.com'
+    const toEmail = Deno.env.get('CONTACT_TO_EMAIL') || 'hello@taimbox.com'
     const contact = contactEmailTemplate(name, email, subject, message)
 
     const result = await sendEmail({
