@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Mail, Send, CheckCircle2, Phone, MapPin, Loader2 } from 'lucide-react';
+import { Mail, Send, CheckCircle2, Phone, MapPin, Loader2, AlertCircle } from 'lucide-react';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 export default function ContactoPage() {
     const [formData, setFormData] = useState({
@@ -16,32 +18,66 @@ export default function ContactoPage() {
         message: ''
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [status, setStatus] = useState<'idle' | 'sent' | 'error'>('idle');
+    const [statusMessage, setStatusMessage] = useState('');
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSubmitting) return;
+
+        const cleanName = formData.name.trim();
+        const cleanEmail = formData.email.trim();
+        const cleanSubject = (formData.subject || '').trim();
+        const cleanMessage = formData.message.trim();
+
+        // Validación mínima (frontend) para mejorar UX
+        const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail);
+        if (!cleanName || !emailOk || !cleanSubject || !cleanMessage) {
+            setStatus('error');
+            setStatusMessage('Revisa los campos: nombre, email válido, asunto y mensaje.');
+            toast.error('Faltan datos o el email no es válido');
+            return;
+        }
+
         setIsSubmitting(true);
+        setStatus('idle');
+        setStatusMessage('');
 
-        // Construct mailto link
-        // De momento solo a hola@taimbox.com
-        const subject = encodeURIComponent(formData.subject || `Contacto desde web: ${formData.name}`);
-        const body = encodeURIComponent(
-            `Nombre: ${formData.name}\nEmail: ${formData.email}\n\nMensaje:\n${formData.message}`
-        );
+        try {
+            const { error } = await supabase.functions.invoke('send-contact-email', {
+                body: {
+                    name: cleanName,
+                    email: cleanEmail,
+                    subject: cleanSubject,
+                    message: cleanMessage,
+                },
+            });
 
-        // Simulate slight delay for UX
-        setTimeout(() => {
+            if (error) {
+                throw error;
+            }
+
+            setStatus('sent');
+            setStatusMessage('Mensaje enviado correctamente. Te responderemos lo antes posible.');
+            toast.success('Enviado correctamente');
+            setFormData({ name: '', email: '', subject: '', message: '' });
+        } catch (err: any) {
+            console.error('[ContactoPage] Error enviando contacto:', err);
+            setStatus('error');
+            setStatusMessage('No se pudo enviar el mensaje. Inténtalo de nuevo más tarde.');
+            toast.error('Error al enviar');
+        } finally {
             setIsSubmitting(false);
-            window.location.href = `mailto:hola@taimbox.com?subject=${subject}&body=${body}`;
-        }, 600);
+        }
     };
 
     return (
-        <div className="min-h-screen bg-slate-900 flex flex-col font-sans selection:bg-indigo-500/30">
+        <div className="min-h-screen bg-slate-950 flex flex-col font-sans selection:bg-indigo-500/30 overflow-x-hidden">
             <Helmet>
                 <title>Contacto | Taimbox</title>
                 <meta name="description" content="Contacta con el equipo de Taimbox." />
@@ -180,14 +216,28 @@ export default function ContactoPage() {
                                                 </>
                                             ) : (
                                                 <>
-                                                    Abrir correo para enviar
+                                                    Enviar mensaje
                                                     <Send className="w-4 h-4 ml-2" />
                                                 </>
                                             )}
                                         </Button>
-                                        <p className="text-xs text-center text-slate-500 mt-4">
-                                            Al enviar, se abrirá tu cliente de correo (Gmail, Outlook, etc.) con el mensaje pre-rellenado hacia hola@taimbox.com
-                                        </p>
+
+                                        {status !== 'idle' && (
+                                            <div
+                                                className={`flex items-start gap-3 rounded-lg border px-4 py-3 ${
+                                                    status === 'sent' ? 'border-emerald-700/40 bg-emerald-500/10' : 'border-rose-700/40 bg-rose-500/10'
+                                                }`}
+                                            >
+                                                {status === 'sent' ? (
+                                                    <CheckCircle2 className="w-5 h-5 text-emerald-300 mt-0.5" />
+                                                ) : (
+                                                    <AlertCircle className="w-5 h-5 text-rose-300 mt-0.5" />
+                                                )}
+                                                <div className="text-sm text-slate-100">
+                                                    {statusMessage}
+                                                </div>
+                                            </div>
+                                        )}
                                     </form>
                                 </CardContent>
                             </Card>
