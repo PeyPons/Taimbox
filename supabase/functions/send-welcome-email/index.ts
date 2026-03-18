@@ -52,7 +52,7 @@ function baseTemplate(content: string, ctaUrl: string, ctaText: string): string 
                     vertical-align: middle;
                     padding-right: 12px;
                   ">
-                    <span style="font-size: 22px;">⏳</span>
+                    <span style="font-size: 22px; font-weight: 700; color: #ffffff; line-height: 40px;">T</span>
                   </td>
                   <td style="
                     font-size: 24px;
@@ -109,11 +109,23 @@ function baseTemplate(content: string, ctaUrl: string, ctaText: string): string 
 </html>`.trim()
 }
 
+function baseText(content: string, ctaUrl: string, ctaText: string): string {
+    return [
+        'Taimbox',
+        '',
+        content,
+        '',
+        `${ctaText}: ${ctaUrl}`,
+        '',
+        `© ${new Date().getFullYear()} Taimbox. Este email fue enviado automáticamente. No es necesario responder.`,
+    ].join('\n')
+}
+
 // ─── Contenido del email de bienvenida (auto-registro) ────────────
 function registrationContent(name: string, agencyName: string): string {
     return `
     <h1 style="margin: 0 0 8px; font-size: 22px; font-weight: 700; color: #0f172a;">
-      ¡Bienvenido a Taimbox! 🎉
+      ¡Bienvenido a Taimbox!
     </h1>
     <p style="margin: 0 0 20px; font-size: 15px; color: #475569; line-height: 1.6;">
       Hola <strong>${name}</strong>, tu cuenta y tu agencia <strong>${agencyName}</strong> ya están listas.
@@ -123,26 +135,37 @@ function registrationContent(name: string, agencyName: string): string {
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 16px 0 24px;">
       <tr>
-        <td style="padding: 6px 0; font-size: 14px; color: #475569;">✅ Planificación inteligente de recursos</td>
+        <td style="padding: 6px 0; font-size: 14px; color: #475569;">- Planificación inteligente de recursos</td>
       </tr>
       <tr>
-        <td style="padding: 6px 0; font-size: 14px; color: #475569;">✅ Control de rentabilidad por proyecto</td>
+        <td style="padding: 6px 0; font-size: 14px; color: #475569;">- Control de rentabilidad por proyecto</td>
       </tr>
       <tr>
-        <td style="padding: 6px 0; font-size: 14px; color: #475569;">✅ Weekly Forecast y redistribución</td>
+        <td style="padding: 6px 0; font-size: 14px; color: #475569;">- Weekly Forecast y redistribución</td>
       </tr>
       <tr>
-        <td style="padding: 6px 0; font-size: 14px; color: #475569;">✅ Radar operativo y coherencia</td>
+        <td style="padding: 6px 0; font-size: 14px; color: #475569;">- Radar operativo y coherencia</td>
       </tr>
     </table>
   `
+}
+
+function registrationText(name: string, agencyName: string): string {
+    return [
+        `Hola ${name}, tu cuenta y tu agencia ${agencyName} ya están listas.`,
+        `Tienes 14 días de prueba gratuita del plan Business para explorar todas las funcionalidades:`,
+        '- Planificación inteligente de recursos',
+        '- Control de rentabilidad por proyecto',
+        '- Weekly Forecast y redistribución',
+        '- Radar operativo y coherencia',
+    ].join('\n')
 }
 
 // ─── Contenido del email de invitación ────────────────────────────
 function invitationContent(name: string, agencyName: string): string {
     return `
     <h1 style="margin: 0 0 8px; font-size: 22px; font-weight: 700; color: #0f172a;">
-      Te han añadido a ${agencyName} 🚀
+      Te han añadido a ${agencyName}
     </h1>
     <p style="margin: 0 0 20px; font-size: 15px; color: #475569; line-height: 1.6;">
       Hola <strong>${name}</strong>, ya tienes acceso a <strong>${agencyName}</strong> en Taimbox.
@@ -151,6 +174,13 @@ function invitationContent(name: string, agencyName: string): string {
       Accede con tu email para ver tu planificación, tareas asignadas y el estado de tus proyectos.
     </p>
   `
+}
+
+function invitationText(name: string, agencyName: string): string {
+    return [
+        `Hola ${name}, ya tienes acceso a ${agencyName} en Taimbox.`,
+        `Accede con tu email para ver tu planificación, tareas asignadas y el estado de tus proyectos.`,
+    ].join('\n')
 }
 
 // ─── Handler principal ───────────────────────────────────────────
@@ -179,11 +209,17 @@ Deno.serve(async (req) => {
 
         let subject: string
         let content: string
+        let text: string
 
         if (type === 'invitation') {
             subject = `Te han añadido a ${cleanAgency} en Taimbox`
             content = baseTemplate(
                 invitationContent(cleanName, cleanAgency),
+                `${siteUrl}/login`,
+                'Acceder a Taimbox'
+            )
+            text = baseText(
+                invitationText(cleanName, cleanAgency),
                 `${siteUrl}/login`,
                 'Acceder a Taimbox'
             )
@@ -194,12 +230,18 @@ Deno.serve(async (req) => {
                 `${siteUrl}/login`,
                 'Empezar ahora'
             )
+            text = baseText(
+                registrationText(cleanName, cleanAgency),
+                `${siteUrl}/login`,
+                'Empezar ahora'
+            )
         }
 
         const result = await sendEmail({
             to: email,
             subject,
             html: content,
+            text,
         })
 
         if (!result.success) {

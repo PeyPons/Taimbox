@@ -296,7 +296,7 @@ En Configuración → Integraciones → Privacidad y demostración, la opción *
 **Implementación**: `AnonymizedContent` (con prop `placeholder`), `useAnonymizeAds` (anonymizer con `account(id)` y `campaign(id)`), aplicado en `AdsPage.tsx` y `MetaAdsPage.tsx`.
 
 #### Módulo compartido `_shared/resend.ts`
-Módulo reutilizable que exporta `sendEmail({ to, subject, html })`. Usa la API HTTP de Resend (`https://api.resend.com/emails`). Variables: `RESEND_API_KEY` (obligatoria), `RESEND_FROM_EMAIL` (default: `Taimbox <onboarding@resend.dev>`). Sin dependencias externas.
+Módulo reutilizable que exporta `sendEmail({ to, subject, html, text? })`. Usa la API HTTP de Resend (`https://api.resend.com/emails`). Variables: `RESEND_API_KEY` (obligatoria), `RESEND_FROM_EMAIL` (default: `Taimbox <onboarding@resend.dev>`). Sin dependencias externas.
 
 #### Emails transaccionales (Resend)
 - **Registro**: Al registrar una agencia (`register-agency`), se envía email de bienvenida (fire-and-forget).

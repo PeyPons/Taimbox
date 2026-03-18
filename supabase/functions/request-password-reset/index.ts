@@ -52,7 +52,7 @@ function resetPasswordTemplate(name: string, resetUrl: string): string {
                     vertical-align: middle;
                     padding-right: 12px;
                   ">
-                    <span style="font-size: 22px;">⏳</span>
+                    <span style="font-size: 22px; font-weight: 700; color: #ffffff; line-height: 40px;">T</span>
                   </td>
                   <td style="
                     font-size: 24px;
@@ -68,7 +68,7 @@ function resetPasswordTemplate(name: string, resetUrl: string): string {
           <tr>
             <td style="padding: 36px 40px 20px;">
               <h1 style="margin: 0 0 8px; font-size: 22px; font-weight: 700; color: #0f172a;">
-                Restablecer contraseña 🔐
+                Restablecer contraseña
               </h1>
               <p style="margin: 0 0 20px; font-size: 15px; color: #475569; line-height: 1.6;">
                 Hola <strong>${name}</strong>, hemos recibido una solicitud para restablecer la contraseña de tu cuenta.
@@ -122,6 +122,17 @@ function resetPasswordTemplate(name: string, resetUrl: string): string {
   </table>
 </body>
 </html>`.trim()
+}
+
+function resetPasswordText(name: string, resetUrl: string): string {
+    return [
+        `Hola ${name}, hemos recibido una solicitud para restablecer la contraseña de tu cuenta.`,
+        ``,
+        `Para restablecerla, abre el siguiente enlace (expira en 1 hora):`,
+        resetUrl,
+        ``,
+        `Si no solicitaste este cambio, puedes ignorar este email. Tu contraseña no se modificará.`,
+    ].join('\n')
 }
 
 Deno.serve(async (req) => {
@@ -224,6 +235,7 @@ Deno.serve(async (req) => {
             to: cleanEmail,
             subject: 'Restablecer tu contraseña de Taimbox',
             html: resetPasswordTemplate(userName, resetUrl),
+            text: resetPasswordText(userName, resetUrl),
         })
 
         console.log('[request-password-reset] sendEmail result:', {

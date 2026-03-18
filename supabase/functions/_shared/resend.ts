@@ -5,6 +5,7 @@ interface SendEmailOptions {
     to: string | string[];
     subject: string;
     html: string;
+    text?: string;
 }
 
 interface SendEmailResult {
@@ -34,6 +35,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
                 to: Array.isArray(options.to) ? options.to : [options.to],
                 subject: options.subject,
                 html: options.html,
+                ...(options.text !== undefined ? { text: options.text } : {}),
             }),
         });
 
