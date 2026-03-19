@@ -592,10 +592,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return; // Ya lo tenemos, no hacemos nada (Caché hit!)
     }
 
-    // Si no está, cargamos
-    const success = await loadDataForMonth(date);
-    if (success !== false) {
+    try {
+      await loadDataForMonth(date);
       loadedMonthsRef.current.add(monthKey);
+    } catch {
+      /* no marcar: reintentar en próxima apertura */
     }
   }, [loadDataForMonth]);
 

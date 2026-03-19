@@ -160,14 +160,14 @@ export type SelectableFutureWeekSlot = {
 };
 
 /**
- * Semanas futuras (no cerradas) posteriores a la semana de la tarea, en varios meses.
- * Incluye el mes ancla y los `extraMonths` siguientes (p. ej. 2 → mes actual + 2 = hasta 3 meses).
+ * Semanas futuras posteriores a la semana de la tarea.
+ * Recorre el mes ancla + `extraMonths` meses más (extraMonths=1 → mes visible + 1 mes siguiente).
  */
 export function collectSelectableFutureWeekSlots(
   taskWeekStartStr: string,
   anchorViewMonth: Date,
   weeklyCloseDay: number,
-  extraMonths: number = 2
+  extraMonths: number = 1
 ): SelectableFutureWeekSlot[] {
   const today = startOfDay(new Date());
   let taskMon: Date;
