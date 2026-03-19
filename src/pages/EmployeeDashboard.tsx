@@ -34,6 +34,7 @@ import { supabase } from '@/lib/supabase';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter }
   from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { NewTaskRow, Deadline } from '@/types';
 import {
@@ -91,6 +92,8 @@ export default function EmployeeDashboard() {
   const [actionsDropdownOpen, setActionsDropdownOpen] = useState(false);
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [dialogDeadlines, setDialogDeadlines] = useState<Deadline[]>([]);
+  const [showConfirmClose, setShowConfirmClose] = useState(false);
+  const [pendingCloseState, setPendingCloseState] = useState<boolean | null>(null);
 
   const { showTour, resetTour } = useWelcomeTour();
   const isMobile = useIsMobile();
@@ -277,9 +280,9 @@ export default function EmployeeDashboard() {
     if (!open) {
       const hasUnsaved = newTasks.length > 1 || newTasks.some(t => t.taskName.trim() !== '' || t.hours !== '');
       if (hasUnsaved) {
-        if (!window.confirm('Tienes tareas pendientes por guardar. ¿Seguro que quieres cerrar y perder los datos?')) {
-          return;
-        }
+        setPendingCloseState(open);
+        setShowConfirmClose(true);
+        return;
       }
     }
     setIsAddingTasks(open);
@@ -1002,6 +1005,31 @@ export default function EmployeeDashboard() {
           }
         }}
       />
+      <AlertDialog open={showConfirmClose} onOpenChange={setShowConfirmClose}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Descartar cambios?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tienes tareas pendientes por guardar. Si cierras ahora, perderás los datos introducidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowConfirmClose(false)}>Seguir editando</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                setShowConfirmClose(false);
+                if (pendingCloseState !== null) {
+                  setIsAddingTasks(pendingCloseState);
+                  setPendingCloseState(null);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Sí, descartar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div >
   );
 }

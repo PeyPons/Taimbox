@@ -2,6 +2,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -116,6 +117,9 @@ export function AllocationFormDialog({
     const [editProjectOpen, setEditProjectOpen] = React.useState(false);
     const [openDependency, setOpenDependency] = React.useState(false);
     const [openWeek, setOpenWeek] = React.useState(false);
+    const [showConfirmClose, setShowConfirmClose] = React.useState(false);
+    const [pendingCloseAction, setPendingCloseAction] = React.useState<'open-change' | 'close-click' | null>(null);
+    const [pendingOpenState, setPendingOpenState] = React.useState<boolean>(false);
     const isMobile = useIsMobile();
 
     const checkCanClose = () => {
@@ -399,21 +403,56 @@ export function AllocationFormDialog({
         </>
     );
 
+    const confirmDialog = (
+      <AlertDialog open={showConfirmClose} onOpenChange={setShowConfirmClose}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Descartar cambios?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tienes datos sin guardar. Si cierras ahora, los perderás.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowConfirmClose(false)}>Seguir editando</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                setShowConfirmClose(false);
+                if (pendingCloseAction === 'open-change') {
+                    onOpenChange(pendingOpenState);
+                } else if (pendingCloseAction === 'close-click') {
+                    onClose();
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Sí, descartar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
+
     if (isMobile) {
         return (
+            <>
             <Sheet open={isOpen} onOpenChange={handleOpenChange}>
                 <SheetContent side="bottom" className="h-[90vh] rounded-t-2xl p-0 gap-0 flex flex-col overflow-hidden">
                     {modalContent}
                 </SheetContent>
             </Sheet>
+            {confirmDialog}
+            </>
         );
     }
 
     return (
+        <>
         <Dialog open={isOpen} onOpenChange={handleOpenChange}>
             <DialogContent className={cn("overflow-hidden gap-0 p-0 transition-all duration-300 max-w-[95vw] sm:max-w-[650px]", editingAllocation && "overflow-visible", !editingAllocation && "sm:max-w-[1100px] h-[85vh] sm:h-[80vh] flex flex-col")}>
                 {modalContent}
             </DialogContent>
         </Dialog>
+        {confirmDialog}
+        </>
     );
 }
