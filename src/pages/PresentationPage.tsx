@@ -317,7 +317,7 @@ function S07_Dashboard({ isActive, direction }: SlideProps) {
                         </div>
                     </div>
                     <div className="space-y-2 max-w-md mx-auto lg:mx-0">
-                        {['Vista diaria con prioridades', 'Control planificación vs deadline', 'Índice de fiabilidad personal', 'Gestión interna y no facturables'].map((f, i) => (
+                        {['Vista diaria con dependencias', 'Control planificación vs deadline', 'Índice de fiabilidad personal', 'Gestión interna y no facturables'].map((f, i) => (
                             <div key={i} className={`flex items-center gap-2 p-2 sm:p-2.5 rounded-lg bg-white/5 border border-white/10 ${i >= 2 ? 'hidden sm:flex' : ''}`}>
                                 <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400 shrink-0" />
                                 <span className="text-sm sm:text-base text-white/90">{f}</span>

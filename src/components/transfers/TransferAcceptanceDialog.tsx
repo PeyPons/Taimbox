@@ -362,7 +362,7 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                                 <div className="h-5 w-5 rounded-full border border-slate-300 flex items-center justify-center peer-data-[state=checked]:border-indigo-600 peer-data-[state=checked]:text-indigo-600">
                                     {mode === 'rollover' && <div className="h-2.5 w-2.5 rounded-full bg-indigo-600" />}
                                 </div>
-                                <span className="font-medium text-slate-700">Imputar y Continuar (Próxima Semana)</span>
+                                <span className="font-medium text-slate-700">Registrar horas y seguir la semana siguiente</span>
                             </Label>
                         </div>
 
@@ -508,7 +508,7 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                             <div className="p-4 bg-indigo-50/50 rounded-lg border border-indigo-100 mt-2">
                                 <p className="text-sm text-indigo-800 flex items-center gap-2">
                                     <ArrowRight className="h-4 w-4" />
-                                    La tarea se moverá a la <strong>semana siguiente</strong>.
+                                    Se registran las horas en la semana actual de la tarea y se crea la misma tarea en la <strong>semana siguiente</strong> (calendario).
                                 </p>
                             </div>
                         )}

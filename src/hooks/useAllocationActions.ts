@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Allocation, NewTaskRow } from '@/types';
 import { format, parseISO } from 'date-fns';
@@ -77,8 +77,37 @@ export function useAllocationActions(employeeId: string, weeks: { weekStart: Dat
         setNewTasks(prev => prev.map(t => t.id === id ? { ...t, [field]: value } : t));
     };
 
+    const rowHasPartialData = (t: NewTaskRow) =>
+        t.taskName.trim().length > 0 ||
+        (t.hours !== '' && !Number.isNaN(parseFloat(t.hours)) && parseFloat(t.hours) > 0);
+
+    const canSubmitBatchAdd = useMemo(() => {
+        const anyRowWithDataButNoProject = newTasks.some(t => rowHasPartialData(t) && !t.projectId);
+        const atLeastOneComplete = newTasks.some(
+            t => Boolean(t.projectId) && t.taskName.trim().length > 0 && parseFloat(t.hours) > 0
+        );
+        return atLeastOneComplete && !anyRowWithDataButNoProject;
+    }, [newTasks]);
+
+    const batchAddHint = useMemo(() => {
+        if (newTasks.some(t => rowHasPartialData(t) && !t.projectId)) {
+            return 'Selecciona un proyecto en cada fila que tenga nombre u horas.';
+        }
+        if (!newTasks.some(t => Boolean(t.projectId) && t.taskName.trim() && parseFloat(t.hours) > 0)) {
+            return 'Completa al menos una fila: proyecto, nombre de tarea y horas.';
+        }
+        return null;
+    }, [newTasks]);
+
     const handleSave = async () => {
         if (isSaving || guardSoftLock()) return;
+
+        if (!editingAllocation) {
+            if (!canSubmitBatchAdd) {
+                toast.error(batchAddHint || 'Revisa proyecto, nombre y horas en cada fila.');
+                return;
+            }
+        }
 
         setIsSaving(true);
         try {
@@ -97,24 +126,30 @@ export function useAllocationActions(employeeId: string, weeks: { weekStart: Dat
                     dependencyId: editDependencyId === 'none' ? null : editDependencyId
                 });
             } else {
-                const savePromises = newTasks
-                    .filter(task => task.projectId && task.hours)
-                    .map(task => {
-                        const targetEmployeeId = task.employeeId || employeeId;
-                        return addAllocation({
-                            employeeId: targetEmployeeId,
-                            projectId: task.projectId,
-                            taskName: task.taskName,
-                            weekStartDate: task.weekDate,
-                            hoursAssigned: parseFloat(task.hours),
-                            status: 'planned',
-                            description: task.description,
-                            dependencyId: task.dependencyId === 'none' ? null : task.dependencyId
-                        });
+                const validTasks = newTasks.filter(
+                    t => t.projectId && t.taskName.trim() && parseFloat(t.hours) > 0
+                );
+                if (validTasks.length === 0) {
+                    toast.error('No hay tareas válidas para guardar.');
+                    setIsSaving(false);
+                    return;
+                }
+                const savePromises = validTasks.map(task => {
+                    const targetEmployeeId = task.employeeId || employeeId;
+                    return addAllocation({
+                        employeeId: targetEmployeeId,
+                        projectId: task.projectId,
+                        taskName: task.taskName.trim(),
+                        weekStartDate: task.weekDate,
+                        hoursAssigned: parseFloat(task.hours),
+                        status: 'planned',
+                        description: task.description,
+                        dependencyId: task.dependencyId === 'none' ? null : task.dependencyId
                     });
+                });
 
                 await Promise.all(savePromises);
-                setNewTasks([]); // Limpiar filas agregadas
+                setNewTasks([]);
             }
             setIsFormOpen(false);
             setEditingAllocation(null);
@@ -266,7 +301,9 @@ export function useAllocationActions(employeeId: string, weeks: { weekStart: Dat
         closeForm,
         recentlyToggled,
         cancelInlineEdit,
-        clearNewTasks
+        clearNewTasks,
+        canSubmitBatchAdd,
+        batchAddHint
     };
 }
 

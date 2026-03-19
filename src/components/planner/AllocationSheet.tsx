@@ -267,7 +267,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     editDescription, setEditDescription, editWeek, setEditWeek, editDependencyId, setEditDependencyId,
     addTaskRow, removeTaskRow, updateTaskRow, handleSave, startEditFull, handleDeleteClick,
     confirmDelete, toggleTaskCompletion, startInlineEdit, saveInlineEdit, updateInlineHours, moveTaskToWeek,
-    closeForm, recentlyToggled, cancelInlineEdit, clearNewTasks
+    closeForm, recentlyToggled, cancelInlineEdit, clearNewTasks,
+    canSubmitBatchAdd, batchAddHint
   } = useAllocationActions(employeeId, weeks, canAssignToOthers, isWeeklyEnabled);
 
   const { getWeekExceedStatus } = useTasksImpact({
@@ -1993,6 +1994,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
         getWeekExceedStatus={getWeekExceedStatus}
         getEmployeeLoadForWeek={getEmployeeLoadForWeek}
         formatProjectName={formatProjectName}
+        canSubmitBatchAdd={canSubmitBatchAdd}
+        batchAddHint={batchAddHint}
       />
 
       {/* Tour interactivo del planificador */}

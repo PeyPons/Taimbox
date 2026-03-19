@@ -9,13 +9,13 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format, parseISO, startOfWeek, isSameMonth, addDays, isBefore } from 'date-fns';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { format, parseISO, startOfWeek, startOfMonth, isSameMonth, addDays, isBefore } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CheckCircle2, ArrowRight, AlertCircle, Plus, X, Users, Clock, Inbox, Trash2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { getStorageKey, getWeeksForMonth, isAllocationInEffectiveMonth, getWeekEndDate } from '@/utils/dateUtils';
+import { getStorageKey, getWeeksForMonth, isAllocationInEffectiveMonth, getWeekEndDate, collectSelectableFutureWeekSlots } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
@@ -59,7 +59,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
   const [moveToMyWeek, setMoveToMyWeek] = useState<Record<string, string>>({}); // taskId -> weekStartDate (para "Mover a mi semana")
   const [keepTaskHours, setKeepTaskHours] = useState<Record<string, { actual: string; computed: string }>>({}); // taskId -> { actual, computed }
   const [rolloverHours, setRolloverHours] = useState<Record<string, { actual: string; computed: string }>>({}); // taskId -> { actual, computed } para rollover
-  const [rolloverNewHours, setRolloverNewHours] = useState<Record<string, string>>({}); // taskId -> nueva estimación para semana siguiente
+  const [rolloverNewHours, setRolloverNewHours] = useState<Record<string, string>>({}); // taskId -> horas planificadas en semana destino
+  const [rolloverTargetWeek, setRolloverTargetWeek] = useState<Record<string, string>>({}); // taskId -> weekStartDate destino (rollover)
 
   // Detectar semana actual o última semana pasada del mes
   const { activeFilters, filterProject, getFilterDisplayName } = useProjectFilters();
@@ -166,37 +167,14 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
 
   const allTasks = [...openTasks, ...transferredTasks];
 
-  // Todas las semanas del mes (para calcular índices correctos)
-  const allWeeks = useMemo(() => getWeeksForMonth(viewDate), [viewDate]);
-
-  // Semanas futuras del mes para distribución
-  const futureWeeks = useMemo(() => {
-    const today = new Date();
-    return allWeeks.filter(week => {
-      try {
-        const weekDate = parseISO(getStorageKey(week.weekStart, viewDate));
-        const weekEnd = addDays(weekDate, 4); // Viernes
-        return weekEnd >= today;
-      } catch {
-        return false;
-      }
-    });
-  }, [allWeeks, viewDate]);
-
-  // Función para obtener el número de semana correcto
-  const getWeekNumber = (weekStartDate: Date): number => {
-    const storageKey = format(weekStartDate, 'yyyy-MM-dd');
-    const weekIndex = allWeeks.findIndex(w => {
-      const weekKey = getStorageKey(w.weekStart, viewDate);
-      return weekKey === storageKey;
-    });
-    return weekIndex >= 0 ? weekIndex + 1 : 0;
-  };
+  const weekSlotsFor = (taskWeekStartStr: string) =>
+    collectSelectableFutureWeekSlots(taskWeekStartStr, startOfMonth(viewDate), weeklyCloseDay, 2);
 
   // Inicializar distribución para tareas [Distribuir]
-  const initializeDistribution = (taskId: string, totalHours: number) => {
+  const initializeDistribution = (taskId: string, totalHours: number, taskWeekStartStr: string) => {
     if (!distributionTasks[taskId] || distributionTasks[taskId].length === 0) {
-      const defaultWeek = futureWeeks[0] ? getStorageKey(futureWeeks[0].weekStart, viewDate) : format(new Date(), 'yyyy-MM-dd');
+      const slots = weekSlotsFor(taskWeekStartStr);
+      const defaultWeek = slots[0]?.storageKey || format(new Date(), 'yyyy-MM-dd');
       setDistributionTasks(prev => ({
         ...prev,
         [taskId]: [{
@@ -209,16 +187,18 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
     }
   };
 
-  const addDistributionRow = (taskId: string) => {
+  const addDistributionRow = (taskId: string, taskWeekStartStr: string) => {
     const current = distributionTasks[taskId] || [];
     const lastRow = current[current.length - 1];
+    const slots = weekSlotsFor(taskWeekStartStr);
+    const fallback = slots[0]?.storageKey || format(new Date(), 'yyyy-MM-dd');
     setDistributionTasks(prev => ({
       ...prev,
       [taskId]: [...current, {
         id: crypto.randomUUID(),
         taskName: '',
         hours: '',
-        weekDate: lastRow?.weekDate || (futureWeeks[0] ? getStorageKey(futureWeeks[0].weekStart, viewDate) : format(new Date(), 'yyyy-MM-dd'))
+        weekDate: lastRow?.weekDate || fallback
       }]
     }));
   };
@@ -256,9 +236,6 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
 
         const taskWeekDate = parseISO(task.weekStartDate);
         const taskWeekStr = format(taskWeekDate, 'yyyy-MM-dd');
-        const nextWeekStart = addDays(taskWeekDate, 7);
-        const nextWeekStr = format(nextWeekStart, 'yyyy-MM-dd');
-        const nextWeekStorageKey = getStorageKey(nextWeekStart, viewDate);
 
         if (action === 'move') {
           // Mover horas restantes a una semana futura seleccionada
@@ -320,6 +297,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
               reason: 'other',
               comments: `Tarea movida a semana futura. Motivo: ${comment}`
             });
+            const mvSlot = collectSelectableFutureWeekSlots(task.weekStartDate, startOfMonth(viewDate), weeklyCloseDay, 2).find(s => s.storageKey === targetWeek);
+            if (mvSlot) await loadDataForMonth(mvSlot.viewMonth);
           }
         } else if (action === 'moveToEmployee') {
           // Mover horas restantes a otro compañero
@@ -336,7 +315,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
             // Validar capacidad del compañero destino
             const targetEmployee = employees.find(e => e.id === targetEmployeeId);
             if (targetEmployee) {
-              const targetWeekLoad = getEmployeeLoadForWeek(targetEmployeeId, targetWeek, undefined, undefined, viewDate);
+              const twSlot = collectSelectableFutureWeekSlots(task.weekStartDate, startOfMonth(viewDate), weeklyCloseDay, 2).find(s => s.storageKey === targetWeek);
+              const targetWeekLoad = getEmployeeLoadForWeek(targetEmployeeId, targetWeek, undefined, undefined, twSlot?.viewMonth ?? viewDate);
               const targetCurrentHours = targetWeekLoad?.hours || 0;
               const targetCapacity = targetWeekLoad?.capacity || 0;
               const newTargetTotal = targetCurrentHours + remainingHours;
@@ -380,6 +360,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
               reason: 'other',
               comments: `Tarea transferida a ${employees.find(e => e.id === targetEmployeeId)?.name || 'otro empleado'} (${remainingHours}h restantes) | Nombre: ${task.taskName || 'Sin nombre'}`
             });
+            const transferSlot = collectSelectableFutureWeekSlots(task.weekStartDate, startOfMonth(viewDate), weeklyCloseDay, 2).find(s => s.storageKey === targetWeek);
+            if (transferSlot) await loadDataForMonth(transferSlot.viewMonth);
           }
         } else if (action === 'justify') {
           const comment = taskComments[task.id];
@@ -423,12 +405,20 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
             comments: comment
           });
         } else if (action === 'rollover') {
-          // Imputar y Continuar: Cerrar tarea actual y crear nueva en semana siguiente
+          // Cerrar semana actual (horas reales) y crear la misma tarea en la semana destino elegida
           const hours = rolloverHours[task.id];
           const newHoursEstimate = rolloverNewHours[task.id];
+          const destWeekStr = rolloverTargetWeek[task.id];
+          const slots = collectSelectableFutureWeekSlots(task.weekStartDate, startOfMonth(viewDate), weeklyCloseDay, 2);
+          const destSlot = slots.find(s => s.storageKey === destWeekStr);
 
           if (!hours || !newHoursEstimate) {
-            toast.error(`"${task.taskName}" necesita horas reales y nueva estimación completadas`);
+            toast.error(`"${task.taskName}" necesita horas reales y horas a planificar completadas`);
+            continue;
+          }
+
+          if (!destWeekStr || !destSlot) {
+            toast.error(`"${task.taskName}": elige la semana en la que quieres seguir con la tarea`);
             continue;
           }
 
@@ -442,11 +432,10 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
           }
 
           if (newEstimate <= 0) {
-            toast.error(`"${task.taskName}" necesita una nueva estimación mayor a 0`);
+            toast.error(`"${task.taskName}" necesita horas a planificar mayores a 0`);
             continue;
           }
 
-          // 1. Cerrar tarea actual (Semana N) - NO cambiar la fecha, se queda en Semana N
           await updateAllocation({
             ...task,
             hoursActual: actual,
@@ -454,60 +443,33 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
             status: 'completed'
           });
 
-          // 2. Calcular semana siguiente (lunes de la semana siguiente)
-          const currentWeekDate = parseISO(task.weekStartDate);
-          const nextWeekStart = startOfWeek(addDays(currentWeekDate, 7), { weekStartsOn: 1 });
-          // Usar getStorageKey para normalizar la fecha según el mes (maneja semanas partidas)
-          const nextWeekStr = getStorageKey(nextWeekStart, viewDate);
-
-          console.log('[Rollover] Creando tarea:', {
-            taskName: task.taskName,
-            currentWeek: task.weekStartDate,
-            nextWeek: nextWeekStr,
-            nextWeekStart: format(nextWeekStart, 'yyyy-MM-dd'),
-            newEstimate,
-            parentId: task.id
-          });
-
-          // 3. Crear nueva tarea (Semana N+1) con parent_allocation_id
           try {
             const newAllocation = await addAllocation({
               employeeId: task.employeeId,
               projectId: task.projectId,
-              weekStartDate: nextWeekStr,
+              weekStartDate: destWeekStr,
               hoursAssigned: newEstimate,
               hoursActual: 0,
               hoursComputed: 0,
               status: 'planned',
               taskName: task.taskName,
               description: task.description,
-              parentAllocationId: task.id // ENLACE CRÍTICO para trazabilidad
+              parentAllocationId: task.id
             });
 
             if (!newAllocation) {
-              console.error('[Rollover] addAllocation retornó null');
-              toast.error(`Error al crear la tarea en la semana siguiente para "${task.taskName}"`);
+              toast.error(`No se pudo crear la tarea en la semana elegida para "${task.taskName}"`);
               continue;
             }
 
-            console.log('[Rollover] Tarea creada exitosamente:', newAllocation);
-
-            // Si la semana siguiente está en un mes diferente, cargar datos de ese mes
-            const nextWeekMonth = new Date(nextWeekStart.getFullYear(), nextWeekStart.getMonth(), 1);
-            const currentViewMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
-
-            if (nextWeekMonth.getTime() !== currentViewMonth.getTime()) {
-              console.log('[Rollover] Cargando datos del mes siguiente:', format(nextWeekMonth, 'yyyy-MM'));
-              await loadDataForMonth(nextWeekMonth);
-            }
+            await loadDataForMonth(destSlot.viewMonth);
           } catch (error) {
-            console.error('[Rollover] Error creando tarea:', error);
-            toast.error(`Error al crear la tarea en la semana siguiente: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+            toast.error(`Error al crear la tarea en la semana elegida: ${error instanceof Error ? error.message : 'Error desconocido'}`);
             continue;
           }
 
-          // 4. Registrar feedback
-          const comment = taskComments[task.id] || `Tarea con rollover: ${actual.toFixed(2)}h imputadas esta semana, ${newEstimate.toFixed(2)}h planificadas para próxima semana`;
+          const destLabel = format(destSlot.weekStart, 'd MMM yyyy', { locale: es });
+          const comment = taskComments[task.id] || `Tarea con rollover: ${actual.toFixed(2)}h registradas en semana cerrada, ${newEstimate.toFixed(2)}h planificadas desde ${destLabel}`;
           await addWeeklyFeedback({
             employeeId,
             weekStartDate: taskWeekStr,
@@ -549,11 +511,13 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
 
           // Avisar si alguna semana excede capacidad (sin bloquear)
           const checkedWeeks = new Set<string>();
+          const distSlots = collectSelectableFutureWeekSlots(task.weekStartDate, startOfMonth(viewDate), weeklyCloseDay, 2);
           for (const distTask of validTasks) {
             if (checkedWeeks.has(distTask.weekDate)) continue;
             checkedWeeks.add(distTask.weekDate);
 
-            const weekLoad = getEmployeeLoadForWeek(employeeId, distTask.weekDate, undefined, undefined, viewDate);
+            const dSlot = distSlots.find(s => s.storageKey === distTask.weekDate);
+            const weekLoad = getEmployeeLoadForWeek(employeeId, distTask.weekDate, undefined, undefined, dSlot?.viewMonth ?? viewDate);
             const currentWeekHours = weekLoad?.hours || 0;
             const weekCapacity = weekLoad?.capacity || 0;
 
@@ -652,6 +616,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
       setKeepTaskHours({});
       setRolloverHours({});
       setRolloverNewHours({});
+      setRolloverTargetWeek({});
     } catch (error) {
       console.error('Error actualizando weekly:', error);
       toast.error('Error al actualizar el weekly');
@@ -748,7 +713,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
 
                             // Inicializar distribución si es necesario
                             if ((isDistributionTask || isTransferredTask) && taskActions[task.id] === 'distribute' && (!distributionTasks[task.id] || distributionTasks[task.id].length === 0)) {
-                              initializeDistribution(task.id, task.hoursAssigned);
+                              initializeDistribution(task.id, task.hoursAssigned, task.weekStartDate);
                             }
 
                             // Datos de transferencia
@@ -797,9 +762,9 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                       onValueChange={(value) => {
                                         setTaskActions(prev => ({ ...prev, [task.id]: value as any }));
                                         if (value === 'distribute' && (isDistributionTask || isTransferredTask)) {
-                                          initializeDistribution(task.id, task.hoursAssigned);
+                                          initializeDistribution(task.id, task.hoursAssigned, task.weekStartDate);
                                         } else if (value === 'distribute' && (!distributionTasks[task.id] || distributionTasks[task.id].length === 0)) {
-                                          initializeDistribution(task.id, missingHours);
+                                          initializeDistribution(task.id, missingHours, task.weekStartDate);
                                         }
 
                                         if (value === 'keep' && !keepTaskHours[task.id]) {
@@ -813,10 +778,10 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                         }
 
                                         if (value === 'rollover' && !rolloverHours[task.id]) {
-                                          // Inicializar horas reales, computadas y nueva estimación con valores por defecto
                                           const defaultActual = (task.hoursActual || missingHours || 0).toFixed(2);
                                           const defaultComputed = (task.hoursComputed || task.hoursActual || missingHours || 0).toFixed(2);
                                           const defaultNewHours = missingHours > 0 ? missingHours.toFixed(2) : '0.00';
+                                          const rSlots = weekSlotsFor(task.weekStartDate);
                                           setRolloverHours(prev => ({
                                             ...prev,
                                             [task.id]: { actual: defaultActual, computed: defaultComputed }
@@ -825,15 +790,18 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                             ...prev,
                                             [task.id]: defaultNewHours
                                           }));
+                                          if (rSlots[0]) {
+                                            setRolloverTargetWeek(prev => ({ ...prev, [task.id]: rSlots[0].storageKey }));
+                                          }
                                         }
 
-                                        if (value === 'move' && !moveToMyWeek[task.id] && futureWeeks.length > 0) {
-                                          const defaultWeek = getStorageKey(futureWeeks[0].weekStart, viewDate);
-                                          setMoveToMyWeek(prev => ({ ...prev, [task.id]: defaultWeek }));
+                                        if (value === 'move' && !moveToMyWeek[task.id]) {
+                                          const mSlots = weekSlotsFor(task.weekStartDate);
+                                          if (mSlots[0]) setMoveToMyWeek(prev => ({ ...prev, [task.id]: mSlots[0].storageKey }));
                                         }
-                                        if (value === 'moveToEmployee' && !moveToWeek[task.id] && futureWeeks.length > 0) {
-                                          const defaultWeek = getStorageKey(futureWeeks[0].weekStart, viewDate);
-                                          setMoveToWeek(prev => ({ ...prev, [task.id]: defaultWeek }));
+                                        if (value === 'moveToEmployee' && !moveToWeek[task.id]) {
+                                          const eSlots = weekSlotsFor(task.weekStartDate);
+                                          if (eSlots[0]) setMoveToWeek(prev => ({ ...prev, [task.id]: eSlots[0].storageKey }));
                                         }
                                       }}
                                       className="grid grid-cols-1 sm:grid-cols-2 gap-3"
@@ -842,9 +810,16 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                         <RadioGroupItem value="keep" id={`${task.id}-keep`} />
                                         <Label htmlFor={`${task.id}-keep`} className="cursor-pointer text-xs font-medium">Mantener / Completar hoy</Label>
                                       </div>
-                                      <div className="flex items-center space-x-2 p-2 rounded border hover:bg-slate-50">
-                                        <RadioGroupItem value="rollover" id={`${task.id}-rollover`} />
-                                        <Label htmlFor={`${task.id}-rollover`} className="cursor-pointer text-xs font-medium">Imputar y Continuar (Próxima Semana)</Label>
+                                      <div className="flex items-start space-x-2 p-2 rounded border hover:bg-slate-50">
+                                        <RadioGroupItem value="rollover" id={`${task.id}-rollover`} className="mt-0.5" />
+                                        <div className="min-w-0">
+                                          <Label htmlFor={`${task.id}-rollover`} className="cursor-pointer text-xs font-medium leading-snug">
+                                            Registrar horas de esta semana y seguir la tarea después
+                                          </Label>
+                                          <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">
+                                            Cierra lo hecho con horas reales y crea la misma tarea en la semana que elijas (incluso otro mes).
+                                          </p>
+                                        </div>
                                       </div>
                                       <div className="flex items-center space-x-2 p-2 rounded border hover:bg-slate-50">
                                         <RadioGroupItem value="move" id={`${task.id}-move`} />
@@ -931,18 +906,24 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                         computed: (task.hoursComputed || task.hoursActual || missingHours || 0).toFixed(2)
                                       };
                                       const newHoursEstimate = rolloverNewHours[task.id] || (missingHours > 0 ? missingHours.toFixed(2) : '0.00');
-
-                                      // Calcular semana siguiente
-                                      const nextWeekStart = addDays(parseISO(task.weekStartDate), 7);
-                                      const nextWeekStr = format(nextWeekStart, 'yyyy-MM-dd');
+                                      const rSlots = weekSlotsFor(task.weekStartDate);
+                                      const byMonth = new Map<string, typeof rSlots>();
+                                      for (const s of rSlots) {
+                                        const k = format(startOfMonth(s.viewMonth), 'yyyy-MM');
+                                        if (!byMonth.has(k)) byMonth.set(k, []);
+                                        byMonth.get(k)!.push(s);
+                                      }
+                                      const monthGroups = [...byMonth.entries()].sort(([a], [b]) => a.localeCompare(b));
 
                                       return (
                                         <div className="mt-3 space-y-3 pl-3 border-l-4 bg-gradient-to-r from-blue-50/30 to-cyan-50/30 rounded-r-lg p-4 border-blue-300">
                                           <div className="space-y-2">
-                                            <p className="text-xs font-medium text-slate-700 mb-2">Imputar horas de esta semana y continuar en la próxima:</p>
+                                            <p className="text-xs font-medium text-slate-700 mb-2">
+                                              Paso 1: cuántas horas hiciste <strong>esta semana</strong>. Paso 2: en qué semana sigues y cuántas horas prevés.
+                                            </p>
                                             <div className="grid grid-cols-2 gap-3">
                                               <div className="space-y-1">
-                                                <Label className="text-xs font-medium text-slate-700">Horas Reales Imputadas *</Label>
+                                                <Label className="text-xs font-medium text-slate-700">Horas que hiciste esta semana *</Label>
                                                 <Input
                                                   type="text"
                                                   inputMode="decimal"
@@ -959,10 +940,10 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                                   }}
                                                   placeholder="0.00"
                                                 />
-                                                <p className="text-xs text-muted-foreground">Horas realmente trabajadas esta semana</p>
+                                                <p className="text-xs text-muted-foreground">Lo que registras como trabajo hecho en la semana que cierras</p>
                                               </div>
                                               <div className="space-y-1">
-                                                <Label className="text-xs font-medium text-slate-700">Horas Computadas</Label>
+                                                <Label className="text-xs font-medium text-slate-700">Horas computadas (facturación)</Label>
                                                 <Input
                                                   type="text"
                                                   inputMode="decimal"
@@ -979,11 +960,49 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                                   }}
                                                   placeholder="0.00"
                                                 />
-                                                <p className="text-xs text-muted-foreground">Horas a facturar (por defecto = reales)</p>
+                                                <p className="text-xs text-muted-foreground">Normalmente igual a las horas hechas</p>
                                               </div>
                                             </div>
                                             <div className="space-y-1 pt-2 border-t border-blue-200">
-                                              <Label className="text-xs font-medium text-slate-700">Nueva estimación para semana siguiente *</Label>
+                                              <Label className="text-xs font-medium text-slate-700">¿En qué semana sigues con la tarea? *</Label>
+                                              {rSlots.length === 0 ? (
+                                                <p className="text-xs text-amber-700">No hay semanas futuras disponibles. Prueba cambiando el mes en el calendario o usa otra opción.</p>
+                                              ) : (
+                                                <Select
+                                                  value={rolloverTargetWeek[task.id] || rSlots[0]?.storageKey}
+                                                  onValueChange={(val) => setRolloverTargetWeek(prev => ({ ...prev, [task.id]: val }))}
+                                                >
+                                                  <SelectTrigger className="h-9 text-xs border-blue-300">
+                                                    <SelectValue placeholder="Elige semana" />
+                                                  </SelectTrigger>
+                                                  <SelectContent className="max-h-[280px]">
+                                                    {monthGroups.map(([mk, monthSlots]) => (
+                                                      <SelectGroup key={mk}>
+                                                        <SelectLabel className="capitalize">
+                                                          {format(monthSlots[0].viewMonth, 'MMMM yyyy', { locale: es })}
+                                                        </SelectLabel>
+                                                        {monthSlots.map((slot) => {
+                                                          const weeks = getWeeksForMonth(slot.viewMonth);
+                                                          const wi = weeks.findIndex(w => getStorageKey(w.weekStart, slot.viewMonth) === slot.storageKey);
+                                                          const wn = wi >= 0 ? wi + 1 : null;
+                                                          const load = getEmployeeLoadForWeek(employeeId, slot.storageKey, undefined, undefined, slot.viewMonth);
+                                                          const avail = round2((load?.capacity || 0) - (load?.hours || 0));
+                                                          return (
+                                                            <SelectItem key={slot.storageKey} value={slot.storageKey}>
+                                                              {wn ? `Sem. ${wn}` : 'Semana'} · {format(slot.weekStart, 'd MMM', { locale: es })} – {format(addDays(slot.weekStart, 4), 'd MMM', { locale: es })}
+                                                              {' · '}{avail >= 0 ? `${avail.toFixed(1)}h libres` : `${Math.abs(avail).toFixed(1)}h sobre capacidad`}
+                                                            </SelectItem>
+                                                          );
+                                                        })}
+                                                      </SelectGroup>
+                                                    ))}
+                                                  </SelectContent>
+                                                </Select>
+                                              )}
+                                              <p className="text-xs text-muted-foreground">Solo semanas futuras (este mes y los dos siguientes).</p>
+                                            </div>
+                                            <div className="space-y-1 pt-2 border-t border-blue-200">
+                                              <Label className="text-xs font-medium text-slate-700">Horas que planeas dedicar en esa semana *</Label>
                                               <Input
                                                 type="text"
                                                 inputMode="decimal"
@@ -1001,7 +1020,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                                 placeholder="0.00"
                                               />
                                               <p className="text-xs text-muted-foreground">
-                                                Horas planificadas para la semana del {format(nextWeekStart, 'd MMM yyyy')}
+                                                Estimación de la misma tarea en la semana elegida arriba
                                               </p>
                                             </div>
                                             <div className="space-y-1 pt-2 border-t border-blue-200">
@@ -1033,7 +1052,10 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
 
                                           <div className="space-y-2">
                                             {(distributionTasks[task.id] || []).map((dist) => {
-                                              const weekLoad = dist.weekDate ? getEmployeeLoadForWeek(employeeId, dist.weekDate, undefined, undefined, viewDate) : null;
+                                              const distSlot = weekSlotsFor(task.weekStartDate).find(s => s.storageKey === dist.weekDate);
+                                              const weekLoad = dist.weekDate
+                                                ? getEmployeeLoadForWeek(employeeId, dist.weekDate, undefined, undefined, distSlot?.viewMonth ?? viewDate)
+                                                : null;
                                               const weekHours = weekLoad?.hours || 0;
                                               const weekCapacity = weekLoad?.capacity || 0;
                                               const weekAvailable = round2(weekCapacity - weekHours);
@@ -1091,24 +1113,42 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                                       <SelectTrigger className="h-9 text-xs flex-1 border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500">
                                                         <SelectValue placeholder="Semana" />
                                                       </SelectTrigger>
-                                                      <SelectContent>
-                                                        {futureWeeks.map(w => {
-                                                          const weekKey = getStorageKey(w.weekStart, viewDate);
-                                                          const load = getEmployeeLoadForWeek(employeeId, weekKey, undefined, undefined, viewDate);
-                                                          const hours = load?.hours || 0;
-                                                          const capacity = load?.capacity || 0;
-                                                          const available = round2(capacity - hours);
-                                                          const status = available >= 5 ? 'healthy' : available >= 0 ? 'warning' : 'overload';
-                                                          return (
-                                                            <SelectItem
-                                                              key={w.weekStart.toISOString()}
-                                                              value={weekKey}
-                                                              className={status === 'healthy' ? 'text-emerald-700' : status === 'warning' ? 'text-amber-700' : 'text-red-700'}
-                                                            >
-                                                              Semana {getWeekNumber(w.weekStart)} ({format(w.weekStart, 'd MMM')}) - {available.toFixed(2)}h libres ({hours.toFixed(2)}h / {capacity.toFixed(2)}h)
-                                                            </SelectItem>
-                                                          );
-                                                        })}
+                                                      <SelectContent className="max-h-[280px]">
+                                                        {(() => {
+                                                          const dSlots = weekSlotsFor(task.weekStartDate);
+                                                          const dm = new Map<string, typeof dSlots>();
+                                                          for (const s of dSlots) {
+                                                            const k = format(startOfMonth(s.viewMonth), 'yyyy-MM');
+                                                            if (!dm.has(k)) dm.set(k, []);
+                                                            dm.get(k)!.push(s);
+                                                          }
+                                                          return [...dm.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([mk, monthSlots]) => (
+                                                            <SelectGroup key={mk}>
+                                                              <SelectLabel className="capitalize">
+                                                                {format(monthSlots[0].viewMonth, 'MMMM yyyy', { locale: es })}
+                                                              </SelectLabel>
+                                                              {monthSlots.map((slot) => {
+                                                                const load = getEmployeeLoadForWeek(employeeId, slot.storageKey, undefined, undefined, slot.viewMonth);
+                                                                const hours = load?.hours || 0;
+                                                                const capacity = load?.capacity || 0;
+                                                                const available = round2(capacity - hours);
+                                                                const status = available >= 5 ? 'healthy' : available >= 0 ? 'warning' : 'overload';
+                                                                const weeks = getWeeksForMonth(slot.viewMonth);
+                                                                const wi = weeks.findIndex(w => getStorageKey(w.weekStart, slot.viewMonth) === slot.storageKey);
+                                                                const wn = wi >= 0 ? wi + 1 : null;
+                                                                return (
+                                                                  <SelectItem
+                                                                    key={slot.storageKey}
+                                                                    value={slot.storageKey}
+                                                                    className={status === 'healthy' ? 'text-emerald-700' : status === 'warning' ? 'text-amber-700' : 'text-red-700'}
+                                                                  >
+                                                                    {wn ? `Sem. ${wn}` : 'Sem.'} ({format(slot.weekStart, 'd MMM')}) — {available.toFixed(2)}h libres ({hours.toFixed(2)}h / {capacity.toFixed(2)}h)
+                                                                  </SelectItem>
+                                                                );
+                                                              })}
+                                                            </SelectGroup>
+                                                          ));
+                                                        })()}
                                                       </SelectContent>
                                                     </Select>
                                                     {weekLoad && (
@@ -1130,7 +1170,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                             variant="outline"
                                             size="sm"
                                             className="w-full text-xs border-2 border-dashed border-indigo-300 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-400 font-medium transition-colors"
-                                            onClick={() => addDistributionRow(task.id)}
+                                            onClick={() => addDistributionRow(task.id, task.weekStartDate)}
                                           >
                                             <Plus className="h-3 w-3 mr-1" /> Añadir distribución
                                           </Button>
@@ -1150,7 +1190,10 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                     {/* Logic for 'move' */}
                                     {taskActions[task.id] === 'move' && (() => {
                                       const selectedWeek = moveToMyWeek[task.id];
-                                      const weekLoad = selectedWeek ? getEmployeeLoadForWeek(employeeId, selectedWeek, undefined, undefined, viewDate) : null;
+                                      const selSlot = weekSlotsFor(task.weekStartDate).find(s => s.storageKey === selectedWeek);
+                                      const weekLoad = selectedWeek
+                                        ? getEmployeeLoadForWeek(employeeId, selectedWeek, undefined, undefined, selSlot?.viewMonth ?? viewDate)
+                                        : null;
                                       const weekHours = weekLoad?.hours || 0;
                                       const weekCapacity = weekLoad?.capacity || 0;
                                       const weekAvailable = round2(weekCapacity - weekHours);
@@ -1161,24 +1204,42 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                       return (
                                         <div className="mt-3 space-y-3 pl-3 border-l-4 bg-gradient-to-r from-blue-50/30 to-cyan-50/30 rounded-r-lg p-4 border-blue-300">
                                           <div className="space-y-1">
-                                            <Label className="text-xs">Semana destino</Label>
+                                            <Label className="text-xs">Semana destino (futuras, varios meses)</Label>
                                             <Select value={moveToMyWeek[task.id]} onValueChange={(val) => setMoveToMyWeek(prev => ({ ...prev, [task.id]: val }))}>
                                               <SelectTrigger className="h-8 text-xs">
                                                 <SelectValue placeholder="seleccionar semana" />
                                               </SelectTrigger>
-                                              <SelectContent>
-                                                {futureWeeks.map(w => {
-                                                  const weekKey = getStorageKey(w.weekStart, viewDate);
-                                                  const load = getEmployeeLoadForWeek(employeeId, weekKey, undefined, undefined, viewDate);
-                                                  const hours = load?.hours || 0;
-                                                  const capacity = load?.capacity || 0;
-                                                  const available = round2(capacity - hours);
-                                                  return (
-                                                    <SelectItem key={w.weekStart.toISOString()} value={weekKey}>
-                                                      Semana {getWeekNumber(w.weekStart)} ({format(w.weekStart, 'd MMM')}) - {available.toFixed(2)}h libres
-                                                    </SelectItem>
-                                                  );
-                                                })}
+                                              <SelectContent className="max-h-[280px]">
+                                                {(() => {
+                                                  const mSlots = weekSlotsFor(task.weekStartDate);
+                                                  const mm = new Map<string, typeof mSlots>();
+                                                  for (const s of mSlots) {
+                                                    const k = format(startOfMonth(s.viewMonth), 'yyyy-MM');
+                                                    if (!mm.has(k)) mm.set(k, []);
+                                                    mm.get(k)!.push(s);
+                                                  }
+                                                  return [...mm.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([mk, monthSlots]) => (
+                                                    <SelectGroup key={mk}>
+                                                      <SelectLabel className="capitalize">
+                                                        {format(monthSlots[0].viewMonth, 'MMMM yyyy', { locale: es })}
+                                                      </SelectLabel>
+                                                      {monthSlots.map((slot) => {
+                                                        const load = getEmployeeLoadForWeek(employeeId, slot.storageKey, undefined, undefined, slot.viewMonth);
+                                                        const h = load?.hours || 0;
+                                                        const cap = load?.capacity || 0;
+                                                        const available = round2(cap - h);
+                                                        const weeks = getWeeksForMonth(slot.viewMonth);
+                                                        const wi = weeks.findIndex(w => getStorageKey(w.weekStart, slot.viewMonth) === slot.storageKey);
+                                                        const wn = wi >= 0 ? wi + 1 : null;
+                                                        return (
+                                                          <SelectItem key={slot.storageKey} value={slot.storageKey}>
+                                                            {wn ? `Sem. ${wn}` : 'Sem.'} ({format(slot.weekStart, 'd MMM')}) — {available.toFixed(2)}h libres
+                                                          </SelectItem>
+                                                        );
+                                                      })}
+                                                    </SelectGroup>
+                                                  ));
+                                                })()}
                                               </SelectContent>
                                             </Select>
                                             {weekLoad && (
@@ -1209,20 +1270,22 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                     {taskActions[task.id] === 'moveToEmployee' && (() => {
                                       const selectedEmployeeId = moveToEmployee[task.id];
                                       const selectedWeek = moveToWeek[task.id];
+                                      const tSlots = weekSlotsFor(task.weekStartDate);
 
-                                      // Calcular disponibilidad total del compañero (promedio de todas las semanas futuras)
                                       const employeeTotalLoad = selectedEmployeeId ? (() => {
-                                        const loads = futureWeeks.map(w => {
-                                          const weekKey = getStorageKey(w.weekStart, viewDate);
-                                          return getEmployeeLoadForWeek(selectedEmployeeId, weekKey, undefined, undefined, viewDate);
-                                        });
+                                        const loads = tSlots.map(slot =>
+                                          getEmployeeLoadForWeek(selectedEmployeeId, slot.storageKey, undefined, undefined, slot.viewMonth)
+                                        );
                                         const totalHours = loads.reduce((sum, l) => sum + (l?.hours || 0), 0);
                                         const totalCapacity = loads.reduce((sum, l) => sum + (l?.capacity || 0), 0);
                                         return { hours: totalHours, capacity: totalCapacity, available: round2(totalCapacity - totalHours) };
                                       })() : null;
 
                                       // Calcular disponibilidad de la semana seleccionada para el compañero
-                                      const weekLoad = selectedEmployeeId && selectedWeek ? getEmployeeLoadForWeek(selectedEmployeeId, selectedWeek, undefined, undefined, viewDate) : null;
+                                      const weekSelSlot = tSlots.find(s => s.storageKey === selectedWeek);
+                                      const weekLoad = selectedEmployeeId && selectedWeek
+                                        ? getEmployeeLoadForWeek(selectedEmployeeId, selectedWeek, undefined, undefined, weekSelSlot?.viewMonth ?? viewDate)
+                                        : null;
                                       const weekHours = weekLoad?.hours || 0;
                                       const weekCapacity = weekLoad?.capacity || 0;
                                       const weekAvailable = round2(weekCapacity - weekHours);
@@ -1244,11 +1307,9 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                   {employees.filter(e => e.isActive && e.id !== employeeId).map(e => {
-                                                    // Calcular disponibilidad total para este empleado
-                                                    const loads = futureWeeks.map(w => {
-                                                      const weekKey = getStorageKey(w.weekStart, viewDate);
-                                                      return getEmployeeLoadForWeek(e.id, weekKey, undefined, undefined, viewDate);
-                                                    });
+                                                    const loads = tSlots.map(slot =>
+                                                      getEmployeeLoadForWeek(e.id, slot.storageKey, undefined, undefined, slot.viewMonth)
+                                                    );
                                                     const totalHours = loads.reduce((sum, l) => sum + (l?.hours || 0), 0);
                                                     const totalCapacity = loads.reduce((sum, l) => sum + (l?.capacity || 0), 0);
                                                     const available = round2(totalCapacity - totalHours);
@@ -1267,29 +1328,48 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                               </Select>
                                             </div>
                                             <div className="space-y-1">
-                                              <Label className="text-xs">Semana</Label>
+                                              <Label className="text-xs">Semana (futuras)</Label>
                                               <Select value={moveToWeek[task.id]} onValueChange={(val) => setMoveToWeek(prev => ({ ...prev, [task.id]: val }))}>
                                                 <SelectTrigger className="h-8 text-xs">
                                                   <SelectValue placeholder="Semana" />
                                                 </SelectTrigger>
-                                                <SelectContent>
-                                                  {futureWeeks.map(w => {
-                                                    const weekKey = getStorageKey(w.weekStart, viewDate);
-                                                    const load = selectedEmployeeId ? getEmployeeLoadForWeek(selectedEmployeeId, weekKey, undefined, undefined, viewDate) : null;
-                                                    const hours = load?.hours || 0;
-                                                    const capacity = load?.capacity || 0;
-                                                    const available = round2(capacity - hours);
-                                                    const status = available >= 5 ? 'healthy' : available >= 0 ? 'warning' : 'overload';
-                                                    return (
-                                                      <SelectItem
-                                                        key={w.weekStart.toISOString()}
-                                                        value={weekKey}
-                                                        className={status === 'healthy' ? 'text-emerald-700' : status === 'warning' ? 'text-amber-700' : 'text-red-700'}
-                                                      >
-                                                        Semana {getWeekNumber(w.weekStart)} ({format(w.weekStart, 'd MMM')}) - {hours.toFixed(2)}h / {capacity.toFixed(2)}h ({available >= 0 ? `${available.toFixed(2)}h libres` : `${Math.abs(available).toFixed(2)}h excedidas`})
-                                                      </SelectItem>
-                                                    );
-                                                  })}
+                                                <SelectContent className="max-h-[280px]">
+                                                  {(() => {
+                                                    const em = new Map<string, typeof tSlots>();
+                                                    for (const s of tSlots) {
+                                                      const k = format(startOfMonth(s.viewMonth), 'yyyy-MM');
+                                                      if (!em.has(k)) em.set(k, []);
+                                                      em.get(k)!.push(s);
+                                                    }
+                                                    return [...em.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([mk, monthSlots]) => (
+                                                      <SelectGroup key={mk}>
+                                                        <SelectLabel className="capitalize">
+                                                          {format(monthSlots[0].viewMonth, 'MMMM yyyy', { locale: es })}
+                                                        </SelectLabel>
+                                                        {monthSlots.map((slot) => {
+                                                          const load = selectedEmployeeId
+                                                            ? getEmployeeLoadForWeek(selectedEmployeeId, slot.storageKey, undefined, undefined, slot.viewMonth)
+                                                            : null;
+                                                          const h = load?.hours || 0;
+                                                          const cap = load?.capacity || 0;
+                                                          const available = round2(cap - h);
+                                                          const status = available >= 5 ? 'healthy' : available >= 0 ? 'warning' : 'overload';
+                                                          const weeks = getWeeksForMonth(slot.viewMonth);
+                                                          const wi = weeks.findIndex(w => getStorageKey(w.weekStart, slot.viewMonth) === slot.storageKey);
+                                                          const wn = wi >= 0 ? wi + 1 : null;
+                                                          return (
+                                                            <SelectItem
+                                                              key={slot.storageKey}
+                                                              value={slot.storageKey}
+                                                              className={status === 'healthy' ? 'text-emerald-700' : status === 'warning' ? 'text-amber-700' : 'text-red-700'}
+                                                            >
+                                                              {wn ? `Sem. ${wn}` : 'Sem.'} ({format(slot.weekStart, 'd MMM')}) — {h.toFixed(2)}h / {cap.toFixed(2)}h
+                                                            </SelectItem>
+                                                          );
+                                                        })}
+                                                      </SelectGroup>
+                                                    ));
+                                                  })()}
                                                 </SelectContent>
                                               </Select>
                                             </div>
@@ -1372,8 +1452,10 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                     }
 
                     // Validar capacidad por semana
+                    const valDistSlots = collectSelectableFutureWeekSlots(task.weekStartDate, startOfMonth(viewDate), weeklyCloseDay, 2);
                     for (const distTask of validTasks) {
-                      const weekLoad = getEmployeeLoadForWeek(employeeId, distTask.weekDate, undefined, undefined, viewDate);
+                      const dvs = valDistSlots.find(s => s.storageKey === distTask.weekDate);
+                      const weekLoad = getEmployeeLoadForWeek(employeeId, distTask.weekDate, undefined, undefined, dvs?.viewMonth ?? viewDate);
                       const currentWeekHours = weekLoad?.hours || 0;
                       const weekCapacity = weekLoad?.capacity || 0;
 
@@ -1396,38 +1478,49 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                   } else if (action === 'rollover') {
                     const hours = rolloverHours[task.id];
                     const newHoursEstimate = rolloverNewHours[task.id];
+                    const rSlotList = collectSelectableFutureWeekSlots(task.weekStartDate, startOfMonth(viewDate), weeklyCloseDay, 2);
+
+                    if (rSlotList.length === 0) {
+                      canSubmit = false;
+                      validationErrors.push(`"${task.taskName}": no hay semanas futuras para continuar la tarea`);
+                    }
+                    if (!rolloverTargetWeek[task.id] || !rSlotList.some(s => s.storageKey === rolloverTargetWeek[task.id])) {
+                      canSubmit = false;
+                      validationErrors.push(`"${task.taskName}": elige la semana en la que sigues con la tarea`);
+                    }
 
                     if (!hours || !hours.actual) {
                       canSubmit = false;
-                      validationErrors.push(`"${task.taskName}": completa las horas reales imputadas`);
+                      validationErrors.push(`"${task.taskName}": indica las horas que hiciste esta semana`);
                     } else {
                       const actual = parseHours(hours.actual);
                       if (actual <= 0) {
                         canSubmit = false;
-                        validationErrors.push(`"${task.taskName}": las horas reales deben ser mayores a 0`);
+                        validationErrors.push(`"${task.taskName}": las horas hechas deben ser mayores a 0`);
                       }
                     }
 
                     if (!newHoursEstimate) {
                       canSubmit = false;
-                      validationErrors.push(`"${task.taskName}": completa la nueva estimación para la semana siguiente`);
+                      validationErrors.push(`"${task.taskName}": indica las horas que planeas en la semana elegida`);
                     } else {
                       const newEstimate = parseHours(newHoursEstimate);
                       if (newEstimate <= 0) {
                         canSubmit = false;
-                        validationErrors.push(`"${task.taskName}": la nueva estimación debe ser mayor a 0`);
+                        validationErrors.push(`"${task.taskName}": las horas planificadas deben ser mayores a 0`);
                       }
                     }
                   } else if (action === 'move') {
                     const targetWeek = moveToMyWeek[task.id];
                     const comment = taskComments[task.id];
 
+                    const moveSlots = collectSelectableFutureWeekSlots(task.weekStartDate, startOfMonth(viewDate), weeklyCloseDay, 2);
                     if (!targetWeek) {
                       canSubmit = false;
                       validationErrors.push(`"${task.taskName}": selecciona semana destino`);
-                    } else if (futureWeeks.length === 0) {
+                    } else if (moveSlots.length === 0) {
                       canSubmit = false;
-                      validationErrors.push(`"${task.taskName}": no hay semanas futuras en este mes. Usa "Mover a otro compañero"`);
+                      validationErrors.push(`"${task.taskName}": no hay semanas futuras disponibles`);
                     } else if (!comment || !comment.trim()) {
                       canSubmit = false;
                       validationErrors.push(`"${task.taskName}": añade una nota explicando por qué mueves esta tarea`);
@@ -1435,7 +1528,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                       // Validar capacidad propia
                       const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
                       if (remainingHours > 0) {
-                        const weekLoad = getEmployeeLoadForWeek(employeeId, targetWeek, undefined, undefined, viewDate);
+                        const mvSlot = moveSlots.find(s => s.storageKey === targetWeek);
+                        const weekLoad = getEmployeeLoadForWeek(employeeId, targetWeek, undefined, undefined, mvSlot?.viewMonth ?? viewDate);
                         const currentWeekHours = weekLoad?.hours || 0;
                         const weekCapacity = weekLoad?.capacity || 0;
                         const newWeekTotal = currentWeekHours + remainingHours;
@@ -1449,18 +1543,22 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                     const targetEmployeeId = moveToEmployee[task.id];
                     const targetWeek = moveToWeek[task.id];
                     const comment = taskComments[task.id];
+                    const teSlots = collectSelectableFutureWeekSlots(task.weekStartDate, startOfMonth(viewDate), weeklyCloseDay, 2);
 
-                    if (!targetEmployeeId || !targetWeek) {
+                    if (teSlots.length === 0) {
+                      canSubmit = false;
+                      validationErrors.push(`"${task.taskName}": no hay semanas futuras para transferir`);
+                    } else if (!targetEmployeeId || !targetWeek) {
                       canSubmit = false;
                       validationErrors.push(`"${task.taskName}": selecciona compañero y semana destino`);
                     } else if (!comment || !comment.trim()) {
                       canSubmit = false;
                       validationErrors.push(`"${task.taskName}": añade una nota explicando por qué transfieres esta tarea`);
                     } else {
-                      // Validar capacidad del compañero destino
                       const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
                       if (remainingHours > 0) {
-                        const targetWeekLoad = getEmployeeLoadForWeek(targetEmployeeId, targetWeek, undefined, undefined, viewDate);
+                        const teSlot = collectSelectableFutureWeekSlots(task.weekStartDate, startOfMonth(viewDate), weeklyCloseDay, 2).find(s => s.storageKey === targetWeek);
+                        const targetWeekLoad = getEmployeeLoadForWeek(targetEmployeeId, targetWeek, undefined, undefined, teSlot?.viewMonth ?? viewDate);
                         const targetCurrentHours = targetWeekLoad?.hours || 0;
                         const targetCapacity = targetWeekLoad?.capacity || 0;
                         const newTargetTotal = targetCurrentHours + remainingHours;

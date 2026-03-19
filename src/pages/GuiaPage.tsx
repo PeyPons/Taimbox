@@ -54,7 +54,7 @@ import { LandingHeader } from '@/components/landing/LandingHeader';
 /* ─── SECTIONS DATA ─── */
 const SECTIONS: { slug: string; title: string; icon: React.ElementType; short: string; color: string }[] = [
   { slug: 'planificador', title: 'Planificador', icon: Calendar, short: 'Calendario visual del equipo y asignación de tareas', color: 'from-indigo-500 to-purple-500' },
-  { slug: 'mi-espacio', title: 'Mi espacio', icon: LayoutGrid, short: 'Tu dashboard personal: carga, prioridades y control de planificación', color: 'from-purple-500 to-pink-500' },
+  { slug: 'mi-espacio', title: 'Mi espacio', icon: LayoutGrid, short: 'Tu dashboard personal: carga, dependencias y control de planificación', color: 'from-purple-500 to-pink-500' },
   { slug: 'deadlines', title: 'Deadlines', icon: Target, short: 'Objetivos mensuales por proyecto y empleado', color: 'from-amber-500 to-orange-500' },
   { slug: 'informes', title: 'Informes', icon: BarChart3, short: 'Reportes, métricas y exportación de datos', color: 'from-rose-500 to-pink-500' },
   { slug: 'weekly-forecast', title: 'Weekly Forecast', icon: FileText, short: 'Cierre semanal y redistribución inteligente de horas', color: 'from-violet-500 to-purple-500' },
@@ -308,13 +308,13 @@ function MiEspacioContent() {
   return (
     <>
       <ContentBlock title="Qué es Mi espacio">
-        <p>Mi espacio es tu <strong className="text-white">dashboard personal</strong>. Aquí ves tu carga de trabajo, tus proyectos, el control de planificación y las prioridades del día o de la semana.</p>
+        <p>Mi espacio es tu <strong className="text-white">dashboard personal</strong>. Aquí ves tu carga de trabajo, tus proyectos, el control de planificación y las dependencias del día o de la semana.</p>
         <ExampleBox>Es lunes por la mañana. Abres Mi espacio y ves que tienes 3 tareas que bloquean a compañeros. Sabes exactamente por dónde empezar.</ExampleBox>
       </ContentBlock>
 
       <ContentBlock title="Pestañas principales">
         <div className="grid sm:grid-cols-2 gap-3">
-          <FeatureCard icon={AlertTriangle} title="Prioridades" description="Tareas que te bloquean o que bloqueas a otros. Insights de dependencias para saber qué hacer primero." color="from-orange-500 to-amber-500" />
+          <FeatureCard icon={AlertTriangle} title="Dependencias" description="Tareas que te bloquean o que bloqueas a otros. Insights para saber qué hacer primero." color="from-orange-500 to-amber-500" />
           <FeatureCard icon={FolderOpen} title="Mis proyectos" description="Vista de tu semana con tareas agrupadas por proyecto. Ve rápidamente qué tienes pendiente en cada uno." color="from-indigo-500 to-blue-500" />
           <FeatureCard icon={Target} title="Control de planificación" description="Alertas cuando lo planificado no coincide con el deadline. Te dice si te faltan o sobran horas." color="from-red-500 to-rose-500" />
           <FeatureCard icon={Users} title="Compañeros" description="Vista de colaboración y carga del equipo. Ve quién está sobrecargado y quién tiene disponibilidad." color="from-blue-500 to-cyan-500" />
@@ -396,7 +396,7 @@ function WeeklyContent() {
   return (
     <>
       <ContentBlock title="Qué es Weekly Forecast">
-        <p>Weekly Forecast es el módulo de <strong className="text-white">cierre semanal</strong>. Al final de cada semana laboral, el sistema genera un resumen de lo planificado vs lo completado y puede redistribuir horas no completadas.</p>
+        <p><strong className="text-white">Weekly Forecast</strong> (menú <strong className="text-white">Seguimiento</strong>) es la previsión y el cierre de <em>equipo</em>: resumen por persona, ajustes y redistribución. Por otro lado, el botón <strong className="text-white">Weekly</strong> en <strong className="text-white">Mi espacio</strong> es la revisión <em>personal</em> de tareas de semanas ya cerradas: completar, mover a otra semana (varios meses adelante), distribuir o registrar horas hechas y planificar el resto en la semana que elijas.</p>
         <ExampleBox>Carlos no completó 15h esta semana. El sistema detecta que Laura tiene 10h libres y Pedro 5h, y sugiere redistribuir el trabajo automáticamente.</ExampleBox>
       </ContentBlock>
 

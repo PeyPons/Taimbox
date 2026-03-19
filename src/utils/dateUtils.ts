@@ -1,4 +1,4 @@
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameMonth, addDays, format, eachDayOfInterval, isWeekend, parseISO, isBefore, isAfter } from 'date-fns';
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameMonth, addDays, addMonths, startOfDay, format, eachDayOfInterval, isWeekend, parseISO, isBefore, isAfter } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { WorkSchedule } from '@/types';
 
@@ -150,6 +150,54 @@ export const isAllocationInEffectiveMonth = (weekStartDate: string | Date, viewM
 export const getWeekEndDate = (weekStartDate: Date, closeDay: number = 4): Date => {
   return addDays(weekStartDate, closeDay);
 };
+
+/** Semana destino en Weekly (mover / rollover / distribuir): clave de BD + mes para carga/capacidad. */
+export type SelectableFutureWeekSlot = {
+  storageKey: string;
+  viewMonth: Date;
+  weekStart: Date;
+  monday: Date;
+};
+
+/**
+ * Semanas futuras (no cerradas) posteriores a la semana de la tarea, en varios meses.
+ * Incluye el mes ancla y los `extraMonths` siguientes (p. ej. 2 → mes actual + 2 = hasta 3 meses).
+ */
+export function collectSelectableFutureWeekSlots(
+  taskWeekStartStr: string,
+  anchorViewMonth: Date,
+  weeklyCloseDay: number,
+  extraMonths: number = 2
+): SelectableFutureWeekSlot[] {
+  const today = startOfDay(new Date());
+  let taskMon: Date;
+  try {
+    taskMon = startOfWeek(parseISO(taskWeekStartStr), { weekStartsOn: 1 });
+  } catch {
+    taskMon = startOfWeek(new Date(), { weekStartsOn: 1 });
+  }
+  const minMonday = startOfWeek(addDays(taskMon, 7), { weekStartsOn: 1 });
+
+  const slots: SelectableFutureWeekSlot[] = [];
+  const seen = new Set<string>();
+  const monthCount = Math.max(1, extraMonths + 1);
+
+  for (let i = 0; i < monthCount; i++) {
+    const month = addMonths(startOfMonth(anchorViewMonth), i);
+    for (const w of getWeeksForMonth(month)) {
+      const storageKey = getStorageKey(w.weekStart, month);
+      if (seen.has(storageKey)) continue;
+      const mon = startOfWeek(w.weekStart, { weekStartsOn: 1 });
+      const weekEnd = getWeekEndDate(w.weekStart, weeklyCloseDay);
+      if (weekEnd < today) continue;
+      if (isBefore(mon, minMonday)) continue;
+      seen.add(storageKey);
+      slots.push({ storageKey, viewMonth: month, weekStart: w.weekStart, monday: mon });
+    }
+  }
+  slots.sort((a, b) => a.monday.getTime() - b.monday.getTime() || a.storageKey.localeCompare(b.storageKey));
+  return slots;
+}
 
 /**
  * Default week close day (Friday = 4 days from Monday)

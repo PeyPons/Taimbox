@@ -96,18 +96,18 @@ Permite renombrar proyectos automáticamente según patrones configurables:
 | AllocationSheet | `src/components/planner/AllocationSheet.tsx` | ~180 |
 | AllocationProjectHeader | `src/components/planner/allocation/AllocationProjectHeader.tsx` | ~45 |
 | AllocationTaskRow | `src/components/planner/allocation/AllocationTaskRow.tsx` | ~50. En móvil recibe `isMobile` para filas táctiles (min-h 44px), texto `text-sm`, horas `font-mono text-base` y botón menú ≥44px. |
-| AllocationFormDialog | `src/components/planner/allocation/AllocationFormDialog.tsx` | ~100 |
+| AllocationFormDialog | `src/components/planner/allocation/AllocationFormDialog.tsx` | ~100. Alta por lotes: **Guardar** deshabilitado hasta ≥1 fila con proyecto+nombre+horas y sin filas con nombre/horas sin proyecto (lógica en `useAllocationActions`: `canSubmitBatchAdd`). |
 | GanttView | `src/components/planner/GanttView.tsx` | ~95 |
 | BatchTaskRow | `src/components/planner/BatchTaskRow.tsx` | ~65. Selector de proyecto en "Añadir tareas": lista ordenada con primero los proyectos que tienen deadline asignado al empleado de la tarea (o actual), luego el resto. |
 | ProjectImpactSummary | `src/components/planner/ProjectImpactSummary.tsx` | ~45 |
 | DashboardWidgets | `src/components/employee/DashboardWidgets.tsx` | ~120 |
-| WeeklyReportDialog | `src/components/employee/WeeklyReportDialog.tsx` | ~85 |
-| PlanningInconsistenciesCard | `src/components/employee/PlanningInconsistenciesCard.tsx` | ~60 |
+| WeeklyReportDialog | `src/components/employee/WeeklyReportDialog.tsx` | Modal Weekly (integración `weekly_feedback`). Opción **«Registrar horas de esta semana y seguir la tarea después»** (antes «Imputar y continuar»): cierra la tarea con horas reales y crea la misma tarea en una **semana destino elegible** (solo futuras, posteriores a la semana de la tarea). Selector agrupado por mes: mes del calendario visible + **dos meses siguientes** (`collectSelectableFutureWeekSlots` en `dateUtils.ts`). Misma lista de semanas para **Mover a otra semana**, **Distribuir** y **Transferir a compañero**; `getEmployeeLoadForWeek` usa el `viewMonth` de cada slot para capacidad correcta en meses cruzados. Tras crear tareas en otro mes se llama `loadDataForMonth`. |
+| PlanningInconsistenciesCard | `src/components/employee/PlanningInconsistenciesCard.tsx` | ~60. **Control de planificación** (dashboard empleado): resumen del mes + filtro «Filtrar por proyecto» integrado en un bloque unificado (ancho completo); si hay texto, muestra «Mostrando M de N tras filtrar». Botón **Añadir** (tareas): píldora pequeña, fondo blanco, texto gris (`slate-600`), icono `ListPlus` violeta (`violet-600`), borde/sombra muy suaves; en colapsado solo si hay déficit (`difference < 0`) y en expandido junto a «TUS DATOS». |
 | GlobalPlanningInconsistencies | `src/components/employee/GlobalPlanningInconsistencies.tsx` | ~380 |
 | MyWeekView | `src/components/employee/MyWeekView.tsx` | ~150 |
 | DeadlinesPage | `src/pages/DeadlinesPage.tsx` | ~670. **Datos**: `useDeadlinesPageData.ts` (carga deadlines/globales, Realtime, locks, filteredProjects, projectsByClient, getMonthlyCapacity, getEmployeeAssignedHours). **Edición inline**: `useDeadlinesEditing.ts` (locks adquirir/renovar/liberar, formulario inline, autoSave, handleFormPatch, cancelEditingProject, toggleProjectExpanded). **Sugerencias**: `useDeadlinesRedistribution.ts`. **Filtros**: `DeadlinesFilters.tsx`. **Listado**: `DeadlinesProjectList.tsx`. **Asignaciones globales**: `GlobalAssignmentDialog.tsx`. **Sugerencias UI**: `DeadlinesSuggestionsPreview.tsx`, `DeadlinesSuggestionsPanel.tsx`. Sin dialog de crear/editar deadline (eliminado como código muerto). |
 | WeeklyForecastPage | `src/pages/WeeklyForecastPage.tsx` | ~380 |
-| EmployeeDashboard | `src/pages/EmployeeDashboard.tsx` | ~220 |
+| EmployeeDashboard | `src/pages/EmployeeDashboard.tsx` | ~220. Pestaña **Dependencias**. Cabecera escritorio/móvil como arriba. Modal **Añadir tareas**: **Guardar** deshabilitado si falta proyecto en filas con nombre u horas; mínimo una fila completa (proyecto + nombre + horas). Demo: `DemoEmployeeDashboard.tsx`. |
 | OperationsRadarPage | `src/pages/OperationsRadarPage.tsx` | ~540 (nombre en fila de proyecto; búsqueda por nombre formateado o crudo) |
 
 > **⚠️ IMPORTANTE**: Si creas un nuevo componente que muestra nombres de proyectos, DEBES usar `useProjectAliasing().formatName()` para mantener consistencia.
@@ -754,6 +754,7 @@ Si modificas una interface, revisa estos consumidores:
 | Si modificas... | Revisa también... |
 |-----------------|-------------------|
 | `dateUtils.ts` → `getWeeksForMonth()` | `AppContext.tsx`, `usePlannerData.ts`, `useAllocationSheet.ts`, `AllocationSheet.tsx` |
+| `dateUtils.ts` → `collectSelectableFutureWeekSlots()` | `WeeklyReportDialog.tsx` (destinos futuros multi-mes en Weekly) |
 | `dateUtils.ts` → `isAllocationInEffectiveMonth()` | `AppContext.tsx`, `usePlannerData.ts`, `useProjectMetrics.ts` |
 | `budgetUtils.ts` → `getEffectiveBudget()` | `DeadlinesPage`, `WeeklyForecastPage`, `ClientsAndProjectsPage`, `useAllocationSheet` |
 | `deadlineUtils.ts` → `fetchDeadlinesForMonth(monthKey, agencyId)` | `useDeadlines`, `DeadlinesPage`, `AllocationSheet`, `EmployeeDashboard`, `WeeklyForecastPage`, `ClientsAndProjectsPage`, `PlanningInconsistenciesCard`, `MyWeekView`, `GlobalPlanningInconsistencies` |
@@ -981,7 +982,7 @@ La app incluye tres tours que se muestran una vez por usuario (estado en `employ
 
 | Tour | Componente | Página / contexto | data-tour (targets) |
 |------|------------|-------------------|---------------------|
-| **WelcomeTour** | `src/components/employee/WelcomeTour.tsx` | EmployeeDashboard (Mi Semana) | add-tasks, weekly-button, crm-export, internal-tasks, goals, absences, calendar, priority-widget, dependencies-widget, planning-inconsistencies, collaboration-cards, projects-summary, monthly-balance, reliability-index; usa tab (dependencies, coherence, teammates, projects, metrics) y openDropdown (actions-dropdown). |
+| **WelcomeTour** | `src/components/employee/WelcomeTour.tsx` | EmployeeDashboard (Mi Semana) | add-tasks, weekly-button, crm-export, internal-tasks, goals, absences, calendar, priority-widget, dependencies-widget, planning-inconsistencies, collaboration-cards, projects-summary, monthly-balance, reliability-index; usa tab y **solo en móvil** abre `actions-dropdown` para CRM/objetivos/ausencias; en escritorio esos targets son botones visibles en cabecera. |
 | **DeadlinesTour** | `src/components/deadlines/DeadlinesTour.tsx` | DeadlinesPage | month-selector (DeadlinesPageHeader), filters (DeadlinesFilters), availability-panel (DeadlinesAvailabilityCard), project-list, inline-editing, concurrent-editing (DeadlinesProjectList), global-assignments (DeadlinesSidebar), suggestions (DeadlinesSuggestionsPreview). |
 | **PlannerTour** | `src/components/planner/PlannerTour.tsx` | AllocationSheet (al abrir detalle de empleado/semana desde PlannerGrid) | planner-view-toggle, planner-week-nav, planner-projects, planner-task, planner-task-name, planner-checkbox, planner-hours, planner-dependency, planner-sort, planner-add-task. |
 

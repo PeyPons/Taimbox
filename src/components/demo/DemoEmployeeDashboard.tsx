@@ -136,7 +136,7 @@ export function DemoEmployeeDashboard() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start h-auto p-1 bg-white border border-slate-200 flex-nowrap overflow-x-auto custom-scrollbar gap-2 min-w-0">
           <TabsTrigger value="dependencies" className="px-4 py-2 min-h-[44px] data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700 shrink-0">
-            <AlertCircle className="h-4 w-4 mr-2" /> Prioridades
+            <AlertCircle className="h-4 w-4 mr-2" /> Dependencias
           </TabsTrigger>
           <TabsTrigger value="projects" className="px-4 py-2 min-h-[44px] data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 shrink-0">
             <ListPlus className="h-4 w-4 mr-2" /> Mis proyectos

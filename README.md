@@ -388,7 +388,7 @@ Centraliza TODOS los valores mágicos del sistema.
 
 ### `src/config/integrations.ts`
 Define las integraciones disponibles para activar por agencia.
-- **`weekly_feedback`**: Sistema Weekly de confirmación.
+- **`weekly_feedback`**: Modal Weekly en Mi espacio (cierre de tareas de semanas pasadas; destinos de semana futuros multi-mes vía `collectSelectableFutureWeekSlots` en `dateUtils.ts`).
 - **`crm_export`**: Exportación de tareas a CRM.
 - **`crm_user_id`**: Campo de ID de usuario CRM para empleados.
 

@@ -66,6 +66,9 @@ interface AllocationFormDialogProps {
     getWeekExceedStatus: (weekDate: string) => boolean;
     getEmployeeLoadForWeek: (employeeId: string, weekStart: string, effectiveStart?: Date, effectiveEnd?: Date, viewMonth?: Date) => { hours: number; capacity: number; percentage: number };
     formatProjectName: (name: string) => string;
+    /** Añadir tareas en lote (planificador): mismas reglas que dashboard empleado */
+    canSubmitBatchAdd: boolean;
+    batchAddHint: string | null;
 }
 
 export function AllocationFormDialog({
@@ -106,7 +109,9 @@ export function AllocationFormDialog({
     getAvailableDependencies,
     getWeekExceedStatus,
     getEmployeeLoadForWeek,
-    formatProjectName
+    formatProjectName,
+    canSubmitBatchAdd,
+    batchAddHint
 }: AllocationFormDialogProps) {
     const [editProjectOpen, setEditProjectOpen] = React.useState(false);
     const [openDependency, setOpenDependency] = React.useState(false);
@@ -327,18 +332,24 @@ export function AllocationFormDialog({
     const footerBlock = (
         <div className={cn("p-4 sm:p-6 py-4 border-t bg-slate-50/50 shrink-0 flex flex-wrap items-center gap-2 w-full", editingAllocation && "bg-transparent border-t-0 pt-0")}>
             {!editingAllocation && (
-                <div className="flex items-center gap-2 text-xs text-slate-500 mr-auto w-full sm:w-auto">
-                    {newTasks.some(t => !t.projectId || !t.taskName || !t.hours || !t.weekDate) && (
-                        <span className="text-amber-600 flex items-center gap-1">
-                            <AlertTriangle className="h-3.5 w-3.5" /> Completa los campos obligatorios
+                <div className="flex items-center gap-2 text-xs mr-auto w-full sm:w-auto min-w-0">
+                    {batchAddHint ? (
+                        <span className="text-amber-600 flex items-start gap-1">
+                            <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" /> {batchAddHint}
                         </span>
+                    ) : (
+                        <span className="text-slate-500">Listo para guardar las filas completas.</span>
                     )}
                 </div>
             )}
             <div className="flex gap-2 ml-auto flex-1 sm:flex-initial justify-end">
                 {editingAllocation && <Button variant="ghost" size="sm" onClick={onDelete} className={cn("text-red-500 mr-auto", isMobile && "h-11 min-h-[44px]")} disabled={isSaving}><Trash2 className="w-4 h-4 mr-2" /> Eliminar</Button>}
                 <Button variant="ghost" onClick={onClose} disabled={isSaving} className={cn(isMobile && "h-11 min-h-[44px]")}>Cancelar</Button>
-                <Button onClick={onSave} disabled={isSaving} className={cn(isMobile && "h-11 min-h-[44px]")}>
+                <Button
+                    onClick={onSave}
+                    disabled={isSaving || (!editingAllocation && !canSubmitBatchAdd)}
+                    className={cn(isMobile && "h-11 min-h-[44px]")}
+                >
                     {isSaving ? (
                         <>
                             <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />

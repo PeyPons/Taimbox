@@ -86,8 +86,8 @@ export default function EmployeeDashboard() {
   const [newTasks, setNewTasks] = useState<NewTaskRow[]>([]);
   const [openComboboxId, setOpenComboboxId] = useState<string | null>(null);
   const [showWeeklyDialog, setShowWeeklyDialog] = useState(false);
-  // Default to "dependencies" (Prioridades) for better focus
-  const [activeTab, setActiveTab] = useState('dependencies');
+  // Default to "coherence" (Control de planificación) to match the workflow
+  const [activeTab, setActiveTab] = useState('coherence');
   const [actionsDropdownOpen, setActionsDropdownOpen] = useState(false);
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [dialogDeadlines, setDialogDeadlines] = useState<Deadline[]>([]);
@@ -259,11 +259,11 @@ export default function EmployeeDashboard() {
     }
   };
 
-  const openAddTasksDialog = () => {
+  const openAddTasksDialog = (defaultProjectId?: string) => {
     const defaultWeek = weeks[0]?.weekStart ? format(weeks[0].weekStart, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
     setNewTasks([{
       id: crypto.randomUUID(),
-      projectId: '',
+      projectId: defaultProjectId || '',
       taskName: '',
       hours: '',
       weekDate: defaultWeek,
@@ -296,11 +296,40 @@ export default function EmployeeDashboard() {
     setNewTasks(prev => prev.map(t => t.id === id ? { ...t, [field]: value } : t));
   };
 
+  /** No guardar si falta proyecto en una fila que ya tiene nombre u horas; hace falta ≥1 fila completa. */
+  const canSaveBulkTasks = useMemo(() => {
+    const rowHasPartialData = (t: NewTaskRow) =>
+      t.taskName.trim().length > 0 ||
+      (t.hours !== '' && !Number.isNaN(parseFloat(t.hours)) && parseFloat(t.hours) > 0);
+    const anyRowWithDataButNoProject = newTasks.some(t => rowHasPartialData(t) && !t.projectId);
+    const atLeastOneComplete = newTasks.some(
+      t => Boolean(t.projectId) && t.taskName.trim().length > 0 && parseFloat(t.hours) > 0
+    );
+    return atLeastOneComplete && !anyRowWithDataButNoProject;
+  }, [newTasks]);
+
+  const bulkTasksHint = useMemo(() => {
+    const rowHasPartialData = (t: NewTaskRow) =>
+      t.taskName.trim().length > 0 ||
+      (t.hours !== '' && !Number.isNaN(parseFloat(t.hours)) && parseFloat(t.hours) > 0);
+    if (newTasks.some(t => rowHasPartialData(t) && !t.projectId)) {
+      return 'Selecciona un proyecto en cada fila que tenga nombre u horas.';
+    }
+    if (!newTasks.some(t => Boolean(t.projectId) && t.taskName.trim() && parseFloat(t.hours) > 0)) {
+      return 'Completa al menos una fila: proyecto, nombre de tarea y horas.';
+    }
+    return null;
+  }, [newTasks]);
+
   const handleSaveTasks = async () => {
     // Prevenir múltiples ejecuciones simultáneas
     if (isSavingTasks) return;
 
     if (!myEmployeeProfile) return;
+    if (!canSaveBulkTasks) {
+      toast.error(bulkTasksHint || 'Revisa proyecto, nombre y horas en cada fila.');
+      return;
+    }
     const validTasks = newTasks.filter(t => t.projectId && t.taskName.trim() && parseFloat(t.hours) > 0);
     if (validTasks.length === 0) { toast.error("Añade al menos una tarea válida"); return; }
 
@@ -518,34 +547,73 @@ export default function EmployeeDashboard() {
           </Button>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Dropdown de Acciones Secundarias */}
-          <DropdownMenu open={actionsDropdownOpen} onOpenChange={setActionsDropdownOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2 border-slate-200" data-tour="actions-dropdown">
-                <MoreHorizontal className="h-4 w-4" /> <span className="hidden sm:inline">Acciones</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          {/* Escritorio: mismas acciones como botones visibles (más espacio). Móvil: menú Acciones. */}
+          {!isMobile && (
+            <>
               {isCrmExportEnabled && (
-                <DropdownMenuItem onClick={handleExportCRM} disabled={!myEmployeeProfile?.crmUserId} className="gap-2" data-tour="crm-export">
-                  <FileDown className="h-4 w-4 text-purple-600" /> Exportar a CRM
-                </DropdownMenuItem>
+                <Button
+                  variant="outline"
+                  className="gap-2 border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-sm shrink-0"
+                  onClick={handleExportCRM}
+                  disabled={!myEmployeeProfile?.crmUserId}
+                  data-tour="crm-export"
+                >
+                  <FileDown className="h-4 w-4 text-purple-600 shrink-0" /> Exportar CRM
+                </Button>
               )}
-
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setShowGoals(true)} className="gap-2" data-tour="goals">
-                <TrendingUp className="h-4 w-4 text-emerald-600" /> Mis Objetivos
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowAbsences(true)} className="gap-2" data-tour="absences">
-                <Calendar className="h-4 w-4 text-amber-600" /> Mis Ausencias
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={resetTour} className="gap-2">
-                <RotateCcw className="h-4 w-4" /> Repetir Tour
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              <Button
+                variant="outline"
+                className="gap-2 border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-sm shrink-0"
+                onClick={() => setShowGoals(true)}
+                data-tour="goals"
+              >
+                <TrendingUp className="h-4 w-4 text-emerald-600 shrink-0" /> Objetivos
+              </Button>
+              <Button
+                variant="outline"
+                className="gap-2 border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-sm shrink-0"
+                onClick={() => setShowAbsences(true)}
+                data-tour="absences"
+              >
+                <Calendar className="h-4 w-4 text-amber-600 shrink-0" /> Ausencias
+              </Button>
+              <Button
+                variant="outline"
+                className="gap-2 border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-sm shrink-0"
+                onClick={resetTour}
+              >
+                <RotateCcw className="h-4 w-4 shrink-0" /> Repetir tour
+              </Button>
+            </>
+          )}
+          {isMobile && (
+            <DropdownMenu open={actionsDropdownOpen} onOpenChange={setActionsDropdownOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2 border-slate-200" data-tour="actions-dropdown">
+                  <MoreHorizontal className="h-4 w-4" /> Acciones
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {isCrmExportEnabled && (
+                  <DropdownMenuItem onClick={handleExportCRM} disabled={!myEmployeeProfile?.crmUserId} className="gap-2" data-tour="crm-export">
+                    <FileDown className="h-4 w-4 text-purple-600" /> Exportar a CRM
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setShowGoals(true)} className="gap-2" data-tour="goals">
+                  <TrendingUp className="h-4 w-4 text-emerald-600" /> Mis Objetivos
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowAbsences(true)} className="gap-2" data-tour="absences">
+                  <Calendar className="h-4 w-4 text-amber-600" /> Mis Ausencias
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={resetTour} className="gap-2">
+                  <RotateCcw className="h-4 w-4" /> Repetir Tour
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           <EmployeeSettings employeeId={myEmployeeProfile.id} />
         </div>
@@ -634,14 +702,14 @@ export default function EmployeeDashboard() {
           {/* 4. VISTA DETALLADA POR PESTAÑAS */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full justify-start h-auto p-1 bg-white border border-slate-200 flex-nowrap overflow-x-auto custom-scrollbar gap-2 min-w-0 pr-2">
+              <TabsTrigger value="coherence" className="px-4 py-2 min-h-[44px] min-w-[9rem] whitespace-nowrap data-[state=active]:bg-red-50 data-[state=active]:text-red-700 shrink-0">
+                <CheckCircle2 className="h-4 w-4 mr-2 shrink-0" /> Control de planificación
+              </TabsTrigger>
               <TabsTrigger value="dependencies" className="px-4 py-2 min-h-[44px] min-w-[7rem] whitespace-nowrap data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700 shrink-0">
-                <AlertCircle className="h-4 w-4 mr-2 shrink-0" /> Prioridades
+                <AlertCircle className="h-4 w-4 mr-2 shrink-0" /> Dependencias
               </TabsTrigger>
               <TabsTrigger value="projects" className="px-4 py-2 min-h-[44px] min-w-[7rem] whitespace-nowrap data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 shrink-0">
                 <ListPlus className="h-4 w-4 mr-2 shrink-0" /> Mis proyectos
-              </TabsTrigger>
-              <TabsTrigger value="coherence" className="px-4 py-2 min-h-[44px] min-w-[9rem] whitespace-nowrap data-[state=active]:bg-red-50 data-[state=active]:text-red-700 shrink-0">
-                <CheckCircle2 className="h-4 w-4 mr-2 shrink-0" /> Control de planificación
               </TabsTrigger>
               <TabsTrigger value="teammates" className="px-4 py-2 min-h-[44px] min-w-[7rem] whitespace-nowrap shrink-0">
                 <div className="flex items-center gap-2">Compañeros</div>
@@ -664,7 +732,12 @@ export default function EmployeeDashboard() {
               </TabsContent>
 
               <TabsContent value="coherence" className="focus-visible:outline-none min-w-0">
-                <PlanningInconsistenciesCard employeeId={myEmployeeProfile.id} viewDate={currentMonth} isManager={isManager} />
+                <PlanningInconsistenciesCard
+                  employeeId={myEmployeeProfile.id}
+                  viewDate={currentMonth}
+                  isManager={isManager}
+                  onAddTasksForProject={(projectId) => openAddTasksDialog(projectId)}
+                />
               </TabsContent>
 
               <TabsContent value="teammates" className="focus-visible:outline-none">
@@ -790,11 +863,19 @@ export default function EmployeeDashboard() {
               </Button>
               <div id="task-list-end-mobile" />
             </div>
-            <div className="border-t p-4 flex gap-2 shrink-0 bg-slate-50">
-              <Button variant="outline" onClick={() => setIsAddingTasks(false)} disabled={isSavingTasks} className="flex-1 h-11">Cancelar</Button>
-              <Button onClick={handleSaveTasks} disabled={isSavingTasks} className="flex-1 h-11">
-                {isSavingTasks ? 'Guardando...' : 'Guardar tareas'}
-              </Button>
+            <div className="border-t p-4 flex flex-col gap-2 shrink-0 bg-slate-50">
+              {bulkTasksHint && (
+                <p className="text-xs text-amber-600 flex items-start gap-1.5 px-0.5">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                  {bulkTasksHint}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setIsAddingTasks(false)} disabled={isSavingTasks} className="flex-1 h-11">Cancelar</Button>
+                <Button onClick={handleSaveTasks} disabled={isSavingTasks || !canSaveBulkTasks} className="flex-1 h-11">
+                  {isSavingTasks ? 'Guardando...' : 'Guardar tareas'}
+                </Button>
+              </div>
             </div>
           </SheetContent>
         </Sheet>
@@ -869,16 +950,18 @@ export default function EmployeeDashboard() {
             </div>
           </div>
 
-          <DialogFooter className="py-4 px-6 border-t bg-slate-50/50 shrink-0">
-            <div className="flex items-center gap-2 text-xs text-slate-500 mr-auto">
-              {newTasks.filter(t => !t.projectId || !t.taskName || !t.hours).length > 0 && (
-                <span className="text-amber-600 flex items-center gap-1">
-                  <AlertTriangle className="h-3.5 w-3.5" /> Completa los campos obligatorios
+          <DialogFooter className="py-4 px-6 border-t bg-slate-50/50 shrink-0 flex-wrap gap-2">
+            <div className="flex items-center gap-2 text-xs mr-auto min-w-[200px]">
+              {bulkTasksHint ? (
+                <span className="text-amber-600 flex items-start gap-1">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" /> {bulkTasksHint}
                 </span>
+              ) : (
+                <span className="text-slate-500">Listo para guardar las filas completas.</span>
               )}
             </div>
             <Button variant="outline" onClick={() => setIsAddingTasks(false)} disabled={isSavingTasks}>Cancelar</Button>
-            <Button onClick={handleSaveTasks} disabled={isSavingTasks}>
+            <Button onClick={handleSaveTasks} disabled={isSavingTasks || !canSaveBulkTasks}>
               {isSavingTasks ? (
                 <>
                   <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />

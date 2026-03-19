@@ -111,7 +111,7 @@ function MockPriorityCards() {
                 <div className="h-8 w-8 rounded-lg bg-orange-500/30 flex items-center justify-center">
                     <AlertCircle className="h-4 w-4 text-orange-300" />
                 </div>
-                <span className="text-white font-semibold text-sm">Prioridades del día</span>
+                <span className="text-white font-semibold text-sm">Dependencias del día</span>
             </div>
 
             <div className="space-y-2.5">
@@ -382,7 +382,7 @@ export function EmployeeDashboardArticle() {
                     </span>
                 </div>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 leading-[1.1] tracking-tight">
-                    Tu día, tus prioridades,{' '}
+                    Tu día, tus dependencias,{' '}
                     <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
                         sin ruido
                     </span>
@@ -391,7 +391,7 @@ export function EmployeeDashboardArticle() {
                     Cada empleado tiene su propio centro de control: sabe qué hacer hoy, cuánto tiempo le queda, cómo va su planificación y qué hacen sus compañeros. Todo sin preguntar a nadie.
                 </p>
                 <div className="flex flex-wrap justify-center gap-3 text-sm">
-                    {['Calendario personal', 'Prioridades inteligentes', 'Métricas de fiabilidad', 'Weekly feedback'].map((f, i) => (
+                    {['Calendario personal', 'Vista de dependencias', 'Métricas de fiabilidad', 'Weekly feedback'].map((f, i) => (
                         <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-indigo-200/90 text-xs font-medium">
                             <CheckCircle2 className="h-3 w-3 text-emerald-400" />
                             {f}
@@ -432,16 +432,16 @@ export function EmployeeDashboardArticle() {
                 </div>
             </section>
 
-            {/* ─── SECTION 2: Prioridades ─── */}
+            {/* ─── SECTION 2: Dependencias ─── */}
             <section className="mb-16 sm:mb-20">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
                     <div>
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-orange-300/90 mb-3 block">Inteligencia contextual</span>
                         <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 leading-tight">
-                            Prioridades claras, sin adivinar
+                            Dependencias claras, sin adivinar
                         </h2>
                         <p className="text-indigo-100/90 mb-4 leading-relaxed">
-                            El sistema analiza tus tareas automáticamente: deadlines, dependencias, carga acumulada. Te presenta una lista de prioridades ordenada por urgencia real, no por «quién gritó más fuerte».
+                            El sistema analiza tus tareas automáticamente: deadlines, dependencias, carga acumulada. Te presenta una vista ordenada por lo que bloquea y por urgencia real, no por «quién gritó más fuerte».
                         </p>
                         <ul className="space-y-3">
                             {[

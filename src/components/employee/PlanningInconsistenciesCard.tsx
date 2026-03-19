@@ -3,11 +3,13 @@ import { useAppOrDemo } from '@/hooks/useAppOrDemo';
 import { useAgency } from '@/contexts/AgencyContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   AlertTriangle, CheckCircle2, Users, TrendingUp, TrendingDown,
-  Info, ChevronDown, ChevronUp, User
+  Info, ChevronDown, ChevronUp, User, Search, ListPlus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
@@ -18,10 +20,15 @@ import { format, isSameMonth, parseISO, startOfMonth, endOfMonth } from 'date-fn
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
 
+/** Píldora compacta: icono violeta (#7C3AED), texto gris pizarra, borde/sombra muy suaves (referencia UX). */
+const addTasksButtonClass =
+  'inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-full border border-slate-200/90 bg-white px-2.5 text-[13px] font-medium leading-none text-slate-600 shadow-[0_1px_2px_rgba(15,23,42,0.06)] transition-colors hover:border-slate-300 hover:bg-slate-50/90 hover:text-slate-700 active:bg-slate-50';
+
 interface PlanningInconsistenciesCardProps {
   employeeId: string;
   viewDate: Date;
   isManager?: boolean; // Si es manager, puede ver información de compañeros
+  onAddTasksForProject?: (projectId: string) => void;
 }
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
@@ -29,7 +36,8 @@ const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 export const PlanningInconsistenciesCard = memo(function PlanningInconsistenciesCard({
   employeeId,
   viewDate,
-  isManager = false
+  isManager = false,
+  onAddTasksForProject
 }: PlanningInconsistenciesCardProps) {
   const app = useAppOrDemo();
   const { allocations, projects, employees } = app;
@@ -40,6 +48,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const { formatName: formatProjectName } = useProjectAliasing();
   const isMobile = useIsMobile();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const monthKey = format(viewDate, 'yyyy-MM');
 
@@ -397,6 +406,14 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
     return results.sort((a, b) => Math.abs(b.difference) - Math.abs(a.difference));
   }, [deadlines, allocations, projects, employees, employeeId, viewDate, isLoading]);
 
+  const visibleInconsistencies = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return inconsistencies;
+    return inconsistencies.filter(inc =>
+      formatProjectName(inc.projectName).toLowerCase().includes(q)
+    );
+  }, [inconsistencies, searchQuery, formatProjectName]);
+
   // Mantener proyectos colapsados por defecto (no expandir automáticamente)
   // El usuario puede expandir manualmente si necesita ver detalles
 
@@ -466,14 +483,44 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
             </Tooltip>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-slate-600">
-            Se han detectado <strong>{inconsistencies.length}</strong> variación{inconsistencies.length !== 1 ? 'es' : ''}
-            {' '}en {format(viewDate, 'MMMM yyyy', { locale: es })}.
-          </p>
+        <CardContent className="space-y-4">
+          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 sm:p-4 space-y-3">
+            <div className="text-sm text-slate-600 leading-snug space-y-1">
+              <p>
+                Se han detectado <strong>{inconsistencies.length}</strong> variación{inconsistencies.length !== 1 ? 'es' : ''}
+                {' '}en {format(viewDate, 'MMMM yyyy', { locale: es })}.
+              </p>
+              {searchQuery.trim() && (
+                <p className="text-xs text-slate-500">
+                  Mostrando <strong>{visibleInconsistencies.length}</strong> de {inconsistencies.length} tras filtrar.
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="planning-inconsistencies-search" className="text-xs font-medium text-slate-500">
+                Filtrar por proyecto
+              </label>
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                <Input
+                  id="planning-inconsistencies-search"
+                  placeholder="Escribe el nombre del proyecto…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-10 w-full bg-white border-slate-200 shadow-sm"
+                  aria-label="Filtrar alertas de planificación por nombre de proyecto"
+                />
+              </div>
+            </div>
+          </div>
 
           <div className="space-y-1.5">
-            {inconsistencies.map(inc => {
+            {visibleInconsistencies.length === 0 ? (
+              <p className="text-sm text-slate-500 py-3">
+                No hay alertas que coincidan con tu búsqueda.
+              </p>
+            ) : visibleInconsistencies.map(inc => {
               const isExpanded = expandedProjects.has(inc.projectId);
               const hasMore = inc.teammates.length > 0;
               const isPositive = inc.difference > 0;
@@ -552,6 +599,22 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                               </>
                             )}
                           </div>
+
+                          {inc.difference < 0 && onAddTasksForProject && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onAddTasksForProject(inc.projectId);
+                              }}
+                              className={cn(addTasksButtonClass, 'flex-shrink-0')}
+                              aria-label="Añadir tareas a este proyecto"
+                            >
+                              <ListPlus className="h-3.5 w-3.5 shrink-0 text-violet-600" strokeWidth={2} aria-hidden />
+                              Añadir
+                            </Button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -588,6 +651,22 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                               <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-indigo-100 text-indigo-700 border-indigo-300 font-semibold">
                                 TUS DATOS
                               </Badge>
+
+                              {inc.difference < 0 && onAddTasksForProject && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onAddTasksForProject(inc.projectId);
+                                  }}
+                                  className={cn(addTasksButtonClass, 'flex-shrink-0')}
+                                  aria-label="Añadir tareas a este proyecto"
+                                >
+                                  <ListPlus className="h-3.5 w-3.5 shrink-0 text-violet-600" strokeWidth={2} aria-hidden />
+                                  Añadir
+                                </Button>
+                              )}
                             </div>
                             <div className="flex items-center gap-2 flex-wrap gap-y-1">
                               {inc.deadlineHours > 0 ? (

@@ -11,6 +11,7 @@ import {
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { useApp } from '@/contexts/AppContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TourStep {
   id: string;
@@ -197,6 +198,7 @@ interface WelcomeTourProps {
 
 export function WelcomeTour({ onComplete, forceShow = false, onTabChange, onDropdownOpen }: WelcomeTourProps) {
   const { currentUser, updateEmployee } = useApp();
+  const isMobile = useIsMobile();
   const [isVisible, setIsVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [highlightPos, setHighlightPos] = useState<HighlightPosition | null>(null);
@@ -399,13 +401,12 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange, onDrop
       });
     }
     
-    // Abrir dropdown si es necesario (similar a como funciona con tabs)
-    if (step.openDropdown && onDropdownOpen) {
+    // En móvil el menú «Acciones» debe abrirse para resaltar CRM / Objetivos / Ausencias. En escritorio esos targets son botones visibles.
+    if (step.openDropdown && onDropdownOpen && isMobile) {
       requestAnimationFrame(() => {
         onDropdownOpen(step.openDropdown!, true);
       });
-    } else if (onDropdownOpen && currentStep > 0) {
-      // Cerrar todos los dropdowns cuando no se necesita ninguno (pero no en el primer paso)
+    } else if (onDropdownOpen && currentStep > 0 && isMobile) {
       const prevStep = tourSteps[currentStep - 1];
       if (prevStep?.openDropdown) {
         requestAnimationFrame(() => {
@@ -413,7 +414,7 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange, onDrop
         });
       }
     }
-  }, [currentStep, isVisible, onTabChange, onDropdownOpen]);
+  }, [currentStep, isVisible, onTabChange, onDropdownOpen, isMobile]);
 
   // Actualizar posiciones cuando cambia el paso
   useEffect(() => {
@@ -429,14 +430,14 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange, onDrop
 
     // Para elementos en dropdowns o tabs, esperar más tiempo para que se rendericen
     // Tabs necesitan más tiempo porque el contenido se renderiza condicionalmente
-    const delay = step.openDropdown ? 600 : (step.tab ? 500 : 200);
+    const delay = step.openDropdown && isMobile ? 600 : (step.tab ? 500 : 200);
 
     const timeoutId = setTimeout(() => {
       calculatePositions();
     }, delay);
 
     return () => clearTimeout(timeoutId);
-  }, [currentStep, isVisible, calculatePositions]);
+  }, [currentStep, isVisible, calculatePositions, isMobile]);
 
   // Recalcular en resize/scroll
   useEffect(() => {
