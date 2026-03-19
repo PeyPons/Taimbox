@@ -273,6 +273,18 @@ export default function EmployeeDashboard() {
     setIsAddingTasks(true);
   };
 
+  const handleAddTasksOpenChange = (open: boolean) => {
+    if (!open) {
+      const hasUnsaved = newTasks.length > 1 || newTasks.some(t => t.taskName.trim() !== '' || t.hours !== '');
+      if (hasUnsaved) {
+        if (!window.confirm('Tienes tareas pendientes por guardar. ¿Seguro que quieres cerrar y perder los datos?')) {
+          return;
+        }
+      }
+    }
+    setIsAddingTasks(open);
+  };
+
   const addTaskRow = () => {
     const lastTask = newTasks[newTasks.length - 1];
     const defaultWeek = lastTask?.weekDate || (weeks[0]?.weekStart ? format(weeks[0].weekStart, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'));
@@ -824,7 +836,7 @@ export default function EmployeeDashboard() {
 
       {/* Dialogo Añadir Tareas (Bulk): Sheet en móvil, Dialog en desktop */}
       {isMobile ? (
-        <Sheet open={isAddingTasks} onOpenChange={setIsAddingTasks}>
+        <Sheet open={isAddingTasks} onOpenChange={handleAddTasksOpenChange}>
           <SheetContent side="bottom" className="h-[92vh] rounded-t-2xl p-0 flex flex-col">
             <SheetHeader className="px-4 py-3 border-b shrink-0">
               <SheetTitle className="flex items-center gap-2 text-base"><ListPlus className="h-5 w-5 text-primary" />Añadir tareas</SheetTitle>
@@ -871,7 +883,7 @@ export default function EmployeeDashboard() {
                 </p>
               )}
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setIsAddingTasks(false)} disabled={isSavingTasks} className="flex-1 h-11">Cancelar</Button>
+                <Button variant="outline" onClick={() => handleAddTasksOpenChange(false)} disabled={isSavingTasks} className="flex-1 h-11">Cancelar</Button>
                 <Button onClick={handleSaveTasks} disabled={isSavingTasks || !canSaveBulkTasks} className="flex-1 h-11">
                   {isSavingTasks ? 'Guardando...' : 'Guardar tareas'}
                 </Button>
@@ -880,7 +892,7 @@ export default function EmployeeDashboard() {
           </SheetContent>
         </Sheet>
       ) : (
-      <Dialog open={isAddingTasks} onOpenChange={setIsAddingTasks}>
+      <Dialog open={isAddingTasks} onOpenChange={handleAddTasksOpenChange}>
         <DialogContent className="sm:max-w-[1100px] h-[80vh] flex flex-col p-0 gap-0 overflow-hidden">
           <DialogHeader className="px-6 py-4 border-b shrink-0">
             <DialogTitle className="flex items-center gap-2"><ListPlus className="h-5 w-5 text-primary" />Añadir tareas</DialogTitle>
@@ -960,7 +972,7 @@ export default function EmployeeDashboard() {
                 <span className="text-slate-500">Listo para guardar las filas completas.</span>
               )}
             </div>
-            <Button variant="outline" onClick={() => setIsAddingTasks(false)} disabled={isSavingTasks}>Cancelar</Button>
+            <Button variant="outline" onClick={() => handleAddTasksOpenChange(false)} disabled={isSavingTasks}>Cancelar</Button>
             <Button onClick={handleSaveTasks} disabled={isSavingTasks || !canSaveBulkTasks}>
               {isSavingTasks ? (
                 <>

@@ -118,6 +118,34 @@ export function AllocationFormDialog({
     const [openWeek, setOpenWeek] = React.useState(false);
     const isMobile = useIsMobile();
 
+    const checkCanClose = () => {
+        if (!editingAllocation) {
+            const hasUnsaved = newTasks.length > 1 || newTasks.some(t => t.taskName.trim() !== '' || t.hours !== '');
+            if (hasUnsaved) {
+                return window.confirm('Tienes tareas pendientes por guardar. ¿Seguro que quieres cerrar y perder los datos?');
+            }
+        } else {
+            const hasEdits =
+                editTaskName !== editingAllocation.taskName ||
+                editHours !== editingAllocation.hoursAssigned.toString() ||
+                (editProjectId && editProjectId !== editingAllocation.projectId);
+            if (hasEdits) {
+                return window.confirm('Tienes cambios sin guardar. ¿Seguro que quieres cerrar y perder los datos?');
+            }
+        }
+        return true;
+    };
+
+    const handleOpenChange = (open: boolean) => {
+        if (!open && !checkCanClose()) return;
+        onOpenChange(open);
+    };
+
+    const handleCloseClick = () => {
+        if (!checkCanClose()) return;
+        onClose();
+    };
+
     // Derive month name for title
     const monthName = viewDate.toLocaleString('es-ES', { month: 'long' });
 
@@ -344,7 +372,7 @@ export function AllocationFormDialog({
             )}
             <div className="flex gap-2 ml-auto flex-1 sm:flex-initial justify-end">
                 {editingAllocation && <Button variant="ghost" size="sm" onClick={onDelete} className={cn("text-red-500 mr-auto", isMobile && "h-11 min-h-[44px]")} disabled={isSaving}><Trash2 className="w-4 h-4 mr-2" /> Eliminar</Button>}
-                <Button variant="ghost" onClick={onClose} disabled={isSaving} className={cn(isMobile && "h-11 min-h-[44px]")}>Cancelar</Button>
+                <Button variant="ghost" onClick={handleCloseClick} disabled={isSaving} className={cn(isMobile && "h-11 min-h-[44px]")}>Cancelar</Button>
                 <Button
                     onClick={onSave}
                     disabled={isSaving || (!editingAllocation && !canSubmitBatchAdd)}
@@ -373,7 +401,7 @@ export function AllocationFormDialog({
 
     if (isMobile) {
         return (
-            <Sheet open={isOpen} onOpenChange={onOpenChange}>
+            <Sheet open={isOpen} onOpenChange={handleOpenChange}>
                 <SheetContent side="bottom" className="h-[90vh] rounded-t-2xl p-0 gap-0 flex flex-col overflow-hidden">
                     {modalContent}
                 </SheetContent>
@@ -382,7 +410,7 @@ export function AllocationFormDialog({
     }
 
     return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <Dialog open={isOpen} onOpenChange={handleOpenChange}>
             <DialogContent className={cn("overflow-hidden gap-0 p-0 transition-all duration-300 max-w-[95vw] sm:max-w-[650px]", editingAllocation && "overflow-visible", !editingAllocation && "sm:max-w-[1100px] h-[85vh] sm:h-[80vh] flex flex-col")}>
                 {modalContent}
             </DialogContent>
