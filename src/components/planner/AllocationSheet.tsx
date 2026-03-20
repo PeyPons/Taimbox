@@ -1119,7 +1119,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                               <th className="py-2 px-3 text-center font-medium w-20">Horas</th>
                                               {isTimeTrackerEnabled && <th className="py-2 px-2 text-center font-medium w-28">Cronómetro</th>}
                                               <th className="py-2 px-3 text-center font-medium w-24">Real</th>
-                                              <th className="py-2 px-3 text-center font-medium w-24">Comp</th>
+                                              {preference !== 'actual' && <th className="py-2 px-3 text-center font-medium w-24">Comp</th>}
                                               <th className="py-2 px-3 text-center font-medium w-20">Balance</th>
                                               <th className="py-2 px-3 text-center font-medium w-12"></th>
                                             </tr>
@@ -1360,24 +1360,26 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                       <span className="text-slate-300 text-xs">-</span>
                                                     )}
                                                   </td>
-                                                  <td className="py-2 px-3 text-center" {...(isFirstTask && { 'data-tour': 'planner-hours' })}>
-                                                    {isCompleted ? (
-                                                      <input
-                                                        type="number"
-                                                        step="0.25"
-                                                        min="0"
-                                                        disabled={!!pendingTransfer || preference === 'actual'}
-                                                        defaultValue={alloc.hoursComputed || 0}
-                                                        onBlur={(e) => updateInlineHours(alloc, 'hoursComputed', e.target.value)}
-                                                        className={cn(
-                                                          "w-12 px-1 py-0.5 text-[10px] text-center border rounded font-mono",
-                                                          (pendingTransfer || preference === 'actual') ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-emerald-50 text-emerald-700"
-                                                        )}
-                                                      />
-                                                    ) : (
-                                                      <span className="text-slate-300 text-xs">-</span>
-                                                    )}
-                                                  </td>
+                                                  {preference !== 'actual' && (
+                                                    <td className="py-2 px-3 text-center" {...(isFirstTask && { 'data-tour': 'planner-hours' })}>
+                                                      {isCompleted ? (
+                                                        <input
+                                                          type="number"
+                                                          step="0.25"
+                                                          min="0"
+                                                          disabled={!!pendingTransfer || preference === 'actual'}
+                                                          defaultValue={alloc.hoursComputed || 0}
+                                                          onBlur={(e) => updateInlineHours(alloc, 'hoursComputed', e.target.value)}
+                                                          className={cn(
+                                                            "w-12 px-1 py-0.5 text-[10px] text-center border rounded font-mono",
+                                                            (pendingTransfer || preference === 'actual') ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-emerald-50 text-emerald-700"
+                                                          )}
+                                                        />
+                                                      ) : (
+                                                        <span className="text-slate-300 text-xs">-</span>
+                                                      )}
+                                                    </td>
+                                                  )}
                                                   <td className="py-2 px-3 text-center">
                                                     {isCompleted && taskBalance !== 0 ? (
                                                       taskBalance > 0 ? (
@@ -1497,7 +1499,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                             <th className="py-2 px-3 text-left font-medium w-8"></th>
                                             <th className="py-2 px-3 text-left font-medium">Tarea</th>
                                             <th className="py-2 px-2 text-center font-medium w-12">Horas</th>
-                                            <th className="py-2 px-2 text-center font-medium w-12">Comp</th>
+                                            {preference !== 'actual' && <th className="py-2 px-2 text-center font-medium w-12">Comp</th>}
                                           </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">

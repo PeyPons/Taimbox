@@ -764,6 +764,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                       placeholder="0.00" />
                                     <p className="text-xs text-muted-foreground">Trabajo efectuado</p>
                                   </div>
+                                  {preference !== 'actual' && (
                                   <div className="space-y-1.5">
                                     <Label className="text-sm font-medium">Horas computadas</Label>
                                     <Input type="text" inputMode="decimal" className="h-10 font-mono text-sm" value={hours.computed}
@@ -772,6 +773,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                       placeholder="0.00" />
                                     <p className="text-xs text-muted-foreground">Criterio de facturación</p>
                                   </div>
+                                  )}
                                 </div>
                                 <WeeklyOptionalNote value={taskComments[selectedTask.id] || ''} onChange={(v) => setTaskComments(prev => ({ ...prev, [selectedTask.id]: v }))} />
                               </div>
@@ -805,6 +807,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                       }}
                                       placeholder="0.00" />
                                   </div>
+                                  {preference !== 'actual' && (
                                   <div className="space-y-1.5">
                                     <Label className="text-sm font-medium">Horas computadas</Label>
                                     <Input type="text" inputMode="decimal" className="h-10 font-mono text-sm" value={hours.computed}
@@ -812,6 +815,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                       onChange={(e) => { const v = normalizeHourInput(e.target.value); setRolloverHours(prev => ({ ...prev, [selectedTask.id]: { ...prev[selectedTask.id], computed: v } })); }}
                                       placeholder="0.00" />
                                   </div>
+                                  )}
                                 </div>
                                 <div className="space-y-1.5 border-t pt-4">
                                   <Label className="text-sm font-medium">Semana de continuación *</Label>

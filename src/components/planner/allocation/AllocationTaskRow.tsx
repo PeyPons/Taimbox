@@ -309,6 +309,7 @@ export function AllocationTaskRow({
                                 <span className={cn("text-slate-300", isMobile ? "text-sm" : "text-[10px]")}>→</span>
 
                                 {/* COMP (editable) */}
+                                {preference !== 'actual' && (
                                 <div className={cn("flex items-center bg-emerald-100 text-emerald-800 rounded border border-emerald-200", isMobile ? "px-2 py-1" : "px-1.5 py-0.5")}>
                                     <span className={cn("font-medium mr-1", isMobile ? "text-sm" : "text-[10px]")}>Comp:</span>
                                     <input
@@ -321,6 +322,7 @@ export function AllocationTaskRow({
                                         className={cn("text-center bg-transparent border-0 focus:outline-none focus:bg-white rounded font-bold font-mono", isMobile ? "w-12 text-base min-h-[36px]" : "w-10 text-[11px]", preference === 'actual' ? "text-emerald-800/50 cursor-not-allowed" : "focus:ring-1 focus:ring-emerald-400")}
                                     />
                                 </div>
+                                )}
                             </div>
 
                             {/* BALANCE de la tarea (solo si hay diferencia) */}
