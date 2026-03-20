@@ -29,6 +29,7 @@ import { getWeekEndDate } from '@/utils/dateUtils';
 import { parseISO } from 'date-fns';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { TaskTimer } from '@/components/employee/TaskTimer';
+import { useAgency } from '@/contexts/AgencyContext';
 
 interface AllocationTaskRowProps {
     alloc: Allocation;
@@ -85,6 +86,8 @@ export function AllocationTaskRow({
     onTimeLogged,
 }: AllocationTaskRowProps) {
     const weeklyCloseDay = useWeeklyCloseDay();
+    const { currentAgency } = useAgency();
+    const preference = currentAgency?.settings?.hoursTrackingPreference;
 
     const isCompleted = alloc.status === 'completed';
     const pendingTransfer = (outgoingTransfers || []).find(t => t.allocationId === alloc.id && t.status === 'pending');
@@ -312,9 +315,10 @@ export function AllocationTaskRow({
                                         type="number"
                                         step="0.5"
                                         min="0"
+                                        disabled={preference === 'actual'}
                                         defaultValue={alloc.hoursComputed || 0}
                                         onBlur={(e) => onUpdateInlineHours('hoursComputed', e.target.value)}
-                                        className={cn("text-center bg-transparent border-0 focus:outline-none focus:bg-white focus:ring-1 focus:ring-emerald-400 rounded font-bold font-mono", isMobile ? "w-12 text-base min-h-[36px]" : "w-10 text-[11px]")}
+                                        className={cn("text-center bg-transparent border-0 focus:outline-none focus:bg-white rounded font-bold font-mono", isMobile ? "w-12 text-base min-h-[36px]" : "w-10 text-[11px]", preference === 'actual' ? "text-emerald-800/50 cursor-not-allowed" : "focus:ring-1 focus:ring-emerald-400")}
                                     />
                                 </div>
                             </div>

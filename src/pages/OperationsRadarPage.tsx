@@ -21,6 +21,7 @@ import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import type { Allocation, Deadline } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -287,7 +288,7 @@ export default function OperationsRadarPage() {
             const pendingTasks = projectAllocs.filter(a => a.status !== 'completed');
             const totalAssigned = projectAllocs.reduce((s, a) => s + (a.hoursAssigned || 0), 0);
             const hoursReal = completedTasks.reduce((s, a) => s + (a.hoursActual || 0), 0);
-            const hoursComputed = completedTasks.reduce((s, a) => s + (a.hoursComputed || 0), 0);
+            const hoursComputed = completedTasks.reduce((s, a) => s + getEffectiveCompletedHours(a, currentAgency?.settings?.hoursTrackingPreference), 0);
             const effectiveUsage = hoursComputed + pendingTasks.reduce((s, a) => s + (a.hoursAssigned || 0), 0);
             const budget = budgetByProject.get(projectId) ?? 0;
             const planningPct = budget > 0 ? (effectiveUsage / budget) * 100 : 0;

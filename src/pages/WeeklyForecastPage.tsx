@@ -33,6 +33,7 @@ import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { Deadline } from '@/types';
 import { getEffectiveBudget } from '@/utils/budgetUtils';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
+import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -200,9 +201,9 @@ export default function WeeklyForecastPage() {
       const completed = monthAllocations.filter(a => a.status === 'completed');
       const planned = monthAllocations.filter(a => a.status !== 'completed');
 
-      // Para tareas completadas: usar hoursComputed si existe (es la fuente de verdad de facturación), sino fallback a real/asignado
+      // Para tareas completadas: usar el preference
       const completedHours = round2(
-        completed.reduce((sum, a) => sum + (a.hoursComputed !== undefined ? a.hoursComputed : ((a.hoursActual || 0) > 0 ? (a.hoursActual || 0) : a.hoursAssigned)), 0)
+        completed.reduce((sum, a) => sum + getEffectiveCompletedHours(a, currentAgency?.settings?.hoursTrackingPreference), 0)
       );
 
       // Para tareas planificadas: usar hoursAssigned (son futuras)

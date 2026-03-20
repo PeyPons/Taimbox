@@ -119,6 +119,8 @@ export interface AgencySettings {
   ehrTarget?: number;
   /** Palabras clave en el nombre del proyecto que excluyen de la alerta "Poco avance" en el Radar operativo (fin de mes). Ej.: off-page, linkbuilding. */
   radarLowProgressExcludeKeywords?: string[];
+  /** Prioriza usar horas reales en lugar de horas computadas para el cálculo de facturación, progreso y rentabilidad */
+  hoursTrackingPreference?: 'computed' | 'actual';
 }
 
 export type AgencyStatus = 'active' | 'suspended';

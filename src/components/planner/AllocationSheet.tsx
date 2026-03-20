@@ -41,6 +41,7 @@ import { TransferRequestDialog } from '@/components/transfers/TaskTransferCompon
 import { useTaskTransfers } from '@/hooks/useTaskTransfers';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { useIntegration } from '@/hooks/useIntegration';
+import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -72,6 +73,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const { formatName: formatProjectName } = useProjectAliasing();
   const isWeeklyEnabled = useIntegration('weekly_feedback');
   const isTimeTrackerEnabled = (currentAgency?.settings?.modules?.timeTracker ?? false) && currentUser?.id === employeeId && currentUser?.user_id != null;
+  const preference = currentAgency?.settings?.hoursTrackingPreference;
 
   // Estados para los sheets de Timeline y Weekly
   const [timelineOpen, setTimelineOpen] = useState(false);
@@ -890,7 +892,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                       const weekEst = round2(weekAllocations.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0));
                       const completedTasks = weekAllocations.filter(a => a.status === 'completed');
                       const weekReal = round2(weekAllocations.reduce((sum, a) => sum + (a.hoursActual || 0), 0));
-                      const weekComp = round2(weekAllocations.reduce((sum, a) => sum + (a.hoursComputed || 0), 0));
+                      const weekComp = round2(weekAllocations.reduce((sum, a) => sum + (a.status === 'completed' ? getEffectiveCompletedHours(a, preference) : 0), 0));
                       const weekBalance = round2(weekComp - weekReal);
 
                       // Fechas de la semana (solo días laborables efectivos del mes: lun-vie, excluyendo fines de semana)
@@ -990,7 +992,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                 // Totales del proyecto esta semana (Real/Comp incluyen cronómetro en pendientes)
                                 const projEst = round2(projAllocations.reduce((s, a) => s + (a.hoursAssigned || 0), 0));
                                 const projReal = round2(projAllocations.reduce((s, a) => s + (a.hoursActual || 0), 0));
-                                const projComp = round2(projAllocations.reduce((s, a) => s + (a.hoursComputed || 0), 0));
+                                const projComp = round2(projAllocations.reduce((s, a) => s + (a.status === 'completed' ? getEffectiveCompletedHours(a, preference) : 0), 0));
+                                const hasAllocations = projAllocations.length > 0;
 
                                 return (
                                   <div
@@ -1363,12 +1366,12 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                         type="number"
                                                         step="0.25"
                                                         min="0"
-                                                        disabled={!!pendingTransfer}
+                                                        disabled={!!pendingTransfer || preference === 'actual'}
                                                         defaultValue={alloc.hoursComputed || 0}
                                                         onBlur={(e) => updateInlineHours(alloc, 'hoursComputed', e.target.value)}
                                                         className={cn(
                                                           "w-12 px-1 py-0.5 text-[10px] text-center border rounded font-mono",
-                                                          pendingTransfer ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-emerald-50 text-emerald-700"
+                                                          (pendingTransfer || preference === 'actual') ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-emerald-50 text-emerald-700"
                                                         )}
                                                       />
                                                     ) : (
@@ -1648,8 +1651,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                               <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg">
                                 <span className="text-slate-500">Plan:</span>
                                 <span className="font-bold tabular-nums text-slate-700">{weekEst}h</span>
-                                <span className="text-slate-300">/</span>
-                                <span className="tabular-nums text-slate-500">{load.capacity}h</span>
+                                <span className="text-slate-400">/</span>
+                                <span className="text-slate-500 font-medium">{load.capacity}h</span>
                               </div>
                               {weekEst !== load.capacity && (
                                 <div className={cn(
@@ -1725,7 +1728,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                               const myHoursInProject = {
                                 estimated: round2(projAllocations.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0)),
                                 completed: completedCount,
-                                computed: round2(projAllocations.filter(a => a.status === 'completed').reduce((sum, a) => sum + (a.hoursComputed || 0), 0))
+                                computed: round2(projAllocations.filter(a => a.status === 'completed').reduce((sum, a) => sum + getEffectiveCompletedHours(a, preference), 0))
                               };
 
                               const isSelected = selectedProjectId === projId;

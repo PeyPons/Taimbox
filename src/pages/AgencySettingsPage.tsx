@@ -206,6 +206,9 @@ export default function AgencySettingsPage() {
 
   /** Objetivo Precio Hora Efectivo (€/h) en Rentabilidad. Por defecto 75. */
   const [ehrTarget, setEhrTarget] = useState(currentAgency?.settings?.ehrTarget ?? 75);
+  const [hoursTrackingPreference, setHoursTrackingPreference] = useState<'computed' | 'actual'>(
+    currentAgency?.settings?.hoursTrackingPreference ?? 'computed'
+  );
 
   /** Palabras clave en nombre de proyecto que excluyen del riesgo "Poco avance" en Radar operativo. */
   const [radarLowProgressExcludeKeywords, setRadarLowProgressExcludeKeywords] = useState<string[]>(
@@ -263,6 +266,7 @@ export default function AgencySettingsPage() {
         clientIds: currentAgency.settings?.planningPrecisionExclusions?.clientIds ?? []
       });
       setEhrTarget(currentAgency.settings?.ehrTarget ?? 75);
+      setHoursTrackingPreference(currentAgency.settings?.hoursTrackingPreference ?? 'computed');
       setRadarLowProgressExcludeKeywords(currentAgency.settings?.radarLowProgressExcludeKeywords ?? []);
       fetchConnectedAccounts();
     }
@@ -367,6 +371,7 @@ export default function AgencySettingsPage() {
         planningPrecisionExclusions,
         timeTrackerMaxHours,
         ehrTarget,
+        hoursTrackingPreference,
         radarLowProgressExcludeKeywords
       });
 
@@ -663,6 +668,79 @@ export default function AgencySettingsPage() {
                     }}
                   />
                   <p className="text-xs text-slate-500">Valor mínimo considerado saludable. Por defecto 75 €/h.</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Preferencias de Seguimiento */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-primary" />
+                  Preferencia de Seguimiento
+                </CardTitle>
+                <CardDescription>
+                  Decide qué horas se utilizarán para calcular los progresos y la rentabilidad.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3 max-w-lg">
+                  <Label>Tipo de horas a priorizar</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label
+                      className={cn(
+                        "relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none",
+                        hoursTrackingPreference === 'computed' ? "border-indigo-600 ring-1 ring-indigo-600 bg-indigo-50/50" : "border-slate-300"
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="hours-pref"
+                        value="computed"
+                        className="sr-only"
+                        checked={hoursTrackingPreference === 'computed'}
+                        onChange={() => setHoursTrackingPreference('computed')}
+                      />
+                      <span className="flex flex-1">
+                        <span className="flex flex-col">
+                          <span className="block text-sm font-medium text-slate-900">Horas Computadas</span>
+                          <span className="mt-1 flex items-center text-sm text-slate-500">
+                            (Recomendado) Validadas tras el Weekly.
+                          </span>
+                        </span>
+                      </span>
+                      {hoursTrackingPreference === 'computed' && (
+                        <Check className="h-5 w-5 text-indigo-600 ml-3" aria-hidden="true" />
+                      )}
+                    </label>
+
+                    <label
+                      className={cn(
+                        "relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none",
+                        hoursTrackingPreference === 'actual' ? "border-indigo-600 ring-1 ring-indigo-600 bg-indigo-50/50" : "border-slate-300"
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="hours-pref"
+                        value="actual"
+                        className="sr-only"
+                        checked={hoursTrackingPreference === 'actual'}
+                        onChange={() => setHoursTrackingPreference('actual')}
+                      />
+                      <span className="flex flex-1">
+                        <span className="flex flex-col">
+                          <span className="block text-sm font-medium text-slate-900">Horas Reales</span>
+                          <span className="mt-1 flex items-center text-sm text-slate-500">
+                            Solo horas imputadas en el tracker.
+                          </span>
+                        </span>
+                      </span>
+                      {hoursTrackingPreference === 'actual' && (
+                        <Check className="h-5 w-5 text-indigo-600 ml-3" aria-hidden="true" />
+                      )}
+                    </label>
+                  </div>
                 </div>
               </CardContent>
             </Card>

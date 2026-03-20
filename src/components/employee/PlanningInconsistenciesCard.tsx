@@ -19,6 +19,7 @@ import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { format, isSameMonth, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
+import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 
 /** Píldora compacta: icono violeta (#7C3AED), texto gris pizarra, borde/sombra muy suaves (referencia UX). */
 const addTasksButtonClass =
@@ -43,6 +44,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
   const { allocations, projects, employees } = app;
   const deadlinesFromContext = (app as { deadlines?: Deadline[] }).deadlines;
   const { currentAgency } = useAgency();
+  const preference = currentAgency?.settings?.hoursTrackingPreference;
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
@@ -102,7 +104,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         allocationsByProject[a.projectId] = { planned: 0, computed: 0 };
       }
       if (a.status === 'completed') {
-        allocationsByProject[a.projectId].computed += a.hoursComputed || 0;
+        allocationsByProject[a.projectId].computed += getEffectiveCompletedHours(a, preference);
       } else {
         allocationsByProject[a.projectId].planned += a.hoursAssigned || 0;
       }
@@ -167,7 +169,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         // Calcular totales del proyecto (todos los empleados)
         const totalProjectComputed = allProjectAllocations
           .filter(a => a.status === 'completed')
-          .reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
+          .reduce((sum, a) => sum + getEffectiveCompletedHours(a, preference), 0);
         const totalProjectPlanned = allProjectAllocations
           .filter(a => a.status !== 'completed')
           .reduce((sum, a) => sum + (a.hoursAssigned || 0), 0);
@@ -194,7 +196,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
             allocationsByEmployee[a.employeeId] = { planned: 0, computed: 0 };
           }
           if (a.status === 'completed') {
-            allocationsByEmployee[a.employeeId].computed += a.hoursComputed || 0;
+            allocationsByEmployee[a.employeeId].computed += getEffectiveCompletedHours(a, preference);
           } else {
             allocationsByEmployee[a.employeeId].planned += a.hoursAssigned || 0;
           }
@@ -297,7 +299,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
         // Calcular totales del proyecto (todos los empleados)
         const totalProjectComputed = allProjectAllocations
           .filter(a => a.status === 'completed')
-          .reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
+          .reduce((sum, a) => sum + getEffectiveCompletedHours(a, preference), 0);
         const totalProjectPlanned = allProjectAllocations
           .filter(a => a.status !== 'completed')
           .reduce((sum, a) => sum + (a.hoursAssigned || 0), 0);
@@ -325,7 +327,7 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
             allocationsByEmployeeNoDeadline[a.employeeId] = { planned: 0, computed: 0 };
           }
           if (a.status === 'completed') {
-            allocationsByEmployeeNoDeadline[a.employeeId].computed += a.hoursComputed || 0;
+            allocationsByEmployeeNoDeadline[a.employeeId].computed += getEffectiveCompletedHours(a, preference);
           } else {
             allocationsByEmployeeNoDeadline[a.employeeId].planned += a.hoursAssigned || 0;
           }

@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useAgency } from '@/contexts/AgencyContext';
+import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 import { Allocation, Project } from '@/types';
 import { getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { format, isSameMonth, parseISO, addDays, startOfWeek } from 'date-fns';
@@ -26,6 +28,8 @@ export function useAllocationSheet(employeeId: string, viewDate: Date, deadlines
     employees, projects, allocations, getEmployeeAllocationsForWeek,
     getEmployeeLoadForWeek, getProjectById
   } = useApp();
+  const { currentAgency } = useAgency();
+  const preference = currentAgency?.settings?.hoursTrackingPreference;
 
   const employee = (employees || []).find(e => e.id === employeeId);
   const weeks = useMemo(() => getWeeksForMonth(viewDate), [viewDate]);
@@ -95,7 +99,7 @@ export function useAllocationSheet(employeeId: string, viewDate: Date, deadlines
       projectMap[a.projectId].totalTasks += 1;
       if (a.status === 'completed') {
         projectMap[a.projectId].completed += a.hoursActual || 0;
-        projectMap[a.projectId].computed += a.hoursComputed || 0;
+        projectMap[a.projectId].computed += getEffectiveCompletedHours(a, preference);
         projectMap[a.projectId].completedTasks += 1;
       }
     });
@@ -109,7 +113,7 @@ export function useAllocationSheet(employeeId: string, viewDate: Date, deadlines
         progress: p.estimated > 0 ? Math.round((p.computed / p.estimated) * 100) : 0
       }))
       .sort((a, b) => b.estimated - a.estimated);
-  }, [allocations, employeeId, viewDate, getProjectById]);
+  }, [allocations, employeeId, viewDate, getProjectById, preference]);
 
   // Calcular estado de horas contratadas de un proyecto (por mes, no por semana)
   const getProjectBudgetStatus = useMemo(() => {
@@ -137,7 +141,7 @@ export function useAllocationSheet(employeeId: string, viewDate: Date, deadlines
       let totalPlanned = 0;
 
       monthAllocations.forEach(a => {
-        const computed = a.status === 'completed' ? (a.hoursComputed || 0) : 0;
+        const computed = getEffectiveCompletedHours(a, preference);
         const planned = a.status !== 'completed' ? (a.hoursAssigned || 0) : 0;
         totalComputed += computed;
         totalPlanned += planned;
@@ -184,7 +188,7 @@ export function useAllocationSheet(employeeId: string, viewDate: Date, deadlines
         breakdown
       };
     };
-  }, [projects, allocations, employees, viewDate, deadlines]);
+  }, [projects, allocations, employees, viewDate, deadlines, preference]);
 
   // Filtrar y ordenar proyectos
   const getFilteredAndSortedProjects = (

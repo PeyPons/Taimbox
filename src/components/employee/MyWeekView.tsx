@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { Deadline } from '@/types';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
+import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 
 interface MyWeekViewProps {
   employeeId: string;
@@ -40,6 +41,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
   const [openFilterTeammate, setOpenFilterTeammate] = useState(false);
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
 
+  const preference = currentAgency?.settings?.hoursTrackingPreference;
   const monthKey = format(viewDate, 'yyyy-MM');
 
   useEffect(() => {
@@ -73,7 +75,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
 
     const totalEstimated = monthlyAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
     const totalReal = completed.reduce((sum, a) => sum + (a.hoursActual || 0), 0);
-    const totalComputed = completed.reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
+    const totalComputed = completed.reduce((sum, a) => sum + getEffectiveCompletedHours(a, preference), 0);
 
     const executionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
@@ -159,7 +161,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
 
       if (alloc.status === 'completed') {
         groups[alloc.projectId].myReal += alloc.hoursActual || 0;
-        groups[alloc.projectId].myComputed += alloc.hoursComputed || 0;
+        groups[alloc.projectId].myComputed += getEffectiveCompletedHours(alloc, preference);
         groups[alloc.projectId].myCompletedTasks += 1;
       }
     });
@@ -178,7 +180,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
         .reduce((sum, a) => sum + a.hoursAssigned, 0));
       const projectTotalComputedAll = round2(allProjectAllocations
         .filter(a => a.status === 'completed')
-        .reduce((sum, a) => sum + (a.hoursComputed || 0), 0));
+        .reduce((sum, a) => sum + getEffectiveCompletedHours(a, preference), 0));
 
       groups[projId].projectTotalAssigned = projectTotalAssigned;
       groups[projId].projectTotalPlanned = projectTotalPlanned;
@@ -218,7 +220,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
           }
           teammateData[a.employeeId].planned += a.hoursAssigned;
           if (a.status === 'completed') {
-            teammateData[a.employeeId].computed += a.hoursComputed || 0;
+            teammateData[a.employeeId].computed += getEffectiveCompletedHours(a, preference);
           }
         });
 

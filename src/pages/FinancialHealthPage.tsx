@@ -93,6 +93,12 @@ export default function FinancialHealthPage() {
     const { historyMinDate: minReportingMonth } = useSubscriptionLimits();
 
     useEffect(() => {
+        if (currentAgency?.settings?.hoursTrackingPreference) {
+            setHoursMode(currentAgency.settings.hoursTrackingPreference);
+        }
+    }, [currentAgency?.settings?.hoursTrackingPreference]);
+
+    useEffect(() => {
         ensureMonthLoaded(currentMonth);
     }, [currentMonth, ensureMonthLoaded]);
 

@@ -41,6 +41,7 @@ import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { supabase } from '@/lib/supabase';
 import { ClientsAndProjectsFilters, type ClientsAndProjectsFiltersValues, type FilterType, type StatusFilter } from '@/components/clients-projects/ClientsAndProjectsFilters';
+import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -241,7 +242,7 @@ export default function ClientsAndProjectsPage() {
       const pendingTasks = monthTasks.filter(t => t.status !== 'completed');
 
       const hoursReal = completedTasks.reduce((sum, t) => sum + (t.hoursActual || 0), 0);
-      const hoursComputed = completedTasks.reduce((sum, t) => sum + (t.hoursComputed || 0), 0);
+      const hoursComputed = completedTasks.reduce((sum, t) => sum + getEffectiveCompletedHours(t, currentAgency?.settings?.hoursTrackingPreference), 0);
       const gain = hoursComputed - hoursReal;
 
       // Calcular uso efectivo: Computadas (de completadas) + Planificadas (de pendientes)

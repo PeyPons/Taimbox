@@ -3,6 +3,8 @@ import { parseISO, isSameMonth, isBefore, isAfter, startOfMonth, endOfMonth, get
 import { useApp } from '../contexts/AppContext';
 import { Allocation, Project, Employee } from '../types';
 import { getEffectiveBudget } from '@/utils/budgetUtils';
+import { useAgency } from '../contexts/AgencyContext';
+import { getEffectiveAllocationHours } from '@/utils/hoursTracking';
 
 /**
  * Central metrics calculation hook.
@@ -103,7 +105,8 @@ function getWorkingDaysInPeriod(start: Date, end: Date): number {
  */
 function prorateHoursForMonth(
     allocation: Allocation,
-    month: Date
+    month: Date,
+    preference?: 'computed' | 'actual'
 ): { planned: number; actual: number; computed: number } {
     const weekStart = parseISO(allocation.weekStartDate);
     const weekEnd = new Date(weekStart);
@@ -117,7 +120,7 @@ function prorateHoursForMonth(
         return {
             planned: allocation.hoursAssigned || 0,
             actual: allocation.hoursActual || 0,
-            computed: allocation.hoursComputed || allocation.hoursActual || allocation.hoursAssigned || 0
+            computed: getEffectiveAllocationHours(allocation, preference)
         };
     }
 
@@ -136,12 +139,14 @@ function prorateHoursForMonth(
     return {
         planned: (allocation.hoursAssigned || 0) * ratio,
         actual: (allocation.hoursActual || 0) * ratio,
-        computed: (allocation.hoursComputed || allocation.hoursActual || allocation.hoursAssigned || 0) * ratio
+        computed: getEffectiveAllocationHours(allocation, preference) * ratio
     };
 }
 
 export function useProjectMetrics(options: UseProjectMetricsOptions): UseProjectMetricsResult {
     const { allocations, projects, clients, employees, isLoading } = useApp();
+    const { currentAgency } = useAgency();
+    const preference = currentAgency?.settings?.hoursTrackingPreference;
     const { month, projectId, employeeId, clientId, deadlines } = options;
 
     const result = useMemo(() => {
@@ -187,7 +192,7 @@ export function useProjectMetrics(options: UseProjectMetricsOptions): UseProject
             let totalComputed = 0;
 
             for (const allocation of projectAllocations) {
-                const prorated = prorateHoursForMonth(allocation, month);
+                const prorated = prorateHoursForMonth(allocation, month, preference);
                 totalPlanned += prorated.planned;
                 totalActual += prorated.actual;
                 totalComputed += prorated.computed;
@@ -249,7 +254,7 @@ export function useProjectMetrics(options: UseProjectMetricsOptions): UseProject
             const projectActual = new Map<string, number>();
 
             for (const allocation of empAllocations) {
-                const prorated = prorateHoursForMonth(allocation, month);
+                const prorated = prorateHoursForMonth(allocation, month, preference);
                 totalPlanned += prorated.planned;
                 totalActual += prorated.actual;
                 totalComputed += prorated.computed;
@@ -316,7 +321,7 @@ export function useProjectMetrics(options: UseProjectMetricsOptions): UseProject
             getProjectMetrics: (id: string) => projectMetricsMap.get(id),
             getEmployeeMetrics: (id: string) => employeeMetricsMap.get(id)
         };
-    }, [allocations, projects, clients, employees, month, projectId, employeeId, clientId, deadlines]);
+    }, [allocations, projects, clients, employees, month, projectId, employeeId, clientId, deadlines, preference]);
 
     return {
         ...result,

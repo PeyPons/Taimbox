@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { format, parseISO, startOfWeek, subWeeks, addDays, isBefore } from 'date-fns';
 import { getWeekEndDate } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
+import { useAgency } from '@/contexts/AgencyContext';
 import { es } from 'date-fns/locale';
 import { CheckCircle2, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -22,6 +23,8 @@ interface CloseTasksDialogProps {
 export function CloseTasksDialog({ open, onOpenChange, employeeId }: CloseTasksDialogProps) {
   const { allocations, projects, clients, updateAllocation } = useApp();
   const weeklyCloseDay = useWeeklyCloseDay();
+  const { currentAgency } = useAgency();
+  const preference = currentAgency?.settings?.hoursTrackingPreference;
 
   const [taskHours, setTaskHours] = useState<Record<string, { actual: string; computed: string }>>({});
 
@@ -164,6 +167,7 @@ export function CloseTasksDialog({ open, onOpenChange, employeeId }: CloseTasksD
                           type="number"
                           min="0"
                           step="0.5"
+                          disabled={preference === 'actual'}
                           placeholder={hours.actual || '0'}
                           value={hours.computed}
                           onChange={(e) => setTaskHours(prev => ({

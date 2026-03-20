@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { getStorageKey, getWeeksForMonth, isAllocationInEffectiveMonth, getWeekEndDate, collectSelectableFutureWeekSlots } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { cn } from '@/lib/utils';
+import { useAgency } from '@/contexts/AgencyContext';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 
 function WeeklyOptionalNote({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -45,6 +46,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
   const { allocations, projects, clients, employees, absences, teamEvents, weeklyFeedback, updateAllocation, addAllocation, deleteAllocation, addWeeklyFeedback, getEmployeeLoadForWeek, loadDataForMonth, ensureMonthLoaded } = useApp();
   const weeklyCloseDay = useWeeklyCloseDay();
   const { formatName: formatProjectName } = useProjectAliasing();
+  const { currentAgency } = useAgency();
+  const preference = currentAgency?.settings?.hoursTrackingPreference;
   const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
   const normalizeNumber = (value: string): string => value.replace(',', '.');
@@ -752,6 +755,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                   <div className="space-y-1.5">
                                     <Label className="text-sm font-medium">Horas computadas</Label>
                                     <Input type="text" inputMode="decimal" className="h-10 font-mono text-sm" value={hours.computed}
+                                      disabled={preference === 'actual'}
                                       onChange={(e) => { const v = normalizeHourInput(e.target.value); setKeepTaskHours(prev => ({ ...prev, [selectedTask.id]: { ...prev[selectedTask.id], computed: v } })); }}
                                       placeholder="0.00" />
                                     <p className="text-xs text-muted-foreground">Criterio de facturación</p>
@@ -782,6 +786,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                   <div className="space-y-1.5">
                                     <Label className="text-sm font-medium">Horas computadas</Label>
                                     <Input type="text" inputMode="decimal" className="h-10 font-mono text-sm" value={hours.computed}
+                                      disabled={preference === 'actual'}
                                       onChange={(e) => { const v = normalizeHourInput(e.target.value); setRolloverHours(prev => ({ ...prev, [selectedTask.id]: { ...prev[selectedTask.id], computed: v } })); }}
                                       placeholder="0.00" />
                                   </div>

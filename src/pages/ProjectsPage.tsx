@@ -32,6 +32,7 @@ import { Project, OKR } from '@/types';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { toast } from 'sonner';
+import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -105,7 +106,7 @@ export default function ProjectsPage() {
         const pendingTasks = monthTasks.filter(t => t.status !== 'completed');
 
         const hoursReal = completedTasks.reduce((sum, t) => sum + (t.hoursActual || 0), 0);
-        const hoursComputed = completedTasks.reduce((sum, t) => sum + (t.hoursComputed || 0), 0);
+        const hoursComputed = completedTasks.reduce((sum, t) => sum + getEffectiveCompletedHours(t, currentAgency?.settings?.hoursTrackingPreference), 0);
         const gain = hoursComputed - hoursReal;
 
         const budget = project.budgetHours || 0;

@@ -23,6 +23,7 @@ import { format, isSameMonth, parseISO, startOfMonth, endOfMonth } from 'date-fn
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
+import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 
 interface GlobalPlanningInconsistenciesProps {
   viewDate: Date;
@@ -62,6 +63,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
 }: GlobalPlanningInconsistenciesProps) {
   const { allocations, projects, employees, clients } = useApp();
   const { currentAgency } = useAgency();
+  const preference = currentAgency?.settings?.hoursTrackingPreference;
   const { selectedDepartmentId } = useDepartmentView();
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -140,7 +142,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
         allocationsByProjectAndEmployee[a.projectId][a.employeeId] = { planned: 0, computed: 0 };
       }
       if (a.status === 'completed') {
-        allocationsByProjectAndEmployee[a.projectId][a.employeeId].computed += a.hoursComputed || 0;
+        allocationsByProjectAndEmployee[a.projectId][a.employeeId].computed += getEffectiveCompletedHours(a, preference);
       } else {
         allocationsByProjectAndEmployee[a.projectId][a.employeeId].planned += a.hoursAssigned || 0;
       }
