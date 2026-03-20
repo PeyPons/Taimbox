@@ -5,11 +5,14 @@ import { format, parseISO } from 'date-fns';
 import { getWeekEndDate } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import { useAgency } from '@/contexts/AgencyContext';
 import { toast } from 'sonner';
 
 export function useAllocationActions(employeeId: string, weeks: { weekStart: Date }[], canAssignToOthers: boolean, isWeeklyEnabled: boolean = true) {
     const { addAllocation, updateAllocation, deleteAllocation } = useApp();
     const weeklyCloseDay = useWeeklyCloseDay();
+    const { currentAgency } = useAgency();
+    const preference = currentAgency?.settings?.hoursTrackingPreference;
     const { isSoftLocked } = useSubscriptionLimits();
 
     // Guard: block all write operations when agency exceeds plan limits
@@ -247,7 +250,11 @@ export function useAllocationActions(employeeId: string, weeks: { weekStart: Dat
     const updateInlineHours = (allocation: Allocation, field: 'hoursActual' | 'hoursComputed', value: string) => {
         const numValue = parseFloat(value) || 0;
         if (allocation[field] !== numValue) {
-            updateAllocation({ ...allocation, [field]: numValue });
+            const updates: Partial<Allocation> = { [field]: numValue };
+            if (field === 'hoursActual' && preference === 'actual') {
+                updates.hoursComputed = numValue;
+            }
+            updateAllocation({ ...allocation, ...updates });
         }
     };
 

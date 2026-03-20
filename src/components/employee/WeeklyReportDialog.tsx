@@ -441,7 +441,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
         } else if (action === 'keep') {
           const hours = keepTaskHours[task.id];
           const actual = hours ? parseHours(hours.actual) : (task.hoursActual || task.hoursAssigned);
-          const computed = hours ? parseHours(hours.computed) : (task.hoursComputed || actual);
+          const computed = preference === 'actual' ? actual : (hours ? parseHours(hours.computed) : (task.hoursComputed || actual));
           if (actual <= 0) { toast.error(`"${task.taskName}" necesita horas reales mayores a 0`); continue; }
           await updateAllocation({ ...task, hoursActual: actual, hoursComputed: computed, status: 'completed' });
           const comment = taskComments[task.id] || `Tarea completada: ${actual.toFixed(2)}h reales, ${computed.toFixed(2)}h computadas`;
@@ -454,7 +454,9 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
           const destSlot = slots.find(s => s.storageKey === destWeekStr);
           if (!hours || !newHoursEstimate) { toast.error(`"${task.taskName}" necesita horas completas`); continue; }
           if (!destWeekStr || !destSlot) { toast.error(`"${task.taskName}": elige semana destino`); continue; }
-          const actual = parseHours(hours.actual); const computed = parseHours(hours.computed) || actual; const newEstimate = parseHours(newHoursEstimate);
+          const actual = parseHours(hours.actual); 
+          const computed = preference === 'actual' ? actual : (parseHours(hours.computed) || actual); 
+          const newEstimate = parseHours(newHoursEstimate);
           if (actual <= 0) { toast.error(`"${task.taskName}" necesita horas reales > 0`); continue; }
           if (newEstimate <= 0) { toast.error(`"${task.taskName}" necesita horas planificadas > 0`); continue; }
           await updateAllocation({ ...task, hoursActual: actual, hoursComputed: computed, status: 'completed' });
@@ -748,7 +750,17 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                   <div className="space-y-1.5">
                                     <Label className="text-sm font-medium">Horas reales *</Label>
                                     <Input type="text" inputMode="decimal" className="h-10 font-mono text-sm" value={hours.actual}
-                                      onChange={(e) => { const v = normalizeHourInput(e.target.value); setKeepTaskHours(prev => ({ ...prev, [selectedTask.id]: { ...prev[selectedTask.id], actual: v } })); }}
+                                      onChange={(e) => { 
+                                        const v = normalizeHourInput(e.target.value); 
+                                        setKeepTaskHours(prev => ({ 
+                                          ...prev, 
+                                          [selectedTask.id]: { 
+                                            ...prev[selectedTask.id], 
+                                            actual: v,
+                                            ...(preference === 'actual' ? { computed: v } : {}) 
+                                          } 
+                                        })); 
+                                      }}
                                       placeholder="0.00" />
                                     <p className="text-xs text-muted-foreground">Trabajo efectuado</p>
                                   </div>
@@ -780,7 +792,17 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                   <div className="space-y-1.5">
                                     <Label className="text-sm font-medium">Horas realizadas *</Label>
                                     <Input type="text" inputMode="decimal" className="h-10 font-mono text-sm" value={hours.actual}
-                                      onChange={(e) => { const v = normalizeHourInput(e.target.value); setRolloverHours(prev => ({ ...prev, [selectedTask.id]: { ...prev[selectedTask.id], actual: v } })); }}
+                                      onChange={(e) => { 
+                                        const v = normalizeHourInput(e.target.value); 
+                                        setRolloverHours(prev => ({ 
+                                          ...prev, 
+                                          [selectedTask.id]: { 
+                                            ...prev[selectedTask.id], 
+                                            actual: v,
+                                            ...(preference === 'actual' ? { computed: v } : {}) 
+                                          } 
+                                        })); 
+                                      }}
                                       placeholder="0.00" />
                                   </div>
                                   <div className="space-y-1.5">

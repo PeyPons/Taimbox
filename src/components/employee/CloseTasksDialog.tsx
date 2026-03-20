@@ -66,7 +66,7 @@ export function CloseTasksDialog({ open, onOpenChange, employeeId }: CloseTasksD
         if (!hours) continue;
 
         const actual = parseFloat(hours.actual) || 0;
-        const computed = parseFloat(hours.computed) || actual; // Si no se especifica, usar actual
+        const computed = preference === 'actual' ? actual : (parseFloat(hours.computed) || actual); // Si no se especifica, usar actual
 
         if (actual <= 0) {
           toast.error(`"${task.taskName}" necesita horas reales mayores a 0`);
@@ -153,7 +153,11 @@ export function CloseTasksDialog({ open, onOpenChange, employeeId }: CloseTasksD
                           value={hours.actual}
                           onChange={(e) => setTaskHours(prev => ({
                             ...prev,
-                            [task.id]: { ...prev[task.id], actual: e.target.value }
+                            [task.id]: { 
+                              ...prev[task.id], 
+                              actual: e.target.value,
+                              ...(preference === 'actual' ? { computed: e.target.value } : {})
+                            }
                           }))}
                           className="h-9"
                         />
