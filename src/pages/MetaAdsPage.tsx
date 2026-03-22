@@ -61,6 +61,8 @@ export default function MetaAdsPage() {
   const [segmentationRules, setSegmentationRules] = useState<SegmentationRule[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showHidden, setShowHidden] = useState(false);
+  /** Si es true, también se listan cuentas con gasto 0 € en el mes. Si es false (defecto), se ocultan. Misma lógica que Google Ads. */
+  const [showZeroSpend, setShowZeroSpend] = useState(false);
   const [expandedSubAccounts, setExpandedSubAccounts] = useState<Record<string, boolean>>({});
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncLogs, setSyncLogs] = useState<string[]>([]);
@@ -257,9 +259,10 @@ export default function MetaAdsPage() {
     });
     let filtered = report;
     if (!showHidden) filtered = filtered.filter(c => !c.isHidden);
+    if (!showZeroSpend) filtered = filtered.filter(c => c.spent > 0);
     if (searchTerm) { const lower = searchTerm.toLowerCase(); filtered = filtered.filter(c => c.client_name.toLowerCase().includes(lower) || c.campaigns.some(camp => camp.campaign_name.toLowerCase().includes(lower))); }
     return filtered.sort((a, b) => b.spent - a.spent);
-  }, [rawData, clientSettings, registeredAccounts, searchTerm, showHidden, segmentationRules, now, currentDay, daysInMonth, daysRemaining]);
+  }, [rawData, clientSettings, registeredAccounts, searchTerm, showHidden, showZeroSpend, segmentationRules, now, currentDay, daysInMonth, daysRemaining]);
 
   const globalStats = useMemo(() => {
     const totalBudget = reportData.reduce((acc, r) => acc + r.budget, 0), totalSpent = reportData.reduce((acc, r) => acc + r.spent, 0);
@@ -301,7 +304,11 @@ export default function MetaAdsPage() {
 
         <div className="flex flex-col sm:flex-row gap-3 items-center bg-white p-3 rounded-xl border shadow-sm">
           <div className="relative flex-1 w-full"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /><Input placeholder="Buscar cuenta o campaña..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 bg-slate-50 border-slate-200" />{searchTerm && <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setSearchTerm('')}><X className="h-3 w-3" /></Button>}</div>
-          <div className="flex items-center gap-4"><div className="flex items-center gap-2"><Switch id="show-hidden" checked={showHidden} onCheckedChange={setShowHidden} /><Label htmlFor="show-hidden" className="text-sm text-slate-600 cursor-pointer flex items-center gap-1">{showHidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}Ocultos</Label></div><span className="text-sm text-slate-500">{reportData.length} cuentas</span></div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <div className="flex items-center gap-2"><Switch id="show-hidden-meta" checked={showHidden} onCheckedChange={setShowHidden} /><Label htmlFor="show-hidden-meta" className="text-sm text-slate-600 cursor-pointer flex items-center gap-1">{showHidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}Ocultos</Label></div>
+            <div className="flex items-center gap-2"><Switch id="show-zero-spend-meta" checked={showZeroSpend} onCheckedChange={setShowZeroSpend} /><Label htmlFor="show-zero-spend-meta" className="text-sm text-slate-600 cursor-pointer">Sin inversión (0 €)</Label></div>
+            <span className="text-sm text-slate-500">{reportData.length} cuentas</span>
+          </div>
         </div>
       </div>
 
