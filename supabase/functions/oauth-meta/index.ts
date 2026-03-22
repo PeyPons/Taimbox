@@ -63,7 +63,18 @@ Deno.serve(async (req) => {
         tokenUrl.searchParams.set('redirect_uri', finalRedirectUri)
         tokenUrl.searchParams.set('code', code)
 
-        const tokenRes = await fetch(tokenUrl.toString())
+        let tokenRes: Response
+        try {
+            tokenRes = await fetch(tokenUrl.toString())
+        } catch (e: unknown) {
+            const net = e instanceof Error ? e.message : String(e)
+            if (/name resolution|getaddrinfo|dns|network/i.test(net)) {
+                throw new Error(
+                    'No hay resolución DNS/red desde el contenedor hacia graph.facebook.com. Revisa DNS del servicio edge-functions (p. ej. dns: [8.8.8.8] en docker-compose) o conectividad saliente.'
+                )
+            }
+            throw new Error(`Error de red al llamar a Meta: ${net}`)
+        }
         const tokenText = await tokenRes.text()
         let tokenJson: Record<string, unknown>
         try {
@@ -95,7 +106,13 @@ Deno.serve(async (req) => {
         longUrl.searchParams.set('client_secret', clientSecret)
         longUrl.searchParams.set('fb_exchange_token', shortLived)
 
-        const longRes = await fetch(longUrl.toString())
+        let longRes: Response
+        try {
+            longRes = await fetch(longUrl.toString())
+        } catch (e: unknown) {
+            const net = e instanceof Error ? e.message : String(e)
+            throw new Error(`Error de red al intercambiar token largo en Meta: ${net}`)
+        }
         const longText = await longRes.text()
         let longJson: Record<string, unknown>
         try {

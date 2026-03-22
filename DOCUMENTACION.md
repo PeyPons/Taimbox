@@ -471,7 +471,7 @@ docker logs supabase-edge-functions --tail 50 -f
 
 #### Solución de problemas: 503 Service Unavailable
 
-Si al vincular Google Ads o listar cuentas aparece **503 (Service Unavailable)** en `oauth-google-ads` o `list-google-accounts`, suele deberse a:
+Si al vincular **Google Ads**, **Meta Ads** o listar cuentas aparece **503 (Service Unavailable)** en `oauth-google-ads`, `list-google-accounts`, `oauth-meta` o `list-meta-accounts`, suele deberse a:
 
 1. **Funciones no desplegadas o desactualizadas**  
    Asegúrate de haber copiado las funciones al volumen y reiniciado el contenedor (ver comandos de despliegue arriba).
@@ -480,11 +480,24 @@ Si al vincular Google Ads o listar cuentas aparece **503 (Service Unavailable)**
    Las funciones necesitan en el contenedor `supabase-edge-functions`:
    - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
    - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (para `oauth-google-ads`)
-   - `GOOGLE_DEVELOPER_TOKEN` (para `list-google-accounts`)  
+   - `GOOGLE_DEVELOPER_TOKEN` (para `list-google-accounts`)
+   - `META_APP_ID`, `META_APP_SECRET` (para `oauth-meta` / Meta Ads)  
    Si falta alguna, la función puede fallar antes de devolver una respuesta controlada y el runtime devuelve 503.
 
 3. **Crash no capturado**  
    Si el body de la petición está vacío o no es JSON válido, las funciones devuelven **400** con mensaje claro. Si aun así ves 503, revisa los logs del contenedor para ver el stack trace.
+
+4. **DNS / «name resolution failed» (Meta Ads, Google, listados)**  
+   Si el body del error o los logs mencionan **`name resolution failed`** o fallos al resolver `graph.facebook.com` / `googleapis.com`, el contenedor **`supabase-edge-functions`** no está resolviendo nombres correctamente (común en Docker con DNS del host defectuoso o redes aisladas). El frontend reintenta automáticamente algunas llamadas ante 503, pero hay que corregir la red:
+   - En el `docker-compose` del servicio `functions`, añadir DNS públicos, p. ej.:
+     ```yaml
+     dns:
+       - 8.8.8.8
+       - 8.8.4.4
+     ```
+   - Reiniciar: `docker compose up -d functions` (o el comando equivalente en tu stack).
+   - Comprobar desde el contenedor: `docker exec -it supabase-edge-functions wget -qO- --timeout=5 https://graph.facebook.com/v21.0/ 2>&1 | head` (o `curl` si está instalado). Si falla por DNS, el problema es de resolución, no de código.
+   - Asegurar también que `SUPABASE_URL` sea alcanzable **desde dentro** del contenedor (p. ej. `http://kong:8000` en la red Docker de Supabase); si el runtime no puede resolver `kong`, el cliente de Supabase fallará al guardar el token tras OAuth.
 
 **Comprobar en el servidor:**
 - Que existan las carpetas `oauth-google-ads` y `list-google-accounts` dentro del volumen de functions.

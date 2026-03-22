@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/lib/supabase';
+import { invokeEdgeFunctionWithRetry } from '@/lib/invokeEdgeFunction';
 import { cn } from '@/lib/utils';
 import { useAgency } from '@/contexts/AgencyContext';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -76,11 +77,11 @@ function GoogleAdsAccountSelect({
       setLoading(true);
       setError(null);
       try {
-        const { data, err } = await supabase.functions.invoke('list-google-accounts', {
-          body: { agency_id: agencyId }
-        });
+        const { data, error } = await invokeEdgeFunctionWithRetry('list-google-accounts', {
+          agency_id: agencyId,
+        }, { retries: 4, baseDelayMs: 750 });
         if (cancelled) return;
-        if (err) throw err;
+        if (error) throw error;
         if (data?.error) throw new Error(data.error);
         setAccounts(data?.accounts ?? []);
       } catch (e: unknown) {
@@ -1904,8 +1905,9 @@ export default function AgencySettingsPage() {
                             if (!currentAgency?.id) return;
                             setSyncingMetaAccounts(true);
                             try {
-                              const { data, error } = await supabase.functions.invoke('list-meta-accounts', {
-                                body: { agency_id: currentAgency.id, sync_config: true },
+                              const { data, error } = await invokeEdgeFunctionWithRetry('list-meta-accounts', {
+                                agency_id: currentAgency.id,
+                                sync_config: true,
                               });
                               if (error) throw error;
                               if (data?.error) throw new Error(data.error);

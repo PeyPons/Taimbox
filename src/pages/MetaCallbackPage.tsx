@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { invokeEdgeFunctionWithRetry } from '@/lib/invokeEdgeFunction';
 import { useAgency } from '@/contexts/AgencyContext';
 import { toast } from 'sonner';
 
@@ -61,17 +62,22 @@ export default function MetaCallbackPage() {
 
             try {
                 const redirectUri = `${window.location.origin}/meta-callback`;
-                const { data, error: fnError } = await supabase.functions.invoke('oauth-meta', {
-                    body: { code, redirect_uri: redirectUri, agency_id: agencyId },
+                const { data, error: fnError } = await invokeEdgeFunctionWithRetry('oauth-meta', {
+                    code,
+                    redirect_uri: redirectUri,
+                    agency_id: agencyId,
                 });
 
                 if (fnError) throw fnError;
                 if (data?.error) throw new Error(data.error);
 
                 try {
-                    await supabase.functions.invoke('list-meta-accounts', {
-                        body: { agency_id: agencyId, sync_config: true },
-                    });
+                    const { error: listErr } = await invokeEdgeFunctionWithRetry(
+                        'list-meta-accounts',
+                        { agency_id: agencyId, sync_config: true },
+                        { retries: 2, baseDelayMs: 600 }
+                    );
+                    if (listErr) console.warn('list-meta-accounts tras OAuth:', listErr);
                 } catch (e) {
                     console.warn('list-meta-accounts tras OAuth:', e);
                 }
@@ -81,7 +87,11 @@ export default function MetaCallbackPage() {
                 navigate('/agency?tab=integrations');
             } catch (err: unknown) {
                 console.error('Error intercambiando token Meta:', err);
-                const msg = err instanceof Error ? err.message : 'Inténtalo de nuevo.';
+                let msg = err instanceof Error ? err.message : 'Inténtalo de nuevo.';
+                if (/name resolution|getaddrinfo/i.test(msg)) {
+                    msg =
+                        'El servidor de integraciones no pudo resolver red/DNS (503). Revisa DNS del contenedor edge-functions o reintenta en unos segundos.';
+                }
                 toast.error(`Error al vincular Meta: ${msg}`);
                 navigate('/agency?tab=integrations');
             }
