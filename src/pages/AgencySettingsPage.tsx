@@ -109,7 +109,7 @@ function GoogleAdsAccountSelect({
   );
 }
 
-const META_OAUTH_SCOPES = 'ads_read,read_insights';
+const META_OAUTH_SCOPES = 'ads_read';
 
 const TAB_VALUES = ['general', 'team', 'projects', 'modules', 'integrations', 'departments', 'appearance', 'billing'] as const;
 

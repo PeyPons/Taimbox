@@ -376,17 +376,24 @@ Si en BD antigua quedó `settings.integrations.metaAccessToken`, el backend aún
 
 **Flujo OAuth:**
 1. Configuración → Integraciones → Meta Ads → **Conectar con Meta**.
-2. El frontend redirige a Facebook con `VITE_META_APP_ID`, `scope=ads_read,read_insights` y `state` (identifica la agencia vía `sessionStorage`).
+2. El frontend redirige a Facebook con `VITE_META_APP_ID`, `scope=ads_read` y `state` (identifica la agencia vía `sessionStorage`). No incluir `read_insights` en el OAuth: no es un permiso válido del diálogo de Login; el acceso a métricas de campañas publicitarias queda cubierto por `ads_read`.
 3. Meta redirige a `/meta-callback?code=...` → `MetaCallbackPage.tsx` invoca `oauth-meta` con `{ code, redirect_uri, agency_id }`.
 4. La Edge Function intercambia el código por token corto y luego por **long-lived token** (Graph API `oauth/access_token` con `fb_exchange_token`) y guarda el resultado en `agencies.meta_ads_access_token`.
 5. Opcionalmente se llama a `list-meta-accounts` para rellenar/actualizar `ad_accounts_config` con las cuentas publicitarias (`/me/adaccounts`).
 6. `sync-meta-ads` usa el token en este orden: columna `meta_ads_access_token` → (respaldo) `integrations.metaAccessToken` en JSON legado → `META_ACCESS_TOKEN` (entorno, opcional).
 
 **Ajustes en Meta for Developers (app Taimbox):**
-- **Inicio de sesión con Facebook para empresas** → Configuración: URI de redirección OAuth válidos → `https://taimbox.com/meta-callback` (y para desarrollo local, `http://localhost:8080/meta-callback`).
-- **Dominios admitidos para el SDK para JavaScript:** `taimbox.com`.
-- **Información básica:** dominios de la aplicación `taimbox.com`, URL del sitio `https://taimbox.com/`, política de privacidad y condiciones (`/privacidad`, `/condiciones`).
-- La URL de Supabase/API (`api.taimbox.com`) **no** debe usarse como redirect OAuth del frontend; el callback es siempre el origen de la app (`taimbox.com` o `localhost`).
+- **Inicio de sesión con Facebook para empresas** → Configuración: URI de redirección OAuth válidos → deben coincidir **exactamente** con el origen real de la SPA + `/meta-callback`: p. ej. `https://taimbox.com/meta-callback` y, si los usuarios entran por subdominio `www`, también `https://www.taimbox.com/meta-callback`. En local: `http://localhost:8080/meta-callback` (o el puerto que use Vite; debe ser el mismo que `window.location.origin` al pulsar "Conectar").
+- **Dominios admitidos para el SDK para JavaScript:** incluir cada host desde el que se carga la app (p. ej. `taimbox.com` y, si aplica, `www.taimbox.com`; para pruebas en máquina, `localhost`).
+- **Información básica → Dominios de la aplicación:** sin `http://` ni `https://`. Como mínimo `taimbox.com`. Si el tráfico entra por **www**, añade también **`www.taimbox.com`** como entrada aparte (Meta trata apex y www como hosts distintos). Para desarrollo local añade **`localhost`**. La URL del sitio puede ser `https://taimbox.com/` o `https://www.taimbox.com/` según el canónico que uses; política y condiciones (`/privacidad`, `/condiciones`) como ya están documentadas.
+- La URL de Supabase/API (`api.taimbox.com`) **no** debe usarse como redirect OAuth del frontend; el callback es siempre el origen de la app (`taimbox.com`, `www` si aplica, o `localhost`).
+
+**Solución de problemas — error Meta: «No se puede cargar la URL / El dominio de esta URL no está incluido en los dominios de la aplicación»:**
+1. Identifica el **host exacto** de la barra de direcciones cuando falla (p. ej. `www.taimbox.com` frente a `taimbox.com`, o `localhost:5173` en dev).
+2. En **Información básica → Dominios de la aplicación**, añade ese dominio **sin puerto** (solo `localhost` para local; el puerto va en las URIs de redirección OAuth, no en "dominios de la aplicación").
+3. En **Inicio de sesión con Facebook para empresas → Configuración**, añade la **URI de redirección OAuth válida** completa: `https://<mismo-host>/meta-callback` (incluido esquema `http`/`https` y puerto si no es 80/443).
+4. En **Dominios admitidos para el SDK para JavaScript**, alinea los mismos hosts que en el paso 2.
+5. Guarda cambios en Meta y vuelve a probar; el `redirect_uri` que envía el frontend es siempre `${window.location.origin}/meta-callback` (`AgencySettingsPage.tsx` / `MetaCallbackPage.tsx`).
 
 **Migración SQL:** `supabase/migrations/20250322120000_meta_ads_access_token.sql` añade la columna `meta_ads_access_token` en `agencies` (ejecutar en la instancia antes de usar OAuth en producción).
 
