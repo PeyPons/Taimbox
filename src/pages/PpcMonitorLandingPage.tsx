@@ -121,12 +121,12 @@ function MockForecast() {
                     <div className="flex items-start gap-3">
                         <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
                         <div>
-                            <p className="text-xs text-indigo-100/90 font-medium mb-1">Ajuste diario recomendado</p>
-                            <p className="text-[11px] text-indigo-200/70 mb-2">Para aterrizar en 10.000€ el día 30, debes bajar el gasto diario de inmediato.</p>
+                            <p className="text-xs text-indigo-100/90 font-medium mb-1">Ritmo recomendado</p>
+                            <p className="text-[11px] text-indigo-200/70 mb-2">Para aterrizar en 10.000€ a fin de mes, hay que bajar el gasto medio diario respecto al ritmo actual.</p>
                             <div className="flex items-center gap-2">
-                                <span className="text-xs text-slate-400 line-through">416€ / día</span>
+                                <span className="text-xs text-slate-400 line-through">416€ / día (ritmo)</span>
                                 <ArrowRight className="h-3 w-3 text-slate-500" />
-                                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 animate-pulse">250€ / día</span>
+                                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 animate-pulse">250€ / día (objetivo)</span>
                             </div>
                         </div>
                     </div>
@@ -306,11 +306,11 @@ export default function PpcMonitorLandingPage() {
                                     Un despiste en Ads cuesta muy caro
                                 </h2>
                                 <p className="text-indigo-100/90 mb-4 leading-relaxed">
-                                    En una agencia, un error humano al configurar el presupuesto diario significa que <strong className="text-white">la agencia paga la diferencia</strong>. Deja de depender de hojas de Excel desactualizadas y de la memoria de tus Media Buyers.
+                                    En Google Ads, un error al configurar el <strong className="text-white">presupuesto diario</strong> de una campaña puede disparar el gasto. En Meta Ads los límites se reparten entre campaña, conjunto y presupuesto compartido: el riesgo es el mismo (sobrecoste), pero el origen del fallo es distinto. Deja de depender de Excel y de revisar cuenta por cuenta cada mañana.
                                 </p>
                                 <div className="rounded-xl border-l-4 border-red-400 bg-red-500/10 border border-red-500/20 p-4">
                                     <p className="text-red-100/90 text-sm m-0">
-                                        <strong className="text-white">Dato real:</strong> Basta un «0» de más en el presupuesto diario de una campaña para quemar 10× el budget pactado con tu cliente en un solo fin de semana.
+                                        <strong className="text-white">Dato real:</strong> Un despiste en el límite de gasto (especialmente en Google, donde el «presupuesto diario» es muy explícito) puede hacer que quemes varias veces el budget pactado con tu cliente en pocos días.
                                     </p>
                                 </div>
                             </div>
@@ -345,7 +345,7 @@ export default function PpcMonitorLandingPage() {
                                 {
                                     icon: AlertTriangle,
                                     title: 'Calculadora de previsiones',
-                                    desc: 'El sistema extrapola el ritmo diario (pacing) para prever cuánto gastará a final de mes. Te recomienda el presupuesto diario óptimo para aterrizar justo en el target.',
+                                    desc: 'El sistema extrapola el ritmo de gasto (pacing) para prever cuánto gastarás a final de mes y sugiere un objetivo medio diario para aterrizar en el presupuesto acordado (en Meta comparas contra el objetivo que fijas en Taimbox).',
                                     gradient: 'from-amber-500 to-orange-500',
                                     color: 'text-amber-300',
                                     border: 'border-amber-500/30',
@@ -404,7 +404,7 @@ export default function PpcMonitorLandingPage() {
                                 <div className="px-2">
                                     <h3 className="text-lg font-bold text-amber-300 mb-2">Calculadora de Previsiones</h3>
                                     <p className="text-indigo-100/80 text-sm leading-relaxed">
-                                        El sistema extrapola el ritmo diario (pacing) para prever cuánto gastará la campaña el último día del mes. Descubre de inmediato qué cuentas necesitan bajada de presupuesto.
+                                        Proyecta el gasto a fin de mes a partir del ritmo actual y compáralo con el presupuesto objetivo. Así ves qué cuentas necesitan actuar en Google Ads o ajustar límites en Meta (campaña, conjunto o cuenta).
                                     </p>
                                 </div>
                             </div>
@@ -451,7 +451,7 @@ export default function PpcMonitorLandingPage() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                 {[
                                     { icon: Globe, label: 'Google Ads', desc: 'Campañas, gasto, presupuesto', color: 'from-blue-500 to-cyan-500' },
-                                    { icon: MessageSquare, label: 'Meta Ads', desc: 'Facebook e Instagram', color: 'from-indigo-500 to-purple-500' },
+                                    { icon: MessageSquare, label: 'Meta Ads', desc: 'Gasto, campañas, ritmo vs objetivo', color: 'from-indigo-500 to-purple-500' },
                                     { icon: DollarSign, label: 'Costes de equipo', desc: 'Horas × coste/hora', color: 'from-emerald-500 to-teal-500' },
                                     { icon: TrendingUp, label: 'P&L en vivo', desc: 'Margen neto por cliente', color: 'from-amber-500 to-orange-500' },
                                 ].map(({ icon: Icon, label, desc, color }, i) => (

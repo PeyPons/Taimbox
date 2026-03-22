@@ -278,7 +278,7 @@ export function IntegrationsArticle() {
                             Facebook e Instagram, unificados
                         </h2>
                         <p className="text-indigo-100/90 mb-4 leading-relaxed">
-                            Sincroniza las campañas de Meta Ads (Facebook e Instagram) de tus clientes para vigilar consumos, alcance y CTR en un único dashboard. Evita que un error humano haga que la agencia pague de su bolsillo los sobrecostes de una campaña.
+                            Sincroniza las campañas de Meta Ads (Facebook e Instagram) de tus clientes para vigilar consumos, alcance y CTR en un único dashboard. Frente a Google Ads, el límite de gasto en Meta se reparte entre campaña, conjunto o presupuesto compartido: aquí defines un <strong className="text-white">presupuesto mensual objetivo</strong> en Taimbox y comparas el ritmo real frente a ese techo.
                         </p>
                         <div className="rounded-xl border-l-4 border-indigo-400 bg-indigo-500/10 border border-indigo-500/20 p-4">
                             <p className="text-indigo-100/90 text-sm m-0">

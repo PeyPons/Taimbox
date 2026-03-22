@@ -275,7 +275,7 @@ Funciones serverless que corren en Deno dentro del contenedor `supabase-edge-fun
 | `sync-google-ads` | `supabase/functions/sync-google-ads/index.ts` | Sincroniza campañas. Usa credenciales plataforma + refresh token (DB). Si no hay filas en `ad_accounts_config`, obtiene toda la jerarquía del MCC (MCC + sub-MCCs + subcuentas) vía `customer_client` recursivo y sincroniza cada cuenta; si hay filas, solo esas. Escribe en `google_ads_campaigns` con `agency_id`. |
 | `oauth-google-ads` | `supabase/functions/oauth-google-ads/index.ts` | **(Nuevo)** Intercambia código OAuth y guarda `refresh_token` en columna de agencia. |
 | `exchange-google-token` | `supabase/functions/exchange-google-token/index.ts` | *(Legacy)* Versión anterior que guardaba en JSON. |
-| `sync-meta-ads` | `supabase/functions/sync-meta-ads/index.ts` | Sincroniza campañas y costes de Meta/Facebook Ads. |
+| `sync-meta-ads` | `supabase/functions/sync-meta-ads/index.ts` | Sincroniza insights a nivel campaña (gasto, clics, conversiones, etc.) vía Graph API; **no** persiste presupuesto diario de Meta en `meta_ads_campaigns` (la integración actual no solicita esos campos). |
 | `generate-api-token` | `supabase/functions/generate-api-token/index.ts` | Genera JWT con claim `agency_id` para acceso API. |
 | `revoke-api-token` | `supabase/functions/revoke-api-token/index.ts` | Revoca un token API (marca `is_active = false`). |
 | `create-user` | `supabase/functions/create-user/index.ts` | Crea usuario en Auth + `employees`. |
@@ -290,6 +290,8 @@ Funciones serverless que corren en Deno dentro del contenedor `supabase-edge-fun
 | `send-welcome-email` | `supabase/functions/send-welcome-email/index.ts` | Envía email de bienvenida (registro) o invitación (añadido a agencia) vía Resend. Body: `{ email, name, agencyName, type }`. Usa `_shared/resend.ts`. Requiere `RESEND_API_KEY`. |
 | `send-contact-email` | `supabase/functions/send-contact-email/index.ts` | Envía email interno a `CONTACT_TO_EMAIL` (default `hello@taimbox.com`) desde el formulario público `/contacto` vía Resend. Body: `{ name, email, subject, message }`. Requiere `RESEND_API_KEY`. |
 | `request-password-reset` | `supabase/functions/request-password-reset/index.ts` | Genera enlace de recuperación de contraseña y lo envía por email vía Resend. Body: `{ email }`. Funciona para cualquier usuario en `auth.users` (empleados, admins de plataforma, etc.). Siempre devuelve 200 (previene enumeración). No requiere autenticación. |
+
+**Meta Ads — presupuesto y ritmo en la UI (`MetaAdsPage.tsx`):** El objetivo mensual y las alertas se basan en el **presupuesto mensual** que la agencia introduce en pantalla (persistido en `client_settings.budget_limit` por cuenta o cliente virtual). La vista compara **gasto medio diario** (lo gastado en el mes ÷ días transcurridos) con **objetivo medio diario** (presupuesto restante ÷ días que faltan). Los límites nativos de gasto siguen configurándose en Meta (campaña, conjunto, presupuesto compartido, etc.); no se muestra un «presupuesto diario importado» desde la API, para alinear el mensaje con el modelo de Meta y con lo que realmente sincroniza `sync-meta-ads`. En **Google Ads** (`AdsPage.tsx`) sí se usa `daily_budget` devuelto por la API cuando está disponible.
 
 #### Integración: Modo demostración (ocultar datos sensibles en toda la app)
 

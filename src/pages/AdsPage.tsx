@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   RefreshCw, Clock, Search, Settings, Layers,
@@ -1249,12 +1249,23 @@ export default function AdsPage() {
                         </PopoverTrigger>
                         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                           <Command>
+                            <CommandInput placeholder="Buscar cuenta o ID..." className="h-9" />
                             <CommandList className="max-h-[280px]">
+                              <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
+                                Ninguna cuenta coincide.
+                              </CommandEmpty>
                               <CommandGroup>
-                                {uniqueAccountsForSelector.map(acc => (
-                                  <CommandItem key={acc.id} value={acc.name || acc.id} onSelect={() => { field.onChange(acc.id); setOpenRuleAccount(false); }}>
+                                {uniqueAccountsForSelector.map((acc) => (
+                                  <CommandItem
+                                    key={acc.id}
+                                    value={`${acc.name || ''} ${acc.id}`}
+                                    onSelect={() => {
+                                      field.onChange(acc.id);
+                                      setOpenRuleAccount(false);
+                                    }}
+                                  >
                                     <Check className={cn('mr-2 h-4 w-4 shrink-0', field.value === acc.id ? 'opacity-100' : 'opacity-0')} />
-                                    {acc.name || acc.id}
+                                    <span className="truncate">{acc.name || acc.id}</span>
                                   </CommandItem>
                                 ))}
                               </CommandGroup>

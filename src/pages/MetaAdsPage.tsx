@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { RefreshCw, Clock, Search, Settings, Layers, TrendingUp, TrendingDown, Scissors, Plus, Trash2, AlertTriangle, CheckCircle2, Calendar, Target, ArrowDownRight, Eye, EyeOff, X, Facebook, Check, ChevronDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -20,7 +20,7 @@ import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
 
 interface MetaCampaignData { campaign_id: string; campaign_name: string; status: string; cost: number; conversions_value?: number; conversions?: number; clicks?: number; impressions?: number; daily_budget?: number; original_client_name?: string; original_client_id?: string; date?: string; client_id?: string; client_name?: string; created_at?: string; }
 interface SegmentationRule { id: string; account_id: string; keyword: string; virtual_name: string; platform: string; }
-interface ClientPacing { client_id: string; client_name: string; is_group: boolean; budget: number; spent: number; progress: number; forecast: number; recommendedDaily: number; avgDailySpend: number; currentDailyBudget: number; status: 'ok' | 'risk' | 'over' | 'under'; remainingBudget: number; total_conversions_val: number; campaigns: MetaCampaignData[]; isHidden: boolean; groupName?: string; isManualGroupBudget?: boolean; isSalesAccount: boolean; realIdsList: { id: string, name: string }[]; globalRoas: number; }
+interface ClientPacing { client_id: string; client_name: string; is_group: boolean; budget: number; spent: number; progress: number; forecast: number; recommendedDaily: number; avgDailySpend: number; status: 'ok' | 'risk' | 'over' | 'under'; remainingBudget: number; total_conversions_val: number; campaigns: MetaCampaignData[]; isHidden: boolean; groupName?: string; isManualGroupBudget?: boolean; isSalesAccount: boolean; realIdsList: { id: string, name: string }[]; globalRoas: number; }
 
 const formatProjectName = (name: string) => (name || '').replace(/^(Cliente|Client|Cuenta|Account)\s*[-:]?\s*/i, '');
 const normalizeId = (id: string) => id ? id.replace(/^act_/, '').trim() : '';
@@ -207,13 +207,13 @@ export default function MetaAdsPage() {
   const reportData = useMemo(() => {
     if (!rawData.length) return [];
     const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const stats = new Map<string, { name: string, spent: number, budget: number, total_conversions_val: number, is_group: boolean, isHidden: boolean, isSalesAccount: boolean, realIds: string[], realIdsNames: { id: string, name: string }[], campaigns: MetaCampaignData[], isManualGroupBudget: boolean, autoDailyBudgetSum: number }>();
+    const stats = new Map<string, { name: string, spent: number, budget: number, total_conversions_val: number, is_group: boolean, isHidden: boolean, isSalesAccount: boolean, realIds: string[], realIdsNames: { id: string, name: string }[], campaigns: MetaCampaignData[], isManualGroupBudget: boolean }>();
 
     registeredAccounts.forEach(acc => {
       const settings = clientSettings[acc.account_id] || { budget: 0, group_name: '', is_hidden: false, is_sales_account: true };
       const groupKey = settings.group_name?.trim() ? `GROUP-${settings.group_name}` : acc.account_id;
       if (!settings.group_name?.trim() && !stats.has(groupKey)) {
-        stats.set(groupKey, { name: acc.account_name || acc.account_id, spent: 0, budget: settings.budget || 0, total_conversions_val: 0, is_group: false, isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false, realIds: [acc.account_id], realIdsNames: [{ id: acc.account_id, name: acc.account_name }], campaigns: [], isManualGroupBudget: false, autoDailyBudgetSum: 0 });
+        stats.set(groupKey, { name: acc.account_name || acc.account_id, spent: 0, budget: settings.budget || 0, total_conversions_val: 0, is_group: false, isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false, realIds: [acc.account_id], realIdsNames: [{ id: acc.account_id, name: acc.account_name }], campaigns: [], isManualGroupBudget: false });
       }
     });
 
@@ -230,11 +230,9 @@ export default function MetaAdsPage() {
         const displayName = settings.group_name?.trim() ? settings.group_name : finalName;
         const isGroupManual = groupKey.startsWith('GROUP-') && (clientSettings[groupKey]?.budget > 0);
         const isIndividualManual = !groupKey.startsWith('GROUP-') && settings.budget > 0;
-        if (!stats.has(groupKey)) { stats.set(groupKey, { name: displayName, spent: 0, budget: 0, total_conversions_val: 0, is_group: groupKey.startsWith('GROUP-'), isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false, realIds: [], realIdsNames: [], campaigns: [], isManualGroupBudget: isGroupManual, autoDailyBudgetSum: 0 }); }
+        if (!stats.has(groupKey)) { stats.set(groupKey, { name: displayName, spent: 0, budget: 0, total_conversions_val: 0, is_group: groupKey.startsWith('GROUP-'), isHidden: settings.is_hidden, isSalesAccount: settings.is_sales_account !== false, realIds: [], realIdsNames: [], campaigns: [], isManualGroupBudget: isGroupManual }); }
         const entry = stats.get(groupKey)!;
         entry.spent += Number(row.cost || 0); entry.total_conversions_val += Number(row.conversions_value || 0);
-        const dailyBudget = Number(row.daily_budget || 0);
-        if (row.status === 'ENABLED' && dailyBudget > 0) entry.autoDailyBudgetSum += dailyBudget;
         if (!entry.realIds.includes(finalId)) { entry.realIds.push(finalId); entry.realIdsNames.push({ id: finalId, name: finalName }); if (!entry.is_group && isIndividualManual) entry.budget = settings.budget; }
         if (Number(row.cost) > 0 || Number(row.impressions) > 0) { entry.campaigns.push({ ...row, original_client_name: finalName, original_client_id: finalId, cost: Number(row.cost), conversions_value: Number(row.conversions_value), conversions: Number(row.conversions), clicks: Number(row.clicks), impressions: Number(row.impressions) }); }
       }
@@ -243,15 +241,19 @@ export default function MetaAdsPage() {
     const report: ClientPacing[] = [];
     stats.forEach((value, key) => {
       let finalBudget = 0;
-      if (value.is_group) { const groupSettings = clientSettings[key.replace('GROUP-', '')] || clientSettings[key]; if (groupSettings?.budget > 0) finalBudget = groupSettings.budget; else finalBudget = value.autoDailyBudgetSum * 30.4; }
-      else { if (value.budget > 0) finalBudget = value.budget; else finalBudget = value.autoDailyBudgetSum * 30.4; }
+      if (value.is_group) {
+        const groupSettings = clientSettings[key.replace('GROUP-', '')] || clientSettings[key];
+        if (groupSettings?.budget > 0) finalBudget = groupSettings.budget;
+      } else if (value.budget > 0) {
+        finalBudget = value.budget;
+      }
       const spent = value.spent, avgDailySpend = currentDay > 0 ? spent / currentDay : 0, forecast = avgDailySpend * daysInMonth;
       const progress = finalBudget > 0 ? (spent / finalBudget) * 100 : 0, remainingBudget = Math.max(0, finalBudget - spent);
-      const recommendedDaily = daysRemaining > 0 ? remainingBudget / daysRemaining : 0, currentDailyBudget = value.autoDailyBudgetSum;
+      const recommendedDaily = daysRemaining > 0 ? remainingBudget / daysRemaining : 0;
       const globalRoas = spent > 0 ? value.total_conversions_val / spent : 0;
       let status: 'ok' | 'risk' | 'over' | 'under' = 'ok';
       if (finalBudget > 0) { if (spent > finalBudget) status = 'over'; else if (forecast > finalBudget) status = 'risk'; else if (progress < 50 && currentDay > 20) status = 'under'; }
-      report.push({ client_id: key, client_name: value.name, is_group: value.is_group, budget: finalBudget, spent, progress, forecast, recommendedDaily, avgDailySpend, currentDailyBudget, status, remainingBudget, total_conversions_val: value.total_conversions_val, isHidden: value.isHidden, isSalesAccount: value.isSalesAccount, groupName: value.is_group ? value.name : undefined, isManualGroupBudget: value.isManualGroupBudget, realIdsList: value.realIdsNames, campaigns: value.campaigns.sort((a, b) => b.cost - a.cost), globalRoas });
+      report.push({ client_id: key, client_name: value.name, is_group: value.is_group, budget: finalBudget, spent, progress, forecast, recommendedDaily, avgDailySpend, status, remainingBudget, total_conversions_val: value.total_conversions_val, isHidden: value.isHidden, isSalesAccount: value.isSalesAccount, groupName: value.is_group ? value.name : undefined, isManualGroupBudget: value.isManualGroupBudget, realIdsList: value.realIdsNames, campaigns: value.campaigns.sort((a, b) => b.cost - a.cost), globalRoas });
     });
     let filtered = report;
     if (!showHidden) filtered = filtered.filter(c => !c.isHidden);
@@ -262,9 +264,9 @@ export default function MetaAdsPage() {
   const globalStats = useMemo(() => {
     const totalBudget = reportData.reduce((acc, r) => acc + r.budget, 0), totalSpent = reportData.reduce((acc, r) => acc + r.spent, 0);
     const totalRevenue = reportData.reduce((acc, r) => acc + r.total_conversions_val, 0);
-    const totalRecommendedDaily = reportData.reduce((acc, r) => acc + r.recommendedDaily, 0), totalCurrentDaily = reportData.reduce((acc, r) => acc + r.currentDailyBudget, 0);
+    const totalRecommendedDaily = reportData.reduce((acc, r) => acc + r.recommendedDaily, 0);
     const atRisk = reportData.filter(r => r.status === 'risk' || r.status === 'over').length, globalRoas = totalSpent > 0 ? totalRevenue / totalSpent : 0;
-    return { totalBudget, totalSpent, totalRevenue, totalRecommendedDaily, totalCurrentDaily, atRisk, globalRoas };
+    return { totalBudget, totalSpent, totalRevenue, totalRecommendedDaily, atRisk, globalRoas };
   }, [reportData]);
 
   const uniqueAccountsForSelector = useMemo(() => {
@@ -288,7 +290,7 @@ export default function MetaAdsPage() {
           </div>
         </div>
 
-        {/* Stats Cards - Optimizadas para Meta (sin daily_budget disponible) */}
+        {/* Ritmo vs objetivo: el presupuesto mensual lo define el usuario en Taimbox; la API de Meta no aporta un “presupuesto diario” equivalente al de Google Ads en esta integración */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <StatCard icon={Target} label="Inversión" value={formatCurrency(globalStats.totalSpent)} subValue={`de ${formatCurrency(globalStats.totalBudget)}`} color="blue" />
           <StatCard icon={TrendingUp} label="Conversiones" value={reportData.reduce((acc, r) => acc + r.campaigns.reduce((a, c) => a + (c.conversions || 0), 0), 0).toFixed(0)} subValue={`Valor ${formatCurrency(globalStats.totalRevenue)}`} color="emerald" />
@@ -307,8 +309,12 @@ export default function MetaAdsPage() {
         <Accordion type="single" collapsible className="space-y-2">
           {reportData.map((client) => {
             const statusConfig = getStatusConfig(client.status);
-            const dailyDiff = client.currentDailyBudget - client.recommendedDaily;
-            const isOverspending = dailyDiff > 0 && client.status !== 'ok';
+            const paceDiff = client.avgDailySpend - client.recommendedDaily;
+            const isPaceTooHigh =
+              client.budget > 0 &&
+              client.recommendedDaily > 0 &&
+              paceDiff > 0 &&
+              (client.status === 'risk' || client.status === 'over');
             return (
               <AccordionItem key={client.client_id} value={client.client_id} className={cn("bg-white border rounded-xl shadow-sm overflow-hidden", client.isHidden && "opacity-60 border-dashed")}>
                 <AccordionTrigger className="hover:no-underline py-4 px-4 group">
@@ -356,13 +362,31 @@ export default function MetaAdsPage() {
                   <div className="p-4 space-y-6">
                     <div className="grid lg:grid-cols-2 gap-6">
                       <div className="bg-white p-4 rounded-lg border space-y-4">
-                        <div className="flex justify-between items-center"><div className="flex items-center gap-2"><Label className="text-sm font-medium text-slate-700">Presupuesto {client.is_group ? 'Total' : 'Mensual'}</Label>{!client.isManualGroupBudget && !clientSettings[client.client_id]?.budget && <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-600 border-blue-200">Auto</Badge>}</div><div className="flex items-center gap-2"><span className="text-slate-400">€</span><Input key={`${client.client_id}-${client.budget}`} type="number" defaultValue={clientSettings[client.client_id]?.budget > 0 ? clientSettings[client.client_id]?.budget : ''} onBlur={(e) => handleSaveBudget(client.client_id, e.target.value)} className="h-8 w-28 text-right" placeholder={client.budget.toFixed(0)} /></div></div>
+                        <div className="flex justify-between items-center"><div className="flex items-center gap-2"><Label className="text-sm font-medium text-slate-700">Presupuesto {client.is_group ? 'Total' : 'Mensual'} objetivo</Label></div><div className="flex items-center gap-2"><span className="text-slate-400">€</span><Input key={`${client.client_id}-${client.budget}`} type="number" defaultValue={clientSettings[client.client_id]?.budget > 0 ? clientSettings[client.client_id]?.budget : ''} onBlur={(e) => handleSaveBudget(client.client_id, e.target.value)} className="h-8 w-28 text-right" placeholder={client.budget.toFixed(0)} /></div></div>
                         <div className="space-y-2"><div className="flex justify-between text-xs text-slate-500"><span>Consumo ({client.progress.toFixed(1)}%)</span><span className={client.remainingBudget <= 0 ? 'text-red-500 font-bold' : ''}>Disponible: {formatCurrency(client.remainingBudget)}</span></div><Progress value={Math.min(client.progress, 100)} className={cn("h-2.5", client.status === 'over' && "[&>div]:bg-red-500", client.status === 'risk' && "[&>div]:bg-amber-500", client.status === 'ok' && "[&>div]:bg-blue-500")} /></div>
                         <div className="grid grid-cols-2 gap-3">
-                          <div className={cn("p-3 rounded-lg border-2 text-center", isOverspending ? "bg-amber-50 border-amber-200" : "bg-slate-50 border-slate-200")}><div className="text-[10px] uppercase text-slate-500 font-medium mb-1">Diario Actual</div><div className={cn("text-xl font-bold", isOverspending ? "text-amber-600" : "text-slate-700")}>{formatCurrency(client.currentDailyBudget)}</div><div className="text-[10px] text-slate-400 mt-1">configurado en Meta</div></div>
-                          <div className="p-3 rounded-lg border-2 text-center bg-emerald-50 border-emerald-200"><div className="text-[10px] uppercase text-slate-500 font-medium mb-1">Diario Recomendado</div><div className="text-xl font-bold text-emerald-600">{formatCurrency(client.recommendedDaily)}</div><div className="text-[10px] text-slate-400 mt-1">para no pasarte</div></div>
+                          <div className={cn("p-3 rounded-lg border-2 text-center", isPaceTooHigh ? "bg-amber-50 border-amber-200" : "bg-slate-50 border-slate-200")}>
+                            <div className="text-[10px] uppercase text-slate-500 font-medium mb-1">Gasto medio diario</div>
+                            <div className={cn("text-xl font-bold", isPaceTooHigh ? "text-amber-600" : "text-slate-700")}>{formatCurrency(client.avgDailySpend)}</div>
+                            <div className="text-[10px] text-slate-400 mt-1">en lo que va de mes</div>
+                          </div>
+                          <div className="p-3 rounded-lg border-2 text-center bg-emerald-50 border-emerald-200">
+                            <div className="text-[10px] uppercase text-slate-500 font-medium mb-1">Objetivo medio diario</div>
+                            <div className="text-xl font-bold text-emerald-600">{formatCurrency(client.recommendedDaily)}</div>
+                            <div className="text-[10px] text-slate-400 mt-1">para cerrar el mes en el presupuesto</div>
+                          </div>
                         </div>
-                        {isOverspending && dailyDiff > 5 && <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800"><AlertTriangle className="w-4 h-4 shrink-0" /><span>Reduce el presupuesto diario en <strong>{formatCurrency(dailyDiff)}</strong> para ajustarte.</span></div>}
+                        <p className="text-[11px] text-slate-500 leading-snug">
+                          El límite de gasto en Meta Ads se configura en Facebook (campaña, conjunto o presupuesto compartido). Aquí defines el <strong className="text-slate-600">presupuesto mensual objetivo</strong> en Taimbox para comparar ritmo real vs. objetivo.
+                        </p>
+                        {isPaceTooHigh && paceDiff > 1 && (
+                          <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                            <AlertTriangle className="w-4 h-4 shrink-0" />
+                            <span>
+                              El ritmo de gasto va por encima del objetivo para no superar el presupuesto mensual. Revisa y ajusta los límites en Meta Ads según tu estructura (campaña, conjunto o cuenta publicitaria).
+                            </span>
+                          </div>
+                        )}
                         <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"><span className="text-sm text-slate-600">Proyección fin de mes</span><span className={cn("font-bold", client.forecast > client.budget ? "text-red-600" : "text-slate-700")}>{formatCurrency(client.forecast)}</span></div>
                       </div>
                       <div className="bg-white rounded-lg border overflow-hidden"><div className="max-h-[350px] overflow-y-auto"><table className="w-full text-xs"><thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b"><tr><th className="px-3 py-2.5 text-left">Campaña</th><th className="px-2 py-2.5 text-right">Gasto</th><th className="px-2 py-2.5 text-right">Valor</th>{client.isSalesAccount && <th className="px-2 py-2.5 text-center">ROAS</th>}</tr></thead><tbody className="divide-y divide-slate-100">{client.campaigns.map((camp, idx) => { const roas = camp.cost > 0 ? (camp.conversions_value || 0) / camp.cost : 0; return <tr key={idx} className="hover:bg-slate-50"><td className="px-3 py-2.5"><div className="space-y-1"><AnonymizedContent isActive={isAnonymized} className="font-medium text-slate-700 line-clamp-2" placeholder={anonymizer.campaign(camp.campaign_id)}>{camp.campaign_name}</AnonymizedContent><div className="flex items-center gap-2 text-[10px] text-slate-400"><span className="flex items-center gap-1"><span className={cn("w-1.5 h-1.5 rounded-full", camp.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-slate-300')} />{camp.status === 'ENABLED' ? 'Activa' : 'Pausada'}</span>{client.is_group && (camp.original_client_name || camp.original_client_id) && <AnonymizedContent isActive={isAnonymized} className="truncate max-w-[100px]" placeholder={anonymizer.account(camp.original_client_id || camp.client_id || '')}>| {formatProjectName(camp.original_client_name || '')}</AnonymizedContent>}</div></div></td><td className="px-2 py-2.5 text-right font-medium text-slate-900">{formatCurrency(camp.cost)}</td><td className="px-2 py-2.5 text-right text-emerald-600">{formatCurrency(camp.conversions_value || 0)}</td>{client.isSalesAccount && <td className="px-2 py-2.5 text-center"><Badge variant="outline" className={cn("text-[10px]", getRoasColor(roas))}>{roas.toFixed(2)}</Badge></td>}</tr>; })}{client.campaigns.length === 0 && <tr><td colSpan={4} className="px-3 py-8 text-center text-slate-400">Sin campañas</td></tr>}</tbody></table></div></div>
@@ -486,7 +510,29 @@ export default function MetaAdsPage() {
 
       <Dialog open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)}><DialogContent><DialogHeader><DialogTitle>Configurar cuenta</DialogTitle><DialogDescription>{editingClient?.name}</DialogDescription></DialogHeader><div className="space-y-4 py-4"><div className="space-y-2"><Label>Nombre del grupo (Holding)</Label><Input value={editingClient?.group || ''} onChange={(e) => setEditingClient(prev => prev ? { ...prev, group: e.target.value } : null)} placeholder="Ej: Grupo ABC" /><p className="text-xs text-slate-500">Las cuentas del mismo grupo se consolidan.</p></div><div className="flex justify-between items-center py-3 border-t"><div><Label>Cuenta de ventas (ROAS)</Label><p className="text-xs text-slate-500">Mostrar conversiones</p></div><Switch checked={editingClient?.isSales !== false} onCheckedChange={(c) => setEditingClient(prev => prev ? { ...prev, isSales: c } : null)} /></div><div className="flex justify-between items-center py-3 border-t"><div><Label>Ocultar cuenta</Label><p className="text-xs text-slate-500">No aparecerá en la lista</p></div><Switch checked={editingClient?.hidden || false} onCheckedChange={(c) => setEditingClient(prev => prev ? { ...prev, hidden: c } : null)} /></div></div><DialogFooter><Button variant="outline" onClick={() => setEditingClient(null)}>Cancelar</Button><Button onClick={handleSaveClientSettings}>Guardar</Button></DialogFooter></DialogContent></Dialog>
 
-      <Dialog open={isSplitModalOpen} onOpenChange={setIsSplitModalOpen}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle className="flex items-center gap-2"><Scissors className="w-5 h-5" /> Dividir Cuentas</DialogTitle><DialogDescription>Separa campañas por palabra clave en cuentas virtuales.</DialogDescription></DialogHeader><div className="space-y-6 py-4"><div className="grid grid-cols-12 gap-3 items-end bg-slate-50 p-4 rounded-lg border"><div className="col-span-12 sm:col-span-4 space-y-1"><Label className="text-xs font-medium">Cuenta Origen</Label><Popover open={openNewRuleAccount} onOpenChange={setOpenNewRuleAccount}><PopoverTrigger asChild><Button variant="outline" className="w-full justify-between font-normal bg-white"><span className="truncate">{newRuleAccount ? (uniqueAccountsForSelector.find(a => a.id === newRuleAccount)?.name || uniqueAccountsForSelector.find(a => a.id === newRuleAccount)?.id || 'Selecciona...') : 'Selecciona...'}</span><ChevronDown className="h-4 w-4 opacity-50 shrink-0" /></Button></PopoverTrigger><PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start"><Command><CommandList className="max-h-[280px]"><CommandGroup>{uniqueAccountsForSelector.map(acc => (<CommandItem key={acc.id} value={acc.name || acc.id} onSelect={() => { setNewRuleAccount(acc.id); setOpenNewRuleAccount(false); }}><Check className={cn('mr-2 h-4 w-4 shrink-0', newRuleAccount === acc.id ? 'opacity-100' : 'opacity-0')} />{acc.name || acc.id}</CommandItem>))}</CommandGroup></CommandList></Command></PopoverContent></Popover></div><div className="col-span-6 sm:col-span-3 space-y-1"><Label className="text-xs font-medium">Si contiene...</Label><Input placeholder="Ej: Loro" className="bg-white" value={newRuleKeyword} onChange={e => setNewRuleKeyword(e.target.value)} /></div><div className="col-span-6 sm:col-span-3 space-y-1"><Label className="text-xs font-medium">Crear cuenta...</Label><Input placeholder="Ej: Loro Parque" className="bg-white" value={newRuleName} onChange={e => setNewRuleName(e.target.value)} /></div><div className="col-span-12 sm:col-span-2"><Button onClick={handleAddRule} className="w-full"><Plus className="w-4 h-4" /></Button></div></div><div className="space-y-2"><h4 className="text-xs font-bold text-slate-500 uppercase">Reglas Activas ({segmentationRules.length})</h4>{segmentationRules.length === 0 ? <p className="text-sm text-slate-400 italic py-4 text-center">No hay reglas</p> : <div className="space-y-2 max-h-[200px] overflow-y-auto">{segmentationRules.map(rule => <div key={rule.id} className="flex items-center justify-between p-3 bg-white border rounded-lg"><div className="flex items-center gap-3 flex-wrap"><Badge variant="outline" className="font-mono text-xs">{normalizeId(rule.account_id).slice(0, 10)}...</Badge><span className="text-sm text-slate-500">Si contiene <strong className="text-slate-700">"{rule.keyword}"</strong></span><span className="text-slate-300">→</span><span className="font-bold text-blue-600">{rule.virtual_name}</span></div><Button variant="ghost" size="icon" onClick={() => handleDeleteRule(rule.id)} className="text-red-500 hover:bg-red-50 h-8 w-8"><Trash2 className="w-4 h-4" /></Button></div>)}</div>}</div></div></DialogContent></Dialog>
+      <Dialog open={isSplitModalOpen} onOpenChange={setIsSplitModalOpen}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle className="flex items-center gap-2"><Scissors className="w-5 h-5" /> Dividir Cuentas</DialogTitle><DialogDescription>Separa campañas por palabra clave en cuentas virtuales.</DialogDescription></DialogHeader><div className="space-y-6 py-4"><div className="grid grid-cols-12 gap-3 items-end bg-slate-50 p-4 rounded-lg border"><div className="col-span-12 sm:col-span-4 space-y-1"><Label className="text-xs font-medium">Cuenta Origen</Label><Popover open={openNewRuleAccount} onOpenChange={setOpenNewRuleAccount}><PopoverTrigger asChild><Button variant="outline" className="w-full justify-between font-normal bg-white"><span className="truncate">{newRuleAccount ? (uniqueAccountsForSelector.find(a => a.id === newRuleAccount)?.name || uniqueAccountsForSelector.find(a => a.id === newRuleAccount)?.id || 'Selecciona...') : 'Selecciona...'}</span><ChevronDown className="h-4 w-4 opacity-50 shrink-0" /></Button></PopoverTrigger><PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                  <Command>
+                                    <CommandInput placeholder="Buscar cuenta o ID..." className="h-9" />
+                                    <CommandList className="max-h-[280px]">
+                                      <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">Ninguna cuenta coincide.</CommandEmpty>
+                                      <CommandGroup>
+                                        {uniqueAccountsForSelector.map((acc) => (
+                                          <CommandItem
+                                            key={acc.id}
+                                            value={`${acc.name || ''} ${acc.id}`}
+                                            onSelect={() => {
+                                              setNewRuleAccount(acc.id);
+                                              setOpenNewRuleAccount(false);
+                                            }}
+                                          >
+                                            <Check className={cn('mr-2 h-4 w-4 shrink-0', newRuleAccount === acc.id ? 'opacity-100' : 'opacity-0')} />
+                                            <span className="truncate">{acc.name || acc.id}</span>
+                                          </CommandItem>
+                                        ))}
+                                      </CommandGroup>
+                                    </CommandList>
+                                  </Command>
+                                </PopoverContent></Popover></div><div className="col-span-6 sm:col-span-3 space-y-1"><Label className="text-xs font-medium">Si contiene...</Label><Input placeholder="Ej: Loro" className="bg-white" value={newRuleKeyword} onChange={e => setNewRuleKeyword(e.target.value)} /></div><div className="col-span-6 sm:col-span-3 space-y-1"><Label className="text-xs font-medium">Crear cuenta...</Label><Input placeholder="Ej: Loro Parque" className="bg-white" value={newRuleName} onChange={e => setNewRuleName(e.target.value)} /></div><div className="col-span-12 sm:col-span-2"><Button onClick={handleAddRule} className="w-full"><Plus className="w-4 h-4" /></Button></div></div><div className="space-y-2"><h4 className="text-xs font-bold text-slate-500 uppercase">Reglas Activas ({segmentationRules.length})</h4>{segmentationRules.length === 0 ? <p className="text-sm text-slate-400 italic py-4 text-center">No hay reglas</p> : <div className="space-y-2 max-h-[200px] overflow-y-auto">{segmentationRules.map(rule => <div key={rule.id} className="flex items-center justify-between p-3 bg-white border rounded-lg"><div className="flex items-center gap-3 flex-wrap"><Badge variant="outline" className="font-mono text-xs">{normalizeId(rule.account_id).slice(0, 10)}...</Badge><span className="text-sm text-slate-500">Si contiene <strong className="text-slate-700">"{rule.keyword}"</strong></span><span className="text-slate-300">→</span><span className="font-bold text-blue-600">{rule.virtual_name}</span></div><Button variant="ghost" size="icon" onClick={() => handleDeleteRule(rule.id)} className="text-red-500 hover:bg-red-50 h-8 w-8"><Trash2 className="w-4 h-4" /></Button></div>)}</div>}</div></div></DialogContent></Dialog>
 
       <Dialog open={isSyncing} onOpenChange={(open) => { if (syncStatus !== 'running') setIsSyncing(open); }}><DialogContent className="sm:max-w-md bg-slate-950 text-slate-100 border-slate-800"><DialogHeader><DialogTitle className="flex items-center gap-2 text-white">{syncStatus === 'running' && <RefreshCw className="w-5 h-5 animate-spin text-blue-500" />}{syncStatus === 'completed' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}Sincronizando Meta Ads</DialogTitle><DialogDescription className="text-slate-400">{syncStatus === 'running' ? 'Conectando...' : 'Finalizado'}</DialogDescription></DialogHeader><Progress value={syncProgress} className="h-2 bg-slate-800 [&>div]:bg-blue-500" /><div className="bg-black/50 rounded-lg p-4 font-mono text-xs text-blue-400 h-64 overflow-hidden border border-slate-800"><div className="h-full overflow-y-auto space-y-1" ref={scrollRef}>{syncLogs.map((log, i) => <div key={i} className="break-words">{log}</div>)}</div></div></DialogContent></Dialog>
     </div>
