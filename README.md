@@ -275,12 +275,13 @@ Todas las páginas principales de la aplicación.
 ### Configuración
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
-| `AgencySettingsPage.tsx` | 60KB+ | Configuración de agencia por secciones: General, Equipo (roles), **Departamentos** (nombre + color por área), Proyectos (filtros/aliasing), Módulos, Integraciones (Google Ads OAuth + Meta Ads), Apariencia, **Plan y facturación** (Stripe). Navegación lateral; pestaña activa por `?tab=`. |
+| `AgencySettingsPage.tsx` | 60KB+ | Configuración de agencia por secciones: General, Equipo (roles), **Departamentos** (nombre + color por área), Proyectos (filtros/aliasing), Módulos, Integraciones (**Google Ads OAuth** + **Meta Ads OAuth**), Apariencia, **Plan y facturación** (Stripe). Navegación lateral; pestaña activa por `?tab=`. |
 | `SettingsPage.tsx` | 6KB | Preferencias de usuario |
 | `AgenciesPage.tsx` | 8KB | Selector de agencias |
 | `AgencyManagementPage.tsx` | 19KB | Administración avanzada de agencia |
 | `ApiKeysPage.tsx` | ~15KB | Gestión de tokens API por agencia (crear, listar, revocar). Ruta `/api-keys`. |
-| `GoogleCallbackPage.tsx` | ~2KB | Página de transición OAuth. Captura `?code=` de Google, invoca `exchange-google-token`, redirige a `/agency`. Sin AppLayout. |
+| `GoogleCallbackPage.tsx` | ~2KB | OAuth Google Ads: captura `?code=`, invoca `oauth-google-ads`, redirige a `/agency?tab=integrations`. Sin AppLayout. |
+| `MetaCallbackPage.tsx` | ~2KB | OAuth Meta Ads: captura `?code=`, invoca `oauth-meta` (y opcionalmente `list-meta-accounts`), redirige a Integraciones. Ruta `/meta-callback`. Sin AppLayout. |
 
 ### Área administrativa (solo plataforma)
 | Página / Ruta | Descripción |

@@ -15,6 +15,7 @@ interface SupabaseAgency {
   updated_at: string;
   google_ads_refresh_token?: string | null;
   google_ads_customer_id?: string | null;
+  meta_ads_access_token?: string | null;
   plan_id?: string | null;
   subscription_status?: string | null;
   stripe_customer_id?: string | null;
@@ -183,6 +184,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       updatedAt: data.updated_at,
       google_ads_refresh_token: data.google_ads_refresh_token ?? undefined,
       google_ads_customer_id: data.google_ads_customer_id ?? undefined,
+      meta_ads_access_token: data.meta_ads_access_token ?? undefined,
       planId,
       subscriptionStatus: data.subscription_status ?? undefined,
       stripeCustomerId: data.stripe_customer_id ?? undefined,
@@ -429,7 +431,8 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
         if (prev?.id === agency.id &&
           JSON.stringify(prev.settings) === JSON.stringify(agency.settings) &&
           prev.google_ads_refresh_token === agency.google_ads_refresh_token &&
-          prev.google_ads_customer_id === agency.google_ads_customer_id) {
+          prev.google_ads_customer_id === agency.google_ads_customer_id &&
+          prev.meta_ads_access_token === agency.meta_ads_access_token) {
           return prev;
         }
         return agency;

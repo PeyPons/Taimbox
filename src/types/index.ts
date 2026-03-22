@@ -139,6 +139,8 @@ export interface Agency {
   updatedAt?: string;
   google_ads_refresh_token?: string;
   google_ads_customer_id?: string;
+  /** Token OAuth Meta (long-lived); prioridad sobre settings.integrations.metaAccessToken */
+  meta_ads_access_token?: string;
   /** Plan actual (Stripe) */
   planId?: PlanId;
   /** Estado de la suscripci?n en Stripe */

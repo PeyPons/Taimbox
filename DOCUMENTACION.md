@@ -361,6 +361,35 @@ El flujo de Google Ads sigue un modelo SaaS donde la plataforma posee las creden
 - `http://localhost:8080/google-callback` (desarrollo)
 - `https://taimbox.com/google-callback` (producción)
 
+#### Arquitectura Meta Ads OAuth (Modelo SaaS)
+
+Mismo patrón que Google Ads: credenciales de la app en la plataforma y un token por agencia almacenado en BD.
+
+| Credencial | Origen | Quién la gestiona |
+|---|---|---|
+| `META_APP_ID` | Variable de entorno en **Edge Functions** (Docker); mismo número que en Meta | **Plataforma** |
+| `VITE_META_APP_ID` | Variable en **`.env` del frontend** (Vite); mismo valor que **Identificador de la aplicación** en Meta | **Plataforma** |
+| `META_APP_SECRET` | Solo en **Edge Functions** (nunca en el frontend) | **Plataforma** |
+| `agencies.meta_ads_access_token` | Columna en BD (token de usuario long-lived tras OAuth) | **Automático** |
+
+Si en BD antigua quedó `settings.integrations.metaAccessToken`, el backend aún puede leerlo como respaldo; la UI ya no permite introducir token manual.
+
+**Flujo OAuth:**
+1. Configuración → Integraciones → Meta Ads → **Conectar con Meta**.
+2. El frontend redirige a Facebook con `VITE_META_APP_ID`, `scope=ads_read,read_insights` y `state` (identifica la agencia vía `sessionStorage`).
+3. Meta redirige a `/meta-callback?code=...` → `MetaCallbackPage.tsx` invoca `oauth-meta` con `{ code, redirect_uri, agency_id }`.
+4. La Edge Function intercambia el código por token corto y luego por **long-lived token** (Graph API `oauth/access_token` con `fb_exchange_token`) y guarda el resultado en `agencies.meta_ads_access_token`.
+5. Opcionalmente se llama a `list-meta-accounts` para rellenar/actualizar `ad_accounts_config` con las cuentas publicitarias (`/me/adaccounts`).
+6. `sync-meta-ads` usa el token en este orden: columna `meta_ads_access_token` → (respaldo) `integrations.metaAccessToken` en JSON legado → `META_ACCESS_TOKEN` (entorno, opcional).
+
+**Ajustes en Meta for Developers (app Taimbox):**
+- **Inicio de sesión con Facebook para empresas** → Configuración: URI de redirección OAuth válidos → `https://taimbox.com/meta-callback` (y para desarrollo local, `http://localhost:8080/meta-callback`).
+- **Dominios admitidos para el SDK para JavaScript:** `taimbox.com`.
+- **Información básica:** dominios de la aplicación `taimbox.com`, URL del sitio `https://taimbox.com/`, política de privacidad y condiciones (`/privacidad`, `/condiciones`).
+- La URL de Supabase/API (`api.taimbox.com`) **no** debe usarse como redirect OAuth del frontend; el callback es siempre el origen de la app (`taimbox.com` o `localhost`).
+
+**Migración SQL:** `supabase/migrations/20250322120000_meta_ads_access_token.sql` añade la columna `meta_ads_access_token` en `agencies` (ejecutar en la instancia antes de usar OAuth en producción).
+
 ### 5.3. Suscripciones (Stripe)
 
 Sistema de planes **Starter** (gratis), **Pro** (49 €/mes early adopter, 99 €/mes estándar) y **Business** (149 €/mes early adopter, 249 €/mes estándar). Plan **Enterprise** (personalizado, sin límite). Nuevos registros reciben trial Business 14 días. **Un solo trial por agencia.** Los precios early adopter se congelan de por vida para el cliente (grandfathering vía `price_id` en Stripe).
@@ -382,14 +411,23 @@ SUPABASE_SERVICE_ROLE_KEY=<service_role_key>
 GOOGLE_CLIENT_ID=<client_id>.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=GOCSPX-<secret>
 GOOGLE_DEVELOPER_TOKEN=<developer_token>
+META_APP_ID=<facebook_app_id>
+META_APP_SECRET=<facebook_app_secret>
 RESEND_API_KEY=<resend_api_key>
 RESEND_FROM_EMAIL=Taimbox <no-reply@taimbox.com>
 ```
 
-**En el frontend** (`.env` de Vite):
+Opcional (solo lectura / pruebas sin OAuth por agencia): `META_ACCESS_TOKEN`.
+
+**En el frontend** (`.env` de Vite en la raíz del proyecto, **no** en el Docker de Supabase):
 ```
 VITE_GOOGLE_CLIENT_ID=<mismo_client_id>.apps.googleusercontent.com
+VITE_META_APP_ID=<identificador_de_la_aplicacion_meta>
 ```
+
+**Valores exactos para Meta (copiar desde el panel):** en [Meta for Developers](https://developers.facebook.com) → tu app → **Configuración de la aplicación** → **Información básica**. El campo **Identificador de la aplicación** (solo dígitos) es el valor de `META_APP_ID` y de `VITE_META_APP_ID` (el mismo número en ambos sitios). La **Clave secreta de la aplicación** (botón *Mostrar*) es **solo** `META_APP_SECRET` en el contenedor de Edge Functions; no la subas al repo ni al build del frontend.
+
+**Dónde van en Docker:** las variables del bloque “contenedor `supabase-edge-functions`” se definen donde ya tienes `GOOGLE_CLIENT_ID` (por ejemplo `.env` junto al `docker-compose` de Supabase, o `environment:` del servicio `functions`). Ahí añade `META_APP_ID`, `META_APP_SECRET` y reinicia ese contenedor. `VITE_META_APP_ID` no se pone en Docker de funciones: va en el `.env` local/CI del **proyecto Vite** y se inyecta al hacer `npm run build`.
 
 #### Despliegue de Edge Functions (self-hosted)
 

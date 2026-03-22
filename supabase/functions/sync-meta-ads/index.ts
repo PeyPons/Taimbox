@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
 
         async function processAgency(agency: any) {
             const integrations = agency.settings?.integrations || {};
-            const accessToken = integrations.metaAccessToken || getSecret('META_ACCESS_TOKEN'); // Fallback to env/secrets
+            const accessToken = agency.meta_ads_access_token || integrations.metaAccessToken || getSecret('META_ACCESS_TOKEN'); // Columna OAuth > JSON > env
 
             if (!accessToken) {
                 await log(`⚠️ Agencia ${agency.name} no tiene Access Token de Meta.`);
@@ -233,7 +233,7 @@ Deno.serve(async (req) => {
 
 
         // MAIN
-        let query = supabase.from('agencies').select('id, name, settings')
+        let query = supabase.from('agencies').select('id, name, settings, meta_ads_access_token')
         if (agency_id) query = query.eq('id', agency_id)
 
         const { data: agencies, error: agenciesError } = await query

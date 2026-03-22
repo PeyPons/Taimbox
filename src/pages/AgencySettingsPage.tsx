@@ -109,6 +109,8 @@ function GoogleAdsAccountSelect({
   );
 }
 
+const META_OAUTH_SCOPES = 'ads_read,read_insights';
+
 const TAB_VALUES = ['general', 'team', 'projects', 'modules', 'integrations', 'departments', 'appearance', 'billing'] as const;
 
 export default function AgencySettingsPage() {
@@ -155,12 +157,12 @@ export default function AgencySettingsPage() {
     currentAgency?.settings?.projectAliasingRules || [DEFAULT_ALIASING_RULE]
   );
   const [integrations, setIntegrations] = useState(currentAgency?.settings?.integrations || {
-    metaAccessToken: '',
     googleAdsCustomerId: '',
     googleAdsDevToken: ''
   });
   const [newAccountId, setNewAccountId] = useState('');
   const [isAddingAccount, setIsAddingAccount] = useState(false);
+  const [syncingMetaAccounts, setSyncingMetaAccounts] = useState(false);
   const [connectedAccounts, setConnectedAccounts] = useState<any[]>([]);
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
 
@@ -236,12 +238,6 @@ export default function AgencySettingsPage() {
       setPrimaryColor(currentAgency.settings?.branding?.primaryColor || '#6366f1');
       setProjectFilters(currentAgency.settings?.projectFilters || DEFAULT_FILTERS);
       setIntegrations(currentAgency.settings?.integrations || {
-        metaAccessToken: '',
-        googleAdsCustomerId: '',
-        googleAdsDevToken: ''
-      });
-      setIntegrations(currentAgency.settings?.integrations || {
-        metaAccessToken: '',
         googleAdsCustomerId: '',
         googleAdsDevToken: ''
       });
@@ -1807,16 +1803,124 @@ export default function AgencySettingsPage() {
                       <Facebook className="h-5 w-5 text-blue-600" />
                       <h3 className="font-semibold text-slate-900">Meta Ads</h3>
                     </div>
+
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="meta-token">Access Token</Label>
-                        <Input
-                          id="meta-token"
-                          type="password"
-                          value={integrations.metaAccessToken || ''}
-                          onChange={(e) => setIntegrations(prev => ({ ...prev, metaAccessToken: e.target.value }))}
-                          placeholder="EAAB..."
-                        />
+                        <Label>Conexión con Meta (OAuth)</Label>
+                        {currentAgency?.meta_ads_access_token ? (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">✅ Token configurado</Badge>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const appId = import.meta.env.VITE_META_APP_ID;
+                                if (!appId) {
+                                  toast.error('Falta VITE_META_APP_ID en el entorno.');
+                                  return;
+                                }
+                                if (!currentAgency?.id) return;
+                                const redirectUri = `${window.location.origin}/meta-callback`;
+                                const state = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+                                sessionStorage.setItem('meta_oauth_state', JSON.stringify({ state, agencyId: currentAgency.id }));
+                                const authUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${encodeURIComponent(appId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}&scope=${encodeURIComponent(META_OAUTH_SCOPES)}&response_type=code`;
+                                window.location.href = authUrl;
+                              }}
+                            >
+                              Re-vincular
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-slate-500 hover:text-red-600"
+                              onClick={async () => {
+                                if (!currentAgency?.id) return;
+                                try {
+                                  const { metaAccessToken: _mt, ...restInt } = currentAgency.settings?.integrations || {};
+                                  const newSettings = {
+                                    ...currentAgency.settings,
+                                    integrations: { ...restInt },
+                                  };
+                                  const { error } = await supabase
+                                    .from('agencies')
+                                    .update({
+                                      meta_ads_access_token: null,
+                                      updated_at: new Date().toISOString(),
+                                      settings: newSettings,
+                                    })
+                                    .eq('id', currentAgency.id);
+                                  if (error) throw error;
+                                  await supabase.from('meta_ads_campaigns').delete().eq('agency_id', currentAgency.id);
+                                  await refreshAgency();
+                                  toast.success('Meta Ads desvinculado');
+                                  fetchConnectedAccounts();
+                                } catch (e: unknown) {
+                                  toast.error(e instanceof Error ? e.message : 'Error al desvincular');
+                                }
+                              }}
+                            >
+                              Desvincular
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-2">
+                            <Button
+                              variant="outline"
+                              className="w-full justify-center gap-2 border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-900"
+                              onClick={() => {
+                                const appId = import.meta.env.VITE_META_APP_ID;
+                                if (!appId) {
+                                  toast.error('Falta VITE_META_APP_ID en el entorno.');
+                                  return;
+                                }
+                                if (!currentAgency?.id) {
+                                  toast.error('No se pudo identificar la agencia.');
+                                  return;
+                                }
+                                const redirectUri = `${window.location.origin}/meta-callback`;
+                                const state = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+                                sessionStorage.setItem('meta_oauth_state', JSON.stringify({ state, agencyId: currentAgency.id }));
+                                const authUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${encodeURIComponent(appId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}&scope=${encodeURIComponent(META_OAUTH_SCOPES)}&response_type=code`;
+                                window.location.href = authUrl;
+                              }}
+                            >
+                              🔗 Conectar con Meta
+                            </Button>
+                            <p className="text-xs text-slate-500">
+                              Se abrirá el inicio de sesión de Meta. Tras autorizar, se importarán las cuentas publicitarias disponibles.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 flex flex-col justify-start">
+                        <Label>Importar cuentas desde Meta</Label>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="w-full md:w-auto"
+                          disabled={!currentAgency?.id || !currentAgency?.meta_ads_access_token || syncingMetaAccounts}
+                          onClick={async () => {
+                            if (!currentAgency?.id) return;
+                            setSyncingMetaAccounts(true);
+                            try {
+                              const { data, error } = await supabase.functions.invoke('list-meta-accounts', {
+                                body: { agency_id: currentAgency.id, sync_config: true },
+                              });
+                              if (error) throw error;
+                              if (data?.error) throw new Error(data.error);
+                              toast.success(`Cuentas actualizadas (${data?.count ?? 0} desde Meta).`);
+                              await fetchConnectedAccounts();
+                            } catch (e: unknown) {
+                              toast.error(e instanceof Error ? e.message : 'Error al listar cuentas');
+                            } finally {
+                              setSyncingMetaAccounts(false);
+                            }
+                          }}
+                        >
+                          {syncingMetaAccounts ? 'Sincronizando…' : 'Actualizar lista de cuentas'}
+                        </Button>
+                        <p className="text-xs text-slate-500">Llama a la API de Meta y registra las cuentas en &quot;Cuentas conectadas&quot;.</p>
                       </div>
                     </div>
 

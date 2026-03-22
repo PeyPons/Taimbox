@@ -114,6 +114,7 @@ const TiemposPage = lazyWithRetry(() => import("./pages/TiemposPage"));
 const ApiKeysPage = lazyWithRetry(() => import("./pages/ApiKeysPage"));
 const ContactSupportPage = lazyWithRetry(() => import("./pages/ContactSupportPage"));
 const GoogleCallbackPage = lazyWithRetry(() => import("./pages/GoogleCallbackPage"));
+const MetaCallbackPage = lazyWithRetry(() => import("./pages/MetaCallbackPage"));
 const ResetPasswordPage = lazyWithRetry(() => import("./pages/ResetPasswordPage"));
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -201,6 +202,9 @@ const App = () => (
 
                           {/* Google OAuth Callback (sin AppLayout, página de transición) */}
                           <Route path="/google-callback" element={<Suspense fallback={<PageLoader />}><GoogleCallbackPage /></Suspense>} />
+
+                          {/* Meta (Facebook) OAuth Callback */}
+                          <Route path="/meta-callback" element={<Suspense fallback={<PageLoader />}><MetaCallbackPage /></Suspense>} />
 
                           {/* Área admin: sin AgencyContext, solo platform_admin */}
                           <Route path="/admin" element={<PlatformAdminRoute />}>
