@@ -386,6 +386,7 @@ Si en BD antigua quedó `settings.integrations.metaAccessToken`, el backend aún
 - **Inicio de sesión con Facebook para empresas** → Configuración: URI de redirección OAuth válidos → deben coincidir **exactamente** con el origen real de la SPA + `/meta-callback`: p. ej. `https://taimbox.com/meta-callback` y, si los usuarios entran por subdominio `www`, también `https://www.taimbox.com/meta-callback`. En local: `http://localhost:8080/meta-callback` (o el puerto que use Vite; debe ser el mismo que `window.location.origin` al pulsar "Conectar").
 - **Dominios admitidos para el SDK para JavaScript:** incluir cada host desde el que se carga la app (p. ej. `taimbox.com` y, si aplica, `www.taimbox.com`; para pruebas en máquina, `localhost`).
 - **Información básica → Dominios de la aplicación:** sin `http://` ni `https://`. Como mínimo `taimbox.com`. Si el tráfico entra por **www**, añade también **`www.taimbox.com`** como entrada aparte (Meta trata apex y www como hosts distintos). Para desarrollo local añade **`localhost`**. La URL del sitio puede ser `https://taimbox.com/` o `https://www.taimbox.com/` según el canónico que uses; política y condiciones (`/privacidad`, `/condiciones`) como ya están documentadas.
+- **Verificación de dominio (Meta Business / Developers):** la meta `facebook-domain-verification` está en `index.html` (raíz del build Vite) para que Meta pueda comprobar la propiedad del dominio. Si Meta genera un nuevo código, sustituye el `content` en ese archivo y vuelve a desplegar el frontend.
 - La URL de Supabase/API (`api.taimbox.com`) **no** debe usarse como redirect OAuth del frontend; el callback es siempre el origen de la app (`taimbox.com`, `www` si aplica, o `localhost`).
 
 **Solución de problemas — error Meta: «No se puede cargar la URL / El dominio de esta URL no está incluido en los dominios de la aplicación»:**
@@ -396,6 +397,26 @@ Si en BD antigua quedó `settings.integrations.metaAccessToken`, el backend aún
 5. Guarda cambios en Meta y vuelve a probar; el `redirect_uri` que envía el frontend es siempre `${window.location.origin}/meta-callback` (`AgencySettingsPage.tsx` / `MetaCallbackPage.tsx`).
 
 **Migración SQL:** `supabase/migrations/20250322120000_meta_ads_access_token.sql` añade la columna `meta_ads_access_token` en `agencies` (ejecutar en la instancia antes de usar OAuth en producción).
+
+**Migración SQL (cuentas Meta en BD):** `supabase/migrations/20250322140000_ad_accounts_config_unique.sql` añade `UNIQUE (account_id, agency_id, platform)` en `ad_accounts_config` para que el upsert desde `list-meta-accounts` / `sync-meta-ads` funcione.
+
+**Verificación del negocio y App Review (Meta):** Taimbox es un SaaS: cada agencia conecta **su** cuenta publicitaria. Para que usuarios que no sean administradores de la app puedan autorizar OAuth y para **acceso avanzado** a permisos como `ads_read`, Meta suele exigir **verificación del negocio** y, según el caso, **revisión de la aplicación (App Review)**.
+
+1. **Modo desarrollo vs producción**  
+   Con la app en modo desarrollo, solo cuentas con rol en la app (admin, desarrollador, tester) o usuarios de prueba pueden completar el flujo. Para clientes reales sin rol, la app debe estar **publicada** y los permisos necesarios aprobados.
+
+2. **Verificación del negocio (Business Verification)**  
+   En [Meta for Developers](https://developers.facebook.com) → tu app → **Configuración de la aplicación** → sección relacionada con verificación / **Business Manager** (o [documentación oficial de verificación de negocio](https://developers.facebook.com/docs/development/release/business-verification)). Debes vincular la app a un **Meta Business** y completar la verificación de identidad del negocio (documentación legal, dominio, etc.). Solo administradores del negocio pueden iniciar el proceso.
+
+3. **App Review — permiso `ads_read`**  
+   En el panel: **Casos de uso** / **Permisos y funciones** (según la versión del panel) → solicitar **acceso avanzado** a `ads_read` si Meta lo marca como necesario para “acceso a datos de anuncios de otros usuarios”.  
+   Meta suele pedir: **política de privacidad** y **condiciones** públicas (ya enlazadas en Información básica), **vídeo o capturas** del flujo real (login → Configuración → Integraciones → Conectar Meta → callback), e **instrucciones de prueba** (URL `https://taimbox.com`, cuenta de prueba o pasos para revisor). Redacta en inglés si el formulario lo exige.
+
+4. **Qué decir en la descripción del caso de uso**  
+   Ejemplo: *“Taimbox is a B2B workforce planning platform. Agencies connect their own Meta Ads account via OAuth to read campaign spend and performance for reporting. We only request `ads_read`. Data is stored per agency and used only inside the app.”*
+
+5. **Tras la aprobación**  
+   Publica los cambios en la app si el panel lo pide y comprueba el flujo con una cuenta que **no** sea admin de la app.
 
 ### 5.3. Suscripciones (Stripe)
 
