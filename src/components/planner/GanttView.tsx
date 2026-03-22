@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import type { Employee } from '@/types';
+import type { Allocation, Employee } from '@/types';
 import {
     format,
     addDays,
@@ -30,6 +30,7 @@ import {
     Info,
 } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 import { Badge } from '@/components/ui/badge';
 import {
     Dialog,
@@ -90,7 +91,7 @@ interface GanttViewProps {
 
 /** Una celda = horas totales del empleado en ese proyecto en esa semana (o mes). */
 function buildEmployeePeriodCells(
-    allocations: { employeeId: string; weekStartDate: string; hoursAssigned: number; taskName?: string; status: string }[],
+    allocations: Allocation[],
     projectId: string,
     periodKeys: string[],
     zoomLevel: ZoomLevel,
@@ -157,6 +158,9 @@ export function GanttView({ initialViewDate, employeesFiltered }: GanttViewProps
         projectName: string;
         clientName: string;
         employeeName: string;
+        projectId: string;
+        employeeId: string;
+        clientId: string;
         periodLabel: string;
         hours: number;
         breakdown: CellBreakdown[];
@@ -269,7 +273,7 @@ export function GanttView({ initialViewDate, employeesFiltered }: GanttViewProps
         > = {};
 
         for (const projectId of projectIdsWithData) {
-            const raw = buildEmployeePeriodCells(allocationsInScope as never[], projectId, periodKeys, zoomLevel);
+            const raw = buildEmployeePeriodCells(allocationsInScope, projectId, periodKeys, zoomLevel);
             const rows: Array<{
                 employeeId: string;
                 employeeName: string;
@@ -371,7 +375,11 @@ export function GanttView({ initialViewDate, employeesFiltered }: GanttViewProps
                                     <span className="truncate">
                                         {selectedProject === 'all'
                                             ? 'Todos los proyectos'
-                                            : formatProjectName(projects.find((p) => p.id === selectedProject)?.name || 'Proyecto')}
+                                            : (
+                                                <SensitiveText kind="project" id={selectedProject}>
+                                                    {formatProjectName(projects.find((p) => p.id === selectedProject)?.name || 'Proyecto')}
+                                                </SensitiveText>
+                                            )}
                                     </span>
                                     <ChevronDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
@@ -414,7 +422,7 @@ export function GanttView({ initialViewDate, employeesFiltered }: GanttViewProps
                                                                 selectedProject === p.id ? 'opacity-100' : 'opacity-0',
                                                             )}
                                                         />
-                                                        {formatProjectName(p.name)}
+                                                        <SensitiveText kind="project" id={p.id}>{formatProjectName(p.name)}</SensitiveText>
                                                     </CommandItem>
                                                 ))}
                                         </CommandGroup>
@@ -541,10 +549,14 @@ export function GanttView({ initialViewDate, employeesFiltered }: GanttViewProps
                                             />
                                             <div className="min-w-0 flex-1">
                                                 <div className="font-bold text-xs text-slate-800 truncate leading-none mb-0.5">
-                                                    {formatProjectName(project?.name || '')}
+                                                    <SensitiveText kind="project" id={projectId}>
+                                                        {formatProjectName(project?.name || '')}
+                                                    </SensitiveText>
                                                 </div>
                                                 <div className="text-[9px] font-medium text-slate-500 truncate uppercase tracking-tight">
-                                                    {client?.name || 'Interno'}
+                                                    <SensitiveText kind="account" id={client?.id ?? `project-${projectId}-internal`}>
+                                                        {client?.name || 'Interno'}
+                                                    </SensitiveText>
                                                 </div>
                                             </div>
                                             <Badge variant="outline" className="text-[9px] h-5 bg-white shrink-0">
@@ -561,7 +573,9 @@ export function GanttView({ initialViewDate, employeesFiltered }: GanttViewProps
                                             <div className="w-72 shrink-0 p-2 pl-10 border-r flex items-center gap-2 bg-white/80 min-h-[44px]">
                                                 <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                                                 <div className="min-w-0 flex-1">
-                                                    <div className="text-[11px] font-semibold text-slate-800 truncate">{row.employeeName}</div>
+                                                    <div className="text-[11px] font-semibold text-slate-800 truncate">
+                                                        <SensitiveText kind="employee" id={row.employeeId}>{row.employeeName}</SensitiveText>
+                                                    </div>
                                                     <div className="text-[10px] text-slate-500 tabular-nums font-medium">
                                                         {row.totalVisibleHours}h en periodo
                                                     </div>
@@ -598,6 +612,9 @@ export function GanttView({ initialViewDate, employeesFiltered }: GanttViewProps
                                                                             projectName: formatProjectName(project?.name || ''),
                                                                             clientName: client?.name || 'Interno',
                                                                             employeeName: row.employeeName,
+                                                                            projectId,
+                                                                            employeeId: row.employeeId,
+                                                                            clientId: client?.id ?? `project-${projectId}-internal`,
                                                                             periodLabel: formatPeriodLabel(pk, zoomLevel),
                                                                             hours: h,
                                                                             breakdown: [...(cell?.breakdown ?? [])].sort(
@@ -644,11 +661,15 @@ export function GanttView({ initialViewDate, employeesFiltered }: GanttViewProps
                                     {cellDetail && (
                                         <>
                                             <p>
-                                                <span className="font-semibold text-slate-800">{cellDetail.employeeName}</span>
+                                                <span className="font-semibold text-slate-800">
+                                                    <SensitiveText kind="employee" id={cellDetail.employeeId}>{cellDetail.employeeName}</SensitiveText>
+                                                </span>
                                                 <span className="text-slate-400"> · </span>
-                                                {cellDetail.projectName}
+                                                <SensitiveText kind="project" id={cellDetail.projectId}>{cellDetail.projectName}</SensitiveText>
                                             </p>
-                                            <p className="text-xs text-slate-500">{cellDetail.clientName}</p>
+                                            <p className="text-xs text-slate-500">
+                                                <SensitiveText kind="account" id={cellDetail.clientId}>{cellDetail.clientName}</SensitiveText>
+                                            </p>
                                             <p className="text-xs flex items-center gap-1.5 mt-2">
                                                 <CalendarDays className="h-3.5 w-3.5 shrink-0" />
                                                 {cellDetail.periodLabel}
@@ -676,7 +697,9 @@ export function GanttView({ initialViewDate, employeesFiltered }: GanttViewProps
                                             className="grid grid-cols-[1fr_auto_auto] gap-2 px-3 py-2.5 text-sm items-center hover:bg-slate-50/80"
                                         >
                                             <span className="truncate font-medium text-slate-800" title={b.taskName}>
-                                                {b.taskName}
+                                                <SensitiveText kind="task" id={`${cellDetail.projectId}|${cellDetail.employeeId}|${idx}|${b.taskName}`}>
+                                                    {b.taskName}
+                                                </SensitiveText>
                                             </span>
                                             <span className="font-mono text-sm tabular-nums text-right shrink-0">
                                                 {Number.isInteger(b.hours) ? b.hours : b.hours.toFixed(2)}h

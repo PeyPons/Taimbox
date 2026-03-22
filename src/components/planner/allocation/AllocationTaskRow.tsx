@@ -30,6 +30,7 @@ import { parseISO } from 'date-fns';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { TaskTimer } from '@/components/employee/TaskTimer';
 import { useAgency } from '@/contexts/AgencyContext';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 interface AllocationTaskRowProps {
     alloc: Allocation;
@@ -133,7 +134,9 @@ export function AllocationTaskRow({
                                         "font-medium leading-tight",
                                         isMobile ? "text-sm" : "text-xs",
                                         isCompleted && "line-through text-slate-400"
-                                    )}>{alloc.taskName || 'Tarea'}</span>
+                                    )}>
+                                        <SensitiveText kind="task" id={alloc.id}>{alloc.taskName || 'Tarea'}</SensitiveText>
+                                    </span>
                                     {/* Badge Weekly si la tarea fue actualizada vía Weekly */}
                                     {(() => {
                                         const isTransferred = alloc.taskName?.includes('(transferida de');
@@ -162,7 +165,9 @@ export function AllocationTaskRow({
                                         {!showAllWeeks ? (
                                             // Vista semanal: mostrar todo completo
                                             <>
-                                                <span className={cn("font-medium", isDepReady ? "text-slate-700" : "text-slate-600")}>{depTask.taskName}</span>
+                                                <span className={cn("font-medium", isDepReady ? "text-slate-700" : "text-slate-600")}>
+                                                    <SensitiveText kind="task" id={depTask.id}>{depTask.taskName}</SensitiveText>
+                                                </span>
                                                 {depOwner && (
                                                     <>
                                                         <Avatar className="h-3 w-3 border border-slate-300 shrink-0">
@@ -171,16 +176,22 @@ export function AllocationTaskRow({
                                                                 {depOwner.name.substring(0, 2).toUpperCase()}
                                                             </AvatarFallback>
                                                         </Avatar>
-                                                        <span className="font-semibold text-slate-800">{depOwner.name}</span>
+                                                        <span className="font-semibold text-slate-800">
+                                                            <SensitiveText kind="employee" id={depOwner.id}>{depOwner.name}</SensitiveText>
+                                                        </span>
                                                     </>
                                                 )}
                                             </>
                                         ) : (
                                             // Vista mensual: layout compacto sin avatar
                                             <>
-                                                <span className={cn("font-medium truncate max-w-[80px]", isDepReady ? "text-slate-700" : "text-slate-600")} title={depTask.taskName}>{depTask.taskName}</span>
+                                                <span className={cn("font-medium truncate max-w-[80px]", isDepReady ? "text-slate-700" : "text-slate-600")} title={depTask.taskName}>
+                                                    <SensitiveText kind="task" id={depTask.id}>{depTask.taskName}</SensitiveText>
+                                                </span>
                                                 {depOwner && (
-                                                    <span className="font-semibold text-slate-800 truncate max-w-[60px]" title={depOwner.name}>{depOwner.name.split(' ')[0]}</span>
+                                                    <span className="font-semibold text-slate-800 truncate max-w-[60px]" title={depOwner.name}>
+                                                        <SensitiveText kind="employee" id={depOwner.id}>{depOwner.name.split(' ')[0]}</SensitiveText>
+                                                    </span>
                                                 )}
                                             </>
                                         )}
@@ -195,7 +206,13 @@ export function AllocationTaskRow({
                                             return (
                                                 <div key={bt.id} className="flex items-center gap-1 text-[9px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded w-fit border border-amber-200">
                                                     <Users className="w-2.5 h-2.5" />
-                                                    <span>💡 <strong>{firstName}</strong> te espera</span>
+                                                    <span>💡 <strong>
+                                                        {blockedUser ? (
+                                                            <SensitiveText kind="employee" id={blockedUser.id}>{firstName}</SensitiveText>
+                                                        ) : (
+                                                            firstName
+                                                        )}
+                                                    </strong> te espera</span>
                                                 </div>
                                             );
                                         })}

@@ -11,6 +11,7 @@ import { getValidRole } from '@/utils/roleUtils';
 import { useAppOrDemo } from '@/hooks/useAppOrDemo';
 import { useAgency } from '@/contexts/AgencyContext';
 import { WeekCell } from './WeekCell';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 export interface WeekData {
   weekStart: Date;
@@ -132,7 +133,7 @@ function MobileEmployeeCard({
             )}
           </div>
           <div className="flex flex-col min-w-0 flex-1">
-            <span className="font-semibold text-sm text-foreground truncate">{employee.name}</span>
+            <SensitiveText kind="employee" id={employee.id} className="font-semibold text-sm text-foreground truncate">{employee.name}</SensitiveText>
             <span className="text-xs text-muted-foreground uppercase tracking-wider truncate">{displayRole}</span>
           </div>
         </div>

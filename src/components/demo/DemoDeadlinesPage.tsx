@@ -15,6 +15,7 @@ import {
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 import { getMonthlyCapacity as getMonthlyCapacityUtil } from '@/utils/dateUtils';
 import { demoDeadlines } from '@/data/demoData';
 
@@ -178,7 +179,9 @@ export function DemoDeadlinesPage() {
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <h3 className="font-semibold text-slate-900">{project.name}</h3>
+                                  <h3 className="font-semibold text-slate-900">
+                                    <SensitiveText kind="project" id={project.id}>{project.name}</SensitiveText>
+                                  </h3>
                                   {project.projectType === 'PPC' && <Badge variant="outline" className="text-[10px] h-5">PPC</Badge>}
                                 </div>
                                 <div className="flex items-center gap-4 mt-1 text-sm text-slate-500">

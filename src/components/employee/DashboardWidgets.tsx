@@ -7,6 +7,7 @@ import { Users, ArrowRight, Sparkles, Link as LinkIcon, CheckCircle2, Clock, Fla
 import { isSameMonth, parseISO } from 'date-fns';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 interface WidgetProps {
     employeeId: string;
@@ -80,12 +81,22 @@ export const PriorityInsights = memo(function PriorityInsights({ employeeId, vie
             content: (
                 <div className="space-y-3">
                     <p className="text-sm text-amber-800">
-                        Ayuda a <strong>{firstBlockedUser}</strong> a seguir avanzando completando esta tarea:
+                        Ayuda a{' '}
+                        <strong>
+                            {blockedUsers[0]?.user ? (
+                                <SensitiveText kind="employee" id={blockedUsers[0].user.id}>{firstBlockedUser}</SensitiveText>
+                            ) : (
+                                firstBlockedUser
+                            )}
+                        </strong>{' '}
+                        a seguir avanzando completando esta tarea:
                     </p>
                     <div className="bg-white/60 rounded-lg p-3 border border-amber-100">
-                        <p className="font-bold text-amber-900">{blockingTask.taskName || 'Sin nombre'}</p>
+                        <p className="font-bold text-amber-900">
+                            <SensitiveText kind="task" id={blockingTask.id}>{blockingTask.taskName || 'Sin nombre'}</SensitiveText>
+                        </p>
                         <Badge variant="outline" className="mt-1 text-[9px] bg-white">
-                            {formatProjectName(proj?.name || '')}
+                            <SensitiveText kind="project" id={blockingTask.projectId}>{formatProjectName(proj?.name || '')}</SensitiveText>
                         </Badge>
                     </div>
 
@@ -95,9 +106,15 @@ export const PriorityInsights = memo(function PriorityInsights({ employeeId, vie
                         </p>
                         {blockedUsers.map(({ task, user }) => (
                             <div key={task.id} className="flex items-center justify-between bg-white/80 px-2 py-1.5 rounded border border-amber-100">
-                                <span className="text-xs text-amber-800 truncate max-w-[120px]">{task.taskName}</span>
+                                <span className="text-xs text-amber-800 truncate max-w-[120px]">
+                                    <SensitiveText kind="task" id={task.id}>{task.taskName}</SensitiveText>
+                                </span>
                                 <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded shrink-0">
-                                    {user?.name?.split(' ')[0]}
+                                    {user ? (
+                                        <SensitiveText kind="employee" id={user.id}>{user.name?.split(' ')[0] ?? ''}</SensitiveText>
+                                    ) : (
+                                        ''
+                                    )}
                                 </span>
                             </div>
                         ))}
@@ -113,7 +130,11 @@ export const PriorityInsights = memo(function PriorityInsights({ employeeId, vie
             title: "🏁 ¡Victoria rápida!",
             content: (
                 <p className="text-sm">
-                    Estás a punto de terminar en <em>{formatProjectName(proj?.name || '')}</em>. ¡Un pequeño empujón y lo tienes!
+                    Estás a punto de terminar en{' '}
+                    <em>
+                        <SensitiveText kind="project" id={quickWinTask.projectId}>{formatProjectName(proj?.name || '')}</SensitiveText>
+                    </em>
+                    . ¡Un pequeño empujón y lo tienes!
                 </p>
             ),
             style: 'bg-emerald-50 border-emerald-200 text-emerald-900'
@@ -125,7 +146,13 @@ export const PriorityInsights = memo(function PriorityInsights({ employeeId, vie
             title: "🚀 Tu próximo paso",
             content: (
                 <p className="text-sm">
-                    Empieza por <strong>{formatProjectName(proj?.name || '')}</strong> ({heavyTask?.hoursAssigned}h). Es tu bloque más grande y ganarás mucho momentum.
+                    Empieza por{' '}
+                    <strong>
+                        <SensitiveText kind="project" id={heavyTask?.projectId ?? 'unknown'}>
+                            {formatProjectName(proj?.name || '')}
+                        </SensitiveText>
+                    </strong>{' '}
+                    ({heavyTask?.hoursAssigned}h). Es tu bloque más grande y ganarás mucho momentum.
                 </p>
             ),
             style: 'bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-200 text-indigo-900'
@@ -208,7 +235,9 @@ export const ProjectTeamPulse = memo(function ProjectTeamPulse({ employeeId, vie
                                     {/* Header con proyecto */}
                                     <div className="px-3 py-1.5 bg-white/50 border-b border-slate-100 flex items-center justify-between">
                                         <Badge variant="outline" className="text-[9px] h-5 bg-white border-slate-200 text-slate-600">
-                                            {formatProjectName(item.myProject?.name || '')}
+                                            <SensitiveText kind="project" id={item.myTask.projectId}>
+                                                {formatProjectName(item.myProject?.name || '')}
+                                            </SensitiveText>
                                         </Badge>
                                         {item.isReady ? (
                                             <span className="flex items-center gap-1 text-[10px] text-emerald-700 font-bold">
@@ -223,7 +252,9 @@ export const ProjectTeamPulse = memo(function ProjectTeamPulse({ employeeId, vie
 
                                     {/* Contenido */}
                                     <div className="px-3 py-2">
-                                        <p className="font-semibold text-slate-800 mb-2">{item.myTask.taskName}</p>
+                                        <p className="font-semibold text-slate-800 mb-2">
+                                            <SensitiveText kind="task" id={item.myTask.id}>{item.myTask.taskName}</SensitiveText>
+                                        </p>
                                         <div className={`flex items-center gap-2 text-[11px] px-2 py-1.5 rounded ${item.isReady ? 'bg-emerald-100/50' : 'bg-slate-100/50'}`}>
                                             <ArrowRight className="w-3 h-3 text-slate-400" />
                                             <span className="text-slate-600">
@@ -238,10 +269,18 @@ export const ProjectTeamPulse = memo(function ProjectTeamPulse({ employeeId, vie
                                                 </Avatar>
                                             )}
                                             <span className={`font-bold ${item.isReady ? 'text-emerald-700' : 'text-slate-700'}`}>
-                                                {item.depOwner?.name?.split(' ')[0]}
+                                                {item.depOwner ? (
+                                                    <SensitiveText kind="employee" id={item.depOwner.id}>
+                                                        {item.depOwner.name?.split(' ')[0]}
+                                                    </SensitiveText>
+                                                ) : null}
                                             </span>
                                             <span className="text-slate-600 text-[10px] font-medium">
-                                                ({item.depTask?.taskName})
+                                                (
+                                                {item.depTask ? (
+                                                    <SensitiveText kind="task" id={item.depTask.id}>{item.depTask.taskName}</SensitiveText>
+                                                ) : null}
+                                                )
                                             </span>
                                         </div>
                                     </div>
@@ -264,7 +303,9 @@ export const ProjectTeamPulse = memo(function ProjectTeamPulse({ employeeId, vie
                                     {/* Header con proyecto */}
                                     <div className="px-3 py-1.5 bg-white/50 border-b border-amber-100 flex items-center justify-between">
                                         <Badge variant="outline" className="text-[9px] h-5 bg-white border-amber-200 text-amber-600">
-                                            {formatProjectName(item.myProject?.name || '')}
+                                            <SensitiveText kind="project" id={item.myTask.projectId}>
+                                                {formatProjectName(item.myProject?.name || '')}
+                                            </SensitiveText>
                                         </Badge>
                                         <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
                                     </div>
@@ -272,7 +313,7 @@ export const ProjectTeamPulse = memo(function ProjectTeamPulse({ employeeId, vie
                                     {/* Contenido */}
                                     <div className="px-3 py-2">
                                         <p className="font-semibold text-amber-900 mb-2">
-                                            {item.myTask.taskName}
+                                            <SensitiveText kind="task" id={item.myTask.id}>{item.myTask.taskName}</SensitiveText>
                                         </p>
 
                                         {/* Lista de compañeros que esperan */}
@@ -281,9 +322,16 @@ export const ProjectTeamPulse = memo(function ProjectTeamPulse({ employeeId, vie
                                                 const waitingUser = employees.find(e => e.id === bt.employeeId);
                                                 return (
                                                     <div key={bt.id} className="flex items-center justify-between">
-                                                        <span className="text-amber-800 truncate max-w-[120px]">{bt.taskName}</span>
+                                                        <span className="text-amber-800 truncate max-w-[120px]">
+                                                            <SensitiveText kind="task" id={bt.id}>{bt.taskName}</SensitiveText>
+                                                        </span>
                                                         <span className="font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded text-[10px] shrink-0">
-                                                            {waitingUser?.name?.split(' ')[0]} espera
+                                                            {waitingUser ? (
+                                                                <SensitiveText kind="employee" id={waitingUser.id}>
+                                                                    {waitingUser.name?.split(' ')[0]}
+                                                                </SensitiveText>
+                                                            ) : null}{' '}
+                                                            espera
                                                         </span>
                                                     </div>
                                                 );

@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
@@ -409,13 +410,16 @@ export default function OperationsRadarPage() {
             // Para cada tarea bloqueada: nombre de la tarea y de la persona bloqueada
             const blockedTaskDetails = waitingAllocs.map(wa => ({
                 taskName: wa.taskName || 'Tarea sin nombre',
-                employeeName: employees?.find(e => e.id === wa.employeeId)?.name ?? 'Alguien'
+                employeeName: employees?.find(e => e.id === wa.employeeId)?.name ?? 'Alguien',
+                allocationId: wa.id,
+                employeeId: wa.employeeId,
             }));
 
             return {
                 allocation,
                 projectName: project?.name ?? '',
                 clientName: client?.name ?? '',
+                clientId: client?.id,
                 blockerEmployee,
                 waitingAllocs,
                 waitingEmployees: uniqueWaitingEmployees,
@@ -493,12 +497,9 @@ export default function OperationsRadarPage() {
                             <p className="text-xs text-slate-500 pt-3">Todas las tareas de las que dependen otras están completadas o no hay dependencias este mes.</p>
                         ) : (
                             <ul className="space-y-2 pt-3">
-                                {blockingTasksForView.map(({ allocation, projectName, clientName, blockerEmployee, waitingEmployees, blockedTaskDetails }) => {
+                                {blockingTasksForView.map(({ allocation, projectName, clientName, clientId, blockerEmployee, waitingEmployees, blockedTaskDetails }) => {
                                     const blockerName = blockerEmployee?.name ?? 'Alguien';
                                     const blockerTaskName = allocation.taskName || 'Tarea sin nombre';
-
-                                    // Quién es bloqueado (lista de nombres únicos)
-                                    const blockedNames = waitingEmployees.map(e => e.name).join(', ');
 
                                     return (
                                         <li key={allocation.id} className="flex items-start gap-3 py-3 px-3 rounded-md bg-slate-50/80 text-xs border border-slate-100">
@@ -511,14 +512,27 @@ export default function OperationsRadarPage() {
                                             <div className="min-w-0 flex-1 space-y-1.5">
                                                 {/* Quién bloquea a quién */}
                                                 <p className="text-sm font-semibold text-slate-800">
-                                                    <span className="text-amber-700">{blockerName}</span>
+                                                    <span className="text-amber-700">
+                                                        <SensitiveText kind="employee" id={allocation.employeeId}>{blockerName}</SensitiveText>
+                                                    </span>
                                                     {' bloquea a '}
-                                                    <span className="text-slate-700">{blockedNames || 'otras tareas'}</span>
+                                                    <span className="text-slate-700">
+                                                        {waitingEmployees.length === 0
+                                                            ? 'otras tareas'
+                                                            : waitingEmployees.map((e, i) => (
+                                                                <span key={e.id}>
+                                                                    {i > 0 && ', '}
+                                                                    <SensitiveText kind="employee" id={e.id}>{e.name}</SensitiveText>
+                                                                </span>
+                                                            ))}
+                                                    </span>
                                                 </p>
                                                 {/* Tarea del bloqueador */}
                                                 <p className="text-[11px] text-slate-600">
                                                     <span className="font-medium text-slate-500">Tarea bloqueadora:</span>{' '}
-                                                    <span className="text-slate-800" title={blockerTaskName}>{blockerTaskName}</span>
+                                                    <span className="text-slate-800" title={blockerTaskName}>
+                                                        <SensitiveText kind="task" id={allocation.id}>{blockerTaskName}</SensitiveText>
+                                                    </span>
                                                 </p>
                                                 {/* Tarea(s) bloqueada(s) */}
                                                 {blockedTaskDetails.length > 0 && (
@@ -529,8 +543,16 @@ export default function OperationsRadarPage() {
                                                         <ul className="mt-0.5 list-none space-y-0.5 pl-0">
                                                             {blockedTaskDetails.map((b, i) => (
                                                                 <li key={i} className="text-slate-700">
-                                                                    · <span className="text-slate-800">{b.taskName}</span>
-                                                                    <span className="text-slate-500"> ({b.employeeName})</span>
+                                                                    ·{' '}
+                                                                    <span className="text-slate-800">
+                                                                        <SensitiveText kind="task" id={b.allocationId}>{b.taskName}</SensitiveText>
+                                                                    </span>
+                                                                    <span className="text-slate-500">
+                                                                        {' '}
+                                                                        (
+                                                                        <SensitiveText kind="employee" id={b.employeeId}>{b.employeeName}</SensitiveText>
+                                                                        )
+                                                                    </span>
                                                                 </li>
                                                             ))}
                                                         </ul>
@@ -538,8 +560,14 @@ export default function OperationsRadarPage() {
                                                 )}
                                                 {/* Proyecto y cliente */}
                                                 <p className="text-[11px] text-slate-500 truncate" title={`${formatProjectName(projectName)}${clientName ? ` · ${clientName}` : ''}`}>
-                                                    {formatProjectName(projectName)}
-                                                    {clientName && ` · ${clientName}`}
+                                                    <SensitiveText kind="project" id={allocation.projectId}>{formatProjectName(projectName)}</SensitiveText>
+                                                    {clientName && clientId && (
+                                                        <>
+                                                            {' · '}
+                                                            <SensitiveText kind="account" id={clientId}>{clientName}</SensitiveText>
+                                                        </>
+                                                    )}
+                                                    {clientName && !clientId && ` · ${clientName}`}
                                                 </p>
                                             </div>
                                         </li>
@@ -770,11 +798,28 @@ export default function OperationsRadarPage() {
                                                                 <ChevronDown className={cn("h-4 w-4 text-slate-400 shrink-0 transition-transform", isExpanded && "rotate-180")} />
                                                                 <div className="min-w-0 flex-1 text-left">
                                                                 <h4 className="text-sm font-semibold text-slate-900 truncate">
-                                                                        {formatProjectName(row.projectName)}
+                                                                        <SensitiveText kind="project" id={row.projectId}>
+                                                                            {formatProjectName(row.projectName)}
+                                                                        </SensitiveText>
                                                                 </h4>
                                                                     <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5 text-xs text-slate-600">
-                                                                        {row.clientName && <span>{row.clientName}</span>}
-                                                                        {deptName && <span className="text-slate-500">· {deptName}</span>}
+                                                                        {row.clientName && project?.clientId && (
+                                                                            <span>
+                                                                                <SensitiveText kind="account" id={project.clientId}>{row.clientName}</SensitiveText>
+                                                                            </span>
+                                                                        )}
+                                                                        {row.clientName && !project?.clientId && <span>{row.clientName}</span>}
+                                                                        {deptName && (
+                                                                            <span className="text-slate-500">
+                                                                                ·{' '}
+                                                                                <SensitiveText
+                                                                                    kind="department"
+                                                                                    id={project?.responsibleDepartmentId ?? 'dept-unknown'}
+                                                                                >
+                                                                                    {deptName}
+                                                                                </SensitiveText>
+                                                                            </span>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                                 <Badge
@@ -916,8 +961,14 @@ export default function OperationsRadarPage() {
                                                                                                     </AvatarFallback>
                                                                                                 </Avatar>
                                                                                                 <div className="min-w-0 flex-1">
-                                                                                                    <p className="font-medium truncate text-slate-800">{task.taskName || 'Tarea'}</p>
-                                                                                                    <p className="text-[10px] text-slate-400">{emp?.name} · Sem {format(parseISO(task.weekStartDate), 'w')}</p>
+                                                                                                    <p className="font-medium truncate text-slate-800">
+                                                                                                        <SensitiveText kind="task" id={task.id}>{task.taskName || 'Tarea'}</SensitiveText>
+                                                                                                    </p>
+                                                                                                    <p className="text-[10px] text-slate-400">
+                                                                                                        <SensitiveText kind="employee" id={task.employeeId}>{emp?.name ?? '—'}</SensitiveText>
+                                                                                                        {' · Sem '}
+                                                                                                        {format(parseISO(task.weekStartDate), 'w')}
+                                                                                                    </p>
                                                                                                 </div>
                                                                                             </div>
                                                                                             <div className="text-right shrink-0">
@@ -964,8 +1015,14 @@ export default function OperationsRadarPage() {
                                                                                                     </AvatarFallback>
                                                                                                 </Avatar>
                                                                                                 <div className="min-w-0 flex-1">
-                                                                                                    <p className="font-medium truncate text-slate-800">{task.taskName || 'Tarea'}</p>
-                                                                                                    <p className="text-[10px] text-slate-400">{emp?.name} · Sem {format(parseISO(task.weekStartDate), 'w')}</p>
+                                                                                                    <p className="font-medium truncate text-slate-800">
+                                                                                                        <SensitiveText kind="task" id={task.id}>{task.taskName || 'Tarea'}</SensitiveText>
+                                                                                                    </p>
+                                                                                                    <p className="text-[10px] text-slate-400">
+                                                                                                        <SensitiveText kind="employee" id={task.employeeId}>{emp?.name ?? '—'}</SensitiveText>
+                                                                                                        {' · Sem '}
+                                                                                                        {format(parseISO(task.weekStartDate), 'w')}
+                                                                                                    </p>
                                                                                                 </div>
                                                                                             </div>
                                                                                             <div className="text-right shrink-0 space-y-0.5">

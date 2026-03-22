@@ -24,6 +24,8 @@ import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
+import { usePrivacyDemo } from '@/contexts/PrivacyDemoContext';
 
 interface GlobalPlanningInconsistenciesProps {
   viewDate: Date;
@@ -75,6 +77,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
   const [coherenceSearchQuery, setCoherenceSearchQuery] = useState('');
   const listTopRef = useRef<HTMLDivElement>(null);
   const { formatName: formatProjectName } = useProjectAliasing();
+  const { isActive: isPrivacyDemo, anonymizer: privacyAnonymizer } = usePrivacyDemo();
 
   const showLocalProjectSearch = !hideProjectSearch;
 
@@ -413,7 +416,15 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                     <Popover open={openFilterProject} onOpenChange={setOpenFilterProject}>
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="min-w-[220px] h-10 text-sm justify-between font-normal">
-                          <span className="truncate">{selectedProjectId === 'all' ? 'Todos los proyectos' : formatProjectName(projects.find(p => p.id === selectedProjectId)?.name ?? '')}</span>
+                          <span className="truncate">
+                            {selectedProjectId === 'all'
+                              ? 'Todos los proyectos'
+                              : (
+                                  <SensitiveText kind="project" id={selectedProjectId}>
+                                    {formatProjectName(projects.find(p => p.id === selectedProjectId)?.name ?? '')}
+                                  </SensitiveText>
+                                )}
+                          </span>
                           <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                         </Button>
                       </PopoverTrigger>
@@ -430,7 +441,9 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                               {projects.map(proj => (
                                 <CommandItem key={proj.id} value={formatProjectName(proj.name || '')} className="py-2.5" onSelect={() => { setSelectedProjectId(proj.id); setOpenFilterProject(false); }}>
                                   <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedProjectId === proj.id ? 'opacity-100' : 'opacity-0')} />
-                                  <span className="truncate">{formatProjectName(proj.name)}</span>
+                                  <span className="truncate">
+                                    <SensitiveText kind="project" id={proj.id}>{formatProjectName(proj.name)}</SensitiveText>
+                                  </span>
                                 </CommandItem>
                               ))}
                             </CommandGroup>
@@ -447,7 +460,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                     <div className="relative min-w-[220px] cursor-pointer" role="button" tabIndex={0} onClick={() => setOpenFilterEmployee(true)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenFilterEmployee(true); } }}>
                       <Input
                         readOnly
-                        value={selectedEmployeeId === 'all' ? '' : employees.find(e => e.id === selectedEmployeeId)?.name ?? ''}
+                        value={selectedEmployeeId === 'all' ? '' : (isPrivacyDemo ? privacyAnonymizer.employee(selectedEmployeeId) : (employees.find(e => e.id === selectedEmployeeId)?.name ?? ''))}
                         placeholder="Filtrar por empleado..."
                         className="pr-9 h-10 cursor-pointer bg-background"
                         aria-label="Filtrar por empleado"
@@ -468,7 +481,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                           {employees.filter(e => e.isActive).map(emp => (
                             <CommandItem key={emp.id} value={emp.name || ''} className="py-2.5" onSelect={() => { setSelectedEmployeeId(emp.id); setOpenFilterEmployee(false); }}>
                               <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedEmployeeId === emp.id ? 'opacity-100' : 'opacity-0')} />
-                              {emp.name}
+                              <SensitiveText kind="employee" id={emp.id}>{emp.name}</SensitiveText>
                             </CommandItem>
                           ))}
                         </CommandGroup>
@@ -521,7 +534,9 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-sm text-slate-800 truncate">
-                        {formatProjectName(inc.projectName)}
+                        <SensitiveText kind="project" id={inc.projectId}>
+                          {formatProjectName(inc.projectName)}
+                        </SensitiveText>
                       </div>
                       {(inc.budgetHours > 0 || inc.minimumHours > 0) && (
                         <div className="mt-1 text-[10px] text-slate-500">
@@ -623,7 +638,9 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1 min-w-0">
-                                <div className="font-medium text-slate-700 truncate">{emp.employeeName}</div>
+                                <div className="font-medium text-slate-700 truncate">
+                                  <SensitiveText kind="employee" id={emp.employeeId}>{emp.employeeName}</SensitiveText>
+                                </div>
                                 <div className="flex flex-col gap-0.5 mt-1 text-[10px]">
                                   <div className="flex items-center gap-2 flex-wrap">
                                     {emp.hasDeadline ? (

@@ -5,6 +5,7 @@ import { useAgency } from '@/contexts/AgencyContext';
 import { getValidRole } from '@/utils/roleUtils';
 import { format, startOfWeek } from 'date-fns';
 import { isCurrentWeek, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 interface EmployeeRowProps {
   employee: Employee;
@@ -52,7 +53,9 @@ export function EmployeeRow({
             )}
           </div>
           <div className="flex flex-col min-w-0 flex-1">
-            <span className="font-semibold text-sm text-foreground line-clamp-2 break-words leading-tight">{employee.name}</span>
+            <SensitiveText kind="employee" id={employee.id} className="font-semibold text-sm text-foreground line-clamp-2 break-words leading-tight" asBlock>
+              {employee.name}
+            </SensitiveText>
             <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{displayRole}</span>
           </div>
         </div>

@@ -7,6 +7,7 @@ import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { format, startOfMonth } from 'date-fns';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -309,7 +310,9 @@ export function ProjectImpactSummary({
               {projectImpact.map(p => (
                 <div key={p.id} className="bg-white p-2.5 rounded border shadow-sm text-xs">
                   <div className="flex justify-between items-start mb-1">
-                    <span className="font-semibold text-slate-700 line-clamp-1 mr-2">{formatProjectName(p.name)}</span>
+                    <span className="font-semibold text-slate-700 line-clamp-1 mr-2">
+                      <SensitiveText kind="project" id={p.id}>{formatProjectName(p.name)}</SensitiveText>
+                    </span>
                     <Badge variant="secondary" className="h-4 px-1 text-[9px] bg-slate-100 text-slate-600 font-normal shrink-0">
                       +{p.adding.toFixed(1)}h
                     </Badge>
@@ -359,7 +362,14 @@ export function ProjectImpactSummary({
                                 "text-[10px] font-medium",
                                 isCurrentEmployee ? "text-blue-700" : "text-indigo-700"
                               )}>
-                                {isCurrentEmployee ? "Tu deadline:" : `${empDeadline.employeeName} deadline:`}
+                                {isCurrentEmployee ? (
+                                  'Tu deadline:'
+                                ) : (
+                                  <>
+                                    <SensitiveText kind="employee" id={empDeadline.employeeId}>{empDeadline.employeeName}</SensitiveText>
+                                    {' '}deadline:
+                                  </>
+                                )}
                               </span>
                               <span className={cn(
                                 "font-medium text-[10px]",
@@ -437,7 +447,7 @@ export function ProjectImpactSummary({
                             <div key={empLoad.employeeId} className="space-y-1">
                               <div className="flex justify-between items-center">
                                 <span className="text-[10px] font-medium text-indigo-700">
-                                  {empLoad.employeeName}:
+                                  <SensitiveText kind="employee" id={empLoad.employeeId}>{empLoad.employeeName}</SensitiveText>:
                                 </span>
                                 <span className={cn(
                                   "font-medium text-[10px]",
@@ -488,7 +498,7 @@ export function ProjectImpactSummary({
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
           )}
           <span className={cn("font-medium truncate max-w-[120px]", p.exceeds ? "text-amber-700" : "text-emerald-700")}>
-            {formatProjectName(p.name)}
+            <SensitiveText kind="project" id={p.id}>{formatProjectName(p.name)}</SensitiveText>
           </span>
           <span className={cn("tabular-nums", p.exceeds ? "text-amber-600" : "text-emerald-600")}>
             +{p.adding}h

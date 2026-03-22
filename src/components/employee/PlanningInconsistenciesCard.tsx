@@ -20,6 +20,7 @@ import { format, isSameMonth, parseISO, startOfMonth, endOfMonth } from 'date-fn
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
 import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 /** Píldora compacta: icono violeta (#7C3AED), texto gris pizarra, borde/sombra muy suaves (referencia UX). */
 const addTasksButtonClass =
@@ -558,7 +559,9 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                         </button>
                         {/* Nombre del proyecto */}
                         <div className="font-semibold text-sm text-slate-800 truncate min-w-0">
-                          {formatProjectName(inc.projectName)}
+                          <SensitiveText kind="project" id={inc.projectId}>
+                            {formatProjectName(inc.projectName)}
+                          </SensitiveText>
                         </div>
                       </div>
 
@@ -769,7 +772,9 @@ export const PlanningInconsistenciesCard = memo(function PlanningInconsistencies
                                       </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 min-w-0">
-                                      <div className="font-semibold text-slate-800 truncate text-sm mb-1">{tm.employeeName}</div>
+                                      <div className="font-semibold text-slate-800 truncate text-sm mb-1">
+                                        <SensitiveText kind="employee" id={tm.employeeId}>{tm.employeeName}</SensitiveText>
+                                      </div>
                                       <div className="flex items-center gap-2 flex-wrap gap-y-1">
                                         {tm.deadlineHours > 0 ? (
                                           <>

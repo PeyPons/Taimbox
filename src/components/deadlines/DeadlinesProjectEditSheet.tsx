@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 import { CheckCircle2 } from 'lucide-react';
 
 export interface InlineFormData {
@@ -71,7 +72,9 @@ export function DeadlinesProjectEditSheet({
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
       <SheetContent side="bottom" className="h-[88vh] rounded-t-2xl p-4 overflow-y-auto">
         <SheetHeader className="mb-4">
-          <SheetTitle className="text-base">{formatProjectName(project.name)}</SheetTitle>
+          <SheetTitle className="text-base">
+            <SensitiveText kind="project" id={project.id}>{formatProjectName(project.name)}</SensitiveText>
+          </SheetTitle>
           <p className="text-xs text-slate-500 font-mono">
             {totalAssigned}h / {budgetDisplay}h
             {isOverBudget && <span className="text-red-600 ml-1"> · Overload</span>}

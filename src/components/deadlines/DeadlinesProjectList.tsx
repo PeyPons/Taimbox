@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { ChevronDown, ChevronRight, Edit, EyeOff, Trash2, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DeadlineEmployeeRow } from '@/components/deadlines/DeadlineEmployeeRow';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 export interface InlineFormData {
   employeeHours: Record<string, number>;
@@ -179,7 +180,9 @@ export function DeadlinesProjectList({
                         <div className="min-w-[180px]">
                           <div className="flex items-center gap-1.5">
                             <span className="text-sm font-medium text-slate-800">
-                              {formatProjectName(project.name)}
+                              <SensitiveText kind="project" id={project.id}>
+                                {formatProjectName(project.name)}
+                              </SensitiveText>
                             </span>
                             {isHidden && (
                               <EyeOff className="h-3 w-3 text-slate-400 flex-shrink-0" />

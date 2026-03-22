@@ -38,6 +38,8 @@ import { isAllocationInEffectiveMonth, getWorkingDaysInMonth, getWorkingDaysElap
 import type { Project, Employee } from '@/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
+import { usePrivacyDemo } from '@/contexts/PrivacyDemoContext';
 
 /** Capacidad teórica mensual: lo que trabajaría el empleado sin vacaciones (para modelo operativo). */
 const DEFAULT_MONTHLY_HOURS = 110;
@@ -91,6 +93,7 @@ export default function FinancialHealthPage() {
     const { currentAgency } = useAgency();
     const { selectedDepartmentId } = useDepartmentView();
     const { historyMinDate: minReportingMonth } = useSubscriptionLimits();
+    const { isActive: privacyDemoActive, anonymizer: privacyAnonymizer } = usePrivacyDemo();
 
     useEffect(() => {
         if (currentAgency?.settings?.hoursTrackingPreference) {
@@ -1010,12 +1013,15 @@ export default function FinancialHealthPage() {
                                                             const semaphoreRadar = getMarginSemaphore(marginPctRadar);
                                                             const attributionRows = projectEmployeeAttributionMap.get(p.projectId) || [];
                                                             const client = clients.find(c => c.id === p.clientId);
-                                                            const clientInitials = (clientName || '?')
+                                                            const clientInitialsRaw = (clientName || '?')
                                                                 .split(' ')
                                                                 .slice(0, 2)
                                                                 .map(part => part[0])
                                                                 .join('')
                                                                 .toUpperCase();
+                                                            const clientInitials = privacyDemoActive
+                                                                ? privacyAnonymizer.account(p.clientId ?? 'unknown-client').slice(0, 2).toUpperCase()
+                                                                : clientInitialsRaw;
                                                             const projectHours = hoursMode === 'computed' ? p.computed : p.actual;
                                                             const hoursRatio = p.budget > 0 ? projectHours / p.budget : 0;
                                                             const isOverBudget = projectHours > p.budget && p.budget > 0;
@@ -1042,8 +1048,12 @@ export default function FinancialHealthPage() {
                                                                                     </AvatarFallback>
                                                                                 </Avatar>
                                                                                 <div className="min-w-0">
-                                                                                    <div className="font-semibold text-slate-900 truncate">{p.projectName}</div>
-                                                                                    <div className="text-[11px] text-slate-500 truncate">{clientName}</div>
+                                                                                    <div className="font-semibold text-slate-900 truncate">
+                                                                                        <SensitiveText kind="project" id={p.projectId}>{p.projectName}</SensitiveText>
+                                                                                    </div>
+                                                                                    <div className="text-[11px] text-slate-500 truncate">
+                                                                                        <SensitiveText kind="account" id={p.clientId ?? 'unknown-client'}>{clientName}</SensitiveText>
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
                                                                         </td>
@@ -1312,8 +1322,12 @@ export default function FinancialHealthPage() {
                                                         return (
                                                             <tr key={p.projectId} className={cn("transition-colors", idx % 2 === 1 ? "bg-slate-50/50" : "bg-white", "hover:bg-slate-100/70")}>
                                                                 <td className="px-4 py-3">
-                                                                    <div className="font-medium text-slate-900">{p.projectName}</div>
-                                                                    <div className="text-[11px] text-slate-500">{clientName}</div>
+                                                                    <div className="font-medium text-slate-900">
+                                                                        <SensitiveText kind="project" id={p.projectId}>{p.projectName}</SensitiveText>
+                                                                    </div>
+                                                                    <div className="text-[11px] text-slate-500">
+                                                                        <SensitiveText kind="account" id={p.clientId ?? 'unknown-client'}>{clientName}</SensitiveText>
+                                                                    </div>
                                                                 </td>
                                                                 <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">{(hoursMode === 'computed' ? p.computed : p.actual).toFixed(1)} h</td>
                                                                 <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">
@@ -1629,7 +1643,10 @@ export default function FinancialHealthPage() {
                                                     const semaphoreProj = getMarginSemaphore(marginPctProj);
                                                     const isExpanded = expandedProjects.has(p.projectId);
                                                     const client = clients.find(c => c.id === p.clientId);
-                                                    const clientInitials = (clientName || '?').split(' ').slice(0, 2).map(part => part[0]).join('').toUpperCase();
+                                                    const clientInitialsRaw = (clientName || '?').split(' ').slice(0, 2).map(part => part[0]).join('').toUpperCase();
+                                                    const clientInitials = privacyDemoActive
+                                                        ? privacyAnonymizer.account(p.clientId ?? 'unknown-client').slice(0, 2).toUpperCase()
+                                                        : clientInitialsRaw;
                                                     const attributionRows = projectEmployeeAttributionMap.get(p.projectId) || [];
                                                     return (
                                                         <Fragment key={p.projectId}>
@@ -1646,8 +1663,12 @@ export default function FinancialHealthPage() {
                                                                             <AvatarFallback className="bg-slate-900 text-white text-xs font-bold" style={client?.color ? { backgroundColor: client.color, color: 'white' } : undefined}>{clientInitials}</AvatarFallback>
                                                                         </Avatar>
                                                                         <div className="min-w-0">
-                                                                            <div className="font-semibold text-slate-900 truncate">{p.projectName}</div>
-                                                                            <div className="text-[11px] text-slate-500 truncate">{clientName}</div>
+                                                                            <div className="font-semibold text-slate-900 truncate">
+                                                                                <SensitiveText kind="project" id={p.projectId}>{p.projectName}</SensitiveText>
+                                                                            </div>
+                                                                            <div className="text-[11px] text-slate-500 truncate">
+                                                                                <SensitiveText kind="account" id={p.clientId ?? 'unknown-client'}>{clientName}</SensitiveText>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 </td>
@@ -1915,8 +1936,12 @@ export default function FinancialHealthPage() {
                                                     return (
                                                         <tr key={p.projectId} className={cn("transition-colors", idx % 2 === 1 ? "bg-slate-50/50" : "bg-white", "hover:bg-slate-100/70")}>
                                                             <td className="px-4 py-3">
-                                                                <div className="font-medium text-slate-900">{p.projectName}</div>
-                                                                <div className="text-[11px] text-slate-500">{clientName}</div>
+                                                                <div className="font-medium text-slate-900">
+                                                                    <SensitiveText kind="project" id={p.projectId}>{p.projectName}</SensitiveText>
+                                                                </div>
+                                                                <div className="text-[11px] text-slate-500">
+                                                                    <SensitiveText kind="account" id={p.clientId ?? 'unknown-client'}>{clientName}</SensitiveText>
+                                                                </div>
                                                             </td>
                                                             <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">{(hoursMode === 'computed' ? p.computed : p.actual).toFixed(1)} h</td>
                                                             <td className="px-4 py-3 text-right font-mono tabular-nums text-slate-700">
@@ -2110,7 +2135,9 @@ export default function FinancialHealthPage() {
                                                                                                 <tbody className="divide-y divide-slate-100">
                                                                                                     {byProjectFiltered.map((bp, i) => (
                                                                                                         <tr key={bp.projectId} className={cn("transition-colors hover:bg-slate-50/50", i % 2 === 1 && "bg-slate-50/30")}>
-                                                                                                            <td className="py-2.5 px-4 font-medium text-slate-900" title={bp.projectName}>{bp.projectName}</td>
+                                                                                                            <td className="py-2.5 px-4 font-medium text-slate-900" title={bp.projectName}>
+                                                                                                                <SensitiveText kind="project" id={bp.projectId}>{bp.projectName}</SensitiveText>
+                                                                                                            </td>
                                                                                                             <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-600 text-sm">{bp.hoursDisplay.toFixed(1)} h</td>
                                                                                                             <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">{bp.attributedRevenue.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>
                                                                                                             <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 text-sm">{bp.cost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}</td>

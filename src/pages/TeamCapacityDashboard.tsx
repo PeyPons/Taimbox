@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 import { getWeeksForMonth, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
@@ -263,7 +264,9 @@ export default function TeamCapacityDashboard() {
                                     <tbody>
                                         {heatmapData.map(row => (
                                             <tr key={row.employeeId} className="border-b hover:bg-slate-50 transition-colors">
-                                                <td className="py-2 px-3 font-medium">{row.employeeName}</td>
+                                                <td className="py-2 px-3 font-medium">
+                                                    <SensitiveText kind="employee" id={row.employeeId}>{row.employeeName}</SensitiveText>
+                                                </td>
                                                 {row.weeklyLoad.map(week => (
                                                     <td key={week.week} className="py-2 px-2 text-center">
                                                         <TooltipProvider>
@@ -293,7 +296,10 @@ export default function TeamCapacityDashboard() {
                                                                     </div>
                                                                 </TooltipTrigger>
                                                                 <TooltipContent className="max-w-xs">
-                                                                    <p className="font-medium mb-1">{row.employeeName} - {week.weekLabel}</p>
+                                                                    <p className="font-medium mb-1">
+                                                                        <SensitiveText kind="employee" id={row.employeeId}>{row.employeeName}</SensitiveText>
+                                                                        {' '}- {week.weekLabel}
+                                                                    </p>
                                                                     <div className="space-y-0.5 text-xs">
                                                                         <p><span className="font-medium">Horas asignadas:</span> {week.hours}h</p>
                                                                         <p><span className="font-medium">Capacidad semanal:</span> {week.capacity}h</p>
@@ -359,20 +365,34 @@ export default function TeamCapacityDashboard() {
                                         <div className="flex items-center gap-2 text-sm">
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-medium text-orange-700 truncate">{dep.blockerTaskName}</span>
-                                                    <span className="text-xs text-muted-foreground">({dep.blockerEmployee})</span>
+                                                    <span className="font-medium text-orange-700 truncate">
+                                                        <SensitiveText kind="task" id={dep.blockerTask.id}>{dep.blockerTaskName}</SensitiveText>
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        (
+                                                        <SensitiveText kind="employee" id={dep.blockerTask.employeeId}>{dep.blockerEmployee}</SensitiveText>
+                                                        )
+                                                    </span>
                                                 </div>
                                             </div>
                                             <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="truncate">{dep.blockedTaskName}</span>
-                                                    <span className="text-xs text-muted-foreground">({dep.blockedEmployee})</span>
+                                                    <span className="truncate">
+                                                        <SensitiveText kind="task" id={dep.blockedTask.id}>{dep.blockedTaskName}</SensitiveText>
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        (
+                                                        <SensitiveText kind="employee" id={dep.blockedTask.employeeId}>{dep.blockedEmployee}</SensitiveText>
+                                                        )
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="flex justify-between items-center mt-2">
-                                            <span className="text-xs text-muted-foreground">{dep.projectName}</span>
+                                            <span className="text-xs text-muted-foreground">
+                                                <SensitiveText kind="project" id={dep.blockedTask.projectId}>{dep.projectName}</SensitiveText>
+                                            </span>
                                             {dep.weeksSinceBlocked > 0 && (
                                                 <Badge
                                                     variant={dep.weeksSinceBlocked >= 2 ? 'destructive' : 'secondary'}

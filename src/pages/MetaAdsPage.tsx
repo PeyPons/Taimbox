@@ -11,13 +11,12 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { RefreshCw, Clock, Search, Settings, Layers, TrendingUp, TrendingDown, Scissors, Plus, Trash2, AlertTriangle, CheckCircle2, Calendar, Target, ArrowDownRight, Eye, EyeOff, X, Facebook, Check, ChevronDown, ShieldCheck } from 'lucide-react';
+import { RefreshCw, Clock, Search, Settings, Layers, TrendingUp, TrendingDown, Scissors, Plus, Trash2, AlertTriangle, CheckCircle2, Calendar, Target, ArrowDownRight, Eye, EyeOff, X, Facebook, Check, ChevronDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency, cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
 import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
-import { AnonymizedBanner } from '@/components/ads/AnonymizedBanner';
 
 interface MetaCampaignData { campaign_id: string; campaign_name: string; status: string; cost: number; conversions_value?: number; conversions?: number; clicks?: number; impressions?: number; daily_budget?: number; original_client_name?: string; original_client_id?: string; date?: string; client_id?: string; client_name?: string; created_at?: string; }
 interface SegmentationRule { id: string; account_id: string; keyword: string; virtual_name: string; platform: string; }
@@ -281,15 +280,13 @@ export default function MetaAdsPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg shadow-blue-500/20"><Facebook className="w-6 h-6 text-white" /></div>
-            <div><h1 className="text-2xl font-bold text-slate-900">Meta Ads</h1><div className="flex items-center gap-3 mt-1"><span className="text-sm text-slate-500 flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{lastSyncTime ? lastSyncTime.toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Sin sincronizar'}</span><Badge variant="outline" className="text-xs"><Calendar className="w-3 h-3 mr-1" />Día {currentDay} de {daysInMonth}</Badge>{isAnonymized && <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200"><ShieldCheck className="w-3 h-3 mr-1" />Datos protegidos</Badge>}</div></div>
+            <div><h1 className="text-2xl font-bold text-slate-900">Meta Ads</h1><div className="flex items-center gap-3 mt-1"><span className="text-sm text-slate-500 flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{lastSyncTime ? lastSyncTime.toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Sin sincronizar'}</span><Badge variant="outline" className="text-xs"><Calendar className="w-3 h-3 mr-1" />Día {currentDay} de {daysInMonth}</Badge></div></div>
           </div>
           <div className="flex gap-2 w-full md:w-auto">
             <Button variant="outline" onClick={() => setIsSplitModalOpen(true)} className="flex-1 md:flex-none"><Scissors className="w-4 h-4 mr-2" /> Dividir</Button>
             <Button onClick={handleStartSync} disabled={isSyncing} className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700"><RefreshCw className={cn("w-4 h-4 mr-2", isSyncing && "animate-spin")} /> Sincronizar</Button>
           </div>
         </div>
-
-        {isAnonymized && <AnonymizedBanner isActive={isAnonymized} />}
 
         {/* Stats Cards - Optimizadas para Meta (sin daily_budget disponible) */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -328,7 +325,6 @@ export default function MetaAdsPage() {
                           </div>
                           {client.is_group && <Badge variant="secondary" className="text-[10px] gap-1"><Layers className="w-3 h-3" /> GRUPO</Badge>}
                           <Badge variant="outline" className={cn("text-[10px]", statusConfig.badgeClass)}>{statusConfig.text}</Badge>
-                          {isAnonymized && <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200"><ShieldCheck className="w-3 h-3 mr-1" />Datos protegidos</Badge>}
                         </div>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">{client.isSalesAccount && client.globalRoas > 0 && <Badge variant="outline" className={cn("text-[10px] h-5", getRoasColor(client.globalRoas))}>ROAS {client.globalRoas.toFixed(2)}</Badge>}{client.isHidden && <Badge variant="outline" className="text-[10px] h-5 gap-1"><EyeOff className="w-3 h-3" /> Oculto</Badge>}</div>
                       </div>

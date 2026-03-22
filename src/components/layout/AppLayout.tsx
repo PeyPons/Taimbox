@@ -5,6 +5,7 @@ import { Header } from './Header';
 import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner';
 import { DepartmentViewBanner } from '@/components/layout/DepartmentViewBanner';
 import { SubscriptionSoftLockBanner } from '@/components/layout/SubscriptionSoftLockBanner';
+import { PrivacyDemoIndicator } from '@/components/privacy/PrivacyDemoIndicator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +27,7 @@ export function AppLayout() {
       <Header onMenuClick={() => setIsSidebarOpen(true)} />
       <DepartmentViewBanner />
       <SubscriptionSoftLockBanner />
+      <PrivacyDemoIndicator />
 
       <div className="flex flex-1">
         <Sidebar

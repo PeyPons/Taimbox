@@ -119,34 +119,34 @@ export function AllocationFormDialog({
     const [openWeek, setOpenWeek] = React.useState(false);
     const [showConfirmClose, setShowConfirmClose] = React.useState(false);
     const [pendingCloseAction, setPendingCloseAction] = React.useState<'open-change' | 'close-click' | null>(null);
-    const [pendingOpenState, setPendingOpenState] = React.useState<boolean>(false);
     const isMobile = useIsMobile();
 
-    const checkCanClose = () => {
+    const hasUnsavedChanges = () => {
         if (!editingAllocation) {
-            const hasUnsaved = newTasks.length > 1 || newTasks.some(t => t.taskName.trim() !== '' || t.hours !== '');
-            if (hasUnsaved) {
-                return window.confirm('Tienes tareas pendientes por guardar. ¿Seguro que quieres cerrar y perder los datos?');
-            }
-        } else {
-            const hasEdits =
-                editTaskName !== editingAllocation.taskName ||
-                editHours !== editingAllocation.hoursAssigned.toString() ||
-                (editProjectId && editProjectId !== editingAllocation.projectId);
-            if (hasEdits) {
-                return window.confirm('Tienes cambios sin guardar. ¿Seguro que quieres cerrar y perder los datos?');
-            }
+            return newTasks.length > 1 || newTasks.some(t => t.taskName.trim() !== '' || t.hours !== '');
         }
-        return true;
+        return (
+            editTaskName !== editingAllocation.taskName ||
+            editHours !== editingAllocation.hoursAssigned.toString() ||
+            (Boolean(editProjectId) && editProjectId !== editingAllocation.projectId)
+        );
     };
 
     const handleOpenChange = (open: boolean) => {
-        if (!open && !checkCanClose()) return;
+        if (!open && hasUnsavedChanges()) {
+            setPendingCloseAction('open-change');
+            setShowConfirmClose(true);
+            return;
+        }
         onOpenChange(open);
     };
 
     const handleCloseClick = () => {
-        if (!checkCanClose()) return;
+        if (hasUnsavedChanges()) {
+            setPendingCloseAction('close-click');
+            setShowConfirmClose(true);
+            return;
+        }
         onClose();
     };
 
@@ -404,24 +404,33 @@ export function AllocationFormDialog({
     );
 
     const confirmDialog = (
-      <AlertDialog open={showConfirmClose} onOpenChange={setShowConfirmClose}>
+      <AlertDialog
+        open={showConfirmClose}
+        onOpenChange={(open) => {
+          setShowConfirmClose(open);
+          if (!open) setPendingCloseAction(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Descartar cambios?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tienes datos sin guardar. Si cierras ahora, los perderás.
+              {editingAllocation
+                ? 'Tienes cambios sin guardar. Si cierras ahora, los perderás.'
+                : 'Tienes tareas pendientes por guardar. Si cierras ahora, perderás los datos introducidos.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowConfirmClose(false)}>Seguir editando</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogCancel>Seguir editando</AlertDialogCancel>
+            <AlertDialogAction
               onClick={() => {
                 setShowConfirmClose(false);
                 if (pendingCloseAction === 'open-change') {
-                    onOpenChange(pendingOpenState);
+                  onOpenChange(false);
                 } else if (pendingCloseAction === 'close-click') {
-                    onClose();
+                  onClose();
                 }
+                setPendingCloseAction(null);
               }}
               className="bg-red-600 hover:bg-red-700 text-white"
             >

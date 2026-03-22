@@ -41,6 +41,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useActiveTimerForSidebar } from '@/hooks/useActiveTimerForSidebar';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 import {
   Collapsible,
   CollapsibleContent,
@@ -477,7 +478,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </AvatarFallback>
               </Avatar>
               <span className="font-medium text-slate-200 truncate min-w-0 flex-1" title={currentUser.email}>
-                {currentUser.first_name || currentUser.name}
+                <SensitiveText kind="employee" id={currentUser.id}>
+                  {currentUser.first_name || currentUser.name}
+                </SensitiveText>
               </span>
               {hasMultipleAgencies && <AgencySelectorCompact inline />}
               <DepartmentViewSelector inline />

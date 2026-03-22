@@ -4,6 +4,7 @@ import { AlertTriangle, AlertOctagon, CheckCircle2, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 interface AllocationProjectHeaderProps {
     project: Project | undefined;
@@ -54,7 +55,9 @@ export function AllocationProjectHeader({
                     <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                             {allCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
-                            <span className={cn("font-bold text-xs truncate", allCompleted && "text-slate-500")}>{formatProjectName(project.name)}</span>
+                            <span className={cn("font-bold text-xs truncate", allCompleted && "text-slate-500")}>
+                              <SensitiveText kind="project" id={project.id}>{formatProjectName(project.name)}</SensitiveText>
+                            </span>
                             {allCompleted && <span className="text-[9px] text-slate-400">({taskCount})</span>}
                         </div>
                         {/* Mostrar horas del empleado en lugar del % global */}

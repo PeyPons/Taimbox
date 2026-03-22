@@ -105,6 +105,7 @@ Para optimizar rendimiento, usamos `loadedMonthsRef`.
 - **`NotificationContext`**: Centro de notificaciones.
 - **`AuthContext`**: Sesión de usuario Supabase.
 - **`DemoContext`**: Datos mock para modo demostración.
+- **`PrivacyDemoProvider`** (`PrivacyDemoContext`): integración **Privacidad y demostración** (`anonymize_ads_for_video`); anonimiza sobre todo **nombres de proyecto** (y otros tipos donde aplique) vía `SensitiveText` + `createPrivacyAnonymizer`. Ver `DOCUMENTACION.md` (integración modo demostración).
 
 </details>
 

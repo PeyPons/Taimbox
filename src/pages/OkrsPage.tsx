@@ -25,6 +25,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Check } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 interface KeyResultItem {
     id: string;
@@ -430,10 +431,14 @@ export default function OkrsPage() {
                                     <div className="flex justify-between items-start gap-4">
                                         <div>
                                             <Badge variant="outline" className="bg-white text-[10px] font-medium text-slate-500 shadow-sm mb-2 rounded-md">
-                                                {client?.name || 'Interno'}
+                                                {client ? (
+                                                    <SensitiveText kind="account" id={client.id}>{client.name}</SensitiveText>
+                                                ) : (
+                                                    'Interno'
+                                                )}
                                             </Badge>
                                             <CardTitle className="text-xl font-bold text-slate-900 leading-tight">
-                                                {formatProjectName(project.name)}
+                                                <SensitiveText kind="project" id={project.id}>{formatProjectName(project.name)}</SensitiveText>
                                             </CardTitle>
                                         </div>
                                         <div className="flex flex-col items-end">
@@ -558,7 +563,15 @@ export default function OkrsPage() {
                                 <Popover open={openFormProject} onOpenChange={setOpenFormProject}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" className="w-full justify-between font-normal">
-                                            <span className="truncate">{formData.projectId ? formatProjectName(projects.find(p => p.id === formData.projectId)?.name || '') : 'seleccionar proyecto...'}</span>
+                                            <span className="truncate">
+                                                {formData.projectId ? (
+                                                    <SensitiveText kind="project" id={formData.projectId}>
+                                                        {formatProjectName(projects.find(p => p.id === formData.projectId)?.name || '')}
+                                                    </SensitiveText>
+                                                ) : (
+                                                    'seleccionar proyecto...'
+                                                )}
+                                            </span>
                                             <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                                         </Button>
                                     </PopoverTrigger>
@@ -568,7 +581,7 @@ export default function OkrsPage() {
                                                 {projects.filter(p => p.status === 'active').map(p => (
                                                     <CommandItem key={p.id} value={formatProjectName(p.name)} onSelect={() => { setFormData(prev => ({ ...prev, projectId: p.id })); setOpenFormProject(false); }}>
                                                         <Check className={cn('mr-2 h-4 w-4 shrink-0', formData.projectId === p.id ? 'opacity-100' : 'opacity-0')} />
-                                                        {formatProjectName(p.name)}
+                                                        <SensitiveText kind="project" id={p.id}>{formatProjectName(p.name)}</SensitiveText>
                                                     </CommandItem>
                                                 ))}
                                             </CommandList>

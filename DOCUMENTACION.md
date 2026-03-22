@@ -96,7 +96,7 @@ Permite renombrar proyectos automáticamente según patrones configurables:
 | AllocationSheet | `src/components/planner/AllocationSheet.tsx` | ~180 |
 | AllocationProjectHeader | `src/components/planner/allocation/AllocationProjectHeader.tsx` | ~45 |
 | AllocationTaskRow | `src/components/planner/allocation/AllocationTaskRow.tsx` | ~50. En móvil recibe `isMobile` para filas táctiles (min-h 44px), texto `text-sm`, horas `font-mono text-base` y botón menú ≥44px. |
-| AllocationFormDialog | `src/components/planner/allocation/AllocationFormDialog.tsx` | ~100. Alta por lotes: **Guardar** deshabilitado hasta ≥1 fila con proyecto+nombre+horas y sin filas con nombre/horas sin proyecto (lógica en `useAllocationActions`: `canSubmitBatchAdd`). |
+| AllocationFormDialog | `src/components/planner/allocation/AllocationFormDialog.tsx` | ~100. Alta por lotes: **Guardar** deshabilitado hasta ≥1 fila con proyecto+nombre+horas y sin filas con nombre/horas sin proyecto (lógica en `useAllocationActions`: `canSubmitBatchAdd`). Cerrar con cambios sin guardar: **AlertDialog** (mismo patrón y copy base que «Añadir tareas» en `EmployeeDashboard`), no diálogo nativo del navegador. |
 | GanttView | `src/components/planner/GanttView.tsx` | ~95 |
 | BatchTaskRow | `src/components/planner/BatchTaskRow.tsx` | ~65. Selector de proyecto en "Añadir tareas": lista ordenada con primero los proyectos que tienen deadline asignado al empleado de la tarea (o actual), luego el resto. |
 | ProjectImpactSummary | `src/components/planner/ProjectImpactSummary.tsx` | ~45 |
@@ -291,11 +291,21 @@ Funciones serverless que corren en Deno dentro del contenedor `supabase-edge-fun
 | `send-contact-email` | `supabase/functions/send-contact-email/index.ts` | Envía email interno a `CONTACT_TO_EMAIL` (default `hello@taimbox.com`) desde el formulario público `/contacto` vía Resend. Body: `{ name, email, subject, message }`. Requiere `RESEND_API_KEY`. |
 | `request-password-reset` | `supabase/functions/request-password-reset/index.ts` | Genera enlace de recuperación de contraseña y lo envía por email vía Resend. Body: `{ email }`. Funciona para cualquier usuario en `auth.users` (empleados, admins de plataforma, etc.). Siempre devuelve 200 (previene enumeración). No requiere autenticación. |
 
-#### Integración: Modo demostración (ocultar datos sensibles en Ads)
+#### Integración: Modo demostración (ocultar datos sensibles en toda la app)
 
-En Configuración → Integraciones → Privacidad y demostración, la opción **"Modo demostración (ocultar datos sensibles)"** sustituye nombres reales de cuentas y campañas por **nombres semánticos genéricos** (ej: "Cliente A - Retail", "Cliente B - Tecnología", "Campaña Ecommerce 01") en las páginas Google Ads y Meta Ads. Los **IDs numéricos** (Google Ads: 123-456-7890, Meta: act_123...) permanecen visibles para demostrar que la integración es real y obtiene registros únicos de la API. Útil para grabaciones de vídeo o verificaciones ante Google Trust & Safety. Se muestra un badge "Datos protegidos" cuando está activo.
+En Configuración → Integraciones → Privacidad y demostración, la opción **"Modo demostración (ocultar datos sensibles)"** activa una capa de anonimización en la UI, además de Google Ads y Meta Ads. **Prioridad de negocio**: para demos con terceros conviene ocultar **nombres de proyecto** y **nombres de cliente** (identifican cuentas reales). El resto (empleados, tareas, etc.) puede mostrarse o anonimizarse según la pantalla.
 
-**Implementación**: `AnonymizedContent` (con prop `placeholder`), `useAnonymizeAds` (anonymizer con `account(id)` y `campaign(id)`), aplicado en `AdsPage.tsx` y `MetaAdsPage.tsx`.
+Cuando el modo está activo, los textos sustituidos se muestran con efecto blur y una **etiqueta semántica genérica** según el tipo (`kind`: cuenta/campaña, empleado, proyecto, tarea, departamento). Los **nombres de cliente** en listados y tablas usan `SensitiveText` con **`kind="account"`** y el **id del cliente** (misma familia de etiquetas que cuentas de anuncios). Los **IDs** que ya se mostraban en la UI (p. ej. cuentas de anuncios) **siguen visibles** donde aplica.
+
+**Auditoría / búsqueda en el código** (para encontrar fugas de nombres reales): en el repo, buscar patrones como `{client.name}`, `client?.name`, `{clientName}`, `clients.find(... )?.name`, `formatProjectName(...)` en JSX de solo lectura, y `title={...}` con nombres de proyecto o cliente. Revisar también `OkrsPage.tsx`, `ClientsAndProjectsPage.tsx`, `FinancialHealthPage.tsx` (rentabilidad) cuando se añadan filas nuevas.
+
+**Deadlines** (`DeadlinesPage.tsx`): los **nombres de proyecto** van envueltos en `SensitiveText` con `kind="project"` en `DeadlinesProjectList.tsx`, `DeadlinesProjectEditSheet.tsx`, `DeadlinesSuggestionsPanel.tsx` (lista, filtros por proyecto, desglose por proyecto); la demo estática `DemoDeadlinesPage.tsx` alinea el mismo criterio en el título del proyecto.
+
+**Indicador global**: una franja discreta (no el banner verde de Ads) en el layout principal (`PrivacyDemoIndicator` en `AppLayout.tsx`). En **escritorio** usa `lg:pl-64` para que el texto no quede bajo el **sidebar fijo** (`z-50`, `w-64`); lo mismo aplica a `ImpersonationBanner`, `DepartmentViewBanner` y `SubscriptionSoftLockBanner`. En las páginas de Ads se eliminó el banner verde duplicado y los badges "Datos protegidos" redundantes para no repetir avisos.
+
+**Implementación**: `PrivacyDemoProvider` + `usePrivacyDemo` / `SensitiveText` (`src/contexts/PrivacyDemoContext.tsx`, `src/components/privacy/SensitiveText.tsx`), motor `createPrivacyAnonymizer` (`src/lib/privacyDemoAnonymizer.ts`). `useAnonymizeAds` reutiliza el mismo contexto para `AdsPage.tsx` y `MetaAdsPage.tsx` con `AnonymizedContent`, `account(id)` y `campaign(id)`.
+
+**Cobertura ampliada (UI)**: en varias pantallas el modo también anonimiza otros campos (p. ej. empleados o clientes) además del nombre de proyecto; eso es **opcional por pantalla** y no sustituye el foco en **proyectos** como dato crítico frente a demos con terceros.
 
 #### Módulo compartido `_shared/resend.ts`
 Módulo reutilizable que exporta `sendEmail({ to, subject, html, text? })`. Usa la API HTTP de Resend (`https://api.resend.com/emails`). Variables: `RESEND_API_KEY` (obligatoria), `RESEND_FROM_EMAIL` (default: `Taimbox <onboarding@resend.dev>`). Sin dependencias externas.

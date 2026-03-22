@@ -8,6 +8,7 @@ import { isSameMonth, parseISO } from 'date-fns';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { Sparkles, HeartHandshake, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 interface CollaborationCardsProps {
   employeeId: string;
@@ -297,7 +298,11 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
                       <AvatarFallback className="text-xs">{collab.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{getDisplayName(collab.name, frequentCollaborators)}</p>
+                      <p className="text-sm font-medium truncate">
+                        <SensitiveText kind="employee" id={collab.id}>
+                          {getDisplayName(collab.name, frequentCollaborators)}
+                        </SensitiveText>
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {collab.sharedProjects} {collab.sharedProjects === 1 ? 'proyecto' : 'proyectos'} · {round2(collab.totalHoursTogether)}h juntos
                       </p>
@@ -341,7 +346,11 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
                         <AvatarFallback className="text-xs">{helper.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{getDisplayName(helper.name, frequentCollaborators)}</p>
+                        <p className="text-sm font-medium truncate">
+                          <SensitiveText kind="employee" id={helper.id}>
+                            {getDisplayName(helper.name, frequentCollaborators)}
+                          </SensitiveText>
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           {getAvailabilityText(helper.occupancy)}
                         </p>
@@ -371,7 +380,11 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
                             <AvatarFallback className="text-xs">{helper.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate text-amber-900">{getDisplayName(helper.name, frequentCollaborators)}</p>
+                            <p className="text-sm font-medium truncate text-amber-900">
+                              <SensitiveText kind="employee" id={helper.id}>
+                                {getDisplayName(helper.name, frequentCollaborators)}
+                              </SensitiveText>
+                            </p>
                             <p className="text-xs text-amber-600">
                               {Math.round(helper.occupancy)}% de carga
                             </p>
@@ -389,7 +402,10 @@ export const CollaborationCards = memo(function CollaborationCards({ employeeId,
                         <div className="space-y-2">
                           <p className="font-semibold text-sm flex items-center gap-1.5">
                             <Heart className="h-3.5 w-3.5 text-amber-500" />
-                            {getDisplayName(helper.name, frequentCollaborators)} está bastante ocupado/a
+                            <SensitiveText kind="employee" id={helper.id}>
+                              {getDisplayName(helper.name, frequentCollaborators)}
+                            </SensitiveText>{' '}
+                            está bastante ocupado/a
                           </p>
                           <p className="text-xs leading-relaxed text-amber-800">
                             Aún así, podría echarte una mano si realmente lo necesitas.

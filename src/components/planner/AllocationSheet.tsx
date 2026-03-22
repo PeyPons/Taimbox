@@ -42,6 +42,7 @@ import { useTaskTransfers } from '@/hooks/useTaskTransfers';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { useIntegration } from '@/hooks/useIntegration';
 import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -506,7 +507,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
       <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
         <div className="bg-primary/10 border-b px-4 py-3 flex items-center justify-between">
           <h3 className="font-bold text-sm text-slate-800 truncate flex-1" title={project?.name}>
-            {formatProjectName(project?.name || 'Proyecto')}
+            <SensitiveText kind="project" id={projectId}>
+              {formatProjectName(project?.name || 'Proyecto')}
+            </SensitiveText>
           </h3>
           <Button variant="ghost" size="sm" className="h-9 w-9 min-h-[44px] min-w-[44px] p-0 hover:bg-indigo-100 shrink-0" onClick={onClose}>
             <X className="h-4 w-4" />
@@ -599,7 +602,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                           </Avatar>
                           <div className="flex-1 min-w-0">
                             <div className={cn("font-medium truncate", isMe ? "text-indigo-700" : "text-slate-600")}>
-                              {employeeName} {isMe && "(tú)"}
+                              <SensitiveText kind="employee" id={empId}>{employeeName}</SensitiveText> {isMe && "(tú)"}
                             </div>
                             <div className="flex gap-3 text-[10px] mt-0.5">
                               <span className="text-blue-600">Plan: {planned.toFixed(1)}h</span>
@@ -657,7 +660,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                   )}
                   <div>
                     <SheetTitle className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-                      {employee.name}
+                      <SensitiveText kind="employee" id={employee.id} asBlock>
+                        {employee.name}
+                      </SensitiveText>
                       <Badge variant="outline" className="ml-2 font-normal text-slate-500 bg-slate-50 hidden sm:inline-flex">
                         Planificación
                       </Badge>
@@ -1016,7 +1021,11 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                     >
                                       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                                         {allCompleted && <CheckCircle2 className="w-4 h-4 shrink-0" />}
-                                        <span className="font-bold truncate">{formatProjectName(project?.name || 'Proyecto')}</span>
+                                        <span className="font-bold truncate">
+                                          <SensitiveText kind="project" id={projId}>
+                                            {formatProjectName(project?.name || 'Proyecto')}
+                                          </SensitiveText>
+                                        </span>
                                         <span className="text-[10px] opacity-80 shrink-0">({projAllocations.length})</span>
                                       </div>
                                       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs sm:text-sm shrink-0 min-w-0">
@@ -1051,7 +1060,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                       className={cn("font-medium text-sm leading-tight break-words cursor-pointer", isCompleted && "line-through text-slate-400")}
                                                       onClick={() => startEditFull(alloc)}
                                                     >
-                                                      {formatProjectName(cleanName)}
+                                                      <SensitiveText kind="task" id={alloc.id}>
+                                                        {formatProjectName(cleanName)}
+                                                      </SensitiveText>
                                                     </span>
                                                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
                                                       <span className="shrink-0 font-mono text-base">{alloc.hoursAssigned}h</span>
@@ -1768,7 +1779,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                 "font-medium text-sm truncate",
                                                 allCompleted ? "text-emerald-700" : "text-slate-700"
                                               )}>
-                                                {formatProjectName(project?.name || 'Proyecto')}
+                                                <SensitiveText kind="project" id={projId}>
+                                                  {formatProjectName(project?.name || 'Proyecto')}
+                                                </SensitiveText>
                                               </div>
                                               <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5">
                                                 <span className="flex items-center gap-0.5">
@@ -1907,7 +1920,9 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                         >
                                           <div className="flex items-center justify-between">
                                             <span className="font-medium text-xs text-slate-700 truncate">
-                                              {formatProjectName(project?.name || '')}
+                                              <SensitiveText kind="project" id={projId}>
+                                                {formatProjectName(project?.name || '')}
+                                              </SensitiveText>
                                             </span>
                                             <span className="text-[10px] text-slate-500 ml-2">{est}h</span>
                                           </div>

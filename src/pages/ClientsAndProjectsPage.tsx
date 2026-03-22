@@ -42,6 +42,7 @@ import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/depar
 import { supabase } from '@/lib/supabase';
 import { ClientsAndProjectsFilters, type ClientsAndProjectsFiltersValues, type FilterType, type StatusFilter } from '@/components/clients-projects/ClientsAndProjectsFilters';
 import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -988,7 +989,11 @@ export default function ClientsAndProjectsPage() {
                                 className="w-full justify-between"
                               >
                                 {field.value
-                                  ? clients.find(c => c.id === field.value)?.name || "Seleccionar cliente"
+                                  ? (
+                                      <SensitiveText kind="account" id={field.value}>
+                                        {clients.find(c => c.id === field.value)?.name || 'Seleccionar cliente'}
+                                      </SensitiveText>
+                                    )
                                   : "Seleccionar cliente"}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
@@ -1006,7 +1011,7 @@ export default function ClientsAndProjectsPage() {
                                       value={client.name}
                                       onSelect={() => field.onChange(client.id)}
                                     >
-                                      {client.name}
+                                      <SensitiveText kind="account" id={client.id}>{client.name}</SensitiveText>
                                     </CommandItem>
                                   ))}
                                 </CommandGroup>
@@ -1405,7 +1410,9 @@ export default function ClientsAndProjectsPage() {
                     className="w-3 h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: client.color }}
                   />
-                  <span className="font-bold text-slate-800 flex-1 text-left">{client.name}</span>
+                  <span className="font-bold text-slate-800 flex-1 text-left">
+                    <SensitiveText kind="account" id={client.id}>{client.name}</SensitiveText>
+                  </span>
                   <div className="flex items-center gap-5 flex-shrink-0">
                     {/* Resumen de horas - Simplificado: 4 métricas principales */}
                     <div className="flex items-center gap-5">
@@ -1540,7 +1547,9 @@ export default function ClientsAndProjectsPage() {
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <p className="text-sm font-medium text-slate-800 truncate">
-                                          {formatProjectName(project.name)}
+                                          <SensitiveText kind="project" id={project.id}>
+                                            {formatProjectName(project.name)}
+                                          </SensitiveText>
                                         </p>
 
                                         {/* Badges de estado del proyecto */}
@@ -2090,7 +2099,15 @@ export default function ClientsAndProjectsPage() {
                   <Popover open={openEditTaskProject} onOpenChange={setOpenEditTaskProject}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className="w-full justify-between font-normal">
-                        <span className="truncate">{editTaskProjectId ? (projects.find(p => p.id === editTaskProjectId)?.name ?? 'Seleccionar proyecto') : 'Seleccionar proyecto'}</span>
+                        <span className="truncate">
+                          {editTaskProjectId ? (
+                            <SensitiveText kind="project" id={editTaskProjectId}>
+                              {formatProjectName(projects.find(p => p.id === editTaskProjectId)?.name ?? 'Seleccionar proyecto')}
+                            </SensitiveText>
+                          ) : (
+                            'Seleccionar proyecto'
+                          )}
+                        </span>
                         <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                       </Button>
                     </PopoverTrigger>
@@ -2100,7 +2117,7 @@ export default function ClientsAndProjectsPage() {
                           {projects.filter(p => p.status === 'active').map(project => (
                             <CommandItem key={project.id} value={project.name} onSelect={() => { setEditTaskProjectId(project.id); setOpenEditTaskProject(false); }}>
                               <Check className={cn('mr-2 h-4 w-4 shrink-0', editTaskProjectId === project.id ? 'opacity-100' : 'opacity-0')} />
-                              {project.name}
+                              <SensitiveText kind="project" id={project.id}>{formatProjectName(project.name)}</SensitiveText>
                             </CommandItem>
                           ))}
                         </CommandList>

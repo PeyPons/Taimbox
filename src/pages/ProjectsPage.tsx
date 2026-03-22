@@ -33,6 +33,7 @@ import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { toast } from 'sonner';
 import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -337,8 +338,6 @@ export default function ProjectsPage() {
   const updateOkrProgress = (id: string, val: number) => { setFormData({ ...formData, okrs: formData.okrs.map(o => o.id === id ? { ...o, progress: val } : o) }); };
   const removeOkr = (id: string) => { setFormData({ ...formData, okrs: formData.okrs.filter(o => o.id !== id) }); };
 
-  const getSelectedEmployeeName = () => selectedEmployeeId === 'all' ? "Todos los empleados" : employees.find(e => e.id === selectedEmployeeId)?.name || "Seleccionar...";
-
   return (
     <div className="flex flex-col h-full space-y-6 p-6 md:p-8 max-w-7xl mx-auto w-full">
 
@@ -629,7 +628,15 @@ export default function ProjectsPage() {
             <Button variant="outline" role="combobox" className="w-full xl:w-[220px] justify-between bg-white shrink-0">
               <span className="flex items-center gap-2 truncate">
                 <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                <span className="truncate">{getSelectedEmployeeName()}</span>
+                <span className="truncate">
+                  {selectedEmployeeId === 'all'
+                    ? 'Todos los empleados'
+                    : (
+                        <SensitiveText kind="employee" id={selectedEmployeeId}>
+                          {employees.find(e => e.id === selectedEmployeeId)?.name || 'Seleccionar...'}
+                        </SensitiveText>
+                      )}
+                </span>
               </span>
               <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50 shrink-0" />
             </Button>
@@ -644,7 +651,7 @@ export default function ProjectsPage() {
                   </CommandItem>
                   {employeesForView.filter(e => e.isActive).map(e => (
                     <CommandItem key={e.id} onSelect={() => { setSelectedEmployeeId(e.id); setOpenEmployeeCombo(false); }}>
-                      {e.name}
+                      <SensitiveText kind="employee" id={e.id}>{e.name}</SensitiveText>
                     </CommandItem>
                   ))}
                 </CommandGroup>
@@ -707,7 +714,9 @@ export default function ProjectsPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-semibold text-slate-900 truncate">
-                            {formatProjectName(data.project.name)}
+                            <SensitiveText kind="project" id={data.project.id}>
+                              {formatProjectName(data.project.name)}
+                            </SensitiveText>
                           </h3>
 
                           {/* Badges de estado con tooltips */}
@@ -766,7 +775,9 @@ export default function ProjectsPage() {
 
                         <div className="flex items-center gap-3 mt-1.5">
                           <span className="text-xs text-slate-500 shrink-0">
-                            {data.client?.name || 'Sin cliente'}
+                            <SensitiveText kind="account" id={data.client?.id ?? `project-${data.project.id}-no-client`}>
+                              {data.client?.name || 'Sin cliente'}
+                            </SensitiveText>
                           </span>
 
                           {/* Mini barra de progreso inline */}
@@ -951,9 +962,12 @@ export default function ProjectsPage() {
                                       </AvatarFallback>
                                     </Avatar>
                                     <div className="min-w-0">
-                                      <p className="text-sm font-medium truncate">{task.taskName}</p>
+                                      <p className="text-sm font-medium truncate">
+                                        <SensitiveText kind="task" id={task.id}>{task.taskName}</SensitiveText>
+                                      </p>
                                       <p className="text-[10px] text-slate-400">
-                                        {emp?.name} • Sem {format(parseISO(task.weekStartDate), 'w')}
+                                        <SensitiveText kind="employee" id={task.employeeId}>{emp?.name ?? ''}</SensitiveText>
+                                        {' '}• Sem {format(parseISO(task.weekStartDate), 'w')}
                                       </p>
                                     </div>
                                   </div>
@@ -998,8 +1012,12 @@ export default function ProjectsPage() {
                                       </AvatarFallback>
                                     </Avatar>
                                     <div className="min-w-0">
-                                      <p className="text-sm font-medium truncate line-through text-slate-500">{task.taskName}</p>
-                                      <p className="text-[10px] text-slate-400">{emp?.name}</p>
+                                      <p className="text-sm font-medium truncate line-through text-slate-500">
+                                        <SensitiveText kind="task" id={task.id}>{task.taskName}</SensitiveText>
+                                      </p>
+                                      <p className="text-[10px] text-slate-400">
+                                        <SensitiveText kind="employee" id={task.employeeId}>{emp?.name ?? ''}</SensitiveText>
+                                      </p>
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-3 text-xs shrink-0">

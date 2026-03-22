@@ -69,7 +69,7 @@ export function ImpersonationBanner() {
   if (!showBanner || !agencyName) return null;
 
   return (
-    <div className="bg-amber-500 text-amber-950 text-sm font-medium px-4 py-2 flex items-center justify-center gap-4 flex-wrap sticky top-0 z-50 shrink-0">
+    <div className="bg-amber-500 text-amber-950 text-sm font-medium px-4 py-2 flex items-center justify-center gap-4 flex-wrap sticky top-0 z-50 shrink-0 lg:pl-64">
       <span>
         Viendo la app como agencia: <strong>{agencyName}</strong>
       </span>

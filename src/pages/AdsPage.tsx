@@ -20,14 +20,13 @@ import {
   RefreshCw, Clock, Search, Settings, Layers,
   TrendingUp, TrendingDown, Scissors, Plus, Trash2,
   AlertTriangle, CheckCircle2, Calendar, Target,
-  ArrowUpRight, ArrowDownRight, Eye, EyeOff, X, Check, ChevronDown, ShieldCheck
+  ArrowUpRight, ArrowDownRight, Eye, EyeOff, X, Check, ChevronDown
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency, cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
 import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
-import { AnonymizedBanner } from '@/components/ads/AnonymizedBanner';
 
 const GoogleIcon = () => (
   <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -614,12 +613,6 @@ export default function AdsPage() {
                   <Calendar className="w-3 h-3 mr-1" />
                   Del 1 al {daysInMonth}
                 </Badge>
-                {isAnonymized && (
-                  <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">
-                    <ShieldCheck className="w-3 h-3 mr-1" />
-                    Datos protegidos
-                  </Badge>
-                )}
               </div>
             </div>
           </div>
@@ -634,8 +627,6 @@ export default function AdsPage() {
             </Button>
           </div>
         </div>
-
-        {isAnonymized && <AnonymizedBanner isActive={isAnonymized} />}
 
         {/* Stats Cards - Reorganized for PPC */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">

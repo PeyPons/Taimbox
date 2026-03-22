@@ -20,6 +20,7 @@ import { useAgency } from '@/contexts/AgencyContext';
 import { getValidRole, getValidDepartment } from '@/utils/roleUtils';
 import { normalizeDepartments } from '@/utils/departmentUtils';
 import { toast } from 'sonner';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 interface EmployeeCardProps {
   employee: Employee;
@@ -66,7 +67,7 @@ export const EmployeeCard = memo(function EmployeeCard({ employee }: EmployeeCar
         </Avatar>
         <div className="flex-1 overflow-hidden">
           <CardTitle className="text-base font-bold truncate text-slate-900">
-            {employee.name}
+            <SensitiveText kind="employee" id={employee.id}>{employee.name}</SensitiveText>
           </CardTitle>
           <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
             <Badge variant="secondary" className="font-normal bg-slate-100 text-slate-600 hover:bg-slate-200">
@@ -74,7 +75,8 @@ export const EmployeeCard = memo(function EmployeeCard({ employee }: EmployeeCar
             </Badge>
             {displayDepartment && (
               <span className="flex items-center gap-1 truncate">
-                <Building2 className="h-3 w-3" /> {displayDepartment}
+                <Building2 className="h-3 w-3" />{' '}
+                <SensitiveText kind="department" id={`${employee.id}|${displayDepartment}`}>{displayDepartment}</SensitiveText>
               </span>
             )}
           </div>
@@ -134,7 +136,9 @@ export const EmployeeCard = memo(function EmployeeCard({ employee }: EmployeeCar
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará al empleado "{employee.name}" y no se puede deshacer.
+              Esta acción eliminará al empleado "
+              <SensitiveText kind="employee" id={employee.id}>{employee.name}</SensitiveText>
+              " y no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

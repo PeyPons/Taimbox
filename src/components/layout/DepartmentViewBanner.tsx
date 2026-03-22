@@ -18,7 +18,7 @@ export function DepartmentViewBanner() {
 
   return (
     <div
-      className="text-sm font-medium px-4 py-2 flex items-center justify-center gap-4 flex-wrap"
+      className="text-sm font-medium px-4 py-2 flex items-center justify-center gap-4 flex-wrap lg:pl-64"
       style={{
         backgroundColor: `${dept.color}22`,
         color: dept.color,

@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AgencyProvider } from "@/contexts/AgencyContext";
+import { PrivacyDemoProvider } from "@/contexts/PrivacyDemoContext";
 import { DepartmentViewProvider } from "@/contexts/DepartmentViewContext";
 import { AppProvider } from "@/contexts/AppContext";
 import { GoalsProvider } from "@/contexts/GoalsContext";
@@ -130,6 +131,7 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <AgencyProvider>
+          <PrivacyDemoProvider>
           <DepartmentViewProvider>
             <AppProvider>
               <GoalsProvider>
@@ -258,6 +260,7 @@ const App = () => (
               </GoalsProvider>
             </AppProvider>
           </DepartmentViewProvider>
+          </PrivacyDemoProvider>
         </AgencyProvider>
       </AuthProvider>
     </QueryClientProvider>

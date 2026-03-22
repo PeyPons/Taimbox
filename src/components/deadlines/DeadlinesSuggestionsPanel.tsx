@@ -28,6 +28,7 @@ import {
   Search,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 export interface SuggestionDonor {
   id: string;
@@ -324,7 +325,9 @@ function CondicionantesBlock({
                               });
                             }}
                           />
-                          <span className="truncate">{p.name}</span>
+                          <span className="truncate">
+                            <SensitiveText kind="project" id={p.id}>{p.name}</SensitiveText>
+                          </span>
                         </label>
                       ))}
                     </div>
@@ -509,7 +512,9 @@ function CondicionantesBlock({
                                 });
                               }}
                             />
-                            <span className="truncate">{p.name}</span>
+                            <span className="truncate">
+                              <SensitiveText kind="project" id={p.id}>{p.name}</SensitiveText>
+                            </span>
                           </label>
                         ))}
                       </div>
@@ -555,7 +560,11 @@ function ResumenPropuesto({
   setRightPanelPorProyectoOpen?: (v: boolean) => void;
 }) {
   const byFrom = new Map<string, { fromName: string; fromAvatar?: string; hours: number }>();
-  const byProject: { projectName: string; items: { fromName: string; hours: number }[] }[] = [];
+  const byProject: {
+    projectId: string;
+    projectName: string;
+    items: { fromName: string; hours: number }[];
+  }[] = [];
   let totalToReceptor = 0;
   group.projects.forEach((p) => {
     const projectItems: { fromName: string; hours: number }[] = [];
@@ -566,7 +575,7 @@ function ResumenPropuesto({
       totalToReceptor += t.suggestedHours;
       projectItems.push({ fromName: t.fromName, hours: t.suggestedHours });
     });
-    if (projectItems.length) byProject.push({ projectName: p.projectName, items: projectItems });
+    if (projectItems.length) byProject.push({ projectId: p.projectId, projectName: p.projectName, items: projectItems });
   });
   if (totalToReceptor <= 0) {
     if (!compact) return <div className="text-sm text-slate-500 py-4">Sin horas sugeridas para este empleado con la opción actual.</div>;
@@ -651,9 +660,11 @@ function ResumenPropuesto({
           <div>
             <p className="text-[11px] font-medium text-slate-500 mb-1">Por proyecto</p>
             <div className="space-y-1.5">
-              {byProject.map((proj, i) => (
-                <div key={i} className="rounded border border-slate-200 bg-white px-2 py-1.5">
-                  <p className="text-[11px] font-medium text-slate-700 truncate">{proj.projectName}</p>
+              {byProject.map((proj) => (
+                <div key={proj.projectId} className="rounded border border-slate-200 bg-white px-2 py-1.5">
+                  <p className="text-[11px] font-medium text-slate-700 truncate">
+                    <SensitiveText kind="project" id={proj.projectId}>{proj.projectName}</SensitiveText>
+                  </p>
                   <div className="flex flex-wrap gap-1 mt-0.5">
                     {proj.items.map((item, j) => (
                       <span
@@ -742,9 +753,11 @@ function ResumenPropuesto({
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="space-y-1.5 pt-1">
-              {byProject.map((proj, i) => (
-                <div key={i} className="rounded border border-slate-200 bg-white px-2 py-1.5">
-                  <p className="text-[11px] font-medium text-slate-700 truncate">{proj.projectName}</p>
+              {byProject.map((proj) => (
+                <div key={proj.projectId} className="rounded border border-slate-200 bg-white px-2 py-1.5">
+                  <p className="text-[11px] font-medium text-slate-700 truncate">
+                    <SensitiveText kind="project" id={proj.projectId}>{proj.projectName}</SensitiveText>
+                  </p>
                   <div className="flex flex-wrap gap-1 mt-0.5">
                     {proj.items.map((item, j) => (
                       <span
@@ -904,7 +917,7 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
                             >
                               <FolderKanban className="h-4 w-4 text-slate-400 shrink-0" />
                               <span className="font-medium text-slate-800 text-sm truncate flex-1">
-                                {proj.projectName}
+                                <SensitiveText kind="project" id={proj.projectId}>{proj.projectName}</SensitiveText>
                               </span>
                               <span className="text-[11px] text-slate-500 shrink-0">
                                 {proj.transfers.length} {proj.transfers.length === 1 ? 'origen' : 'orígenes'}

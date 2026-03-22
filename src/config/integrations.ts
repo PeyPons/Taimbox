@@ -33,7 +33,7 @@ export const AVAILABLE_INTEGRATIONS: Record<string, IntegrationDefinition> = {
   anonymize_ads_for_video: {
     id: 'anonymize_ads_for_video',
     name: 'Modo demostración (ocultar datos sensibles)',
-    description: 'Sustituye nombres por etiquetas genéricas (Cliente A - Retail, Campaña Ecommerce 01) y mantiene los IDs visibles. Útil para grabaciones de vídeo o verificaciones ante Google Trust & Safety.',
+    description: 'En toda la aplicación, sustituye visualmente nombres de personas, clientes, proyectos y tareas por etiquetas genéricas (mismo criterio que en Google/Meta Ads). Los IDs reales se mantienen donde ya se mostraban. Útil para demos a clientes o verificaciones Trust & Safety.',
     category: 'other',
     requiresConfig: false,
   },

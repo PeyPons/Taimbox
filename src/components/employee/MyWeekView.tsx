@@ -22,6 +22,7 @@ import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { Deadline } from '@/types';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 interface MyWeekViewProps {
   employeeId: string;
@@ -96,6 +97,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
       projectId: string;
       projectName: string;
       clientName: string;
+      clientId: string;
       clientColor: string;
       myEstimated: number;
       myReal: number;
@@ -137,6 +139,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
           projectId: alloc.projectId,
           projectName: proj?.name || 'Sin proyecto',
           clientName: cli?.name || 'Interno',
+          clientId: cli?.id ?? `internal-${alloc.projectId}`,
           clientColor: cli?.color || '#6b7280',
           myEstimated: 0,
           myReal: 0,
@@ -315,7 +318,15 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                 <Popover open={openFilterProject} onOpenChange={setOpenFilterProject}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-[180px] h-8 text-xs justify-between font-normal">
-                      <span className="truncate">{filterProject === 'all' ? 'Todos los proyectos' : formatProjectName(projectGroups.find(g => g.projectId === filterProject)?.projectName ?? '')}</span>
+                      <span className="truncate">
+                        {filterProject === 'all'
+                          ? 'Todos los proyectos'
+                          : (
+                              <SensitiveText kind="project" id={filterProject}>
+                                {formatProjectName(projectGroups.find(g => g.projectId === filterProject)?.projectName ?? '')}
+                              </SensitiveText>
+                            )}
+                      </span>
                       <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
                     </Button>
                   </PopoverTrigger>
@@ -330,7 +341,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                           {projectGroups.map(g => (
                             <CommandItem key={g.projectId} value={formatProjectName(g.projectName)} onSelect={() => { setFilterProject(g.projectId); setOpenFilterProject(false); }}>
                               <Check className={cn('mr-2 h-4 w-4 shrink-0', filterProject === g.projectId ? 'opacity-100' : 'opacity-0')} />
-                              {formatProjectName(g.projectName)}
+                              <SensitiveText kind="project" id={g.projectId}>{formatProjectName(g.projectName)}</SensitiveText>
                             </CommandItem>
                           ))}
                         </CommandGroup>
@@ -344,7 +355,15 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                 <Popover open={openFilterTeammate} onOpenChange={setOpenFilterTeammate}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-[180px] h-8 text-xs justify-between font-normal">
-                      <span className="truncate">{filterTeammate === 'all' ? 'Todos los compañeros' : (allTeammates.find(e => e?.id === filterTeammate)?.name ?? 'Compañero')}</span>
+                      <span className="truncate">
+                        {filterTeammate === 'all'
+                          ? 'Todos los compañeros'
+                          : (
+                              <SensitiveText kind="employee" id={filterTeammate}>
+                                {allTeammates.find(e => e?.id === filterTeammate)?.name ?? 'Compañero'}
+                              </SensitiveText>
+                            )}
+                      </span>
                       <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
                     </Button>
                   </PopoverTrigger>
@@ -359,7 +378,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                           {allTeammates.map(emp => emp && (
                             <CommandItem key={emp.id} value={emp.name || ''} onSelect={() => { setFilterTeammate(emp.id); setOpenFilterTeammate(false); }}>
                               <Check className={cn('mr-2 h-4 w-4 shrink-0', filterTeammate === emp.id ? 'opacity-100' : 'opacity-0')} />
-                              {emp.name}
+                              <SensitiveText kind="employee" id={emp.id}>{emp.name}</SensitiveText>
                             </CommandItem>
                           ))}
                         </CommandGroup>
@@ -400,11 +419,13 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <CardTitle className="text-sm font-bold truncate" title={group.projectName}>
-                          {formatProjectName(group.projectName)}
+                          <SensitiveText kind="project" id={group.projectId}>{formatProjectName(group.projectName)}</SensitiveText>
                         </CardTitle>
                         <div className="flex items-center gap-1.5 mt-1">
                           <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: group.clientColor }} />
-                          <span className="text-xs text-muted-foreground truncate">{group.clientName}</span>
+                          <span className="text-xs text-muted-foreground truncate">
+                            <SensitiveText kind="account" id={group.clientId}>{group.clientName}</SensitiveText>
+                          </span>
                         </div>
                       </div>
 
@@ -448,7 +469,9 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                                 </Avatar>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p className="font-semibold">{tm.name}</p>
+                                <p className="font-semibold">
+                                  <SensitiveText kind="employee" id={tm.id}>{tm.name}</SensitiveText>
+                                </p>
                                 <p className="text-xs text-muted-foreground">
                                   {tm.hoursComputed}h computadas ({tm.impactPercentage}%)
                                 </p>
@@ -464,7 +487,9 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                               </TooltipTrigger>
                               <TooltipContent>
                                 {group.teammates.slice(4).map(tm => (
-                                  <div key={tm.id} className="text-xs">{tm.name}: {tm.hoursComputed}h</div>
+                                  <div key={tm.id} className="text-xs">
+                                    <SensitiveText kind="employee" id={tm.id}>{tm.name}</SensitiveText>: {tm.hoursComputed}h
+                                  </div>
                                 ))}
                               </TooltipContent>
                             </Tooltip>
@@ -539,7 +564,9 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                                     {tm.name.substring(0, 2).toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
-                                <span className="font-medium text-slate-700 truncate max-w-[80px]">{tm.name.split(' ')[0]}</span>
+                                <span className="font-medium text-slate-700 truncate max-w-[80px]">
+                                  <SensitiveText kind="employee" id={tm.id}>{tm.name.split(' ')[0]}</SensitiveText>
+                                </span>
                               </div>
                               <div className="flex items-center gap-2 text-[10px]">
                                 <span className="text-blue-600">Plan: {tm.hoursPlanned}h</span>
