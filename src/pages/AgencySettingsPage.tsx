@@ -56,48 +56,110 @@ import {
 } from "@/components/ui/select"
 import React from 'react';
 
+type GoogleAccountRow = { id: string; resourceName: string; descriptiveName?: string | null };
+
+/** Evita ráfagas: HMR de Vite remonta el componente y antes se disparaban decenas de POST al mismo endpoint. */
+const googleAccountsListInflight = new Map<string, Promise<GoogleAccountRow[]>>();
+
+function fetchGoogleAccountsDeduped(agencyId: string): Promise<GoogleAccountRow[]> {
+  const existing = googleAccountsListInflight.get(agencyId);
+  if (existing) return existing;
+  const p = (async () => {
+    try {
+      const { data, error } = await invokeEdgeFunctionWithRetry(
+        'list-google-accounts',
+        { agency_id: agencyId },
+        { retries: 2, baseDelayMs: 2000 }
+      );
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data?.accounts ?? [];
+    } finally {
+      googleAccountsListInflight.delete(agencyId);
+    }
+  })();
+  googleAccountsListInflight.set(agencyId, p);
+  return p;
+}
+
 /** Selector de cuentas Google Ads: solo se monta cuando hay token, para no romper reglas de hooks al desvincular */
 function GoogleAdsAccountSelect({
   agencyId,
-  value,
-  onValueChange,
+  fetchEnabled,
 }: {
   agencyId: string;
-  value: string;
-  onValueChange: (v: string) => void;
+  /** Solo pide el listado cuando la pestaña Integraciones está visible (evita trabajo en segundo plano). */
+  fetchEnabled: boolean;
 }) {
-  const [accounts, setAccounts] = useState<{ id: string; resourceName: string; descriptiveName?: string | null }[]>([]);
+  const [accounts, setAccounts] = useState<GoogleAccountRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryTick, setRetryTick] = useState(0);
 
   useEffect(() => {
-    let cancelled = false;
-    const fetchAccounts = async () => {
-      if (!agencyId) return;
-      setLoading(true);
+    if (!agencyId || !fetchEnabled) {
+      setLoading(false);
       setError(null);
-      try {
-        const { data, error } = await invokeEdgeFunctionWithRetry('list-google-accounts', {
-          agency_id: agencyId,
-        }, { retries: 4, baseDelayMs: 750 });
-        if (cancelled) return;
-        if (error) throw error;
-        if (data?.error) throw new Error(data.error);
-        setAccounts(data?.accounts ?? []);
-      } catch (e: unknown) {
-        if (cancelled) return;
-        console.error('Error fetching Google accounts:', e);
-        setError('Error cargando cuentas');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    fetchAccounts();
-    return () => { cancelled = true; };
-  }, [agencyId]);
+      return;
+    }
 
+    setLoading(true);
+    let cancelled = false;
+    const debounceMs = 400;
+    const t = window.setTimeout(() => {
+      const fetchAccounts = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          const list = await fetchGoogleAccountsDeduped(agencyId);
+          if (cancelled) return;
+          setAccounts(list);
+        } catch (e: unknown) {
+          if (cancelled) return;
+          console.error('Error fetching Google accounts:', e);
+          setError('No se pudo cargar el listado (servidor 503 o red). Revisa Edge Functions en el host.');
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+      };
+      void fetchAccounts();
+    }, debounceMs);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [agencyId, fetchEnabled, retryTick]);
+
+  if (!fetchEnabled) {
+    return <SelectItem value="__idle__" disabled>Abre la pestaña Integraciones para cargar cuentas</SelectItem>;
+  }
   if (loading) return <SelectItem value="__loading__" disabled>Cargando cuentas...</SelectItem>;
-  if (error) return <SelectItem value="__error__" disabled>{error}</SelectItem>;
+  if (error) {
+    return (
+      <>
+        <div
+          className="px-2 py-2 border-b border-border"
+          onPointerDown={(e) => e.preventDefault()}
+        >
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={(e) => {
+              e.stopPropagation();
+              setRetryTick((n) => n + 1);
+            }}
+          >
+            Reintentar
+          </Button>
+          <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug">{error}</p>
+        </div>
+        <SelectItem value="__error__" disabled>Error al cargar</SelectItem>
+      </>
+    );
+  }
   if (accounts.length === 0) return <SelectItem value="__empty__" disabled>No se encontraron cuentas</SelectItem>;
   return (
     <>
@@ -2014,8 +2076,7 @@ export default function AgencySettingsPage() {
                               <SelectContent>
                                 <GoogleAdsAccountSelect
                                   agencyId={currentAgency.id}
-                                  value={currentAgency.google_ads_customer_id || integrations.googleAdsCustomerId || ''}
-                                  onValueChange={(v) => setIntegrations(prev => ({ ...prev, googleAdsCustomerId: v }))}
+                                  fetchEnabled={activeTab === 'integrations'}
                                 />
                               </SelectContent>
                             </Select>

@@ -498,6 +498,7 @@ Si al vincular **Google Ads**, **Meta Ads** o listar cuentas aparece **503 (Serv
    - Reiniciar: `docker compose up -d functions` (o el comando equivalente en tu stack).
    - Comprobar desde el contenedor: `docker exec -it supabase-edge-functions wget -qO- --timeout=5 https://graph.facebook.com/v21.0/ 2>&1 | head` (o `curl` si está instalado). Si falla por DNS, el problema es de resolución, no de código.
    - Asegurar también que `SUPABASE_URL` sea alcanzable **desde dentro** del contenedor (p. ej. `http://kong:8000` en la red Docker de Supabase); si el runtime no puede resolver `kong`, el cliente de Supabase fallará al guardar el token tras OAuth.
+   - **Vite en local:** el hot reload puede remontar la página de Configuración y repetir muchas veces la llamada a `list-google-accounts`. El frontend **deduplica** la petición por `agency_id`, aplica un **debounce** y solo carga el listado cuando la pestaña **Integraciones** está activa, para no saturar la API mientras el 503 persiste en el servidor.
 
 **Comprobar en el servidor:**
 - Que existan las carpetas `oauth-google-ads` y `list-google-accounts` dentro del volumen de functions.
