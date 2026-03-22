@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
             }))
             const { error: upsertErr } = await supabase
                 .from('ad_accounts_config')
-                .upsert(upsertConfigs, { onConflict: 'account_id' })
+                .upsert(upsertConfigs, { onConflict: 'account_id,agency_id,platform' })
             if (upsertErr) {
                 console.warn('[list-meta-accounts] upsert ad_accounts_config:', upsertErr.message)
             }

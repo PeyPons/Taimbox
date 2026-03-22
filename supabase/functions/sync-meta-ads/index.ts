@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
                         agency_id: agency.id
                     }));
 
-                    const { error: upsertErr } = await supabase.from('ad_accounts_config').upsert(upsertConfigs, { onConflict: 'account_id' });
+                    const { error: upsertErr } = await supabase.from('ad_accounts_config').upsert(upsertConfigs, { onConflict: 'account_id,agency_id,platform' });
                     if (upsertErr) await log(`    ⚠️ Error actualizando configuración: ${upsertErr.message}`);
                 }
 

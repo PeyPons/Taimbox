@@ -1989,28 +1989,7 @@ export default function AgencySettingsPage() {
                     </div>
 
                     <div className="mt-4 pt-4 border-t">
-                      <div className="space-y-4">
-                        <h4 className="font-medium text-sm flex items-center gap-2">
-                          <PlusCircle className="w-4 h-4 text-emerald-600" />
-                          Añadir cuenta publicitaria
-                        </h4>
-                        <div className="flex flex-col md:flex-row gap-3 items-end">
-                          <div className="space-y-1.5 w-full">
-                            <Label className="text-xs">ID de cuenta (Meta Ads)</Label>
-                            <Input
-                              placeholder="Ej: act_123456789"
-                              value={newAccountId}
-                              onChange={(e) => setNewAccountId(e.target.value)}
-                              className="bg-white"
-                            />
-                          </div>
-                          <Button onClick={handleAddAccount} disabled={isAddingAccount} size="sm" className="w-full md:w-auto shrink-0">
-                            {isAddingAccount ? '...' : 'Añadir'}
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3 mt-4">
+                      <div className="space-y-3">
                         <h4 className="text-xs font-semibold text-slate-500 uppercase">Cuentas conectadas ({connectedAccounts.length})</h4>
                         {connectedAccounts.length === 0 ? (
                           <p className="text-sm text-slate-400 italic">No hay cuentas conectadas.</p>
