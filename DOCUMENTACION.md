@@ -34,7 +34,7 @@ Cada vez que el usuario acepta o cambia preferencias se hace push con evento `co
 2. **Debe enlazarse en la navegación del sitio** (ej. Footer en `LandingFooter.tsx`, menús dropdown estructurados como `FeaturesDropdown.tsx` o menú móvil en `LandingHeader.tsx`).
 3. El frontend *debe* tener definido su `<Helmet>` respectivo (Title, Meta Description, y `rel="canonical"`).
 
-Para **nuevos artículos del blog** (`/blog/...`): añadir la URL a `sitemap.xml`, la entrada a `src/data/blogPosts.ts`, crear la ruta en `App.tsx`, la página en `src/pages/blog/` y el componente de contenido; el índice `/blog` ya enlaza todos los posts definidos en `blogPosts.ts`. El blog se enlaza solo desde el footer (no en el menú principal).
+Para **nuevos artículos del blog** (`/blog/...`): añadir la URL a `sitemap.xml`, la entrada a `src/data/blogPosts.ts`, crear la ruta en `App.tsx`, la página en `src/pages/blog/` y el componente de contenido; el índice `/blog` consume automáticamente `blogPosts.ts` y renderiza destacado + buscador + filtros por categoría + grid de artículos. El blog se enlaza solo desde el footer (no en el menú principal).
 
 #### Base de artículos del blog
 
