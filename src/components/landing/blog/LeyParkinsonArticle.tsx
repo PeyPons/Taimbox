@@ -429,7 +429,7 @@ export function LeyParkinsonArticle({
               Que el tiempo trabaje a tu favor, no en tu contra
             </h2>
             <p className="text-indigo-100/90 text-lg mb-8 max-w-2xl mx-auto">
-              Planifica por horas, fija límites y revisa el margen. Prueba Taimbox sin compromiso.
+              Planificación por horas, límites claros y margen a la vista; en Taimbox se puede probar sin compromiso.
             </p>
             <Link to="/planificador-recursos">
               <Button

@@ -12,6 +12,26 @@ export interface BlogPost {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: 'plantilla-planificacion-recursos-agencia',
+    title: 'Plantilla de planificación de recursos para agencias',
+    description:
+      'Descarga la plantilla de planificación de recursos en Excel o Google Sheets: 5 hojas con fórmulas, formato condicional, desplegables y protección de celdas. Calcula capacidad neta, utilización y margen.',
+    date: '2026-03-24',
+    href: '/blog/plantilla-planificacion-recursos-agencia',
+    readingMinutes: 22,
+    relatedSlug: 'planificacion-proyectos-cronograma-recursos',
+  },
+  {
+    slug: 'kpis-agencias-marketing-2026',
+    title: 'KPIs para agencias de marketing: 5 métricas que sí importan en 2026',
+    description:
+      'Utilización, rentabilidad y pacing, estimación vs real, capacidad por departamento y OKRs: métricas accionables, qué hacer si el número falla y por qué medir bien no debería ser arqueología en Excel.',
+    date: '2026-03-23',
+    href: '/blog/kpis-agencias-marketing-2026',
+    readingMinutes: 16,
+    relatedSlug: 'planificacion-proyectos-cronograma-recursos',
+  },
+  {
     slug: 'planificacion-proyectos-cronograma-recursos',
     title: 'Planificación de proyectos: cronograma, presupuesto y recursos',
     description: 'Guía práctica para unir cronograma, presupuesto y capacidad del equipo. Incluye diagrama de Gantt, fases del proyecto, KPIs y herramientas.',

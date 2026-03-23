@@ -11,16 +11,20 @@ import {
   Clock,
   BookOpen,
   Sparkles,
+  BarChart3,
 } from 'lucide-react';
 import type { BlogPost } from '@/data/blogPosts';
 
 function getPostIcon(slug: string) {
+  if (slug.includes('kpis')) return BarChart3;
+  if (slug.includes('plantilla')) return LayoutGrid;
   if (slug.includes('planificacion') || slug.includes('cronograma')) return LayoutGrid;
   if (slug.includes('timeboxing')) return Clock;
   return BookOpen;
 }
 
 function getPostAccent(slug: string): 'indigo' | 'emerald' | 'purple' {
+  if (slug.includes('plantilla')) return 'indigo';
   if (slug.includes('planificacion') || slug.includes('cronograma')) return 'indigo';
   if (slug.includes('timeboxing')) return 'emerald';
   return 'purple';

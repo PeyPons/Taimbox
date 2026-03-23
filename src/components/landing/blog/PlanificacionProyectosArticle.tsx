@@ -286,7 +286,7 @@ export function PlanificacionProyectosArticle({
 
         <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
           Esta forma de trabajar está muy alineada con el timeboxing: asignar bloques de tiempo concretos a proyectos
-          o tareas en lugar de solo listar tareas sin tiempo. Si quieres profundizar en la técnica, tenemos una guía dedicada:{' '}
+          o tareas en lugar de solo listar tareas sin tiempo. La técnica la recogemos con más detalle en la guía sobre{' '}
           <Link to="/blog/que-es-timeboxing" className="text-indigo-300 hover:text-white underline underline-offset-2">
             qué es el timeboxing
           </Link>
@@ -426,7 +426,7 @@ export function PlanificacionProyectosArticle({
         </div>
 
         <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed mt-6">
-          Si quieres ver cómo encaja en tu flujo, las opciones de precios están en la página de{' '}
+          Tarifas y planes concretos en la página de{' '}
           <Link to="/precios" className="text-indigo-300 hover:text-white underline underline-offset-2">
             precios
           </Link>
@@ -485,7 +485,7 @@ export function PlanificacionProyectosArticle({
             Planifica por horas y recupera el control del margen
           </h2>
           <p className="text-indigo-100/90 text-lg mb-8 max-w-2xl mx-auto">
-            Cronograma, presupuesto y recursos en un solo lugar. Prueba Taimbox sin compromiso.
+            Cronograma, presupuesto y recursos en un solo lugar; Taimbox se puede explorar sin compromiso.
           </p>
           <Link to="/planificador-recursos">
             <Button
