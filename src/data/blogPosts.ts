@@ -13,9 +13,9 @@ export interface BlogPost {
 export const blogPosts: BlogPost[] = [
   {
     slug: 'plantilla-planificacion-recursos-agencia',
-    title: 'Plantilla de planificación de recursos para agencias',
+    title: 'Plantilla gratuita de planificación de recursos para agencias',
     description:
-      'Descarga la plantilla de planificación de recursos en Excel o Google Sheets: 5 hojas con fórmulas, formato condicional, desplegables y protección de celdas. Calcula capacidad neta, utilización y margen.',
+      'Descarga gratis una plantilla de planificación de recursos para agencias en Excel o Google Sheets: 5 hojas con fórmulas, formato condicional, desplegables y protección de celdas. Calcula capacidad neta, utilización y margen.',
     date: '2026-03-24',
     href: '/blog/plantilla-planificacion-recursos-agencia',
     readingMinutes: 22,

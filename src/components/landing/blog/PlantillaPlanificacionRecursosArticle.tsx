@@ -55,7 +55,7 @@ export function PlantillaPlanificacionRecursosArticle({
           {readingMinutes != null && <BlogReadingTime minutes={readingMinutes} />}
         </div>
         <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-[2.75rem] font-black text-white mb-5 sm:mb-6 leading-[1.15] tracking-tight text-center">
-          Plantilla de planificación de recursos para agencias
+          Plantilla gratuita de planificación de recursos para agencias
         </h1>
         <div className="space-y-4 text-indigo-100/95 text-base sm:text-lg leading-[1.75]">
           <p>
@@ -68,6 +68,10 @@ export function PlantillaPlanificacionRecursosArticle({
             posible</strong>, entender cuándo flaquea y saber qué criterio mantener si decides dar el salto a una
             herramienta integrada. Al final hay una plantilla .xlsx con cinco hojas listas para usar: instrucciones,
             equipo, proyectos, asignación semanal e insights con formato condicional y KPIs.
+          </p>
+          <p>
+            Si estabas comparando <strong>plantillas gratuitas de planificación de recursos</strong>, esta está pensada
+            para uso real en agencia: no solo reparte horas, también cruza capacidad neta, pacing, coste y margen.
           </p>
           <div className="rounded-2xl border-l-4 border-indigo-400 bg-indigo-500/10 border border-indigo-500/20 p-4 sm:p-6 my-6">
             <p className="text-white/95 font-medium m-0">

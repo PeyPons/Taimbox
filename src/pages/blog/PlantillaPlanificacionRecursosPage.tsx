@@ -29,9 +29,11 @@ const TOC_ITEMS = [
 const CANONICAL = 'https://taimbox.com/blog/plantilla-planificacion-recursos-agencia';
 
 export default function PlantillaPlanificacionRecursosPage() {
-  const titleShort = 'Plantilla de planificación de recursos para agencias';
+  const titleShort = 'Plantilla gratuita de planificación de recursos para agencias';
+  const seoTitle =
+    'Plantillas gratuitas de planificación de recursos: descarga plantilla para agencias (Excel y Google Sheets)';
   const description =
-    'Descarga la plantilla de planificación de recursos en Excel o Google Sheets: 5 hojas con fórmulas, formato condicional, desplegables y protección de celdas. Calcula capacidad neta, utilización y margen.';
+    'Descarga gratis una plantilla de planificación de recursos para agencias en Excel o Google Sheets: 5 hojas con fórmulas, formato condicional, desplegables y protección de celdas. Calcula capacidad neta, utilización y margen.';
 
   const howToSteps = [
     {
@@ -108,11 +110,11 @@ export default function PlantillaPlanificacionRecursosPage() {
   return (
     <>
       <Helmet>
-        <title>{titleShort} | Taimbox</title>
+        <title>{seoTitle} | Taimbox</title>
         <meta name="description" content={description} />
         <link rel="canonical" href={CANONICAL} />
         <meta property="og:type" content="article" />
-        <meta property="og:title" content={`${titleShort} | Taimbox`} />
+        <meta property="og:title" content={`${seoTitle} | Taimbox`} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={CANONICAL} />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
