@@ -12,7 +12,10 @@ const relatedPost = post?.relatedSlug ? blogPosts.find((p) => p.slug === post.re
 const TOC_ITEMS = [
   { id: 'que-es-ley-parkinson', label: '1. Qué es la Ley de Parkinson' },
   { id: 'formulacion-origen', label: '2. Formulación exacta y origen' },
+  { id: 'parkinson-estructura-burocracia', label: 'Origen burocrático y estructura' },
+  { id: 'segunda-ley-gastos', label: 'Segunda ley: gastos e ingresos' },
   { id: 'ejemplos-ley-parkinson', label: '3. Ejemplos en el día a día y en negocio' },
+  { id: 'ley-trivialidad', label: 'Ley de la trivialidad (efecto cobertizo)' },
   { id: 'evidencia-estudios', label: '4. Evidencia empírica y estudios' },
   { id: 'consecuencias-negocio', label: '5. Consecuencias en empresas y equipos' },
   { id: 'antidotos-timeboxing', label: '6. Antídotos: timeboxing y plazos' },
@@ -28,14 +31,14 @@ export default function LeyParkinsonPage() {
         <title>Ley de Parkinson: qué es, ejemplos y cómo combatirla | Taimbox</title>
         <meta
           name="description"
-          content="Guía completa sobre la Ley de Parkinson: origen, formulación, evidencia, consecuencias en negocio y antídotos (timeboxing, plazos y gestión del tiempo)."
+          content="Ley de Parkinson explicada al completo: tiempo, origen burocrático, segunda ley de gastos e ingresos, ley de la trivialidad (efecto cobertizo), evidencia y antídotos (timeboxing, plazos)."
         />
         <link rel="canonical" href="https://taimbox.com/blog/ley-parkinson" />
         <meta property="og:type" content="article" />
         <meta property="og:title" content="Ley de Parkinson: qué es, ejemplos y cómo combatirla | Taimbox" />
         <meta
           property="og:description"
-          content="Guía completa sobre la Ley de Parkinson: origen, evidencia, consecuencias y antídotos como el timeboxing."
+          content="Tiempo, burocracia, segunda ley financiera, ley de la trivialidad en reuniones y antídotos prácticos."
         />
         <meta property="og:url" content="https://taimbox.com/blog/ley-parkinson" />
         <script type="application/ld+json">
@@ -46,7 +49,7 @@ export default function LeyParkinsonPage() {
                 '@type': 'Article',
                 headline: 'Ley de Parkinson: qué es, ejemplos y cómo combatirla',
                 description:
-                  'Guía completa sobre la Ley de Parkinson: origen, formulación, evidencia, consecuencias en negocio y antídotos (timeboxing, plazos y gestión del tiempo).',
+                  'Guía completa sobre la Ley de Parkinson: tiempo, origen burocrático, segunda ley de gastos, ley de la trivialidad, evidencia y antídotos (timeboxing, plazos).',
                 author: { '@type': 'Organization', name: 'Taimbox' },
                 publisher: { '@type': 'Organization', name: 'Taimbox' },
                 datePublished: post?.date ?? '2025-03-18',
@@ -85,7 +88,7 @@ export default function LeyParkinsonPage() {
 
         <div className="relative z-10">
           <LeyParkinsonArticle
-            readingMinutes={post?.readingMinutes ?? 18}
+            readingMinutes={post?.readingMinutes ?? 24}
             tocItems={TOC_ITEMS}
             relatedPost={relatedPost ? { title: relatedPost.title, description: relatedPost.description, href: relatedPost.href } : undefined}
           />

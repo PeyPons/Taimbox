@@ -52,10 +52,11 @@ export const blogPosts: BlogPost[] = [
   {
     slug: 'ley-parkinson',
     title: 'Ley de Parkinson: qué es, ejemplos y cómo combatirla',
-    description: 'Guía completa sobre la Ley de Parkinson: origen, formulación, evidencia, consecuencias en negocio y antídotos (timeboxing, plazos y gestión del tiempo).',
+    description:
+      'Ley del tiempo, origen burocrático (Marina británica), segunda ley de gastos e ingresos, ley de la trivialidad en reuniones, evidencia y antídotos (timeboxing, plazos).',
     date: '2025-03-18',
     href: '/blog/ley-parkinson',
-    readingMinutes: 18,
+    readingMinutes: 24,
     relatedSlug: 'que-es-timeboxing',
   },
 ];

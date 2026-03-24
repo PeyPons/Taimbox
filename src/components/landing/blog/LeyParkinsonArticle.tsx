@@ -13,6 +13,9 @@ import {
   ChevronRight,
   Quote,
   Zap,
+  Building2,
+  Wallet,
+  MessageSquareWarning,
 } from 'lucide-react';
 import { RevealOnScroll } from './RevealOnScroll';
 import { BlogReadingTime } from './BlogReadingTime';
@@ -58,9 +61,10 @@ export function LeyParkinsonArticle({
           </p>
           <div className="rounded-2xl border-l-4 border-indigo-400 bg-indigo-500/10 border border-indigo-500/20 p-4 sm:p-6 my-6">
             <p className="text-white/95 font-medium m-0">
-              En esta guía repasamos el origen de la ley, su formulación exacta, ejemplos en la vida cotidiana y en el
-              negocio, evidencia empírica, las consecuencias para empresas y equipos, y los antídotos que realmente
-              funcionan: timeboxing, plazos cortos y gestión explícita del tiempo.
+              En esta guía repasamos la formulación clásica del tiempo, el <strong>origen sociológico</strong> (crítica a
+              la burocracia), la <strong>segunda ley</strong> sobre gastos e ingresos, la <strong>ley de la
+              trivialidad</strong> en reuniones, ejemplos, evidencia, consecuencias en empresas y antídotos: timeboxing,
+              plazos cortos y límites explícitos.
             </p>
           </div>
         </div>
@@ -134,11 +138,78 @@ export function LeyParkinsonArticle({
             </div>
           </div>
 
-          <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed mt-6">
+          <p className="text-indigo-200/85 text-sm sm:text-base mt-6 mb-0">
+            Más abajo desarrollamos el resto del marco de Parkinson: origen burocrático, segunda ley financiera y ley de la
+            trivialidad.
+          </p>
+        </section>
+      </RevealOnScroll>
+
+      {/* Origen burocrático y estructura */}
+      <RevealOnScroll delay={1}>
+        <section id="parkinson-estructura-burocracia" className="mb-12 sm:mb-16 scroll-mt-24">
+          <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex items-center gap-3">
+            <Building2 className="h-8 w-8 text-slate-300 shrink-0" />
+            Origen sociológico: no es solo &quot;falta de foco&quot;
+          </h2>
+          <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>
-              Parkinson también enunció una &quot;segunda ley&quot;: los gastos crecen hasta igualar los ingresos. En
-              gestión del tiempo y productividad, la primera ley es la que tiene más impacto: entenderla es el primer
-              paso para diseñar plazos, reuniones y planificación de forma que el tiempo no se diluya por inercia.
+              Parkinson formuló la ley del tiempo en un contexto de <strong>crítica a la burocracia</strong>, no como
+              manual de autodisciplina personal. Su mirada era sociológica: las organizaciones tienden a generar trabajo y
+              puestos que se perpetúan aunque la función real (barcos, servicios, clientes) no lo exija al mismo ritmo.
+            </p>
+            <p>
+              Un ejemplo que él mismo popularizó es el de la <strong>administración naval británica</strong>: entre 1914 y
+              1928 el personal de oficina creció de forma sostenida (en torno a un ritmo anual del orden del 5–7% en
+              distintas ramas citadas en su análisis) mientras el número de <strong>barcos en servicio disminuía
+              drásticamente</strong>. El mensaje no es un dato estadístico para un examen, sino una ilustración: el aparato
+              administrativo puede hincharse con independencia del &quot;output&quot; que pretende servir.
+            </p>
+            <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/50 p-5 sm:p-6 my-6">
+              <p className="text-white font-medium m-0 text-base sm:text-lg leading-relaxed">
+                La Ley de Parkinson no es solo una trampa mental: es un <strong>defecto estructural</strong> de las
+                organizaciones que tienden a crear trabajo innecesario o a multiplicar capas para justificar su
+                existencia. Combatirla no depende solo de &quot;concentrarse más&quot;: hace falta revisar comités,
+                aprobaciones, plantillas y cargas que fabrican trabajo sin valor.
+              </p>
+            </div>
+            <p>
+              Por eso los antídotos van en dos frentes: hábitos personales (timeboxing, plazos) y{' '}
+              <strong>diseño organizativo</strong> (menos reuniones obligatorias, menos trámites, presupuestos y roles
+              claros). En equipos de agencia, si solo pides &quot;más disciplina&quot; pero el sistema añade reuniones y
+              capas, la ley sigue ganando.
+            </p>
+          </div>
+        </section>
+      </RevealOnScroll>
+
+      {/* Segunda ley: gastos */}
+      <RevealOnScroll delay={1}>
+        <section id="segunda-ley-gastos" className="mb-12 sm:mb-16 scroll-mt-24">
+          <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex items-center gap-3">
+            <Wallet className="h-8 w-8 text-emerald-400 shrink-0" />
+            Segunda ley de Parkinson: los gastos y los ingresos
+          </h2>
+          <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
+            <p>
+              En el mismo libro y ensayos, Parkinson enunció una ley espejo de la del tiempo:{' '}
+              <strong>&quot;Los gastos aumentan hasta cubrir todos los ingresos&quot;</strong> (formulaciones equivalentes:
+              el gasto sube para igualar el ingreso disponible). Es el paralelo financiero de &quot;el trabajo llena el
+              tiempo&quot;: el dinero tiende a <strong>dispersarse</strong> mientras haya saldo percibido, no porque cada
+              gasto sea racional.
+            </p>
+            <p>
+              En una empresa, eso se ve en presupuestos que se consumen porque &quot;sobraba partida&quot;; en lo
+              personal, en el efecto de que sube el sueldo y a los pocos meses el estilo de vida se ha ajustado de nuevo al
+              límite. <strong>Aplique este principio a su presupuesto personal:</strong> si no asigna un destino
+              concreto a cada parte del ingreso (ahorro automático, tope de variable, fondo de emergencia), el dinero
+              tiende a &quot;expandirse&quot; en gastos hormiga hasta agotar lo disponible, igual que el trabajo llena el
+              plazo.
+            </p>
+            <p>
+              Los antídotos son análogos a los del tiempo: <strong>topes</strong> (presupuesto por categoría),{' '}
+              <strong>reglas automáticas</strong> (transferencias el día de cobro) y <strong>revisión periódica</strong>, no
+              solo fuerza de voluntad puntual.
             </p>
           </div>
         </section>
@@ -207,6 +278,39 @@ export function LeyParkinsonArticle({
                 </p>
               </div>
             </div>
+          </div>
+        </section>
+      </RevealOnScroll>
+
+      {/* Ley de la trivialidad */}
+      <RevealOnScroll delay={1}>
+        <section id="ley-trivialidad" className="mb-12 sm:mb-16 scroll-mt-24">
+          <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex items-center gap-3">
+            <MessageSquareWarning className="h-8 w-8 text-amber-400 shrink-0" />
+            Ley de la trivialidad (efecto cobertizo)
+          </h2>
+          <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
+            <p>
+              Parkinson describió otro fenómeno que explica por qué las reuniones se comen la semana sin avanzar lo
+              importante: la <strong>ley de la trivialidad</strong> (en la literatura anglosajona a veces ilustrada con
+              la &quot;prioridad del cobertizo&quot; o <em>bicycle shed</em>). En un comité, el grupo dedica tiempo
+              desproporcionado a temas <strong>fáciles de entender</strong> (el color de un cobertizo, un detalle de
+              formato) pero dedica poco o nada a decisiones complejas y críticas (por ejemplo, un diseño técnico profundo)
+              porque exigen esfuerzo cognitivo y riesgo.
+            </p>
+            <div className="rounded-2xl border border-amber-500/25 bg-amber-950/30 p-5 sm:p-6 my-6">
+              <p className="text-amber-100/95 font-medium m-0">
+                <strong>Cuidado con el efecto cobertizo:</strong> no permita que la facilidad de discutir un tema trivial
+                consuma el tiempo reservado para las decisiones estratégicas de su proyecto. Si la reunión solo avanza en
+                detalles cómodos, la Ley de Parkinson del tiempo se cumple en el lugar equivocado.
+              </p>
+            </div>
+            <p>
+              <strong>Cómo recortar reuniones esta semana:</strong> orden del día con prioridad explícita (lo crítico
+              primero, tiempo acotado), límite de duración, y regla de &quot;decisión o aplazamiento&quot;: si el tema no
+              es nuclear, se documenta y se sale. Así reduces el tiempo que el grupo invierte en lo que es fácil de opinar
+              pero poco relevante.
+            </p>
           </div>
         </section>
       </RevealOnScroll>
@@ -378,14 +482,14 @@ export function LeyParkinsonArticle({
         <section className="mb-12">
           <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-6 sm:p-8 mb-8">
             <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-4">
-              La Ley de Parkinson afirma que el trabajo se expande hasta llenar el tiempo disponible. Conocerla permite
-              diseñar plazos, reuniones y planificación de forma que el tiempo no se diluya por inercia. Los antídotos
-              más efectivos son el timeboxing, los plazos cortos e intermedios y los límites explícitos de tiempo por
-              tarea y por proyecto.
+              La Ley de Parkinson afirma que el trabajo se expande hasta llenar el tiempo disponible; en el mismo marco,
+              la segunda ley vincula <strong>gastos e ingresos</strong>, y la ley de la trivialidad explica el tiempo
+              perdido en debates irrelevantes. Conocer las tres dimensiones (tiempo, dinero, foco en reuniones) permite
+              actuar tanto en hábitos personales como en <strong>estructura</strong> de equipos y procesos.
             </p>
             <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed m-0">
-              En equipos y agencias, aplicar esta lógica con un planificador por horas y presupuestos claros mejora la
-              predictibilidad y la rentabilidad.
+              Los antídotos clásicos son timeboxing, plazos cortos y límites explícitos; en agencias, un planificador por
+              horas y presupuestos claros mejora predictibilidad y rentabilidad.
             </p>
           </div>
 
@@ -419,6 +523,24 @@ export function LeyParkinsonArticle({
                   El timeboxing es uno de los antídotos más directos: fijas un tiempo máximo para la tarea y, cuando se
                   acaba, pasas a la siguiente. Así el trabajo no puede expandirse más allá del límite. Por eso en
                   muchas guías de productividad se cita la Ley de Parkinson como motivación para usar timeboxing.
+                </p>
+              </div>
+              <div className="w-full h-px bg-white/10" />
+              <div>
+                <h4 className="text-white font-semibold mb-2">¿Qué es la segunda ley de Parkinson sobre dinero?</h4>
+                <p className="text-sm text-indigo-200/90">
+                  Es la observación de que los gastos tienden a subir hasta ocupar el nivel de ingresos disponible, en
+                  paralelo a la primera ley (el trabajo llena el tiempo). En finanzas personales o de empresa, se
+                  mitiga con topes, reglas automáticas y revisión periódica, no solo con buenas intenciones.
+                </p>
+              </div>
+              <div className="w-full h-px bg-white/10" />
+              <div>
+                <h4 className="text-white font-semibold mb-2">¿Qué es la ley de la trivialidad?</h4>
+                <p className="text-sm text-indigo-200/90">
+                  Es el patrón por el que los equipos dedican tiempo desproporcionado a temas fáciles de entender (detalles
+                  menores) y poco a decisiones complejas y críticas. En reuniones, se reduce priorizando lo importante,
+                  acotando tiempo por tema y evitando que lo &quot;cómodo de discutir&quot; se coma la agenda.
                 </p>
               </div>
             </div>
