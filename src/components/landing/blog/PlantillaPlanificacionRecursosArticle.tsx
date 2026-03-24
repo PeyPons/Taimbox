@@ -109,12 +109,12 @@ export function PlantillaPlanificacionRecursosArticle({
         </div>
       )}
 
-      {/* I. Introducción */}
+      {/* 1 Introducción */}
       <RevealOnScroll>
         <section id="intro-excel-primer-amor" className="mb-12 sm:mb-16 scroll-mt-24">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex items-center gap-3">
             <FileSpreadsheet className="h-8 w-8 text-emerald-400 shrink-0" />
-            I. Por qué el Excel es el «primer amor» de toda agencia
+            1. Por qué el Excel es el «primer amor» de toda agencia
           </h2>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>
@@ -145,12 +145,12 @@ export function PlantillaPlanificacionRecursosArticle({
         </section>
       </RevealOnScroll>
 
-      {/* II. Capacidad bruta vs neta */}
+      {/* 2 Capacidad bruta vs neta */}
       <RevealOnScroll delay={1}>
         <section id="capacidad-bruta-vs-neta" className="mb-12 sm:mb-16 scroll-mt-24">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex items-center gap-3">
             <Users className="h-8 w-8 text-purple-400 shrink-0" />
-            II. Capacidad bruta vs capacidad neta: la primera fórmula que importa
+            2. Capacidad bruta vs capacidad neta: la primera fórmula que importa
           </h2>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>
@@ -227,12 +227,12 @@ export function PlantillaPlanificacionRecursosArticle({
         </section>
       </RevealOnScroll>
 
-      {/* III. Anatomía plantilla: 4 hojas */}
+      {/* 3 Anatomía plantilla: 4 hojas */}
       <RevealOnScroll delay={1}>
         <section id="anatomia-plantilla-profesional" className="mb-12 sm:mb-16 scroll-mt-24">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex items-center gap-3">
             <Table2 className="h-8 w-8 text-indigo-400 shrink-0" />
-            III. Anatomía de la plantilla: cuatro hojas y cómo se conectan
+            3. Anatomía de la plantilla: cuatro hojas y cómo se conectan
           </h2>
           <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
             La estructura profesional se apoya en <strong>cuatro hojas encadenadas</strong> (más una de instrucciones): inventario de equipo,
@@ -410,12 +410,12 @@ export function PlantillaPlanificacionRecursosArticle({
         </section>
       </RevealOnScroll>
 
-      {/* IV. Fórmula maestra + formato condicional */}
+      {/* 4 Fórmula maestra + formato condicional */}
       <RevealOnScroll delay={2}>
         <section id="formula-utilizacion-formato" className="mb-12 sm:mb-16 scroll-mt-24">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex items-center gap-3">
             <Calculator className="h-8 w-8 text-emerald-400 shrink-0" />
-            IV. Fórmula de utilización y formato condicional
+            4. Fórmula de utilización y formato condicional
           </h2>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
             <p>
@@ -472,12 +472,12 @@ export function PlantillaPlanificacionRecursosArticle({
         </section>
       </RevealOnScroll>
 
-      {/* V. Pacing por proyecto y margen */}
+      {/* 5 Pacing por proyecto y margen */}
       <RevealOnScroll delay={2}>
         <section id="pacing-proyecto-margen" className="mb-12 sm:mb-16 scroll-mt-24">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex items-center gap-3">
             <BarChart3 className="h-8 w-8 text-purple-400 shrink-0" />
-            V. Pacing por proyecto y margen estimado
+            5. Pacing por proyecto y margen estimado
           </h2>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>
@@ -542,12 +542,12 @@ export function PlantillaPlanificacionRecursosArticle({
         </section>
       </RevealOnScroll>
 
-      {/* VI. Impuesto Excel */}
+      {/* 6 Impuesto Excel */}
       <RevealOnScroll delay={2}>
         <section id="impuesto-excel-techo" className="mb-12 sm:mb-16 scroll-mt-24">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex items-center gap-3">
             <Wallet className="h-8 w-8 text-amber-400 shrink-0" />
-            VI. El «impuesto Excel»: cuánto cuesta mantener la hoja
+            6. El «impuesto Excel»: cuánto cuesta mantener la hoja
           </h2>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>
@@ -579,12 +579,12 @@ export function PlantillaPlanificacionRecursosArticle({
         </section>
       </RevealOnScroll>
 
-      {/* VII. Techo de cristal */}
+      {/* 7 Techo de cristal */}
       <RevealOnScroll delay={2}>
         <section id="techo-cristal-errores" className="mb-12 sm:mb-16 scroll-mt-24">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex items-center gap-3">
             <AlertTriangle className="h-8 w-8 text-rose-400 shrink-0" />
-            VII. Techo de cristal: tres puntos donde la hoja se rompe
+            7. Techo de cristal: tres puntos donde la hoja se rompe
           </h2>
           <div className="space-y-6">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6">
@@ -623,12 +623,12 @@ export function PlantillaPlanificacionRecursosArticle({
         </section>
       </RevealOnScroll>
 
-      {/* VIII. Validación y protección */}
+      {/* 8 Validación y protección */}
       <RevealOnScroll delay={3}>
         <section id="validacion-proteccion-errores" className="mb-12 sm:mb-16 scroll-mt-24">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex items-center gap-3">
             <Shield className="h-8 w-8 text-indigo-400 shrink-0" />
-            VIII. Validación de datos y protección: cómo evitar que la hoja se rompa
+            8. Validación de datos y protección: cómo evitar que la hoja se rompa
           </h2>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
             <p>
@@ -673,12 +673,12 @@ export function PlantillaPlanificacionRecursosArticle({
         </section>
       </RevealOnScroll>
 
-      {/* IX. Escalar semana a semana */}
+      {/* 9 Escalar semana a semana */}
       <RevealOnScroll delay={3}>
         <section id="escalar-semana-semana" className="mb-12 sm:mb-16 scroll-mt-24">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex items-center gap-3">
             <CalendarRange className="h-8 w-8 text-emerald-400 shrink-0" />
-            IX. Cómo escalar la plantilla semana a semana
+            9. Cómo escalar la plantilla semana a semana
           </h2>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
             <p>
@@ -719,11 +719,11 @@ export function PlantillaPlanificacionRecursosArticle({
         </section>
       </RevealOnScroll>
 
-      {/* X. Google Sheets */}
+      {/* 10 Google Sheets */}
       <RevealOnScroll delay={3}>
         <section id="google-sheets-diferencias" className="mb-12 sm:mb-16 scroll-mt-24">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6">
-            X. Google Sheets vs Excel: ¿cambia algo?
+            10. Google Sheets vs Excel: ¿cambia algo?
           </h2>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>
@@ -756,12 +756,12 @@ export function PlantillaPlanificacionRecursosArticle({
         </section>
       </RevealOnScroll>
 
-      {/* XI. Evolución a Taimbox */}
+      {/* 11 Evolución a Taimbox */}
       <RevealOnScroll delay={3}>
         <section id="evolucion-taimbox-passiva" className="mb-12 sm:mb-16 scroll-mt-24">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex items-center gap-3">
             <LayoutGrid className="h-8 w-8 text-indigo-400 shrink-0" />
-            XI. Evolución: de rellenar celdas a planificación pasiva
+            11. Evolución: de rellenar celdas a planificación pasiva
           </h2>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
             <p>
@@ -796,7 +796,7 @@ export function PlantillaPlanificacionRecursosArticle({
         </section>
       </RevealOnScroll>
 
-      {/* XII. FAQ */}
+      {/* FAQ */}
       <RevealOnScroll delay={3}>
         <section id="faq-plantilla-recursos" className="mb-12 sm:mb-16 scroll-mt-24">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex items-center gap-3">
