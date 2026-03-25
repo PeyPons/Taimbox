@@ -52,7 +52,7 @@ export default function LeyParkinsonPage() {
                   'Guía completa sobre la Ley de Parkinson: tiempo, origen burocrático, segunda ley de gastos, ley de la trivialidad, evidencia y antídotos (timeboxing, plazos).',
                 author: { '@type': 'Organization', name: 'Taimbox' },
                 publisher: { '@type': 'Organization', name: 'Taimbox' },
-                datePublished: post?.date ?? '2025-03-18',
+                datePublished: post?.date ?? '2026-03-14',
               },
               {
                 '@type': 'SoftwareApplication',

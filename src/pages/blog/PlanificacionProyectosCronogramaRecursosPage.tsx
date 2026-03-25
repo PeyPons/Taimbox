@@ -48,7 +48,7 @@ export default function PlanificacionProyectosCronogramaRecursosPage() {
                   'Guía práctica para unir cronograma, presupuesto y capacidad del equipo. Incluye diagrama de Gantt, fases del proyecto, KPIs y herramientas de gestión de proyectos.',
                 author: { '@type': 'Organization', name: 'Taimbox' },
                 publisher: { '@type': 'Organization', name: 'Taimbox' },
-                datePublished: post?.date ?? '2025-03-17',
+                datePublished: post?.date ?? '2026-03-18',
               },
               {
                 '@type': 'SoftwareApplication',

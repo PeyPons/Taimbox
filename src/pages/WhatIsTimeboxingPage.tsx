@@ -41,7 +41,7 @@ export default function WhatIsTimeboxingPage() {
                 description: 'Descubre qué es el Timeboxing, la técnica número uno de gestión del tiempo. Aprende a usar cajas de tiempo para aumentar la rentabilidad de tu agencia o empresa.',
                 author: { '@type': 'Organization', name: 'Taimbox' },
                 publisher: { '@type': 'Organization', name: 'Taimbox' },
-                datePublished: post?.date ?? '2024-01-15',
+                datePublished: post?.date ?? '2026-03-10',
               },
               {
                 '@type': 'SoftwareApplication',
