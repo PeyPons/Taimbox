@@ -43,7 +43,7 @@ import {
 import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, CheckCircle2, Plus, X, Check, ListPlus, AlertTriangle, HelpCircle, RotateCcw, FileDown, CheckSquare, AlertCircle, Trash2, MoreHorizontal } from 'lucide-react';
 import { startOfMonth, endOfMonth, format, isSameMonth, parseISO, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useIsMobile } from '@/hooks/use-mobile';

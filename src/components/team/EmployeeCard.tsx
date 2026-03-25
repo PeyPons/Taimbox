@@ -19,7 +19,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { getValidRole, getValidDepartment } from '@/utils/roleUtils';
 import { normalizeDepartments } from '@/utils/departmentUtils';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 interface EmployeeCardProps {

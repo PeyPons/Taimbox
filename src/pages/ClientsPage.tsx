@@ -17,7 +17,7 @@ import {
   Minus, Eye, X, ChevronDown
 } from 'lucide-react';
 import { cn, matchesAliasingRule } from '@/lib/utils';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { format, subMonths, addMonths, isSameMonth, parseISO } from 'date-fns';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';

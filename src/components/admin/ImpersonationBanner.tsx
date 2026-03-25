@@ -1,8 +1,14 @@
-import { useState, useEffect } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { Eye, LogOut } from "lucide-react";
 import { useAgency } from "@/contexts/AgencyContext";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 
@@ -11,7 +17,18 @@ interface ImpersonationRow {
   agency_name: string;
 }
 
-export function ImpersonationBanner() {
+interface ImpersonationState {
+  loading: boolean;
+  isImpersonating: boolean;
+  agencyName: string;
+  agencyId: string;
+  exiting: boolean;
+  exitImpersonation: () => Promise<void>;
+}
+
+const ImpersonationContext = createContext<ImpersonationState | null>(null);
+
+function useImpersonationState(): ImpersonationState {
   const navigate = useNavigate();
   const [info, setInfo] = useState<ImpersonationRow | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,16 +52,23 @@ export function ImpersonationBanner() {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const handleExit = async () => {
-    const agencyId = info?.agency_id ?? currentAgency?.id;
-    if (!agencyId) return;
+  const showRow = !loading && (info ?? (isPlatformAdmin && currentAgency));
+  const agencyName = info?.agency_name ?? currentAgency?.name ?? "";
+  const agencyId = info?.agency_id ?? currentAgency?.id ?? "";
+  const isImpersonating = showRow && !!agencyName;
+
+  const exitImpersonation = useCallback(async () => {
+    const id = info?.agency_id ?? currentAgency?.id;
+    if (!id) return;
     setExiting(true);
     try {
       const { error } = await supabase.rpc("admin_stop_impersonate", {
-        p_agency_id: agencyId,
+        p_agency_id: id,
       });
       if (error) throw error;
       setInfo(null);
@@ -54,35 +78,64 @@ export function ImpersonationBanner() {
     } finally {
       setExiting(false);
     }
-  };
+  }, [currentAgency?.id, info?.agency_id, navigate]);
 
-  // Mostrar cuando la RPC devuelve agencia en impersonación o cuando es platform admin viendo una agencia (fallback)
-  const showBanner = !loading && (info ?? (isPlatformAdmin && currentAgency));
-  const agencyName = info?.agency_name ?? currentAgency?.name ?? "";
-  const agencyId = info?.agency_id ?? currentAgency?.id ?? "";
+  return useMemo(
+    () => ({
+      loading,
+      isImpersonating,
+      agencyName,
+      agencyId,
+      exiting,
+      exitImpersonation,
+    }),
+    [agencyId, agencyName, exiting, exitImpersonation, isImpersonating, loading]
+  );
+}
 
-  useEffect(() => {
-    document.body.style.setProperty('--impersonation-banner-height', showBanner && agencyName ? '2.5rem' : '0');
-    return () => document.body.style.removeProperty('--impersonation-banner-height');
-  }, [showBanner, agencyName]);
+export function ImpersonationProvider({ children }: { children: React.ReactNode }) {
+  const value = useImpersonationState();
+  return (
+    <ImpersonationContext.Provider value={value}>{children}</ImpersonationContext.Provider>
+  );
+}
 
-  if (!showBanner || !agencyName) return null;
+export function useImpersonationStatus(): ImpersonationState {
+  const ctx = useContext(ImpersonationContext);
+  if (!ctx) {
+    throw new Error("useImpersonationStatus debe usarse dentro de ImpersonationProvider");
+  }
+  return ctx;
+}
+
+/** Vista compacta en el sidebar (sustituye la franja superior). */
+export function SidebarImpersonationPanel() {
+  const { loading, isImpersonating, agencyName, agencyId, exitImpersonation, exiting } =
+    useImpersonationStatus();
+
+  if (loading || !isImpersonating) return null;
 
   return (
-    <div className="bg-amber-500 text-amber-950 text-sm font-medium px-4 py-2 flex items-center justify-center gap-4 flex-wrap sticky top-0 z-50 shrink-0 lg:pl-64">
-      <span>
-        Viendo la app como agencia: <strong>{agencyName}</strong>
-      </span>
-      <Button
-        size="sm"
-        variant="outline"
-        className="border-amber-700 text-amber-900 hover:bg-amber-600 hover:text-white h-7 gap-1"
-        onClick={handleExit}
-        disabled={exiting || !agencyId}
+    <div className="shrink-0 px-2 pt-1 pb-0.5 border-t border-slate-800/90">
+      <div
+        className="flex items-center gap-1.5 min-w-0 rounded-md border border-amber-500/25 bg-amber-950/45 px-1.5 py-1"
+        title={`Vista admin: ${agencyName}`}
       >
-        <LogOut className="h-3.5 w-3.5" />
-        Salir de vista
-      </Button>
+        <Eye className="h-3 w-3 text-amber-400 shrink-0" aria-hidden />
+        <span className="text-[10px] leading-tight text-amber-100/95 truncate flex-1 min-w-0">
+          {agencyName}
+        </span>
+        <button
+          type="button"
+          onClick={exitImpersonation}
+          disabled={exiting || !agencyId}
+          className="shrink-0 inline-flex items-center justify-center h-6 w-6 rounded text-amber-200/90 hover:bg-amber-600/30 hover:text-white disabled:opacity-50"
+          title="Salir de vista"
+          aria-label="Salir de vista de agencia"
+        >
+          <LogOut className="h-3 w-3" />
+        </button>
+      </div>
     </div>
   );
 }

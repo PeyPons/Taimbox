@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { useAgency } from "@/contexts/AgencyContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Loader2, MessageCircle, CheckCircle, Eye, Send } from "lucide-react";

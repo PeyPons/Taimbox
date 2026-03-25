@@ -6,7 +6,7 @@ import { getWeekEndDate } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useAgency } from '@/contexts/AgencyContext';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 
 export function useAllocationActions(employeeId: string, weeks: { weekStart: Date }[], canAssignToOthers: boolean, isWeeklyEnabled: boolean = true) {
     const { addAllocation, updateAllocation, deleteAllocation } = useApp();

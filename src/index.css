@@ -3,10 +3,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Margen superior del main en móvil: header (4rem) + banner impersonación si existe */
+/* Margen superior del main en móvil: header fijo (4rem) */
 @media (max-width: 1023px) {
   .main-content-area {
-    margin-top: calc(4rem + var(--impersonation-banner-height, 0));
+    margin-top: 4rem;
   }
 }
 @media (min-width: 1024px) {

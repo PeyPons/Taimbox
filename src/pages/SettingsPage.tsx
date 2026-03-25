@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { PlusCircle, ShieldCheck, Building2, ArrowRight, MessageCircle } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAgency } from '@/contexts/AgencyContext';

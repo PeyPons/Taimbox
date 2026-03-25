@@ -42,6 +42,7 @@ import { Button } from '@/components/ui/button';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useActiveTimerForSidebar } from '@/hooks/useActiveTimerForSidebar';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
+import { SidebarImpersonationPanel } from '@/components/admin/ImpersonationBanner';
 import {
   Collapsible,
   CollapsibleContent,
@@ -466,6 +467,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           </div>
         )}
+
+        <SidebarImpersonationPanel />
 
         {/* Footer: una sola línea — avatar, nombre, vista, logout (sin nombre agencia) */}
         <div className="px-2 py-1.5 border-t border-slate-800 bg-slate-950/50">

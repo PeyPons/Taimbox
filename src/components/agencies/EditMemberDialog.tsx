@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, UserCog } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 
 interface EditMemberDialogProps {
   open: boolean;

@@ -20,7 +20,7 @@ import { getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth, getWeekE
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { format, addMonths, subMonths, isSameMonth, parseISO, addDays, isBefore, startOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { PlannerTour } from './PlannerTour';
 import { WeekNavigation } from './WeekNavigation';
 import { ProjectImpactSummary } from './ProjectImpactSummary';

@@ -36,7 +36,7 @@ import { DeadlinesSidebar } from '@/components/deadlines/DeadlinesSidebar';
 import { DeadlinesPageHeader } from '@/components/deadlines/DeadlinesPageHeader';
 import { DeadlinesConfirmDialog } from '@/components/deadlines/DeadlinesConfirmDialog';
 import { DeadlinesProjectList } from '@/components/deadlines/DeadlinesProjectList';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { supabase } from '@/lib/supabase';
 import { Deadline, GlobalAssignment } from '@/types';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';

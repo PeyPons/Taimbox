@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { KeyRound, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
 type PageState = 'verifying' | 'form' | 'success' | 'error';

@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { cn, matchesAliasingRule } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { format, subMonths, addMonths, isSameMonth, parseISO, getDaysInMonth, getDate } from 'date-fns';
 import { isAllocationInEffectiveMonth, getWeeksForMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
@@ -43,6 +43,7 @@ import { supabase } from '@/lib/supabase';
 import { ClientsAndProjectsFilters, type ClientsAndProjectsFiltersValues, type FilterType, type StatusFilter } from '@/components/clients-projects/ClientsAndProjectsFilters';
 import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
+import { useSearchParams, useLocation } from 'react-router-dom';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -118,6 +119,11 @@ export default function ClientsAndProjectsPage() {
   } = useApp();
   const { currentAgency } = useAgency();
   const { selectedDepartmentId } = useDepartmentView();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const focusProjectIdFromState = (location.state as { focusProjectId?: string } | null)?.focusProjectId;
+  const focusProjectIdFromUrl =
+    searchParams.get('projectId') ?? (typeof focusProjectIdFromState === 'string' ? focusProjectIdFromState : null);
   const isCrmExportEnabled = useIntegration('crm_export');
   const { formatName: formatProjectName } = useProjectAliasing();
 
@@ -485,11 +491,41 @@ export default function ClientsAndProjectsPage() {
     return regularClients;
   }, [clients, projects, projectsAnalysis, allocations, employees, currentMonth, prevMonth, getProjectHoursForMonth]);
 
+  /** Cliente virtual o real bajo el que se lista el proyecto (aliasing agrupa en otro id que `project.clientId`). */
+  const focusSectionClientId = useMemo(() => {
+    if (!focusProjectIdFromUrl) return null;
+    for (const row of clientsWithProjects) {
+      if (row.stats.projects.some((p) => p.project.id === focusProjectIdFromUrl)) {
+        return row.client.id;
+      }
+    }
+    return null;
+  }, [clientsWithProjects, focusProjectIdFromUrl]);
+
+  /** Desde ?projectId=: expandir la sección correcta y hacer scroll (tras pintar la lista). */
+  useEffect(() => {
+    if (!focusProjectIdFromUrl || !focusSectionClientId) return;
+    setExpandedClients((prev) => new Set(prev).add(focusSectionClientId));
+    setExpandedProjects((prev) => new Set(prev).add(focusProjectIdFromUrl));
+    const t = window.setTimeout(() => {
+      document.getElementById(`project-focus-${focusProjectIdFromUrl}`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [focusProjectIdFromUrl, focusSectionClientId]);
+
   // Filtrar clientes y proyectos (valores de filtro desde ClientsAndProjectsFilters vía filterSnapshot)
   const filteredClients = useMemo(() => {
     const { searchQuery, statusFilter, selectedEmployeeId, projectTypeFilter, activeFilter } = filterSnapshot;
     return clientsWithProjects
       .filter(({ client, stats }) => {
+        if (focusProjectIdFromUrl) {
+          const hasProject = stats.projects.some((p) => p.project.id === focusProjectIdFromUrl);
+          if (!hasProject) return false;
+          return true;
+        }
         if (searchQuery) {
           const query = searchQuery.toLowerCase();
           const clientMatch = client.name.toLowerCase().includes(query);
@@ -518,6 +554,9 @@ export default function ClientsAndProjectsPage() {
       })
       .map(({ client, stats, prevStats, employees }) => {
         const filteredProjects = stats.projects.filter(({ project, analysis }) => {
+          if (focusProjectIdFromUrl) {
+            return project.id === focusProjectIdFromUrl;
+          }
           if (!analysis) return false;
           if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase().trim();
@@ -620,7 +659,7 @@ export default function ClientsAndProjectsPage() {
         // Si tienen las mismas horas, ordenar alfabéticamente
         return a.client.name.localeCompare(b.client.name);
       });
-  }, [clientsWithProjects, filterSnapshot]);
+  }, [clientsWithProjects, filterSnapshot, focusProjectIdFromUrl]);
 
   // Estadísticas globales
   const globalStats = useMemo(() => {
@@ -1520,7 +1559,7 @@ export default function ClientsAndProjectsPage() {
                         const isProjectNearLimit = analysis.planningPct > 85 && !analysis.overBudget;
 
                         return (
-                          <div key={project.id} className="mb-2">
+                          <div key={project.id} id={`project-focus-${project.id}`} className="mb-2 scroll-mt-24">
                             {/* Header del proyecto */}
                             <Collapsible
                               open={isProjectExpanded}

@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Loader2, MessageSquarePlus, Eye } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 import { SupportMessageContent } from "@/components/support/SupportMessageContent";
 
 interface SupportTicketRow {

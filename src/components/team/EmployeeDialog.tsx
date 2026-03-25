@@ -18,7 +18,7 @@ import { useDepartmentView } from '@/contexts/DepartmentViewContext';
 import { normalizeDepartments } from '@/utils/departmentUtils';
 import { getWeeklyHoursFromSchedule } from '@/utils/dateUtils';
 import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { Briefcase, CalendarClock, Target, Lock, Clock, ShieldCheck, Hash, Key } from 'lucide-react';
 import { useIntegration } from '@/hooks/useIntegration';
 

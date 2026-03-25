@@ -27,7 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Loader2, Search, Pause, Play, LogIn, CreditCard } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 
 interface AgencyRow {
   id: string;

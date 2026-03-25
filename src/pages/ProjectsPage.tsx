@@ -31,7 +31,7 @@ import {
 import { Project, OKR } from '@/types';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
 

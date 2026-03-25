@@ -23,7 +23,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Loader2, UserPlus, Trash2, Shield } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 
 interface PlatformAdminRow {
   user_id: string;

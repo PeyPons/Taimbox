@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Plus, Search, CalendarOff } from 'lucide-react';
 import { EmployeeDialog } from '@/components/team/EmployeeDialog';
 import { Employee } from '@/types';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 
 export default function TeamPage() {
   const { employees } = useApp();

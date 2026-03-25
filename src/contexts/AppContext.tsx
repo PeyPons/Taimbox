@@ -8,7 +8,7 @@ import { getCapacityReductionBreakdown } from '@/utils/capacityUtils';
 import { addDays, format, startOfMonth, endOfMonth } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAgency } from '@/contexts/AgencyContext';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { logCreate, logUpdate, logDelete } from '@/services/auditService';
 
 // Tipos para respuestas de Supabase (snake_case)

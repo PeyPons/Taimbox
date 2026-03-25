@@ -1,16 +1,21 @@
 import { Menu, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { useImpersonationStatus } from "@/components/admin/ImpersonationBanner";
+import { cn } from "@/lib/utils";
 
 interface HeaderProps {
     onMenuClick: () => void;
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
+    const { isImpersonating } = useImpersonationStatus();
     return (
         <header
-            className="fixed left-0 right-0 h-16 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 lg:hidden z-40 transition-[top] duration-200"
-            style={{ top: 'var(--impersonation-banner-height, 0)' }}
+            className={cn(
+                "fixed left-0 right-0 top-0 h-16 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 lg:hidden z-40 transition-shadow duration-200",
+                isImpersonating && "shadow-[inset_0_2px_0_0_#f59e0b]"
+            )}
         >
             <div className="flex items-center gap-2 font-bold text-lg tracking-tight text-white">
                 <div className="h-7 w-7 rounded bg-primary flex items-center justify-center">

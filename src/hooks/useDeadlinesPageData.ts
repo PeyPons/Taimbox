@@ -5,7 +5,7 @@
  */
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { supabase } from '@/lib/supabase';
 import { Deadline, GlobalAssignment, Project, Client, Employee, Absence, TeamEvent } from '@/types';
 import { getEffectiveBudget } from '@/utils/budgetUtils';

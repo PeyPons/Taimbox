@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { invokeEdgeFunctionWithRetry } from '@/lib/invokeEdgeFunction';
 import { useAgency } from '@/contexts/AgencyContext';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 
 export default function MetaCallbackPage() {
     const [searchParams] = useSearchParams();

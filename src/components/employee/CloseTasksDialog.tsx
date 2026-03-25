@@ -11,7 +11,7 @@ import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { useAgency } from '@/contexts/AgencyContext';
 import { es } from 'date-fns/locale';
 import { CheckCircle2, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { cn, formatProjectName } from '@/lib/utils';
 
 interface CloseTasksDialogProps {

@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { format, addDays, parseISO, startOfWeek, addMonths, getWeekOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { cn } from '@/lib/utils';
 import { getWeeksForMonth, getStorageKey } from '@/utils/dateUtils';
 import { Textarea } from '@/components/ui/textarea';

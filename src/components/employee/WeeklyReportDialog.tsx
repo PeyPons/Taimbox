@@ -13,7 +13,7 @@ import { format, parseISO, startOfWeek, startOfMonth, isSameMonth, addDays, addM
 import { es } from 'date-fns/locale';
 import { CheckCircle2, AlertCircle, Plus, Users, Clock, Trash2, Search } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { getStorageKey, getWeeksForMonth, isAllocationInEffectiveMonth, getWeekEndDate, collectSelectableFutureWeekSlots } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { cn } from '@/lib/utils';

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Building2, Users, MessageSquare } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 
 interface PlatformMetrics {
   total_agencies: number;

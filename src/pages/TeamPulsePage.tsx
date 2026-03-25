@@ -14,7 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Loader2, Play, CheckCircle2, Circle, Clock, AlertCircle, RefreshCw, Calendar, ListTodo } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 
 export default function TeamPulsePage() {
     const { employees, allocations, projects, clients, isLoading, refreshData } = useApp();

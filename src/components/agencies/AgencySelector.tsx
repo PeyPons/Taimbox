@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Building2, ChevronDown, Plus, Settings, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { cn } from '@/lib/utils';
 
 export function AgencySelector() {

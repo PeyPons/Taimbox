@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, UserPlus } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 
 interface InviteUserDialogProps {
   open: boolean;

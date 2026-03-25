@@ -12,7 +12,7 @@ import { invokeEdgeFunctionWithRetry } from '@/lib/invokeEdgeFunction';
 import { cn } from '@/lib/utils';
 import { useAgency } from '@/contexts/AgencyContext';
 import { usePermissions } from '@/hooks/usePermissions';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import {
   Building2, Settings, Users, Palette, Save, Loader2,
   Filter, Plus, Trash2, HelpCircle, Info, X,

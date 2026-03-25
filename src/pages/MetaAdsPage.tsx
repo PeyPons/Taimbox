@@ -14,7 +14,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { RefreshCw, Clock, Search, Settings, Layers, TrendingUp, TrendingDown, Scissors, Plus, Trash2, AlertTriangle, CheckCircle2, Calendar, Target, ArrowDownRight, Eye, EyeOff, X, Facebook, Check, ChevronDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency, cn } from '@/lib/utils';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
 import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
 

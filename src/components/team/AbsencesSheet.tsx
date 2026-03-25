@@ -15,7 +15,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Trash2, CalendarIcon, Plus, Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { getAbsenceTypeLabel } from '@/utils/capacityUtils';
 
 interface AbsencesSheetProps {

@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { ViewMode, DepartmentConfig } from '@/types';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 
 interface DepartmentConfigRow {
     id: string;

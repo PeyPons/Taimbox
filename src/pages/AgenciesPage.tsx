@@ -3,7 +3,7 @@ import { useAgency } from '@/contexts/AgencyContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Building2, Settings, Loader2, Check, Users, Shield, Plus } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';

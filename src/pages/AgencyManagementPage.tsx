@@ -27,7 +27,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ArrowLeft, Loader2, Users, Shield, Crown, AlertTriangle, Trash2, UserCheck, UserX, UserPlus, Check, ChevronDown } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { cn } from '@/lib/utils';
 
 export default function AgencyManagementPage() {

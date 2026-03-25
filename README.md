@@ -49,7 +49,7 @@ El archivo más importante para contratos de datos.
 **Ubicación**: `src/App.tsx`
 
 Configura la jerarquía de **Providers** y el Router con las rutas de la aplicación.
-- **Jerarquía**: `Helmet` > `QueryClient` > `Auth` > `Agency` > `App` > `Goals` > `Notification` > `Tooltip`.
+- **Jerarquía**: `Helmet` > `QueryClient` > `Auth` > `Agency` > `App` > `Goals` > `Tooltip` > `BrowserRouter` > **Toaster (Sileo)** > `Notification` > rutas.
 - **Protección**: Usa `ProtectedRoute` (Auth) y `PermissionProtectedRoute` (RBAC).
 
 ### 1.3 `src/lib/supabase.ts`
@@ -102,7 +102,10 @@ Para optimizar rendimiento, usamos `loadedMonthsRef`.
 
 ### 2.4 Otros Contextos
 - **`GoalsContext`**: OKRs y Objetivos Profesionales.
-- **`NotificationContext`**: Centro de notificaciones.
+- **`NotificationContext`**: Campanita con historial persistido en `tb_inbox_{agencyId}_{userId}` (máx. 50 entradas); migración desde la clave legacy `notifications` si existía.
+- **Motor de avisos**: `src/hooks/useNotificationEngine.ts` (`NotificationEngineHost`) evalúa reglas cuando cambian datos o al recuperar foco. Los avisos automáticos (presupuesto, jueves con ≥2 tareas abiertas, fin de mes ≤3 días) **solo** se añaden a la campanita (`pushSystemNotification`), no como toasts. Deduplicación de “ya avisado” en `tb_notify_state_{agencyId}_{userId}` — `src/lib/notificationState.ts`.
+- **Sileo** (`src/lib/notify.ts`): solo para feedback de acciones en la app (guardar, errores, login, etc.), no para las reglas automáticas anteriores.
+- **Toasts globales**: `src/lib/notify.ts` es la **única** fachada permitida para mostrar toasts (no importar el paquete `sileo` fuera de ahí). Compatibilidad API tipo Sonner (`toast.success` / `error` / …) y `toastLegacy` para el patrón `{ title, description, variant }` vía `useToast` en `src/hooks/use-toast.ts`. Estilos: `import 'sileo/styles.css'` en `main.tsx`.
 - **`AuthContext`**: Sesión de usuario Supabase.
 - **`DemoContext`**: Datos mock para modo demostración.
 - **`PrivacyDemoProvider`** (`PrivacyDemoContext`): integración **Privacidad y demostración** (`anonymize_ads_for_video`); anonimiza sobre todo **nombres de proyecto** (y otros tipos donde aplique) vía `SensitiveText` + `createPrivacyAnonymizer`. Ver `DOCUMENTACION.md` (integración modo demostración).
@@ -296,7 +299,7 @@ Todas las páginas principales de la aplicación.
 
 **App de usuario (soporte):** Ruta `/soporte`: (1) Formulario "Nueva solicitud" que crea un ticket (RPC `create_support_ticket_from_app`). (2) "Mis tickets": listado de tickets de la agencia con estado y fecha; botón "Ver" abre detalle con conversación (respuestas visibles) y formulario para responder (RPCs `list_my_support_tickets`, `get_my_support_ticket`, `list_my_support_ticket_replies`, `add_support_ticket_reply_from_app`). Los mensajes admiten formato con un editor WYSIWYG (barra de herramientas: negrita, cursiva, código); el contenido se guarda como Markdown y se muestra formateado con `SupportMessageContent`. En Configuración hay tarjeta y en Sidebar enlace "Contactar soporte".
 
-**Nota:** Las rutas `/admin/*` no dependen de agencia; el panel usa RPCs con SECURITY DEFINER. **Acceder como agencia:** RPCs `admin_impersonate_agency(p_agency_id)` y `admin_stop_impersonate(p_agency_id)`; columna `is_impersonation` en `user_agencies`. Al entrar en una agencia de la que no eres miembro se muestra un banner "Viendo como [Agencia]" con botón "Salir de vista".
+**Nota:** Las rutas `/admin/*` no dependen de agencia; el panel usa RPCs con SECURITY DEFINER. **Acceder como agencia:** RPCs `admin_impersonate_agency(p_agency_id)` y `admin_stop_impersonate(p_agency_id)`; columna `is_impersonation` en `user_agencies`. Al entrar en una agencia de la que no eres miembro se muestra una **línea compacta** al pie del sidebar (encima del footer con Vista global / avatar) con el nombre y un icono para salir; en móvil el header lleva un borde ámbar sutil mientras dure la vista.
 
 ### Otros
 | Página | Tamaño | Descripción |

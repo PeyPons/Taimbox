@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency, cn } from '@/lib/utils';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { useAnonymizeAds } from '@/hooks/useAnonymizeAds';
 import { AnonymizedContent } from '@/components/ads/AnonymizedContent';
 

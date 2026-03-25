@@ -16,7 +16,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Building2, ChevronDown, Check } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { cn } from '@/lib/utils';
 
 interface AgencySelectorCompactProps {

@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAgency } from '@/contexts/AgencyContext';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 
 export default function GoogleCallbackPage() {
     const [searchParams] = useSearchParams();

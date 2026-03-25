@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
 import { useAgency } from '@/contexts/AgencyContext';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import {
   Key, Plus, Trash2, Copy, Check, Loader2, Shield, Clock,
   AlertTriangle, Eye, EyeOff, BookOpen, ExternalLink, Terminal, Info

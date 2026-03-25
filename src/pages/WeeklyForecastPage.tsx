@@ -23,7 +23,7 @@ import { format, startOfMonth, endOfMonth, isSameMonth, parseISO, addDays, start
 import { es } from 'date-fns/locale';
 import { AlertCircle, TrendingUp, TrendingDown, CheckCircle2, Users, Plus, ArrowRight, ChevronLeft, ChevronRight, CalendarDays, Check, ChevronDown, ArrowUpDown, Search, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { getStorageKey, getWeeksForMonth, getMonthlyCapacity, isAllocationInEffectiveMonth, getWeekEndDate } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';

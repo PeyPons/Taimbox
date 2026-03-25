@@ -1,6 +1,5 @@
 import { Suspense, lazy } from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "@/lib/notify";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -14,6 +13,7 @@ import { GoalsProvider } from "@/contexts/GoalsContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import { NotificationEngineHost } from "@/components/notifications/NotificationEngineHost";
 
 // Componentes de auth
 import Login from "./pages/Login";
@@ -138,12 +138,12 @@ const App = () => (
           <DepartmentViewProvider>
             <AppProvider>
               <GoalsProvider>
-                <NotificationProvider>
                   <TooltipProvider>
-                    <Toaster />
-                    <Sonner />
                     <BrandingEffect />
                     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                    <Toaster theme="system" position="top-right" />
+                    <NotificationProvider>
+                      <NotificationEngineHost />
                       <ScrollToTop />
                       <CookieBanner />
                       <Routes>
@@ -262,9 +262,9 @@ const App = () => (
                         <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>} />
 
                       </Routes>
+                    </NotificationProvider>
                     </BrowserRouter>
                   </TooltipProvider>
-                </NotificationProvider>
               </GoalsProvider>
             </AppProvider>
           </DepartmentViewProvider>

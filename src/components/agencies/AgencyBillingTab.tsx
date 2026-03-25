@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { CreditCard, Loader2, ExternalLink, Check, Calendar, XCircle, AlertTriangle } from 'lucide-react';
 import { PLAN_LIMITS } from '@/config/plans';
 import type { PlanId } from '@/types';

@@ -9,6 +9,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotifications, Notification } from '@/contexts/NotificationContext';
 import { useNavigate } from 'react-router-dom';
+import { usePermissions } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
@@ -17,12 +18,36 @@ import { es } from 'date-fns/locale';
 export function NotificationBell() {
     const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } = useNotifications();
     const navigate = useNavigate();
+    const { permissions } = usePermissions();
 
     const handleNotificationClick = (notification: Notification) => {
         markAsRead(notification.id);
-        if (notification.link) {
-            navigate(notification.link);
+        const baseClientsProjects =
+            permissions.can_access_clients !== false ? '/clients' : '/projects';
+        let link = notification.link?.trim();
+        const pid = notification.projectId;
+        if ((!link || !link.includes('projectId=')) && pid) {
+            link = `${baseClientsProjects}?projectId=${encodeURIComponent(pid)}`;
         }
+        if (!link) return;
+        const navOpts =
+            pid && (link.startsWith('/clients') || link.startsWith('/projects'))
+                ? { state: { focusProjectId: pid } }
+                : undefined;
+        // Rutas internas con query/hash: pathname + search explícitos
+        if (link.startsWith('/')) {
+            try {
+                const url = new URL(link, window.location.origin);
+                navigate(
+                    { pathname: url.pathname, search: url.search, hash: url.hash },
+                    navOpts
+                );
+                return;
+            } catch {
+                /* fallback */
+            }
+        }
+        navigate(link, navOpts);
     };
 
     const getIcon = (type: string) => {

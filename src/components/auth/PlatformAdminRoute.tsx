@@ -1,7 +1,7 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
-import { toast } from "sonner";
+import { toast } from "@/lib/notify";
 
 /**
  * Guard para rutas del área admin. Requiere sesión y que el usuario sea platform_admin.

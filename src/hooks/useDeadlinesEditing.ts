@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { supabase } from '@/lib/supabase';
 import type { Deadline } from '@/types';
 

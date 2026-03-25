@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useApp } from '@/contexts/AppContext';
 import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
+import { toast } from '@/lib/notify';
 import { Building2, Users, UserCircle, FolderKanban, Check, ArrowRight, ArrowLeft, Sparkles, X, Plus, Layers, UserPlus, Trash2, Loader2, ShieldCheck } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DEFAULT_PERMISSIONS } from '@/types/permissions';
