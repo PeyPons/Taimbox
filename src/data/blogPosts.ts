@@ -12,6 +12,26 @@ export interface BlogPost {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: 'por-que-tu-agencia-pierde-rentabilidad-equipo-ocupado',
+    title: 'Por qué tu agencia pierde rentabilidad aunque el equipo esté siempre ocupado',
+    description:
+      'Ocupación alta vs margen real: utilización, context switching, presencialismo digital, horas no facturables, scope creep y métricas que sí predicen rentabilidad. Sin venderte herramientas: datos, tablas y qué hacer esta semana.',
+    date: '2026-03-26',
+    href: '/blog/por-que-tu-agencia-pierde-rentabilidad-equipo-ocupado',
+    readingMinutes: 14,
+    relatedSlug: 'kpis-agencias-marketing-2026',
+  },
+  {
+    slug: 'como-medir-rentabilidad-proyecto-agencia-dejar-vender-horas',
+    title: 'Cómo medir la rentabilidad real por proyecto en tu agencia (y dejar de vender horas)',
+    description:
+      'Modelos de pricing (horas, retainer, valor, híbrido), margen bruto por proyecto, protocolo de alcance en tres pasos y sprints para proteger márgenes. Enlace natural con planificación y timeboxing.',
+    date: '2026-03-26',
+    href: '/blog/como-medir-rentabilidad-proyecto-agencia-dejar-vender-horas',
+    readingMinutes: 12,
+    relatedSlug: 'planificacion-proyectos-cronograma-recursos',
+  },
+  {
     slug: 'gestion-carga-trabajo-equipo-sin-burnout',
     title: 'Cómo gestionar la carga de trabajo de tu equipo sin burnout',
     description:

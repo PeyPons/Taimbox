@@ -67,6 +67,7 @@ export function WhatIsTimeboxingArticle({ readingMinutes, tocItems, relatedPost 
                 <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
                     <p>
                         El <strong>Timeboxing</strong> es una estrategia de gestión del tiempo orientada a objetivos que consiste en asignar un período de tiempo estricto, fijo y máximo (una "caja de tiempo" o <em>timebox</em>) a una tarea o actividad específica. Cuando el tiempo se acaba, la tarea se detiene, independientemente de si está terminada al 100% o no.
+                        En agencia se nota cuando el “luego lo acabo” dura lo mismo que el timebox: suena el cronómetro y el equipo cambia de contexto sin discutir.
                     </p>
                     <p>Esta metodología propone una <strong>inversión radical</strong> de cómo entendemos el trabajo tradicional:</p>
                     <ul className="space-y-3 mt-4">
@@ -104,6 +105,7 @@ export function WhatIsTimeboxingArticle({ readingMinutes, tocItems, relatedPost 
                 </h2>
                 <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
                     Antes de empezar a crear tus cajas de tiempo, debes decidir qué tipo de enfoque necesita la tarea a la que te enfrentas.
+                    La cicatriz aquí es aplicar un “duro” a una revisión creativa: si no había decisión que cerrar, el diseño se rompe y el equipo lo paga en la semana siguiente.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
@@ -160,6 +162,7 @@ export function WhatIsTimeboxingArticle({ readingMinutes, tocItems, relatedPost 
                 </h2>
                 <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
                     Harvard Business Review clasificó el Timeboxing como la habilidad #1 de productividad. ¿El motivo? Su impacto directo en la neurociencia humana:
+                    Se nota cuando, tras dos cajas bien puestas, la urgencia mental baja y por fin aparece el trabajo “de verdad”.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
                     <div className="rounded-2xl border border-purple-500/20 bg-purple-950/30 p-5 flex flex-col items-center text-center">
@@ -191,7 +194,9 @@ export function WhatIsTimeboxingArticle({ readingMinutes, tocItems, relatedPost 
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-500/30 text-indigo-300 font-bold text-lg">1</div>
                         <div className="flex-1 w-full">
                             <h4 className="text-white font-bold text-lg mb-2">Identifica y divide la tarea</h4>
-                            <p className="text-indigo-200/90 text-sm sm:text-base mb-2">Si tienes una tarea de más de 3 horas, divídela. Los bloques grandes fomentan la pérdida de atención.</p>
+                            <p className="text-indigo-200/90 text-sm sm:text-base mb-2">
+                                Si tienes una tarea de más de 3 horas, divídela. Los bloques grandes fomentan la pérdida de atención. La cicatriz: si divides tarde, congelas el avance y el cliente te mete el cambio cuando ya estabais “cerrando”.
+                            </p>
                             <div className="text-sm px-4 py-3 bg-indigo-950/50 rounded-lg border border-indigo-500/30 text-indigo-100">
                                 <strong className="text-indigo-300">Ejemplo B2B:</strong> En lugar de 4h para "Crear Propuesta", usa "Investigación" (45 min), "Redacción" (90 min), y "Revisión" (30 min).
                             </div>
@@ -243,6 +248,7 @@ export function WhatIsTimeboxingArticle({ readingMinutes, tocItems, relatedPost 
                 </h2>
                 <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
                     El Timeboxing individual te hace rápido. El <strong>Timeboxing en equipo</strong> hace a tu empresa más rentable. Cuando coordinas a decenas de empleados, aseguras que el tiempo invertido en un cliente no supere el presupuesto.
+                        La cicatriz aparece cuando “todo va bien” y, aun así, el proyecto se come horas por cambios de última hora: ahí hace falta caja y control, no esperanza.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
@@ -305,6 +311,7 @@ export function WhatIsTimeboxingArticle({ readingMinutes, tocItems, relatedPost 
                 </h2>
                 <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
                     ¿Harto de la "reunionitis"? El Timeboxing es la solución definitiva para evitar que las sesiones se extiendan sin llegar a conclusiones.
+                    La cicatriz es la reunión que “acaba a tiempo” pero las decisiones se quedan en el aire y reaparecen en Slack como comentarios sueltos.
                 </p>
                 <ul className="space-y-4">
                     <li className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/10">

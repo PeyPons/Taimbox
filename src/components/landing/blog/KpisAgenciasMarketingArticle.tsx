@@ -87,6 +87,7 @@ export function KpisAgenciasMarketingArticle({
           <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
             Tercera columna a propósito <strong>ejecutiva</strong>: si el KPI no te ayuda a decidir algo incómodo (contratar,
             subir precio, cortar scope), no es un KPI; es un adorno.
+            En la práctica, lo notas cuando el comité mira el número y la conversación se queda en “vale… ¿y ahora qué?”.
           </p>
           <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
             <table className="w-full text-left text-sm sm:text-base">
@@ -147,9 +148,10 @@ export function KpisAgenciasMarketingArticle({
             <p>
               Un rango <strong>orientativo</strong> en muchas agencias de servicios ronda el 70–85%; el mix de negocio
               (retainers, proyectos puntuales, I+D interna) cambia el objetivo. No es una verdad absoluta.
+              Se ve clarísimo cuando “estamos a tope” en el standup… pero en dos días el proyecto ya va tarde y el margen empieza a temblar.
             </p>
             <p>
-              <strong>Solución manual:</strong> puedes obtener el mismo número con papel y boli o una hoja de cálculo:
+              <strong>Si lo haces a mano:</strong> puedes obtener el mismo número con papel y boli o una hoja de cálculo:
               horas por persona y semana, capacidad neta (restando ausencias) y qué parte va a cliente o producción frente
               al total. Es farragoso, pero el KPI es el mismo; el coste es el tiempo de actualizarlo cada semana. Una
               estructura de partida —inventario de horas, cuadrante y % de carga— está en la{' '}
@@ -204,6 +206,8 @@ export function KpisAgenciasMarketingArticle({
               el margen. Hace falta <strong>pacing</strong>: comparar el consumo de horas con el tiempo transcurrido del
               mes (¿vas por delante o por detrás del ritmo?). Si a mitad de mes ya vas desproporcionado, la conversión con
               el cliente va con tiempo.
+              La cicatriz típica: “vamos bien” hasta el día 12, y de repente todo el mundo empieza a preguntarte por el mismo
+              proyecto… con el Excel ya en versiones y el cliente ya en modo urgencia.
             </p>
             <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/25 p-5 sm:p-6 my-2">
               <h3 className="text-white font-semibold mb-2 text-base sm:text-lg">Ejemplo con números (mitad de mes)</h3>
@@ -218,7 +222,7 @@ export function KpisAgenciasMarketingArticle({
               </p>
             </div>
             <p>
-              <strong>Solución manual:</strong> en Excel basta una fila por proyecto con fee del mes, horas consumidas,
+              <strong>Si lo haces en Excel:</strong> basta una fila por proyecto con fee del mes, horas consumidas,
               horas presupuestadas y una columna con el <strong>porcentaje de mes transcurrido</strong>; si las horas
               consumidas crecen más rápido que el calendario, el pacing va mal. El truco es mantener los datos al día sin
               pelearse con cinco versiones de la misma hoja.
@@ -255,9 +259,11 @@ export function KpisAgenciasMarketingArticle({
               Fórmula útil: <strong>(horas reales − horas estimadas) / horas estimadas</strong> por tipo de trabajo o
               proyecto. Sirve para <strong>aprender a presupuestar</strong>, no para castigar al project manager en
               público: si el diseño siempre se sale un 20%, el siguiente presupuesto lleva ese buffer explícito.
+              En la vida real, te lo pregunta el director cuando ya estás en la fase de “otra ronda más” y aún no sabes si la desviación era
+              un bache o el patrón.
             </p>
             <p>
-              <strong>Solución manual:</strong> una tabla en Excel (o en tu ERP) con columnas de estimado y real por
+              <strong>Si lo haces a mano:</strong> una tabla en Excel (o en tu ERP) con columnas de estimado y real por
               proyecto o tipo de entregable; un filtro por disciplina te muestra si la desviación es sistemática. Las
               retrospectivas al cerrar proyecto son el momento de actualizar los ratios para el siguiente presupuesto.
             </p>
@@ -284,9 +290,10 @@ export function KpisAgenciasMarketingArticle({
             <p>
               A veces la agencia «está a tope» pero solo un área (Paid, producción, diseño) arrastra el cuello de botella.
               Sin esta vista, mezclas sensación global con datos y tomas decisiones tarde.
+              Se nota cuando el resto del equipo va “verde” en la semana… y diseño/producción se come la cola sin que nadie lo vea hasta que se entregan tarde.
             </p>
             <p>
-              <strong>Solución manual:</strong> una matriz simple (incluso en Excel) con departamentos en filas y horas
+              <strong>Si lo haces a mano:</strong> una matriz simple (incluso en Excel) con departamentos en filas y horas
               cargadas o % de capacidad por semana; o una reunión breve semanal donde cada lead declare estado
               (verde/ámbar/rojo) en su equipo. Sin granularidad por área, solo ves el promedio y no sabes dónde meter
               refuerzo.
@@ -315,9 +322,10 @@ export function KpisAgenciasMarketingArticle({
               La productividad no es solo «picar horas»: es avanzar hacia objetivos que importan al negocio. Este KPI mide{' '}
               <strong>eficacia</strong> (¿vamos donde dijimos?), no solo eficiencia. Si la utilización es alta pero los
               resultados estratégicos no llegan, algo desalinea prioridades.
+              Lo ves cuando los OKRs van “cumplidos” por entregables… pero el margen y la retención siguen igual, y te toca explicar por qué en dirección.
             </p>
             <p>
-              <strong>Solución manual:</strong> una tabla con key results, responsable y % de avance (Notion, Google Sheets
+              <strong>Si lo haces a mano:</strong> una tabla con key results, responsable y % de avance (Notion, Google Sheets
               o Excel) más una revisión trimestral sincera. Lo importante es que los KR no midan solo actividad: si el
               margen sube pero el resultado de negocio no, el indicador estratégico está mal elegido.
             </p>
@@ -351,6 +359,7 @@ export function KpisAgenciasMarketingArticle({
               <strong>arqueología de datos</strong> — perseguir a la gente para que rellene horas, cuadrar versiones y
               reconciliar el fee del mes con las horas consumidas cuando el ritmo del proyecto ya se desvió hace diez días.
               El problema no es solo que Excel sea estático; es que el día a día de una agencia es líquido.
+              En algún punto, esa líquidoidad te explota en la cara: el lunes ya tienes “versión 4”, el martes hay cambios y el jueves nadie quiere tocar el archivo.
             </p>
             <p>
               En 2026 el sector empuja hacia herramientas que <strong>reducen trabajo manual</strong> en reporting; lo que
@@ -386,6 +395,7 @@ export function KpisAgenciasMarketingArticle({
             </Link>{' '}
             recorre planificador, informes y equipos con vistas parecidas a lo que hemos contado arriba (capacidad,
             rentabilidad, departamentos).
+            Si eres de los que prefieren “verlo una vez” antes de montar otro Excel desde cero, aquí es donde encaja.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link to="/planificador-recursos">
@@ -442,6 +452,10 @@ export function KpisAgenciasMarketingArticle({
             <p className="text-indigo-100/90 text-lg mb-8 max-w-2xl mx-auto">
               Capacidad y ritmo de proyectos en un solo flujo en <strong>Taimbox</strong>, para quien ya haya cerrado
               Excel los lunes. Sin compromiso al empezar.
+            </p>
+            <p className="text-indigo-200/70 text-sm m-0 max-w-2xl mx-auto">
+              La cicatriz final suele ser la misma: el día que preguntas “¿por qué el margen no aparece?”, te responden con un “porque el mes
+              se nos fue”, y tú quieres que el número te diga dónde se fugó.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
               <Link to="/reportes-rentabilidad">

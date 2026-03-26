@@ -83,6 +83,7 @@ export function PlanificacionProyectosArticle({
               en qué orden, con qué recursos y en qué plazos. No es solo una lista de tareas: es decidir las fases de un
               proyecto, asignar responsabilidades, estimar tiempos y costes y dejar un marco claro para el seguimiento y
               la evaluación.
+              La cicatriz aparece cuando nadie lo “acuerda” en serio y luego el proyecto se re-plantea en la primera crisis.
             </p>
             <p>
               En la práctica, la planificación suele organizarse en fases. Aunque cada metodología las nombra distinto
@@ -147,6 +148,7 @@ export function PlanificacionProyectosArticle({
             visual de representarlo es el diagrama de Gantt: barras sobre una escala de tiempo que muestran la duración
             de cada actividad y, en muchas herramientas, las dependencias entre ellas. Sirve para ver de un vistazo si
             las fechas encajan y qué tareas son críticas.
+            La cicatriz es que el Gantt “cuadra” en pantalla… pero cuando se repiten urgencias, el mismo recurso aparece en tres frentes.
           </p>
           <p>
             Un diagrama de Gantt bien usado te ayuda a responder preguntas como: ¿cuándo empieza y termina cada fase?,
@@ -202,6 +204,7 @@ export function PlanificacionProyectosArticle({
             construye a partir de las horas: horas estimadas por rol o por persona, multiplicadas por un coste o por
             un precio de venta. Una matriz de presupuesto del proyecto puede desglosar por fases, por paquetes de
             trabajo o por mes, según cómo factures o controles.
+            La cicatriz suele ser ese enero en que aprueban el “X horas”, y en el primer cambio de alcance el número deja de protegerte.
           </p>
           <p>
             La relación con el cronograma es directa: si el cronograma se alarga, las horas reales suelen dispararse y
@@ -254,6 +257,7 @@ export function PlanificacionProyectosArticle({
             capacidad. La capacidad del equipo es la cantidad de horas disponibles en un periodo (día, semana, mes)
             descontando vacaciones, bajas y otras ausencias. Si no tienes claro cuántas horas tiene cada persona por
             semana, es muy fácil asignar más trabajo del que pueden hacer o, al revés, dejar capacidad sin usar.
+            Lo que duele es asignar “capacidad bruta” y descubrir, dos semanas después, que la capacidad neta real era bastante menos.
           </p>
           <p>
             La asignación de horas es el puente entre el cronograma y el presupuesto: quién dedica cuántas horas a qué
@@ -330,6 +334,7 @@ export function PlanificacionProyectosArticle({
           horas consumidas, costes y, si aplica, satisfacción del cliente. Para eso sirven los indicadores: el KPI de
           un proyecto puede ser el avance frente al plan, las horas reales frente a las presupuestadas o el margen
           actual del proyecto.
+          La cicatriz es cuando el dashboard “te da la razón” tarde: el cliente ya se enfadó y ya consumiste el buffer.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 mb-8">
@@ -372,6 +377,7 @@ export function PlanificacionProyectosArticle({
           Las herramientas de gestión de proyectos cubren necesidades distintas. Los tableros tipo Kanban (Trello,
           Asana, ClickUp, Notion para proyectos) son muy útiles para el estado de las tareas y el flujo de trabajo;
           muchos incluyen también vista de cronograma o diagrama de Gantt.
+          La cicatriz es tener “tres verdades”: una para tareas, otra para horas y otra para margen, y terminar decidiendo a dedo en cada crisis.
         </p>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-5 sm:p-8 mb-6 transition-all duration-300 hover:border-white/20 hover:shadow-xl">

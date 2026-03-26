@@ -121,6 +121,7 @@ export function PlantillaPlanificacionRecursosArticle({
               <strong>Coste cero, flexibilidad total y curva de aprendizaje que el equipo ya domina.</strong> Para cinco
               personas y cuatro clientes, una hoja bien pensada basta para ver quién está cargado y dónde hay margen.
               Nadie necesita justificar una licencia ni configurar permisos: abres, escribes y compartes.
+              La cicatriz es cuando el martes llega “versión 4” por email y nadie sabe cuál es la que refleja la realidad.
             </p>
             <p>
               El romance dura mientras el mantenimiento es anecdótico. Con ocho o diez personas, varios proyectos
@@ -157,6 +158,7 @@ export function PlantillaPlanificacionRecursosArticle({
               <strong>Capacidad bruta</strong> es el contrato: normalmente 40 h/semana. <strong>Capacidad neta</strong> es
               lo que queda para trabajo de producción o cliente después de descontar reuniones recurrentes, formación,
               administración interna y ausencias puntuales (vacaciones, festivos, bajas).
+              La cicatriz aparece cuando comparas “bruta vs asignada” y el equipo está agotado, pero el número sigue pareciendo verde.
             </p>
             <p>
               La diferencia importa porque, si comparas horas asignadas contra la bruta, la utilización siempre parece baja
@@ -238,6 +240,7 @@ export function PlantillaPlanificacionRecursosArticle({
             La estructura profesional se apoya en <strong>cuatro hojas encadenadas</strong> (más una de instrucciones): inventario de equipo,
             catálogo de proyectos, cuadrante de asignación semanal y dashboard de insights. Cada una alimenta a la
             siguiente; si alguna falla, el resultado final pierde sentido.
+            Lo notas cuando una hoja “no se ha tocado” y aun así cambian los KPIs… porque la fórmula estaba apuntando a otro rango.
           </p>
 
           <div className="space-y-8 mb-8">
@@ -483,6 +486,7 @@ export function PlantillaPlanificacionRecursosArticle({
             <p>
               La hoja <strong>Proyectos</strong> añade dos métricas que un cuadrante sencillo no suele incluir:
               el <strong>pacing</strong> (ritmo de consumo de horas) y el <strong>margen mensual estimado</strong>.
+              La cicatriz es cuando el Excel te marca un buen pacing… y aun así el fee se va en horas antes de que cierre el mes.
             </p>
             <p>
               El pacing compara las horas asignadas esta semana con lo que «debería» asignarse si repartes el presupuesto
@@ -554,6 +558,7 @@ export function PlantillaPlanificacionRecursosArticle({
               Si un PM con coste hora de <strong>40 €</strong> dedica <strong>4 horas semanales</strong> a actualizar el
               Excel (perseguir datos, corregir fórmulas, reconciliar versiones, preparar el resumen para la reunión de
               carga), el coste directo es:
+              La cicatriz: cuando el reporte consume más tiempo del que te ayuda a tomar decisiones.
             </p>
           </div>
           <div className="rounded-2xl border border-amber-500/30 bg-amber-950/30 p-5 sm:p-6 mt-4 mb-6">
@@ -593,6 +598,7 @@ export function PlantillaPlanificacionRecursosArticle({
                 Perseguir a todo el equipo para que rellene sus horas, cuadrar versiones del archivo y descubrir que la
                 hoja de la semana pasada no se actualizó. El dato existe, pero llegar a él cuesta más que el propio valor
                 que aporta.
+                La cicatriz es que el “dato clave” aparece justo después de la reunión donde ibais a decidir.
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6">
@@ -635,6 +641,7 @@ export function PlantillaPlanificacionRecursosArticle({
               El 80 % de los errores en una plantilla de recursos viene de dos sitios: alguien escribe un nombre con una
               tilde distinta y el SUMIF no cruza, o alguien borra una fórmula sin querer. La plantilla incluye dos
               mecanismos para minimizar ambos:
+              Lo sientes cuando alguien “solo mira” una celda y, sin avisar, rompe el cálculo del margen.
             </p>
           </div>
           <div className="space-y-6">

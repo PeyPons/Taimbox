@@ -39,6 +39,8 @@ import LeyParkinsonPage from "./pages/blog/LeyParkinsonPage";
 import KpisAgenciasMarketingPage from "./pages/blog/KpisAgenciasMarketingPage";
 import PlantillaPlanificacionRecursosPage from "./pages/blog/PlantillaPlanificacionRecursosPage";
 import GestionCargaTrabajoEquipoPage from "./pages/blog/GestionCargaTrabajoEquipoPage";
+import PorQueAgenciaPierdeRentabilidadPage from "./pages/blog/PorQueAgenciaPierdeRentabilidadPage";
+import ComoMedirRentabilidadProyectoPage from "./pages/blog/ComoMedirRentabilidadProyectoPage";
 import EmployeeDashboardLandingPage from "./pages/EmployeeDashboardLandingPage";
 import PlannerLandingPage from "./pages/PlannerLandingPage";
 import TeamLandingPage from "./pages/TeamLandingPage";
@@ -161,6 +163,8 @@ const App = () => (
                         <Route path="/blog/ley-parkinson" element={<LeyParkinsonPage />} />
                         <Route path="/blog/kpis-agencias-marketing-2026" element={<KpisAgenciasMarketingPage />} />
                         <Route path="/blog/plantilla-planificacion-recursos-agencia" element={<PlantillaPlanificacionRecursosPage />} />
+                        <Route path="/blog/por-que-tu-agencia-pierde-rentabilidad-equipo-ocupado" element={<PorQueAgenciaPierdeRentabilidadPage />} />
+                        <Route path="/blog/como-medir-rentabilidad-proyecto-agencia-dejar-vender-horas" element={<ComoMedirRentabilidadProyectoPage />} />
                         <Route path="/blog/gestion-carga-trabajo-equipo-sin-burnout" element={<GestionCargaTrabajoEquipoPage />} />
                         {/* Redirección 301: URL antigua del artículo */}
                         <Route path="/que-es-timeboxing" element={<Navigate to="/blog/que-es-timeboxing" replace />} />

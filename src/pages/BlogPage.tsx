@@ -17,10 +17,12 @@ import {
   Filter,
   SlidersHorizontal,
   HeartPulse,
+  LineChart,
 } from 'lucide-react';
 import type { BlogPost } from '@/data/blogPosts';
 
 function getPostIcon(slug: string) {
+  if (slug.includes('rentabilidad')) return LineChart;
   if (slug.includes('burnout') || slug.includes('carga-trabajo')) return HeartPulse;
   if (slug.includes('kpis')) return BarChart3;
   if (slug.includes('plantilla')) return LayoutGrid;

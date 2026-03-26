@@ -34,48 +34,43 @@ export function GestionCargaTrabajoEquipoArticle({
         <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-[2.75rem] font-black text-white mb-5 sm:mb-6 leading-[1.15] tracking-tight text-center">
           Cómo gestionar la carga de trabajo de tu equipo sin burnout
         </h1>
-        <div className="space-y-4 text-indigo-100/95 text-base sm:text-lg leading-[1.75]">
+        <div className="space-y-5 text-indigo-100/95 text-base sm:text-lg leading-[1.75]">
           <p>
-            Según datos que sintetizan informes recientes en torno a <strong>Gallup</strong> y{' '}
-            <strong>Workhuman</strong> (2024), una mayoría muy amplia de personas encuestadas ha experimentado, al
-            menos en algún momento, síntomas asociados al agotamiento profesional. En <strong>marketing</strong>,{' '}
-            <strong>agencias</strong> y entornos creativos, los estudios sectoriales suelen situar la prevalencia de una
-            sensación <em>crónica</em> de estar al límite en torno a <strong>cuatro de cada diez profesionales</strong>
-            —con matices según muestra, país y metodología—, lo que convierte el tema en un riesgo operativo, no solo
-            humano.
+            Los informes de <strong>Gallup</strong> y <strong>Workhuman</strong> (2024) dibujan un panorama duro: una
+            mayoría muy amplia de personas dice haber sentido, al menos una vez, síntomas de agotamiento profesional. En
+            marketing y agencias, además, no es raro encontrar equipos donde casi la mitad describe una tensión{' '}
+            <em>constante</em>, no un mal mes puntual. Ahí el problema deja de ser «anecdótico» y pasa a ser de{' '}
+            <strong>operaciones</strong> y de <strong>personas</strong> a la vez.
           </p>
           <p>
-            El problema rara vez es que la gente «no trabaje suficiente». Lo habitual es que el trabajo esté{' '}
-            <strong>mal distribuido</strong>, sin <strong>visibilidad</strong> real de quién lleva qué, y sin{' '}
-            <strong>límites</strong> claros ante nuevas peticiones. Esta guía es una respuesta práctica a búsquedas como{' '}
-            <em>gestionar carga de trabajo equipo</em>, <em>cómo evitar burnout en el trabajo</em>,{' '}
-            <em>workload management</em> en equipos o <em>sobrecarga de trabajo empleados</em>: definiciones, señales,
-            un <strong>framework</strong> de seis pasos, métricas y herramientas, sin perder de vista la{' '}
-            <strong>distribución de tareas</strong> y la <strong>gestión de recursos humanos</strong> en una{' '}
-            <strong>agencia</strong>.
+            Lo que falla casi nunca es que «no se trabaje». Lo que falla es que el trabajo está{' '}
+            <strong>mal repartido</strong>, que nadie ve de un vistazo quién arrastra qué, y que faltan{' '}
+            <strong>límites</strong> claros cuando entra una petición nueva. Abajo vas a encontrar definiciones que
+            aclaran el lío entre «quién hace qué» y «con qué medios», señales para detectar saturación antes del colapso, un marco de seis
+            pasos que puedes robar para tu próxima reunión, y una tabla de métricas para dejar de adivinar.
           </p>
           <div className="rounded-2xl border-l-4 border-violet-400 bg-violet-500/10 border border-violet-500/20 p-4 sm:p-6 my-6">
             <p className="text-white/95 font-medium m-0">
-              La <strong>planificación de proyectos</strong> (cronograma, dependencias y capacidad) es el contexto
-              donde vive la carga: si quieres profundizar en ese mapa, empieza por{' '}
+              La carga no flota en el vacío: vive dentro de la <strong>planificación de proyectos</strong> —fechas,
+              dependencias, quién puede cuando—. Si quieres ese mapa con calma, está todo hilado en{' '}
               <Link
                 to="/blog/planificacion-proyectos-cronograma-recursos"
                 className="text-violet-300 hover:text-white underline underline-offset-2"
               >
                 planificación de proyectos
               </Link>
-              . Los <Link
+              . Para cerrar con cifras que sirvan en una reunión de números, los{' '}
+              <Link
                 to="/blog/kpis-agencias-marketing-2026"
                 className="text-violet-300 hover:text-white underline underline-offset-2"
               >
                 KPIs de rendimiento en agencias
               </Link>{' '}
-              te ayudan a cerrar el círculo con números accionables; y la{' '}
+              van al detalle. Y si te frustra que todo «se alargue», la{' '}
               <Link to="/blog/ley-parkinson" className="text-violet-300 hover:text-white underline underline-offset-2">
                 Ley de Parkinson y los plazos
               </Link>{' '}
-              explica por qué, sin límites explícitos, el trabajo tiende a expandirse hasta ocupar todo el tiempo
-              disponible.
+              cuenta por qué, sin topes claros, el trabajo ocupa todo el hueco que le dejas.
             </p>
           </div>
         </div>
@@ -84,51 +79,57 @@ export function GestionCargaTrabajoEquipoArticle({
       <RevealOnScroll>
         <section id="lo-que-aprenderas" className="mb-12 sm:mb-16 scroll-mt-24">
           <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-4">
-            Lo que aprenderás en este artículo
+            1. Mapa rápido (por si quieres saltar)
           </h2>
           <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
-            Tabla resumen para decidir si esta guía responde a tu búsqueda (y para ahorrarte scroll si ya dominas un
-            bloque).
+            Cada bloque va al grano. Si algo ya lo tienes claro, adelante con el siguiente.
+            Se nota cuando el lunes te venden “tranquilidad”… y a las 11 ya hay dos urgencias peleándose por el mismo diseñador.
           </p>
           <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
             <table className="w-full text-left text-sm sm:text-base">
               <thead>
                 <tr className="border-b border-white/10 bg-white/5">
-                  <th className="p-3 sm:p-4 text-violet-200 font-semibold">Sección</th>
-                  <th className="p-3 sm:p-4 text-violet-200 font-semibold">Qué cubre</th>
-                  <th className="p-3 sm:p-4 text-violet-200 font-semibold">Te sirve si buscas…</th>
+                  <th className="p-3 sm:p-4 text-violet-200 font-semibold">Tema</th>
+                  <th className="p-3 sm:p-4 text-violet-200 font-semibold">De qué hablamos</th>
+                  <th className="p-3 sm:p-4 text-violet-200 font-semibold">Te viene bien si…</th>
                 </tr>
               </thead>
               <tbody className="text-indigo-100/90">
                 <tr className="border-b border-white/10">
                   <td className="p-3 sm:p-4 font-medium text-white align-top">Carga de trabajo</td>
-                  <td className="p-3 sm:p-4 align-top">Qué es el workload management y cómo se diferencia del resource management.</td>
-                  <td className="p-3 sm:p-4 align-top">Definir bien el problema antes de «meter más gente».</td>
+                  <td className="p-3 sm:p-4 align-top">
+                    Qué significa repartir bien el día a día frente a planificar personas y presupuesto a medio plazo.
+                  </td>
+                  <td className="p-3 sm:p-4 align-top">Sientes que el problema no es «falta de gente» sino de orden.</td>
                 </tr>
                 <tr className="border-b border-white/10">
                   <td className="p-3 sm:p-4 font-medium text-white align-top">Causas del burnout</td>
-                  <td className="p-3 sm:p-4 align-top">Estructura (OMS/CIE-11) y seis causas organizativas frecuentes.</td>
-                  <td className="p-3 sm:p-4 align-top">Por qué se produce el burnout en equipos más allá del «estrés puntual».</td>
+                  <td className="p-3 sm:p-4 align-top">
+                    Cómo lo enmarca la OMS (CIE-11) y seis causas que suelen venir del trabajo, no del carácter.
+                  </td>
+                  <td className="p-3 sm:p-4 align-top">Necesitas explicar por qué el equipo pincha más allá de «están estresados».</td>
                 </tr>
                 <tr className="border-b border-white/10">
                   <td className="p-3 sm:p-4 font-medium text-white align-top">Señales de alerta</td>
-                  <td className="p-3 sm:p-4 align-top">Conducta observable + métricas (utilización, plazos, criticidad).</td>
-                  <td className="p-3 sm:p-4 align-top">Cómo saber si mi equipo está saturado antes del cuelgue.</td>
+                  <td className="p-3 sm:p-4 align-top">Lo que se nota en el día a día y lo que enseñan utilización, plazos y tareas gordas.</td>
+                  <td className="p-3 sm:p-4 align-top">Intuyes saturación pero nadie lo dice en voz alta todavía.</td>
                 </tr>
                 <tr className="border-b border-white/10">
-                  <td className="p-3 sm:p-4 font-medium text-white align-top">Framework de 6 pasos</td>
-                  <td className="p-3 sm:p-4 align-top">De la visibilidad a la revisión periódica, con Eisenhower y timeboxing.</td>
-                  <td className="p-3 sm:p-4 align-top">Priorizar tareas en equipo y repartir trabajo con criterio.</td>
+                  <td className="p-3 sm:p-4 font-medium text-white align-top">Seis pasos prácticos</td>
+                  <td className="p-3 sm:p-4 align-top">
+                    De ver la carga real a revisarla cada semana, pasando por Eisenhower y bloques de tiempo.
+                  </td>
+                  <td className="p-3 sm:p-4 align-top">Quieres algo que puedas llevar a la reunión del lunes.</td>
                 </tr>
                 <tr className="border-b border-white/10">
-                  <td className="p-3 sm:p-4 font-medium text-white align-top">Manager + crisis</td>
-                  <td className="p-3 sm:p-4 align-top">Liderazgo, seguridad psicológica y qué hacer si el burnout ya está instalado.</td>
-                  <td className="p-3 sm:p-4 align-top">Prevenir rotación de personal y recuperar confianza.</td>
+                  <td className="p-3 sm:p-4 font-medium text-white align-top">Tu rol y las crisis</td>
+                  <td className="p-3 sm:p-4 align-top">Qué hace de verdad un manager y qué hacer cuando el burnout ya está encima.</td>
+                  <td className="p-3 sm:p-4 align-top">Te toca liderar, dar ejemplo o levantar un equipo tocado.</td>
                 </tr>
                 <tr>
                   <td className="p-3 sm:p-4 font-medium text-white align-top">Métricas y herramientas</td>
-                  <td className="p-3 sm:p-4 align-top">Tabla de KPIs de carga/bienestar y categorías de software neutras.</td>
-                  <td className="p-3 sm:p-4 align-top">Herramientas para gestionar carga de trabajo sin sesgo de marca.</td>
+                  <td className="p-3 sm:p-4 align-top">Una tabla para mirar cada mes y tipos de software que suelen ayudar, sin nombres de marca.</td>
+                  <td className="p-3 sm:p-4 align-top">Estás harto de decidir a ojo y quieres algo más tangible.</td>
                 </tr>
               </tbody>
             </table>
@@ -145,51 +146,48 @@ export function GestionCargaTrabajoEquipoArticle({
       <RevealOnScroll>
         <section id="que-es-carga-trabajo" className="mb-12 sm:mb-16 scroll-mt-24">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6">
-            ¿Qué es realmente la carga de trabajo? (y por qué no es solo «tener mucho trabajo»)
+            2. ¿Qué es realmente la carga de trabajo? (y por qué no es solo «tener mucho trabajo»)
           </h2>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>
-              Muchos equipos confunden <strong>carga alta</strong> con <strong>carga mal gestionada</strong>. No es lo
-              mismo tener un trimestre intenso con picos planificados que vivir en permanente urgencia porque nadie sabe,
-              en una sola vista, quién está al límite. El <strong>workload management</strong> es el proceso de{' '}
-              <strong>planificar, distribuir y monitorizar</strong> tareas entre un equipo para que cada persona tenga un
-              volumen razonable y sostenible en el tiempo. En una <strong>agencia de marketing</strong>, eso incluye
-              campañas, creatividades, informes, reuniones con cliente y el «coste oculto» de coordinación.
+              Muchos equipos confunden <strong>carga alta</strong> con <strong>carga mal llevada</strong>. No es lo
+              mismo un trimestre duro pero avisado que vivir en modo eterna emergencia porque nadie tiene una foto clara
+              de quién va justo. <strong>Gestionar la carga</strong> es, en la práctica, planificar quién hace qué,
+              repartir con cabeza y mirar si eso se sostiene en el tiempo —no solo el lunes. En una agencia eso incluye
+              campañas, creatividades, informes, reuniones con el cliente y todo el tiempo que se va en coordinar sin que
+              aparezca en ningún sitio.
+              La cicatriz suele ser el “te lo reenvío” que vuelve tres veces porque el bloqueo real era coordinación, no capacidad.
             </p>
             <p>
-              Desde la perspectiva de <strong>employee wellbeing</strong> y <strong>gestión de recursos humanos</strong>,
-              el workload no es un detalle operativo menor: es la interfaz entre promesas comerciales y capacidad humana.
-              Cuando esa interfaz falla, aparecen síntomas que el lenguaje médico asocia al <strong>síndrome del
-              trabajador quemado</strong>, pero la palanca efectiva sigue siendo organizativa: expectativas, prioridades y
-              justicia en el reparto. Los <strong>managers</strong> que trabajan un <strong>workload balance</strong>{' '}
-              explícito suelen combinar mejor <strong>bienestar laboral</strong> y <strong>productividad</strong> porque
-              reducen trabajo duplicado, esperas y rehacer entregables.
+              Para <strong>RR. HH.</strong> y para dirección, esto no es un apéndice del Excel: es donde chocan lo que se
+              vende y lo que la gente puede aguantar. Cuando revienta, a veces llegan etiquetas como el{' '}
+              <strong>síndrome del trabajador quemado</strong>, pero lo que suele fallar son las expectativas, el orden de
+              prioridades y si el reparto se ve justo. Cuando el equipo puede hablar de eso sin miedo, suele ganar tanto
+              calidad de vida como calidad de entrega: menos duplicar trabajo, menos esperar a que «alguien conteste» y
+              menos entregar la versión séptima de lo mismo.
             </p>
             <p>
-              Cuando alguien pregunta por <strong>employee wellbeing</strong> o <strong>bienestar laboral</strong> en
-              relación con la <strong>productividad</strong>, la respuesta útil no es «más mindfulness»: es{' '}
-              <strong>capacidad de equipo</strong> visible y <strong>planificación</strong> que respete límites humanos.
-              Sin ese mapa, aparece el <strong>síndrome del trabajador quemado</strong> como síntoma organizativo, no
-              como fallo individual de «resiliencia».
+              No hace falta otro taller de respiración si el calendario sigue siendo un campo de batalla. Lo que hace
+              falta es <strong>capacidad de equipo</strong> visible y una <strong>planificación</strong> que no asuma que
+              «ya se apañará». Sin ese mapa, el agotamiento se lee como culpa individual; con él, se lee como señal de que
+              algo en el sistema pide cambio.
             </p>
           </div>
 
           <h3 className="text-lg sm:text-xl font-bold text-white mt-8 mb-3">
-            Diferencia entre workload management y resource management
+            Día a día frente a plantilla y presupuesto
           </h3>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>
-              <strong>Workload</strong> responde a <em>cómo</em> se asignan las tareas en el día a día: quién hace qué,
-              esta semana, con qué prioridad y qué depende de qué. <strong>Resource management</strong> responde a{' '}
-              <em>qué</em> se necesita para hacerlas: personas con ciertas habilidades, presupuesto, horas contratadas,
-              mix junior/senior. Los dos forman un <strong>bucle continuo</strong>: si solo miras recursos en Excel sin
-              mirar la cola de tareas real, tendrás «capacidad teórica» y caos operativo; si solo miras tareas sin
-              encajar con coste y habilidades, tendrás burn rate y márgenes rotos.
+              Uno es <em>cómo</em> circulan las tareas esta semana: quién tiene el balón, qué es urgente, qué bloquea a
+              qué. Otro es <em>con qué</em> cuentas para hacerlo: perfiles, coste, horas contratadas, mezcla junior y
+              senior. En inglés lo llaman workload y resource management; aquí importa no mezclarlos sin querer. Si solo
+              miras plantilla y Excel de capacidad pero no la cola real de trabajo, tienes «todo cuadra en papel» y caos
+              en el Slack. Si solo miras tickets y no el coste ni quién puede hacer qué, el margen se come solo.
             </p>
             <p>
-              En la práctica de <strong>gestión de recursos humanos en agencia</strong>, el error típico es mezclar ambos
-              en la misma reunión sin acuerdo de qué decisión se toma: contratación (recurso) frente a repriorización
-              (carga). Separar el lenguaje ya reduce fricción.
+              En agencia, el lío clásico es una reunión donde medio mundo habla de contratar y el otro medio de parar
+              cosas. Si dejas claro si la decisión es «meter gente» o «ordenar lo que hay», ya habéis ganado media batalla.
             </p>
           </div>
 
@@ -205,11 +203,10 @@ export function GestionCargaTrabajoEquipoArticle({
               <strong>recursos</strong>; muchas veces es falta de <strong>visibilidad</strong> y de reglas de reparto.
             </p>
             <p>
-              La <strong>carga laboral excesiva</strong> concentra riesgo: un solo punto de fallo, cuellos de botella en
-              revisiones creativas o en cuentas clave, y una percepción de <strong>injusticia</strong> («yo no puedo
-              decir que no») que erosiona la confianza. Un <strong>workload balance</strong> sano para{' '}
-              <strong>managers</strong> implica que las tareas <strong>críticas</strong> no vivan siempre en las mismas
-              dos cabezas.
+              Cuando la carga se amontona en pocas personas, el riesgo es de verdad: un solo cuello de botella en la
+              revisión creativa o en la cuenta estrella, y además la sensación de <strong>injusticia</strong> —«a mí no me
+              dejan decir que no»— que corroe el equipo. Si quien manda puede ver eso, lo razonable es que las piezas
+              gordas no caigan siempre en las mismas dos cabezas.
             </p>
           </div>
         </section>
@@ -218,32 +215,32 @@ export function GestionCargaTrabajoEquipoArticle({
       <RevealOnScroll delay={1}>
         <section id="causas-burnout-equipos" className="mb-12 sm:mb-16 scroll-mt-24">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6">
-            Las causas reales del burnout (que los managers no suelen ver)
+            3. Las causas reales del burnout (que los managers no suelen ver)
           </h2>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>
-              El <strong>estrés puntual</strong> (una lanzamiento, un pico de campaña) puede ser intenso y, aun así,
-              sostenible si hay recuperación y claridad. El <strong>burnout</strong> es otra cosa: agotamiento
-              prolongado con distanciamiento del trabajo y sensación de baja eficacia. La <strong>OMS</strong>, en la{' '}
-              <strong>CIE-11</strong>, lo reconoce como <strong>fenómeno ocupacional</strong> vinculado al entorno
-              laboral —no como un simple diagnóstico médico aislado—, lo que empuja la responsabilidad hacia la{' '}
-              <strong>organización</strong> y el diseño del trabajo.
+              El <strong>estrés puntual</strong> —un lanzamiento, una campaña que se dispara— puede ser brutal y, aun así,
+              llevadero si después hay respiro y las reglas del juego son claras. El <strong>burnout</strong> es otra
+              historia: se queda, te desconecta del trabajo y te hace sentir que rindes menos aunque sigas currando. La{' '}
+              <strong>OMS</strong> lo recoge en la <strong>CIE-11</strong> como algo ligado al trabajo mal gestionado, no
+              como un capricho personal. Traducción para el día a día: mirar a la organización, no solo al «ánimo» de cada
+              uno.
+              Lo ves cuando tu mejor creativo deja de mandar GIFs por Slack, responde con frío y el equipo ya no discute el scope: solo lo traga.
             </p>
             <p>
-              Tres dimensiones habituales en marcos clínicos y organizativos: <strong>agotamiento emocional</strong>,{' '}
-              <strong>despersonalización</strong> o cinismo hacia el trabajo, y <strong>baja realización personal</strong>{' '}
-              (sensación de no rendir como antes). Para SEO y para tu equipo, esto responde a consultas del tipo{' '}
-              <em>causas del burnout laboral</em> o <em>por qué se produce el burnout en equipos</em>: no es solo «muchas
-              horas», es un cóctel de demandas y carencias de apoyo.
+              En la práctica se suelen ver tres cosas a la vez: <strong>agotamiento emocional</strong>,{' '}
+              <strong>despersonalización</strong> (el cinismo hacia el trabajo) y <strong>baja realización personal</strong>{' '}
+              —esa sensación de «antes daba para más». No es solo «muchas horas»: es mezcla de exigencias y de cosas que el
+              equipo debería tener (claridad, apoyo, reconocimiento) y no tiene.
             </p>
           </div>
 
           <h3 className="text-lg sm:text-xl font-bold text-white mt-8 mb-4">Las seis causas estructurales del burnout en equipos</h3>
-          <ol className="list-decimal list-inside space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed marker:text-violet-300">
+          <ol className="list-decimal list-outside space-y-5 pl-5 sm:pl-6 text-indigo-100/90 text-base sm:text-lg leading-relaxed marker:text-violet-300 marker:font-semibold">
             <li>
-              <strong className="text-white">Sobrecarga de trabajo real:</strong> más tareas o más alcance del que cabe en
-              el tiempo disponible, sin ajuste de plazos ni de expectativas. Muy relacionado con{' '}
-              <strong>sobrecarga de trabajo empleados</strong> medida en backlog, no solo en horas declaradas.
+              <strong className="text-white">Sobrecarga de trabajo real:</strong> más tareas o más alcance de los que
+              caben en el tiempo que hay, sin tocar plazos ni expectativas. Se nota en el backlog y en la cara del equipo,
+              no solo en la hoja de horas.
             </li>
             <li>
               <strong className="text-white">Delegación inadecuada:</strong> el reparto inicial falla: se asigna a quien
@@ -255,8 +252,8 @@ export function GestionCargaTrabajoEquipoArticle({
               agotamiento.
             </li>
             <li>
-              <strong className="text-white">Ausencia de reconocimiento:</strong> el esfuerzo no se nombra; solo se habla
-              cuando algo falla. La recompensa percibida cae y con ella la motivación intrínseca.
+              <strong className="text-white">Ausencia de reconocimiento:</strong> solo se habla cuando algo salta por
+              los aires; lo que va bien pasa desapercibido. La moral no aguanta solo de críticas.
             </li>
             <li>
               <strong className="text-white">Objetivos inalcanzables o cambiantes:</strong> el <strong>scope creep</strong>{' '}
@@ -268,9 +265,9 @@ export function GestionCargaTrabajoEquipoArticle({
               infinita.
             </li>
           </ol>
-          <p className="text-indigo-200/80 text-sm sm:text-base mt-6 italic">
-            En <strong>burnout en agencias de marketing</strong>, las causas 1, 5 y 6 suelen aparecer juntas: plazos
-            agresivos, peticiones fuera de alcance y cultura de respuesta inmediata en canales abiertos.
+          <p className="text-indigo-200/80 text-sm sm:text-base mt-6 not-italic">
+            En marketing y agencias, la primera, la quinta y la sexta suelen ir del brazo: demasiado encima de la mesa,
+            alcance que crece sin contrato ni tiempo, y el chat encendido como si fuera guardia en urgencias.
           </p>
         </section>
       </RevealOnScroll>
@@ -278,15 +275,18 @@ export function GestionCargaTrabajoEquipoArticle({
       <RevealOnScroll delay={2}>
         <section id="senales-equipo-riesgo" className="mb-12 sm:mb-16 scroll-mt-24">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6">
-            Cómo detectar que tu equipo está en riesgo: señales de alerta tempranas
+            4. Cómo detectar que tu equipo está en riesgo: señales de alerta tempranas
           </h2>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>
-              Este bloque concentra intención de búsqueda: <em>señales de burnout en el equipo</em>,{' '}
-              <em>cómo saber si mi equipo está saturado</em>, <em>señales de sobrecarga laboral</em>. La clave es
-              combinar <strong>lo que se ve</strong> en el día a día con <strong>lo que se mide</strong> sin esperar a
-              que alguien pida ayuda en voz alta —porque muchas personas aguantan en silencio por miedo a parecer
-              incapaces o por inseguridad laboral.
+              ¿Cómo saber si el equipo va justo antes de que alguien explote? Mezcla intuición con números. Mucha gente no
+              dice «no puedo más» hasta muy tarde: por miedo a quedar mal, por el sueldo a fin de mes o porque cree que
+              aguantar es parte del trabajo.
+              La señal de campo es el tono del canal: antes había preguntas, luego solo mensajes cortos y silencios largos “porque estoy saturado”.
+            </p>
+            <p>
+              Por eso conviene mirar a la vez <strong>lo que ves</strong> y <strong>lo que dicen los datos</strong>. Si solo
+              confías en el pasillo —o en el canal general—, casi siempre llegas tarde.
             </p>
           </div>
 
@@ -295,21 +295,23 @@ export function GestionCargaTrabajoEquipoArticle({
           </div>
 
           <h3 className="text-lg sm:text-xl font-bold text-white mt-8 mb-3">Señales conductuales (las que se ven)</h3>
-          <ul className="space-y-3 text-indigo-100/90 text-base sm:text-lg leading-relaxed list-disc list-inside marker:text-violet-400">
-            <li>Irritabilidad, cambios de humor o aislamiento en canales donde antes participaban.</li>
-            <li>Llegadas tarde, absentismo o <strong>presentismo</strong> improductivo (en el sitio, pero sin entregar).</li>
-            <li>Menor calidad o más retrabajo en entregables que antes salían bien a la primera.</li>
-            <li>Reducción de participación en reuniones o en dinámicas de equipo; respuestas mínimas.</li>
+          <ul className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed list-disc list-outside pl-5 sm:pl-6 marker:text-violet-400">
+            <li>Irritabilidad, cambios de humor o que alguien se «apague» en Slack donde antes metía mano.</li>
+            <li>
+              Llegadas tarde, absentismo o <strong>presentismo</strong> de manual: físicamente ahí, mentalmente en otro
+              sitio.
+            </li>
+            <li>Entregables que antes salían finos y ahora llegan con más tiritas o más rondas de corrección.</li>
+            <li>En reuniones, solo monosílabos; en dinámicas de equipo, desaparición gradual.</li>
           </ul>
 
-          <h3 className="text-lg sm:text-xl font-bold text-white mt-8 mb-3">Señales métricas (las que se miden)</h3>
+          <h3 className="text-lg sm:text-xl font-bold text-white mt-8 mb-3">Lo que cuentan los números</h3>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>
-              Aquí el artículo gana profundidad frente a textos genéricos de <strong>RR.HH.</strong> Los datos no
-              sustituyen la conversación, pero evitan que el manager dependa solo del «¿todo bien?» en el pasillo
-              virtual.
+              Los números no sustituyen una conversación honesta, pero sí evitan que todo dependa del «¿todo bien?» que
+              todo el mundo contesta con un sí por inercia.
             </p>
-            <ul className="space-y-3 list-disc list-inside marker:text-violet-400">
+            <ul className="space-y-4 list-disc list-outside pl-5 sm:pl-6 marker:text-violet-400">
               <li>
                 <strong className="text-white">Volumen de tareas por persona:</strong> si alguien tiene el doble (o más)
                 de tickets/tareas abiertas que la mediana del equipo, revisa si es rol, si es conocimiento único o si es
@@ -330,41 +332,40 @@ export function GestionCargaTrabajoEquipoArticle({
               <li>
                 <strong className="text-white">Tasa de utilización:</strong> porcentaje de tiempo dedicado a trabajo
                 productivo o facturable frente a capacidad neta. En agencias, un rango orientativo «saludable» para muchos
-                perfiles de producción suele situarse en torno al <strong>70–80%</strong>; por encima del{' '}
-                <strong>85% de forma sostenida</strong>, el riesgo de error, conflicto y rotación crece. Ajusta según tu
-                modelo (cuentas, creatividad, consultoría).
+                perfiles de producción suele rondar el <strong>70–80%</strong>. Si te pasas del <strong>85% muchas
+                semanas seguidas</strong>, suele subir el error, el cabreo y las ganas de mirar ofertas en LinkedIn. Cada
+                agencia es un mundo: cuentas, creatividad, consultoría… tú ajustas.
               </li>
             </ul>
           </div>
 
           <h3 className="text-lg sm:text-xl font-bold text-white mt-8 mb-3">El problema silencioso: el burnout que no se verbaliza</h3>
-          <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            Si nadie se queja, no implica que la <strong>carga laboral</strong> esté bien; puede implicar que nadie se
-            atreve. El manager debe aprender a leer <strong>métricas de carga</strong> y señales conductuales antes del
-            colapso. Complementa con preguntas directas en 1:1 («del 1 al 5, ¿cómo ves tu carga esta semana?») y con
-            anonimato en encuestas puntuales si la cultura aún no es segura.
+          <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
+            Que nadie se queje no significa que vaya bien: muchas veces significa que nadie se atreve. A quien lidera le
+            toca aprender a leer el tablero —tareas, plazos, caras— antes del pinchazo. En los 1:1, una pregunta simple
+            suele abrir más que un discurso: «del 1 al 5, ¿cómo llevas la carga esta semana?». Y si el ambiente aún no da
+            para sinceridad a cara descubierta, un pulso anónimo de vez en cuando también vale.
           </p>
           <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            Cruza siempre datos con contexto: una persona con muchas horas registradas puede estar en formación o en
-            shadowing; otra con pocas horas puede estar bloqueada esperando feedback. La pregunta útil no es solo «¿cuánto
-            trabaja?», sino «¿el flujo de trabajo permite terminar sin fricción excesiva?». Ahí es donde confluyen{' '}
-            <strong>workload management</strong> y una <strong>planificación de proyectos</strong> seria: sin dependencias
-            resueltas y sin ventanas de revisión, la <strong>sobrecarga de trabajo empleados</strong> se disfraza de mala
-            planificación individual.
+            Ojo al interpretar cifras: muchas horas puede ser alguien en formación o acompañando a otro; pocas horas puede
+            ser alguien bloqueado esperando feedback. Lo que importa es si el flujo deja terminar sin fricción absurda. Si
+            las dependencias están mal resueltas o no hay hueco para revisar, no es «que Fulano vaga»: es que el sistema
+            lo está frenando.
           </p>
         </section>
       </RevealOnScroll>
 
       <RevealOnScroll>
         <section id="framework-gestion-sostenible" className="mb-12 sm:mb-16 scroll-mt-24">
-          <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex flex-wrap items-center gap-2">
+          <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex items-center gap-3">
             <Scale className="h-8 w-8 text-violet-400 shrink-0" aria-hidden />
-            Framework para gestionar la carga de trabajo de forma sostenible
+            5. Framework para gestionar la carga de trabajo de forma sostenible
           </h2>
-          <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-8">
-            Corazón práctico del texto: seis pasos que puedes implementar sin esperar a un cambio de herramienta. Encajan
-            con <strong>cómo repartir el trabajo equitativamente</strong> en sentido <em>justo</em> (no necesariamente
-            igualitario): según capacidad, habilidad y momento vital del profesional.
+          <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
+            Seis pasos que puedes aplicar el lunes que viene, aunque sigas con la misma herramienta de siempre. Aquí{' '}
+            <strong>repartir bien</strong> no es darle a todos el mismo número de tareas: es repartir según capacidad real,
+            habilidad y el momento que lleva cada persona (recién salido de un pico vs en una racha más tranquila).
+            La cicatriz es el “viernes perfecto” que el lunes no se sostiene: el bloque de revisión se rompe y nadie sabe a qué hora liberar.
           </p>
 
           <div className="mb-10">
@@ -395,8 +396,7 @@ export function GestionCargaTrabajoEquipoArticle({
               lectura de briefs: lo que en muchas hojas aparece como «cero horas» pero consume capacidad real. Cuando ese
               trabajo invisible no se nombra, la <strong>planificación</strong> parece realista y el equipo vive en
               permanente desfase. Un ritual simple —revisar cada viernes la foto de la semana siguiente— ya reduce
-              sorpresas y mejora la <strong>distribución de tareas en equipo</strong> porque las conversaciones incómodas
-              ocurren antes del lunes.
+              sorpresas y mejora el reparto entre el equipo porque las conversaciones incómodas ocurren antes del lunes.
             </p>
           </div>
 
@@ -422,10 +422,10 @@ export function GestionCargaTrabajoEquipoArticle({
           <h3 className="text-lg sm:text-xl font-bold text-white mt-8 mb-3">Paso 3: Redistribuye la carga con criterio (no al azar)</h3>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>
-              <strong>Cómo priorizar tareas en equipo</strong> no es solo ordenar una lista: es alinear con{' '}
-              <strong>capacidad disponible real</strong> (no la teórica de contrato), <strong>habilidades</strong>,
-              afinidad con el tipo de trabajo y <strong>estado actual</strong> de la persona. No es lo mismo asignar a
-              alguien que acaba de cerrar un lanzamiento largo que a alguien que lleva semanas en modo mantenimiento.
+              Priorizar en equipo no es solo ordenar un backlog bonito. Es cuadrar con la <strong>capacidad real</strong>{' '}
+              (no la del contrato en papel), con quién sabe hacer qué, con qué le apetece o aguanta cada uno ahora mismo.
+              No es lo mismo cargar a quien acaba de salir de un infierno de lanzamiento que a quien lleva semanas en
+              ritmo mantenimiento.
             </p>
             <p>
               Repartir «para que todos tengan lo mismo» en número de tareas puede ser injusto si las criticidades difieren.
@@ -435,56 +435,53 @@ export function GestionCargaTrabajoEquipoArticle({
             <p>
               Documenta decisiones de reparto en un lugar único (nota de proyecto, comentario en herramienta o acta breve)
               para que no dependan de memoria oral. Eso reduce conflictos del tipo «pensaba que esto lo llevaba X» y
-              permite auditar, semanas después, si la <strong>carga laboral</strong> fue equitativa en sentido de riesgo,
-              no solo en número de tickets. En <strong>agencias de marketing</strong>, donde cuentas y creativos comparten
-              deadlines, esa trazabilidad es un antídoto contra la sobrecarga selectiva de un solo perfil.
+              permite mirar atrás y ver si el riesgo se repartió o si solo se contaron tickets. En agencia, donde cuenta y
+              creativo comparten la misma fecha límite, eso evita que solo uno de los dos se lleve el golpe.
             </p>
           </div>
 
           <h3 className="text-lg sm:text-xl font-bold text-white mt-8 mb-3">Paso 4: Aprende a decir que no como equipo</h3>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>
-              En agencias, el patrón tóxico es aceptar todo lo que pide el cliente o el comercial. El manager debe ser
-              <strong> cortafuegos</strong>. El <strong>scope creep</strong> absorbe horas invisibles que nadie planificó
-              y destruye la confianza interna («otra vez prometieron sin preguntar»).
+              En agencias, el patrón tóxico es decir sí a todo lo que pide el cliente o el comercial. Ahí el manager tiene
+              que hacer de <strong>cortafuegos</strong>. El <strong>scope creep</strong> se come horas que no estaban en
+              ningún sitio y, de paso, rompe la confianza («otra vez prometieron sin preguntarnos»).
             </p>
             <p>
-              Técnica práctica antes de aceptar un nuevo encargo: <em>«¿Qué dejamos de hacer para poder hacer esto?»</em>.
-              Si no hay respuesta, no hay capacidad: hay que negociar fecha, alcance o recursos. Esto es gestión adulta de
-              <strong> workload management</strong>, no falta de espíritu de servicio.
+              Antes de meter un encargo nuevo en el saco, prueba esta frase en serio:{' '}
+              <em>«¿Qué dejamos de hacer para poder hacer esto?»</em>. Si no sale nada de la lista, no hay hueco: toca
+              negociar fecha, alcance o gente. Eso no es ser antipático; es cuidar al equipo.
             </p>
           </div>
 
           <h3 className="text-lg sm:text-xl font-bold text-white mt-8 mb-3">Paso 5: Crea ritmos de trabajo con bloques de tiempo protegidos</h3>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>
-              El <strong>timeboxing</strong> consiste en asignar un tiempo máximo a una tarea o bloque de trabajo y tratar
-              ese límite como parte del método, no como sugerencia decorativa. En equipo, se combina con calendario:
-              bloques de <strong>deep work</strong>, días con menos reuniones internas, y <strong>buffers</strong> entre
-              proyectos para absorber imprevistos sin romper la semana entera.
+              El <strong>timeboxing</strong> es ponerle techo al tiempo de una tarea y tomarse ese techo en serio, no como
+              adorno del calendario. En equipo se traduce en bloques para concentrarse, días con menos reuniones internas
+              y un poco de aire entre proyectos para que el imprevisto no rompa la semana entera.
             </p>
             <p>
-              No hace falta dogmatismo: hace falta acuerdo cultural de que es legítimo estar en foco sin responder al
-              instante. Eso reduce la sensación de urgencia constante y protege la capacidad cognitiva —especialmente en
-              perfiles que crean o analizan. Si quieres la base conceptual, el artículo{' '}
+              No hace falta secta del cronómetro: hace falta que el grupo entienda que está bien estar en foco sin
+              responder al minuto. Eso baja la fiebre de la urgencia permanente y cuida la cabeza de quien crea o mete
+              mano a datos. Si quieres la explicación pausada de la técnica, está en{' '}
               <Link to="/blog/que-es-timeboxing" className="text-violet-300 hover:text-white underline underline-offset-2">
                 Qué es el timeboxing
-              </Link>{' '}
-              profundiza en la técnica; aquí la usamos como palanca de <strong>prevención de burnout</strong> por diseño
-              del tiempo.
+              </Link>
+              ; aquí nos quedamos con la idea de proteger el tiempo como proteges el margen.
             </p>
           </div>
 
           <h3 className="text-lg sm:text-xl font-bold text-white mt-8 mb-3">Paso 6: Revisa la carga periódicamente (no solo en crisis)</h3>
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>
-              Instaura un <strong>weekly load check</strong> breve (diez minutos en 1:1 o en standup ampliado): escala del
-              1 al 5 sobre carga, cuellos de botella y una sola acción de desbloqueo. Repite a nivel de equipo quincenal
-              para ver distribución, no solo promedios individuales.
+              Cada semana, diez minutos bastan: en el 1:1 o en un standup un poco más largo, pregunta por la carga del 1
+              al 5, por un cuello de botella y por <em>una</em> cosa que desbloquee la semana. Cada dos semanas, haz zoom
+              out en equipo: no solo cómo está cada uno, sino si el reparto huele raro.
             </p>
             <p>
-              Si solo hablas de carga cuando alguien «explota», hablarás siempre demasiado tarde. La revisión periódica es
-              lo que diferencia un sistema de <strong>prevención</strong> de un parche emocional.
+              Si la carga solo sale en conversación cuando alguien revienta, siempre irás tarde. El hábito de mirarla
+              con calma es lo que separa prevenir de poner parches cuando ya duele.
             </p>
           </div>
         </section>
@@ -492,81 +489,87 @@ export function GestionCargaTrabajoEquipoArticle({
 
       <RevealOnScroll delay={1}>
         <section id="rol-manager-equipo" className="mb-12 sm:mb-16 scroll-mt-24">
-          <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex flex-wrap items-center gap-2">
+          <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex items-center gap-3">
             <HeartPulse className="h-8 w-8 text-rose-400 shrink-0" aria-hidden />
-            El rol del manager: liderar sin quemar al equipo
+            6. El rol del manager: liderar sin quemar al equipo
           </h2>
-          <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
+          <div className="space-y-8 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>
-              El burnout no es solo un problema individual: es <strong>liderazgo</strong> y <strong>cultura</strong>.
-              Directores de agencia y managers intermedios son quienes modelan si está permitido proteger el foco, si se
-              negocia el alcance y si el reconocimiento existe fuera de los picos de crisis.
+              El burnout no es un «tema personal» que se arregla con más fuerza de voluntad. Es, en buena parte,{' '}
+              <strong>cultura</strong> y <strong>liderazgo</strong>: lo que tú permites en reuniones, cómo reaccionas cuando
+              alguien pide margen, y si el reconocimiento solo sale cuando hay incendio.
+              La cicatriz de manager llega cuando en el 1:1 la persona sonríe y dice “estoy bien”, y una semana después desaparecen entregas “porque no da”.
             </p>
+
+            <div className="space-y-3">
+              <h3 className="text-lg sm:text-xl font-bold text-white m-0">Feedback constante, no solo cuando algo falla</h3>
+              <p className="m-0">
+                Gallup y Workhuman llevan tiempo diciendo algo que molesta: quien recibe feedback a menudo aguanta mejor
+                el ritmo que quien solo escucha crítica cuando algo estalla. Y el «bien hecho» no tiene que salir solo del
+                jefe: cuando los compañeros nombran el trabajo invisible —documentar, dejar el relevo claro, mejorar un
+                proceso—, el ambiente cambia.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-lg sm:text-xl font-bold text-white m-0">Crear un entorno psicológicamente seguro</h3>
+              <p className="m-0">
+                Que alguien pueda decir <em>«esta semana no me da la vida»</em> sin miedo a represalias no es debilidad: es
+                aviso a tiempo. Si en tu equipo nunca pasa nada, desconfía: o estáis en un paraíso poco creíble, o la gente
+                se está callando. Ojo si las métricas gritan saturación y el chat sigue en modo «todo bien».
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-lg sm:text-xl font-bold text-white m-0">Flexibilidad como herramienta de prevención</h3>
+              <p className="m-0">
+                Horarios flexibles o remoto solo ayudan si encajan en cómo se gestiona la carga de verdad. Si en el fondo
+                se premia estar conectado a todas horas, la «flexibilidad» acaba siendo culpa disfrazada: libertad en el
+                papel, presión en la práctica.
+              </p>
+            </div>
           </div>
-
-          <h3 className="text-lg sm:text-xl font-bold text-white mt-8 mb-3">Feedback constante, no solo cuando algo falla</h3>
-          <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            Los informes que relacionan <strong>feedback frecuente</strong> con menor probabilidad de agotamiento
-            apuntan a diferencias del orden de <strong>decenas de puntos porcentuales</strong> entre quienes reciben
-            comentarios regulares y quienes solo escuchan crítica en incidentes. El reconocimiento no tiene que ser solo
-            vertical: fomentar que fluya entre pares reduce la carga emocional del líder y normaliza el buen trabajo
-            invisible (documentación, handover, mejora de procesos).
-          </p>
-
-          <h3 className="text-lg sm:text-xl font-bold text-white mt-8 mb-3">Crear un entorno psicológicamente seguro</h3>
-          <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            Que alguien pueda decir <em>«no puedo con esto esta semana»</em> sin castigo inmediato no es debilidad: es
-            información temprana. Si el equipo solo dice «sí», o bien la carga es irrealmente baja —poco probable en una
-            agencia— o bien la gente se autocensura. Señal de alarma: cero quejas + métricas de saturación altas.
-          </p>
-
-          <h3 className="text-lg sm:text-xl font-bold text-white mt-8 mb-3">Flexibilidad como herramienta de prevención</h3>
-          <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            Horarios flexibles, remoto razonable y pausas protegidas funcionan cuando son parte del <strong>sistema</strong>{' '}
-            de gestión de carga, no cuando son «beneficios» que contradicen expectativas de disponibilidad 24/7. La
-            flexibilidad mal comunicada genera culpa: se promete libertad y se premia la permanencia conectada.
-          </p>
         </section>
       </RevealOnScroll>
 
       <RevealOnScroll delay={2}>
         <section id="burnout-instalado" className="mb-12 sm:mb-16 scroll-mt-24">
-          <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex flex-wrap items-center gap-2">
+          <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex items-center gap-3">
             <ShieldAlert className="h-8 w-8 text-amber-400 shrink-0" aria-hidden />
-            Burnout ya instalado: qué hacer cuando es demasiado tarde para prevenir
+            7. Burnout ya instalado: qué hacer cuando es demasiado tarde para prevenir
           </h2>
-          <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
+          <div className="space-y-6 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>
-              Responde a búsquedas del tipo <em>qué hacer si mi equipo tiene burnout</em> o{' '}
-              <em>cómo recuperar un equipo quemado</em>. Primero: dejar de minimizar. Segundo: actuar en tres frentes —
-              carga, expectativas y apoyo — en paralelo, no en serie.
+              Si ya estás en fase «equipo fundido», el peor error es restarle importancia con frases hechas. Hay que
+              actuar en varios frentes a la vez —carga, expectativas y apoyo— en lugar de ir paliativo por paliativo.
+              Se ve en el correo de urgencia a las 19:30, con el “ok, lo saco como sea” aunque el calendario grite que no hay hueco.
             </p>
-            <ol className="list-decimal list-inside space-y-3 marker:text-amber-300">
+            <ol className="list-decimal list-outside space-y-5 pl-5 sm:pl-6 marker:text-amber-300 marker:font-semibold m-0">
               <li>
-                <strong className="text-white">Normalizar la conversación</strong> sin tabúes ni juicio moral; el burnout
-                es señal de sistema, no de «falta de actitud».
+                <strong className="text-white">Hablarlo sin tabú.</strong> El agotamiento prolongado es señal de cómo está
+                montado el trabajo, no de «falta de actitud».
               </li>
               <li>
-                <strong className="text-white">Redistribución inmediata</strong> de lo urgente; quitar peso real, no solo
-                «ánimo».
+                <strong className="text-white">Quitar peso de verdad.</strong> Redistribuir lo urgente hoy, no solo mandar
+                ánimos.
               </li>
               <li>
-                <strong className="text-white">Revisar objetivos y plazos</strong>: ¿son realistas con la capacidad
-                disponible hoy?
+                <strong className="text-white">Releer objetivos y fechas.</strong> Pregunta incómoda: ¿esto es viable con
+                la cabeza y las horas que tenemos <em>ahora</em>?
               </li>
               <li>
-                <strong className="text-white">Descanso o reducción temporal de carga</strong> donde sea posible (días,
-                rebalanceo de cuenta, pausa de iniciativas no críticas).
+                <strong className="text-white">Tiempo para recuperar.</strong> Días, rebalancear cuentas o aparcar
+                iniciativas que no son vitales esta semana.
               </li>
               <li>
-                <strong className="text-white">Apoyo profesional</strong> si el caso es grave: orientación psicológica o
-                recursos de salud laboral, según país y políticas de la empresa.
+                <strong className="text-white">Apoyo profesional si hace falta.</strong> Según tu país y políticas: salud
+                laboral, orientación psicológica, EAP… sin sustituir los cambios estructurales.
               </li>
             </ol>
             <p>
-              No basta con fruta en la oficina o una suscripción genérica a meditación si la estructura de trabajo sigue
-              exigiendo disponibilidad total y alcance infinito. Los parches cosméticos sin cambios en reparto y
-              prioridades suelen empeorar el cinismo («otro programa de bienestar»).
+              La fruta en recepción o la app de meditación no arreglan un calendario imposible. Si el mensaje es «cuidaos»
+              pero el sistema sigue pidiendo disponibilidad total, lo único que sube es el cinismo —«otro parche»— y baja
+              la confianza en la dirección.
             </p>
           </div>
         </section>
@@ -574,19 +577,25 @@ export function GestionCargaTrabajoEquipoArticle({
 
       <RevealOnScroll>
         <section id="metricas-carga-equipo" className="mb-12 sm:mb-16 scroll-mt-24">
-          <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex flex-wrap items-center gap-2">
+          <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6 flex items-center gap-3">
             <BarChart3 className="h-8 w-8 text-emerald-400 shrink-0" aria-hidden />
-            Métricas que todo manager debería tener controladas
+            8. Métricas que todo manager debería tener controladas
           </h2>
-          <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
-            Bloque muy buscado en español: <em>cómo medir la carga de trabajo del equipo</em>,{' '}
-            <em>KPIs de bienestar laboral</em>, <em>tasa de utilización empleados</em>. La tabla resume qué vigilar; los
-            umbrales son orientativos: calibra con tu tipo de agencia y con los{' '}
-            <Link to="/blog/kpis-agencias-marketing-2026" className="text-violet-300 hover:text-white underline underline-offset-2">
-              KPIs de rendimiento en agencias
-            </Link>{' '}
-            que ya uses.
-          </p>
+          <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
+            <p>
+              Si quieres medir la carga sin quedarte solo con el «yo creo que van justos», esta tabla es un buen punto de
+              partida. Los porcentajes son orientativos: lo que vale en una consultora no tiene por qué valer en una casa
+              de producción.
+              La cicatriz es cuando el director mira la tabla y dice “utilización ok”… y el backlog sigue creciendo cada día.
+            </p>
+            <p>
+              Para bajar al detalle —utilización, márgenes, ritmo del proyecto— el artículo de{' '}
+              <Link to="/blog/kpis-agencias-marketing-2026" className="text-violet-300 hover:text-white underline underline-offset-2">
+                KPIs de rendimiento en agencias
+              </Link>{' '}
+              lo cuenta con más mimo.
+            </p>
+          </div>
           <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
             <table className="w-full text-left text-sm sm:text-base">
               <thead>
@@ -636,14 +645,16 @@ export function GestionCargaTrabajoEquipoArticle({
       <RevealOnScroll delay={1}>
         <section id="herramientas-workload" className="mb-12 sm:mb-16 scroll-mt-24">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6">
-            Herramientas útiles para gestionar la carga de trabajo (visión por categorías)
+            9. Herramientas que suelen ayudar (por tipo, sin marcas)
           </h2>
-          <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
+          <div className="space-y-5 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>
-              Sin recomendar una sola marca: lo que importa es que la herramienta responda a un vacío concreto de{' '}
-              <strong>visibilidad</strong>, <strong>límites</strong> o <strong>feedback</strong>.
+              No te voy a vender un nombre propio: lo que importa es qué agujero estás tapando. ¿Falta ver quién lleva
+              qué? ¿Falta cruzar horas reales con lo presupuestado? ¿O falta saber cómo está el ánimo antes de que reviente
+              en público?
+              La cicatriz es la misma siempre: abres el tablero, lo usas dos días, lo dejas y el mes entero se te va a “actualizo luego”.
             </p>
-            <ul className="space-y-3 list-disc list-inside marker:text-violet-400">
+            <ul className="space-y-4 list-disc list-outside pl-5 sm:pl-6 marker:text-violet-400">
               <li>
                 <strong className="text-white">Planificadores de tareas y tableros visuales:</strong> ver carga de un
                 vistazo, límites WIP, estados claros.
@@ -665,19 +676,20 @@ export function GestionCargaTrabajoEquipoArticle({
                 inmediata con normas de canal y expectativas de tiempo de respuesta.
               </li>
             </ul>
-            <p className="text-sm text-indigo-200/80">
-              Este bloque puede ampliarse en el futuro con menciones puntuales a producto sin reescribir el resto del
-              artículo.
+            <p>
+              Casi siempre hace falta <strong>dos capas</strong> que conversen entre sí: una para el flujo (tareas,
+              estados, quién tiene el balón) y otra para el <strong>tiempo</strong> (horas, utilización, estimado vs
+              real). Si no hablan, el director de proyecto acaba siendo contable a mano y el equipo vuelve al modo
+              «salvavidas».
             </p>
             <p>
-              En la práctica, la mayoría de equipos necesita al menos <strong>dos capas</strong>: una donde viva el flujo
-              de trabajo (tareas y estados) y otra donde viva el <strong>tiempo</strong> (horas, utilización, estimación
-              vs real). Si esas capas no hablan entre sí, el manager acaba reconciliando a mano y el sistema vuelve a
-              depender de heroísmo. Las <strong>encuestas de clima</strong> bien diseñadas —cortas, frecuentes y con
-              espacio para comentario libre opcional— actúan como termómetro cuando las métricas aún no muestran el
-              problema. La <strong>comunicación asíncrona</strong>, por su parte, solo reduce el estrés si hay normas
-              explícitas: qué canal es para urgencias reales, qué tiempo de respuesta es razonable por tipo de mensaje y
-              cuándo se espera disponibilidad sincrónica. Sin esas reglas, «async» se convierte en «siempre encendido».
+              Las <strong>encuestas de clima</strong>, si son cortas y no cada trimestre en forma de tesis, sirven de
+              termómetro cuando los números aún «cuadran» pero el ambiente no.
+            </p>
+            <p>
+              Y sobre la <strong>comunicación asíncrona</strong>: solo alivia si hay reglas claras —qué canal es para
+              fuego real, qué tiempo de respuesta es razonable, cuándo hace falta estar en vivo. Sin eso, «trabajar async»
+              es sinónimo de estar enganchado al móvil a todas horas.
             </p>
           </div>
         </section>
@@ -685,26 +697,25 @@ export function GestionCargaTrabajoEquipoArticle({
 
       <RevealOnScroll delay={2}>
         <section id="conclusion-gestion-carga" className="mb-12 sm:mb-16 scroll-mt-24">
-          <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6">Conclusión</h2>
-          <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
+          <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-5 sm:mb-6">10. Conclusión</h2>
+          <div className="space-y-5 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>
-              El <strong>burnout</strong> no es un problema de actitud ni de resistencia personal en solitario: es, con
-              frecuencia, una <strong>señal organizativa</strong> de que la <strong>distribución del trabajo</strong> y
-              los <strong>límites</strong> no están funcionando. La buena noticia es que tiene palancas claras: visibilidad,
-              priorización explícita, reparto con criterio, cortafuegos ante el alcance, ritmos de foco y revisión
-              periódica de carga —además de métricas que hablen antes que el silencio.
+              El <strong>burnout</strong> no es que la gente «no aguante». Es, muchas veces, la foto de que la{' '}
+              <strong>distribución del trabajo</strong> y los <strong>límites</strong> no están a la altura. La parte
+              buena es que hay cosas concretas que sí puedes hacer: ver la carga, decidir prioridades en voz alta, repartir con cabeza,
+              cortar alcance cuando toca, proteger foco y revisar cómo va la semana sin esperar al drama.
+              Si esto se queda en una charla y no vuelves a mirar la carga con calma, el burnout vuelve con otro nombre antes de fin de trimestre.
             </p>
             <p>
-              <strong>Próxima acción:</strong> comparte este artículo con tu equipo directo o dedica los próximos diez
-              minutos de tu reunión semanal a una sola pregunta: «¿Quién está por encima de su capacidad sostenible y qué
-              quitamos o movemos esta semana?». Si la respuesta es incómoda, probablemente sea la correcta.
+              Si solo te llevas una cosa de aquí, que sea esta pregunta en tu próxima reunión (diez minutos bastan):{' '}
+              <em>«¿Quién va sobrado de verdad y qué quitamos o movemos para esta semana?»</em>. Si la respuesta pica un
+              poco, probablemente vais por buen camino.
             </p>
             <p>
-              Si llevas tiempo posponiendo este tema, empieza por un solo paso del framework —normalmente{' '}
-              <strong>visibilidad</strong>— y mide durante dos semanas. Los datos humildes (una tabla compartida con
-              tareas y horas) baten a menudo a la perfección aspiracional de un tablero nadie actualiza. La meta no es el
-              documento: es que la conversación sobre <strong>carga</strong> deje de ser tabú y pase a ser un hábito de
-              gestión tan habitual como revisar el pipeline comercial.
+              Y si llevas meses posponiéndolo, empieza por <strong>visibilidad</strong>: dos semanas con una tabla
+              compartida honesta suelen enseñar más que un tablero bonito que nadie actualiza. El objetivo no es el
+              documento; es que hablar de <strong>carga</strong> deje de ser raro y pase a ser tan normal como mirar el
+              pipeline.
             </p>
           </div>
         </section>
@@ -714,44 +725,57 @@ export function GestionCargaTrabajoEquipoArticle({
         <section id="faq-gestion-carga-trabajo" className="mb-12 sm:mb-16 scroll-mt-24">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-6">Preguntas frecuentes</h2>
           <div className="space-y-6 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            <div className="rounded-xl border border-white/10 bg-white/5 p-5 sm:p-6">
-              <h3 className="text-white font-bold text-lg mb-2">¿Cuánto es demasiada carga de trabajo?</h3>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-5 sm:p-6 space-y-3">
+              <h3 className="text-white font-bold text-lg m-0">¿Cuánto es demasiada carga de trabajo?</h3>
               <p className="m-0">
-                Depende del rol, pero señales útiles: utilización sostenida muy por encima del ~85%, desviaciones
-                sistemáticas estimado/real, aumento de retrabajo y caída de cumplimiento de plazos. Lo «demasiado» es
-                cuando la carga deja de ser puntual y pasa a ser estructural sin ventanas de recuperación.
+                No hay un número mágico: depende del rol. Pero ojo si la utilización se queda muy por encima del ~85%
+                durante largo rato, si estimado y real nunca coinciden, si hay más retrabajo o si los plazos empiezan a
+                caerse todos a la vez.
+                La cicatriz típica es cuando el equipo sigue respondiendo “todo bien” y los retrasos pasan a ser normales, no excepciones.
+              </p>
+              <p className="m-0 text-indigo-200/90">
+                En la práctica, «demasiado» es cuando deja de ser un pico y se convierte en rutina sin respiro.
               </p>
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 p-5 sm:p-6">
-              <h3 className="text-white font-bold text-lg mb-2">¿Cómo sé si mi equipo tiene burnout?</h3>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-5 sm:p-6 space-y-3">
+              <h3 className="text-white font-bold text-lg m-0">¿Cómo sé si mi equipo tiene burnout?</h3>
               <p className="m-0">
-                Combina señales conductuales (cansancio, cinismo, baja calidad, aislamiento) con datos (plazos, carga por
-                persona, criticidad). No esperes a la confesión explícita: pregunta de forma regular y crea canales
-                seguros.
+                Cruza lo que ves (cansancio, cinismo, calidad bajando, gente que se encierra) con lo que miden los datos:
+                plazos, reparto de tareas gordas, quién acumula riesgo.
+              </p>
+              <p className="m-0 text-indigo-200/90">
+                Y no esperes a que alguien lo diga en una reunión: pregunta a menudo y deja sitio para respuestas honestas.
               </p>
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 p-5 sm:p-6">
-              <h3 className="text-white font-bold text-lg mb-2">¿Qué diferencia hay entre estrés y burnout?</h3>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-5 sm:p-6 space-y-3">
+              <h3 className="text-white font-bold text-lg m-0">¿Qué diferencia hay entre estrés y burnout?</h3>
               <p className="m-0">
-                El estrés agudo puede movilizar; suele tener un «después» de alivio. El burnout es más crónico: agotamiento
-                sostenido, desconexión del trabajo y sensación de baja eficacia. Requiere cambios de carga y de sistema,
-                no solo «aguantar».
+                El estrés puede venir con una fecha de caducidad: termina el lanzamiento y baja la tensión. El burnout se
+                queda: agotamiento que no recuperas con un fin de semana, desgana con el trabajo y sensación de ir más
+                lento pese a esforzarte.
+              </p>
+              <p className="m-0 text-indigo-200/90">
+                Ahí hace falta tocar el sistema, no solo «más aguante».
               </p>
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 p-5 sm:p-6">
-              <h3 className="text-white font-bold text-lg mb-2">¿Cómo repartir tareas equitativamente en una agencia?</h3>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-5 sm:p-6 space-y-3">
+              <h3 className="text-white font-bold text-lg m-0">¿Cómo repartir tareas equitativamente en una agencia?</h3>
               <p className="m-0">
-                Equitativo no siempre es «el mismo número»: reparte según capacidad neta, habilidad, criticidad y momento
-                del proyecto. Usa visibilidad común y rota exposición a tareas de alto riesgo para no depender siempre de
-                las mismas personas.
+                «Equitativo» no es repartir el mismo número de tickets. Es que el <em>riesgo</em> y el esfuerzo vivan
+                repartidos: capacidad real, habilidad, qué tan crítico es cada encargo y en qué fase está el proyecto.
+              </p>
+              <p className="m-0 text-indigo-200/90">
+                Rota lo que pesa para que no siempre caiga en los mismos dos perfiles.
               </p>
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 p-5 sm:p-6">
-              <h3 className="text-white font-bold text-lg mb-2">¿Qué herramienta es imprescindible para workload management?</h3>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-5 sm:p-6 space-y-3">
+              <h3 className="text-white font-bold text-lg m-0">¿Hay alguna herramienta imprescindible para la carga de trabajo?</h3>
               <p className="m-0">
-                Ninguna por sí sola. Lo imprescindible es un acuerdo de equipo sobre dónde vive la verdad (tablero, hoja,
-                ERP) y disciplina de actualización. Elige categorías (tareas, horas, Gantt, encuestas) según tu punto
-                ciego principal.
+                Ninguna salva un equipo sin acuerdos. Lo que cuenta es decidir dónde está «la verdad» (tablero, hoja, ERP)
+                y cumplirla entre todos.
+              </p>
+              <p className="m-0 text-indigo-200/90">
+                Elige categorías —tareas, horas, Gantt, encuestas— según lo que ahora mismo no estás viendo.
               </p>
             </div>
           </div>
@@ -761,12 +785,12 @@ export function GestionCargaTrabajoEquipoArticle({
       <RevealOnScroll delay={1}>
         <section id="cta-gestion-carga" className="text-center mt-12 mb-8 scroll-mt-24">
           <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto mb-8">
-            Si quieres seguir en la misma línea operativa —métricas concretas y decisiones que se pueden tomar en
-            comité—, el siguiente paso natural es revisar los{' '}
+            Si te ha picado el gusanillo de pasar de intuición a números que sirvan en comité, aquí van dos lecturas que
+            suelen cerrar el círculo:{' '}
             <Link to="/blog/kpis-agencias-marketing-2026" className="text-violet-300 hover:text-white underline underline-offset-2">
               KPIs de rendimiento en agencias
             </Link>{' '}
-            o profundizar en{' '}
+            y{' '}
             <Link
               to="/blog/planificacion-proyectos-cronograma-recursos"
               className="text-violet-300 hover:text-white underline underline-offset-2"

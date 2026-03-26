@@ -89,6 +89,7 @@ export function LeyParkinsonArticle({
               Economist</em> en 1955. Más tarde lo desarrolló en el libro <em>Parkinson&apos;s Law: The Pursuit of
               Progress</em> (1957). La idea central es que el tiempo que dedicamos a una tarea tiende a ocupar todo el
               plazo que tenemos asignado, no el que objetivamente la tarea requiere.
+              La cicatriz suele ser “mismo entregable, más rondas”: se decide con buen timing… y acaba creciendo como si nadie hubiera definido un techo.
             </p>
             <p>
               En la práctica: si das una semana para hacer un borrador, la gente usará la semana; si das un día para el
@@ -125,6 +126,7 @@ export function LeyParkinsonArticle({
               su realización&quot;. Parkinson la ilustró con ejemplos burocráticos (comités que se reúnen hasta que se
               acaba el tiempo, trámites que duran lo que tarda el horario de oficina), pero la ley se aplica a cualquier
               tipo de tarea: informes, reuniones, proyectos, correos o decisiones.
+              Lo notas cuando en el planning pones “2 días” y al tercer día la gente todavía está puliendo detalles que no cambian la decisión.
             </p>
           </div>
 
@@ -157,6 +159,7 @@ export function LeyParkinsonArticle({
               Parkinson formuló la ley del tiempo en un contexto de <strong>crítica a la burocracia</strong>, no como
               manual de autodisciplina personal. Su mirada era sociológica: las organizaciones tienden a generar trabajo y
               puestos que se perpetúan aunque la función real (barcos, servicios, clientes) no lo exija al mismo ritmo.
+              En agencia se ve cuando el “comité de alineamiento” reaparece cada semana aunque nadie salga con una decisión clara.
             </p>
             <p>
               Un ejemplo que él mismo popularizó es el de la <strong>administración naval británica</strong>: entre 1914 y
@@ -197,6 +200,7 @@ export function LeyParkinsonArticle({
               el gasto sube para igualar el ingreso disponible). Es el paralelo financiero de &quot;el trabajo llena el
               tiempo&quot;: el dinero tiende a <strong>dispersarse</strong> mientras haya saldo percibido, no porque cada
               gasto sea racional.
+              La cicatriz suele ser el “imprevistos no usados” que se convierte en “imprevistos gastados” a final de mes.
             </p>
             <p>
               En una empresa, eso se ve en presupuestos que se consumen porque &quot;sobraba partida&quot;; en lo
@@ -224,6 +228,7 @@ export function LeyParkinsonArticle({
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
             <p>
               Reconocer la ley en situaciones concretas ayuda a combatirla. Algunos ejemplos típicos:
+              Se parece mucho a ese “te lo doy hoy” que termina siendo “para esta tarde” porque el margen desapareció y nadie lo dijo.
             </p>
           </div>
 
@@ -297,6 +302,7 @@ export function LeyParkinsonArticle({
               desproporcionado a temas <strong>fáciles de entender</strong> (el color de un cobertizo, un detalle de
               formato) pero dedica poco o nada a decisiones complejas y críticas (por ejemplo, un diseño técnico profundo)
               porque exigen esfuerzo cognitivo y riesgo.
+              La cicatriz se siente cuando la reunión termina “conforme” pero nadie puede decir qué decisión se tomó para el cliente.
             </p>
             <div className="rounded-2xl border border-amber-500/25 bg-amber-950/30 p-5 sm:p-6 my-6">
               <p className="text-amber-100/95 font-medium m-0">
@@ -325,6 +331,7 @@ export function LeyParkinsonArticle({
             <p>
               La observación de Parkinson era sobre todo cualitativa (burocracia y comités). En las últimas décadas,
               investigaciones en psicología y gestión del tiempo han aportado apoyo indirecto:
+              Y en el día a día se traduce en que cuando el plazo es claro, el equipo deja de “optimizar por miedo” y empieza a entregar.
             </p>
             <ul className="space-y-2 list-disc pl-6 text-indigo-100/90">
               <li>
@@ -360,6 +367,7 @@ export function LeyParkinsonArticle({
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
             <p>
               Si no se gestiona activamente el tiempo, la ley se traduce en retrasos, sobrecoste y desenfoque:
+              La cicatriz típica es que “todo estaba bajo control” hasta que el cliente pide ver algo funcionando y ya no hay ventanas.
             </p>
           </div>
 
@@ -394,6 +402,7 @@ export function LeyParkinsonArticle({
             <p>
               La Ley de Parkinson no es fatal: puedes usarla a tu favor reduciendo el tiempo &quot;disponible&quot; y
               haciendo que el trabajo se adapte a ese límite. Las prácticas más efectivas son:
+              Se nota cuando pasas de “cuando esté listo” a “este bloque termina aquí” y por fin el trabajo deja de expandirse sin permiso.
             </p>
           </div>
 
@@ -460,6 +469,7 @@ export function LeyParkinsonArticle({
             <p>
               A nivel individual, cada persona puede usar timeboxing o plazos personales. A nivel de equipo y agencia,
               hace falta que los límites sean visibles y compartidos:
+              La cicatriz final es cuando el límite está definido en papel, pero en la práctica el viernes a media mañana ya nadie lo respeta.
             </p>
             <ul className="space-y-2 list-disc pl-6 text-indigo-100/90">
               <li>Planificador por horas donde se vea el tiempo asignado por tarea y por persona.</li>

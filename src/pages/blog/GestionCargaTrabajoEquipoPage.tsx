@@ -10,16 +10,16 @@ const post = blogPosts.find((p) => p.slug === SLUG)!;
 const relatedPost = post?.relatedSlug ? blogPosts.find((p) => p.slug === post.relatedSlug) : null;
 
 const TOC_ITEMS = [
-  { id: 'lo-que-aprenderas', label: 'Lo que aprenderás' },
-  { id: 'que-es-carga-trabajo', label: 'Qué es la carga de trabajo' },
-  { id: 'causas-burnout-equipos', label: 'Causas del burnout' },
-  { id: 'senales-equipo-riesgo', label: 'Señales de riesgo' },
-  { id: 'framework-gestion-sostenible', label: 'Framework en 6 pasos' },
-  { id: 'rol-manager-equipo', label: 'Rol del manager' },
-  { id: 'burnout-instalado', label: 'Burnout ya instalado' },
-  { id: 'metricas-carga-equipo', label: 'Métricas clave' },
-  { id: 'herramientas-workload', label: 'Herramientas' },
-  { id: 'conclusion-gestion-carga', label: 'Conclusión' },
+  { id: 'lo-que-aprenderas', label: '1. Mapa rápido' },
+  { id: 'que-es-carga-trabajo', label: '2. Qué es la carga de trabajo' },
+  { id: 'causas-burnout-equipos', label: '3. Causas del burnout' },
+  { id: 'senales-equipo-riesgo', label: '4. Señales de riesgo' },
+  { id: 'framework-gestion-sostenible', label: '5. Framework en 6 pasos' },
+  { id: 'rol-manager-equipo', label: '6. Rol del manager' },
+  { id: 'burnout-instalado', label: '7. Burnout ya instalado' },
+  { id: 'metricas-carga-equipo', label: '8. Métricas clave' },
+  { id: 'herramientas-workload', label: '9. Herramientas' },
+  { id: 'conclusion-gestion-carga', label: '10. Conclusión' },
   { id: 'faq-gestion-carga-trabajo', label: 'Preguntas frecuentes' },
 ];
 
@@ -34,23 +34,23 @@ export default function GestionCargaTrabajoEquipoPage() {
   const faqItems = [
     {
       q: '¿Cuánto es demasiada carga de trabajo?',
-      a: 'Depende del rol, pero señales útiles: utilización sostenida muy por encima del ~85%, desviaciones sistemáticas estimado/real, aumento de retrabajo y caída de cumplimiento de plazos. Lo «demasiado» es cuando la carga deja de ser puntual y pasa a ser estructural sin ventanas de recuperación.',
+      a: 'No hay un número mágico: depende del rol. Pero ojo si la utilización se queda muy por encima del ~85% durante largo rato, si estimado y real nunca coinciden, si hay más retrabajo o si los plazos empiezan a caerse todos a la vez. En la práctica, «demasiado» es cuando deja de ser un pico y se convierte en rutina sin respiro.',
     },
     {
       q: '¿Cómo sé si mi equipo tiene burnout?',
-      a: 'Combina señales conductuales (cansancio, cinismo, baja calidad, aislamiento) con datos (plazos, carga por persona, criticidad). No esperes a la confesión explícita: pregunta de forma regular y crea canales seguros.',
+      a: 'Cruza lo que ves (cansancio, cinismo, calidad bajando, gente que se encierra) con lo que miden los datos: plazos, reparto de tareas gordas, quién acumula riesgo. Y no esperes a que alguien lo diga en una reunión: pregunta a menudo y deja sitio para respuestas honestas.',
     },
     {
       q: '¿Qué diferencia hay entre estrés y burnout?',
-      a: 'El estrés agudo puede movilizar; suele tener un «después» de alivio. El burnout es más crónico: agotamiento sostenido, desconexión del trabajo y sensación de baja eficacia. Requiere cambios de carga y de sistema, no solo «aguantar».',
+      a: 'El estrés puede venir con una fecha de caducidad: termina el lanzamiento y baja la tensión. El burnout se queda: agotamiento que no recuperas con un fin de semana, desgana con el trabajo y sensación de ir más lento pese a esforzarte. Ahí hace falta tocar el sistema, no solo «más aguante».',
     },
     {
       q: '¿Cómo repartir tareas equitativamente en una agencia?',
-      a: 'Equitativo no siempre es «el mismo número»: reparte según capacidad neta, habilidad, criticidad y momento del proyecto. Usa visibilidad común y rota exposición a tareas de alto riesgo para no depender siempre de las mismas personas.',
+      a: '«Equitativo» no es repartir el mismo número de tickets. Es que el riesgo y el esfuerzo vivan repartidos: capacidad real, habilidad, qué tan crítico es cada encargo y en qué fase está el proyecto. Rota lo que pesa para que no siempre caiga en los mismos dos perfiles.',
     },
     {
-      q: '¿Qué herramienta es imprescindible para workload management?',
-      a: 'Ninguna por sí sola. Lo imprescindible es un acuerdo de equipo sobre dónde vive la verdad (tablero, hoja, ERP) y disciplina de actualización. Elige categorías (tareas, horas, Gantt, encuestas) según tu punto ciego principal.',
+      q: '¿Hay alguna herramienta imprescindible para la carga de trabajo?',
+      a: 'Ninguna salva un equipo sin acuerdos. Lo que cuenta es decidir dónde está «la verdad» (tablero, hoja, ERP) y cumplirla entre todos. Elige categorías —tareas, horas, Gantt, encuestas— según lo que ahora mismo no estás viendo.',
     },
   ];
 
