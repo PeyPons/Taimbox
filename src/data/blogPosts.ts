@@ -12,6 +12,16 @@ export interface BlogPost {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: 'gestion-carga-trabajo-equipo-sin-burnout',
+    title: 'Cómo gestionar la carga de trabajo de tu equipo sin burnout',
+    description:
+      'Guía 2026: workload management, señales de sobrecarga, framework en 6 pasos, métricas (utilización, plazos, criticidad) y herramientas por categorías. Cultura, límites y visibilidad para equipos y agencias.',
+    date: '2026-03-26',
+    href: '/blog/gestion-carga-trabajo-equipo-sin-burnout',
+    readingMinutes: 24,
+    relatedSlug: 'kpis-agencias-marketing-2026',
+  },
+  {
     slug: 'plantilla-planificacion-recursos-agencia',
     title: 'Plantilla gratuita de planificación de recursos para agencias',
     description:

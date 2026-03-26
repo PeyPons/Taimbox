@@ -16,10 +16,12 @@ import {
   Search,
   Filter,
   SlidersHorizontal,
+  HeartPulse,
 } from 'lucide-react';
 import type { BlogPost } from '@/data/blogPosts';
 
 function getPostIcon(slug: string) {
+  if (slug.includes('burnout') || slug.includes('carga-trabajo')) return HeartPulse;
   if (slug.includes('kpis')) return BarChart3;
   if (slug.includes('plantilla')) return LayoutGrid;
   if (slug.includes('planificacion') || slug.includes('cronograma')) return LayoutGrid;
@@ -28,6 +30,7 @@ function getPostIcon(slug: string) {
 }
 
 function getPostAccent(slug: string): 'indigo' | 'emerald' | 'purple' {
+  if (slug.includes('burnout') || slug.includes('carga-trabajo')) return 'purple';
   if (slug.includes('plantilla')) return 'indigo';
   if (slug.includes('planificacion') || slug.includes('cronograma')) return 'indigo';
   if (slug.includes('timeboxing')) return 'emerald';

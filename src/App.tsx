@@ -38,6 +38,7 @@ import PlanificacionProyectosCronogramaRecursosPage from "./pages/blog/Planifica
 import LeyParkinsonPage from "./pages/blog/LeyParkinsonPage";
 import KpisAgenciasMarketingPage from "./pages/blog/KpisAgenciasMarketingPage";
 import PlantillaPlanificacionRecursosPage from "./pages/blog/PlantillaPlanificacionRecursosPage";
+import GestionCargaTrabajoEquipoPage from "./pages/blog/GestionCargaTrabajoEquipoPage";
 import EmployeeDashboardLandingPage from "./pages/EmployeeDashboardLandingPage";
 import PlannerLandingPage from "./pages/PlannerLandingPage";
 import TeamLandingPage from "./pages/TeamLandingPage";
@@ -160,6 +161,7 @@ const App = () => (
                         <Route path="/blog/ley-parkinson" element={<LeyParkinsonPage />} />
                         <Route path="/blog/kpis-agencias-marketing-2026" element={<KpisAgenciasMarketingPage />} />
                         <Route path="/blog/plantilla-planificacion-recursos-agencia" element={<PlantillaPlanificacionRecursosPage />} />
+                        <Route path="/blog/gestion-carga-trabajo-equipo-sin-burnout" element={<GestionCargaTrabajoEquipoPage />} />
                         {/* Redirección 301: URL antigua del artículo */}
                         <Route path="/que-es-timeboxing" element={<Navigate to="/blog/que-es-timeboxing" replace />} />
 

@@ -266,6 +266,20 @@ export function WhatIsTimeboxingArticle({ readingMinutes, tocItems, relatedPost 
                     </div>
                 </div>
 
+                <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed mb-6">
+                    A escala de equipo, el timeboxing es una pieza del puzzle: también importa quién acumula tareas críticas,
+                    cómo se negocia el alcance y qué métricas miras antes de que alguien diga «no puedo más». Si quieres
+                    conectar la técnica con reparto de carga, señales de saturación y cultura de límites, esta guía profundiza
+                    en cómo{' '}
+                    <Link
+                        to="/blog/gestion-carga-trabajo-equipo-sin-burnout"
+                        className="text-indigo-300 hover:text-white underline underline-offset-2"
+                    >
+                        evitar burnout con timeboxing
+                    </Link>{' '}
+                    como parte de un sistema de workload management.
+                </p>
+
                 {/* Cápsula Taimbox 3 */}
                 <div className="rounded-2xl border-2 border-emerald-500/40 bg-emerald-900/30 p-5 sm:p-8 flex flex-col md:flex-row gap-6 items-center shadow-2xl">
                     <div className="flex-1">
