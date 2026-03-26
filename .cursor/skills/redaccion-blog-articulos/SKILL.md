@@ -41,6 +41,8 @@ Los bloques que **organizan** y **rompen** la densidad mejoran la lectura:
 - **Numeración de secciones (guías largas)**: en artículos tipo guía, numerar los **H2 principales** en orden (`1.`, `2.`, …) y repetir el mismo orden en las **etiquetas del TOC** (`blogPosts` / `TOC_ITEMS`). Los **subpasos** van en **H3** (`Paso 1:`, apartados dentro de un bloque, etc.). El bloque **FAQ** al final puede usar H2 sin número (`Preguntas frecuentes`) para no competir con la numeración del cuerpo; mantener el mismo criterio en todos los posts largos.
 - **Espacio entre párrafos**: si dos `<p>` seguidos son bloques distintos (idea nueva), añadir margen explícito (`mb-6` al primero u otro patrón coherente con el artículo) para que no se peguen visualmente.
 - **Gráficos / visualizaciones**: rodea el bloque con al menos un **párrafo cicatriz** que conecte la forma visual con una consecuencia humana (p. ej. “ese desplome rojo es el coste de perder a tu mejor creativo…”). No dejes que el lector “lea solo el dibujo”: ancla el trazo a una escena reconocible. Si el gráfico tiene datos o avisos importantes, **no los escondas solo en hover**: repítelos en texto o en un callout siempre visible.
+  - Si el gráfico usa animación tipo “GIF” (evolución en el tiempo), el mensaje debe seguir siendo entendible **sin interacciones**: avisos/callouts siempre visibles.
+  - Si hay controles `pause/play`, al reanudar el gráfico debe **continuar desde donde se pausó** (no reiniciar desde el principio).
 
 ## Elementos dinámicos o “especiales”
 
@@ -73,6 +75,7 @@ Tras editar contenido o schema, mantener **coherencia** entre H3 del artículo, 
 - [ ] ¿El JSON-LD refleja el título visible de cada FAQ?
 - [ ] ¿`date` / `datePublished` coinciden con el **día real de publicación** (sin fechas inventadas ni futuras)?
 - [ ] ¿Si hay gráfico o visual fuerte, hay **cicatriz** alrededor (o callout visible) y no dependemos solo del hover para lo importante?
+- [ ] ¿Si hay animación con `pause/play`, el `play` retoma el mismo estado (no empieza de 0)?
 - [ ] ¿Hay 'cicatrices'? (¿Aparecen situaciones específicas de la 'trinchera' de una agencia?).
 - [ ] ¿He evitado la jerga de relleno? (¿He eliminado frases como 'cabe destacar' o 'es vital mencionar'?). 
 - [ ] ¿He 'mojado la camiseta'? (¿He tomado una postura clara sobre un problema incómodo del sector?).
