@@ -519,11 +519,17 @@ export default function AdsPage() {
 
       const spent = value.spent;
       const avgDailySpend = currentDay > 0 ? spent / currentDay : 0;
-      const forecast = avgDailySpend * daysInMonth;
+      const currentDailyBudget = value.autoDailyBudgetSum;
+      // Proyección: si hay suma de presupuestos diarios en campañas activas, proyectamos
+      // gasto futuro con ese tope (coherente con "Diario actual" y con el diario recomendado).
+      // Si no, mantenemos el ritmo medio del mes (puede desalinearse si acabas de cambiar límites en Google).
+      const forecast =
+        currentDailyBudget > 0
+          ? spent + currentDailyBudget * daysRemaining
+          : avgDailySpend * daysInMonth;
       const progress = finalBudget > 0 ? (spent / finalBudget) * 100 : 0;
       const remainingBudget = Math.max(0, finalBudget - spent);
       const recommendedDaily = daysRemaining > 0 ? remainingBudget / daysRemaining : 0;
-      const currentDailyBudget = value.autoDailyBudgetSum;
       const globalRoas = spent > 0 ? value.total_conversions_val / spent : 0;
 
       // Nuevas métricas calculadas
@@ -920,10 +926,27 @@ export default function AdsPage() {
                         )}
 
                         {/* Proyección */}
-                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                          <span className="text-sm text-slate-600">Proyección fin de mes</span>
+                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg gap-2">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-sm text-slate-600 cursor-help border-b border-dotted border-slate-300">
+                                Proyección fin de mes
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs text-xs">
+                              {client.currentDailyBudget > 0 ? (
+                                <>
+                                  Estimación: gasto acumulado + (suma de presupuestos diarios de campañas activas × días restantes del mes). Va alineada con el diario que muestra Google en esta vista.
+                                </>
+                              ) : (
+                                <>
+                                  Sin presupuesto diario por campaña en los datos sincronizados: se usa el gasto medio del mes proyectado al calendario completo.
+                                </>
+                              )}
+                            </TooltipContent>
+                          </Tooltip>
                           <span className={cn(
-                            "font-bold",
+                            "font-bold shrink-0",
                             client.forecast > client.budget ? "text-red-600" : "text-slate-700"
                           )}>
                             {formatCurrency(client.forecast)}

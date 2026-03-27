@@ -394,7 +394,17 @@ export default function MetaAdsPage() {
                             </span>
                           </div>
                         )}
-                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"><span className="text-sm text-slate-600">Proyección fin de mes</span><span className={cn("font-bold", client.forecast > client.budget ? "text-red-600" : "text-slate-700")}>{formatCurrency(client.forecast)}</span></div>
+                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg gap-2">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-sm text-slate-600 cursor-help border-b border-dotted border-slate-300">Proyección fin de mes</span>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs text-xs">
+                              Usa el gasto medio diario del mes (invertido ÷ días transcurridos) proyectado al calendario completo. Si cambiaste el ritmo en Meta hace poco, puede no coincidir con el objetivo medio diario; ese valor es el ritmo para cerrar en el presupuesto objetivo de Taimbox.
+                            </TooltipContent>
+                          </Tooltip>
+                          <span className={cn("font-bold shrink-0", client.forecast > client.budget ? "text-red-600" : "text-slate-700")}>{formatCurrency(client.forecast)}</span>
+                        </div>
                       </div>
                       <div className="bg-white rounded-lg border overflow-hidden"><div className="max-h-[350px] overflow-y-auto"><table className="w-full text-xs"><thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b"><tr><th className="px-3 py-2.5 text-left">Campaña</th><th className="px-2 py-2.5 text-right">Gasto</th><th className="px-2 py-2.5 text-right">Valor</th>{client.isSalesAccount && <th className="px-2 py-2.5 text-center">ROAS</th>}</tr></thead><tbody className="divide-y divide-slate-100">{client.campaigns.map((camp, idx) => { const roas = camp.cost > 0 ? (camp.conversions_value || 0) / camp.cost : 0; return <tr key={idx} className="hover:bg-slate-50"><td className="px-3 py-2.5"><div className="space-y-1"><AnonymizedContent isActive={isAnonymized} className="font-medium text-slate-700 line-clamp-2" placeholder={anonymizer.campaign(camp.campaign_id)}>{camp.campaign_name}</AnonymizedContent><div className="flex items-center gap-2 text-[10px] text-slate-400"><span className="flex items-center gap-1"><span className={cn("w-1.5 h-1.5 rounded-full", camp.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-slate-300')} />{camp.status === 'ENABLED' ? 'Activa' : 'Pausada'}</span>{client.is_group && (camp.original_client_name || camp.original_client_id) && <AnonymizedContent isActive={isAnonymized} className="truncate max-w-[100px]" placeholder={anonymizer.account(camp.original_client_id || camp.client_id || '')}>| {formatProjectName(camp.original_client_name || '')}</AnonymizedContent>}</div></div></td><td className="px-2 py-2.5 text-right font-medium text-slate-900">{formatCurrency(camp.cost)}</td><td className="px-2 py-2.5 text-right text-emerald-600">{formatCurrency(camp.conversions_value || 0)}</td>{client.isSalesAccount && <td className="px-2 py-2.5 text-center"><Badge variant="outline" className={cn("text-[10px]", getRoasColor(roas))}>{roas.toFixed(2)}</Badge></td>}</tr>; })}{client.campaigns.length === 0 && <tr><td colSpan={4} className="px-3 py-8 text-center text-slate-400">Sin campañas</td></tr>}</tbody></table></div></div>
                     </div>
