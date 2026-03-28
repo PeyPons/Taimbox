@@ -49,7 +49,7 @@ El archivo más importante para contratos de datos.
 **Ubicación**: `src/App.tsx`
 
 Configura la jerarquía de **Providers** y el Router con las rutas de la aplicación.
-- **Jerarquía**: `Helmet` > `QueryClient` > `Auth` > `Agency` > `App` > `Goals` > `Tooltip` > `BrowserRouter` > **Toaster (Sileo)** > `Notification` > rutas.
+- **Jerarquía**: `Helmet` > `QueryClient` > `Auth` > `Agency` > `App` > `Goals` > `Tooltip` > `BrowserRouter` > **Toaster (Sonner)** > `Notification` > rutas.
 - **Protección**: Usa `ProtectedRoute` (Auth) y `PermissionProtectedRoute` (RBAC).
 
 ### 1.3 `src/lib/supabase.ts`
@@ -104,8 +104,8 @@ Para optimizar rendimiento, usamos `loadedMonthsRef`.
 - **`GoalsContext`**: OKRs y Objetivos Profesionales.
 - **`NotificationContext`**: Campanita con historial persistido en `tb_inbox_{agencyId}_{userId}` (máx. 50 entradas); migración desde la clave legacy `notifications` si existía.
 - **Motor de avisos**: `src/hooks/useNotificationEngine.ts` (`NotificationEngineHost`) evalúa reglas cuando cambian datos o al recuperar foco. Los avisos automáticos (presupuesto, jueves con ≥2 tareas abiertas, fin de mes ≤3 días) **solo** se añaden a la campanita (`pushSystemNotification`), no como toasts. Deduplicación de “ya avisado” en `tb_notify_state_{agencyId}_{userId}` — `src/lib/notificationState.ts`.
-- **Sileo** (`src/lib/notify.ts`): solo para feedback de acciones en la app (guardar, errores, login, etc.), no para las reglas automáticas anteriores.
-- **Toasts globales**: `src/lib/notify.ts` es la **única** fachada permitida para mostrar toasts (no importar el paquete `sileo` fuera de ahí). Compatibilidad API tipo Sonner (`toast.success` / `error` / …) y `toastLegacy` para el patrón `{ title, description, variant }` vía `useToast` en `src/hooks/use-toast.ts`. Estilos: `import 'sileo/styles.css'` en `main.tsx`.
+- **Sonner** (`sonner` + `src/lib/notify.ts`): solo para feedback de acciones en la app (guardar, errores, login, etc.), no para las reglas automáticas anteriores.
+- **Toasts globales**: `src/lib/notify.ts` es la **única** fachada permitida para mostrar toasts (no importar `sonner` directamente salvo el componente `Toaster` en `src/components/ui/sonner.tsx`). API `toast.success` / `error` / … y `toastLegacy` para `{ title, description, variant }` vía `useToast` en `src/hooks/use-toast.ts`. Ubicación visual: **abajo a la derecha**, z-index por encima de modales Radix.
 - **`AuthContext`**: Sesión de usuario Supabase.
 - **`DemoContext`**: Datos mock para modo demostración.
 - **`PrivacyDemoProvider`** (`PrivacyDemoContext`): integración **Privacidad y demostración** (`anonymize_ads_for_video`); anonimiza sobre todo **nombres de proyecto** (y otros tipos donde aplique) vía `SensitiveText` + `createPrivacyAnonymizer`. Ver `DOCUMENTACION.md` (integración modo demostración).

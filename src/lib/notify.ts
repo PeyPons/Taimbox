@@ -1,41 +1,40 @@
 /**
- * Fachada única para toasts (Sileo). No importar `sileo` fuera de este módulo.
+ * Fachada única para toasts (Sonner). No importar `sonner` fuera de este módulo salvo el `<Toaster />` en `App`.
  */
-import { sileo, Toaster as SileoToaster } from 'sileo';
+import { toast as sonnerToast } from 'sonner';
 
-export { SileoToaster as Toaster };
+export { Toaster } from '@/components/ui/sonner';
 
 type SonnerLikeOptions = {
   description?: string;
   duration?: number | null;
 };
 
-function toSileoOpts(message: string, opts?: SonnerLikeOptions) {
-  const base: { title?: string; description?: string; duration?: number | null } = {
-    duration: opts?.duration,
-  };
-  if (opts?.description) {
-    base.title = message;
-    base.description = opts.description;
-  } else {
-    base.title = message;
-  }
-  return base;
+function toExternalToast(opts?: SonnerLikeOptions) {
+  const out: { description?: string; duration?: number } = {};
+  if (opts?.description) out.description = opts.description;
+  if (opts?.duration === null) out.duration = Infinity;
+  else if (opts?.duration !== undefined) out.duration = opts.duration;
+  return out;
 }
 
 export const toast = {
-  success: (message: string, opts?: SonnerLikeOptions) => sileo.success(toSileoOpts(message, opts)),
+  success: (message: string, opts?: SonnerLikeOptions) =>
+    sonnerToast.success(message, toExternalToast(opts)),
 
-  error: (message: string, opts?: SonnerLikeOptions) => sileo.error(toSileoOpts(message, opts)),
+  error: (message: string, opts?: SonnerLikeOptions) =>
+    sonnerToast.error(message, toExternalToast(opts)),
 
-  warning: (message: string, opts?: SonnerLikeOptions) => sileo.warning(toSileoOpts(message, opts)),
+  warning: (message: string, opts?: SonnerLikeOptions) =>
+    sonnerToast.warning(message, toExternalToast(opts)),
 
-  info: (message: string, opts?: SonnerLikeOptions) => sileo.info(toSileoOpts(message, opts)),
+  info: (message: string, opts?: SonnerLikeOptions) =>
+    sonnerToast.info(message, toExternalToast(opts)),
 
-  promise: sileo.promise.bind(sileo) as typeof sileo.promise,
+  promise: sonnerToast.promise.bind(sonnerToast),
 };
 
-/** Compatibilidad con el antiguo API tipo Radix/shadcn `{ title, description, variant }`. */
+/** Compatibilidad con el API tipo Radix/shadcn `{ title, description, variant }`. */
 export function toastLegacy(options: {
   title?: string;
   description?: string;
@@ -43,16 +42,13 @@ export function toastLegacy(options: {
 }): void {
   const { title, description, variant } = options;
   if (variant === 'destructive') {
-    sileo.error({
-      title: title || 'Error',
-      description,
-    });
+    sonnerToast.error(title || 'Error', { description });
     return;
   }
   if (title && description) {
-    sileo.success({ title, description });
+    sonnerToast.success(title, { description });
   } else {
-    sileo.success({ title: title || description || '' });
+    sonnerToast.success(title || description || '');
   }
 }
 
@@ -60,6 +56,6 @@ export function useToastShim() {
   return {
     toast: toastLegacy,
     toasts: [] as const,
-    dismiss: () => sileo.clear(),
+    dismiss: () => sonnerToast.dismiss(),
   };
 }

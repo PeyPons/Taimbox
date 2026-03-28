@@ -144,7 +144,7 @@ const App = () => (
                   <TooltipProvider>
                     <BrandingEffect />
                     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                    <Toaster theme="system" position="top-right" />
+                    <Toaster />
                     <NotificationProvider>
                       <NotificationEngineHost />
                       <ScrollToTop />
