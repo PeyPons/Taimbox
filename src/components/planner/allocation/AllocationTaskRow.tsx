@@ -1,33 +1,12 @@
 import { Allocation, Employee, TaskTransfer, WeeklyFeedback } from '@/types';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-    MoreHorizontal,
-    Pencil,
-    ArrowRightLeft,
-    ArrowRightCircle,
-    AlertTriangle,
-    Lock,
-    Link as LinkIcon,
-    CheckCircle2,
-    Users,
-    Clock,
-    TrendingUp,
-    TrendingDown
-} from 'lucide-react';
-import { getWeekEndDate } from '@/utils/dateUtils';
-import { parseISO } from 'date-fns';
+import { Link as LinkIcon, CheckCircle2, Users, Clock, TrendingUp, TrendingDown } from 'lucide-react';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
+import { PlannerTaskContextMenu } from '@/components/planner/allocation/PlannerTaskContextMenu';
 import { TaskTimer } from '@/components/employee/TaskTimer';
 import { useAgency } from '@/contexts/AgencyContext';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
@@ -52,6 +31,8 @@ interface AllocationTaskRowProps {
     showAllWeeks: boolean;
     setTransferTask: (alloc: Allocation) => void;
     setTransferDialogOpen: (open: boolean) => void;
+    /** Abre el modal de cierre Weekly centrado en la tarea (planificador) */
+    onOpenWeeklyForTask?: (alloc: Allocation) => void;
     isWeeklyEnabled: boolean;
     /** En móvil: fila más alta y táctil */
     isMobile?: boolean;
@@ -81,6 +62,7 @@ export function AllocationTaskRow({
     showAllWeeks,
     setTransferTask,
     setTransferDialogOpen,
+    onOpenWeeklyForTask,
     isWeeklyEnabled,
     isMobile = false,
     showTaskTimer = false,
@@ -220,58 +202,24 @@ export function AllocationTaskRow({
                                 )}
                             </div>
 
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className={cn("opacity-0 group-hover:opacity-100 transition-opacity shrink-0", isMobile ? "h-11 w-11 min-h-[44px] min-w-[44px]" : "h-5 w-5")}><MoreHorizontal className={isMobile ? "h-4 w-4" : "h-3 w-3"} /></Button></DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                        onClick={() => onStartEditFull()}
-                                        disabled={(() => {
-                                            if (pendingTransfer) return true;
-                                            if (!isWeeklyEnabled) return false;
-                                            try {
-                                                const taskWeekDate = parseISO(alloc.weekStartDate);
-                                                const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
-                                                return taskWeekEnd < new Date();
-                                            } catch {
-                                                return false;
-                                            }
-                                        })()}
-                                    >
-                                        {pendingTransfer ? <Lock className="mr-2 h-3.5 w-3.5" /> : <Pencil className="mr-2 h-3.5 w-3.5" />}
-                                        {pendingTransfer ? 'Transferencia pendiente' : 'Editar'}
-                                    </DropdownMenuItem>
-                                    {!pendingTransfer && (
-                                        <DropdownMenuItem
-                                            onClick={() => {
-                                                setTransferTask(alloc);
-                                                setTransferDialogOpen(true);
-                                            }}
-                                        >
-                                            <ArrowRightLeft className="mr-2 h-3.5 w-3.5" /> Transferir
-                                        </DropdownMenuItem>
-                                    )}
-                                    {isWeeklyEnabled && (() => {
-                                        try {
-                                            const taskWeekDate = parseISO(alloc.weekStartDate);
-                                            const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
-                                            const isPastWeek = taskWeekEnd < new Date();
-                                            if (isPastWeek) {
-                                                return (
-                                                    <DropdownMenuItem disabled className="text-xs text-amber-600">
-                                                        <AlertTriangle className="mr-2 h-3.5 w-3.5" /> Usa Weekly para gestionar
-                                                    </DropdownMenuItem>
-                                                );
-                                            }
-                                            return null;
-                                        } catch {
-                                            return null;
-                                        }
-                                    })()}
-                                    {nextWeekStart && (
-                                        <DropdownMenuItem onClick={() => onMoveTask(nextWeekStart)}><ArrowRightCircle className="mr-2 h-3.5 w-3.5" /> Mover sem.</DropdownMenuItem>
-                                    )}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            <PlannerTaskContextMenu
+                                alloc={alloc}
+                                pendingTransfer={!!pendingTransfer}
+                                isWeeklyEnabled={isWeeklyEnabled}
+                                weeklyCloseDay={weeklyCloseDay}
+                                nextWeekStart={nextWeekStart}
+                                onStartEditFull={() => onStartEditFull()}
+                                onTransfer={() => {
+                                    setTransferTask(alloc);
+                                    setTransferDialogOpen(true);
+                                }}
+                                onMoveTask={onMoveTask}
+                                onOpenWeeklyForTask={onOpenWeeklyForTask}
+                                triggerClassName={cn(
+                                    isMobile ? 'h-11 w-11 min-h-[44px] min-w-[44px]' : 'h-5 w-5'
+                                )}
+                                iconClassName={isMobile ? 'h-4 w-4' : 'h-3 w-3'}
+                            />
                         </div>
                     )}
                 </div>

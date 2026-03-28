@@ -14,9 +14,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { Allocation, Project } from '@/types';
-import { CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, TrendingUp, TrendingDown, CheckCircle2, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc, GanttChart, ArrowLeft, ArrowRight, Filter, SlidersHorizontal, ArrowRightLeft, Lock, Check, Plus, Pencil, Link as LinkIcon, AlertTriangle, AlertOctagon } from 'lucide-react';
+import { CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, TrendingUp, TrendingDown, CheckCircle2, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc, GanttChart, ArrowLeft, ArrowRight, Filter, SlidersHorizontal, ArrowRightLeft, Lock, Check, Plus, Link as LinkIcon, AlertTriangle, AlertOctagon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth, getWeekEndDate } from '@/utils/dateUtils';
+import { getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth, getWeekEndDate, isAllocationWeekPastForWeekly } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { format, addMonths, subMonths, isSameMonth, parseISO, addDays, isBefore, startOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -28,6 +28,7 @@ import { useAllocationSheet, ProjectBudgetStatus } from '@/hooks/useAllocationSh
 import { useAllocationActions } from '@/hooks/useAllocationActions';
 import { AllocationProjectHeader } from '@/components/planner/allocation/AllocationProjectHeader';
 import { AllocationTaskRow } from '@/components/planner/allocation/AllocationTaskRow';
+import { PlannerTaskContextMenu } from '@/components/planner/allocation/PlannerTaskContextMenu';
 import { TaskTimer } from '@/components/employee/TaskTimer';
 import { BatchTaskRow } from '@/components/planner/BatchTaskRow';
 import { AllocationFormDialog } from '@/components/planner/allocation/AllocationFormDialog';
@@ -79,6 +80,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   // Estados para los sheets de Timeline y Weekly
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [weeklyOpen, setWeeklyOpen] = useState(false);
+  const [weeklyFocusAllocationId, setWeeklyFocusAllocationId] = useState<string | null>(null);
 
   // Inicializar con la semana actual si no se especifica otra
   const getInitialViewDate = () => {
@@ -772,7 +774,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                           variant="ghost"
                           size="sm"
                           className={cn("h-7 px-2 text-slate-500 hover:text-indigo-600", isMobile && "h-11 min-h-[44px] px-3")}
-                          onClick={() => setWeeklyOpen(true)}
+                          onClick={() => {
+                            setWeeklyFocusAllocationId(null);
+                            setWeeklyOpen(true);
+                          }}
                         >
                           <TrendingUp className="h-3.5 w-3.5" />
                         </Button>
@@ -929,6 +934,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
 
                       // VISTA TABULAR para semana individual
                       if (!effectiveShowAllWeeks) {
+                        const nextWeekNavStart =
+                          activeWeekIndex < weeks.length - 1
+                            ? weeks[activeWeekIndex + 1].weekStart
+                            : undefined;
                         return (
                           <div key={weekStr} className="flex-1 min-w-0 overflow-x-hidden w-full max-w-full">
                             {/* Header compacto de la semana */}
@@ -1041,24 +1050,33 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                         {sortedTasks.map((alloc) => {
                                           const isCompleted = alloc.status === 'completed';
                                           const taskBalance = isCompleted ? round2((alloc.hoursComputed || 0) - (alloc.hoursActual || 0)) : 0;
+                                          const pendingTransferMobile = (outgoingTransfers || []).find(t => t.allocationId === alloc.id && t.status === 'pending');
 
                                           // Limpieza de nombre simplificada para móvil
                                           let cleanName = alloc.taskName || 'Tarea';
                                           cleanName = cleanName.replace(/\s*\(transferida de .+?(?:, original: .+?)?\)/g, '').trim();
 
                                           return (
-                                            <div key={alloc.id} className={cn("flex flex-col gap-2 p-3 bg-white touch-manipulation", isCompleted && "bg-slate-50/50")}>
+                                            <div key={alloc.id} className={cn("group flex flex-col gap-2 p-3 bg-white touch-manipulation", isCompleted && "bg-slate-50/50")}>
                                               <div className="flex items-start justify-between gap-3">
                                                 <div className="flex items-start gap-3 flex-1 min-w-0">
                                                   <Checkbox
                                                     checked={isCompleted}
                                                     onCheckedChange={() => toggleTaskCompletion(alloc)}
-                                                    className={cn("mt-1 shrink-0", isCompleted && "data-[state=checked]:bg-emerald-600")}
+                                                    disabled={!!pendingTransferMobile}
+                                                    className={cn("mt-1 shrink-0", isCompleted && "data-[state=checked]:bg-emerald-600", pendingTransferMobile && "opacity-50")}
                                                   />
                                                   <div className="flex flex-col gap-1 min-w-0 flex-1">
                                                     <span
-                                                      className={cn("font-medium text-sm leading-tight break-words cursor-pointer", isCompleted && "line-through text-slate-400")}
-                                                      onClick={() => startEditFull(alloc)}
+                                                      className={cn("font-medium text-sm leading-tight break-words cursor-pointer", isCompleted && "line-through text-slate-400", pendingTransferMobile && "cursor-not-allowed opacity-70")}
+                                                      onClick={() => {
+                                                        if (pendingTransferMobile) return;
+                                                        if (isWeeklyEnabled && isAllocationWeekPastForWeekly(alloc.weekStartDate, weeklyCloseDay)) {
+                                                          toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
+                                                          return;
+                                                        }
+                                                        startEditFull(alloc);
+                                                      }}
                                                     >
                                                       <SensitiveText kind="task" id={alloc.id}>
                                                         {formatProjectName(cleanName)}
@@ -1086,32 +1104,37 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                     </div>
                                                   </div>
                                                 </div>
-                                                <div className="flex items-center gap-1 shrink-0">
-                                                  <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                      <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-11 w-11 min-h-[44px] text-indigo-400 hover:text-indigo-600"
-                                                        onClick={() => {
-                                                          setTransferTask(alloc);
-                                                          setTransferDialogOpen(true);
-                                                        }}
-                                                      >
-                                                        <ArrowRightLeft className="h-4 w-4" />
-                                                      </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent side="top">Transferir tarea</TooltipContent>
-                                                  </Tooltip>
-                                                  <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-11 w-11 min-h-[44px] text-slate-400 shrink-0"
-                                                    onClick={() => startEditFull(alloc)}
-                                                  >
-                                                    <Pencil className="h-4 w-4" />
-                                                  </Button>
-                                                </div>
+                                                <PlannerTaskContextMenu
+                                                  alloc={alloc}
+                                                  pendingTransfer={!!pendingTransferMobile}
+                                                  isWeeklyEnabled={isWeeklyEnabled}
+                                                  weeklyCloseDay={weeklyCloseDay}
+                                                  nextWeekStart={nextWeekNavStart}
+                                                  onStartEditFull={() => {
+                                                    if (pendingTransferMobile) return;
+                                                    if (isWeeklyEnabled && isAllocationWeekPastForWeekly(alloc.weekStartDate, weeklyCloseDay)) {
+                                                      toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
+                                                      return;
+                                                    }
+                                                    startEditFull(alloc);
+                                                  }}
+                                                  onTransfer={() => {
+                                                    setTransferTask(alloc);
+                                                    setTransferDialogOpen(true);
+                                                  }}
+                                                  onMoveTask={(target) => moveTaskToWeek(alloc, target)}
+                                                  onOpenWeeklyForTask={
+                                                    isWeeklyEnabled
+                                                      ? (a) => {
+                                                          setWeeklyFocusAllocationId(a.id);
+                                                          setWeeklyOpen(true);
+                                                        }
+                                                      : undefined
+                                                  }
+                                                  menuTriggerMode="always"
+                                                  triggerClassName="h-11 w-11 min-h-[44px] min-w-[44px]"
+                                                  iconClassName="h-4 w-4"
+                                                />
                                               </div>
                                             </div>
                                           );
@@ -1152,7 +1175,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                 <tr
                                                   key={alloc.id}
                                                   className={cn(
-                                                    "hover:bg-slate-50 transition-colors",
+                                                    "group hover:bg-slate-50 transition-colors",
                                                     isCompleted && "bg-slate-50/50",
                                                     !isCompleted && depTask && !isDepReady && "bg-amber-50/50"
                                                   )}
@@ -1410,54 +1433,37 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                       <span className="text-slate-200 text-xs">-</span>
                                                     )}
                                                   </td>
-                                                  <td className="py-2 px-3">
-                                                    <div className="flex items-center gap-1">
-                                                      {/* Botón Transferir */}
-                                                      <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                          <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            disabled={!!pendingTransfer}
-                                                            className="h-7 w-7 p-0 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 disabled:opacity-30"
-                                                            onClick={() => {
-                                                              setTransferTask(alloc);
-                                                              setTransferDialogOpen(true);
-                                                            }}
-                                                          >
-                                                            {pendingTransfer ? <ArrowRightLeft className="h-3.5 w-3.5 animate-pulse text-amber-500" /> : <ArrowRightLeft className="h-3.5 w-3.5" />}
-                                                          </Button>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent side="top">Transferir a otro compañero</TooltipContent>
-                                                      </Tooltip>
-                                                      {/* Botón Editar */}
-                                                      <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        disabled={!!pendingTransfer}
-                                                        className="h-7 w-7 p-0 disabled:opacity-30"
-                                                        onClick={() => {
+                                                  <td className="py-2 px-3 text-center">
+                                                    <div className="flex justify-center">
+                                                      <PlannerTaskContextMenu
+                                                        alloc={alloc}
+                                                        pendingTransfer={!!pendingTransfer}
+                                                        isWeeklyEnabled={isWeeklyEnabled}
+                                                        weeklyCloseDay={weeklyCloseDay}
+                                                        nextWeekStart={nextWeekNavStart}
+                                                        onStartEditFull={() => {
                                                           if (pendingTransfer) return;
-                                                          // BLOQUEO: No permitir editar tareas de semanas pasadas (solo si Weekly está activo)
-                                                          if (isWeeklyEnabled) {
-                                                            try {
-                                                              const taskWeekDate = parseISO(alloc.weekStartDate);
-                                                              const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
-                                                              const today = new Date();
-
-                                                              if (taskWeekEnd < today) {
-                                                                toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
-                                                                return;
-                                                              }
-                                                            } catch {
-                                                              // Si hay error parseando la fecha, permitir editar (por seguridad)
-                                                            }
+                                                          if (isWeeklyEnabled && isAllocationWeekPastForWeekly(alloc.weekStartDate, weeklyCloseDay)) {
+                                                            toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
+                                                            return;
                                                           }
                                                           startEditFull(alloc);
                                                         }}
-                                                      >
-                                                        <Pencil className="h-3.5 w-3.5" />
-                                                      </Button>
+                                                        onTransfer={() => {
+                                                          setTransferTask(alloc);
+                                                          setTransferDialogOpen(true);
+                                                        }}
+                                                        onMoveTask={(target) => moveTaskToWeek(alloc, target)}
+                                                        onOpenWeeklyForTask={
+                                                          isWeeklyEnabled
+                                                            ? (a) => {
+                                                                setWeeklyFocusAllocationId(a.id);
+                                                                setWeeklyOpen(true);
+                                                              }
+                                                            : undefined
+                                                        }
+                                                        triggerClassName="h-7 w-7"
+                                                      />
                                                     </div>
                                                   </td>
                                                 </tr>
@@ -1853,6 +1859,14 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                             isMobile={isMobile}
                                             showTaskTimer={isTimeTrackerEnabled}
                                             onTimeLogged={handleTimeLogged}
+                                            onOpenWeeklyForTask={
+                                              isWeeklyEnabled
+                                                ? (a) => {
+                                                    setWeeklyFocusAllocationId(a.id);
+                                                    setWeeklyOpen(true);
+                                                  }
+                                                : undefined
+                                            }
                                           />
                                         ))}
                                       </div>
@@ -2046,9 +2060,13 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
       />
       <WeeklyReportDialog
         open={weeklyOpen}
-        onOpenChange={setWeeklyOpen}
+        onOpenChange={(o) => {
+          setWeeklyOpen(o);
+          if (!o) setWeeklyFocusAllocationId(null);
+        }}
         employeeId={employeeId}
         viewDate={viewDate}
+        focusAllocationId={weeklyFocusAllocationId}
       />
 
       {/* Dialog de Transferencia de Tareas */}

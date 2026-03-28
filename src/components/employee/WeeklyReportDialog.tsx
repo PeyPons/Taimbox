@@ -14,10 +14,14 @@ import { es } from 'date-fns/locale';
 import { CheckCircle2, AlertCircle, Plus, Users, Clock, Trash2, Search } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from '@/lib/notify';
-import { getStorageKey, getWeeksForMonth, isAllocationInEffectiveMonth, getWeekEndDate, collectSelectableFutureWeekSlots } from '@/utils/dateUtils';
+import { getStorageKey, getWeeksForMonth, isAllocationInEffectiveMonth, getWeekEndDate } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
+import {
+  useWeeklyCloseMutations,
+  parseWeeklyCloseHours,
+  normalizeWeeklyHourInput,
+} from '@/hooks/useWeeklyCloseMutations';
 import { cn } from '@/lib/utils';
-import { useAgency } from '@/contexts/AgencyContext';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 
 function WeeklyOptionalNote({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -40,31 +44,38 @@ interface WeeklyReportDialogProps {
   onOpenChange: (open: boolean) => void;
   employeeId: string;
   viewDate: Date;
+  /**
+   * Desde el planificador: abre el mismo modal centrado en una allocation concreta
+   * (se inyecta en la lista aunque la semana aún no cierre o el filtro mensual la excluya).
+   */
+  focusAllocationId?: string | null;
 }
 
-export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }: WeeklyReportDialogProps) {
-  const { allocations, projects, clients, employees, absences, teamEvents, weeklyFeedback, updateAllocation, addAllocation, deleteAllocation, addWeeklyFeedback, getEmployeeLoadForWeek, loadDataForMonth, ensureMonthLoaded } = useApp();
+export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, focusAllocationId = null }: WeeklyReportDialogProps) {
+  const { allocations, projects, clients, employees, absences, teamEvents, weeklyFeedback, getEmployeeLoadForWeek, loadDataForMonth, ensureMonthLoaded } = useApp();
   const weeklyCloseDay = useWeeklyCloseDay();
   const { formatName: formatProjectName } = useProjectAliasing();
-  const { currentAgency } = useAgency();
-  const preference = currentAgency?.settings?.hoursTrackingPreference;
   const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
-  const normalizeNumber = (value: string): string => value.replace(',', '.');
-  const parseHours = (value: string): number => {
-    const parsed = parseFloat(normalizeNumber(value));
-    return isNaN(parsed) ? 0 : parsed;
-  };
+  const {
+    preference,
+    applyMoveToEmployee,
+    applyJustify,
+    applyKeep,
+    applyRollover,
+    applyDistribute,
+    getSlotsForTaskWeek,
+  } = useWeeklyCloseMutations(viewDate);
 
-  const [taskActions, setTaskActions] = useState<Record<string, 'move' | 'moveToEmployee' | 'justify' | 'distribute' | 'keep' | 'rollover' | null>>({});
+  const parseHours = parseWeeklyCloseHours;
+
+  const [taskActions, setTaskActions] = useState<Record<string, 'postpone' | 'moveToEmployee' | 'justify' | 'distribute' | 'keep' | null>>({});
   const [taskComments, setTaskComments] = useState<Record<string, string>>({});
   const [distributionTasks, setDistributionTasks] = useState<Record<string, Array<{ id: string; taskName: string; hours: string; weekDate: string }>>>({});
   const [moveToEmployee, setMoveToEmployee] = useState<Record<string, string>>({});
   const [moveToWeek, setMoveToWeek] = useState<Record<string, string>>({});
-  const [moveToMyWeek, setMoveToMyWeek] = useState<Record<string, string>>({});
   const [keepTaskHours, setKeepTaskHours] = useState<Record<string, { actual: string; computed: string }>>({});
   const [rolloverHours, setRolloverHours] = useState<Record<string, { actual: string; computed: string }>>({});
-  const [rolloverNewHours, setRolloverNewHours] = useState<Record<string, string>>({});
   const [rolloverTargetWeek, setRolloverTargetWeek] = useState<Record<string, string>>({});
   const [modalSearch, setModalSearch] = useState('');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -101,7 +112,6 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
 
   const { openTasks, transferredTasks } = useMemo(() => {
     const today = new Date();
-    const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
     const processedByWeeklyIds = new Set(
       weeklyFeedback
         .filter(fb => fb.allocationId && (
@@ -118,6 +128,20 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
 
     const open: typeof allocations = [];
     const transferred: typeof allocations = [];
+
+    const pushFocusedIfMissing = () => {
+      if (!open || !focusAllocationId) return;
+      const focused = allocations.find(a => a.id === focusAllocationId && a.employeeId === employeeId);
+      if (!focused || processedByWeeklyIds.has(focused.id) || focused.status === 'completed') return;
+      const seen = new Set([...open.map(t => t.id), ...transferred.map(t => t.id)]);
+      if (seen.has(focused.id)) return;
+      try {
+        const isTransferredTask = focused.transferredFromAllocationId !== undefined && focused.transferredFromAllocationId !== null
+          || focused.taskName?.includes('(transferida de');
+        if (isTransferredTask) transferred.push(focused);
+        else open.push(focused);
+      } catch { /* ignore */ }
+    };
 
     allocations.forEach(a => {
       if (a.employeeId !== employeeId) return;
@@ -138,15 +162,19 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
       } catch { /* ignore parse errors */ }
     });
 
+    pushFocusedIfMissing();
+
     return {
       openTasks: Array.from(new Map(open.map(t => [t.id, t])).values()),
       transferredTasks: Array.from(new Map(transferred.map(t => [t.id, t])).values())
     };
-  }, [allocations, employeeId, viewDate, weeklyFeedback]);
+  }, [allocations, employeeId, viewDate, weeklyFeedback, weeklyCloseDay, open, focusAllocationId, targetWeek]);
 
-  const allTasks = [...openTasks, ...transferredTasks];
-
-  const WEEKLY_SLOT_EXTRA_MONTHS = 1;
+  const allTasks = useMemo(
+    () => [...openTasks, ...transferredTasks],
+    [openTasks, transferredTasks]
+  );
+  const singleTaskFromPlanner = Boolean(open && focusAllocationId && allTasks.length === 1 && allTasks[0]?.id === focusAllocationId);
 
   useEffect(() => {
     if (!open) return;
@@ -159,12 +187,15 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
     if (!open) { setModalSearch(''); setSelectedTaskId(null); }
   }, [open]);
 
+  /** Selección inicial o recuperación si la tarea ya no está; no incluir selectedTaskId en deps para no pisar el clic del usuario en otra tarea. */
   useEffect(() => {
     if (!open || allTasks.length === 0) return;
-    if (!selectedTaskId || !allTasks.some(t => t.id === selectedTaskId)) {
-      setSelectedTaskId(allTasks[0].id);
-    }
-  }, [open, allTasks, selectedTaskId]);
+    setSelectedTaskId(prev => {
+      if (prev && allTasks.some(t => t.id === prev)) return prev;
+      if (focusAllocationId && allTasks.some(t => t.id === focusAllocationId)) return focusAllocationId;
+      return allTasks[0].id;
+    });
+  }, [open, allTasks, focusAllocationId]);
 
   // ── Derived state ──
   const resolvedCount = allTasks.filter(t => taskActions[t.id]).length;
@@ -202,13 +233,14 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
     if (action === 'keep') {
       const h = keepTaskHours[taskId];
       if (h && parseHours(h.actual) <= 0) return 'error';
-    } else if (action === 'rollover') {
+    } else if (action === 'postpone') {
       if (!rolloverTargetWeek[taskId]) return 'error';
       const h = rolloverHours[taskId];
       if (!h?.actual || parseHours(h.actual) <= 0) return 'error';
-      if (!rolloverNewHours[taskId] || parseHours(rolloverNewHours[taskId]) <= 0) return 'error';
-    } else if (action === 'move') {
-      if (!moveToMyWeek[taskId]) return 'error';
+      const t = allTasks.find(x => x.id === taskId);
+      if (!t) return 'error';
+      const rem = round2(t.hoursAssigned - parseHours(h.actual));
+      if (rem <= 0) return 'error';
     } else if (action === 'moveToEmployee') {
       if (!moveToEmployee[taskId] || !moveToWeek[taskId]) return 'error';
     } else if (action === 'distribute') {
@@ -236,7 +268,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
       const projectBudget = projects.find(p => p.id === task.projectId)?.budgetHours || 0;
       const newTotal = projectMonthAllocations.reduce((s, a) => s + a.hoursAssigned, 0) + totalDistributed;
       if (projectBudget > 0 && newTotal > projectBudget) { canSubmit = false; validationErrors.push(`"${task.taskName}": excede presupuesto (${newTotal.toFixed(1)}h/${projectBudget.toFixed(1)}h)`); }
-      const valSlots = collectSelectableFutureWeekSlots(task.weekStartDate, startOfMonth(viewDate), weeklyCloseDay, WEEKLY_SLOT_EXTRA_MONTHS);
+      const valSlots = getSlotsForTaskWeek(task.weekStartDate);
       for (const dt of validTasks) {
         const dvs = valSlots.find(s => s.storageKey === dt.weekDate);
         const wl = getEmployeeLoadForWeek(employeeId, dt.weekDate, undefined, undefined, dvs?.viewMonth ?? viewDate);
@@ -246,23 +278,21 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
     } else if (action === 'keep') {
       const h = keepTaskHours[task.id]; const actual = h ? parseHours(h.actual) : (task.hoursActual || task.hoursAssigned);
       if (!actual || actual <= 0) { canSubmit = false; validationErrors.push(`"${task.taskName}": horas reales > 0`); }
-    } else if (action === 'rollover') {
-      const rSlots = collectSelectableFutureWeekSlots(task.weekStartDate, startOfMonth(viewDate), weeklyCloseDay, WEEKLY_SLOT_EXTRA_MONTHS);
+    } else if (action === 'postpone') {
+      const rSlots = getSlotsForTaskWeek(task.weekStartDate);
       if (rSlots.length === 0) { canSubmit = false; validationErrors.push(`"${task.taskName}": sin semanas futuras`); }
-      if (!rolloverTargetWeek[task.id] || !rSlots.some(s => s.storageKey === rolloverTargetWeek[task.id])) { canSubmit = false; validationErrors.push(`"${task.taskName}": elige semana de continuación`); }
+      if (!rolloverTargetWeek[task.id] || !rSlots.some(s => s.storageKey === rolloverTargetWeek[task.id])) { canSubmit = false; validationErrors.push(`"${task.taskName}": elige semana destino`); }
       const h = rolloverHours[task.id];
       if (!h?.actual || parseHours(h.actual) <= 0) { canSubmit = false; validationErrors.push(`"${task.taskName}": horas realizadas > 0`); }
-      if (!rolloverNewHours[task.id] || parseHours(rolloverNewHours[task.id]) <= 0) { canSubmit = false; validationErrors.push(`"${task.taskName}": horas planificadas > 0`); }
-    } else if (action === 'move') {
-      const moveSlots = collectSelectableFutureWeekSlots(task.weekStartDate, startOfMonth(viewDate), weeklyCloseDay, WEEKLY_SLOT_EXTRA_MONTHS);
-      if (!moveToMyWeek[task.id]) { canSubmit = false; validationErrors.push(`"${task.taskName}": selecciona semana destino`); }
-      else if (moveSlots.length === 0) { canSubmit = false; validationErrors.push(`"${task.taskName}": sin semanas disponibles`); }
+      const rem = round2(task.hoursAssigned - parseHours(h.actual));
+      if (rem <= 0) { canSubmit = false; validationErrors.push(`"${task.taskName}": debe quedar saldo para posponer (horas realizadas < estimado)`); }
       else {
-        const rem = task.hoursAssigned - (task.hoursActual || 0);
-        if (rem > 0) { const mv = moveSlots.find(s => s.storageKey === moveToMyWeek[task.id]); const wl = getEmployeeLoadForWeek(employeeId, moveToMyWeek[task.id], undefined, undefined, mv?.viewMonth ?? viewDate); if ((wl?.hours || 0) + rem > (wl?.capacity || 0)) capacityWarnings.push(`"${task.taskName}": semana destino sobre capacidad`); }
+        const dSlot = rSlots.find(s => s.storageKey === rolloverTargetWeek[task.id]);
+        const wl = getEmployeeLoadForWeek(employeeId, rolloverTargetWeek[task.id], undefined, undefined, dSlot?.viewMonth ?? viewDate);
+        if ((wl?.hours || 0) + rem > (wl?.capacity || 0)) capacityWarnings.push(`"${task.taskName}": semana destino sobre capacidad`);
       }
     } else if (action === 'moveToEmployee') {
-      const teSlots = collectSelectableFutureWeekSlots(task.weekStartDate, startOfMonth(viewDate), weeklyCloseDay, WEEKLY_SLOT_EXTRA_MONTHS);
+      const teSlots = getSlotsForTaskWeek(task.weekStartDate);
       if (teSlots.length === 0) { canSubmit = false; validationErrors.push(`"${task.taskName}": sin semanas para transferir`); }
       else if (!moveToEmployee[task.id] || !moveToWeek[task.id]) { canSubmit = false; validationErrors.push(`"${task.taskName}": selecciona compañero y semana`); }
       else {
@@ -273,8 +303,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
   }
 
   // ── Week slots & selectors ──
-  const weekSlotsFor = (taskWeekStartStr: string) =>
-    collectSelectableFutureWeekSlots(taskWeekStartStr, startOfMonth(viewDate), weeklyCloseDay, WEEKLY_SLOT_EXTRA_MONTHS);
+  const weekSlotsFor = getSlotsForTaskWeek;
 
   const weekSelectGroups = (taskWeekStartStr: string, loadForEmployeeId: string | null) => {
     const slots = weekSlotsFor(taskWeekStartStr);
@@ -364,27 +393,21 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
     if (action === 'keep' && !keepTaskHours[task.id]) {
       setKeepTaskHours(prev => ({ ...prev, [task.id]: { actual: (task.hoursActual || task.hoursAssigned || 0).toFixed(2), computed: (task.hoursComputed || task.hoursActual || task.hoursAssigned || 0).toFixed(2) } }));
     }
-    if (action === 'rollover' && !rolloverHours[task.id]) {
+    if (action === 'postpone' && !rolloverHours[task.id]) {
       const rSlots = weekSlotsFor(task.weekStartDate);
-      setRolloverHours(prev => ({ ...prev, [task.id]: { actual: (task.hoursActual || missingHours || 0).toFixed(2), computed: (task.hoursComputed || task.hoursActual || missingHours || 0).toFixed(2) } }));
-      setRolloverNewHours(prev => ({ ...prev, [task.id]: missingHours > 0 ? missingHours.toFixed(2) : '0.00' }));
+      setRolloverHours(prev => ({
+        ...prev,
+        [task.id]: {
+          actual: (task.hoursActual || missingHours || 0).toFixed(2),
+          computed: (task.hoursComputed || task.hoursActual || missingHours || 0).toFixed(2),
+        },
+      }));
       if (rSlots[0]) setRolloverTargetWeek(prev => ({ ...prev, [task.id]: rSlots[0].storageKey }));
-    }
-    if (action === 'move' && !moveToMyWeek[task.id]) {
-      const mSlots = weekSlotsFor(task.weekStartDate);
-      if (mSlots[0]) setMoveToMyWeek(prev => ({ ...prev, [task.id]: mSlots[0].storageKey }));
     }
     if (action === 'moveToEmployee' && !moveToWeek[task.id]) {
       const eSlots = weekSlotsFor(task.weekStartDate);
       if (eSlots[0]) setMoveToWeek(prev => ({ ...prev, [task.id]: eSlots[0].storageKey }));
     }
-  };
-
-  // ── Hour input normalizer ──
-  const normalizeHourInput = (raw: string) => {
-    const v = raw.replace(/[^0-9,.]/g, '').replace(/,/g, '.');
-    const parts = v.split('.');
-    return parts.length > 1 ? `${parts[0]}.${parts[1].slice(0, 2)}` : v;
   };
 
   // ── Submit handler ──
@@ -395,126 +418,48 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
       for (const task of allTasks) {
         const action = taskActions[task.id];
         if (!action) continue;
-        const taskWeekDate = parseISO(task.weekStartDate);
-        const taskWeekStr = format(taskWeekDate, 'yyyy-MM-dd');
 
-        if (action === 'move') {
-          const targetWeekVal = moveToMyWeek[task.id];
-          const comment = taskComments[task.id];
-          if (!targetWeekVal) { toast.error('Selecciona una semana destino'); continue; }
-          const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
-          if (remainingHours > 0) {
-            await updateAllocation({ ...task, hoursAssigned: task.hoursActual || 0, status: 'completed' });
-            const existing = allocations.find(a => a.employeeId === employeeId && a.projectId === task.projectId && a.weekStartDate === targetWeekVal && a.taskName === task.taskName);
-            if (existing) { await updateAllocation({ ...existing, hoursAssigned: existing.hoursAssigned + remainingHours }); }
-            else { await addAllocation({ employeeId, projectId: task.projectId, weekStartDate: targetWeekVal, hoursAssigned: remainingHours, taskName: task.taskName || 'Tarea movida', status: 'planned' }); }
-            await addWeeklyFeedback({ employeeId, weekStartDate: taskWeekStr, projectId: task.projectId, allocationId: task.id, reason: 'other', comments: comment?.trim() ? `Tarea movida a semana futura. Nota: ${comment.trim()}` : 'Tarea movida a semana futura' });
-            const mvSlot = collectSelectableFutureWeekSlots(task.weekStartDate, startOfMonth(viewDate), weeklyCloseDay, WEEKLY_SLOT_EXTRA_MONTHS).find(s => s.storageKey === targetWeekVal);
-            if (mvSlot) await loadDataForMonth(mvSlot.viewMonth);
-          }
-        } else if (action === 'moveToEmployee') {
-          const targetEmployeeId = moveToEmployee[task.id];
-          const targetWeekVal = moveToWeek[task.id];
-          const transferComment = taskComments[task.id];
-          if (!targetEmployeeId || !targetWeekVal) { toast.error('Selecciona compañero y semana destino'); continue; }
-          const remainingHours = task.hoursAssigned - (task.hoursActual || 0);
-          if (remainingHours > 0) {
-            const targetEmployee = employees.find(e => e.id === targetEmployeeId);
-            if (targetEmployee) {
-              const twSlot = collectSelectableFutureWeekSlots(task.weekStartDate, startOfMonth(viewDate), weeklyCloseDay, WEEKLY_SLOT_EXTRA_MONTHS).find(s => s.storageKey === targetWeekVal);
-              const targetWeekLoad = getEmployeeLoadForWeek(targetEmployeeId, targetWeekVal, undefined, undefined, twSlot?.viewMonth ?? viewDate);
-              if ((targetWeekLoad?.hours || 0) + remainingHours > (targetWeekLoad?.capacity || 0)) {
-                toast.warning(`${targetEmployee.name} excedería su capacidad. La tarea se creará de todas formas.`);
-              }
-            }
-            await updateAllocation({ ...task, hoursAssigned: task.hoursActual || 0, status: 'completed' });
-            const taskNameTransferred = task.taskName || 'Tarea';
-            await addAllocation({ employeeId: targetEmployeeId, projectId: task.projectId, weekStartDate: targetWeekVal, hoursAssigned: remainingHours, taskName: taskNameTransferred, status: 'planned', transferredFromAllocationId: task.id, originalTransferredTaskName: task.originalTransferredTaskName || taskNameTransferred.replace(/\(transferida de .+\)/, '').trim(), transferSourceEmployeeId: employeeId });
-            const transferBase = `Tarea transferida a ${employees.find(e => e.id === targetEmployeeId)?.name || 'otro empleado'} (${remainingHours}h restantes) | Nombre: ${task.taskName || 'Sin nombre'}`;
-            await addWeeklyFeedback({ employeeId, weekStartDate: taskWeekStr, projectId: task.projectId, allocationId: task.id, reason: 'other', comments: transferComment?.trim() ? `${transferBase} | Nota: ${transferComment.trim()}` : transferBase });
-            const transferSlot = collectSelectableFutureWeekSlots(task.weekStartDate, startOfMonth(viewDate), weeklyCloseDay, WEEKLY_SLOT_EXTRA_MONTHS).find(s => s.storageKey === targetWeekVal);
-            if (transferSlot) await loadDataForMonth(transferSlot.viewMonth);
-          }
+        if (action === 'moveToEmployee') {
+          await applyMoveToEmployee(
+            task,
+            employeeId,
+            moveToEmployee[task.id] || '',
+            moveToWeek[task.id] || '',
+            taskComments[task.id]
+          );
         } else if (action === 'justify') {
-          const comment = taskComments[task.id];
-          if (comment?.trim()) { await addWeeklyFeedback({ employeeId, weekStartDate: taskWeekStr, projectId: task.projectId, allocationId: task.id, reason: 'other', comments: comment }); }
+          await applyJustify(task, employeeId, taskComments[task.id]);
         } else if (action === 'keep') {
           const hours = keepTaskHours[task.id];
           const actual = hours ? parseHours(hours.actual) : (task.hoursActual || task.hoursAssigned);
           const computed = preference === 'actual' ? actual : (hours ? parseHours(hours.computed) : (task.hoursComputed || actual));
-          if (actual <= 0) { toast.error(`"${task.taskName}" necesita horas reales mayores a 0`); continue; }
-          await updateAllocation({ ...task, hoursActual: actual, hoursComputed: computed, status: 'completed' });
-          const comment = taskComments[task.id] || `Tarea completada: ${actual.toFixed(2)}h reales, ${computed.toFixed(2)}h computadas`;
-          await addWeeklyFeedback({ employeeId, weekStartDate: taskWeekStr, projectId: task.projectId, allocationId: task.id, reason: 'other', comments: comment });
-        } else if (action === 'rollover') {
+          await applyKeep(task, employeeId, actual, computed, taskComments[task.id]);
+        } else if (action === 'postpone') {
           const hours = rolloverHours[task.id];
-          const newHoursEstimate = rolloverNewHours[task.id];
-          const destWeekStr = rolloverTargetWeek[task.id];
-          const slots = collectSelectableFutureWeekSlots(task.weekStartDate, startOfMonth(viewDate), weeklyCloseDay, WEEKLY_SLOT_EXTRA_MONTHS);
-          const destSlot = slots.find(s => s.storageKey === destWeekStr);
-          if (!hours || !newHoursEstimate) { toast.error(`"${task.taskName}" necesita horas completas`); continue; }
-          if (!destWeekStr || !destSlot) { toast.error(`"${task.taskName}": elige semana destino`); continue; }
-          const actual = parseHours(hours.actual); 
-          const computed = preference === 'actual' ? actual : (parseHours(hours.computed) || actual); 
-          const newEstimate = parseHours(newHoursEstimate);
-          if (actual <= 0) { toast.error(`"${task.taskName}" necesita horas reales > 0`); continue; }
-          if (newEstimate <= 0) { toast.error(`"${task.taskName}" necesita horas planificadas > 0`); continue; }
-          await updateAllocation({ ...task, hoursActual: actual, hoursComputed: computed, status: 'completed' });
-          try {
-            const newAllocation = await addAllocation({ employeeId: task.employeeId, projectId: task.projectId, weekStartDate: destWeekStr, hoursAssigned: newEstimate, hoursActual: 0, hoursComputed: 0, status: 'planned', taskName: task.taskName, description: task.description, parentAllocationId: task.id });
-            if (!newAllocation) { toast.error(`No se pudo crear tarea para "${task.taskName}"`); continue; }
-            await loadDataForMonth(destSlot.viewMonth);
-          } catch (error) { toast.error(`Error: ${error instanceof Error ? error.message : 'desconocido'}`); continue; }
-          const destLabel = format(destSlot.weekStart, 'd MMM yyyy', { locale: es });
-          const comment = taskComments[task.id] || `Tarea con rollover: ${actual.toFixed(2)}h registradas, ${newEstimate.toFixed(2)}h planificadas desde ${destLabel}`;
-          await addWeeklyFeedback({ employeeId, weekStartDate: taskWeekStr, projectId: task.projectId, allocationId: task.id, reason: 'other', comments: comment });
+          const destWeekStr = rolloverTargetWeek[task.id] || '';
+          if (!hours) {
+            toast.error(`"${task.taskName}" necesita horas realizadas`);
+            continue;
+          }
+          const actual = parseHours(hours.actual);
+          const computed = preference === 'actual' ? actual : (parseHours(hours.computed) || actual);
+          const newEstimate = round2(task.hoursAssigned - actual);
+          if (newEstimate <= 0) {
+            toast.error(`"${task.taskName}": debe quedar saldo para posponer`);
+            continue;
+          }
+          await applyRollover(task, employeeId, actual, computed, newEstimate, destWeekStr, taskComments[task.id]);
         } else if (action === 'distribute') {
           const distTasks = distributionTasks[task.id] || [];
           const validTasks = distTasks.filter(t => t.taskName.trim() && parseHours(t.hours) > 0);
-          if (validTasks.length === 0) { toast.error('Añade al menos una tarea válida'); continue; }
-          const totalDistributed = validTasks.reduce((sum, t) => sum + parseHours(t.hours), 0);
-          if (Math.abs(totalDistributed - task.hoursAssigned) > 0.01) { toast.error(`Suma ${totalDistributed.toFixed(2)}h ≠ ${task.hoursAssigned.toFixed(2)}h`); continue; }
-          const projectMonthAllocations = allocations.filter(a => a.projectId === task.projectId && isAllocationInEffectiveMonth(a.weekStartDate, viewDate) && a.id !== task.id);
-          const projectBudget = projects.find(p => p.id === task.projectId)?.budgetHours || 0;
-          const newProjectMonthTotal = projectMonthAllocations.reduce((s, a) => s + a.hoursAssigned, 0) + totalDistributed;
-          if (projectBudget > 0 && newProjectMonthTotal > projectBudget) toast.warning(`Proyecto excede presupuesto (${newProjectMonthTotal.toFixed(1)}h/${projectBudget.toFixed(1)}h). Se creará igualmente.`);
-
-          const checkedWeeks = new Set<string>();
-          const distSlots = collectSelectableFutureWeekSlots(task.weekStartDate, startOfMonth(viewDate), weeklyCloseDay, WEEKLY_SLOT_EXTRA_MONTHS);
-          for (const dt of validTasks) {
-            if (checkedWeeks.has(dt.weekDate)) continue;
-            checkedWeeks.add(dt.weekDate);
-            const dSlot = distSlots.find(s => s.storageKey === dt.weekDate);
-            const wl = getEmployeeLoadForWeek(employeeId, dt.weekDate, undefined, undefined, dSlot?.viewMonth ?? viewDate);
-            const wt = validTasks.filter(t => t.weekDate === dt.weekDate).reduce((s, t) => s + parseHours(t.hours), 0);
-            if ((wl?.hours || 0) + wt > (wl?.capacity || 0)) toast.warning(`Semana ${format(parseISO(dt.weekDate), 'd MMM')} sobre capacidad.`);
-          }
-
-          const isTransferredTask = !!task.transferredFromAllocationId || task.taskName?.includes('(transferida de');
-          const transferMatch = task.taskName?.match(/\(transferida de (.+)\)/);
-          const fromEmployeeName = transferMatch ? transferMatch[1] : (task.transferSourceEmployeeId ? employees.find(e => e.id === task.transferSourceEmployeeId)?.name : null);
-          const originalTransferredTaskName = task.originalTransferredTaskName || (isTransferredTask ? task.taskName?.replace(/\(transferida de .+\)/, '').trim() || task.taskName : null);
-          const originalTaskId = task.id;
-          const originalTaskName = task.taskName?.replace(/\(transferida de .+\)/, '').trim() || task.taskName || 'Tarea';
-          const userComment = taskComments[task.id]?.trim();
-          const baseComment = `Distribuidas en ${validTasks.length} tarea(s): ${validTasks.map(t => `${t.taskName} (${t.hours}h)`).join(', ')} | Nombre original: ${originalTaskName}`;
-          await addWeeklyFeedback({ employeeId, weekStartDate: taskWeekStr, projectId: task.projectId, allocationId: originalTaskId, reason: 'other', comments: userComment ? `${baseComment} | Nota: ${userComment}` : baseComment });
-
-          for (const distTask of validTasks) {
-            const newAllocation = await addAllocation({ employeeId, projectId: task.projectId, weekStartDate: distTask.weekDate, hoursAssigned: parseHours(distTask.hours), taskName: distTask.taskName, status: 'planned', transferredFromAllocationId: isTransferredTask && task.transferredFromAllocationId ? task.transferredFromAllocationId : undefined, distributionSourceAllocationId: originalTaskId, originalTransferredTaskName: originalTransferredTaskName || distTask.taskName, transferSourceEmployeeId: task.transferSourceEmployeeId || (isTransferredTask ? undefined : employeeId) });
-            if (isTransferredTask && fromEmployeeName && newAllocation) {
-              const fbComment = originalTransferredTaskName && originalTransferredTaskName !== distTask.taskName ? `Tarea distribuida desde transferencia de ${fromEmployeeName} (tarea original: ${originalTransferredTaskName})` : `Tarea distribuida desde transferencia de ${fromEmployeeName}`;
-              await addWeeklyFeedback({ employeeId, weekStartDate: distTask.weekDate, projectId: task.projectId, allocationId: newAllocation.id, reason: 'other', comments: fbComment });
-            }
-          }
-          await deleteAllocation(originalTaskId);
+          await applyDistribute(task, employeeId, validTasks, taskComments[task.id]);
         }
       }
 
       toast.success('Weekly actualizado correctamente');
       onOpenChange(false);
-      setTaskActions({}); setTaskComments({}); setMoveToEmployee({}); setMoveToWeek({}); setMoveToMyWeek({});
-      setDistributionTasks({}); setKeepTaskHours({}); setRolloverHours({}); setRolloverNewHours({}); setRolloverTargetWeek({});
+      setTaskActions({}); setTaskComments({}); setMoveToEmployee({}); setMoveToWeek({});
+      setDistributionTasks({}); setKeepTaskHours({}); setRolloverHours({}); setRolloverTargetWeek({});
     } catch (error) {
       console.error('Error actualizando weekly:', error);
       toast.error('Error al actualizar el weekly');
@@ -534,8 +479,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
 
   const actionOptions: Array<[string, string]> = [
     ['keep', 'Completar'],
-    ['rollover', 'Continuar en otra semana'],
-    ['move', 'Reprogramar'],
+    ['postpone', 'Posponer lo pendiente'],
     ['distribute', 'Desglosar en subtareas'],
     ['moveToEmployee', 'Transferir a compañero'],
   ];
@@ -551,10 +495,12 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
         <div className="space-y-3 border-b px-6 pb-4 pt-5">
           <DialogHeader className="space-y-1">
             <DialogTitle className="text-lg font-semibold tracking-tight">
-              Cierre semanal
+              {singleTaskFromPlanner ? 'Opciones Weekly' : 'Cierre semanal'}
             </DialogTitle>
             <DialogDescription id="weekly-desc" className="text-sm text-muted-foreground">
-              {resolvedCount} de {allTasks.length} {allTasks.length === 1 ? 'tarea resuelta' : 'tareas resueltas'}
+              {singleTaskFromPlanner
+                ? 'Completa, posponer, desglosar o transferir con el mismo flujo que en la previsión semanal.'
+                : `${resolvedCount} de ${allTasks.length} ${allTasks.length === 1 ? 'tarea resuelta' : 'tareas resueltas'}`}
             </DialogDescription>
           </DialogHeader>
           <div className="h-1.5 overflow-hidden rounded-full bg-muted">
@@ -581,7 +527,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
             {/* ── BODY: SPLIT PANEL ── */}
             <div className="flex min-h-0 flex-1">
               {/* ── LEFT: SIDEBAR (desktop) ── */}
-              <div className="hidden w-64 shrink-0 flex-col border-r bg-muted/30 md:flex">
+              <div className={cn('w-64 shrink-0 flex-col border-r bg-muted/30', singleTaskFromPlanner ? 'hidden' : 'hidden md:flex')}>
                 <div className="border-b p-2.5">
                   <div className="relative">
                     <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -651,7 +597,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
               {/* ── RIGHT: DETAIL ── */}
               <div className="flex min-w-0 flex-1 flex-col">
                 {/* Mobile: task selector */}
-                <div className="border-b p-3 md:hidden">
+                <div className={cn('border-b p-3 md:hidden', singleTaskFromPlanner && 'hidden')}>
                   <Select value={selectedTaskId || ''} onValueChange={(val) => setSelectedTaskId(val)}>
                     <SelectTrigger className="h-10">
                       <SelectValue placeholder="Seleccionar tarea" />
@@ -751,7 +697,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                     <Label className="text-sm font-medium">Horas reales *</Label>
                                     <Input type="text" inputMode="decimal" className="h-10 font-mono text-sm" value={hours.actual}
                                       onChange={(e) => { 
-                                        const v = normalizeHourInput(e.target.value); 
+                                        const v = normalizeWeeklyHourInput(e.target.value); 
                                         setKeepTaskHours(prev => ({ 
                                           ...prev, 
                                           [selectedTask.id]: { 
@@ -769,7 +715,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                     <Label className="text-sm font-medium">Horas computadas</Label>
                                     <Input type="text" inputMode="decimal" className="h-10 font-mono text-sm" value={hours.computed}
                                       disabled={preference === 'actual'}
-                                      onChange={(e) => { const v = normalizeHourInput(e.target.value); setKeepTaskHours(prev => ({ ...prev, [selectedTask.id]: { ...prev[selectedTask.id], computed: v } })); }}
+                                      onChange={(e) => { const v = normalizeWeeklyHourInput(e.target.value); setKeepTaskHours(prev => ({ ...prev, [selectedTask.id]: { ...prev[selectedTask.id], computed: v } })); }}
                                       placeholder="0.00" />
                                     <p className="text-xs text-muted-foreground">Criterio de facturación</p>
                                   </div>
@@ -780,14 +726,14 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                             );
                           })()}
 
-                          {/* ROLLOVER */}
-                          {taskActions[selectedTask.id] === 'rollover' && (() => {
+                          {/* POSTPONE: mismo criterio que cierre parcial (saldo = estimado − realizadas → rollover) */}
+                          {taskActions[selectedTask.id] === 'postpone' && (() => {
                             const hours = rolloverHours[selectedTask.id] || {
                               actual: (selectedTask.hoursActual || selectedMissingHours || 0).toFixed(2),
                               computed: (selectedTask.hoursComputed || selectedTask.hoursActual || selectedMissingHours || 0).toFixed(2)
                             };
-                            const newHoursEst = rolloverNewHours[selectedTask.id] || (selectedMissingHours > 0 ? selectedMissingHours.toFixed(2) : '0.00');
                             const rSlots = weekSlotsFor(selectedTask.weekStartDate);
+                            const pendNext = Math.max(0, round2(selectedTask.hoursAssigned - parseHours(hours.actual)));
                             return (
                               <div className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
@@ -795,7 +741,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                     <Label className="text-sm font-medium">Horas realizadas *</Label>
                                     <Input type="text" inputMode="decimal" className="h-10 font-mono text-sm" value={hours.actual}
                                       onChange={(e) => { 
-                                        const v = normalizeHourInput(e.target.value); 
+                                        const v = normalizeWeeklyHourInput(e.target.value); 
                                         setRolloverHours(prev => ({ 
                                           ...prev, 
                                           [selectedTask.id]: { 
@@ -806,19 +752,26 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                         })); 
                                       }}
                                       placeholder="0.00" />
+                                    <p className="text-xs text-muted-foreground">
+                                      Pendiente para la otra semana:{' '}
+                                      <span className="font-mono font-semibold text-foreground">
+                                        {pendNext.toFixed(2)}h
+                                      </span>{' '}
+                                      (estimado menos horas realizadas; se planificarán al cerrar)
+                                    </p>
                                   </div>
                                   {preference !== 'actual' && (
                                   <div className="space-y-1.5">
                                     <Label className="text-sm font-medium">Horas computadas</Label>
                                     <Input type="text" inputMode="decimal" className="h-10 font-mono text-sm" value={hours.computed}
                                       disabled={preference === 'actual'}
-                                      onChange={(e) => { const v = normalizeHourInput(e.target.value); setRolloverHours(prev => ({ ...prev, [selectedTask.id]: { ...prev[selectedTask.id], computed: v } })); }}
+                                      onChange={(e) => { const v = normalizeWeeklyHourInput(e.target.value); setRolloverHours(prev => ({ ...prev, [selectedTask.id]: { ...prev[selectedTask.id], computed: v } })); }}
                                       placeholder="0.00" />
                                   </div>
                                   )}
                                 </div>
                                 <div className="space-y-1.5 border-t pt-4">
-                                  <Label className="text-sm font-medium">Semana de continuación *</Label>
+                                  <Label className="text-sm font-medium">Semana destino *</Label>
                                   {rSlots.length === 0 ? (
                                     <p className="text-xs text-destructive">No hay semanas disponibles.</p>
                                   ) : (
@@ -828,30 +781,10 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                     </Select>
                                   )}
                                 </div>
-                                <div className="space-y-1.5 border-t pt-4">
-                                  <Label className="text-sm font-medium">Horas planificadas en destino *</Label>
-                                  <Input type="text" inputMode="decimal" className="h-10 font-mono text-sm" value={newHoursEst}
-                                    onChange={(e) => { const v = normalizeHourInput(e.target.value); setRolloverNewHours(prev => ({ ...prev, [selectedTask.id]: v })); }}
-                                    placeholder="0.00" />
-                                </div>
                                 <WeeklyOptionalNote value={taskComments[selectedTask.id] || ''} onChange={(v) => setTaskComments(prev => ({ ...prev, [selectedTask.id]: v }))} />
                               </div>
                             );
                           })()}
-
-                          {/* MOVE */}
-                          {taskActions[selectedTask.id] === 'move' && (
-                            <div className="space-y-4">
-                              <div className="space-y-1.5">
-                                <Label className="text-sm font-medium">Semana destino *</Label>
-                                <Select value={moveToMyWeek[selectedTask.id]} onValueChange={(val) => setMoveToMyWeek(prev => ({ ...prev, [selectedTask.id]: val }))}>
-                                  <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Seleccionar semana" /></SelectTrigger>
-                                  <SelectContent className="max-h-[min(280px,60vh)]">{weekSelectGroups(selectedTask.weekStartDate, employeeId)}</SelectContent>
-                                </Select>
-                              </div>
-                              <WeeklyOptionalNote value={taskComments[selectedTask.id] || ''} onChange={(v) => setTaskComments(prev => ({ ...prev, [selectedTask.id]: v }))} />
-                            </div>
-                          )}
 
                           {/* DISTRIBUTE */}
                           {taskActions[selectedTask.id] === 'distribute' && (
@@ -873,7 +806,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate }:
                                         <Input type="text" className="h-9 min-w-[120px] flex-1 text-sm" value={dist.taskName}
                                           onChange={(e) => updateDistributionRow(selectedTask.id, dist.id, 'taskName', e.target.value)} placeholder="Nombre subtarea" />
                                         <Input type="text" inputMode="decimal" className={cn("h-9 w-[4.5rem] font-mono text-sm", isOverCap && "border-destructive/60")} value={dist.hours}
-                                          onChange={(e) => updateDistributionHours(selectedTask.id, dist.id, normalizeHourInput(e.target.value))} placeholder="h" />
+                                          onChange={(e) => updateDistributionHours(selectedTask.id, dist.id, normalizeWeeklyHourInput(e.target.value))} placeholder="h" />
                                         <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive" onClick={() => removeDistributionRow(selectedTask.id, dist.id)}>
                                           <Trash2 className="h-4 w-4" />
                                         </Button>

@@ -151,6 +151,25 @@ export const getWeekEndDate = (weekStartDate: Date, closeDay: number = 4): Date 
   return addDays(weekStartDate, closeDay);
 };
 
+/**
+ * True si la semana de la allocation (inicio = `allocationWeekStartDate`) ya pasó respecto a `referenceDate`
+ * según el día de cierre semanal de la agencia. Con integración Weekly activa, transferir / mover semana /
+ * edición completa del tramo deben hacerse vía el flujo Weekly (no desde el menú del planificador).
+ */
+export function isAllocationWeekPastForWeekly(
+  allocationWeekStartDate: string,
+  weeklyCloseDay: number,
+  referenceDate: Date = new Date()
+): boolean {
+  try {
+    const taskWeekDate = parseISO(allocationWeekStartDate);
+    const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
+    return taskWeekEnd < referenceDate;
+  } catch {
+    return false;
+  }
+}
+
 /** Semana destino en Weekly (mover / rollover / distribuir): clave de BD + mes para carga/capacidad. */
 export type SelectableFutureWeekSlot = {
   storageKey: string;
