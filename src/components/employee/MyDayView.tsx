@@ -8,7 +8,7 @@ import { TaskTimer } from '@/components/employee/TaskTimer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Clock, Sun, Calendar, ChevronUp, ChevronDown, Search, X, ArrowRight, Undo2, ListChecks } from 'lucide-react';
-import { format, isSameWeek, parseISO, startOfWeek, getDay } from 'date-fns';
+import { format, isSameWeek, startOfWeek, getDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { Allocation } from '@/types';
+import { parseDateStringLocal } from '@/utils/dateUtils';
 
 export interface MyDayViewProps {
   employeeId: string;
@@ -34,7 +35,7 @@ function sortByUserPriority(a: Allocation, b: Allocation): number {
 
 /** Tareas de la semana en curso o de semanas anteriores no completadas (mismo criterio que la vista anterior). */
 function isInWeeklyOrPastScope(taskWeekStartStr: string, today: Date): boolean {
-  const taskDate = parseISO(taskWeekStartStr);
+  const taskDate = parseDateStringLocal(taskWeekStartStr);
   const weekStart = startOfWeek(today, { weekStartsOn: 1 });
   return isSameWeek(taskDate, today, { weekStartsOn: 1 }) || taskDate < weekStart;
 }
@@ -167,7 +168,7 @@ export function MyDayView({
   const renderTaskCard = (task: Allocation, options: { showReorder: boolean; isFocus: boolean }) => {
     const project = projects.find(p => p.id === task.projectId);
     const client = clients.find(c => c.id === project?.clientId);
-    const isOverdue = parseISO(task.weekStartDate) < startOfWeek(today, { weekStartsOn: 1 });
+    const isOverdue = parseDateStringLocal(task.weekStartDate) < startOfWeek(today, { weekStartsOn: 1 });
     const idxInBacklog = sortedBacklog.findIndex(t => t.id === task.id);
     const isFocused = task.focusDate === todayStr;
 
