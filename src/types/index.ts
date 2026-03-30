@@ -249,6 +249,8 @@ export interface Allocation {
   transferSourceEmployeeId?: string; // ID del empleado origen de la transferencia
   userPriority?: number | null; // Prioridad personal del usuario (menor = m?s prioritario)
   isLocked?: boolean; // When true, only admins can edit
+  /** Fecha (YYYY-MM-DD) en que el empleado marca la tarea en foco; null = backlog. Modelo Pull / vista diaria. */
+  focusDate?: string | null;
 }
 
 export interface TimeEntry {

@@ -1,384 +1,439 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { TaskTimer } from '@/components/employee/TaskTimer';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Circle, Clock, ArrowRight, Sun, Calendar, AlertTriangle, FileText, Zap, X } from 'lucide-react';
-import { format, isSameWeek, startOfWeek, endOfWeek, getDate, getDay } from 'date-fns';
-import { cn, formatProjectName } from '@/lib/utils';
+import { CheckCircle2, Clock, Sun, Calendar, ChevronUp, ChevronDown, Search, X, ArrowRight, Undo2, ListChecks } from 'lucide-react';
+import { format, isSameWeek, parseISO, startOfWeek, getDay } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import type { Allocation } from '@/types';
 
-export function MyDayView() {
-    const { projects, clients, currentUser, updateAllocation, allocations, loadDataForMonth } = useApp();
-    const { currentAgency } = useAgency();
-    const { canAccess } = usePermissions();
-    const isTimeTrackerEnabled = (currentAgency?.settings?.modules?.timeTracker ?? false) && currentUser?.user_id != null;
-    const navigate = useNavigate();
-    const [completedToday, setCompletedToday] = useState<string[]>([]);
+export interface MyDayViewProps {
+  employeeId: string;
+  /** Mes de contexto para precarga de allocations (además del mes actual). */
+  viewDate: Date;
+  /** Integración weekly_feedback: muestra acceso al mismo modal que el planificador (posponer, distribuir, etc.). */
+  weeklyEnabled?: boolean;
+  /** Abre `WeeklyReportDialog` centrado en esta allocation (mismo flujo que «Opciones Weekly…» en el planner). */
+  onOpenWeeklyForAllocation?: (allocationId: string) => void;
+}
 
-    // State for the completion popover
-    const [popoverOpenId, setPopoverOpenId] = useState<string | null>(null);
-    const [completionData, setCompletionData] = useState({ actual: 0, computed: 0 });
+function sortByUserPriority(a: Allocation, b: Allocation): number {
+  return (a.userPriority ?? 999) - (b.userPriority ?? 999);
+}
 
-    const today = new Date();
-    const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+/** Tareas de la semana en curso o de semanas anteriores no completadas (mismo criterio que la vista anterior). */
+function isInWeeklyOrPastScope(taskWeekStartStr: string, today: Date): boolean {
+  const taskDate = parseISO(taskWeekStartStr);
+  const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+  return isSameWeek(taskDate, today, { weekStartsOn: 1 }) || taskDate < weekStart;
+}
 
-    // --- 1. DETERMINE DAILY CAPACITY ---
-    const dailyCapacity = useMemo(() => {
-        // If workSchedule exists and isn't just the default 8s, use it
-        if (currentUser?.workSchedule) {
-            const schedule = currentUser.workSchedule;
-            const isDefault = Object.values(schedule).slice(0, 5).every(h => h === 8); // Mon-Fri (checking broadly)
+export function MyDayView({
+  employeeId,
+  viewDate,
+  weeklyEnabled = false,
+  onOpenWeeklyForAllocation,
+}: MyDayViewProps) {
+  const { projects, clients, updateAllocation, allocations, loadDataForMonth, ensureMonthLoaded, currentUser } = useApp();
+  const { currentAgency } = useAgency();
+  const { canAccess } = usePermissions();
+  const { formatName: formatProjectName } = useProjectAliasing();
+  const isTimeTrackerEnabled = (currentAgency?.settings?.modules?.timeTracker ?? false) && currentUser?.user_id != null;
+  const preference = currentAgency?.settings?.hoursTrackingPreference;
+  const navigate = useNavigate();
+  const [completedToday, setCompletedToday] = useState<string[]>([]);
+  const [popoverOpenId, setPopoverOpenId] = useState<string | null>(null);
+  const [completionData, setCompletionData] = useState({ actual: 0, computed: 0 });
+  const [searchQuery, setSearchQuery] = useState('');
 
-            if (!isDefault) {
-                const dayIndex = getDay(today);
-                const scheduleMap = [schedule.sunday, schedule.monday, schedule.tuesday, schedule.wednesday, schedule.thursday, schedule.friday, schedule.saturday];
-                return scheduleMap[dayIndex] || 0;
-            }
-        }
+  const today = new Date();
+  const todayStr = format(today, 'yyyy-MM-dd');
 
-        // Fallback: Use defaultWeeklyCapacity / 5 for weekdays
-        if (currentUser?.defaultWeeklyCapacity) {
-            const dayIndex = getDay(today);
-            if (dayIndex === 0 || dayIndex === 6) return 0; // Weekend
-            return currentUser.defaultWeeklyCapacity / 5;
-        }
+  useEffect(() => {
+    void ensureMonthLoaded(viewDate);
+    void ensureMonthLoaded(new Date());
+  }, [ensureMonthLoaded, viewDate]);
 
-        return 8;
-    }, [currentUser]);
-
-    // --- 2. PRE-CALCULATE DATA FOR SORTING ---
-
-    // Set of IDs that are blocked by current user's tasks
-    // Map<UserId, boolean> - wait, Map<AllocationId, boolean> -> if allocation X is dependency for Y
-    const blockingMap = useMemo(() => {
-        const map = new Set<string>();
-        if (!currentUser) return map;
-
-        // Find all Allocations that have a dependencyId
-        allocations.forEach(a => {
-            if (a.dependencyId && a.status !== 'completed') {
-                map.add(a.dependencyId);
-            }
-        });
-        return map;
-    }, [allocations, currentUser]);
-
-    // Helper to calculate project progress for "Risk" check
-    const projectStats = useMemo(() => {
-        const stats = new Map<string, { percent: number, contracted: number }>();
-        projects.forEach(p => {
-            if (p.status !== 'active') return;
-            // Simplified calculation - in a real app might need the full chart logic but this is a proxy
-            // We want to know if "Project < 50% computed".
-            // Since we don't have the full monthly computed logic here easily available without re-implementing, 
-            // we will use budgetHours vs actualHours if available or assume 0 for now if data missing.
-            // Actually, let's use the 'contracted' (budgetHours) directly for Value sort.
-            // For "Risk < 50%", we rely on what we have.
-
-            // To properly do "Risk < 50%", we need "hoursComputed". 
-            // We can approximate "hoursComputed" by summing completed/planned allocations for this month.
-            // For performance, let's stick to "High Value" (contracted hours) sorting mainly, 
-            // and maybe a simple "Is incomplete near month end" check on project level if we had that data readily available.
-            // Let's implement the specific user request: "Mitad de mes y proyectos con menos de 50%".
-
-            // Filter allocs for this project this month
-            // This might be heavy if many projects. Let's do it lazy or lightweight.
-            stats.set(p.id, { percent: 0, contracted: p.budgetHours });
-        });
-        return stats;
-    }, [projects]);
-
-
-    // --- 3. FILTER & SORT TASKS ---
-    const { prioritizedTasks, totalHours } = useMemo(() => {
-        if (!currentUser) return { prioritizedTasks: [], totalHours: 0 };
-
-        // A. Candidates: Overdue OR This Week (incomplete)
-        let candidates = allocations.filter(a => {
-            if (a.employeeId !== currentUser.id) return false;
-            if (a.status === 'completed') return false;
-            if (completedToday.includes(a.id)) return false; // Also hide optimistically completed ones
-
-            const taskDate = new Date(a.weekStartDate);
-            return isSameWeek(taskDate, today, { weekStartsOn: 1 }) ||
-                (taskDate < weekStart && a.status !== 'completed');
-        });
-
-        const dayOfMonth = getDate(today);
-
-
-        // B. Sort
-        candidates.sort((a, b) => {
-            // 1. BLOCKING (User is blocking someone else)
-            // If A is blocking someone, it goes first.
-            const aIsBlocking = blockingMap.has(a.id);
-            const bIsBlocking = blockingMap.has(b.id);
-            if (aIsBlocking && !bIsBlocking) return -1;
-            if (!aIsBlocking && bIsBlocking) return 1;
-
-            // 2. INFORME / REPORTE
-            const regex = /informe|reporte/i;
-            const aIsReport = regex.test(a.taskName || '');
-            const bIsReport = regex.test(b.taskName || '');
-            if (aIsReport && !bIsReport) return -1;
-            if (!aIsReport && bIsReport) return 1;
-
-            // 3. RISK & VALUE
-            const projectA = projects.find(p => p.id === a.projectId);
-            const projectB = projects.find(p => p.id === b.projectId);
-
-            if (projectA && projectB) {
-                // 3a. Mid-month Risk (>15th, <50% progress) -> This is hard to calc cheaply strictly.
-                // We'll approximate: If day > 15, prioritize projects with HIGHER contracted hours (assuming they are more critical to finish).
-                // User said: "proyectos que tengan más horas contratadas".
-
-                // If day > 15, we *could* try to check progress, but "Contracted Hours" is a safer consistent metric for "Importance".
-                // Let's us Contracted Hours as the main tie-breaker here.
-                if (projectA.budgetHours !== projectB.budgetHours) {
-                    return projectB.budgetHours - projectA.budgetHours; // Descending (Big projects first)
-                }
-            }
-
-            // 4. DATE (Older first)
-            return new Date(a.weekStartDate).getTime() - new Date(b.weekStartDate).getTime();
-        });
-
-        // C. Cap at Daily Capacity
-        let accumulatedHours = 0;
-        const finalSelection = [];
-
-        for (const task of candidates) {
-            const hours = task.hoursAssigned; // Use assigned hours
-
-            // Always add at least one task if empty
-            if (finalSelection.length === 0) {
-                finalSelection.push(task);
-                accumulatedHours += hours;
-                continue;
-            }
-
-            // If adding this task stays roughly within capacity (allow small overflow if it fits "mostly")
-            // Strict interpretation: "NO superen su jornada".
-            // So if accumulated + hours > capacity, we stop.
-            if (accumulatedHours + hours <= dailyCapacity) {
-                finalSelection.push(task);
-                accumulatedHours += hours;
-            } else {
-                // Should we stop? Or finding smaller tasks to fill the gap?
-                // Simple approach: Stop.
-                // But maybe we are at 7h and capacity is 8h, and next task is 2h. 
-                // Creating a simplified MyDay means focusing on Top Priority. 
-                // So stopping is correct for "Focus".
-                break;
-            }
-        }
-
-        return { prioritizedTasks: finalSelection, totalHours: accumulatedHours };
-
-    }, [allocations, currentUser, today, weekStart, completedToday, blockingMap, projects, dailyCapacity]);
-
-
-    const handleCompleteSubmit = async (allocation: any) => {
-        setCompletedToday(prev => [...prev, allocation.id]); // Optimistic hide
-        setPopoverOpenId(null);
-
-        await updateAllocation({
-            ...allocation,
-            status: 'completed',
-            hoursActual: completionData.actual,
-            hoursComputed: completionData.computed
-        });
-    };
-
-    const openCompletion = (allocation: any) => {
-        setCompletionData({
-            actual: allocation.hoursAssigned,
-            computed: allocation.hoursAssigned
-        });
-        setPopoverOpenId(allocation.id);
-    };
-
-    const handleTimeLogged = useCallback(() => {
-        loadDataForMonth(new Date());
-    }, [loadDataForMonth]);
-
-    if (prioritizedTasks.length === 0) {
-        return (
-            <Card className="bg-gradient-to-r from-slate-50 to-white border-slate-200 mb-6 shadow-sm overflow-hidden relative">
-                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-                    <Sun className="h-32 w-32 text-slate-400" />
-                </div>
-                <CardContent className="flex flex-col items-center justify-center py-8 text-center relative z-10">
-                    <div className="bg-amber-100 p-3 rounded-full mb-3">
-                        <Sun className="h-6 w-6 text-amber-500" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-slate-800">¡Todo despejado por hoy!</h3>
-                    <p className="text-slate-500 max-w-md mt-1 mb-4">
-                        Has completado tus tareas prioritarias. ¡Buen trabajo!
-                    </p>
-                    <Button
-                        variant="outline"
-                        className="gap-2"
-                        onClick={() => {
-                            // Navegar a la página de planificación según los permisos del usuario
-                            if (canAccess('/planner')) {
-                                navigate('/planner');
-                            } else if (canAccess('/deadlines')) {
-                                navigate('/deadlines');
-                            } else {
-                                // Si no tiene acceso a ninguna, navegar al dashboard
-                                navigate('/dashboard');
-                            }
-                        }}
-                    >
-                        <Calendar className="h-4 w-4" />
-                        Ver planificación completa
-                    </Button>
-                </CardContent>
-            </Card>
-        );
+  const dailyCapacity = useMemo(() => {
+    if (currentUser?.workSchedule) {
+      const schedule = currentUser.workSchedule;
+      const dayIndex = getDay(today);
+      const scheduleMap = [
+        schedule.sunday,
+        schedule.monday,
+        schedule.tuesday,
+        schedule.wednesday,
+        schedule.thursday,
+        schedule.friday,
+        schedule.saturday,
+      ];
+      return scheduleMap[dayIndex] || 0;
     }
+    if (currentUser?.defaultWeeklyCapacity) {
+      const dayIndex = getDay(today);
+      if (dayIndex === 0 || dayIndex === 6) return 0;
+      return currentUser.defaultWeeklyCapacity / 5;
+    }
+    return 8;
+  }, [currentUser, today]);
+
+  const { focusTasks, backlogTasks, sortedBacklog } = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const candidates = (allocations || []).filter(a => {
+      if (a.employeeId !== employeeId) return false;
+      if (a.status === 'completed') return false;
+      if (completedToday.includes(a.id)) return false;
+      if (!isInWeeklyOrPastScope(a.weekStartDate, today)) return false;
+      if (q) {
+        const proj = projects.find(p => p.id === a.projectId);
+        const text = `${a.taskName ?? ''} ${formatProjectName(proj?.name ?? '')}`.toLowerCase();
+        if (!text.includes(q)) return false;
+      }
+      return true;
+    });
+
+    const focus = candidates.filter(a => a.focusDate === todayStr).sort(sortByUserPriority);
+    const backlog = candidates.filter(a => a.focusDate !== todayStr);
+    const sorted = [...backlog].sort(sortByUserPriority);
+    return { focusTasks: focus, backlogTasks: backlog, sortedBacklog: sorted };
+  }, [allocations, employeeId, today, todayStr, completedToday, searchQuery, projects, formatProjectName]);
+
+  const handleTimeLogged = useCallback(() => {
+    void loadDataForMonth(today);
+  }, [loadDataForMonth, today]);
+
+  const togglePin = useCallback(
+    async (alloc: Allocation) => {
+      const next = alloc.focusDate === todayStr ? null : todayStr;
+      await updateAllocation({ id: alloc.id, focusDate: next });
+    },
+    [todayStr, updateAllocation]
+  );
+
+  const ensureFocusForTimer = useCallback(
+    async (alloc: Allocation) => {
+      if (alloc.focusDate === todayStr) return;
+      await updateAllocation({ id: alloc.id, focusDate: todayStr });
+    },
+    [todayStr, updateAllocation]
+  );
+
+  const moveInBacklog = useCallback(
+    async (alloc: Allocation, direction: 'up' | 'down') => {
+      const sorted = sortedBacklog;
+      const idx = sorted.findIndex(t => t.id === alloc.id);
+      if (idx < 0) return;
+      const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= sorted.length) return;
+      const other = sorted[swapIdx];
+      const pA = alloc.userPriority ?? idx + 1;
+      const pB = other.userPriority ?? swapIdx + 1;
+      await updateAllocation({ id: alloc.id, userPriority: pB });
+      await updateAllocation({ id: other.id, userPriority: pA });
+    },
+    [sortedBacklog, updateAllocation]
+  );
+
+  const handleCompleteSubmit = async (allocation: Allocation) => {
+    setCompletedToday(prev => [...prev, allocation.id]);
+    setPopoverOpenId(null);
+    await updateAllocation({
+      ...allocation,
+      status: 'completed',
+      hoursActual: completionData.actual,
+      hoursComputed: completionData.computed,
+    });
+  };
+
+  const openCompletion = (allocation: Allocation) => {
+    setCompletionData({
+      actual: allocation.hoursAssigned,
+      computed: allocation.hoursAssigned,
+    });
+    setPopoverOpenId(allocation.id);
+  };
+
+  const renderTaskCard = (task: Allocation, options: { showReorder: boolean; isFocus: boolean }) => {
+    const project = projects.find(p => p.id === task.projectId);
+    const client = clients.find(c => c.id === project?.clientId);
+    const isOverdue = parseISO(task.weekStartDate) < startOfWeek(today, { weekStartsOn: 1 });
+    const idxInBacklog = sortedBacklog.findIndex(t => t.id === task.id);
+    const isFocused = task.focusDate === todayStr;
 
     return (
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100 mb-6 shadow-sm overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
-                <Sun className="h-32 w-32 text-blue-600" />
+      <div
+        key={task.id}
+        className={cn(
+          'rounded-xl border shadow-sm hover:shadow-md transition-all group relative',
+          isFocused
+            ? 'bg-white border-amber-200/60 ring-1 ring-amber-100'
+            : 'bg-white/80 backdrop-blur-sm border-slate-200/60'
+        )}
+      >
+        <div className="p-3 pb-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <h4 className="font-semibold text-sm text-slate-800 truncate" title={task.taskName}>
+                {task.taskName || 'Tarea sin nombre'}
+              </h4>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ backgroundColor: client?.color || '#cbd5e1' }}
+                />
+                <span className="text-xs text-slate-500 truncate">
+                  {formatProjectName(project?.name || '')}
+                </span>
+                {isOverdue && (
+                  <Badge variant="outline" className="h-4 px-1.5 text-[9px] border-red-200 text-red-600 bg-red-50">Retrasada</Badge>
+                )}
+              </div>
             </div>
+            {options.showReorder && (
+              <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button type="button" variant="ghost" size="icon" className="h-6 w-6" disabled={idxInBacklog <= 0} onClick={() => void moveInBacklog(task, 'up')} aria-label="Subir">
+                  <ChevronUp className="h-3.5 w-3.5" />
+                </Button>
+                <Button type="button" variant="ghost" size="icon" className="h-6 w-6" disabled={idxInBacklog < 0 || idxInBacklog >= sortedBacklog.length - 1} onClick={() => void moveInBacklog(task, 'down')} aria-label="Bajar">
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
 
-            <CardHeader className="pb-2 relative z-10">
-                <div className="flex justify-between items-start">
-                    <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <Sun className="h-5 w-5 text-amber-500" />
-                            <span className="text-xs font-bold text-amber-600 uppercase tracking-wider">Mi Día</span>
-                        </div>
-                        <CardTitle className="text-xl text-slate-900">
-                            Buenos días, {currentUser?.name.split(' ')[0]}
-                        </CardTitle>
-                        <CardDescription className="text-slate-600">
-                            Objetivo de hoy: <span className="font-semibold text-slate-900">{dailyCapacity}h</span> de alto impacto.
-                        </CardDescription>
+        <div className="flex items-center justify-between px-3 py-2 border-t border-slate-100/80 gap-2">
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
+            <div className={cn('flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium', isOverdue ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-600')}>
+              <Clock className="h-3 w-3 shrink-0" />
+              <span>{task.hoursAssigned}h</span>
+            </div>
+            {isTimeTrackerEnabled && currentUser && (
+              <TaskTimer employeeId={currentUser.id} allocationId={task.id} onTimeLogged={handleTimeLogged} beforeStart={() => ensureFocusForTimer(task)} />
+            )}
+          </div>
+          <div className="flex items-center gap-0.5 shrink-0">
+            {weeklyEnabled && onOpenWeeklyForAllocation && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-7 w-7 p-0 rounded-full text-slate-500 hover:bg-indigo-50 hover:text-indigo-700"
+                title="Opciones Weekly…"
+                aria-label="Opciones Weekly: posponer, distribuir o transferir"
+                onClick={() => onOpenWeeklyForAllocation(task.id)}
+              >
+                <ListChecks className="h-4 w-4" />
+              </Button>
+            )}
+          <Popover open={popoverOpenId === task.id} onOpenChange={open => { if (open) openCompletion(task); else setPopoverOpenId(null); }}>
+            <PopoverTrigger asChild>
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 rounded-full hover:bg-emerald-50 hover:text-emerald-600 shrink-0" title="Completar">
+                <CheckCircle2 className="h-5 w-5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-3" align="end">
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm">Completar tarea</h4>
+                <div className={cn('grid gap-2', preference === 'actual' ? 'grid-cols-1' : 'grid-cols-2')}>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">Horas reales</Label>
+                    <Input
+                      type="number"
+                      className="h-7 text-xs"
+                      value={completionData.actual}
+                      onChange={e => {
+                        const val = parseFloat(e.target.value) || 0;
+                        setCompletionData(p => ({
+                          ...p,
+                          actual: val,
+                          ...(preference === 'actual' ? { computed: val } : {}),
+                        }));
+                      }}
+                    />
+                  </div>
+                  {preference !== 'actual' && (
+                    <div className="space-y-1">
+                      <Label className="text-[10px] text-muted-foreground">Computadas</Label>
+                      <Input type="number" className="h-7 text-xs" value={completionData.computed} onChange={e => setCompletionData(p => ({ ...p, computed: parseFloat(e.target.value) || 0 }))} />
                     </div>
-                    <div className="bg-white/50 backdrop-blur-sm px-3 py-1 rounded-full border border-blue-100 text-xs font-medium text-blue-700">
-                        {totalHours}h planificadas
-                    </div>
+                  )}
                 </div>
-            </CardHeader>
+                <Button size="sm" className="w-full text-xs h-7" onClick={() => void handleCompleteSubmit(task)}>Confirmar</Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+          </div>
+        </div>
 
-            <CardContent className="relative z-10">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {prioritizedTasks.map(task => {
-                        const project = projects.find(p => p.id === task.projectId);
-                        const client = clients.find(c => c.id === project?.clientId);
-                        const isOverdue = new Date(task.weekStartDate) < weekStart;
-                        const isBlocking = blockingMap.has(task.id);
-                        const isReport = /informe|reporte/i.test(task.taskName || '');
-                        const isHighValue = (project?.budgetHours || 0) > 40; // Example threshold
-
-                        return (
-                            <div key={task.id} className="bg-white/80 backdrop-blur-sm p-3 rounded-lg border border-blue-100/50 shadow-sm hover:shadow-md transition-all group relative">
-                                {isBlocking && (
-                                    <div className="absolute -top-1 -right-1 z-10">
-                                        <Badge variant="destructive" className="h-5 px-1.5 text-[10px] shadow-sm animate-pulse">Bloqueante</Badge>
-                                    </div>
-                                )}
-                                <div className="flex items-start justify-between gap-2 mb-2">
-                                    <div className="min-w-0 pr-4">
-                                        <h4 className="font-semibold text-sm text-slate-800 truncate" title={task.taskName}>
-                                            {task.taskName || 'Tarea sin nombre'}
-                                        </h4>
-                                        <div className="flex items-center gap-1.5 mt-0.5">
-                                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: client?.color || '#cbd5e1' }} />
-                                            <span className="text-xs text-slate-500 truncate max-w-[120px]">{formatProjectName(project?.name)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center justify-between pt-2 border-t border-slate-100/50 mt-2">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <div className={cn("flex items-center gap-1.5 text-xs px-2 py-1 rounded",
-                                            isOverdue ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-500"
-                                        )}>
-                                            <Clock className="h-3 w-3" />
-                                            <span>{task.hoursAssigned}h</span>
-                                        </div>
-                                        {isTimeTrackerEnabled && currentUser && (
-                                            <TaskTimer
-                                                employeeId={currentUser.id}
-                                                allocationId={task.id}
-                                                onTimeLogged={handleTimeLogged}
-                                            />
-                                        )}
-                                        {isReport && (
-                                            <div title="Prioridad informe" className="flex items-center justify-center h-6 w-6 rounded bg-indigo-50 text-indigo-600">
-                                                <FileText className="h-3 w-3" />
-                                            </div>
-                                        )}
-                                        {isHighValue && !isReport && !isBlocking && (
-                                            <div title="Proyecto importante" className="flex items-center justify-center h-6 w-6 rounded bg-amber-50 text-amber-600">
-                                                <Zap className="h-3 w-3" />
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <Popover open={popoverOpenId === task.id} onOpenChange={(open) => {
-                                        if (open) openCompletion(task);
-                                        else setPopoverOpenId(null);
-                                    }}>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                className="h-7 w-7 p-0 rounded-full hover:bg-emerald-50 hover:text-emerald-600"
-                                                title="Completar"
-                                            >
-                                                <CheckCircle2 className="h-5 w-5" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-64 p-3" align="end">
-                                            <div className="space-y-3">
-                                                <div className="flex items-center justify-between">
-                                                    <h4 className="font-semibold text-sm">Completar Tarea</h4>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <div className="space-y-1">
-                                                        <Label className="text-[10px] text-muted-foreground">Horas reales</Label>
-                                                        <Input
-                                                            type="number"
-                                                            className="h-7 text-xs"
-                                                            value={completionData.actual}
-                                                            onChange={e => setCompletionData(p => ({ ...p, actual: parseFloat(e.target.value) || 0 }))}
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <Label className="text-[10px] text-muted-foreground">Computadas</Label>
-                                                        <Input
-                                                            type="number"
-                                                            className="h-7 text-xs"
-                                                            value={completionData.computed}
-                                                            onChange={e => setCompletionData(p => ({ ...p, computed: parseFloat(e.target.value) || 0 }))}
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <Button size="sm" className="w-full text-xs h-7" onClick={() => handleCompleteSubmit(task)}>
-                                                    Confirmar
-                                                </Button>
-                                            </div>
-                                        </PopoverContent>
-                                    </Popover>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </CardContent>
-        </Card>
+        {!isFocused && (
+          <button
+            type="button"
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50/60 hover:bg-amber-100/80 border-t border-amber-100/60 rounded-b-xl transition-colors"
+            onClick={() => void togglePin(task)}
+          >
+            <Sun className="h-3.5 w-3.5" />
+            Añadir a mi día
+          </button>
+        )}
+        {isFocused && (
+          <button
+            type="button"
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] text-slate-400 hover:text-slate-600 hover:bg-slate-50 border-t border-slate-100/60 rounded-b-xl transition-colors"
+            onClick={() => void togglePin(task)}
+          >
+            <Undo2 className="h-3 w-3" />
+            Devolver al backlog
+          </button>
+        )}
+      </div>
     );
+  };
+
+  const totalFocusHours = useMemo(
+    () => focusTasks.reduce((s, t) => s + t.hoursAssigned, 0),
+    [focusTasks]
+  );
+
+  const allEmpty = focusTasks.length === 0 && backlogTasks.length === 0 && !searchQuery;
+
+  if (allEmpty) {
+    return (
+      <Card className="bg-gradient-to-r from-slate-50 to-white border-slate-200 mb-6 shadow-sm overflow-hidden relative">
+        <CardContent className="flex flex-col items-center justify-center py-8 text-center relative z-10">
+          <div className="bg-amber-100 p-3 rounded-full mb-3">
+            <Sun className="h-6 w-6 text-amber-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-slate-800">Sin tareas en tu semana</h3>
+          <p className="text-slate-500 max-w-md mt-1 mb-4">
+            Cuando tengas asignaciones para esta semana o anteriores pendientes, aparecerán aquí.
+          </p>
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => {
+              if (canAccess('/planner')) navigate('/planner');
+              else if (canAccess('/deadlines')) navigate('/deadlines');
+              else navigate('/dashboard');
+            }}
+          >
+            <Calendar className="h-4 w-4" />
+            Ver planificación
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-5 mb-6">
+      {/* Greeting + summary bar */}
+      <Card className="bg-gradient-to-br from-blue-50/80 via-white to-indigo-50/40 border-blue-100/60 shadow-sm overflow-hidden relative">
+        <div className="absolute -top-8 -right-8 opacity-[0.06] pointer-events-none">
+          <Sun className="h-40 w-40 text-blue-600" />
+        </div>
+        <CardContent className="pt-5 pb-4 relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">
+                Hola, {currentUser?.name?.split(' ')[0] ?? 'equipo'}
+              </h2>
+              <p className="text-sm text-slate-500 mt-0.5">
+                {format(today, "EEEE d 'de' MMMM", { locale: es })}
+                <span className="mx-1.5 text-slate-300">·</span>
+                Jornada: <span className="font-semibold text-slate-700">{dailyCapacity}h</span>
+                <span className="mx-1.5 text-slate-300">·</span>
+                En foco: <span className="font-semibold text-amber-700">{totalFocusHours}h</span>
+              </p>
+            </div>
+            <div className="relative max-w-xs w-full sm:w-64">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+              <Input
+                placeholder="Buscar tarea o proyecto…"
+                className="h-8 pl-8 pr-8 text-sm bg-white/80 border-slate-200"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onClick={() => setSearchQuery('')}>
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {focusTasks.length > 4 && (
+        <Alert className="border-amber-200 bg-amber-50/80">
+          <AlertDescription className="text-amber-900 text-sm">
+            Tienes más de 4 tareas en foco: puede ser difícil terminarlas todas. Considera priorizar menos ítems.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* En foco hoy */}
+      <div>
+        <div className="flex items-center gap-2 mb-3 px-0.5">
+          <Sun className="h-4 w-4 text-amber-500" />
+          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">En foco hoy</h3>
+          {focusTasks.length > 0 && (
+            <Badge variant="secondary" className="h-5 text-[10px] bg-amber-100 text-amber-700 border-amber-200">
+              {focusTasks.length}
+            </Badge>
+          )}
+        </div>
+        {focusTasks.length === 0 ? (
+          <Card className="border-dashed border-slate-200 bg-slate-50/50">
+            <CardContent className="py-6 text-center">
+              <p className="text-sm text-slate-500">
+                {searchQuery ? 'Sin resultados en foco.' : 'Nada en foco todavía. Usa "Añadir a mi día" en el backlog o inicia el cronómetro.'}
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {focusTasks.map(task => renderTaskCard(task, { showReorder: false, isFocus: true }))}
+          </div>
+        )}
+      </div>
+
+      {/* Backlog semanal */}
+      <div>
+        <div className="flex items-center gap-2 mb-3 px-0.5">
+          <ArrowRight className="h-4 w-4 text-slate-400" />
+          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Backlog semanal</h3>
+          {backlogTasks.length > 0 && (
+            <Badge variant="secondary" className="h-5 text-[10px]">
+              {backlogTasks.length}
+            </Badge>
+          )}
+        </div>
+        {backlogTasks.length === 0 ? (
+          <Card className="border-dashed border-slate-200 bg-slate-50/50">
+            <CardContent className="py-4 text-center">
+              <p className="text-sm text-slate-500">
+                {searchQuery ? 'Sin resultados en el backlog.' : 'Todas las tareas están en foco o completadas.'}
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {sortedBacklog.map(task => renderTaskCard(task, { showReorder: true, isFocus: false }))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

@@ -2,6 +2,8 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { MyWeekView } from '@/components/employee/MyWeekView';
+import { MyDayView } from '@/components/employee/MyDayView';
+import { useDashboardView } from '@/hooks/useDashboardView';
 import { WeeklyReportDialog } from '@/components/employee/WeeklyReportDialog';
 import { PriorityInsights, ProjectTeamPulse } from '@/components/employee/DashboardWidgets';
 import { ReliabilityIndexCard } from '@/components/employee/ReliabilityIndexCard';
@@ -40,7 +42,7 @@ import { NewTaskRow, Deadline } from '@/types';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
-import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, CheckCircle2, Plus, X, Check, ListPlus, AlertTriangle, HelpCircle, RotateCcw, FileDown, CheckSquare, AlertCircle, Trash2, MoreHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, CheckCircle2, Plus, X, Check, ListPlus, AlertTriangle, HelpCircle, RotateCcw, FileDown, CheckSquare, AlertCircle, Trash2, MoreHorizontal, Sun } from 'lucide-react';
 import { startOfMonth, endOfMonth, format, isSameMonth, parseISO, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from '@/lib/notify';
@@ -69,6 +71,8 @@ export default function EmployeeDashboard() {
   const { isPlatformAdmin, isLoading: isPlatformAdminLoading } = usePlatformAdmin();
   const isManager = canAccess('/planner') || canAccess('/reports') || canAccess('/operaciones') || canAccess('/finanzas');
 
+  const { activeView, showToggle, setView, isSaving: isSavingViewPref } = useDashboardView();
+
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isLoadingMonth, setIsLoadingMonth] = useState(false);
   const [selectedCell, setSelectedCell] = useState<{ employeeId: string; weekStart: Date } | null>(null);
@@ -87,6 +91,7 @@ export default function EmployeeDashboard() {
   const [newTasks, setNewTasks] = useState<NewTaskRow[]>([]);
   const [openComboboxId, setOpenComboboxId] = useState<string | null>(null);
   const [showWeeklyDialog, setShowWeeklyDialog] = useState(false);
+  const [weeklyFocusAllocationId, setWeeklyFocusAllocationId] = useState<string | null>(null);
   // Default to "coherence" (Control de planificación) to match the workflow
   const [activeTab, setActiveTab] = useState('coherence');
   const [actionsDropdownOpen, setActionsDropdownOpen] = useState(false);
@@ -531,110 +536,114 @@ export default function EmployeeDashboard() {
       {/* 0. PANEL DE TRANSFERENCIAS PENDIENTES */}
       <PendingTransfersPanel />
 
-      {/* 1. CABECERA UNIFICADA DE ACCIONES */}
-      <div className="flex flex-wrap items-center gap-2 justify-between">
-        <div className="flex gap-2 flex-wrap flex-1">
-          {/* Action: WEEKLY */}
+      {/* 1. CABECERA UNIFICADA */}
+      <div className="flex items-center gap-3 bg-white/70 backdrop-blur-sm rounded-xl border border-slate-200/80 p-2 shadow-sm">
+        {/* Left: View toggle */}
+        {showToggle && myEmployeeProfile && (
+          <div className="flex items-center rounded-lg bg-slate-100/80 p-0.5 gap-0.5 shrink-0" data-tour="dashboard-view-toggle">
+            <Button
+              type="button"
+              variant={activeView === 'weekly' ? 'default' : 'ghost'}
+              size="sm"
+              className={cn('h-8 px-3 text-xs font-medium', isMobile && 'h-11 min-h-[44px]')}
+              onClick={() => void setView('weekly')}
+              disabled={isSavingViewPref}
+            >
+              Mi semana
+            </Button>
+            <Button
+              type="button"
+              variant={activeView === 'daily' ? 'default' : 'ghost'}
+              size="sm"
+              className={cn('h-8 px-3 gap-1.5 text-xs font-medium', isMobile && 'h-11 min-h-[44px]')}
+              onClick={() => void setView('daily')}
+              disabled={isSavingViewPref}
+            >
+              <Sun className="h-3.5 w-3.5 shrink-0" /> Mi día
+            </Button>
+          </div>
+        )}
+
+        {!showToggle && <div className="shrink-0" />}
+
+        <div className="h-6 w-px bg-slate-200/80 shrink-0 hidden sm:block" />
+
+        {/* Center: Primary actions */}
+        <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto no-scrollbar">
           {isWeeklyFeedbackEnabled && (
             <Button
               onClick={() => setShowWeeklyDialog(true)}
+              size="sm"
               className={cn(
-                "gap-2 shadow-sm transition-all",
+                "gap-1.5 shrink-0 text-xs font-medium shadow-sm transition-all",
                 hasPendingWeeklyTasks
-                  ? "bg-amber-600 text-white hover:bg-amber-700 animate-pulse shadow-lg shadow-amber-500/50"
+                  ? "bg-amber-600 text-white hover:bg-amber-700 animate-pulse shadow-amber-500/30"
                   : "bg-primary text-white hover:bg-primary/90"
               )}
               data-tour="weekly-button"
             >
-              {hasPendingWeeklyTasks ? <AlertCircle className="h-4 w-4 animate-bounce" /> : <CheckSquare className="h-4 w-4" />}
+              {hasPendingWeeklyTasks ? <AlertCircle className="h-3.5 w-3.5" /> : <CheckSquare className="h-3.5 w-3.5" />}
               Weekly
             </Button>
           )}
 
-          {/* Action: AÑADIR TAREAS */}
-          <Button onClick={openAddTasksDialog} className="gap-2 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm" data-tour="add-tasks">
-            <ListPlus className="h-4 w-4 text-primary" /> Añadir tareas
+          <Button size="sm" onClick={openAddTasksDialog} variant="outline" className="gap-1.5 shrink-0 text-xs font-medium border-slate-200 bg-white hover:bg-slate-50" data-tour="add-tasks">
+            <ListPlus className="h-3.5 w-3.5 text-primary" /> Añadir tareas
           </Button>
 
-          {/* Action: INTERNAL TASK */}
-          <Button onClick={() => setIsAddingExtra(true)} className="gap-2 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm" data-tour="internal-tasks">
-            <Clock className="h-4 w-4 text-slate-600" /> Tarea interna
+          <Button size="sm" onClick={() => setIsAddingExtra(true)} variant="outline" className="gap-1.5 shrink-0 text-xs font-medium border-slate-200 bg-white hover:bg-slate-50" data-tour="internal-tasks">
+            <Clock className="h-3.5 w-3.5 text-slate-500" /> Tarea interna
           </Button>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap justify-end">
-          {/* Escritorio: mismas acciones como botones visibles (más espacio). Móvil: menú Acciones. */}
-          {!isMobile && (
-            <>
+        {/* Right: Secondary actions */}
+        <div className="flex items-center gap-1 shrink-0">
+          <DropdownMenu open={actionsDropdownOpen} onOpenChange={setActionsDropdownOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 px-2 gap-1.5 text-xs text-slate-500 hover:text-slate-700" data-tour="actions-dropdown">
+                <MoreHorizontal className="h-4 w-4" />
+                {!isMobile && <span>Más</span>}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
               {isCrmExportEnabled && (
-                <Button
-                  variant="outline"
-                  className="gap-2 border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-sm shrink-0"
-                  onClick={handleExportCRM}
-                  disabled={!myEmployeeProfile?.crmUserId}
-                  data-tour="crm-export"
-                >
-                  <FileDown className="h-4 w-4 text-purple-600 shrink-0" /> Exportar CRM
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                className="gap-2 border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-sm shrink-0"
-                onClick={() => setShowGoals(true)}
-                data-tour="goals"
-              >
-                <TrendingUp className="h-4 w-4 text-emerald-600 shrink-0" /> Objetivos
-              </Button>
-              <Button
-                variant="outline"
-                className="gap-2 border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-sm shrink-0"
-                onClick={() => setShowAbsences(true)}
-                data-tour="absences"
-              >
-                <Calendar className="h-4 w-4 text-amber-600 shrink-0" /> Ausencias
-              </Button>
-              <Button
-                variant="outline"
-                className="gap-2 border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-sm shrink-0"
-                onClick={resetTour}
-              >
-                <RotateCcw className="h-4 w-4 shrink-0" /> Repetir tour
-              </Button>
-            </>
-          )}
-          {isMobile && (
-            <DropdownMenu open={actionsDropdownOpen} onOpenChange={setActionsDropdownOpen}>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2 border-slate-200" data-tour="actions-dropdown">
-                  <MoreHorizontal className="h-4 w-4" /> Acciones
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                {isCrmExportEnabled && (
-                  <DropdownMenuItem onClick={handleExportCRM} disabled={!myEmployeeProfile?.crmUserId} className="gap-2" data-tour="crm-export">
+                <>
+                  <DropdownMenuItem onClick={handleExportCRM} disabled={!myEmployeeProfile?.crmUserId} className="gap-2 text-sm" data-tour="crm-export">
                     <FileDown className="h-4 w-4 text-purple-600" /> Exportar a CRM
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setShowGoals(true)} className="gap-2" data-tour="goals">
-                  <TrendingUp className="h-4 w-4 text-emerald-600" /> Mis Objetivos
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowAbsences(true)} className="gap-2" data-tour="absences">
-                  <Calendar className="h-4 w-4 text-amber-600" /> Mis Ausencias
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={resetTour} className="gap-2">
-                  <RotateCcw className="h-4 w-4" /> Repetir Tour
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              <DropdownMenuItem onClick={() => setShowGoals(true)} className="gap-2 text-sm" data-tour="goals">
+                <TrendingUp className="h-4 w-4 text-emerald-600" /> Objetivos
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowAbsences(true)} className="gap-2 text-sm" data-tour="absences">
+                <Calendar className="h-4 w-4 text-amber-600" /> Ausencias
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={resetTour} className="gap-2 text-sm">
+                <RotateCcw className="h-4 w-4" /> Repetir tour
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <EmployeeSettings employeeId={myEmployeeProfile.id} />
         </div>
       </div>
 
-      {/* Vista semanal (planificación) */}
+      {activeView === 'daily' && myEmployeeProfile && (
+        <MyDayView
+          employeeId={myEmployeeProfile.id}
+          viewDate={currentMonth}
+          weeklyEnabled={isWeeklyFeedbackEnabled}
+          onOpenWeeklyForAllocation={(allocationId) => {
+            setWeeklyFocusAllocationId(allocationId);
+            setShowWeeklyDialog(true);
+          }}
+        />
+      )}
+
+      {activeView === 'weekly' && (
       <>
           {/* 2. CONTROL MES */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white/60 p-3 rounded-lg border border-slate-200 backdrop-blur-sm">
@@ -713,6 +722,8 @@ export default function EmployeeDashboard() {
               </div>
             </Card>
           )}
+      </>
+      )}
 
           {/* 4. VISTA DETALLADA POR PESTAÑAS */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -765,7 +776,6 @@ export default function EmployeeDashboard() {
               </TabsContent>
             </div>
           </Tabs>
-      </>
 
       {/* MODALES Y DIÁLOGOS (Hidden UI) */}
       {selectedCell && (
@@ -994,7 +1004,16 @@ export default function EmployeeDashboard() {
       {showGoals && <ProfessionalGoalsSheet open={showGoals} onOpenChange={setShowGoals} employeeId={myEmployeeProfile.id} />}
       {showAbsences && <AbsencesSheet open={showAbsences} onOpenChange={setShowAbsences} employeeId={myEmployeeProfile.id} />}
       {myEmployeeProfile && isWeeklyFeedbackEnabled && (
-        <WeeklyReportDialog open={showWeeklyDialog} onOpenChange={setShowWeeklyDialog} employeeId={myEmployeeProfile.id} viewDate={currentMonth} />
+        <WeeklyReportDialog
+          open={showWeeklyDialog}
+          onOpenChange={(o) => {
+            setShowWeeklyDialog(o);
+            if (!o) setWeeklyFocusAllocationId(null);
+          }}
+          employeeId={myEmployeeProfile.id}
+          viewDate={currentMonth}
+          focusAllocationId={weeklyFocusAllocationId}
+        />
       )}
       <WelcomeTour
         forceShow={showTour}

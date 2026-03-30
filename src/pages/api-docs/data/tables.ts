@@ -309,6 +309,7 @@ export const TABLE_GROUPS: TableGroup[] = [
           { name: 'status', type: 'text', required: false, default: "'planned'", check: "IN ('planned','completed')", description: 'Estado de la asignacion.' },
           { name: 'is_locked', type: 'boolean', required: false, default: 'false', description: 'Si esta bloqueada para edicion.' },
           { name: 'user_priority', type: 'integer', required: false, description: 'Prioridad asignada por el usuario (orden).' },
+          { name: 'focus_date', type: 'date', required: false, description: 'Día en que el empleado marca la tarea en foco (vista Mi día); null = backlog. No altera hours_assigned.' },
           { name: 'dependency_id', type: 'uuid', required: false, fk: 'allocations(id)', description: 'Asignacion de la que depende.' },
           { name: 'parent_allocation_id', type: 'uuid', required: false, fk: 'allocations(id)', description: 'Asignacion padre (subdivisiones).' },
           { name: 'transferred_from_allocation_id', type: 'uuid', required: false, fk: 'allocations(id)', description: 'Origen si fue transferida.' },

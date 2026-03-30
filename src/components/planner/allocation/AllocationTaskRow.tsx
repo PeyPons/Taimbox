@@ -4,7 +4,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Link as LinkIcon, CheckCircle2, Users, Clock, TrendingUp, TrendingDown } from 'lucide-react';
+import { Link as LinkIcon, CheckCircle2, Users, Clock, TrendingUp, TrendingDown, Sun } from 'lucide-react';
+import { format } from 'date-fns';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { PlannerTaskContextMenu } from '@/components/planner/allocation/PlannerTaskContextMenu';
 import { TaskTimer } from '@/components/employee/TaskTimer';
@@ -71,6 +72,8 @@ export function AllocationTaskRow({
     const weeklyCloseDay = useWeeklyCloseDay();
     const { currentAgency } = useAgency();
     const preference = currentAgency?.settings?.hoursTrackingPreference;
+    const todayIso = format(new Date(), 'yyyy-MM-dd');
+    const isFocusToday = alloc.focusDate === todayIso;
 
     const isCompleted = alloc.status === 'completed';
     const pendingTransfer = (outgoingTransfers || []).find(t => t.allocationId === alloc.id && t.status === 'pending');
@@ -112,6 +115,11 @@ export function AllocationTaskRow({
                         <div className="flex justify-between items-start">
                             <div className="flex flex-col w-full">
                                 <div className="flex items-center gap-1.5">
+                                    {isFocusToday && (
+                                        <span className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-amber-100 shrink-0" title="El empleado marcó esta tarea en foco para hoy">
+                                            <Sun className="h-2.5 w-2.5 text-amber-600" aria-label="En foco hoy" />
+                                        </span>
+                                    )}
                                     <span className={cn(
                                         "font-medium leading-tight",
                                         isMobile ? "text-sm" : "text-xs",

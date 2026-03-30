@@ -12,8 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useDepartmentConfigs } from '@/hooks/useDashboardView';
-import { ViewMode, DepartmentConfig } from '@/types';
-import { Calendar, Lock, Unlock, Loader2, Settings } from 'lucide-react';
+import { ViewMode } from '@/types';
+import { Calendar, Lock, Unlock, Loader2, Settings, Sun } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface DepartmentViewConfigDialogProps {
@@ -47,7 +47,7 @@ export function DepartmentViewConfigDialog({
     }, [open, departmentName, getConfigForDepartment]);
 
     const handleSave = async () => {
-        const success = await saveDepartmentConfig(departmentName, 'weekly', isStrict);
+        const success = await saveDepartmentConfig(departmentName, defaultView, isStrict);
         if (success) {
             onOpenChange(false);
         }
@@ -67,15 +67,41 @@ export function DepartmentViewConfigDialog({
                 </DialogHeader>
 
                 <div className="space-y-6 py-4">
-                    {/* Vista por defecto: solo semanal (modo Zen eliminado) */}
                     <div className="space-y-3">
                         <Label className="text-sm font-medium">Vista por defecto del equipo</Label>
-                        <div className="flex items-center gap-2 rounded-lg border-2 border-slate-200 p-4 bg-slate-50/50">
-                            <Calendar className="h-8 w-8 text-primary" />
-                            <div>
-                                <span className="font-medium">Semanal</span>
-                                <span className="text-xs text-slate-500 block">Vista completa de la semana</span>
-                            </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setDefaultView('weekly')}
+                                className={cn(
+                                    'flex items-center gap-2 rounded-lg border-2 p-4 text-left transition-colors',
+                                    defaultView === 'weekly'
+                                        ? 'border-primary bg-primary/5'
+                                        : 'border-slate-200 bg-slate-50/50 hover:bg-slate-50'
+                                )}
+                            >
+                                <Calendar className="h-8 w-8 text-primary shrink-0" />
+                                <div>
+                                    <span className="font-medium">Mi semana</span>
+                                    <span className="text-xs text-slate-500 block">Calendario y carga mensual</span>
+                                </div>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setDefaultView('daily')}
+                                className={cn(
+                                    'flex items-center gap-2 rounded-lg border-2 p-4 text-left transition-colors',
+                                    defaultView === 'daily'
+                                        ? 'border-primary bg-primary/5'
+                                        : 'border-slate-200 bg-slate-50/50 hover:bg-slate-50'
+                                )}
+                            >
+                                <Sun className="h-8 w-8 text-amber-500 shrink-0" />
+                                <div>
+                                    <span className="font-medium">Mi día</span>
+                                    <span className="text-xs text-slate-500 block">En foco hoy y backlog semanal</span>
+                                </div>
+                            </button>
                         </div>
                     </div>
 
@@ -118,7 +144,7 @@ export function DepartmentViewConfigDialog({
                                 {isStrict ? "Modo estricto" : "Modo flexible"}
                             </Badge>
                             <Badge variant="outline" className="text-xs">
-                                Vista: Semanal
+                                Vista por defecto: {defaultView === 'daily' ? 'Mi día' : 'Mi semana'}
                             </Badge>
                         </div>
                     </div>

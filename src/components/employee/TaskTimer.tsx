@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Play, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTaskTimer } from '@/hooks/useTaskTimer';
@@ -9,6 +10,8 @@ export interface TaskTimerProps {
   allocationId: string;
   disabled?: boolean;
   onTimeLogged?: (allocationId: string, hoursLogged: number) => void;
+  /** Ejecutado antes de iniciar el cronómetro (p. ej. marcar la tarea en foco para hoy). */
+  beforeStart?: () => Promise<void>;
 }
 
 export function TaskTimer({
@@ -16,6 +19,7 @@ export function TaskTimer({
   allocationId,
   disabled = false,
   onTimeLogged,
+  beforeStart,
 }: TaskTimerProps) {
   const { currentAgency } = useAgency();
   const maxHours = currentAgency?.settings?.timeTrackerMaxHours ?? 12;
@@ -25,6 +29,7 @@ export function TaskTimer({
     { maxHours, onTimeLogged }
   );
   const displayTime = isRunning ? formattedTime : formattedTimeShort;
+  const [isPriming, setIsPriming] = useState(false);
 
   if (isLoading) {
     return (
@@ -66,8 +71,19 @@ export function TaskTimer({
           variant="ghost"
           size="icon"
           className="h-6 w-6 text-slate-500 hover:bg-green-100 hover:text-green-600 rounded-full"
-          onClick={startTimer}
-          disabled={disabled}
+          onClick={async () => {
+            if (disabled || isSaving || isPriming) return;
+            setIsPriming(true);
+            try {
+              if (beforeStart) await beforeStart();
+              await startTimer();
+            } catch {
+              /* beforeStart o inicio del timer falló */
+            } finally {
+              setIsPriming(false);
+            }
+          }}
+          disabled={disabled || isSaving || isPriming}
           aria-label="Iniciar cronómetro"
         >
           <Play className="h-3 w-3 fill-current" />

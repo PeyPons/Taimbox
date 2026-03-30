@@ -401,12 +401,11 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange, onDrop
       });
     }
     
-    // En móvil el menú «Acciones» debe abrirse para resaltar CRM / Objetivos / Ausencias. En escritorio esos targets son botones visibles.
-    if (step.openDropdown && onDropdownOpen && isMobile) {
+    if (step.openDropdown && onDropdownOpen) {
       requestAnimationFrame(() => {
         onDropdownOpen(step.openDropdown!, true);
       });
-    } else if (onDropdownOpen && currentStep > 0 && isMobile) {
+    } else if (onDropdownOpen && currentStep > 0) {
       const prevStep = tourSteps[currentStep - 1];
       if (prevStep?.openDropdown) {
         requestAnimationFrame(() => {
@@ -430,7 +429,7 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange, onDrop
 
     // Para elementos en dropdowns o tabs, esperar más tiempo para que se rendericen
     // Tabs necesitan más tiempo porque el contenido se renderiza condicionalmente
-    const delay = step.openDropdown && isMobile ? 600 : (step.tab ? 500 : 200);
+    const delay = step.openDropdown ? 600 : (step.tab ? 500 : 200);
 
     const timeoutId = setTimeout(() => {
       calculatePositions();

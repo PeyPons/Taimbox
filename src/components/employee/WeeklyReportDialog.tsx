@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -9,12 +9,12 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format, parseISO, startOfWeek, startOfMonth, isSameMonth, addDays, addMonths, isBefore } from 'date-fns';
+import { format, parseISO, startOfWeek, startOfMonth, addDays, addMonths, isBefore, isSameWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CheckCircle2, AlertCircle, Plus, Users, Clock, Trash2, Search } from 'lucide-react';
+import { CheckCircle2, AlertCircle, AlertTriangle, Plus, Clock, Trash2, Search } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from '@/lib/notify';
-import { getStorageKey, getWeeksForMonth, isAllocationInEffectiveMonth, getWeekEndDate } from '@/utils/dateUtils';
+import { getStorageKey, getWeeksForMonth, isAllocationInEffectiveMonth, getWeekEndDate, parseDateStringLocal } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import {
   useWeeklyCloseMutations,
@@ -23,6 +23,7 @@ import {
 } from '@/hooks/useWeeklyCloseMutations';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 function WeeklyOptionalNote({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
@@ -80,27 +81,31 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
   const [modalSearch, setModalSearch] = useState('');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [weeklyTab, setWeeklyTab] = useState<'past' | 'current'>('past');
 
-  const taskMatchesSearch = (task: (typeof allocations)[0]) => {
-    const q = modalSearch.trim().toLowerCase();
-    if (!q) return true;
-    const proj = projects.find(p => p.id === task.projectId);
-    const rawProjectName = proj
-      ? typeof (proj as any).name === 'string' ? (proj as any).name
-        : typeof (proj as any).project_name === 'string' ? (proj as any).project_name
-          : typeof (proj as any).title === 'string' ? (proj as any).title : ''
-      : '';
-    const projectLabel = formatProjectName(rawProjectName).toLowerCase();
-    const rawTaskName = typeof (task as any).taskName === 'string' ? (task as any).taskName : '';
-    const taskLabel = rawTaskName.toLowerCase().replace(/\(transferida de[^\)]*\)/gi, '').trim();
-    return projectLabel.includes(q) || taskLabel.includes(q);
-  };
+  const taskMatchesSearch = useCallback(
+    (task: (typeof allocations)[0]) => {
+      const q = modalSearch.trim().toLowerCase();
+      if (!q) return true;
+      const proj = projects.find(p => p.id === task.projectId);
+      const rawProjectName = proj
+        ? typeof (proj as any).name === 'string'
+          ? (proj as any).name
+          : typeof (proj as any).project_name === 'string'
+            ? (proj as any).project_name
+            : typeof (proj as any).title === 'string'
+              ? (proj as any).title
+              : ''
+        : '';
+      const projectLabel = formatProjectName(rawProjectName).toLowerCase();
+      const rawTaskName = typeof (task as any).taskName === 'string' ? (task as any).taskName : '';
+      const taskLabel = rawTaskName.toLowerCase().replace(/\(transferida de[^\)]*\)/gi, '').trim();
+      return projectLabel.includes(q) || taskLabel.includes(q);
+    },
+    [modalSearch, projects, formatProjectName]
+  );
 
   const { activeFilters, filterProject, getFilterDisplayName } = useProjectFilters();
-  const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-  const currentWeekStr = format(currentWeekStart, 'yyyy-MM-dd');
-  const isCurrentWeekInMonth = isSameMonth(currentWeekStart, viewDate);
-
   const getTargetWeek = (): string | null => {
     const monthEnd = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0);
     if (isBefore(monthEnd, new Date())) {
@@ -147,13 +152,15 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
       if (a.employeeId !== employeeId) return;
       if (processedByWeeklyIds.has(a.id)) return;
       try {
-        const taskWeekDate = parseISO(a.weekStartDate);
+        const taskWeekDate = parseDateStringLocal(a.weekStartDate);
         if (!isAllocationInEffectiveMonth(a.weekStartDate, viewDate)) return;
         const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
         if (targetWeek !== null) {
           if (getStorageKey(taskWeekDate, viewDate) !== targetWeek) return;
         } else {
-          if (taskWeekEnd > today) return;
+          // Permitir ajustes proactivos de la semana actual aunque aún no haya llegado el día de cierre.
+          const isCurrentCalendarWeek = isSameWeek(taskWeekDate, today, { weekStartsOn: 1 });
+          if (taskWeekEnd > today && !isCurrentCalendarWeek) return;
         }
         const isTransferredTask = a.transferredFromAllocationId !== undefined && a.transferredFromAllocationId !== null
           || a.taskName?.includes('(transferida de');
@@ -174,6 +181,27 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
     () => [...openTasks, ...transferredTasks],
     [openTasks, transferredTasks]
   );
+
+  /**
+   * Semana actual vs atrasadas: misma semana ISO (lunes inicio) que hoy, usando fecha local de `week_start_date`.
+   * `parseISO` solo con YYYY-MM-DD puede correr un día en UTC− y mandar todo a «Requieren cierre» por error.
+   */
+  const { pastTasks, currentTasks } = useMemo(() => {
+    const today = new Date();
+    const past: typeof allTasks = [];
+    const current: typeof allTasks = [];
+    for (const t of allTasks) {
+      try {
+        const d = parseDateStringLocal(t.weekStartDate);
+        if (isSameWeek(d, today, { weekStartsOn: 1 })) current.push(t);
+        else past.push(t);
+      } catch {
+        past.push(t);
+      }
+    }
+    return { pastTasks: past, currentTasks: current };
+  }, [allTasks]);
+
   const singleTaskFromPlanner = Boolean(open && focusAllocationId && allTasks.length === 1 && allTasks[0]?.id === focusAllocationId);
 
   useEffect(() => {
@@ -183,24 +211,60 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
     void loadDataForMonth(addMonths(anchor, 1));
   }, [open, viewDate, ensureMonthLoaded, loadDataForMonth]);
 
+  const weeklyTabInitForSessionRef = useRef(false);
+
   useEffect(() => {
-    if (!open) { setModalSearch(''); setSelectedTaskId(null); }
+    if (!open) {
+      setModalSearch('');
+      setSelectedTaskId(null);
+      setWeeklyTab('past');
+      weeklyTabInitForSessionRef.current = false;
+    }
   }, [open]);
 
-  /** Selección inicial o recuperación si la tarea ya no está; no incluir selectedTaskId en deps para no pisar el clic del usuario en otra tarea. */
+  /** Una sola vez al abrir: pestaña por defecto o la del foco del planificador (sin pisar si el usuario ya cambió de pestaña al refrescar datos). */
   useEffect(() => {
-    if (!open || allTasks.length === 0) return;
+    if (!open || weeklyTabInitForSessionRef.current) return;
+    weeklyTabInitForSessionRef.current = true;
+    if (focusAllocationId) {
+      const task = allocations.find(a => a.id === focusAllocationId && a.employeeId === employeeId);
+      if (task) {
+        try {
+          const d = parseDateStringLocal(task.weekStartDate);
+          setWeeklyTab(isSameWeek(d, new Date(), { weekStartsOn: 1 }) ? 'current' : 'past');
+        } catch {
+          setWeeklyTab('past');
+        }
+        return;
+      }
+    }
+    setWeeklyTab('past');
+  }, [open, focusAllocationId, allocations, employeeId]);
+
+  const tabTaskPool = singleTaskFromPlanner
+    ? allTasks
+    : weeklyTab === 'past'
+      ? pastTasks
+      : currentTasks;
+  const filteredTasks = useMemo(() => tabTaskPool.filter(taskMatchesSearch), [tabTaskPool, taskMatchesSearch]);
+
+  /** Selección acorde a pestaña y filtro de búsqueda. */
+  useEffect(() => {
+    if (!open) return;
+    if (filteredTasks.length === 0) {
+      setSelectedTaskId(null);
+      return;
+    }
     setSelectedTaskId(prev => {
-      if (prev && allTasks.some(t => t.id === prev)) return prev;
-      if (focusAllocationId && allTasks.some(t => t.id === focusAllocationId)) return focusAllocationId;
-      return allTasks[0].id;
+      if (prev && filteredTasks.some(t => t.id === prev)) return prev;
+      if (focusAllocationId && filteredTasks.some(t => t.id === focusAllocationId)) return focusAllocationId;
+      return filteredTasks[0].id;
     });
-  }, [open, allTasks, focusAllocationId]);
+  }, [open, filteredTasks, focusAllocationId]);
 
   // ── Derived state ──
   const resolvedCount = allTasks.filter(t => taskActions[t.id]).length;
   const progress = allTasks.length > 0 ? (resolvedCount / allTasks.length) * 100 : 0;
-  const filteredTasks = allTasks.filter(taskMatchesSearch);
 
   const sidebarGroups: Array<{ id: string; label: string; tasks: typeof allTasks }> = [];
   const assignedIds = new Set<string>();
@@ -523,8 +587,62 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
             </p>
           </div>
         ) : (
-          <>
-            {/* ── BODY: SPLIT PANEL ── */}
+          <Tabs
+            value={singleTaskFromPlanner ? 'past' : weeklyTab}
+            onValueChange={(v) => setWeeklyTab(v as 'past' | 'current')}
+            className="flex min-h-0 flex-1 flex-col"
+          >
+            {!singleTaskFromPlanner && (
+              <div className="shrink-0 border-b px-6 pb-3 pt-2">
+                <TabsList className="grid h-auto w-full max-w-lg grid-cols-2 gap-1 p-1">
+                  <TabsTrigger
+                    value="past"
+                    className={cn(
+                      'gap-1.5 px-2 py-2 text-xs sm:text-sm',
+                      pastTasks.length > 0 && 'data-[state=active]:text-destructive data-[state=inactive]:text-destructive/80'
+                    )}
+                  >
+                    {pastTasks.length > 0 ? (
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-600" aria-hidden />
+                    ) : null}
+                    <span className="truncate text-left font-semibold">Requieren cierre</span>
+                    <span className="font-mono text-[11px] opacity-80">({pastTasks.length})</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="current" className="gap-1 px-2 py-2 text-xs sm:text-sm">
+                    <span className="truncate font-medium">Semana actual</span>
+                    <span className="font-mono text-[11px] text-muted-foreground">({currentTasks.length})</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+            )}
+
+            {/* ── BODY: vacío por pestaña o split panel ── */}
+            {(() => {
+              const showPastTabEmpty = !singleTaskFromPlanner && weeklyTab === 'past' && pastTasks.length === 0;
+              const showCurrentTabEmpty = !singleTaskFromPlanner && weeklyTab === 'current' && currentTasks.length === 0;
+              if (showPastTabEmpty) {
+                return (
+                  <div className="flex flex-1 flex-col items-center justify-center px-8 py-14 text-center">
+                    <CheckCircle2 className="mb-3 h-10 w-10 text-emerald-500/90" strokeWidth={1.5} />
+                    <h3 className="text-base font-semibold text-slate-800">Todo al día</h3>
+                    <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
+                      No tienes tareas de semanas anteriores pendientes de cierre. Puedes revisar la pestaña <strong>Semana actual</strong> si quieres ajustar lo de esta semana.
+                    </p>
+                  </div>
+                );
+              }
+              if (showCurrentTabEmpty) {
+                return (
+                  <div className="flex flex-1 flex-col items-center justify-center px-8 py-14 text-center">
+                    <Clock className="mb-3 h-9 w-9 text-muted-foreground/50" strokeWidth={1.5} />
+                    <h3 className="text-base font-semibold">Sin tareas en la semana actual</h3>
+                    <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
+                      Aquí aparecerán las tareas de la semana en curso cuando quieras hacer ajustes proactivos.
+                    </p>
+                  </div>
+                );
+              }
+              return (
             <div className="flex min-h-0 flex-1">
               {/* ── LEFT: SIDEBAR (desktop) ── */}
               <div className={cn('w-64 shrink-0 flex-col border-r bg-muted/30', singleTaskFromPlanner ? 'hidden' : 'hidden md:flex')}>
@@ -877,9 +995,11 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                 </div>
               </div>
             </div>
+              );
+            })()}
 
             {/* ── FOOTER ── */}
-            <DialogFooter className="items-center border-t px-6 py-4 sm:justify-between">
+            <DialogFooter className="shrink-0 items-center border-t px-6 py-4 sm:justify-between">
               <p className="hidden text-sm text-muted-foreground sm:block">
                 {resolvedCount}/{allTasks.length} configuradas
               </p>
@@ -903,7 +1023,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                 </Button>
               </div>
             </DialogFooter>
-          </>
+          </Tabs>
         )}
       </DialogContent>
     </Dialog>

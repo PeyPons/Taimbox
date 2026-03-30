@@ -77,6 +77,8 @@ interface SupabaseAllocation {
   original_transferred_task_name?: string;
   transfer_source_employee_id?: string;
   user_priority?: number | null;
+  focus_date?: string | null;
+  is_locked?: boolean;
 }
 
 interface SupabaseAbsence {
@@ -366,7 +368,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           parentAllocationId: a.parent_allocation_id,
           originalTransferredTaskName: a.original_transferred_task_name,
           transferSourceEmployeeId: a.transfer_source_employee_id,
-          userPriority: a.user_priority ?? null
+          userPriority: a.user_priority ?? null,
+          focusDate: a.focus_date ?? null,
+          isLocked: a.is_locked ?? false
         }));
 
         // Si skipLoading es true, significa que estamos cargando datos adicionales (merge con upsert)
@@ -491,7 +495,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           parentAllocationId: a.parent_allocation_id,
           originalTransferredTaskName: a.original_transferred_task_name,
           transferSourceEmployeeId: a.transfer_source_employee_id,
-          userPriority: a.user_priority ?? null
+          userPriority: a.user_priority ?? null,
+          focusDate: a.focus_date ?? null,
+          isLocked: a.is_locked ?? false
         }));
 
         setAllocations(prev => {
@@ -736,7 +742,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             parentAllocationId: row.parent_allocation_id,
             originalTransferredTaskName: row.original_transferred_task_name,
             transferSourceEmployeeId: row.transfer_source_employee_id,
-            userPriority: row.user_priority ?? null
+            userPriority: row.user_priority ?? null,
+            focusDate: row.focus_date ?? null,
+            isLocked: row.is_locked ?? false
           });
           if (payload.eventType === 'INSERT') {
             const newAllocation = mapAllocation(payload.new as SupabaseAllocation);
@@ -1066,7 +1074,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       parent_allocation_id: allocation.parentAllocationId,
       original_transferred_task_name: allocation.originalTransferredTaskName,
       transfer_source_employee_id: allocation.transferSourceEmployeeId,
-      user_priority: allocation.userPriority
+      user_priority: allocation.userPriority,
+      focus_date: allocation.focusDate ?? null,
+      is_locked: allocation.isLocked ?? false
     }).select().single();
 
     if (error) {
@@ -1092,7 +1102,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         parentAllocationId: data.parent_allocation_id,
         originalTransferredTaskName: data.original_transferred_task_name,
         transferSourceEmployeeId: data.transfer_source_employee_id,
-        userPriority: data.user_priority
+        userPriority: data.user_priority,
+        focusDate: data.focus_date ?? null,
+        isLocked: data.is_locked ?? false
       };
       setAllocations(prev => [...prev, mappedAllocation]);
 
@@ -1127,7 +1139,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       parentAllocationId: 'parent_allocation_id',
       originalTransferredTaskName: 'original_transferred_task_name',
       transferSourceEmployeeId: 'transfer_source_employee_id',
-      userPriority: 'user_priority'
+      userPriority: 'user_priority',
+      focusDate: 'focus_date',
+      isLocked: 'is_locked'
     };
 
     const updatePayload: Record<string, unknown> = {};

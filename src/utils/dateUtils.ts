@@ -5,6 +5,19 @@ import { WorkSchedule } from '@/types';
 // ... (Resto de funciones: getMonthName, formatDateToISO, isCurrentWeek se mantienen igual) ...
 export const getMonthName = (date: Date) => format(date, 'MMMM', { locale: es });
 export const formatDateToISO = (date: Date) => format(date, 'yyyy-MM-dd');
+
+/**
+ * Interpreta `YYYY-MM-DD` como fecha **local** a medianoche.
+ * Evita desfases de un día respecto a `parseISO` en husos UTC− (la cadena sin hora se trata como UTC medianoche).
+ */
+export function parseDateStringLocal(ymd: string): Date {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd.trim());
+  if (!m) return parseISO(ymd);
+  const y = Number(m[1]);
+  const mo = Number(m[2]) - 1;
+  const d = Number(m[3]);
+  return new Date(y, mo, d);
+}
 // ✅ Updated isCurrentWeek to handle split weeks (e.g. Jan 1st vs Dec 29th)
 export const isCurrentWeek = (date: Date) => {
   const now = new Date();

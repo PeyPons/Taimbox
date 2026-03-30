@@ -193,7 +193,7 @@ Lógica reutilizable de UI.
 - **`useTaskTransfers`**: Máquina de estados para transferencias (`pending` -> `accepted/rejected`).
 - **`use-mobile.tsx`**: Detecta viewport (mobile vs desktop) para Layouts adaptativos.
 - **`useAppOrDemo`**: Selecciona contexto real o demo automáticamente.
-- **`useDashboardView`**: Gestiona la configuración de vista del dashboard del empleado por departamento (siempre vista semanal; modo Zen eliminado).
+- **`useDashboardView`**: Cascada departamento (`department_config.default_view` + `is_view_strict`) y preferencia del empleado (`employees.preferred_view`). Vista **Mi semana** (calendario) o **Mi día** (`MyDayView`: foco con `focus_date` + backlog). Toggle en cabecera del dashboard si el departamento no es estricto. Config. admin: `DepartmentViewConfigDialog` (semanal / diario).
 - **`useDeadlines`**: Lógica de carga y gestión de deadlines. Acepta `{ agencyId }` para multi-tenant; usa `fetchDeadlinesForMonth()` de `utils/deadlineUtils.ts` para filtrar por agencia cuando varias comparten el mismo Supabase.
 - **`useIntegration`**: Detecta integraciones habilitadas por agencia.
 - **`useProjectFilters`**: Filtros personalizados de proyectos por agencia.
@@ -230,6 +230,7 @@ const { formatName: formatProjectName } = useProjectAliasing();
     - **Modo Batch**: Permite editar múltiples semanas a la vez.
     - **Validación Visual**: Muestra barras de progreso de presupuesto en tiempo real.
     - **Refactorizado**: Dividido en subcomponentes (`AllocationProjectHeader`, `AllocationTaskRow`, `AllocationFormDialog`) y hook lógico (`useAllocationActions`) para mejorar mantenibilidad.
+    - **`AllocationTaskRow`**: indicador sol (círculo ámbar) si la tarea tiene `focus_date` = hoy (empleado la marcó en **Mi día**); visible en vista semanal y mensual del planner.
 
 ### 5.2 Equipo (`src/components/team`)
 - **`EmployeeDialog.tsx`**:
@@ -249,7 +250,7 @@ Todas las páginas principales de la aplicación.
 ### Planificación y Operaciones
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
-| `EmployeeDashboard.tsx` | 40KB | Vista personal del empleado ("Mi Semana"). **Móvil**: Dialog→Sheet para "Gestión interna" y "Añadir tareas"; navegación mes con botones ≥44px. |
+| `EmployeeDashboard.tsx` | 40KB | Vista personal del empleado: **Mi semana** (calendario mensual + pestañas) o **Mi día** (`MyDayView`, con acceso **Weekly** por tarea vía `focusAllocationId` si la integración está activa). Toggle según `useDashboardView`. Toolbar unificada: toggle a la izquierda, acciones primarias (Weekly, Añadir tareas, Tarea interna) en el centro, acciones secundarias en dropdown "Más". **Móvil**: Dialog→Sheet para "Gestión interna" y "Añadir tareas"; navegación mes con botones ≥44px. |
 | `DeadlinesPage.tsx` | ~670 líneas | Gestión de fechas límite mensuales. **Datos**: `useDeadlinesPageData.ts` (carga, Realtime, locks, filtros, capacidad). **Edición inline**: `useDeadlinesEditing.ts` (locks, formulario inline, autoSave). **Sugerencias**: `useDeadlinesRedistribution.ts`. **Filtros** en `DeadlinesFilters.tsx`; **listado** en `DeadlinesProjectList.tsx`. **Extraídos**: `DeadlinesPageHeader.tsx`, `DeadlinesSidebar.tsx`, `DeadlinesProjectEditSheet.tsx`, `DeadlinesConfirmDialog.tsx`. Ver DOCUMENTACION.md. **Móvil**: filtros y edición en Sheet. |
 | `WeeklyForecastPage.tsx` | 94KB | Previsión y confirmación semanal |
 | `TeamCapacityPage.tsx` | 26KB | Vista de carga del equipo completo |

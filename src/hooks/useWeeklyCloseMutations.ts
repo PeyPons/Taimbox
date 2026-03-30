@@ -2,24 +2,17 @@ import { useCallback, useMemo } from 'react';
 import { format, parseISO, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from '@/lib/notify';
+import { supabase } from '@/lib/supabase';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { collectSelectableFutureWeekSlots, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { normalizeWeeklyHourInput, parseWeeklyCloseHours } from '@/utils/weeklyCloseShared';
 import type { Allocation } from '@/types';
 
 export const WEEKLY_SLOT_EXTRA_MONTHS = 1;
 
-export function normalizeWeeklyHourInput(raw: string): string {
-  const v = raw.replace(/[^0-9,.]/g, '').replace(/,/g, '.');
-  const parts = v.split('.');
-  return parts.length > 1 ? `${parts[0]}.${parts[1].slice(0, 2)}` : v;
-}
-
-export function parseWeeklyCloseHours(value: string): number {
-  const parsed = parseFloat(value.replace(',', '.'));
-  return Number.isNaN(parsed) ? 0 : parsed;
-}
+export { normalizeWeeklyHourInput, parseWeeklyCloseHours } from '@/utils/weeklyCloseShared';
 
 export interface DistributionRowInput {
   taskName: string;
@@ -112,7 +105,8 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
         hoursActualOverride !== undefined ? hoursActualOverride : (task.hoursActual || 0);
       const remainingHours = task.hoursAssigned - effectiveActual;
       if (remainingHours <= 0) return true;
-      await updateAllocation({ ...task, hoursAssigned: effectiveActual, status: 'completed' });
+
+      const snapshotTask: Allocation = { ...task };
       const existing = allocations.find(
         a =>
           a.employeeId === employeeId &&
@@ -120,28 +114,41 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
           a.weekStartDate === targetWeekVal &&
           a.taskName === task.taskName
       );
-      if (existing) {
-        await updateAllocation({ ...existing, hoursAssigned: existing.hoursAssigned + remainingHours });
-      } else {
-        await addAllocation({
+      const snapshotExisting: Allocation | null = existing ? { ...existing } : null;
+
+      try {
+        await updateAllocation({ ...task, hoursAssigned: effectiveActual, status: 'completed' });
+        if (existing) {
+          await updateAllocation({ ...existing, hoursAssigned: existing.hoursAssigned + remainingHours });
+        } else {
+          await addAllocation({
+            employeeId,
+            projectId: task.projectId,
+            weekStartDate: targetWeekVal,
+            hoursAssigned: remainingHours,
+            taskName: task.taskName || 'Tarea movida',
+            status: 'planned',
+          });
+        }
+        await addWeeklyFeedback({
           employeeId,
+          weekStartDate: taskWeekStr,
           projectId: task.projectId,
-          weekStartDate: targetWeekVal,
-          hoursAssigned: remainingHours,
-          taskName: task.taskName || 'Tarea movida',
-          status: 'planned',
+          allocationId: task.id,
+          reason: 'other',
+          comments: comment?.trim()
+            ? `Tarea movida a semana futura. Nota: ${comment.trim()}`
+            : 'Tarea movida a semana futura',
         });
+      } catch (err) {
+        await updateAllocation(snapshotTask);
+        if (snapshotExisting) await updateAllocation(snapshotExisting);
+        toast.error(
+          err instanceof Error ? err.message : 'Error al mover la tarea; se revirtió el cambio.'
+        );
+        return false;
       }
-      await addWeeklyFeedback({
-        employeeId,
-        weekStartDate: taskWeekStr,
-        projectId: task.projectId,
-        allocationId: task.id,
-        reason: 'other',
-        comments: comment?.trim()
-          ? `Tarea movida a semana futura. Nota: ${comment.trim()}`
-          : 'Tarea movida a semana futura',
-      });
+
       const mvSlot = getSlotsForTaskWeek(task.weekStartDate).find(s => s.storageKey === targetWeekVal);
       if (mvSlot) await loadDataForMonth(mvSlot.viewMonth);
       return true;
@@ -179,29 +186,40 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
           toast.warning(`${targetEmployee.name} excedería su capacidad. La tarea se creará de todas formas.`);
         }
       }
-      await updateAllocation({ ...task, hoursAssigned: task.hoursActual || 0, status: 'completed' });
+
+      const snapshotTask: Allocation = { ...task };
       const taskNameTransferred = task.taskName || 'Tarea';
-      await addAllocation({
-        employeeId: targetEmployeeId,
-        projectId: task.projectId,
-        weekStartDate: targetWeekVal,
-        hoursAssigned: remainingHours,
-        taskName: taskNameTransferred,
-        status: 'planned',
-        transferredFromAllocationId: task.id,
-        originalTransferredTaskName:
-          task.originalTransferredTaskName || taskNameTransferred.replace(/\(transferida de .+\)/, '').trim(),
-        transferSourceEmployeeId: employeeId,
-      });
-      const transferBase = `Tarea transferida a ${employees.find(e => e.id === targetEmployeeId)?.name || 'otro empleado'} (${remainingHours}h restantes) | Nombre: ${task.taskName || 'Sin nombre'}`;
-      await addWeeklyFeedback({
-        employeeId,
-        weekStartDate: taskWeekStr,
-        projectId: task.projectId,
-        allocationId: task.id,
-        reason: 'other',
-        comments: transferComment?.trim() ? `${transferBase} | Nota: ${transferComment.trim()}` : transferBase,
-      });
+      try {
+        await updateAllocation({ ...task, hoursAssigned: task.hoursActual || 0, status: 'completed' });
+        await addAllocation({
+          employeeId: targetEmployeeId,
+          projectId: task.projectId,
+          weekStartDate: targetWeekVal,
+          hoursAssigned: remainingHours,
+          taskName: taskNameTransferred,
+          status: 'planned',
+          transferredFromAllocationId: task.id,
+          originalTransferredTaskName:
+            task.originalTransferredTaskName || taskNameTransferred.replace(/\(transferida de .+\)/, '').trim(),
+          transferSourceEmployeeId: employeeId,
+        });
+        const transferBase = `Tarea transferida a ${employees.find(e => e.id === targetEmployeeId)?.name || 'otro empleado'} (${remainingHours}h restantes) | Nombre: ${task.taskName || 'Sin nombre'}`;
+        await addWeeklyFeedback({
+          employeeId,
+          weekStartDate: taskWeekStr,
+          projectId: task.projectId,
+          allocationId: task.id,
+          reason: 'other',
+          comments: transferComment?.trim() ? `${transferBase} | Nota: ${transferComment.trim()}` : transferBase,
+        });
+      } catch (err) {
+        await updateAllocation(snapshotTask);
+        toast.error(
+          err instanceof Error ? err.message : 'Error en la transferencia; se revirtió el cambio.'
+        );
+        return;
+      }
+
       const transferSlot = getSlotsForTaskWeek(task.weekStartDate).find(s => s.storageKey === targetWeekVal);
       if (transferSlot) await loadDataForMonth(transferSlot.viewMonth);
     },
@@ -270,8 +288,6 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
       destWeekStr: string,
       comment?: string
     ) => {
-      const taskWeekDate = parseISO(task.weekStartDate);
-      const taskWeekStr = format(taskWeekDate, 'yyyy-MM-dd');
       const slots = getSlotsForTaskWeek(task.weekStartDate);
       const destSlot = slots.find(s => s.storageKey === destWeekStr);
       if (!destWeekStr || !destSlot) {
@@ -286,44 +302,31 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
         toast.error(`"${task.taskName}" necesita horas planificadas > 0`);
         return false;
       }
-      await updateAllocation({ ...task, hoursActual: actual, hoursComputed: computed, status: 'completed' });
-      try {
-        const newAllocation = await addAllocation({
-          employeeId: task.employeeId,
-          projectId: task.projectId,
-          weekStartDate: destWeekStr,
-          hoursAssigned: newEstimate,
-          hoursActual: 0,
-          hoursComputed: 0,
-          status: 'planned',
-          taskName: task.taskName,
-          description: task.description,
-          parentAllocationId: task.id,
-        });
-        if (!newAllocation) {
-          toast.error(`No se pudo crear tarea para "${task.taskName}"`);
-          return false;
-        }
-        await loadDataForMonth(destSlot.viewMonth);
-      } catch (error) {
-        toast.error(`Error: ${error instanceof Error ? error.message : 'desconocido'}`);
-        return false;
-      }
       const destLabel = format(destSlot.weekStart, 'd MMM yyyy', { locale: es });
       const fb =
         comment ||
         `Tarea con rollover: ${actual.toFixed(2)}h registradas, ${newEstimate.toFixed(2)}h planificadas desde ${destLabel}`;
-      await addWeeklyFeedback({
-        employeeId,
-        weekStartDate: taskWeekStr,
-        projectId: task.projectId,
-        allocationId: task.id,
-        reason: 'other',
-        comments: fb,
+
+      const { error: rpcError } = await supabase.rpc('partial_close_rollover', {
+        p_original_id: task.id,
+        p_hours_actual: actual,
+        p_hours_computed: computed,
+        p_dest_week_start: destWeekStr,
+        p_new_hours_assigned: newEstimate,
+        p_feedback_employee_id: employeeId,
+        p_feedback_comments: fb,
       });
+
+      if (rpcError) {
+        toast.error(rpcError.message || 'No se pudo completar el cierre parcial (¿migración aplicada en Supabase?)');
+        return false;
+      }
+
+      await loadDataForMonth(startOfMonth(parseISO(task.weekStartDate)));
+      await loadDataForMonth(destSlot.viewMonth);
       return true;
     },
-    [addAllocation, addWeeklyFeedback, getSlotsForTaskWeek, loadDataForMonth, updateAllocation]
+    [getSlotsForTaskWeek, loadDataForMonth]
   );
 
   const applyDistribute = useCallback(

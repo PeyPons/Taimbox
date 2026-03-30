@@ -24,11 +24,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useWeeklyCloseMutations, normalizeWeeklyHourInput } from '@/hooks/useWeeklyCloseMutations';
 import {
-  useWeeklyCloseMutations,
   parseWeeklyCloseHours,
-  normalizeWeeklyHourInput,
-} from '@/hooks/useWeeklyCloseMutations';
+  resolveComputedForClose,
+  validateKeepHours,
+  validatePostponeRemaining,
+} from '@/utils/weeklyCloseShared';
 import { getStorageKey, getWeeksForMonth } from '@/utils/dateUtils';
 import type { Allocation } from '@/types';
 import { useApp } from '@/contexts/AppContext';
@@ -143,12 +145,12 @@ export function TaskPartialCloseDialog({
     setSubmitting(true);
     try {
       const actual = parseWeeklyCloseHours(actualStr);
-      const computed =
-        preference === 'actual' ? actual : parseWeeklyCloseHours(computedStr) || actual;
+      const computed = resolveComputedForClose(actual, computedStr, preference);
 
       if (mode === 'keep') {
-        if (actual <= 0) {
-          toast.error('Las horas realizadas deben ser mayores a 0');
+        const keepErr = validateKeepHours(actual);
+        if (keepErr) {
+          toast.error(keepErr);
           return;
         }
         const ok = await applyKeep(
@@ -165,22 +167,12 @@ export function TaskPartialCloseDialog({
         return;
       }
 
-      // Posponer: una sola ruta (rollover) con estimación del nuevo tramo = saldo automático
-      if (actual <= 0) {
-        toast.error('Las horas realizadas deben ser mayores a 0');
+      const postpone = validatePostponeRemaining(actual, allocation.hoursAssigned, destWeek);
+      if (!postpone.ok) {
+        toast.error(postpone.message);
         return;
       }
-      if (!destWeek) {
-        toast.error('Selecciona la semana en la que quieres planificar lo pendiente');
-        return;
-      }
-      const remaining = Math.round((allocation.hoursAssigned - actual) * 100) / 100;
-      if (remaining <= 0) {
-        toast.error(
-          'Para posponer debe quedar tiempo pendiente (horas realizadas menores que el estimado de la tarea)'
-        );
-        return;
-      }
+      const { remaining } = postpone;
       const okR = await applyRollover(
         allocation,
         allocation.employeeId,
