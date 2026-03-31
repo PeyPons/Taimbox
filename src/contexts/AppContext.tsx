@@ -6,6 +6,14 @@ import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange, getTeamEventDetailsInRange } from '@/utils/teamEventUtils';
 import { getCapacityReductionBreakdown } from '@/utils/capacityUtils';
 import { addDays, format, startOfMonth, endOfMonth } from 'date-fns';
+import {
+  computeClientTotalHoursForMonth,
+  computeEmployeeLoadForWeek,
+  computeEmployeeMonthlyLoad,
+  computeProjectHoursForMonth,
+} from '@/utils/appMetrics';
+import { fetchInitialAppData, loadMonthData } from '@/utils/appDataLoader';
+import { round2 } from '@/utils/numbers';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { toast } from '@/lib/notify';
@@ -174,8 +182,6 @@ interface AppContextType {
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
-
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const { user: authUser, isInitialized: isAuthInitialized } = useAuth();
   const { currentAgency, isLoading: isAgencyLoading } = useAgency();
@@ -205,390 +211,49 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Ref para trackear la agencia anterior y detectar cambios
   const prevAgencyIdRef = useRef<string | null>(null);
 
-  const fetchData = useCallback(async (skipLoading = false, dateRange?: { start: Date; end: Date }) => {
-    // No cargar datos si no hay agencia seleccionada
-    if (!currentAgency?.id) {
-      setIsLoading(false);
-      return;
-    }
-
-    if (!skipLoading) {
-      setIsLoading(true);
-    }
-    try {
-      // Calcular rango de fechas: solo mes actual (otros meses se cargan bajo demanda via ensureMonthLoaded)
-      const today = new Date();
-      const defaultStart = new Date(today.getFullYear(), today.getMonth(), 1);
-      const defaultEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      const startDate = dateRange?.start || defaultStart;
-      const endDate = dateRange?.end || defaultEnd;
-
-      // Formatear fechas para Supabase (YYYY-MM-DD)
-      const startStr = format(startDate, 'yyyy-MM-dd');
-      const endStr = format(endDate, 'yyyy-MM-dd');
-
-      const agencyId = currentAgency.id;
-
-      // ============================================================
-      // PHASE 1: Critical data (blocks UI) - employees, clients, active projects
-      // ============================================================
-      const [empRes, cliRes, projRes] = await Promise.all([
-        supabase.from('employees').select('*').eq('agency_id', agencyId),
-        supabase.from('clients').select('*').eq('agency_id', agencyId),
-        // OPTIMIZATION: Only load active projects initially
-        supabase.from('projects').select('*').eq('agency_id', agencyId).eq('status', 'active'),
-      ]);
-
-      if (empRes.data) {
-        const mappedEmployees: Employee[] = empRes.data.map((e: SupabaseEmployee) => ({
-          id: e.id,
-          agencyId: e.agency_id,
-          name: e.name,
-          role: (e.role || 'SEO') as EmployeeRole,
-          avatarUrl: e.avatar_url,
-          defaultWeeklyCapacity: e.default_weekly_capacity,
-          workSchedule: (e.work_schedule || { monday: 8, tuesday: 8, wednesday: 8, thursday: 8, friday: 8, saturday: 0, sunday: 0 }) as WorkSchedule,
-          isActive: e.is_active,
-          first_name: e.first_name,
-          last_name: e.last_name,
-          email: e.email,
-          user_id: e.user_id,
-          department: e.department,
-          hourlyRate: e.hourly_rate || 0,
-          crmUserId: e.crm_user_id,
-          welcomeTourCompleted: e.welcome_tour_completed === true,
-          deadlinesTourCompleted: e.deadlines_tour_completed === true,
-          plannerTourCompleted: e.planner_tour_completed === true,
-          permissions: e.permissions || undefined,
-          preferredView: e.preferred_view || null
-        }));
-        setEmployees(mappedEmployees);
-        employeesRef.current = mappedEmployees; // Actualizar ref
-      }
-
-      if (cliRes.data) {
-        setClients(cliRes.data.map((c: SupabaseClient): Client => ({
-          id: c.id,
-          agencyId: c.agency_id,
-          name: c.name,
-          color: c.color
-        })));
-      }
-      if (projRes.data) {
-        setProjects(projRes.data.map((p: SupabaseProject): Project => ({
-          id: p.id,
-          agencyId: p.agency_id,
-          clientId: p.client_id,
-          name: p.name,
-          status: (p.status || 'active') as 'active' | 'archived' | 'completed',
-          budgetHours: round2(p.budget_hours),
-          minimumHours: round2(p.minimum_hours || 0),
-          monthlyFee: p.monthly_fee,
-          externalId: p.external_id ? Number(p.external_id) : undefined,
-          projectType: p.project_type,
-          isHidden: p.is_hidden || false,
-          responsibleDepartmentId: p.responsible_department_id ?? undefined,
-          okrs: p.okrs,
-          deliverables_log: p.deliverables_log
-        })));
-      }
-
-      // Release critical loading state - UI can now render with employees, clients, projects
-      if (!skipLoading) {
+  const fetchData = useCallback(
+    async (skipLoading = false, dateRange?: { start: Date; end: Date }) => {
+      if (!currentAgency?.id) {
         setIsLoading(false);
+        return;
       }
 
-      // ============================================================
-      // PHASE 2: Secondary data (background, non-blocking)
-      // ============================================================
-      setIsSecondaryLoading(true);
-      const [allocRes, absRes, evRes, feedbackRes, routinesRes] = await Promise.all([
-        // Allocations: filtrar por week_start_date y employee de la agencia
-        supabase.from('allocations')
-          .select('*, employees!allocations_employee_id_fkey!inner(agency_id)')
-          .eq('employees.agency_id', agencyId)
-          .gte('week_start_date', startStr)
-          .lte('week_start_date', endStr),
-        // Absences: filtrar por rango de fechas y employee de la agencia
-        supabase.from('absences')
-          .select('*, employees!inner(agency_id)')
-          .eq('employees.agency_id', agencyId)
-          .lte('start_date', endStr)
-          .gte('end_date', startStr),
-        // Team events: filtrar por agencia y date
-        supabase.from('team_events')
-          .select('*')
-          .eq('agency_id', agencyId)
-          .gte('date', startStr)
-          .lte('date', endStr),
-        supabase.from('weekly_feedback')
-          .select('*, employees!inner(agency_id)')
-          .eq('employees.agency_id', agencyId)
-          .gte('week_start_date', startStr)
-          .lte('week_start_date', endStr),
-        // Cargar rutinas de empleados de la agencia actual
-        supabase.from('user_routines').select('*, employees!inner(agency_id)').eq('employees.agency_id', agencyId)
-      ]);
-
-      if (allocRes.error) console.error('Error fetching allocations:', allocRes.error);
-      if (absRes.error) console.error('Error fetching absences:', absRes.error);
-      if (evRes.error) console.error('Error fetching events:', evRes.error);
-      if (feedbackRes.error) console.error('Error fetching feedback:', feedbackRes.error);
-      if (routinesRes.error) console.error('Error fetching user routines:', routinesRes.error);
-
-      if (feedbackRes.data) {
-        // Mapeo feedback...
-      }
-
-      if (routinesRes.data) {
-        setUserRoutines(routinesRes.data.map((r: SupabaseUserRoutine) => ({
-          id: r.id,
-          employeeId: r.employee_id,
-          title: r.title,
-          estimatedMinutes: r.estimated_minutes,
-          projectId: r.project_id,
-          isActive: r.is_active
-        })));
-      }
-      if (allocRes.data) {
-        const mappedAllocations: Allocation[] = allocRes.data.map((a: SupabaseAllocation): Allocation => ({
-          id: a.id,
-          employeeId: a.employee_id,
-          projectId: a.project_id,
-          weekStartDate: a.week_start_date,
-          hoursAssigned: round2(a.hours_assigned),
-          hoursActual: a.hours_actual ? round2(a.hours_actual) : undefined,
-          hoursComputed: a.hours_computed ? round2(a.hours_computed) : undefined,
-          status: (a.status || 'planned') as 'planned' | 'completed' | 'active',
-          description: a.description,
-          taskName: a.task_name,
-          dependencyId: a.dependency_id,
-          transferredFromAllocationId: a.transferred_from_allocation_id,
-          distributionSourceAllocationId: a.distribution_source_allocation_id,
-          parentAllocationId: a.parent_allocation_id,
-          originalTransferredTaskName: a.original_transferred_task_name,
-          transferSourceEmployeeId: a.transfer_source_employee_id,
-          userPriority: a.user_priority ?? null,
-          focusDate: a.focus_date ?? null,
-          isLocked: a.is_locked ?? false
-        }));
-
-        // Si skipLoading es true, significa que estamos cargando datos adicionales (merge con upsert)
-        // Si no, reemplazamos todos los datos
-        if (skipLoading) {
-          setAllocations(prev => {
-            // UPSERT: Actualizar existentes y añadir nuevos
-            const incomingMap = new Map(mappedAllocations.map(a => [a.id, a]));
-            const updatedPrev = prev.map(existing =>
-              incomingMap.has(existing.id) ? incomingMap.get(existing.id)! : existing
-            );
-            const prevIds = new Set(prev.map(a => a.id));
-            const newItems = mappedAllocations.filter(a => !prevIds.has(a.id));
-            return [...updatedPrev, ...newItems];
-          });
-        } else {
-          setAllocations(mappedAllocations);
-        }
-      }
-      if (absRes.data) {
-        setAbsences(absRes.data.map((ab: SupabaseAbsence): Absence => ({
-          id: ab.id,
-          employeeId: ab.employee_id,
-          startDate: ab.start_date,
-          endDate: ab.end_date,
-          type: (ab.type || 'other') as 'vacation' | 'sick_leave' | 'personal' | 'other',
-          description: ab.description,
-          hours: ab.hours
-        })));
-      }
-      if (evRes.data) {
-        setTeamEvents(evRes.data.map((te: SupabaseTeamEvent): TeamEvent => ({
-          id: te.id,
-          name: te.name,
-          date: te.date,
-          hoursReduction: te.hours_reduction,
-          affectedEmployeeIds: te.affected_employee_ids
-        })));
-      }
-      if (feedbackRes.data) {
-        setWeeklyFeedback(feedbackRes.data.map((fb: SupabaseWeeklyFeedback): WeeklyFeedback => ({
-          id: fb.id,
-          employeeId: fb.employee_id,
-          weekStartDate: fb.week_start_date,
-          projectId: fb.project_id,
-          allocationId: fb.allocation_id,
-          reason: fb.reason as WeeklyFeedback['reason'],
-          comments: fb.comments,
-          createdAt: fb.created_at
-        })));
-      }
-      setIsSecondaryLoading(false);
-    } catch (error) {
-      console.error("Error cargando datos:", error);
-      const errorMessage = (error as Error)?.message || "Error al cargar los datos. Por favor, recarga la página.";
-      toast.error(errorMessage);
-      setIsLoading(false);
-      setIsSecondaryLoading(false);
-    }
-  }, [currentAgency?.id]);
+      await fetchInitialAppData({
+        agencyId: currentAgency.id,
+        skipLoading,
+        dateRange,
+        setIsLoading,
+        setIsSecondaryLoading,
+        setEmployees,
+        setClients,
+        setProjects,
+        setAllocations,
+        setAbsences,
+        setTeamEvents,
+        setWeeklyFeedback,
+        setUserRoutines,
+        employeesRef,
+      });
+    },
+    [currentAgency?.id]
+  );
 
   // Función para cargar datos de un mes específico (merge con datos existentes)
-  const loadDataForMonth = useCallback(async (month: Date): Promise<boolean> => {
-    // No cargar si no hay agencia
-    if (!currentAgency?.id) return false;
+  const loadDataForMonth = useCallback(
+    async (month: Date): Promise<boolean> => {
+      if (!currentAgency?.id) return false;
 
-    const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
-    const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
-    let dataFound = false;
-
-    // Calcular el rango de semanas que pueden tener días en este mes (incluyendo semanas que cruzan)
-    const weeks = getWeeksForMonth(month);
-    const weekStartDates = weeks.map(w => format(w.weekStart, 'yyyy-MM-dd'));
-    const minWeekStart = weekStartDates.length > 0 ? weekStartDates[0] : format(monthStart, 'yyyy-MM-dd');
-    const maxWeekStart = weekStartDates.length > 0 ? weekStartDates[weekStartDates.length - 1] : format(monthEnd, 'yyyy-MM-dd');
-
-    const agencyId = currentAgency.id;
-
-    // Cargar solo allocations, absences, team_events y weekly_feedback para este mes (merge)
-    try {
-      const startStr = format(monthStart, 'yyyy-MM-dd');
-      const endStr = format(monthEnd, 'yyyy-MM-dd');
-
-      const [allocRes, absRes, evRes, feedRes] = await Promise.all([
-        supabase.from('allocations')
-          .select('*, employees!allocations_employee_id_fkey!inner(agency_id)')
-          .eq('employees.agency_id', agencyId)
-          .gte('week_start_date', minWeekStart)
-          .lte('week_start_date', maxWeekStart),
-        supabase.from('absences')
-          .select('*, employees!inner(agency_id)')
-          .eq('employees.agency_id', agencyId)
-          .lte('start_date', endStr)
-          .gte('end_date', startStr),
-        supabase.from('team_events')
-          .select('*')
-          .eq('agency_id', agencyId)
-          .gte('date', startStr)
-          .lte('date', endStr),
-        supabase.from('weekly_feedback')
-          .select('*, employees!inner(agency_id)')
-          .eq('employees.agency_id', agencyId)
-          .gte('week_start_date', minWeekStart)
-          .lte('week_start_date', maxWeekStart),
-      ]);
-
-      if (allocRes.data) {
-        const mappedAllocations: Allocation[] = allocRes.data.map((a: SupabaseAllocation): Allocation => ({
-          id: a.id,
-          employeeId: a.employee_id,
-          projectId: a.project_id,
-          weekStartDate: a.week_start_date,
-          hoursAssigned: round2(a.hours_assigned),
-          hoursActual: a.hours_actual ? round2(a.hours_actual) : undefined,
-          hoursComputed: a.hours_computed ? round2(a.hours_computed) : undefined,
-          status: (a.status || 'planned') as 'planned' | 'completed' | 'active',
-          description: a.description,
-          taskName: a.task_name,
-          dependencyId: a.dependency_id,
-          transferredFromAllocationId: a.transferred_from_allocation_id,
-          distributionSourceAllocationId: a.distribution_source_allocation_id,
-          parentAllocationId: a.parent_allocation_id,
-          originalTransferredTaskName: a.original_transferred_task_name,
-          transferSourceEmployeeId: a.transfer_source_employee_id,
-          userPriority: a.user_priority ?? null,
-          focusDate: a.focus_date ?? null,
-          isLocked: a.is_locked ?? false
-        }));
-
-        setAllocations(prev => {
-          // UPSERT: Actualizar existentes y añadir nuevos
-          const incomingMap = new Map(mappedAllocations.map(a => [a.id, a]));
-          const updatedPrev = prev.map(existing =>
-            incomingMap.has(existing.id) ? incomingMap.get(existing.id)! : existing
-          );
-          const prevIds = new Set(prev.map(a => a.id));
-          // Filtrar por mes efectivo antes de añadir nuevos
-          const newItems = mappedAllocations.filter(a =>
-            !prevIds.has(a.id) && isAllocationInEffectiveMonth(a.weekStartDate, month)
-          );
-          return [...updatedPrev, ...newItems];
-        });
-      }
-
-      if (absRes.data) {
-        const mappedAbsences: Absence[] = absRes.data.map((a: SupabaseAbsence): Absence => ({
-          id: a.id,
-          employeeId: a.employee_id,
-          startDate: a.start_date,
-          endDate: a.end_date,
-          type: (a.type || 'other') as 'vacation' | 'sick_leave' | 'personal' | 'other',
-          description: a.description,
-          hours: a.hours
-        }));
-
-        setAbsences(prev => {
-          // UPSERT: Actualizar existentes y añadir nuevos
-          const incomingMap = new Map(mappedAbsences.map(a => [a.id, a]));
-          const updatedPrev = prev.map(existing =>
-            incomingMap.has(existing.id) ? incomingMap.get(existing.id)! : existing
-          );
-          const prevIds = new Set(prev.map(a => a.id));
-          const newItems = mappedAbsences.filter(a => !prevIds.has(a.id));
-          return [...updatedPrev, ...newItems];
-        });
-      }
-
-      if (evRes.data) {
-        const mappedEvents: TeamEvent[] = evRes.data.map((e: SupabaseTeamEvent): TeamEvent => ({
-          id: e.id,
-          name: e.name,
-          date: e.date,
-          hoursReduction: e.hours_reduction,
-          affectedEmployeeIds: e.affected_employee_ids
-        }));
-
-        setTeamEvents(prev => {
-          // UPSERT: Actualizar existentes y añadir nuevos
-          const incomingMap = new Map(mappedEvents.map(e => [e.id, e]));
-          const updatedPrev = prev.map(existing =>
-            incomingMap.has(existing.id) ? incomingMap.get(existing.id)! : existing
-          );
-          const prevIds = new Set(prev.map(e => e.id));
-          const newItems = mappedEvents.filter(e => !prevIds.has(e.id));
-          return [...updatedPrev, ...newItems];
-        });
-      }
-
-      if (feedRes.data && feedRes.data.length > 0) {
-        dataFound = true;
-        const mappedFeedback: WeeklyFeedback[] = feedRes.data.map((fb: SupabaseWeeklyFeedback): WeeklyFeedback => ({
-          id: fb.id,
-          employeeId: fb.employee_id,
-          weekStartDate: fb.week_start_date,
-          projectId: fb.project_id,
-          allocationId: fb.allocation_id,
-          reason: fb.reason as WeeklyFeedback['reason'],
-          comments: fb.comments,
-          createdAt: fb.created_at
-        }));
-
-        setWeeklyFeedback(prev => {
-          // UPSERT: Actualizar existentes y añadir nuevos
-          const incomingMap = new Map(mappedFeedback.map(f => [f.id, f]));
-          const updatedPrev = prev.map(existing =>
-            incomingMap.has(existing.id) ? incomingMap.get(existing.id)! : existing
-          );
-          const prevIds = new Set(prev.map(f => f.id));
-          const newItems = mappedFeedback.filter(f => !prevIds.has(f.id));
-          return [...updatedPrev, ...newItems];
-        });
-      }
-    } catch (error) {
-      console.error("Error cargando datos del mes:", error);
-    }
-
-    return dataFound;
-  }, [currentAgency?.id]);
+      return loadMonthData({
+        agencyId: currentAgency.id,
+        month,
+        setAllocations,
+        setAbsences,
+        setTeamEvents,
+        setWeeklyFeedback,
+      });
+    },
+    [currentAgency?.id]
+  );
 
   // Función centralizada para asegurar que un mes está cargado (evita peticiones duplicadas)
   const ensureMonthLoaded = useCallback(async (date: Date) => {
@@ -1006,7 +671,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setUserRoutines(prev => prev.filter(r => r.employeeId !== id));
     setTeamEvents(prev => prev.map(te => ({
       ...te,
-      affectedEmployeeIds: (te.affectedEmployeeIds || []).filter(eid => eid !== id)
+      affectedEmployeeIds: Array.isArray(te.affectedEmployeeIds)
+        ? te.affectedEmployeeIds.filter(eid => eid !== id)
+        : te.affectedEmployeeIds
     })));
 
     // 3. Borrar de la tabla employees
@@ -1379,129 +1046,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return allocations.filter(a => a.employeeId === employeeId && a.weekStartDate === weekStart);
   }, [allocations]);
 
-  const getEmployeeLoadForWeek = useCallback((employeeId: string, weekStart: string, effectiveStart?: Date, effectiveEnd?: Date, viewMonth?: Date) => {
-    const employee = employees.find(e => e.id === employeeId);
-    if (!employee) return { hours: 0, capacity: 0, baseCapacity: 0, status: 'empty' as LoadStatus, percentage: 0, breakdown: [] };
-
-    // Filtrar allocations por employeeId y weekStartDate
-    let employeeAllocations = allocations.filter(a => a.employeeId === employeeId && a.weekStartDate === weekStart);
-
-    // Si se proporciona viewMonth, filtrar también por mes efectivo (para evitar sumar horas de meses anteriores)
-    if (viewMonth) {
-      employeeAllocations = employeeAllocations.filter(a => isAllocationInEffectiveMonth(a.weekStartDate, viewMonth));
-    }
-
-    const totalHours = round2(employeeAllocations.reduce((sum, a) => sum + (a.status === 'completed' && (a.hoursActual || 0) > 0 ? Number(a.hoursActual) : Number(a.hoursAssigned)), 0));
-
-    const weekStartDate = new Date(weekStart);
-    const weekEndDate = addDays(weekStartDate, 6);
-    const rangeStart = effectiveStart || weekStartDate;
-    const rangeEnd = effectiveEnd || weekEndDate;
-
-    let baseCapacity: number;
-    if (effectiveStart && effectiveEnd) {
-      const { totalHours: capacityHours } = getWorkingDaysInRange(effectiveStart, effectiveEnd, employee.workSchedule);
-      baseCapacity = capacityHours;
-    } else {
-      baseCapacity = employee.defaultWeeklyCapacity;
-    }
-
-    let reducedCapacity = baseCapacity;
-
-    // Use unified capacity reduction to prevent double-counting of absences and events
-    const relevantAbsences = absences.filter(a => a.employeeId === employeeId);
-    const { total: totalReduction, breakdown } = getCapacityReductionBreakdown(
-      rangeStart, rangeEnd, employeeId, relevantAbsences, teamEvents, employee.workSchedule
-    );
-    reducedCapacity -= totalReduction;
-
-    reducedCapacity = Math.max(0, round2(reducedCapacity));
-    const percentage = reducedCapacity > 0 ? round2((totalHours / reducedCapacity) * 100) : (totalHours > 0 ? 999 : 0);
-    const hoursRemaining = reducedCapacity - totalHours;
-    let status: LoadStatus = 'empty';
-    if (totalHours === 0) status = 'empty';
-    else if (reducedCapacity === 0 && totalHours > 0) status = 'overload';
-    else if (totalHours > reducedCapacity) status = 'overload'; // Rojo: se pasa del límite
-    else if (hoursRemaining >= 2 && hoursRemaining <= 5) status = 'healthy'; // Verde: tiene entre 2-5 horas libres
-    else status = 'warning'; // Amarillo: cerca del límite (menos de 2h libres o más de 5h libres)
-
-    return { hours: totalHours, capacity: reducedCapacity, baseCapacity, status, percentage, breakdown };
-  }, [employees, allocations, absences, teamEvents]);
-
-  const getEmployeeMonthlyLoad = useCallback((employeeId: string, year: number, month: number) => {
-    const employee = employees.find(e => e.id === employeeId);
-    if (!employee) return { hours: 0, capacity: 0, status: 'empty' as LoadStatus, percentage: 0 };
-    const monthStart = new Date(year, month, 1);
-    const weeks = getWeeksForMonth(monthStart);
-    let totalHours = 0;
-    weeks.forEach(week => {
-      // Buscar allocations por weekStartDate real, pero filtrar por mes efectivo
-      const weekStartDate = format(week.weekStart, 'yyyy-MM-dd');
-      const tasks = allocations.filter(a =>
-        a.employeeId === employeeId &&
-        a.weekStartDate === weekStartDate &&
-        isAllocationInEffectiveMonth(a.weekStartDate, monthStart)
+  const getEmployeeLoadForWeek = useCallback(
+    (employeeId: string, weekStart: string, effectiveStart?: Date, effectiveEnd?: Date, viewMonth?: Date) => {
+      return computeEmployeeLoadForWeek(
+        employeeId,
+        weekStart,
+        { effectiveStart, effectiveEnd, viewMonth },
+        { employees, allocations, absences, teamEvents }
       );
-      totalHours += tasks.reduce((sum, a) => sum + (a.status === 'completed' && (a.hoursActual || 0) > 0 ? Number(a.hoursActual) : Number(a.hoursAssigned)), 0);
-    });
-    totalHours = round2(totalHours);
-    const monthEnd = new Date(year, month + 1, 0);
-    const employeeAbsences = absences.filter(a => a.employeeId === employeeId);
-    let capacity = getMonthlyCapacity(year, month, employee.workSchedule);
-    // Use unified capacity reduction to prevent double-counting of absences and events
-    const { total: totalReduction } = getCapacityReductionBreakdown(
-      monthStart, monthEnd, employeeId, employeeAbsences, teamEvents, employee.workSchedule
-    );
-    capacity = Math.max(0, round2(capacity - totalReduction));
-    const percentage = capacity > 0 ? round2((totalHours / capacity) * 100) : (totalHours > 0 ? 999 : 0);
-    const hoursRemaining = capacity - totalHours;
-    let status: LoadStatus = 'empty';
-    if (totalHours === 0) status = 'empty';
-    else if (capacity === 0 && totalHours > 0) status = 'overload';
-    else if (totalHours > capacity) status = 'overload'; // Rojo: se pasa del límite
-    else if (hoursRemaining >= 2 && hoursRemaining <= 5) status = 'healthy'; // Verde: tiene entre 2-5 horas libres
-    else status = 'warning'; // Amarillo: cerca del límite (menos de 2h libres o más de 5h libres)
-    return { hours: totalHours, capacity, status, percentage };
-  }, [employees, allocations, absences, teamEvents]);
+    },
+    [employees, allocations, absences, teamEvents]
+  );
 
-  const getProjectHoursForMonth = useCallback((projectId: string, month: Date) => {
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return { used: 0, budget: 0, available: 0, percentage: 0 };
-    const weeks = getWeeksForMonth(month);
-    let usedHours = 0;
-    weeks.forEach(week => {
-      const storageKey = getStorageKey(week.weekStart, month);
-      const tasks = allocations.filter(a =>
-        a.projectId === projectId &&
-        a.weekStartDate === storageKey &&
-        isAllocationInEffectiveMonth(a.weekStartDate, month)
-      );
-      usedHours += tasks.reduce((sum, a) => sum + (a.status === 'completed' && (a.hoursActual || 0) > 0 ? Number(a.hoursActual) : Number(a.hoursAssigned)), 0);
-    });
-    usedHours = round2(usedHours);
-    const available = round2(Math.max(0, project.budgetHours - usedHours));
-    const percentage = project.budgetHours > 0 ? round2((usedHours / project.budgetHours) * 100) : 0;
-    return { used: usedHours, budget: project.budgetHours, available, percentage };
-  }, [projects, allocations]);
-
-  const getClientTotalHoursForMonth = useCallback((clientId: string, month: Date) => {
-    const clientProjects = projects.filter(p => p.clientId === clientId);
-    const weeks = getWeeksForMonth(month);
-    let totalUsed = 0;
-    let totalBudget = 0;
-    clientProjects.forEach(project => {
-      totalBudget += Number(project.budgetHours);
-      weeks.forEach(week => {
-        const storageKey = getStorageKey(week.weekStart, month);
-        const tasks = allocations.filter(a => a.projectId === project.id && a.weekStartDate === storageKey);
-        totalUsed += tasks.reduce((sum, a) => sum + (a.status === 'completed' && (a.hoursActual || 0) > 0 ? Number(a.hoursActual) : Number(a.hoursAssigned)), 0);
+  const getEmployeeMonthlyLoad = useCallback(
+    (employeeId: string, year: number, month: number) => {
+      return computeEmployeeMonthlyLoad(employeeId, year, month, {
+        employees,
+        allocations,
+        absences,
+        teamEvents,
       });
-    });
-    totalUsed = round2(totalUsed);
-    totalBudget = round2(totalBudget);
-    const percentage = totalBudget > 0 ? round2((totalUsed / totalBudget) * 100) : 0;
-    return { used: totalUsed, budget: totalBudget, percentage };
-  }, [projects, allocations]);
+    },
+    [employees, allocations, absences, teamEvents]
+  );
+
+  const getProjectHoursForMonth = useCallback(
+    (projectId: string, month: Date) => {
+      return computeProjectHoursForMonth(projectId, month, { projects, allocations });
+    },
+    [projects, allocations]
+  );
+
+  const getClientTotalHoursForMonth = useCallback(
+    (clientId: string, month: Date) => {
+      return computeClientTotalHoursForMonth(clientId, month, { projects, allocations });
+    },
+    [projects, allocations]
+  );
 
 
   const addRoutine = async (routine: Omit<UserRoutine, 'id'>) => {
@@ -1694,4 +1275,61 @@ export function useApp() {
   const context = useContext(AppContext);
   if (!context) throw new Error('useApp must be used within an AppProvider');
   return context;
+}
+
+// Selectores finos para evitar que todos los consumidores dependan de todo el contexto.
+// Permiten ir migrando páginas a hooks más específicos sin cambiar la API existente.
+
+export function useAppEmployees() {
+  const { employees, currentUser } = useApp();
+  return { employees, currentUser };
+}
+
+export function useAppProjects() {
+  const { projects, clients, getProjectById, getClientById } = useApp();
+  return { projects, clients, getProjectById, getClientById };
+}
+
+export function useAppAllocations() {
+  const {
+    allocations,
+    getEmployeeAllocationsForWeek,
+    getEmployeeLoadForWeek,
+    getEmployeeMonthlyLoad,
+    getProjectHoursForMonth,
+    getClientTotalHoursForMonth,
+    loadDataForMonth,
+    ensureMonthLoaded,
+  } = useApp();
+
+  return {
+    allocations,
+    getEmployeeAllocationsForWeek,
+    getEmployeeLoadForWeek,
+    getEmployeeMonthlyLoad,
+    getProjectHoursForMonth,
+    getClientTotalHoursForMonth,
+    loadDataForMonth,
+    ensureMonthLoaded,
+  };
+}
+
+export function useAppAbsencesAndEvents() {
+  const { absences, teamEvents } = useApp();
+  return { absences, teamEvents };
+}
+
+export function useAppTransfers() {
+  const { pendingTransfers, outgoingTransfers, fetchTransfers } = useApp();
+  return { pendingTransfers, outgoingTransfers, fetchTransfers };
+}
+
+export function useAppAllocationActions() {
+  const { addAllocation, updateAllocation, deleteAllocation, isLoading } = useApp();
+  return { addAllocation, updateAllocation, deleteAllocation, isLoading };
+}
+
+export function useAppWeeklyFeedback() {
+  const { weeklyFeedback, addWeeklyFeedback } = useApp();
+  return { weeklyFeedback, addWeeklyFeedback };
 }

@@ -103,7 +103,7 @@ Permite renombrar proyectos automáticamente según patrones configurables:
 **Componentes que usan aliasing** (actualizar si añades más):
 | Componente | Archivo | Línea aprox. |
 |------------|---------|--------------|
-| AllocationSheet | `src/components/planner/AllocationSheet.tsx` | ~180 |
+| AllocationSheet | `src/components/planner/AllocationSheet.tsx` | ~2000. Orquestador de planificación por empleado/mes (datos, edición, Weekly, transferencias, impacto, responsive). |
 | AllocationProjectHeader | `src/components/planner/allocation/AllocationProjectHeader.tsx` | ~45 |
 | AllocationTaskRow | `src/components/planner/allocation/AllocationTaskRow.tsx` | ~50. En móvil recibe `isMobile` para filas táctiles (min-h 44px), texto `text-sm`, horas `font-mono text-base` y botón menú ≥44px. **Indicador sol (☀)**: círculo ámbar junto al nombre si `focus_date` coincide con el día local (visible en vista semanal y mensual); indica que el empleado tiene la tarea en foco hoy (`MyDayView`). Menú vía **`PlannerTaskContextMenu`**: con Weekly activo → **Editar** + **Opciones Weekly…** (abre `WeeklyReportDialog` con `focusAllocationId`). Sin Weekly → Editar, transferir, mover sem. |
 | PlannerTaskContextMenu | `src/components/planner/allocation/PlannerTaskContextMenu.tsx` | Menú ⋯ compartido: vista **mensual** y **semanal** del planificador. Con `isWeeklyEnabled` y `onOpenWeeklyForTask`: entradas reducidas y reutilización del modal masivo Weekly por tarea. |
@@ -118,10 +118,10 @@ Permite renombrar proyectos automáticamente según patrones configurables:
 | GlobalPlanningInconsistencies | `src/components/employee/GlobalPlanningInconsistencies.tsx` | ~380 |
 | MyWeekView | `src/components/employee/MyWeekView.tsx` | ~150 |
 | MyDayView | `src/components/employee/MyDayView.tsx` | Vista **Mi día** (modelo Pull): zona **En foco hoy** (`focus_date` = hoy local) y **Backlog semanal**; botón "Añadir a mi día" / "Devolver al backlog" en cada tarjeta; orden del backlog con `user_priority` (flechas, solo hover); buscador de tareas/proyectos en la cabecera; respeta `hoursTrackingPreference` en el popover de completar; icono **ListChecks** junto a completar si `weeklyEnabled` + `onOpenWeeklyForAllocation` → abre `WeeklyReportDialog` con `focusAllocationId` (mismo flujo que «Opciones Weekly…» del planner). Props: `employeeId`, `viewDate`, `weeklyEnabled?`, `onOpenWeeklyForAllocation?`. |
-| DeadlinesPage | `src/pages/DeadlinesPage.tsx` | ~670. **Datos**: `useDeadlinesPageData.ts` (carga deadlines/globales, Realtime, locks, filteredProjects, projectsByClient, getMonthlyCapacity, getEmployeeAssignedHours). **Edición inline**: `useDeadlinesEditing.ts` (locks adquirir/renovar/liberar, formulario inline, autoSave, handleFormPatch, cancelEditingProject, toggleProjectExpanded). **Sugerencias**: `useDeadlinesRedistribution.ts`. **Filtros**: `DeadlinesFilters.tsx`. **Listado**: `DeadlinesProjectList.tsx`. **Asignaciones globales**: `GlobalAssignmentDialog.tsx`. **Sugerencias UI**: `DeadlinesSuggestionsPreview.tsx`, `DeadlinesSuggestionsPanel.tsx`. Sin dialog de crear/editar deadline (eliminado como código muerto). |
-| WeeklyForecastPage | `src/pages/WeeklyForecastPage.tsx` | ~380 |
+| DeadlinesPage | `src/pages/DeadlinesPage.tsx` | ~680. **Datos**: `useDeadlinesPageData.ts` (carga deadlines/globales, Realtime, locks, filteredProjects, projectsByClient, getMonthlyCapacity, getEmployeeAssignedHours). **Edición inline**: `useDeadlinesEditing.ts` (locks adquirir/renovar/liberar, formulario inline, autoSave, handleFormPatch, cancelEditingProject, toggleProjectExpanded). **Sugerencias**: `useDeadlinesRedistribution.ts`. **Filtros**: `DeadlinesFilters.tsx`. **Listado**: `DeadlinesProjectList.tsx`. **Asignaciones globales**: `GlobalAssignmentDialog.tsx`. **Sugerencias UI**: `DeadlinesSuggestionsPreview.tsx`, `DeadlinesSuggestionsPanel.tsx`. Sin dialog de crear/editar deadline (eliminado como código muerto). |
+| WeeklyForecastPage | `src/pages/WeeklyForecastPage.tsx` | ~1250. Capa de orquestación UI sobre hooks de dominio: `useWeeklyForecastMonthData`, `useWeeklyForecastFilters`, `useWeeklyForecastProjectForecast`, `useWeeklyForecastTransfers`, `useWeeklyForecastRedistribution`. |
 | EmployeeDashboard | `src/pages/EmployeeDashboard.tsx` | ~220. Toolbar compacta unificada: toggle vista (izq.), acciones primarias al centro (Weekly, Añadir tareas, Tarea interna), secundarias en dropdown "Más" (Objetivos, Ausencias, CRM, Repetir tour). Toggle **Mi semana | Mi día** (`useDashboardView` cuando el departamento no es estricto). Vista semanal: calendario mensual + pestañas. Vista día: `MyDayView` sin calendario grande; **Weekly** masivo limpia `weeklyFocusAllocationId`; desde cada tarea del día se puede abrir el mismo `WeeklyReportDialog` con foco en esa allocation. Pestaña **Dependencias**. Modal **Añadir tareas**: **Guardar** deshabilitado si falta proyecto en filas con nombre u horas; mínimo una fila completa (proyecto + nombre + horas). Demo: `DemoEmployeeDashboard.tsx`. |
-| OperationsRadarPage | `src/pages/OperationsRadarPage.tsx` | ~540 (nombre en fila de proyecto; búsqueda por nombre formateado o crudo) |
+| OperationsRadarPage | `src/pages/OperationsRadarPage.tsx` | ~900 (nombre en fila de proyecto; búsqueda por nombre formateado o crudo) |
 
 > **⚠️ IMPORTANTE**: Si creas un nuevo componente que muestra nombres de proyectos, DEBES usar `useProjectAliasing().formatName()` para mantener consistencia.
 
@@ -826,7 +826,7 @@ Si los logs muestran `main function started` seguido de `shutdown signal receive
 - **Modificar permisos**:
     - Añadir el flag en `UserPermissions` y en `ROUTE_PERMISSIONS` (si protege una ruta) en `src/types/permissions.ts`.
     - Añadir etiqueta en `PERMISSION_LABELS` y valor por defecto en `DEFAULT_PERMISSIONS`.
-    - Editar `src/hooks/usePermissions.ts`: añadir la clave en `RESTRICTED_PERMISSIONS` y, si aplica, lógica de compatibilidad para roles ya guardados (ej. nuevos permisos que se derivan de uno existente hasta que se edite el rol).
+    - Editar `src/utils/permissionsUtils.ts`: añadir la clave en `RESTRICTED_PERMISSIONS` y, si aplica, lógica de compatibilidad para roles ya guardados (ej. nuevos permisos que se derivan de uno existente hasta que se edite el rol). `usePermissions.ts` consume estas utilidades.
     - Añadir el permiso en la lista por sección en Configuración de agencia → Equipo (`AgencySettingsPage.tsx`).
     - **Seguimiento operativo** (`/operaciones`) y **Rentabilidad** (`/finanzas`) tienen permisos propios: `can_access_operations_radar` y `can_access_financial_health`. Las rutas y páginas de Reportes clásicos e Informes clientes han sido eliminadas; los permisos `can_access_reports` y `can_access_client_reports` pueden seguir en roles por compatibilidad pero no tienen página asociada.
 - **Actualizar Workers**:
@@ -858,10 +858,10 @@ Si modificas una interface, revisa estos consumidores:
 
 | Si modificas... | Revisa también... |
 |-----------------|-------------------|
-| `AppContext.tsx` (fetchData) | Todos los componentes que usan `useApp()` - especialmente `AllocationSheet`, `PlannerGrid`, `EmployeeDashboard` |
-| `AppContext.tsx` (getEmployeeLoadForWeek) | `WeekCell.tsx`, `EmployeeRow.tsx`, `usePlannerData.ts` |
+| `AppContext.tsx` (fetchData) / `appDataLoader.ts` | Todos los componentes que usan `useApp()` - especialmente `AllocationSheet`, `PlannerGrid`, `EmployeeDashboard` |
+| `AppContext.tsx` (getEmployeeLoadForWeek) / `appMetrics.ts` (computeEmployeeLoadForWeek) | `WeekCell.tsx`, `EmployeeRow.tsx`, `usePlannerData.ts` |
 | `AppContext.tsx` (ensureMonthLoaded) | `usePlannerData.ts`, `AllocationSheet.tsx`, `OperationsRadarPage.tsx` |
-| `AgencyContext.tsx` (currentAgency) | `AppContext.tsx`, `usePermissions.ts`, `AgencySettingsPage.tsx` |
+| `AgencyContext.tsx` (currentAgency) / `agencyUtils.ts` | `AppContext.tsx`, `usePermissions.ts`, `AgencySettingsPage.tsx` |
 | `GoalsContext.tsx` | `OkrsPage.tsx`, `ProfessionalGoalsSheet.tsx` |
 
 ### 8.3 Dependencias de Utilities
@@ -869,13 +869,13 @@ Si modificas una interface, revisa estos consumidores:
 | Si modificas... | Revisa también... |
 |-----------------|-------------------|
 | `dateUtils.ts` → `isAllocationWeekPastForWeekly()` | `PlannerTaskContextMenu`, `AllocationSheet` (coherencia con bloqueo Weekly en vista semanal) |
-| `dateUtils.ts` → `getWeeksForMonth()` | `AppContext.tsx`, `usePlannerData.ts`, `useAllocationSheet.ts`, `AllocationSheet.tsx` |
+| `dateUtils.ts` → `getWeeksForMonth()` | `AppContext.tsx`, `usePlannerData.ts`, `useAllocationSheet.ts`, `AllocationSheet.tsx`, `appMetrics.ts` |
 | `dateUtils.ts` → `collectSelectableFutureWeekSlots()` | `useWeeklyCloseMutations.ts` (slots de destino), `WeeklyReportDialog.tsx`, `TaskPartialCloseDialog.tsx` |
-| `dateUtils.ts` → `isAllocationInEffectiveMonth()` | `AppContext.tsx`, `usePlannerData.ts`, `useProjectMetrics.ts` |
+| `dateUtils.ts` → `isAllocationInEffectiveMonth()` | `AppContext.tsx`, `usePlannerData.ts`, `useProjectMetrics.ts`, `appMetrics.ts` |
 | `dateUtils.ts` → `parseDateStringLocal()` | `WeeklyReportDialog.tsx` (pestañas y filtro de semana); `MyDayView.tsx` (alcance semanal y «Retrasada»); parseo local de `YYYY-MM-DD` |
 | `budgetUtils.ts` → `getEffectiveBudget()` | `DeadlinesPage`, `WeeklyForecastPage`, `ClientsAndProjectsPage`, `useAllocationSheet` |
 | `deadlineUtils.ts` → `fetchDeadlinesForMonth(monthKey, agencyId)` | `useDeadlines`, `DeadlinesPage`, `AllocationSheet`, `EmployeeDashboard`, `WeeklyForecastPage`, `ClientsAndProjectsPage`, `PlanningInconsistenciesCard`, `MyWeekView`, `GlobalPlanningInconsistencies` |
-| `capacityUtils.ts` → `getDailyReduction()` | `getCapacityReductionInRange()`, `getCapacityReductionBreakdown()`, `AppContext.tsx` |
+| `capacityUtils.ts` → `getDailyReduction()` | `getCapacityReductionInRange()`, `getCapacityReductionBreakdown()`, `AppContext.tsx`, `appMetrics.ts` |
 | `capacityUtils.ts` → `getScheduledHoursForDay()` | Todas las funciones de capacidad, `WeekCell.tsx` |
 | `taskPermissions.ts` → `canEditTask()` | `AllocationSheet.tsx`, cualquier UI de edición de tareas |
 | `permissions.ts` → `ROUTE_PERMISSIONS` | `App.tsx` (guards), `PermissionProtectedRoute.tsx`, `Sidebar.tsx` |
@@ -940,9 +940,25 @@ Todos los componentes re-renderizan
 | `src/components/deadlines/DeadlinesConfirmDialog.tsx` | AlertDialog para confirmar eliminar deadline/asignación, copiar mes o resetear mes | Usado solo por `DeadlinesPage` |
 | `src/components/deadlines/DeadlinesProjectList.tsx` | Listado de proyectos agrupados por cliente: cabeceras colapsables, filas con horas/equipo/total, edición inline (desktop), indicadores de edición concurrente y ocultos | Usado solo por `DeadlinesPage`; recibe `projectsByClient`, callbacks de edición y `onRequestDeleteDeadline`; usa `DeadlineEmployeeRow` para chips y filas de horas por empleado |
 | `src/components/deadlines/DeadlineEmployeeRow.tsx` | Fila/chip de empleado en Deadlines: modo display (chip avatar + nombre + horas) o modo edit (avatar + nombre + input horas); usado en el listado de proyectos | Usado solo por `DeadlinesProjectList` |
+| `src/components/planner/allocation/AllocationMonthNavigation.tsx` | Bloque presentacional de navegación mensual/semanal del AllocationSheet (mes actual, desplazamiento horizontal de semanas) | Usado solo por `AllocationSheet` |
+| `src/components/planner/allocation/AllocationToolbarControls.tsx` | Bloque presentacional de herramientas en cabecera del AllocationSheet (búsqueda, toggle Semana/Mes, accesos a Timeline/Weekly y menú de orden/visualización) | Usado solo por `AllocationSheet` |
+| `src/components/weekly-forecast/WeeklyForecastTransfersFilters.tsx` | Bloque presentacional de filtros de la pestaña Transferencias (estado + selectores de compañero/proyecto) | Usado solo por `WeeklyForecastPage` |
 | `src/components/clients-projects/ClientsAndProjectsFilters.tsx` | Filtros de Clientes y Proyectos con estado local (búsqueda, estado, tipo proyecto, empleado, filtros de análisis: todos/sin actividad/falta planificar/retrasados/exceso horas) | Usado solo por `ClientsAndProjectsPage`; notifica valores vía `onFiltersChange`; debounce 300 ms en búsqueda |
 | `src/hooks/useProjectAliasing.ts` | Formateo de nombres de proyectos según reglas de agencia | `AgencyContext`, `formatProjectName`, usado en 15+ componentes |
+| `AgencyContext` selectores (`useAgencySettings`, `useAgencyModules`, `useUserAgencies`) | Lectura segmentada de agencia/config sin consumir todo `useAgency()` | Configuración y pantallas con consumo parcial de settings/agencias |
 | `src/utils/deadlineUtils.ts` | Carga de deadlines por mes filtrando por agencia (multi-tenant) | `fetchDeadlinesForMonth(monthKey, agencyId)`; join con `projects.agency_id`. Usado por `useDeadlines`, DeadlinesPage, AllocationSheet, EmployeeDashboard, WeeklyForecastPage, ClientsAndProjectsPage, PlanningInconsistenciesCard, MyWeekView, GlobalPlanningInconsistencies |
+| `src/utils/planningInconsistencies.ts` | Cálculo puro de incoherencias globales por proyecto/empleado y filtro por búsqueda (proyecto/cliente) | Usado por `GlobalPlanningInconsistencies` para separar lógica de datos del render |
+| `src/utils/permissionsUtils.ts` | Utilidades puras de permisos (resolver permisos por rol, checks `canAccess`/`hasPermission`, fallback restringido) | `usePermissions` |
+| `src/utils/numbers.ts` | Utilidades numéricas compartidas (`round2`) para evitar duplicación de redondeos | `AppContext`, `appDataLoader`, `appMetrics`, `planningInconsistencies`, `Weekly/Radar/Planner` |
+| `src/hooks/useOperationsRadarMonthState.ts` | Estado mensual y sincronización URL para Radar Operativo (`?mes`), carga de deadlines del mes y navegación de meses | Usado por `OperationsRadarPage` |
+| `src/hooks/useOperationsRadarData.ts` | Capa de datos del Radar Operativo: cálculo de riesgo (`overBudget` / `lowProgress` / `lowPace`), filtros por departamento y ordenación base por severidad | Usado por `OperationsRadarPage` |
+| `src/hooks/useWeeklyForecastMonthData.ts` | Estado mensual de Weekly Forecast (`forecast_date`), carga de transferencias por mes/agencia y deadlines del mes | Usado por `WeeklyForecastPage` |
+| `src/hooks/useWeeklyForecastFilters.ts` | Filtros de departamento para Weekly Forecast (empleados/proyectos visibles en el mes) | Usado por `WeeklyForecastPage` |
+| `src/hooks/useWeeklyForecastProjectForecast.ts` | Cálculo del semáforo mensual por proyecto (contratado vs realizado, estado red/yellow/green, filtros y orden) | Usado por `WeeklyForecastPage` |
+| `src/hooks/useWeeklyForecastTransfers.ts` | Consolidación de transferencias del mes (task_transfers + weekly_feedback + rastreo de distribuciones) y filtros por empleado/proyecto/estado/departamento | Usado por `WeeklyForecastPage` |
+| `src/hooks/useWeeklyForecastRedistribution.ts` | Cálculo de tareas retrasadas por empleado y acción de redistribución (completar original + crear transferida en semana destino) | Usado por `WeeklyForecastPage` |
+| `src/hooks/useAllocationSheetMonthData.ts` | Carga mensual de AllocationSheet (cache local por mes + deadlines del mes para presupuesto efectivo) | Usado por `AllocationSheet` |
+| `AppContext` selectores (`useAppAllocationActions`, `useAppWeeklyFeedback`) | Lectura segmentada de acciones/feedback para páginas de planificación y forecast sin consumir `useApp()` completo | `AllocationSheet`, `WeeklyForecastPage` |
 | `src/hooks/useDeadlines.ts` | Carga y estado de deadlines; opción `agencyId` para filtrar por agencia | `deadlineUtils.fetchDeadlinesForMonth` |
 | `src/hooks/useDeadlinesRedistribution.ts` | Cálculo de tips de redistribución (desequilibrio de carga), suggestionDonors, suggestionsByEmployeeAndProject, suggestionsByEmployee; condicionantes (excludedDonorIds, maxReceiverLoadPct, minSenderLoadPct) | Usado solo por `DeadlinesPage` |
 
@@ -952,6 +968,8 @@ Todos los componentes re-renderizan
 | `src/hooks/useDeadlinesEditing.ts` | Edición inline en Deadlines: estado (editingProjectId, inlineFormData, isSaving, autoSaveStatus), refs (autoSaveTimeout, lockRefreshInterval), acquire/renew/release/releaseAllMy locks, startEditingProject, cancelEditingProject, toggleProjectExpanded, updateInlineEmployeeHours, autoSaveDeadline, handleFormPatch, saveInlineDeadline; cleanup al desmontar o cambiar mes; cancelEditingProject limpia también autoSaveTimeoutRef | Usado solo por `DeadlinesPage`; recibe canEditDeadlines, selectedMonth, currentUser, employees, getProjectDeadline, hiddenProjects, setHiddenProjects, setDeadlines, setEditingLocks, broadcastChannelRef, setExpandedProjects |
 
 **Refactor Deadlines (auditoría)**: Tras reducir DeadlinesPage de ~1120 a ~670 líneas con hooks y componentes extraídos, se auditaron: encaje de props entre página → DeadlinesProjectList / DeadlinesProjectEditSheet / DeadlinesSidebar; tipos InlineFormData y getProjectDeadline compatibles; useDeadlinesPageData (Realtime deadlines, global_assignments, project_editing_locks, broadcast lock-released) y useDeadlinesEditing (locks, autoSave, cleanup); build y lints OK. No hay tests unitarios de Deadlines; se recomienda prueba manual: edición inline desktop, Sheet móvil, locks entre usuarios, cambio de mes, cerrar pestaña con edición abierta.
+
+**Auditoría legacy (2026-03-15)**: `TaskPartialCloseDialog` no tiene consumidores activos en producción (búsqueda de referencias sin imports/uso). Se mantiene explícitamente como **componente de referencia** para flujos parciales; el flujo vigente del planificador usa `WeeklyReportDialog` desde `PlannerTaskContextMenu` con `focusAllocationId`.
 
 ---
 
@@ -999,7 +1017,7 @@ Antes de modificar cualquier archivo crítico, usa este checklist:
 ### Al añadir nuevo permiso:
 - [ ] Añadido a `UserPermissions` en `src/types/permissions.ts`
 - [ ] Añadido a `ROUTE_PERMISSIONS` si protege una ruta
-- [ ] Añadido a `DEFAULT_PERMISSIONS` y `RESTRICTED_PERMISSIONS` en `usePermissions.ts`
+- [ ] Añadido a `DEFAULT_PERMISSIONS` y `RESTRICTED_PERMISSIONS` (en `src/utils/permissionsUtils.ts`)
 - [ ] Añadido label en `PERMISSION_LABELS`
 
 ### Al modificar lógica de Realtime:

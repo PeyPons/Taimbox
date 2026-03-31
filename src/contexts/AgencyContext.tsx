@@ -2,6 +2,12 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { supabase } from '@/lib/supabase';
 import { Agency, AgencySettings } from '@/types';
 import { useAuth } from './AuthContext';
+import {
+  getAgencyMembersUtil,
+  mapSupabaseAgency,
+  removeUserFromAgencyUtil,
+  transferAgencyOwnershipUtil,
+} from '@/utils/agencyUtils';
 
 // Tipos para respuestas de Supabase (snake_case)
 interface SupabaseAgency {
@@ -48,24 +54,6 @@ export interface UserAgency {
   isPrimary: boolean;
 }
 
-// Función auxiliar para verificar permisos de admin en los settings
-const checkAdminPermission = (roleName: string | null, settings: AgencySettings): boolean => {
-  if (!roleName) return false;
-
-  // Buscar la configuración del rol
-  const roleConfig = settings.roles?.find(r =>
-    r.name.toLowerCase() === roleName.toLowerCase()
-  );
-
-  // Si existe configuración, verificar el permiso específico
-  if (roleConfig && roleConfig.permissions) {
-    return roleConfig.permissions.can_access_agency_settings === true;
-  }
-
-  // Si no hay configuración, por seguridad NO es admin
-  return false;
-};
-
 interface AgencyContextType {
   currentAgency: Agency | null;
   isLoading: boolean;
@@ -96,105 +84,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
   const repairAttemptedRef = useRef(false);
   const prevUserIdRef = useRef<string | null>(null);
 
-  // Migración automática de integraciones para agencias existentes (definida primero para usarse en mapSupabaseAgency)
-  const migrateIntegrations = useCallback(async (agencyId: string, settings: AgencySettings): Promise<AgencySettings> => {
-    // Si ya tiene enabledIntegrations, no hacer migración
-    if (settings.enabledIntegrations) {
-      return settings;
-    }
-
-    const enabledIntegrations: AgencySettings['enabledIntegrations'] = {};
-
-    // Migración 1: weekly_feedback
-    // Si el módulo weeklyFeedback está activo, activar la integración
-    if (settings.modules?.weeklyFeedback === true) {
-      enabledIntegrations.weekly_feedback = true;
-    }
-
-    // Migración 2: crm_user_id y crm_export
-    // Verificar si hay empleados con crmUserId configurado (opcional, no bloquea si falla)
-    try {
-      const { data: employeesWithCrm, error: employeesError } = await supabase
-        .from('employees')
-        .select('crm_user_id')
-        .eq('agency_id', agencyId)
-        .not('crm_user_id', 'is', null)
-        .limit(1);
-
-      // Solo activar si la consulta fue exitosa y hay resultados
-      if (!employeesError && employeesWithCrm && employeesWithCrm.length > 0) {
-        enabledIntegrations.crm_user_id = true;
-        enabledIntegrations.crm_export = true;
-      }
-    } catch (err) {
-      // Silenciar el error - la migración de CRM es opcional
-      // No bloquea la carga de la agencia si falla
-      console.debug('[AgencyContext] No se pudo verificar empleados con CRM (opcional):', err);
-    }
-
-    // Inicializar enabledIntegrations (incluso si está vacío) para evitar migraciones futuras
-    const migratedSettings = {
-      ...settings,
-      enabledIntegrations
-    };
-
-    // Intentar guardar la migración, pero no bloquear si falla
-    // Si falla, retornamos los settings con enabledIntegrations inicializado en memoria
-    try {
-      const { error: updateError } = await supabase
-        .from('agencies')
-        .update({ settings: migratedSettings })
-        .eq('id', agencyId);
-
-      if (updateError) {
-        console.warn('[AgencyContext] No se pudo guardar migración en BD (continuando en memoria):', updateError);
-        // Retornar settings con enabledIntegrations en memoria aunque no se guardó
-        return migratedSettings;
-      }
-
-      if (Object.keys(enabledIntegrations).length > 0) {
-        // Migración de integraciones completada
-      }
-    } catch (err) {
-      console.warn('[AgencyContext] Error guardando migración (continuando en memoria):', err);
-      // Retornar settings con enabledIntegrations en memoria aunque no se guardó
-      return migratedSettings;
-    }
-
-    return migratedSettings;
-  }, []);
-
-  // Mapear respuesta de Supabase a tipo Agency
-  const mapSupabaseAgency = useCallback(async (data: SupabaseAgency): Promise<Agency> => {
-    const settings = data.settings || {};
-
-    // Ejecutar migración si es necesario
-    const migratedSettings = await migrateIntegrations(data.id, settings);
-
-    const status = (data.status === 'suspended' ? 'suspended' : 'active') as Agency['status'];
-    const planId = (data.plan_id === 'pro' || data.plan_id === 'business' ? data.plan_id : 'starter') as Agency['planId'];
-    return {
-      id: data.id,
-      name: data.name,
-      slug: data.slug,
-      settings: migratedSettings,
-      setupCompleted: data.setup_completed ?? true,
-      status,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
-      google_ads_refresh_token: data.google_ads_refresh_token ?? undefined,
-      google_ads_customer_id: data.google_ads_customer_id ?? undefined,
-      meta_ads_access_token: data.meta_ads_access_token ?? undefined,
-      planId,
-      subscriptionStatus: data.subscription_status ?? undefined,
-      stripeCustomerId: data.stripe_customer_id ?? undefined,
-      stripeSubscriptionId: data.stripe_subscription_id ?? undefined,
-      trialEndsAt: data.trial_ends_at ?? undefined,
-      subscriptionPeriodEndsAt: data.subscription_period_ends_at ?? undefined,
-      subscriptionCancelAtPeriodEnd: data.subscription_cancel_at_period_end ?? false,
-      trialUsedAt: data.trial_used_at ?? undefined,
-    };
-  }, [migrateIntegrations]);
+  // mapSupabaseAgency y migraciones se delegan a utils.
 
   const fetchAgencyForUser = useCallback(async () => {
     if (!user?.email) {
@@ -532,164 +422,24 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
 
   // Obtener miembros de una agencia
   const getAgencyMembers = useCallback(async (agencyId: string): Promise<AgencyMember[]> => {
-    // 1. Obtener empleados de la agencia
-    const { data: employees, error: employeesError } = await supabase
-      .from('employees')
-      .select('id, user_id, name, email, role, department, is_active')
-      .eq('agency_id', agencyId)
-      .order('name');
-
-    if (employeesError) {
-      console.error('[AgencyContext] Error obteniendo empleados:', employeesError);
-      throw new Error('Error al obtener miembros de la agencia');
-    }
-
-    if (!employees || employees.length === 0) {
-      return [];
-    }
-
-    // 2. Obtener settings de la agencia para verificar permisos de roles
-    const { data: agencyData, error: agencyError } = await supabase
-      .from('agencies')
-      .select('settings')
-      .eq('id', agencyId)
-      .single();
-
-    if (agencyError) {
-      console.error('[AgencyContext] Error obteniendo settings de agencia:', agencyError);
-    }
-
-    const agencySettings = agencyData?.settings || {};
-
-    // 3. Obtener información de user_agencies para saber quién es primario (Owner)
-    const userIds = employees.filter(e => e.user_id).map(e => e.user_id);
-    let userAgenciesData: Array<{ user_id: string; is_primary: boolean }> = [];
-
-    if (userIds.length > 0) {
-      const { data: uaData } = await supabase
-        .from('user_agencies')
-        .select('user_id, is_primary')
-        .eq('agency_id', agencyId)
-        .in('user_id', userIds);
-
-      userAgenciesData = uaData || [];
-    }
-
-    // 4. Mapear a AgencyMember con lógica de permisos segura
-    const members: AgencyMember[] = employees.map(emp => {
-      const userAgency = userAgenciesData.find(ua => ua.user_id === emp.user_id);
-      const isPrimary = userAgency?.is_primary ?? false;
-
-      // Es admin si:
-      // 1. Es el propietario (isPrimary)
-      // 2. Su rol tiene permiso explícito 'can_access_agency_settings' en los settings
-      const isAdmin = isPrimary || checkAdminPermission(emp.role, agencySettings);
-
-      return {
-        id: emp.id,
-        userId: emp.user_id || null,
-        name: emp.name,
-        email: emp.email || '',
-        role: emp.role || null,
-        department: emp.department || null,
-        isActive: emp.is_active ?? true,
-        isAdmin,
-        isPrimary
-      };
-    });
-
-    return members;
+    return getAgencyMembersUtil(agencyId);
   }, []);
 
   // Eliminar usuario de una agencia
-  const removeUserFromAgency = useCallback(async (userId: string, agencyId: string): Promise<{ completelyRemoved: boolean }> => {
-    // 1. Verificar si el usuario está en otras agencias
-    const { data: otherAgencies, error: checkError } = await supabase
-      .from('user_agencies')
-      .select('id, agency_id')
-      .eq('user_id', userId)
-      .neq('agency_id', agencyId);
-
-    if (checkError) {
-      console.error('[AgencyContext] Error verificando otras agencias:', checkError);
-      throw new Error('Error al verificar agencias del usuario');
-    }
-
-    const hasOtherAgencies = otherAgencies && otherAgencies.length > 0;
-
-    // 2. Desactivar o eliminar empleado de esta agencia
-    const { error: employeeError } = await supabase
-      .from('employees')
-      .update({ is_active: false })
-      .eq('user_id', userId)
-      .eq('agency_id', agencyId);
-
-    if (employeeError) {
-      console.error('[AgencyContext] Error desactivando empleado:', employeeError);
-      throw new Error('Error al eliminar el miembro');
-    }
-
-    // 3. Eliminar relación en user_agencies
-    const { error: uaError } = await supabase
-      .from('user_agencies')
-      .delete()
-      .eq('user_id', userId)
-      .eq('agency_id', agencyId);
-
-    if (uaError) {
-      console.error('[AgencyContext] Error eliminando de user_agencies:', uaError);
-      // No lanzar error aquí, la eliminación del empleado ya se hizo
-    }
-
-    return { completelyRemoved: !hasOtherAgencies };
-  }, []);
+  const removeUserFromAgency = useCallback(
+    async (userId: string, agencyId: string): Promise<{ completelyRemoved: boolean }> => {
+      return removeUserFromAgencyUtil(userId, agencyId);
+    },
+    []
+  );
 
   // Transferir propiedad de agencia
-  const transferAgencyOwnership = useCallback(async (newOwnerId: string, agencyId: string): Promise<void> => {
-    // 1. Quitar is_primary de todos los usuarios de esta agencia
-    const { error: resetError } = await supabase
-      .from('user_agencies')
-      .update({ is_primary: false })
-      .eq('agency_id', agencyId);
-
-    if (resetError) {
-      console.error('[AgencyContext] Error reseteando is_primary:', resetError);
-      throw new Error('Error al transferir propiedad');
-    }
-
-    // 2. Establecer el nuevo owner como primario
-    const { error: setOwnerError } = await supabase
-      .from('user_agencies')
-      .update({ is_primary: true })
-      .eq('user_id', newOwnerId)
-      .eq('agency_id', agencyId);
-
-    if (setOwnerError) {
-      console.error('[AgencyContext] Error estableciendo nuevo owner:', setOwnerError);
-      throw new Error('Error al establecer nuevo propietario');
-    }
-
-    // 3. Actualizar el rol del nuevo owner para incluir "Admin" si no tiene un rol asignado o no parece ser admin
-    const { data: newOwnerEmployee } = await supabase
-      .from('employees')
-      .select('id, role')
-      .eq('user_id', newOwnerId)
-      .eq('agency_id', agencyId)
-      .maybeSingle();
-
-    if (newOwnerEmployee) {
-      // Verificar si el rol actual parece ser de admin
-      const currentRole = newOwnerEmployee.role?.toLowerCase() || '';
-      const seemsLikeAdmin = ['admin', 'manager', 'director', 'owner', 'propietario'].some(k => currentRole.includes(k));
-
-      if (!seemsLikeAdmin) {
-        await supabase
-          .from('employees')
-          .update({ role: 'Admin' })
-          .eq('id', newOwnerEmployee.id);
-      }
-    }
-  }, []);
+  const transferAgencyOwnership = useCallback(
+    async (newOwnerId: string, agencyId: string): Promise<void> => {
+      return transferAgencyOwnershipUtil(newOwnerId, agencyId);
+    },
+    []
+  );
 
   const value = {
     currentAgency,
@@ -732,5 +482,20 @@ export function useAgency() {
     throw new Error('useAgency must be used within an AgencyProvider');
   }
   return context;
+}
+
+export function useAgencySettings() {
+  const { currentAgency } = useAgency();
+  return currentAgency?.settings ?? null;
+}
+
+export function useAgencyModules() {
+  const settings = useAgencySettings();
+  return settings?.modules ?? null;
+}
+
+export function useUserAgencies() {
+  const { userAgencies, availableAgencies } = useAgency();
+  return { userAgencies, availableAgencies };
 }
 

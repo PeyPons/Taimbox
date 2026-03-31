@@ -17,26 +17,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
-import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
+import { normalizeDepartments } from '@/utils/departmentUtils';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import type { Allocation, Deadline } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
-
-const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
-
-function parseMonthFromSearchParams(searchParams: URLSearchParams): Date {
-    const mes = searchParams.get('mes');
-    if (!mes || !/^\d{4}-\d{2}$/.test(mes)) return startOfMonth(new Date());
-    try {
-        const d = parseISO(`${mes}-01`);
-        if (isNaN(d.getTime())) return startOfMonth(new Date());
-        return startOfMonth(d);
-    } catch {
-        return startOfMonth(new Date());
-    }
-}
+import { useOperationsRadarMonthState } from '@/hooks/useOperationsRadarMonthState';
+import { useOperationsRadarData, type ProjectRowItem, type ProjectStatusType } from '@/hooks/useOperationsRadarData';
+import { round2 } from '@/utils/numbers';
 
 export default function OperationsRadarPage() {
     const [searchParams] = useSearchParams();
@@ -53,15 +42,21 @@ export default function OperationsRadarPage() {
         [currentAgency?.settings?.departments]
     );
 
-    const [viewDate, setViewDate] = useState<Date>(() => parseMonthFromSearchParams(searchParams));
-
-    // Sincronizar estado inicial de mes con URL cuando cambian los params (ej. navegación atrás)
-    useEffect(() => {
-        setViewDate(prev => {
-            const fromUrl = parseMonthFromSearchParams(searchParams);
-            return prev.getTime() !== fromUrl.getTime() ? fromUrl : prev;
-        });
-    }, [searchParams]);
+    const {
+        viewDate,
+        deadlines,
+        isCurrentMonth,
+        currentWeekOfMonth,
+        isEndOfMonth,
+        handlePrevMonth,
+        handleNextMonth,
+        handleToday,
+    } = useOperationsRadarMonthState({
+        searchParams,
+        navigate,
+        ensureMonthLoaded,
+        currentAgencyId: currentAgency?.id,
+    });
 
     // Permitir que ?depto= configure la vista por departamento (una sola fuente de verdad)
     useEffect(() => {
@@ -79,183 +74,24 @@ export default function OperationsRadarPage() {
         }
     }, [searchParams, departments, selectedDepartmentId, setSelectedDepartmentId]);
 
-    // Cargar datos del mes
-    useEffect(() => {
-        ensureMonthLoaded(viewDate);
-    }, [viewDate, ensureMonthLoaded]);
-
-    const [deadlines, setDeadlines] = useState<Deadline[]>([]);
-    useEffect(() => {
-        const monthKey = format(viewDate, 'yyyy-MM');
-        let cancelled = false;
-        fetchDeadlinesForMonth(monthKey, currentAgency?.id).then(({ data, error }) => {
-            if (!cancelled && !error && data) setDeadlines(data);
-            if (!cancelled && error) setDeadlines([]);
-        });
-        return () => { cancelled = true; };
-    }, [viewDate, currentAgency?.id]);
-
-    const handlePrevMonth = () => {
-        const next = subMonths(viewDate, 1);
-        setViewDate(next);
-        const nextParams = new URLSearchParams(searchParams);
-        nextParams.set('mes', format(next, 'yyyy-MM'));
-        navigate({ pathname: '/operaciones', search: nextParams.toString() }, { replace: true });
-    };
-    const handleNextMonth = () => {
-        const next = addMonths(viewDate, 1);
-        setViewDate(next);
-        const nextParams = new URLSearchParams(searchParams);
-        nextParams.set('mes', format(next, 'yyyy-MM'));
-        navigate({ pathname: '/operaciones', search: nextParams.toString() }, { replace: true });
-    };
-    const handleToday = () => {
-        const next = startOfMonth(new Date());
-        setViewDate(next);
-        const nextParams = new URLSearchParams(searchParams);
-        nextParams.set('mes', format(next, 'yyyy-MM'));
-        navigate({ pathname: '/operaciones', search: nextParams.toString() }, { replace: true });
-    };
 
     const { projectMetrics } = useProjectMetrics({
         month: viewDate,
         deadlines
     });
 
-    const isCurrentMonth = isSameMonth(new Date(), viewDate);
-    const referenceDate = isCurrentMonth ? new Date() : endOfMonth(viewDate);
-    const currentWeekOfMonth = Math.ceil(getDate(referenceDate) / 7);
-    const isEndOfMonth = currentWeekOfMonth >= 3;
-    const atRiskProjectsRaw = useMemo(() => {
-        const risks: Array<
-            typeof projectMetrics[0] & { riskLevel: 'critical' | 'high' | 'medium'; riskReason: string; riskType: 'overBudget' | 'lowProgress' | 'lowPace' }
-        > = [];
-
-        projectMetrics.forEach(p => {
-            const hoursOverBudget = p.actual - p.budget;
-            const completionRate = p.budget > 0 ? (p.actual / p.budget) * 100 : 0;
-            const projectNameLower = p.projectName.toLowerCase();
-            const excludeKeywords = currentAgency?.settings?.radarLowProgressExcludeKeywords ?? [];
-            const isExcludedFromLowProgress = excludeKeywords.length > 0 &&
-                excludeKeywords.some(kw => projectNameLower.includes(kw.trim().toLowerCase()));
-
-            if (hoursOverBudget > 0) {
-                risks.push({
-                    ...p,
-                    riskLevel: hoursOverBudget > 5 ? 'critical' : 'high',
-                    riskReason: `Supera presupuesto en ${hoursOverBudget.toFixed(1)}h`,
-                    riskType: 'overBudget'
-                });
-            } else if (isEndOfMonth && completionRate < 35 && p.budget > 0 && !isExcludedFromLowProgress) {
-                risks.push({
-                    ...p,
-                    riskLevel: completionRate < 20 ? 'critical' : 'high',
-                    riskReason: `Poco avance (${completionRate.toFixed(0)}%)`,
-                    riskType: 'lowProgress'
-                });
-            } else if (!p.isPacing && p.budget > 0) {
-                // Por debajo del objetivo (no al ritmo): Aviso bajo, no "En regla"
-                risks.push({
-                    ...p,
-                    riskLevel: 'medium',
-                    riskReason: `Por debajo del objetivo (Avance real: ${p.progressOperational.toFixed(0)}%)`,
-                    riskType: 'lowPace'
-                });
-            }
-        });
-
-        return risks.sort((a, b) => {
-            const riskOrder: Record<string, number> = { critical: 0, high: 1, medium: 2 };
-            return (riskOrder[a.riskLevel] || 2) - (riskOrder[b.riskLevel] || 2);
-        });
-    }, [projectMetrics, isEndOfMonth, currentAgency?.settings?.radarLowProgressExcludeKeywords]);
-
-    // Empleados y proyectos relevantes para la vista por departamento actual
-    const employeesForView = useMemo(() => {
-        if (!selectedDepartmentId || !departments.length) return employees ?? [];
-        const dept = departments.find(d => d.id === selectedDepartmentId || d.name === selectedDepartmentId);
-        if (!dept) return employees ?? [];
-        return (employees ?? []).filter(e => employeeBelongsToDepartment(e.department, dept.id, dept.name));
-    }, [employees, selectedDepartmentId, departments]);
-
-    const projectIdsForDepartment = useMemo(() => {
-        if (!selectedDepartmentId) return undefined as Set<string> | undefined;
-        if (!employeesForView.length) return new Set<string>();
-        const allowedEmployeeIds = new Set(employeesForView.map(e => e.id));
-        const ids = new Set<string>();
-        allocations.forEach(a => {
-            if (!allowedEmployeeIds.has(a.employeeId)) return;
-            if (!isAllocationInEffectiveMonth(a.weekStartDate, viewDate)) return;
-            ids.add(a.projectId);
-        });
-        return ids;
-    }, [allocations, employeesForView, selectedDepartmentId, viewDate]);
-
-    const atRiskProjects = useMemo(() => {
-        // Sin filtro de departamento → todos los riesgos
-        if (!projectIdsForDepartment) return atRiskProjectsRaw;
-        return atRiskProjectsRaw.filter(risk => projectIdsForDepartment.has(risk.projectId));
-    }, [atRiskProjectsRaw, projectIdsForDepartment]);
-
-    /** Estado único por proyecto (misma lógica que cartera): excluyente y con orden de prioridad */
-    type ProjectStatusType = 'over-budget' | 'behind-schedule' | 'needs-planning' | 'no-activity' | 'in-rule';
-
-    type ProjectRowItem = {
-        projectId: string;
-        projectName: string;
-        clientName: string;
-        planned: number;
-        actual: number;
-        computed: number;
-        budget: number;
-        progressOperational: number;
-        riskLevel?: 'critical' | 'high' | 'medium';
-        riskType?: 'overBudget' | 'lowProgress' | 'lowPace';
-        /** Estado para filtros y badge: En regla solo si no hay exceso, retraso, falta planificar ni sin actividad */
-        status: ProjectStatusType;
-    };
-
-    const allProjectsForView = useMemo(() => {
-        const selectedDept = selectedDepartmentId && departments.length
-            ? departments.find(d => d.id === selectedDepartmentId || d.name === selectedDepartmentId)
-            : null;
-        const byDept = projectIdsForDepartment && selectedDept
-            ? projectMetrics.filter(p => {
-                if (!projectIdsForDepartment.has(p.projectId)) return false;
-                const project = projects?.find(proj => proj.id === p.projectId);
-                if (!project?.responsibleDepartmentId) return true;
-                return project.responsibleDepartmentId === selectedDept.id || project.responsibleDepartmentId === selectedDept.name;
-            })
-            : projectIdsForDepartment
-                ? projectMetrics.filter(p => projectIdsForDepartment.has(p.projectId))
-                : projectMetrics;
-        const riskMap = new Map(atRiskProjects.map(r => [r.projectId, r]));
-        const rows: ProjectRowItem[] = byDept.map(p => {
-            const risk = riskMap.get(p.projectId);
-            const base = {
-                projectId: p.projectId,
-                projectName: p.projectName,
-                clientName: p.clientName ?? '',
-                planned: p.planned,
-                actual: p.actual,
-                computed: p.computed,
-                budget: p.budget,
-                progressOperational: p.progressOperational,
-                status: 'in-rule' as ProjectStatusType
-            };
-            if (risk) {
-                return { ...base, riskLevel: risk.riskLevel, riskType: risk.riskType };
-            }
-            return base;
-        });
-        const riskOrder: Record<string, number> = { critical: 0, high: 1, medium: 2 };
-        return rows.sort((a, b) => {
-            const aOrder = a.riskLevel ? riskOrder[a.riskLevel] ?? 3 : 4;
-            const bOrder = b.riskLevel ? riskOrder[b.riskLevel] ?? 3 : 4;
-            if (aOrder !== bOrder) return aOrder - bOrder;
-            return (a.projectName || '').localeCompare(b.projectName || '');
-        });
-    }, [projectMetrics, projectIdsForDepartment, atRiskProjects, selectedDepartmentId, departments, projects]);
+    
+    const { employeesForView, atRiskProjects, allProjectsForView } = useOperationsRadarData({
+        projectMetrics,
+        viewDate,
+        isEndOfMonth,
+        radarLowProgressExcludeKeywords: currentAgency?.settings?.radarLowProgressExcludeKeywords ?? [],
+        selectedDepartmentId,
+        departments,
+        employees,
+        allocations,
+        projects,
+    });
 
     const [statusFilter, setStatusFilter] = useState<'all' | ProjectStatusType>('all');
     const [expandedAlerts, setExpandedAlerts] = useState<Set<string>>(new Set());

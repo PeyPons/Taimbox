@@ -11,10 +11,10 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useApp } from '@/contexts/AppContext';
+import { useAppAllocationActions, useAppAllocations, useAppEmployees, useAppProjects, useAppWeeklyFeedback } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { Allocation, Project } from '@/types';
-import { CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, TrendingUp, TrendingDown, CheckCircle2, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc, GanttChart, ArrowLeft, ArrowRight, Filter, SlidersHorizontal, ArrowRightLeft, Lock, Check, Plus, Link as LinkIcon, AlertTriangle, AlertOctagon } from 'lucide-react';
+import { CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, TrendingUp, TrendingDown, CheckCircle2, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc, GanttChart, Filter, SlidersHorizontal, ArrowRightLeft, Lock, Check, Plus, Link as LinkIcon, AlertTriangle, AlertOctagon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth, getWeekEndDate, isAllocationWeekPastForWeekly } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
@@ -29,23 +29,24 @@ import { useAllocationActions } from '@/hooks/useAllocationActions';
 import { AllocationProjectHeader } from '@/components/planner/allocation/AllocationProjectHeader';
 import { AllocationTaskRow } from '@/components/planner/allocation/AllocationTaskRow';
 import { PlannerTaskContextMenu } from '@/components/planner/allocation/PlannerTaskContextMenu';
+import { AllocationMonthNavigation } from '@/components/planner/allocation/AllocationMonthNavigation';
+import { AllocationToolbarControls } from '@/components/planner/allocation/AllocationToolbarControls';
 import { TaskTimer } from '@/components/employee/TaskTimer';
 import { BatchTaskRow } from '@/components/planner/BatchTaskRow';
 import { AllocationFormDialog } from '@/components/planner/allocation/AllocationFormDialog';
 import { useTasksImpact } from '@/hooks/useTasksImpact';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePermissions } from '@/hooks/usePermissions';
-import { NewTaskRow, Deadline } from '@/types';
+import { NewTaskRow } from '@/types';
 import { supabase } from '@/lib/supabase';
-import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { TransferRequestDialog } from '@/components/transfers/TaskTransferComponents';
 import { useTaskTransfers } from '@/hooks/useTaskTransfers';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { useIntegration } from '@/hooks/useIntegration';
 import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
-
-const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
+import { useAllocationSheetMonthData } from '@/hooks/useAllocationSheetMonthData';
+import { round2 } from '@/utils/numbers';
 
 interface AllocationSheetProps {
   open: boolean;
@@ -60,11 +61,11 @@ type SortOption = 'budget_desc' | 'budget_asc' | 'my_hours_desc' | 'my_hours_asc
 
 export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, viewDateContext }: AllocationSheetProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const {
-    employees, projects, clients, allocations, getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getProjectById,
-    addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading, loadDataForMonth, weeklyFeedback,
-    currentUser
-  } = useApp();
+  const { employees, currentUser } = useAppEmployees();
+  const { projects, clients, getProjectById } = useAppProjects();
+  const { allocations, getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, loadDataForMonth } = useAppAllocations();
+  const { addAllocation, updateAllocation, deleteAllocation, isLoading: isGlobalLoading } = useAppAllocationActions();
+  const { weeklyFeedback } = useAppWeeklyFeedback();
 
   const { currentAgency } = useAgency();
   const { outgoingTransfers } = useTaskTransfers();
@@ -105,8 +106,6 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const [viewDate, setViewDate] = useState(() => getInitialViewDate());
   const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(new Set());
   const [isTourActive, setIsTourActive] = useState(false);
-  const [isLoadingTasks, setIsLoadingTasks] = useState(true); // State for internal task loading
-  const loadedMonthsRef = useRef<Set<string>>(new Set());
   const autoAddTriggeredRef = useRef(false);
 
   const handleTimeLogged = useCallback((allocationId: string, hoursLogged: number) => {
@@ -164,52 +163,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     }
   }, [open, weekStart, viewDateContext]);
 
-  // Cargar datos del mes cuando cambia el mes visible
-  useEffect(() => {
-    if (open && !isGlobalLoading) {
-      const monthKey = `${viewDate.getFullYear()}-${viewDate.getMonth()}`;
-
-      // Si ya se cargó este mes según el ref, no hacer nada (evita loops)
-      if (loadedMonthsRef.current.has(monthKey)) {
-        setIsLoadingTasks(false);
-        return;
-      }
-
-      // Verificar si REALMENTE tenemos datos para este mes en el contexto
-      const monthStart = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
-      const monthEnd = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0);
-
-      const hasDataInContext = allocations.some(a => {
-        try {
-          const allocDate = new Date(a.weekStartDate);
-          return allocDate >= monthStart && allocDate <= monthEnd;
-        } catch {
-          return false;
-        }
-      });
-
-      // Si hay datos, marcar como cargado y salir
-      if (hasDataInContext) {
-        loadedMonthsRef.current.add(monthKey);
-        setIsLoadingTasks(false);
-        return;
-      }
-
-      // Si no hay datos, cargarlos
-      setIsLoadingTasks(true);
-      loadDataForMonth(viewDate)
-        .then(() => {
-          // Solo marcamos como cargado si terminó con éxito
-          loadedMonthsRef.current.add(monthKey);
-        })
-        .finally(() => {
-          setIsLoadingTasks(false);
-        });
-    }
-  }, [viewDate, open, isGlobalLoading, loadDataForMonth]); // REMOVIDO allocations para evitar loops
-
   const [searchTerm, setSearchTerm] = useState('');
-  const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const inlineInputRef = useRef<HTMLInputElement>(null);
 
   const [openComboboxId, setOpenComboboxId] = useState<string | null>(null);
@@ -255,6 +209,16 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   // Filtro: solo proyectos donde tengo tareas esta semana
   const [showOnlyMyProjects, setShowOnlyMyProjects] = useState(true);
 
+  const { isLoadingTasks, deadlines } = useAllocationSheetMonthData({
+    open,
+    isFormOpen: open,
+    viewDate,
+    currentAgencyId: currentAgency?.id,
+    allocations,
+    isGlobalLoading,
+    loadDataForMonth,
+  });
+
   // Usar hook personalizado para lógica de negocio
   const {
     employee,
@@ -285,32 +249,6 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     getProjectBudgetStatus,
     viewMonth: viewDate
   });
-
-  // Cargar deadlines del mes (filtrados por agencia)
-  const loadDeadlinesForMonth = useCallback(async (month: Date) => {
-    const monthKey = format(startOfMonth(month), 'yyyy-MM');
-    try {
-      const { data, error } = await fetchDeadlinesForMonth(monthKey, currentAgency?.id);
-      if (error) throw error;
-      setDeadlines(data ?? []);
-    } catch (error) {
-      console.error('Error cargando deadlines:', error);
-      setDeadlines([]);
-    }
-  }, [currentAgency?.id]);
-
-  useEffect(() => {
-    if (open) {
-      loadDeadlinesForMonth(viewDate);
-    }
-  }, [open, viewDate, loadDeadlinesForMonth]);
-
-  // Cargar deadlines cuando se abre el formulario de añadir tareas
-  useEffect(() => {
-    if (isFormOpen) {
-      loadDeadlinesForMonth(viewDate);
-    }
-  }, [isFormOpen, viewDate, loadDeadlinesForMonth]);
 
   // Encontrar el índice de la semana clicada cuando weeks esté disponible
   useEffect(() => {
@@ -676,163 +614,35 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                 </div>
 
                 {/* 2. SECCIÓN CENTRAL: NAVEGACIÓN (Absoluta en desktop para centrado perfecto) */}
-                <div className="flex flex-col items-center gap-2 w-full xl:w-auto xl:absolute xl:left-1/2 xl:top-1 xl:-translate-x-1/2 z-0 order-3 xl:order-2">
-                  {/* Navegación Mes */}
-                  <div className="flex items-center gap-1 sm:gap-1 bg-white/50 backdrop-blur-sm p-1 rounded-full border shadow-sm">
-                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 rounded-full", isMobile && "h-11 w-11 min-h-[44px]")} onClick={handlePrevMonth}><ChevronLeft className="h-4 w-4" /></Button>
-                    <span className={cn("text-base font-bold capitalize text-center select-none text-slate-700", isMobile ? "w-28 min-w-0 truncate" : "w-36")}>{monthLabel}</span>
-                    <Button variant="ghost" size="icon" className={cn("h-8 w-8 rounded-full", isMobile && "h-11 w-11 min-h-[44px]")} onClick={handleNextMonth}><ChevronRight className="h-4 w-4" /></Button>
-                  </div>
-
-                  {/* Navegación Semanas (Solo visible en showAllWeeks) */}
-                  <div className={cn(
-                    "flex items-center gap-3 transition-all duration-300 overflow-hidden",
-                    showAllWeeks ? "h-8 opacity-100" : "h-0 opacity-0"
-                  )}>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                      onClick={() => scrollContainerRef.current?.scrollBy({ left: -420, behavior: 'smooth' })}
-                      disabled={!showAllWeeks}
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 select-none">Navegar Semanas</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                      onClick={() => scrollContainerRef.current?.scrollBy({ left: 420, behavior: 'smooth' })}
-                      disabled={!showAllWeeks}
-                    >
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                <AllocationMonthNavigation
+                  isMobile={isMobile}
+                  monthLabel={monthLabel}
+                  showAllWeeks={showAllWeeks}
+                  onPrevMonth={handlePrevMonth}
+                  onNextMonth={handleNextMonth}
+                  onScrollWeeksLeft={() => scrollContainerRef.current?.scrollBy({ left: -420, behavior: 'smooth' })}
+                  onScrollWeeksRight={() => scrollContainerRef.current?.scrollBy({ left: 420, behavior: 'smooth' })}
+                />
 
                 {/* 3. SECCIÓN DERECHA: HERRAMIENTAS */}
-                <div className="flex items-center gap-2 z-10 ml-auto order-2 xl:order-3">
-                  {/* Búsqueda Colapsable */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className={cn("relative transition-all duration-300 ease-in-out", searchTerm ? "w-48" : "w-9 focus-within:w-48")}>
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                        <Input
-                          placeholder="Buscar tarea o proyecto..."
-                          className={cn(
-                            "pl-9 h-9 text-xs bg-white/50 focus:bg-white transition-all",
-                            !searchTerm && "cursor-pointer"
-                          )}
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">Filtra por nombre de tarea o de proyecto</TooltipContent>
-                  </Tooltip>
-
-                  <div className="h-6 w-px bg-slate-200 mx-1" />
-
-                  {/* Vista Semana / Mes: texto visible en desktop (premium = sin depender solo de iconos) */}
-                  <div className="flex bg-slate-100/80 p-1 rounded-lg gap-1" data-tour="planner-view-toggle">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={cn("h-7 px-2 gap-1.5", isMobile && "h-11 min-h-[44px] px-3", effectiveShowAllWeeks && "bg-white shadow-sm text-indigo-600")}
-                          onClick={() => setShowAllWeeks(!showAllWeeks)}
-                        >
-                          {effectiveShowAllWeeks ? <LayoutGrid className="h-3.5 w-3.5 shrink-0" /> : <Calendar className="h-3.5 w-3.5 shrink-0" />}
-                          <span className="text-xs font-medium">{effectiveShowAllWeeks ? 'Mes' : 'Semana'}</span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">Vista: {effectiveShowAllWeeks ? "mes completo (todas las semanas)" : "semana actual"}</TooltipContent>
-                    </Tooltip>
-
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={cn("h-7 px-2 text-slate-500 hover:text-indigo-600", isMobile && "h-11 min-h-[44px] px-3")}
-                          onClick={() => setTimelineOpen(true)}
-                        >
-                          <GanttChart className="h-3.5 w-3.5" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="max-w-[220px]">
-                        <p className="font-medium">Timeline</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Todas las semanas del mes en una línea para comparar cargas de un vistazo.</p>
-                      </TooltipContent>
-                    </Tooltip>
-
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={cn("h-7 px-2 text-slate-500 hover:text-indigo-600", isMobile && "h-11 min-h-[44px] px-3")}
-                          onClick={() => {
-                            setWeeklyFocusAllocationId(null);
-                            setWeeklyOpen(true);
-                          }}
-                        >
-                          <TrendingUp className="h-3.5 w-3.5" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="max-w-[220px]">
-                        <p className="font-medium">Previsión semanal</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Resumen de cierre de semana y tareas pendientes de revisar.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-
-                  <div className="h-6 w-px bg-slate-200 mx-1" />
-
-                  {/* Menú contextual: en semanal muestra criterio actual (premium = estado visible sin abrir) */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="h-9 px-2 gap-2 text-slate-600 border-slate-200 min-w-0" data-tour="planner-sort">
-                        <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
-                        <span className="text-xs truncate max-w-[140px] sm:max-w-[200px]">{sortButtonLabel}</span>
-                        <ChevronDown className="h-3 w-3 opacity-50 shrink-0" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      {effectiveShowAllWeeks && (
-                        <>
-                          <div className="p-2">
-                            <p className="text-xs font-semibold text-slate-500 mb-2 px-1">VISUALIZACIÓN</p>
-                            <div className="flex items-center justify-between px-2 py-1.5 hover:bg-slate-50 rounded cursor-pointer" onClick={() => setAutoExpand(!autoExpand)}>
-                              <span className="text-sm">Proyectos expandidos</span>
-                              {autoExpand && <Check className="h-3.5 w-3.5 text-indigo-600" />}
-                            </div>
-                          </div>
-                          <div className="h-px bg-slate-100 my-1" />
-                        </>
-                      )}
-                      <div className="p-2">
-                        <p className="text-xs font-semibold text-slate-500 mb-2 px-1">
-                          {effectiveShowAllWeeks ? 'ORDENAR POR' : 'ORDENAR PROYECTOS'}
-                        </p>
-                        <DropdownMenuItem onClick={() => setSortOption('budget_desc')} className="text-xs">
-                          {sortOption === 'budget_desc' && <Check className="h-3 w-3 mr-2 text-indigo-600" />} Horas contratadas (Mayor)
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setSortOption('budget_asc')} className="text-xs">
-                          {sortOption === 'budget_asc' && <Check className="h-3 w-3 mr-2 text-indigo-600" />} Horas contratadas (Menor)
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setSortOption('my_hours_desc')} className="text-xs">
-                          {sortOption === 'my_hours_desc' && <Check className="h-3 w-3 mr-2 text-indigo-600" />} Mis horas (Mayor)
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setSortOption('my_hours_asc')} className="text-xs">
-                          {sortOption === 'my_hours_asc' && <Check className="h-3 w-3 mr-2 text-indigo-600" />} Mis horas (Menor)
-                        </DropdownMenuItem>
-                      </div>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                <AllocationToolbarControls
+                  isMobile={isMobile}
+                  searchTerm={searchTerm}
+                  onSearchTermChange={setSearchTerm}
+                  effectiveShowAllWeeks={effectiveShowAllWeeks}
+                  showAllWeeks={showAllWeeks}
+                  onToggleShowAllWeeks={() => setShowAllWeeks(!showAllWeeks)}
+                  onOpenTimeline={() => setTimelineOpen(true)}
+                  onOpenWeekly={() => {
+                    setWeeklyFocusAllocationId(null);
+                    setWeeklyOpen(true);
+                  }}
+                  sortButtonLabel={sortButtonLabel}
+                  autoExpand={autoExpand}
+                  onToggleAutoExpand={() => setAutoExpand(!autoExpand)}
+                  sortOption={sortOption}
+                  onSetSortOption={setSortOption}
+                />
               </div>
               {toolbarContextLine && (
                 <p className="text-xs text-slate-500 mt-1 px-0.5" aria-live="polite">
@@ -1401,12 +1211,12 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                           type="number"
                                                           step="0.25"
                                                           min="0"
-                                                          disabled={!!pendingTransfer || preference === 'actual'}
+                                                          disabled={!!pendingTransfer}
                                                           defaultValue={alloc.hoursComputed || 0}
                                                           onBlur={(e) => updateInlineHours(alloc, 'hoursComputed', e.target.value)}
                                                           className={cn(
                                                             "w-12 px-1 py-0.5 text-[10px] text-center border rounded font-mono",
-                                                            (pendingTransfer || preference === 'actual') ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-emerald-50 text-emerald-700"
+                                                            pendingTransfer ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-emerald-50 text-emerald-700"
                                                           )}
                                                         />
                                                       ) : (

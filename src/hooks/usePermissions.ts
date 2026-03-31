@@ -2,29 +2,7 @@ import { useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { UserPermissions, ROUTE_PERMISSIONS, DEFAULT_PERMISSIONS } from '@/types/permissions';
-
-const RESTRICTED_PERMISSIONS: UserPermissions = {
-  can_access_planner: false,
-  can_access_projects: false,
-  can_access_clients: false,
-  can_access_team: false,
-  can_access_team_capacity: false,
-  can_access_reports: false,
-  can_access_operations_radar: false,
-  can_access_financial_health: false,
-  can_access_client_reports: false,
-  can_access_google_ads: false,
-  can_access_meta_ads: false,
-  can_access_ads_reports: false,
-  can_access_deadlines: true,
-  can_access_okrs: false,
-  can_access_weekly_forecast: false,
-  can_access_weekly: true,
-  can_access_settings: true,
-  can_access_agency_settings: false,
-  can_access_api_keys: false,
-  can_access_support: true,
-};
+import { canAccessRoute, hasPermissionFlag, resolveUserPermissions } from '@/utils/permissionsUtils';
 
 /**
  * Hook para verificar permisos del usuario actual basados en su rol
@@ -34,64 +12,25 @@ export function usePermissions() {
   const { currentAgency } = useAgency();
 
   const permissions = useMemo(() => {
-    if (!currentUser) {
-      return DEFAULT_PERMISSIONS;
-    }
-
-    // 1. Buscar el rol del usuario en la configuración de la agencia
-    const agencyRoles = currentAgency?.settings?.roles || [];
-    const userRoleName = currentUser.role || '';
-
-    // Safety check: roles might be strings (legacy) or RoleConfig objects (new)
-    // We treat agencyRoles as any[] here to avoid TS errors with mismatched runtime data
-    const safeAgencyRoles = agencyRoles as any[];
-
-    const roleConfig = safeAgencyRoles.find(
-      (r) => {
-        if (!r) return false;
-        if (typeof r === 'string') return r.toLowerCase() === userRoleName.toLowerCase();
-        return r.name && r.name.toLowerCase() === userRoleName.toLowerCase();
-      }
-    );
-
-    // 2. Si encontramos configuración de rol, usar esos permisos
-    if (roleConfig && typeof roleConfig !== 'string' && roleConfig.permissions) {
-      const p = roleConfig.permissions as UserPermissions;
-      // Compatibilidad: roles que tenían "Reportes" siguen teniendo Seguimiento operativo y Rentabilidad hasta que se editen
-      return {
-        ...p,
-        can_access_operations_radar: p.can_access_operations_radar ?? p.can_access_reports ?? false,
-        can_access_financial_health: p.can_access_financial_health ?? p.can_access_reports ?? false,
-      };
-    }
-
-    // 3. No role configuration found - log warning and return restricted permissions
-    // SECURITY: Permissions must be explicitly configured in agency_settings.roles
-    // No implicit admin access based on role name keywords
-    if (userRoleName) {
-      console.warn(`[usePermissions] No role configuration found for role "${userRoleName}". User will have restricted access. Configure permissions in Agency Settings.`);
-    }
-
-    // 4. Default: Permisos restringidos para roles no configurados
-    return RESTRICTED_PERMISSIONS;
+    return resolveUserPermissions({
+      currentUserRole: currentUser?.role,
+      agencyRoles: currentAgency?.settings?.roles,
+      defaultPermissions: DEFAULT_PERMISSIONS,
+    });
   }, [currentUser, currentAgency]);
 
   /**
    * Verifica si el usuario tiene permiso para acceder a una ruta
    */
   const canAccess = (route: string): boolean => {
-    const permissionKey = ROUTE_PERMISSIONS[route];
-    if (!permissionKey) {
-      return true;
-    }
-    return permissions[permissionKey] !== false;
+    return canAccessRoute(permissions, route, ROUTE_PERMISSIONS);
   };
 
   /**
    * Verifica si el usuario tiene un permiso específico
    */
   const hasPermission = (permission: keyof UserPermissions): boolean => {
-    return permissions[permission] !== false;
+    return hasPermissionFlag(permissions, permission);
   };
 
   /**

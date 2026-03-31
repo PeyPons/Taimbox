@@ -1,5 +1,5 @@
 import { useMemo, memo, useState, useEffect, useRef } from 'react';
-import { useApp } from '@/contexts/AppContext';
+import { useAppAllocations, useAppEmployees, useAppProjects } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,13 +19,13 @@ import { CONSTANTS } from '@/config/constants';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { Deadline } from '@/types';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
-import { format, isSameMonth, parseISO, startOfMonth, endOfMonth } from 'date-fns';
-import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { format, isSameMonth, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
-import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
 import { usePrivacyDemo } from '@/contexts/PrivacyDemoContext';
+import { computeGlobalPlanningInconsistencies, filterInconsistenciesBySearch, type Inconsistency } from '@/utils/planningInconsistencies';
+import { round2 } from '@/utils/numbers';
 
 interface GlobalPlanningInconsistenciesProps {
   viewDate: Date;
@@ -35,35 +35,14 @@ interface GlobalPlanningInconsistenciesProps {
   hideProjectSearch?: boolean;
 }
 
-const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
-
-interface Inconsistency {
-  projectId: string;
-  projectName: string;
-  employees: Array<{
-    employeeId: string;
-    employeeName: string;
-    avatarUrl?: string;
-    deadlineHours: number;
-    plannedHours: number;
-    computedHours: number;
-    difference: number;
-    hasDeadline: boolean;
-  }>;
-  totalDeadlineHours: number;
-  totalPlannedHours: number;
-  totalComputedHours: number;
-  totalDifference: number;
-  budgetHours: number;
-  minimumHours: number;
-}
-
 export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsistencies({
   viewDate,
   searchQuery: searchQueryProp = null,
   hideProjectSearch = false
 }: GlobalPlanningInconsistenciesProps) {
-  const { allocations, projects, employees, clients } = useApp();
+  const { allocations } = useAppAllocations();
+  const { employees } = useAppEmployees();
+  const { projects, clients } = useAppProjects();
   const { currentAgency } = useAgency();
   const preference = currentAgency?.settings?.hoursTrackingPreference;
   const { selectedDepartmentId } = useDepartmentView();
@@ -118,191 +97,34 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
     loadDeadlines();
   }, [monthKey, currentAgency?.id]);
 
-  // Calcular incoherencias globales agrupadas por proyecto
   const inconsistencies = useMemo(() => {
     if (isLoading) return [];
 
-    const monthStart = startOfMonth(viewDate);
-    const monthEnd = endOfMonth(viewDate);
-
-    // Obtener allocations del mes filtradas por la vista de departamento (si aplica)
-    const monthAllocations = allocations.filter(a =>
-      isAllocationInEffectiveMonth(a.weekStartDate, viewDate) &&
-      (!allowedEmployeeIds || allowedEmployeeIds.has(a.employeeId))
-    );
-
-    // Agrupar allocations por proyecto y empleado
-    const allocationsByProjectAndEmployee: Record<string, Record<string, {
-      planned: number;
-      computed: number;
-    }>> = {};
-
-    monthAllocations.forEach(a => {
-      if (!allocationsByProjectAndEmployee[a.projectId]) {
-        allocationsByProjectAndEmployee[a.projectId] = {};
-      }
-      if (!allocationsByProjectAndEmployee[a.projectId][a.employeeId]) {
-        allocationsByProjectAndEmployee[a.projectId][a.employeeId] = { planned: 0, computed: 0 };
-      }
-      if (a.status === 'completed') {
-        allocationsByProjectAndEmployee[a.projectId][a.employeeId].computed += getEffectiveCompletedHours(a, preference);
-      } else {
-        allocationsByProjectAndEmployee[a.projectId][a.employeeId].planned += a.hoursAssigned || 0;
-      }
+    return computeGlobalPlanningInconsistencies({
+      deadlines,
+      allocations,
+      projects,
+      employees,
+      viewDate,
+      allowedEmployeeIds,
+      selectedEmployeeId,
+      selectedProjectId,
+      hideProjectSearch,
+      hoursTrackingPreference: preference,
     });
-
-    // Agrupar por proyecto para evitar duplicidades
-    const projectInconsistencies: Record<string, Inconsistency> = {};
-
-    // Primero procesar proyectos con deadlines
-    deadlines.forEach(deadline => {
-      if (deadline.isHidden) return;
-
-      const projectId = deadline.projectId;
-      const project = projects.find(p => p.id === projectId);
-      if (!project) return;
-
-      // Un Map por employeeId evita duplicados (un empleado solo aparece una vez por proyecto)
-      const employeeMap = new Map<string, Inconsistency['employees'][0]>();
-      let totalDeadline = 0;
-      let totalPlanned = 0;
-      let totalComputed = 0;
-
-      // Procesar cada empleado en el deadline (solo si sigue existiendo en la agencia y pasa el filtro de departamento)
-      Object.entries(deadline.employeeHours).forEach(([empId, deadlineHrs]) => {
-        const emp = employees.find(e => e.id === empId);
-        if (!emp) return; // Omitir empleados eliminados para no mostrar "Desconocido"
-        if (allowedEmployeeIds && !allowedEmployeeIds.has(empId)) return;
-        const empAllocs = allocationsByProjectAndEmployee[projectId]?.[empId] || { planned: 0, computed: 0 };
-        const total = empAllocs.planned + empAllocs.computed;
-        const diff = round2(total - deadlineHrs);
-
-        employeeMap.set(empId, {
-          employeeId: empId,
-          employeeName: emp.name,
-          avatarUrl: emp.avatarUrl,
-          deadlineHours: deadlineHrs,
-          plannedHours: round2(empAllocs.planned),
-          computedHours: round2(empAllocs.computed),
-          difference: diff,
-          hasDeadline: true
-        });
-        totalDeadline += deadlineHrs;
-        totalPlanned += empAllocs.planned;
-        totalComputed += empAllocs.computed;
-      });
-
-      // También incluir empleados con horas pero sin deadline en este proyecto (sin duplicar)
-      Object.entries(allocationsByProjectAndEmployee[projectId] || {}).forEach(([empId, allocs]) => {
-        if (employeeMap.has(empId)) return; // Ya está por el deadline
-        if (!deadline.employeeHours[empId] && (allocs.planned > 0 || allocs.computed > 0)) {
-          const emp = employees.find(e => e.id === empId);
-          if (!emp) return; // Omitir empleados eliminados
-          if (allowedEmployeeIds && !allowedEmployeeIds.has(empId)) return;
-          const total = allocs.planned + allocs.computed;
-
-          employeeMap.set(empId, {
-            employeeId: empId,
-            employeeName: emp.name,
-            avatarUrl: emp.avatarUrl,
-            deadlineHours: 0,
-            plannedHours: round2(allocs.planned),
-            computedHours: round2(allocs.computed),
-            difference: round2(total),
-            hasDeadline: false
-          });
-          totalPlanned += allocs.planned;
-          totalComputed += allocs.computed;
-        }
-      });
-
-      const employeeInconsistencies = Array.from(employeeMap.values());
-
-      // SIEMPRE registrar el proyecto si tiene deadline, aunque no haya inconsistencias
-      // Esto evita que se procese después como "sin deadline"
-      // Solo mostramos la tarjeta si hay inconsistencias reales
-      const effectiveBudget = deadline.budgetOverride !== undefined && deadline.budgetOverride !== null
-        ? deadline.budgetOverride
-        : (project.budgetHours || 0);
-
-      projectInconsistencies[projectId] = {
-        projectId,
-        projectName: project.name,
-        employees: employeeInconsistencies, // Puede estar vacío si todo coincide
-        totalDeadlineHours: totalDeadline,
-        totalPlannedHours: round2(totalPlanned),
-        totalComputedHours: round2(totalComputed),
-        totalDifference: round2((totalPlanned + totalComputed) - totalDeadline),
-        budgetHours: effectiveBudget,
-        minimumHours: project.minimumHours || 0
-      };
-    });
-
-    // Procesar proyectos sin deadline pero con horas
-    Object.entries(allocationsByProjectAndEmployee).forEach(([projectId, empAllocs]) => {
-      // Solo si no está ya en projectInconsistencies
-      if (projectInconsistencies[projectId]) return;
-
-      const project = projects.find(p => p.id === projectId);
-      if (!project) return;
-
-      const employeeInconsistencies: Inconsistency['employees'] = [];
-      let totalPlanned = 0;
-      let totalComputed = 0;
-
-      Object.entries(empAllocs).forEach(([empId, allocs]) => {
-        const total = allocs.planned + allocs.computed;
-        if (total > 0) {
-          const emp = employees.find(e => e.id === empId);
-          if (!emp) return; // Omitir empleados eliminados (no mostrar "Desconocido")
-          if (allowedEmployeeIds && !allowedEmployeeIds.has(empId)) return;
-          employeeInconsistencies.push({
-            employeeId: empId,
-            employeeName: emp.name,
-            avatarUrl: emp.avatarUrl,
-            deadlineHours: 0,
-            plannedHours: round2(allocs.planned),
-            computedHours: round2(allocs.computed),
-            difference: round2(total),
-            hasDeadline: false
-          });
-          totalPlanned += allocs.planned;
-          totalComputed += allocs.computed;
-        }
-      });
-
-      if (employeeInconsistencies.length > 0) {
-        projectInconsistencies[projectId] = {
-          projectId,
-          projectName: project.name,
-          employees: employeeInconsistencies,
-          totalDeadlineHours: 0,
-          totalPlannedHours: round2(totalPlanned),
-          totalComputedHours: round2(totalComputed),
-          totalDifference: round2(totalPlanned + totalComputed),
-          budgetHours: project.budgetHours || 0, // No hay deadline, usamos el budget base
-          minimumHours: project.minimumHours || 0
-        };
-      }
-    });
-
-    // Filtrar por empleado si está seleccionado
-    let filtered = Object.values(projectInconsistencies);
-
-    // Filtro de proyecto solo cuando mostramos el selector local (no en Seguimiento operativo)
-    if (!hideProjectSearch && selectedProjectId !== 'all') {
-      filtered = filtered.filter(proj => proj.projectId === selectedProjectId);
-    }
-
-    if (selectedEmployeeId !== 'all') {
-      filtered = filtered.map(proj => ({
-        ...proj,
-        employees: proj.employees.filter(emp => emp.employeeId === selectedEmployeeId)
-      })).filter(proj => proj.employees.length > 0);
-    }
-
-    return filtered.sort((a, b) => Math.abs(b.totalDifference) - Math.abs(a.totalDifference));
-  }, [deadlines, allocations, projects, employees, viewDate, isLoading, selectedEmployeeId, selectedProjectId, hideProjectSearch, allowedEmployeeIds]);
+  }, [
+    deadlines,
+    allocations,
+    projects,
+    employees,
+    viewDate,
+    isLoading,
+    selectedEmployeeId,
+    selectedProjectId,
+    hideProjectSearch,
+    allowedEmployeeIds,
+    preference,
+  ]);
 
   // Expandir todos solo si hay pocos; con muchos (ej. 100+) mantener colapsados para rendimiento
   useEffect(() => {
@@ -327,12 +149,12 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
 
   const filteredBySearch = useMemo(() => {
     const q = (hideProjectSearch ? (searchQueryProp ?? '').trim() : coherenceSearchQuery.trim()).toLowerCase();
-    if (!q) return inconsistencies;
-    return inconsistencies.filter(inc => {
-      const proj = projects.find(p => p.id === inc.projectId);
-      const clientName = proj ? (clients || []).find(c => c.id === proj.clientId)?.name ?? '' : '';
-      const projectName = formatProjectName(inc.projectName);
-      return projectName.toLowerCase().includes(q) || (clientName && clientName.toLowerCase().includes(q));
+    return filterInconsistenciesBySearch({
+      inconsistencies,
+      query: q,
+      projects,
+      clients: clients || [],
+      formatProjectName,
     });
   }, [inconsistencies, hideProjectSearch, searchQueryProp, coherenceSearchQuery, projects, clients, formatProjectName]);
 

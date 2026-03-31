@@ -1,6 +1,5 @@
-/* eslint-disable */
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useApp } from '@/contexts/AppContext';
+import { useAppAbsencesAndEvents, useAppEmployees, useAppProjects } from '@/contexts/AppContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
@@ -50,7 +49,9 @@ import { useDeadlinesEditing } from '@/hooks/useDeadlinesEditing';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 export default function DeadlinesPage() {
-  const { projects, clients, employees, absences, teamEvents, currentUser } = useApp();
+  const { projects, clients } = useAppProjects();
+  const { employees, currentUser } = useAppEmployees();
+  const { absences, teamEvents } = useAppAbsencesAndEvents();
   const { canAccess } = usePermissions();
   const isManager = canAccess('/planner') || canAccess('/reports') || canAccess('/operaciones') || canAccess('/finanzas');
   const canEditDeadlines = isManager || canAccess('/deadlines');

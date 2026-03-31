@@ -61,7 +61,7 @@ Cliente singleton de Supabase. Requiere `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANO
 <summary><h2>🧠 Fase 2: Gestión de Estado (Contexts)</h2></summary>
 
 ### 2.1 `AppContext.tsx` (Core Data)
-**Líneas**: ~1500 | **Estado**: Crítico
+**Líneas**: ~1330 | **Estado**: Crítico
 
 Gestiona la carga de la base de datos principal (`employees`, `projects`, `allocations`).
 
@@ -93,6 +93,7 @@ Para optimizar rendimiento, usamos `loadedMonthsRef`.
 ### 2.2 `AgencyContext.tsx` (Multi-Tenant)
 - **Propósito**: Aisla datos por agencia.
 - **Key Function**: `switchAgency(id)` limpia todo el estado y recarga.
+- **Selectores ligeros**: `useAgencySettings()`, `useAgencyModules()`, `useUserAgencies()` para reducir lecturas masivas de `useAgency()` en pantallas grandes.
 
 ### 2.3 `DepartmentViewContext.tsx` (Vistas por Departamento)
 - **Propósito**: Gestiona la vista activa: **Vista Global** (todo) o un departamento concreto (ej. Marketing).
@@ -251,8 +252,8 @@ Todas las páginas principales de la aplicación.
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
 | `EmployeeDashboard.tsx` | 40KB | Vista personal del empleado: **Mi semana** (calendario mensual + pestañas) o **Mi día** (`MyDayView`, con acceso **Weekly** por tarea vía `focusAllocationId` si la integración está activa). Toggle según `useDashboardView`. Toolbar unificada: toggle a la izquierda, acciones primarias (Weekly, Añadir tareas, Tarea interna) en el centro, acciones secundarias en dropdown "Más". **Móvil**: Dialog→Sheet para "Gestión interna" y "Añadir tareas"; navegación mes con botones ≥44px. |
-| `DeadlinesPage.tsx` | ~670 líneas | Gestión de fechas límite mensuales. **Datos**: `useDeadlinesPageData.ts` (carga, Realtime, locks, filtros, capacidad). **Edición inline**: `useDeadlinesEditing.ts` (locks, formulario inline, autoSave). **Sugerencias**: `useDeadlinesRedistribution.ts`. **Filtros** en `DeadlinesFilters.tsx`; **listado** en `DeadlinesProjectList.tsx`. **Extraídos**: `DeadlinesPageHeader.tsx`, `DeadlinesSidebar.tsx`, `DeadlinesProjectEditSheet.tsx`, `DeadlinesConfirmDialog.tsx`. Ver DOCUMENTACION.md. **Móvil**: filtros y edición en Sheet. |
-| `WeeklyForecastPage.tsx` | 94KB | Previsión y confirmación semanal |
+| `DeadlinesPage.tsx` | ~680 líneas | Gestión de fechas límite mensuales. **Datos**: `useDeadlinesPageData.ts` (carga, Realtime, locks, filtros, capacidad). **Edición inline**: `useDeadlinesEditing.ts` (locks, formulario inline, autoSave). **Sugerencias**: `useDeadlinesRedistribution.ts`. **Filtros** en `DeadlinesFilters.tsx`; **listado** en `DeadlinesProjectList.tsx`. **Extraídos**: `DeadlinesPageHeader.tsx`, `DeadlinesSidebar.tsx`, `DeadlinesProjectEditSheet.tsx`, `DeadlinesConfirmDialog.tsx`. Ver DOCUMENTACION.md. **Móvil**: filtros y edición en Sheet. |
+| `WeeklyForecastPage.tsx` | ~1250 líneas | Previsión y confirmación semanal. Refactorizada por dominio con hooks: `useWeeklyForecastMonthData`, `useWeeklyForecastFilters`, `useWeeklyForecastProjectForecast`, `useWeeklyForecastTransfers`, `useWeeklyForecastRedistribution`. |
 | `TeamCapacityPage.tsx` | 26KB | Vista de carga del equipo completo |
 | `TeamPage.tsx` | 4KB | Listado de empleados |
 | `TeamPulsePage.tsx` | 14KB | Métricas de salud del equipo |

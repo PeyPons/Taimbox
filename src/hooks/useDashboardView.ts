@@ -48,10 +48,9 @@ export function useDashboardView() {
                 .select('*')
                 .eq('agency_id', currentAgency.id)
                 .eq('department_name', currentUser.department)
-                .single();
+                .maybeSingle();
 
-            if (error && error.code !== 'PGRST116') {
-                // PGRST116 = no rows returned (not an error, just no config)
+            if (error) {
                 console.error('[useDashboardView] Error loading department config:', error);
             }
 
