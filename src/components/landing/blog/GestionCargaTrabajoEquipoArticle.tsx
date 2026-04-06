@@ -1,4 +1,5 @@
 import { LocaleLink } from './LocaleLink';
+import { Button } from '@/components/ui/button';
 import { HeartPulse, Scale, ShieldAlert, BarChart3 } from 'lucide-react';
 import { RevealOnScroll } from './RevealOnScroll';
 import { BlogReadingTime } from './BlogReadingTime';

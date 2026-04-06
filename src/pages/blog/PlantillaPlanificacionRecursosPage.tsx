@@ -5,6 +5,7 @@ import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { BlogBreadcrumb } from '@/components/landing/blog/BlogBreadcrumb';
 import { blogPosts, getBlogPostLocaleFields } from '@/data/blogPosts';
+import { i18nAsArray } from '@/lib/i18nReturnObjects';
 import { useTranslation } from 'react-i18next';
 
 const SLUG = 'plantilla-planificacion-recursos-agencia';
@@ -42,7 +43,9 @@ export default function PlantillaPlanificacionRecursosPage() {
   const description = t(`posts.${postKey}.meta.description`);
 
   const howToData = (t(`posts.${postKey}.howTo`, { returnObjects: true }) as any) || {};
-  const faqData = (t(`posts.${postKey}.faqItems`, { returnObjects: true }) as any[]) || [];
+  const faqData = i18nAsArray<{ q: string; a: string }>(
+    t(`posts.${postKey}.faqItems`, { returnObjects: true }),
+  );
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -61,7 +64,7 @@ export default function PlantillaPlanificacionRecursosPage() {
         name: howToData.title || 'Cómo usar la plantilla de planificación de recursos para agencias',
         description:
           howToData.desc || 'Pasos para configurar inventario de horas, catálogo de proyectos, cuadrante semanal y dashboard de utilización en Excel o Google Sheets.',
-        step: (howToData.steps || []).map((s: any, i: number) => ({
+        step: i18nAsArray<{ name: string; text: string }>(howToData.steps).map((s, i: number) => ({
           '@type': 'HowToStep',
           position: i + 1,
           name: s.name,

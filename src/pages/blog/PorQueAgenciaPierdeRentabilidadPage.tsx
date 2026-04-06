@@ -5,6 +5,7 @@ import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { BlogBreadcrumb } from '@/components/landing/blog/BlogBreadcrumb';
 import { blogPosts, getBlogPostLocaleFields } from '@/data/blogPosts';
+import { i18nAsArray } from '@/lib/i18nReturnObjects';
 import { useTranslation } from 'react-i18next';
 
 const SLUG = 'por-que-tu-agencia-pierde-rentabilidad-equipo-ocupado';
@@ -34,7 +35,9 @@ export default function PorQueAgenciaPierdeRentabilidadPage() {
 
   const headline = t(`posts.${postKey}.meta.headline`);
   const description = t(`posts.${postKey}.meta.description`);
-  const faqData = (t(`posts.${postKey}.faqItems`, { returnObjects: true }) as any[]) || [];
+  const faqData = i18nAsArray<{ q: string; a: string }>(
+    t(`posts.${postKey}.faqItems`, { returnObjects: true }),
+  );
 
   const jsonLd = {
     '@context': 'https://schema.org',

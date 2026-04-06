@@ -5,6 +5,7 @@ import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { BlogBreadcrumb } from '@/components/landing/blog/BlogBreadcrumb';
 import { blogPosts, getBlogPostLocaleFields } from '@/data/blogPosts';
+import { i18nAsArray } from '@/lib/i18nReturnObjects';
 import { useTranslation } from 'react-i18next';
 
 const SLUG = 'como-medir-rentabilidad-proyecto-agencia-dejar-vender-horas';
@@ -31,7 +32,9 @@ export default function ComoMedirRentabilidadProyectoPage() {
   const titleH1 = t(`posts.${postKey}.meta.headline`);
   const description = t(`posts.${postKey}.meta.description`);
 
-  const faqItems = (t(`posts.${postKey}.faqItems`, { returnObjects: true }) as any[]) || [];
+  const faqItems = i18nAsArray<{ q: string; a: string }>(
+    t(`posts.${postKey}.faqItems`, { returnObjects: true }),
+  );
   const howToData = (t(`posts.${postKey}.howTo`, { returnObjects: true }) as any) || {};
   const softwareData = (t(`posts.${postKey}.software`, { returnObjects: true }) as any) || {};
 
@@ -51,7 +54,7 @@ export default function ComoMedirRentabilidadProyectoPage() {
         '@type': 'HowTo',
         name: howToData.title,
         description: howToData.desc,
-        step: (howToData.steps || []).map((s: any, i: number) => ({
+        step: i18nAsArray<{ name: string; text: string }>(howToData.steps).map((s, i: number) => ({
           '@type': 'HowToStep',
           position: i + 1,
           name: s.name,
