@@ -1639,8 +1639,8 @@
       "badge": "Equipos y bienestar laboral",
       "title": "Cómo gestionar la carga de trabajo de tu equipo sin burnout",
       "intro": {
-        "p1": "Los informes de Gallup y Workhuman (2024)...",
-        "p2": "Lo que falla casi nunca es que «no se trabaje»...",
+        "p1": "Los informes de Gallup y Workhuman (2024) dibujan un panorama duro: una gran mayoría de personas dice haber sentido al menos una vez síntomas de burnout profesional. En marketing y agencias no es raro encontrar equipos en los que casi la mitad describe una tensión constante, no solo un mes malo puntual. Ahí el problema deja de ser «anécdota» y se vuelve un asunto a la vez operativo y de personas.",
+        "p2": "Lo que falla casi nunca es que «no se trabaje». Lo que falla es que el trabajo está mal repartido, nadie ve de un vistazo quién lleva qué, y faltan límites claros cuando entra una petición nueva. Abajo encontrarás definiciones que aclaran el lío entre «quién hace qué» y «con qué medios», señales para detectar la saturación antes del colapso, un marco en seis pasos que puedes llevar a tu próxima reunión y una tabla de métricas para dejar de adivinar.",
         "capsule": "La carga no flota en el vacío: vive dentro de la <LocaleLink1>planificación de proyectos</Link1> —fechas, dependencias, quién está disponible y cuándo—. Si quieres ese mapa con calma, todo encaja en la planificación de proyectos. Para cerrar con cifras que sirvan en una reunión de números, los <LocaleLink2>KPIs de rendimiento de la agencia</Link2> entran al detalle. Y si te frustra que todo «se alargue», la <LocaleLink3>Ley de Parkinson y los plazos</Link3> explica por qué, sin límites claros, el trabajo llena todo el espacio que le das."
       },
       "sections": {
@@ -1688,63 +1688,63 @@
           }
         },
         "whatIs": {
-          "title": "2. ¿Qué es realmente la carga de trabajo?",
-          "p1": "Muchos equipos confunden carga alta con carga mal llevada..."
+          "title": "2. ¿Qué es realmente la carga de trabajo? (y por qué no es solo «tener mucho trabajo»)",
+          "p1": "Muchos equipos confunden carga alta con carga mal llevada. Gestionar la carga es, en la práctica, planificar quién hace qué, repartir con criterio y mirar si eso es sostenible en el tiempo."
         },
         "causes": {
-          "title": "3. Las causas reales del burnout",
-          "p1": "El estrés puntual puede ser brutal y, aun así, llevadero..."
+          "title": "3. Las causas reales del burnout (que muchos managers no ven)",
+          "p1": "El estrés puntual —un lanzamiento, una campaña que despega— puede ser brutal y, aun así, llevable si después hay respiro y las reglas son claras. El burnout es otra historia: se queda, te desconecta del trabajo y te hace sentir que rindes menos aunque sigas esforzándote."
         },
         "signals": {
-          "title": "4. Cómo detectar que tu equipo está en riesgo",
-          "p1": "¿Cómo saber si el equipo va justo antes de que alguien explote?..."
+          "title": "4. Cómo detectar que tu equipo está en riesgo: señales tempranas",
+          "p1": "¿Cómo saber si el equipo va al límite antes de que alguien reviente? Mezcla intuición y números. Mucha gente no dice «no puedo más» hasta muy tarde."
         },
         "framework": {
           "title": "5. Framework para gestionar la carga de trabajo de forma sostenible",
-          "p1": "Seis pasos que puedes aplicar el lunes que viene..."
+          "p1": "Seis pasos que puedes aplicar el lunes que viene, incluso con las mismas herramientas de siempre. Repartir bien no es dar a todos el mismo número de tareas: es repartir según capacidad real, habilidad y el estado actual de cada persona."
         },
         "manager": {
           "title": "6. El rol del manager: liderar sin quemar al equipo",
-          "p1": "El burnout no es un «tema personal» que se arregla con más fuerza de voluntad..."
+          "p1": "El burnout no es un «tema personal» que se arregla con más fuerza de voluntad. En buena medida es cultura y liderazgo: qué permites en las reuniones, cómo respondes cuando alguien pide margen, y si el reconocimiento solo llega cuando hay incendio."
         },
         "installed": {
-          "title": "7. Burnout ya instalado: qué hacer cuando es demasiado tarde",
-          "p1": "Si ya estás en fase «equipo fundido», el peor error es restarle importancia..."
+          "title": "7. Burnout ya instalado: qué hacer cuando es demasiado tarde para prevenir",
+          "p1": "Si ya estás en fase de «equipo fundido», el peor error es restarle importancia con frases hechas. Hay que actuar a la vez en varios frentes: carga, expectativas y apoyo."
         },
         "metrics": {
           "title": "8. Métricas que todo manager debería tener controladas",
-          "p1": "Si quieres medir la carga sin quedarte solo con el «yo creo que van justos»..."
+          "p1": "Si quieres medir la carga sin quedarte solo en el «yo creo que van justos», la tabla de esta guía es un buen punto de partida. Los porcentajes son orientativos: lo que vale en una consultora no tiene por qué valer en una casa de producción."
         },
         "tools": {
-          "title": "9. Herramientas que suelen ayudar",
-          "p1": "No te voy a vender un nombre propio: lo que importa es qué agujero estás tapando..."
+          "title": "9. Herramientas que suelen ayudar (por tipo, sin marcas)",
+          "p1": "No te voy a vender un nombre propio: lo que importa es qué agujero estás tapando. ¿Necesitas ver quién lleva qué? ¿Te faltan horas reales frente al presupuesto? ¿O saber el clima antes de que explote en público?"
         },
         "conclusion": {
           "title": "10. Conclusión",
-          "p1": "El burnout no es que la gente «no aguante»..."
+          "p1": "El burnout no es que la gente «no aguante». Suele ser la foto de un reparto de carga y unos límites que no están listos para medirse. La buena noticia es que hay cosas concretas que puedes hacer: ver la carga, decidir prioridades en voz alta, repartir con criterio, recortar alcance cuando toque, proteger el foco y revisar cómo va la semana."
         }
       },
       "faq": {
         "title": "Preguntas frecuentes",
         "q1": {
           "q": "¿Cuánto es demasiada carga de trabajo?",
-          "a": "No hay un número mágico: depende del rol. Pero ojo si la utilización se queda muy por encima del ~85%..."
+          "a": "No hay un número mágico: depende del rol. Pero ojo si la utilización se queda muy por encima del ~85% durante largo rato, si estimado y real nunca coinciden, si hay más retrabajo o si los plazos empiezan a caerse todos a la vez. En la práctica, «demasiado» es cuando deja de ser un pico y se convierte en rutina sin respiro."
         },
         "q2": {
           "q": "¿Cómo sé si mi equipo tiene burnout?",
-          "a": "Cruza lo que ves (cansancio, cinismo, calidad bajando, gente que se encierra) con lo que miden los datos..."
+          "a": "Cruza lo que ves (cansancio, cinismo, calidad bajando, gente que se encierra) con lo que miden los datos: plazos, reparto de tareas gordas, quién acumula riesgo. Y no esperes a que alguien lo diga en una reunión: pregunta a menudo y deja sitio para respuestas honestas."
         },
         "q3": {
           "q": "¿Qué diferencia hay entre estrés y burnout?",
-          "a": "El estrés puede venir con una fecha de caducidad; el burnout se queda..."
+          "a": "El estrés puede venir con una fecha de caducidad: termina el lanzamiento y baja la tensión. El burnout se queda: agotamiento que no recuperas con un fin de semana, desgana con el trabajo y sensación de ir más lento pese a esforzarte. Ahí hace falta tocar el sistema, no solo «más aguante»."
         },
         "q4": {
           "q": "¿Cómo repartir tareas equitativamente en una agencia?",
-          "a": "«Equitativo» no es repartir el mismo número de tickets. Es que el riesgo y el esfuerzo vivan repartidos..."
+          "a": "«Equitativo» no es repartir el mismo número de tickets. Es que el riesgo y el esfuerzo vivan repartidos: capacidad real, habilidad, qué tan crítico es cada encargo y en qué fase está el proyecto. Rota lo que pesa para que no siempre caiga en los mismos dos perfiles."
         },
         "q5": {
           "q": "¿Hay alguna herramienta imprescindible para la carga de trabajo?",
-          "a": "Ninguna salva un equipo sin acuerdos. Lo que cuenta es decidir dónde está «la verdad» y cumplirla entre todos."
+          "a": "Ninguna salva un equipo sin acuerdos. Lo que cuenta es decidir dónde está «la verdad» (tablero, hoja, ERP) y cumplirla entre todos. Elige categorías —tareas, horas, Gantt, encuestas— según lo que ahora mismo no estás viendo."
         }
       },
       "cta": {
@@ -1754,8 +1754,8 @@
         "seoTitle": "Cómo gestionar la carga de trabajo del equipo sin burnout (Guía 2026)",
         "headline": "Cómo gestionar la carga de trabajo de tu equipo sin burnout",
         "description": {
-          "p1": "Los informes de Gallup y Workhuman (2024)...",
-          "p2": "Lo que falla casi nunca es que «no se trabaje»...",
+          "p1": "Los informes de Gallup y Workhuman (2024) dibujan un panorama duro: una gran mayoría de personas dice haber sentido al menos una vez síntomas de burnout profesional. En marketing y agencias no es raro encontrar equipos en los que casi la mitad describe una tensión constante, no solo un mes malo puntual. Ahí el problema deja de ser «anécdota» y se vuelve un asunto a la vez operativo y de personas.",
+          "p2": "Lo que falla casi nunca es que «no se trabaje». Lo que falla es que el trabajo está mal repartido, nadie ve de un vistazo quién lleva qué, y faltan límites claros cuando entra una petición nueva. Abajo encontrarás definiciones que aclaran el lío entre «quién hace qué» y «con qué medios», señales para detectar la saturación antes del colapso, un marco en seis pasos que puedes llevar a tu próxima reunión y una tabla de métricas para dejar de adivinar.",
           "capsule": "La carga no flota en el vacío: vive dentro de la <LocaleLink1>planificación de proyectos</Link1> —fechas, dependencias, quién está disponible y cuándo—. Si quieres ese mapa con calma, todo encaja en la planificación de proyectos. Para cerrar con cifras que sirvan en una reunión de números, los <LocaleLink2>KPIs de rendimiento de la agencia</Link2> entran al detalle. Y si te frustra que todo «se alargue», la <LocaleLink3>Ley de Parkinson y los plazos</Link3> explica por qué, sin límites claros, el trabajo llena todo el espacio que le das."
         }
       },
