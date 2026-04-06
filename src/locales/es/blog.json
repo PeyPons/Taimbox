@@ -1646,7 +1646,46 @@
       "sections": {
         "map": {
           "title": "1. Mapa rápido (por si quieres saltar)",
-          "p1": "Cada bloque va al grano..."
+          "p1": "Cada bloque va al grano. Si ya tienes algo claro, salta al siguiente. Lo notas cuando el lunes te venden «tranquilidad»… y a las 11 hay dos urgencias peleándose por el mismo diseñador.",
+          "table": {
+            "headers": {
+              "0": "Sección",
+              "1": "Qué cierra esta parte",
+              "2": "La idea que te llevas"
+            },
+            "rows": {
+              "0": {
+                "0": "2. ¿Qué es la carga de trabajo?",
+                "1": "Diferencia entre mucho trabajo y carga mal gestionada: planificación, reparto y sostenibilidad.",
+                "2": "Gestionar carga es ver quién hace qué y si es sostenible en el tiempo, no solo «estar ocupados»."
+              },
+              "1": {
+                "0": "3. Causas del burnout",
+                "1": "Estrés puntual vs. agotamiento que se queda; por qué el sistema importa más que el «aguante».",
+                "2": "Sin pausas ni reglas claras, el estrés deja de ser un pico y se convierte en fondo."
+              },
+              "2": {
+                "0": "4. Señales de riesgo",
+                "1": "Cómo detectar saturación antes del crack mezclando intuición y datos.",
+                "2": "Mucha gente no dice «no puedo más» hasta tarde; hay que preguntar y mirar reparto y plazos."
+              },
+              "3": {
+                "0": "5. Framework en 6 pasos",
+                "1": "Pasos concretos para visibilizar, priorizar, repartir con criterio y proteger el foco.",
+                "2": "Repartir bien no es el mismo número de tareas para todos: es capacidad real, habilidad y contexto."
+              },
+              "4": {
+                "0": "6. Rol del manager",
+                "1": "Cultura y liderazgo: qué permites en reuniones y cómo respondes cuando piden aire.",
+                "2": "El burnout no es solo «tema personal»; el tono del equipo y los límites marcan el techo."
+              },
+              "5": {
+                "0": "7. Burnout ya instalado",
+                "1": "Qué hacer cuando el equipo va fundido: varias palancas a la vez (carga, expectativas, apoyo).",
+                "2": "Minimizar con frases hechas empeora; hace falta acción visible y repriorizar sin humo."
+              }
+            }
+          }
         },
         "whatIs": {
           "title": "2. ¿Qué es realmente la carga de trabajo?",

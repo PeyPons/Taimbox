@@ -1646,7 +1646,46 @@
       "sections": {
         "map": {
           "title": "1. Quick map (if you want to skip ahead)",
-          "p1": "Each block gets straight to the point. If you already have something clear, move on to the next. You notice it when on Monday they sell you 'tranquility'... and by 11 AM there are two emergencies fighting for the same designer."
+          "p1": "Each block gets straight to the point. If you already have something clear, move on to the next. You notice it when on Monday they sell you 'tranquility'... and by 11 AM there are two emergencies fighting for the same designer.",
+          "table": {
+            "headers": {
+              "0": "Section",
+              "1": "What this part settles",
+              "2": "The takeaway"
+            },
+            "rows": {
+              "0": {
+                "0": "2. What is workload?",
+                "1": "High load vs poorly managed load: planning, distribution, and sustainability.",
+                "2": "Managing load means seeing who does what and whether it's sustainable—not just staying busy."
+              },
+              "1": {
+                "0": "3. Causes of burnout",
+                "1": "Short-term stress vs exhaustion that lingers; why the system matters more than 'toughing it out'.",
+                "2": "Without breaks and clear rules, stress stops being a spike and becomes the baseline."
+              },
+              "2": {
+                "0": "4. Warning signs",
+                "1": "How to spot overload before someone breaks—blend intuition with numbers.",
+                "2": "Many people don't say 'I can't cope' until very late; ask often and watch allocation and deadlines."
+              },
+              "3": {
+                "0": "5. Six-step framework",
+                "1": "Concrete steps to make work visible, prioritize, distribute fairly, and protect focus.",
+                "2": "Fair distribution isn't the same task count for everyone—it's real capacity, skill, and context."
+              },
+              "4": {
+                "0": "6. The manager's role",
+                "1": "Culture and leadership: what you allow in meetings and how you react when people ask for slack.",
+                "2": "Burnout isn't only a 'personal issue'—team tone and boundaries set the ceiling."
+              },
+              "5": {
+                "0": "7. Burnout already set in",
+                "1": "What to do when the team is already burnt out: several levers at once—load, expectations, support.",
+                "2": "Downplaying with clichés makes it worse; you need visible action and honest reprioritization."
+              }
+            }
+          }
         },
         "whatIs": {
           "title": "2. What is workload really? (and why it's not just 'having a lot of work')",

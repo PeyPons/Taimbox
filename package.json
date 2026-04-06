@@ -12,7 +12,8 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "generate:plantilla": "node scripts/generate-plantilla-xlsx.mjs"
+    "generate:plantilla": "node scripts/generate-plantilla-xlsx.mjs",
+    "check:blog-i18n": "node scripts/check-blog-i18n.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
