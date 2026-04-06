@@ -22,6 +22,8 @@ export default function ContactoPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [status, setStatus] = useState<'idle' | 'sent' | 'error'>('idle');
     const [statusMessage, setStatusMessage] = useState('');
+    const { t, i18n } = useTranslation('landing');
+    const lang = i18n.language.startsWith('en') ? 'en' : 'es';
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;

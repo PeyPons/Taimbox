@@ -270,9 +270,9 @@ function SectionNav({ currentSlug, sections }: { currentSlug: string; sections: 
 /* ─── SECTION CONTENT RENDERERS ─── */
 
 function PlanificadorContent() {
+  const { t } = useTranslation('landing');
   return (
     <>
-      const { t } = useTranslation('landing');
       <ContentBlock title={t('landing:guide.content.planificador.intro.title')}>
         <p>
           {t('landing:guide.content.planificador.intro.bodyBefore')}

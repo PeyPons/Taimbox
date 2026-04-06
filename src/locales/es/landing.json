@@ -961,6 +961,10 @@
     }
   },
   "static": {
+    "contact": {
+      "seoTitle": "Contacto | Taimbox",
+      "seoDescription": "Ponte en contacto con el equipo de Taimbox."
+    },
     "pitch": {
       "seoTitle": "Presentación Taimbox | ROI y Operaciones para Agencias",
       "seoDescription": "Descubre cómo Taimbox transforma la rentabilidad de las agencias de servicios mediante el timeboxing y el control presupuestario en tiempo real.",
@@ -2790,4 +2794,4 @@
     "pending": "pendiente"
   }
 }
-
+
