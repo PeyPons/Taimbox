@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { localizedPathFromEs } from '@/i18n/publicPaths';
+import { i18nAsArray } from '@/lib/i18nReturnObjects';
 
 const P = 'commercial.projects.page';
 
@@ -34,7 +35,7 @@ type CoherenceItem = { text: string; variant: string };
 /* ─── Mockup: Projects CRUD ─── */
 function MockProjects() {
     const { t } = useTranslation('landing');
-    const labelRows = t(`${P}.mockProjects.rows`, { returnObjects: true }) as MockProjectRow[];
+    const labelRows = i18nAsArray<MockProjectRow>(t(`${P}.mockProjects.rows`, { returnObjects: true }));
     const budgetMeta = [
         { budget: 40, used: 32, status: 'active', color: 'emerald' },
         { budget: 25, used: 18, status: 'active', color: 'emerald' },
@@ -91,7 +92,7 @@ function MockProjects() {
 /* ─── Mockup: Deadlines ─── */
 function MockDeadlines() {
     const { t } = useTranslation('landing');
-    const deadlines = t(`${P}.mockDeadlines.rows`, { returnObjects: true }) as MockDeadlineRow[];
+    const deadlines = i18nAsArray<MockDeadlineRow>(t(`${P}.mockDeadlines.rows`, { returnObjects: true }));
 
     return (
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-6 shadow-2xl backdrop-blur-sm">
@@ -153,7 +154,7 @@ function MockDeadlines() {
 /* ─── Mockup: OKRs ─── */
 function MockOKRs() {
     const { t } = useTranslation('landing');
-    const krs = t(`${P}.mockOKRs.krs`, { returnObjects: true }) as MockKr[];
+    const krs = i18nAsArray<MockKr>(t(`${P}.mockOKRs.krs`, { returnObjects: true }));
     const globalPct = t(`${P}.mockOKRs.globalProgressPct`);
 
     return (
@@ -200,7 +201,7 @@ function MockOKRs() {
 /* ─── Mockup: Coherence Check ─── */
 function MockCoherence() {
     const { t } = useTranslation('landing');
-    const items = t(`${P}.mockCoherence.items`, { returnObjects: true }) as CoherenceItem[];
+    const items = i18nAsArray<CoherenceItem>(t(`${P}.mockCoherence.items`, { returnObjects: true }));
 
     return (
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-6 shadow-2xl backdrop-blur-sm">
@@ -237,12 +238,12 @@ function MockCoherence() {
 /* ─── Main Article ─── */
 export function ProjectsArticle() {
     const { t, i18n } = useTranslation('landing');
-    const heroPills = t(`${P}.hero.pills`, { returnObjects: true }) as string[];
-    const s1Bullets = t(`${P}.s1.bullets`, { returnObjects: true }) as string[];
-    const s2Bullets = t(`${P}.s2.bullets`, { returnObjects: true }) as string[];
-    const s3Tiles = t(`${P}.s3.tiles`, { returnObjects: true }) as { label: string; desc: string }[];
-    const s4Bullets = t(`${P}.s4.bullets`, { returnObjects: true }) as string[];
-    const ctaStats = t(`${P}.cta.stats`, { returnObjects: true }) as { num: string; label: string }[];
+    const heroPills = i18nAsArray<string>(t(`${P}.hero.pills`, { returnObjects: true }));
+    const s1Bullets = i18nAsArray<string>(t(`${P}.s1.bullets`, { returnObjects: true }));
+    const s2Bullets = i18nAsArray<string>(t(`${P}.s2.bullets`, { returnObjects: true }));
+    const s3Tiles = i18nAsArray<{ label: string; desc: string }>(t(`${P}.s3.tiles`, { returnObjects: true }));
+    const s4Bullets = i18nAsArray<string>(t(`${P}.s4.bullets`, { returnObjects: true }));
+    const ctaStats = i18nAsArray<{ num: string; label: string }>(t(`${P}.cta.stats`, { returnObjects: true }));
 
     const s1Icons = [FolderOpen, BarChart3, AlertTriangle];
     const s3Icons = [Flag, Target, TrendingUp, CalendarCheck];

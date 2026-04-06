@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { localizedPathFromEs } from '@/i18n/publicPaths';
+import { i18nAsArray } from '@/lib/i18nReturnObjects';
 
 const P = 'commercial.integrations.page';
 
@@ -48,7 +49,7 @@ type WeeklyEmployee = { name: string; status: 'confirmed' | 'pending' };
 /* ─── Mockup: Google Ads ─── */
 function MockGoogleAds() {
     const { t } = useTranslation('landing');
-    const campaigns = t(`${P}.mockGoogle.campaigns`, { returnObjects: true }) as GoogleCampaignRow[];
+    const campaigns = i18nAsArray<GoogleCampaignRow>(t(`${P}.mockGoogle.campaigns`, { returnObjects: true }));
 
     return (
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-6 shadow-2xl backdrop-blur-sm">
@@ -107,7 +108,7 @@ function MockGoogleAds() {
 /* ─── Mockup: Meta Ads ─── */
 function MockMetaAds() {
     const { t } = useTranslation('landing');
-    const campaigns = t(`${P}.mockMeta.campaigns`, { returnObjects: true }) as MetaCampaignRow[];
+    const campaigns = i18nAsArray<MetaCampaignRow>(t(`${P}.mockMeta.campaigns`, { returnObjects: true }));
 
     return (
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-6 shadow-2xl backdrop-blur-sm">
@@ -208,7 +209,7 @@ function MockAPI() {
 /* ─── Mockup: Weekly Feedback ─── */
 function MockWeeklyFeedback() {
     const { t } = useTranslation('landing');
-    const employees = t(`${P}.mockWeekly.employees`, { returnObjects: true }) as WeeklyEmployee[];
+    const employees = i18nAsArray<WeeklyEmployee>(t(`${P}.mockWeekly.employees`, { returnObjects: true }));
 
     return (
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-6 shadow-2xl backdrop-blur-sm">
@@ -254,12 +255,12 @@ function MockWeeklyFeedback() {
 /* ─── Main Article ─── */
 export function IntegrationsArticle() {
     const { t, i18n } = useTranslation('landing');
-    const pills = t(`${P}.hero.pills`, { returnObjects: true }) as string[];
-    const s1Bullets = t(`${P}.s1.bullets`, { returnObjects: true }) as string[];
-    const s3Tiles = t(`${P}.s3.tiles`, { returnObjects: true }) as { label: string; desc: string }[];
-    const s4Bullets = t(`${P}.s4.bullets`, { returnObjects: true }) as string[];
-    const s5Cards = t(`${P}.s5.cards`, { returnObjects: true }) as { label: string; desc: string }[];
-    const ctaStats = t(`${P}.cta.stats`, { returnObjects: true }) as { num: string; label: string }[];
+    const pills = i18nAsArray<string>(t(`${P}.hero.pills`, { returnObjects: true }));
+    const s1Bullets = i18nAsArray<string>(t(`${P}.s1.bullets`, { returnObjects: true }));
+    const s3Tiles = i18nAsArray<{ label: string; desc: string }>(t(`${P}.s3.tiles`, { returnObjects: true }));
+    const s4Bullets = i18nAsArray<string>(t(`${P}.s4.bullets`, { returnObjects: true }));
+    const s5Cards = i18nAsArray<{ label: string; desc: string }>(t(`${P}.s5.cards`, { returnObjects: true }));
+    const ctaStats = i18nAsArray<{ num: string; label: string }>(t(`${P}.cta.stats`, { returnObjects: true }));
 
     const s1Icons = [DollarSign, Target, TrendingUp];
     const s3Icons = [Code2, Webhook, Shield, Plug];

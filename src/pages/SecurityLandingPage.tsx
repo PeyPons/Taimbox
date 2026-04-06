@@ -23,12 +23,13 @@ import {
     Download,
 } from 'lucide-react';
 import { localizedPathFromEs } from '@/i18n/publicPaths';
+import { i18nAsArray } from '@/lib/i18nReturnObjects';
 
 const P = 'commercial.security.page';
 
 export default function SecurityLandingPage() {
     const { t, i18n } = useTranslation('landing');
-    const infraBullets = t(`${P}.infraBullets`, { returnObjects: true }) as string[];
+    const infraBullets = i18nAsArray<string>(t(`${P}.infraBullets`, { returnObjects: true }));
 
     return (
         <>

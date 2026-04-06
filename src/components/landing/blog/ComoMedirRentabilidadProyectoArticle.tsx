@@ -8,6 +8,7 @@ import { BlogRelatedPost } from './BlogRelatedPost';
 import type { BlogTOCItem } from './BlogTOC';
 import { ScopeProtocoloInfographic } from './ScopeProtocoloInfographic';
 import { useTranslation } from 'react-i18next';
+import { parseOneLocaleLink, parseTwoLocaleLinks } from '@/lib/blogLocaleLinkSplit';
 
 export interface ComoMedirRentabilidadProyectoArticleProps {
   readingMinutes?: number;
@@ -22,6 +23,8 @@ export function ComoMedirRentabilidadProyectoArticle({
 }: ComoMedirRentabilidadProyectoArticleProps) {
   const { t } = useTranslation('blog');
   const postKey = 'comoMedirRentabilidadProyecto';
+  const introP1 = parseOneLocaleLink(t(`posts.${postKey}.intro.p1`));
+  const section5p2 = parseTwoLocaleLinks(t(`posts.${postKey}.section5.p2`));
 
   return (
     <article
@@ -50,11 +53,17 @@ export function ComoMedirRentabilidadProyectoArticle({
 
         <div className="space-y-5 text-indigo-100/95 text-base sm:text-lg leading-[1.75]">
           <p>
-            {t(`posts.${postKey}.intro.p1`).split('<LocaleLink>')[0]}
-            <LocaleLink to="/blog/por-que-tu-agencia-pierde-rentabilidad-equipo-ocupado" className="text-violet-300 hover:text-white underline underline-offset-2">
-              {t(`posts.${postKey}.intro.p1`).split('<LocaleLink>')[1].split('</LocaleLink>')[0]}
-            </LocaleLink>
-            {t(`posts.${postKey}.intro.p1`).split('</LocaleLink>')[1]}
+            {introP1.ok ? (
+              <>
+                {introP1.p.before}
+                <LocaleLink to="/blog/por-que-tu-agencia-pierde-rentabilidad-equipo-ocupado" className="text-violet-300 hover:text-white underline underline-offset-2">
+                  {introP1.p.link}
+                </LocaleLink>
+                {introP1.p.after}
+              </>
+            ) : (
+              introP1.plain
+            )}
           </p>
           <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.intro.p2`) }} />
         </div>
@@ -195,15 +204,21 @@ export function ComoMedirRentabilidadProyectoArticle({
           <div className="space-y-4 text-indigo-100/90 text-base sm:text-lg leading-relaxed">
             <p>{t(`posts.${postKey}.section5.p1`)}</p>
             <p>
-              {t(`posts.${postKey}.section5.p2`).split('<LocaleLink>')[0]}
-              <LocaleLink to="/blog/plantilla-planificacion-recursos-agencia" className="text-cyan-300 hover:text-white underline underline-offset-2">
-                {t(`posts.${postKey}.section5.p2`).split('<LocaleLink>')[1].split('</LocaleLink>')[0]}
-              </LocaleLink>
-              {t(`posts.${postKey}.section5.p2`).split('</LocaleLink>')[1].split('<LocaleLink>')[0]}
-              <LocaleLink to="/blog/kpis-agencias-marketing-2026" className="text-cyan-300 hover:text-white underline underline-offset-2">
-                {t(`posts.${postKey}.section5.p2`).split('<LocaleLink>')[2].split('</LocaleLink>')[0]}
-              </LocaleLink>
-              {t(`posts.${postKey}.section5.p2`).split('</LocaleLink>')[2]}
+              {section5p2.ok ? (
+                <>
+                  {section5p2.p.before1}
+                  <LocaleLink to="/blog/plantilla-planificacion-recursos-agencia" className="text-cyan-300 hover:text-white underline underline-offset-2">
+                    {section5p2.p.link1}
+                  </LocaleLink>
+                  {section5p2.p.between}
+                  <LocaleLink to="/blog/kpis-agencias-marketing-2026" className="text-cyan-300 hover:text-white underline underline-offset-2">
+                    {section5p2.p.link2}
+                  </LocaleLink>
+                  {section5p2.p.after}
+                </>
+              ) : (
+                section5p2.plain
+              )}
             </p>
           </div>
         </section>

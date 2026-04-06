@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { localizedPathFromEs } from '@/i18n/publicPaths';
+import { i18nAsArray } from '@/lib/i18nReturnObjects';
 
 const P = 'commercial.reports.page';
 
@@ -32,7 +33,9 @@ const MOCK_PROFIT_NUMS = [
 /* ─── Mockup: Profitability Dashboard ─── */
 function MockProfitability() {
     const { t } = useTranslation('landing');
-    const rows = t(`${P}.mockProfit.rows`, { returnObjects: true }) as { client: string; name: string }[];
+    const rows = i18nAsArray<{ client: string; name: string }>(
+        t(`${P}.mockProfit.rows`, { returnObjects: true }),
+    );
 
     return (
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-6 shadow-2xl backdrop-blur-sm">
@@ -99,7 +102,9 @@ function MockProfitability() {
 /* ─── Mockup: Client Report ─── */
 function MockClientReport() {
     const { t } = useTranslation('landing');
-    const lines = t(`${P}.mockClient.lines`, { returnObjects: true }) as { label: string; hours: string; pct: number }[];
+    const lines = i18nAsArray<{ label: string; hours: string; pct: number }>(
+        t(`${P}.mockClient.lines`, { returnObjects: true }),
+    );
 
     return (
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-6 shadow-2xl backdrop-blur-sm">
@@ -217,11 +222,13 @@ function MockForecast() {
 /* ─── Main Article ─── */
 export function ReportsArticle() {
     const { t, i18n } = useTranslation('landing');
-    const pills = t(`${P}.hero.pills`, { returnObjects: true }) as string[];
-    const s1Bullets = t(`${P}.s1.bullets`, { returnObjects: true }) as string[];
-    const s2Bullets = t(`${P}.s2.bullets`, { returnObjects: true }) as string[];
-    const exportCards = t(`${P}.export.cards`, { returnObjects: true }) as { label: string; desc: string }[];
-    const ctaStats = t(`${P}.cta.stats`, { returnObjects: true }) as { num: string; label: string }[];
+    const pills = i18nAsArray<string>(t(`${P}.hero.pills`, { returnObjects: true }));
+    const s1Bullets = i18nAsArray<string>(t(`${P}.s1.bullets`, { returnObjects: true }));
+    const s2Bullets = i18nAsArray<string>(t(`${P}.s2.bullets`, { returnObjects: true }));
+    const exportCards = i18nAsArray<{ label: string; desc: string }>(
+        t(`${P}.export.cards`, { returnObjects: true }),
+    );
+    const ctaStats = i18nAsArray<{ num: string; label: string }>(t(`${P}.cta.stats`, { returnObjects: true }));
 
     const formulaKeys = ['f1', 'f2', 'f3', 'f4'] as const;
     const formulaIcons = [Clock, DollarSign, Percent, BarChart3];

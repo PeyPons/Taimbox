@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { SeoTags } from '@/seo/SeoTags';
+import { i18nAsArray } from '@/lib/i18nReturnObjects';
 
 const PLAN_META = [
   {
@@ -75,15 +76,17 @@ export default function PreciosPage() {
         ...meta,
         period: t(`pricing.plans.${meta.id}.period`),
         description: t(`pricing.plans.${meta.id}.description`),
-        features: t(`pricing.plans.${meta.id}.features`, { returnObjects: true }) as string[],
+        features: i18nAsArray<string>(t(`pricing.plans.${meta.id}.features`, { returnObjects: true })),
         cta: t(`pricing.plans.${meta.id}.cta`),
       })),
     [t, i18n.language],
   );
 
-  const universalItems = t('pricing.universal', { returnObjects: true }) as { title: string; desc: string }[];
-  const trustLines = t('pricing.trust', { returnObjects: true }) as { text: string; sub: string }[];
-  const faqItems = t('pricing.faq', { returnObjects: true }) as { q: string; a: string }[];
+  const universalItems = i18nAsArray<{ title: string; desc: string }>(
+    t('pricing.universal', { returnObjects: true }),
+  );
+  const trustLines = i18nAsArray<{ text: string; sub: string }>(t('pricing.trust', { returnObjects: true }));
+  const faqItems = i18nAsArray<{ q: string; a: string }>(t('pricing.faq', { returnObjects: true }));
   const heroPills = [t('pricing.pill1'), t('pricing.pill2'), t('pricing.pill3')];
 
   const enterpriseMail = `mailto:hello@taimbox.com?subject=${encodeURIComponent(t('pricing.enterpriseMailSubject'))}`;

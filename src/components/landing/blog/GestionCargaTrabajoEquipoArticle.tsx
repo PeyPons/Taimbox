@@ -8,6 +8,7 @@ import type { BlogTOCItem } from './BlogTOC';
 import { CargaTrabajoFrameworkVisual } from './CargaTrabajoFrameworkVisual';
 import { SenalesCargaAlertaVisual } from './SenalesCargaAlertaVisual';
 import { useTranslation } from 'react-i18next';
+import { parseGestionCapsule } from '@/lib/blogLocaleLinkSplit';
 
 export interface GestionCargaTrabajoEquipoArticleProps {
   readingMinutes?: number;
@@ -22,6 +23,7 @@ export function GestionCargaTrabajoEquipoArticle({
 }: GestionCargaTrabajoEquipoArticleProps) {
   const { t } = useTranslation('blog');
   const postKey = 'gestionCargaTrabajoEquipo';
+  const capsule = parseGestionCapsule(t(`posts.${postKey}.intro.capsule`));
 
   return (
     <article
@@ -43,19 +45,25 @@ export function GestionCargaTrabajoEquipoArticle({
           <p dangerouslySetInnerHTML={{ __html: t(`posts.${postKey}.intro.p2`) }} />
           <div className="rounded-2xl border-l-4 border-violet-400 bg-violet-500/10 border border-violet-500/20 p-4 sm:p-6 my-6">
             <p className="text-white/95 font-medium m-0">
-              {t(`posts.${postKey}.intro.capsule`).split('<LocaleLink1>')[0]}
-              <LocaleLink to="/blog/planificacion-proyectos-cronograma-recursos" className="text-violet-300 hover:text-white underline underline-offset-2">
-                {t(`posts.${postKey}.intro.capsule`).split('<LocaleLink1>')[1].split('</Link1>')[0]}
-              </LocaleLink>
-              {t(`posts.${postKey}.intro.capsule`).split('</Link1>')[1].split('<LocaleLink2>')[0]}
-              <LocaleLink to="/blog/kpis-agencias-marketing-2026" className="text-violet-300 hover:text-white underline underline-offset-2">
-                {t(`posts.${postKey}.intro.capsule`).split('<LocaleLink2>')[1].split('</Link2>')[0]}
-              </LocaleLink>
-              {t(`posts.${postKey}.intro.capsule`).split('</Link2>')[1].split('<LocaleLink3>')[0]}
-              <LocaleLink to="/blog/ley-parkinson" className="text-violet-300 hover:text-white underline underline-offset-2">
-                {t(`posts.${postKey}.intro.capsule`).split('<LocaleLink3>')[1].split('</Link3>')[0]}
-              </LocaleLink>
-              {t(`posts.${postKey}.intro.capsule`).split('</Link3>')[1]}
+              {capsule.ok ? (
+                <>
+                  {capsule.p.before1}
+                  <LocaleLink to="/blog/planificacion-proyectos-cronograma-recursos" className="text-violet-300 hover:text-white underline underline-offset-2">
+                    {capsule.p.link1}
+                  </LocaleLink>
+                  {capsule.p.between12}
+                  <LocaleLink to="/blog/kpis-agencias-marketing-2026" className="text-violet-300 hover:text-white underline underline-offset-2">
+                    {capsule.p.link2}
+                  </LocaleLink>
+                  {capsule.p.between23}
+                  <LocaleLink to="/blog/ley-parkinson" className="text-violet-300 hover:text-white underline underline-offset-2">
+                    {capsule.p.link3}
+                  </LocaleLink>
+                  {capsule.p.after3}
+                </>
+              ) : (
+                capsule.plain
+              )}
             </p>
           </div>
         </div>

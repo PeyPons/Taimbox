@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { localizedPathFromEs } from '@/i18n/publicPaths';
+import { i18nAsArray } from '@/lib/i18nReturnObjects';
 
 const P = 'commercial.employeeDashboard.page';
 
@@ -102,7 +103,9 @@ function MockCalendarGrid() {
 
 function MockPriorityCards() {
     const { t } = useTranslation('landing');
-    const priorities = t<{ name: string; hours: string; deadline: string }[]>(`${P}.mockPriority.items`, { returnObjects: true });
+    const priorities = i18nAsArray<{ name: string; hours: string; deadline: string }>(
+        t(`${P}.mockPriority.items`, { returnObjects: true }),
+    );
 
     return (
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-6 shadow-2xl backdrop-blur-sm">
@@ -114,7 +117,7 @@ function MockPriorityCards() {
             </div>
 
             <div className="space-y-2.5">
-                {Array.isArray(priorities) && priorities.map((p, i) => {
+                {priorities.map((p, i) => {
                     const urgency = i === 0 ? 'critical' : i === 1 ? 'warning' : 'normal';
                     const color = urgency === 'critical' ? 'red' : urgency === 'warning' ? 'amber' : 'emerald';
                     return (
@@ -154,8 +157,10 @@ function MockPriorityCards() {
 
 function MockProjectList() {
     const { t } = useTranslation('landing');
-    const projects = t<{ client: string; name: string; tasks: number }[]>(`${P}.mockProject.projects`, { returnObjects: true });
-    const count = Array.isArray(projects) ? projects.length : 0;
+    const projects = i18nAsArray<{ client: string; name: string; tasks: number }>(
+        t(`${P}.mockProject.projects`, { returnObjects: true }),
+    );
+    const count = projects.length;
 
     return (
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-6 shadow-2xl backdrop-blur-sm">
@@ -170,7 +175,7 @@ function MockProjectList() {
             </div>
 
             <div className="space-y-3">
-                {Array.isArray(projects) && projects.map((p, i) => {
+                {projects.map((p, i) => {
                     const hours = [32, 18, 12][i] ?? 12;
                     const budget = [40, 25, 15][i] ?? 15;
                     const pct = Math.round((hours / budget) * 100);
@@ -213,7 +218,9 @@ function MockProjectList() {
 
 function MockCollaborationCards() {
     const { t } = useTranslation('landing');
-    const teammates = t<{ name: string; role: string; projects: number; avatar: string }[]>(`${P}.mockCollab.teammates`, { returnObjects: true });
+    const teammates = i18nAsArray<{ name: string; role: string; projects: number; avatar: string }>(
+        t(`${P}.mockCollab.teammates`, { returnObjects: true }),
+    );
 
     return (
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-6 shadow-2xl backdrop-blur-sm">
@@ -225,7 +232,7 @@ function MockCollaborationCards() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                {Array.isArray(teammates) && teammates.map((tm, i) => {
+                {teammates.map((tm, i) => {
                     const load = [78, 92, 55][i] ?? 55;
                     const loadColor = load > 90 ? 'text-red-400' : load > 70 ? 'text-amber-400' : 'text-emerald-400';
                     const bgColor = load > 90 ? 'bg-red-500' : load > 70 ? 'bg-amber-500' : 'bg-emerald-500';
@@ -306,7 +313,7 @@ function MockMetricsPanel() {
 
 function MockWeeklyActions() {
     const { t } = useTranslation('landing');
-    const rows = t<{ name: string; action: string }[]>(`${P}.mockWeekly.rows`, { returnObjects: true });
+    const rows = i18nAsArray<{ name: string; action: string }>(t(`${P}.mockWeekly.rows`, { returnObjects: true }));
     const rowMeta = [
         { icon: '✓', color: 'emerald' as const },
         { icon: '→', color: 'amber' as const },
@@ -323,7 +330,7 @@ function MockWeeklyActions() {
             </div>
 
             <div className="space-y-2">
-                {Array.isArray(rows) && rows.map((row, i) => {
+                {rows.map((row, i) => {
                     const meta = rowMeta[i] ?? rowMeta[0];
                     const c = meta.color;
                     return (
@@ -376,17 +383,17 @@ function MockWeeklyActions() {
 
 export function EmployeeDashboardArticle() {
     const { t, i18n } = useTranslation('landing');
-    const heroPills = t<string[]>(`${P}.hero.pills`, { returnObjects: true });
-    const s1Bullets = t<string[]>(`${P}.s1.bullets`, { returnObjects: true });
-    const s2Bullets = t<string[]>(`${P}.s2.bullets`, { returnObjects: true });
-    const s3Tiles = t<{ label: string; desc: string }[]>(`${P}.s3.tiles`, { returnObjects: true });
+    const heroPills = i18nAsArray<string>(t(`${P}.hero.pills`, { returnObjects: true }));
+    const s1Bullets = i18nAsArray<string>(t(`${P}.s1.bullets`, { returnObjects: true }));
+    const s2Bullets = i18nAsArray<string>(t(`${P}.s2.bullets`, { returnObjects: true }));
+    const s3Tiles = i18nAsArray<{ label: string; desc: string }>(t(`${P}.s3.tiles`, { returnObjects: true }));
     const s3Icons = [ListPlus, Clock, BarChart3, Target, Timer];
-    const s5Bullets = t<string[]>(`${P}.s5.bullets`, { returnObjects: true });
-    const s6Bullets = t<string[]>(`${P}.s6.bullets`, { returnObjects: true });
+    const s5Bullets = i18nAsArray<string>(t(`${P}.s5.bullets`, { returnObjects: true }));
+    const s6Bullets = i18nAsArray<string>(t(`${P}.s6.bullets`, { returnObjects: true }));
     const s6Icons = [Shield, BarChart3, CheckCircle2];
     const s2Icons = [AlertCircle, Users, TrendingUp];
     const s1Icons = [Calendar, Zap, Target];
-    const ctaStats = t<{ num: string; label: string }[]>(`${P}.cta.stats`, { returnObjects: true });
+    const ctaStats = i18nAsArray<{ num: string; label: string }>(t(`${P}.cta.stats`, { returnObjects: true }));
     const guidePath = localizedPathFromEs('/guia/mi-espacio', i18n.language);
 
     return (

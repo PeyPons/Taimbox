@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { PpcMonitorPacingChart } from '@/components/landing/PpcMonitorPacingChart';
 import { localizedPathFromEs } from '@/i18n/publicPaths';
+import { i18nAsArray } from '@/lib/i18nReturnObjects';
 
 const P = 'commercial.ppc.page';
 
@@ -34,14 +35,14 @@ type RowStatus = 'ok' | 'warning' | 'danger';
 
 function MockDashboard() {
     const { t } = useTranslation('landing');
-    const rows = t(`${P}.mockDashboard.rows`, { returnObjects: true }) as Array<{
+    const rows = i18nAsArray<{
         client: string;
         badge: string | null;
         budget: string;
         spent: string;
         pct: number;
         status: RowStatus;
-    }>;
+    }>(t(`${P}.mockDashboard.rows`, { returnObjects: true }));
 
     return (
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-6 shadow-2xl backdrop-blur-sm">
@@ -296,23 +297,25 @@ function MockHoldings() {
 
 export default function PpcMonitorLandingPage() {
     const { t, i18n } = useTranslation('landing');
-    const features = t(`${P}.features`, { returnObjects: true }) as Array<{
+    const features = i18nAsArray<{
         title: string;
         desc: string;
         gradient: string;
         color: string;
         border: string;
         bg: string;
-    }>;
-    const platformItems = t(`${P}.platforms.items`, { returnObjects: true }) as Array<{ label: string; desc: string; color: string }>;
-    const securityStrip = t(`${P}.securityStrip`, { returnObjects: true }) as Array<{
+    }>(t(`${P}.features`, { returnObjects: true }));
+    const platformItems = i18nAsArray<{ label: string; desc: string; color: string }>(
+        t(`${P}.platforms.items`, { returnObjects: true }),
+    );
+    const securityStrip = i18nAsArray<{
         text: string;
         color: string;
         border: string;
         bg: string;
-    }>;
-    const ctaStats = t(`${P}.cta.stats`, { returnObjects: true }) as Array<{ num: string; label: string }>;
-    const ctaFooters = t(`${P}.cta.footers`, { returnObjects: true }) as string[];
+    }>(t(`${P}.securityStrip`, { returnObjects: true }));
+    const ctaStats = i18nAsArray<{ num: string; label: string }>(t(`${P}.cta.stats`, { returnObjects: true }));
+    const ctaFooters = i18nAsArray<string>(t(`${P}.cta.footers`, { returnObjects: true }));
 
     const loginHref = `${localizedPathFromEs('/login', i18n.language)}?tab=register`;
 

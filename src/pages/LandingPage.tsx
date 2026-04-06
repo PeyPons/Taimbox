@@ -45,6 +45,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
+import { i18nAsArray } from '@/lib/i18nReturnObjects';
 import { SeoTags } from '@/seo/SeoTags';
 import { CalendarPreview } from '@/components/landing/CalendarPreview';
 import { LandingFooter } from '@/components/landing/LandingFooter';
@@ -90,8 +91,7 @@ export default function LandingPage() {
   const [activeFeature, setActiveFeature] = useState(0);
 
   const homeFeatures = useMemo(() => {
-    const raw = t('home.featuresCarousel', { returnObjects: true }) as HomeCarouselJson[];
-    if (!Array.isArray(raw)) return [];
+    const raw = i18nAsArray<HomeCarouselJson>(t('home.featuresCarousel', { returnObjects: true }));
     return raw.map((item, i) => {
       const meta = FEATURE_CAROUSEL_META[i];
       if (!meta) return null;
@@ -100,7 +100,7 @@ export default function LandingPage() {
   }, [t]);
 
   const faqItems = useMemo(
-    () => t('home.faqItems', { returnObjects: true }) as HomeFaqJson[],
+    () => i18nAsArray<HomeFaqJson>(t('home.faqItems', { returnObjects: true })),
     [t],
   );
 
@@ -508,8 +508,8 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 relative">
               <div className="hidden md:block absolute top-1/2 left-[20%] right-[20%] h-px bg-gradient-to-r from-indigo-500/50 via-purple-500/50 to-blue-500/50" />
 
-              {(
-                t('home.integrationsCards', { returnObjects: true }) as { title: string; description: string }[]
+              {i18nAsArray<{ title: string; description: string }>(
+                t('home.integrationsCards', { returnObjects: true }),
               ).map((card, idx) => {
                 const icons = [Download, Code, Calendar];
                 const Icon = icons[idx] ?? Download;
@@ -575,7 +575,7 @@ export default function LandingPage() {
                   <h3 className="text-2xl font-bold text-white">{t('home.problemsWithoutTitle')}</h3>
                 </div>
                 <div className="space-y-4">
-                  {t<string[]>('home.problemsWithoutItems', { returnObjects: true }).map((item, idx) => (
+                  {i18nAsArray<string>(t('home.problemsWithoutItems', { returnObjects: true })).map((item, idx) => (
                     <div key={idx} className="flex items-center gap-4 p-3 bg-red-500/10 rounded-xl border border-red-500/20">
                       <Clock className="h-5 w-5 text-red-400 shrink-0" />
                       <span className="text-white/90 font-medium">{item}</span>
@@ -593,7 +593,7 @@ export default function LandingPage() {
                   <h3 className="text-2xl font-bold text-white">{t('home.problemsWithTitle')}</h3>
                 </div>
                 <div className="space-y-4">
-                  {t<string[]>('home.problemsWithItems', { returnObjects: true }).map((item, idx) => (
+                  {i18nAsArray<string>(t('home.problemsWithItems', { returnObjects: true })).map((item, idx) => (
                     <div key={idx} className="flex items-center gap-4 p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
                       <Zap className="h-5 w-5 text-emerald-400 shrink-0" />
                       <span className="text-white/90 font-medium">{item}</span>
@@ -892,7 +892,7 @@ export default function LandingPage() {
             </h2>
             {/* Audience badges: adaptados a móvil */}
             <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-4">
-              {t<string[]>('home.audienceBadges', { returnObjects: true }).map((badge, idx) => (
+              {i18nAsArray<string>(t('home.audienceBadges', { returnObjects: true })).map((badge, idx) => (
                 <span
                   key={idx}
                   className="px-3 sm:px-4 py-1.5 bg-primary/100/20 rounded-full text-indigo-200 text-xs sm:text-sm font-medium border border-indigo-500/30 text-center"
@@ -916,7 +916,7 @@ export default function LandingPage() {
                   <h3 className="text-xl font-bold text-white">{t('home.useCasesLeaderTitle')}</h3>
                 </div>
                 <div className="space-y-3">
-                  {t<string[]>('home.useCasesLeaderItems', { returnObjects: true }).map((item, idx) => (
+                  {i18nAsArray<string>(t('home.useCasesLeaderItems', { returnObjects: true })).map((item, idx) => (
                     <div key={idx} className="flex items-center gap-3 p-2.5 bg-primary/100/10 rounded-lg border border-indigo-500/20">
                       <CheckCircle2 className="h-4 w-4 text-indigo-400 shrink-0" />
                       <span className="text-sm text-white/90">{item}</span>
@@ -936,7 +936,7 @@ export default function LandingPage() {
                   <h3 className="text-xl font-bold text-white">{t('home.useCasesPmTitle')}</h3>
                 </div>
                 <div className="space-y-3">
-                  {t<string[]>('home.useCasesPmItems', { returnObjects: true }).map((item, idx) => (
+                  {i18nAsArray<string>(t('home.useCasesPmItems', { returnObjects: true })).map((item, idx) => (
                     <div key={idx} className="flex items-center gap-3 p-2.5 bg-purple-500/10 rounded-lg border border-purple-500/20">
                       <CheckCircle2 className="h-4 w-4 text-purple-400 shrink-0" />
                       <span className="text-sm text-white/90">{item}</span>
@@ -956,7 +956,7 @@ export default function LandingPage() {
                   <h3 className="text-xl font-bold text-white">{t('home.useCasesEmployeeTitle')}</h3>
                 </div>
                 <div className="space-y-3">
-                  {t<string[]>('home.useCasesEmployeeItems', { returnObjects: true }).map((item, idx) => (
+                  {i18nAsArray<string>(t('home.useCasesEmployeeItems', { returnObjects: true })).map((item, idx) => (
                     <div key={idx} className="flex items-center gap-3 p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
                       <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
                       <span className="text-sm text-white/90">{item}</span>
@@ -973,7 +973,7 @@ export default function LandingPage() {
                 {t('home.resultsTitle')}
               </h3>
               <div className="grid md:grid-cols-3 gap-6 mt-8">
-                {t<string[]>('home.resultsMetrics', { returnObjects: true }).map((label, idx) => {
+                {i18nAsArray<string>(t('home.resultsMetrics', { returnObjects: true })).map((label, idx) => {
                   const values = ['70%', '85%', '60%'];
                   const gradients = [
                     'bg-gradient-to-r from-indigo-300 to-purple-300',

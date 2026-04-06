@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { localizedPathFromEs } from '@/i18n/publicPaths';
+import { i18nAsArray } from '@/lib/i18nReturnObjects';
 
 const P = 'commercial.planner.page';
 
@@ -32,7 +33,7 @@ function MockPlanningGrid() {
         { name: 'Pedro S.', initials: 'PS', color: 'from-emerald-400 to-teal-500', weeks: [4, 7, 6, 8, 10] },
     ];
     const weeks = ['S1', 'S2', 'S3', 'S4', 'S5'];
-    const weekDates = t(`${P}.mockGrid.weekDates`, { returnObjects: true }) as string[];
+    const weekDates = i18nAsArray<string>(t(`${P}.mockGrid.weekDates`, { returnObjects: true }));
 
     return (
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-6 shadow-2xl backdrop-blur-sm">
@@ -284,12 +285,12 @@ function MockSplitWeeks() {
 /* ─── Main Article ─── */
 export function PlannerArticle() {
     const { t, i18n } = useTranslation('landing');
-    const pills = t(`${P}.hero.pills`, { returnObjects: true }) as string[];
-    const s1Bullets = t(`${P}.s1.bullets`, { returnObjects: true }) as string[];
-    const s2Tiles = t(`${P}.s2.tiles`, { returnObjects: true }) as { label: string; desc: string }[];
-    const s3Bullets = t(`${P}.s3.bullets`, { returnObjects: true }) as string[];
-    const s5Cards = t(`${P}.s5.cards`, { returnObjects: true }) as { label: string; desc: string }[];
-    const ctaStats = t(`${P}.cta.stats`, { returnObjects: true }) as { num: string; label: string }[];
+    const pills = i18nAsArray<string>(t(`${P}.hero.pills`, { returnObjects: true }));
+    const s1Bullets = i18nAsArray<string>(t(`${P}.s1.bullets`, { returnObjects: true }));
+    const s2Tiles = i18nAsArray<{ label: string; desc: string }>(t(`${P}.s2.tiles`, { returnObjects: true }));
+    const s3Bullets = i18nAsArray<string>(t(`${P}.s3.bullets`, { returnObjects: true }));
+    const s5Cards = i18nAsArray<{ label: string; desc: string }>(t(`${P}.s5.cards`, { returnObjects: true }));
+    const ctaStats = i18nAsArray<{ num: string; label: string }>(t(`${P}.cta.stats`, { returnObjects: true }));
 
     const s1Icons = [Eye, Calendar, AlertTriangle];
     const s3Icons = [GitBranch, AlertTriangle, Zap];

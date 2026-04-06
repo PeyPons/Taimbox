@@ -51,6 +51,7 @@ import { useTranslation, type TFunction } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { localizedPathFromEs, pathEsToEn } from '@/i18n/publicPaths';
+import { i18nAsArray } from '@/lib/i18nReturnObjects';
 import { SeoTags } from '@/seo/SeoTags';
 
 /* ─── SECTIONS (iconos y gradientes fijos; títulos vía i18n) ─── */
@@ -589,10 +590,9 @@ function InformesContent() {
 
 function WeeklyContent() {
   const { t } = useTranslation('landing');
-  const howSteps = t('guide.content.weeklyForecast.howSteps', { returnObjects: true }) as {
-    title: string;
-    description: string;
-  }[];
+  const howSteps = i18nAsArray<{ title: string; description: string }>(
+    t('guide.content.weeklyForecast.howSteps', { returnObjects: true }),
+  );
 
   return (
     <>

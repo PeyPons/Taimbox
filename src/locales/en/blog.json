@@ -1641,7 +1641,7 @@
       "intro": {
         "p1": "Reports from Gallup and Workhuman (2024) paint a tough picture: a large majority of people say they have felt symptoms of professional burnout at least once. In marketing and agencies, it's not uncommon to find teams where nearly half describe a constant tension, not just a one-off bad month. There, the problem stops being 'anecdotal' and becomes both an operations and a people issue.",
         "p2": "What fails is almost never that 'no work is being done'. What fails is that work is badly distributed, nobody sees at a glance who is carrying what, and clear limits are missing when a new request comes in. Below you will find definitions that clarify the mess between 'who does what' and 'with what means', signs to detect saturation before collapse, a six-step framework you can steal for your next meeting, and a table of metrics to stop guessing.",
-        "capsule": "Load doesn't float in a vacuum: it lives inside project planning —dates, dependencies, who is available when—. If you want that map with calm, it's all tied together in project planning. To wrap up with figures that serve in a numbers meeting, the agency performance KPIs go into detail. And if it frustrates you that everything 'drags on', Parkinson's Law and deadlines tells you why, without clear caps, work fills all the space you give it."
+        "capsule": "Load doesn't float in a vacuum: it lives inside <LocaleLink1>project planning</Link1> —dates, dependencies, who is available when—. If you want that map with calm, it's all tied together in project planning. To wrap up with figures that serve in a numbers meeting, the <LocaleLink2>agency performance KPIs</Link2> go into detail. And if it frustrates you that everything 'drags on', <LocaleLink3>Parkinson's Law and deadlines</Link3> tells you why, without clear caps, work fills all the space you give it."
       },
       "sections": {
         "map": {
@@ -1717,7 +1717,7 @@
         "description": {
           "p1": "Reports from Gallup and Workhuman (2024) paint a tough picture: a large majority of people say they have felt symptoms of professional burnout at least once. In marketing and agencies, it's not uncommon to find teams where nearly half describe a constant tension, not just a one-off bad month. There, the problem stops being 'anecdotal' and becomes both an operations and a people issue.",
           "p2": "What fails is almost never that 'no work is being done'. What fails is that work is badly distributed, nobody sees at a glance who is carrying what, and clear limits are missing when a new request comes in. Below you will find definitions that clarify the mess between 'who does what' and 'with what means', signs to detect saturation before collapse, a six-step framework you can steal for your next meeting, and a table of metrics to stop guessing.",
-          "capsule": "Load doesn't float in a vacuum: it lives inside project planning —dates, dependencies, who is available when—. If you want that map with calm, it's all tied together in project planning. To wrap up with figures that serve in a numbers meeting, the agency performance KPIs go into detail. And if it frustrates you that everything 'drags on', Parkinson's Law and deadlines tells you why, without clear caps, work fills all the space you give it."
+          "capsule": "Load doesn't float in a vacuum: it lives inside <LocaleLink1>project planning</Link1> —dates, dependencies, who is available when—. If you want that map with calm, it's all tied together in project planning. To wrap up with figures that serve in a numbers meeting, the <LocaleLink2>agency performance KPIs</Link2> go into detail. And if it frustrates you that everything 'drags on', <LocaleLink3>Parkinson's Law and deadlines</Link3> tells you why, without clear caps, work fills all the space you give it."
         }
       },
       "toc": {
@@ -1813,7 +1813,7 @@
         "item3": "Scope creep isn't just 'difficult clients': it's a lack of a container. A three-step protocol —record, quantify, communicate— can be set in motion without waiting for the next quarter."
       },
       "intro": {
-        "p1": "If you've already read why <Link>being busy doesn't mean being profitable</Link>, the next step is truly uncomfortable: looking at projects one by one and asking yourself if the price made sense with the real cost —not with the cost you'd like to believe.",
+        "p1": "If you've already read why <LocaleLink>being busy doesn't mean being profitable</LocaleLink>, the next step is truly uncomfortable: looking at projects one by one and asking yourself if the price made sense with the real cost —not with the cost you'd like to believe.",
         "p2": "Here you will find <strong>pricing models with pros and cons</strong>, a margin calculation you can take to a spreadsheet without philosophy, a scope protocol that avoids working for free by omission, and a way to frame work in short cycles so that time stops being a river without banks."
       },
       "section1": {
@@ -1875,7 +1875,7 @@
       "section5": {
         "title": "5. The sprint model: from infinite fee to closed cycles",
         "p1": "Working by sprints (1 or 2 week cycles) helps time not to dilate. Instead of a three-month project that gets deformed, you have six two-week deliveries with fixed objectives. You notice it when the team stops asking 'when does this end?' and starts saying 'this goes into the next sprint'.",
-        "p2": "If you want to connect the calendar with your people's real capacity, the <Link>team resource planning</Link> tells you how to join dates and heads without anyone exploding. And to know if the pace is right, <Link>project pacing</Link> gives you the pulse in real time."
+        "p2": "If you want to connect the calendar with your people's real capacity, the <LocaleLink>team resource planning</LocaleLink> tells you how to join dates and heads without anyone exploding. And to know if the pace is right, <LocaleLink>project pacing</LocaleLink> gives you the pulse in real time."
       },
       "faq": {
         "title": "Frequently Asked Questions",

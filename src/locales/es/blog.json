@@ -1641,7 +1641,7 @@
       "intro": {
         "p1": "Los informes de Gallup y Workhuman (2024)...",
         "p2": "Lo que falla casi nunca es que «no se trabaje»...",
-        "capsule": "La carga no flota en el vacío: vive dentro de la planificación de proyectos..."
+        "capsule": "La carga no flota en el vacío: vive dentro de la <LocaleLink1>planificación de proyectos</Link1> —fechas, dependencias, quién está disponible y cuándo—. Si quieres ese mapa con calma, todo encaja en la planificación de proyectos. Para cerrar con cifras que sirvan en una reunión de números, los <LocaleLink2>KPIs de rendimiento de la agencia</Link2> entran al detalle. Y si te frustra que todo «se alargue», la <LocaleLink3>Ley de Parkinson y los plazos</Link3> explica por qué, sin límites claros, el trabajo llena todo el espacio que le das."
       },
       "sections": {
         "map": {
@@ -1717,7 +1717,7 @@
         "description": {
           "p1": "Los informes de Gallup y Workhuman (2024)...",
           "p2": "Lo que falla casi nunca es que «no se trabaje»...",
-          "capsule": "La carga no flota en el vacío: vive dentro de la planificación de proyectos..."
+          "capsule": "La carga no flota en el vacío: vive dentro de la <LocaleLink1>planificación de proyectos</Link1> —fechas, dependencias, quién está disponible y cuándo—. Si quieres ese mapa con calma, todo encaja en la planificación de proyectos. Para cerrar con cifras que sirvan en una reunión de números, los <LocaleLink2>KPIs de rendimiento de la agencia</Link2> entran al detalle. Y si te frustra que todo «se alargue», la <LocaleLink3>Ley de Parkinson y los plazos</Link3> explica por qué, sin límites claros, el trabajo llena todo el espacio que le das."
         }
       },
       "toc": {
@@ -1813,7 +1813,7 @@
         "item3": "El scope creep no es solo «clientes difíciles»: es falta de contenedor. Un protocolo de tres pasos —registrar, cuantificar, comunicar— se puede poner en marcha sin esperar al próximo trimestre."
       },
       "intro": {
-        "p1": "Si ya leíste por qué <Link>estar ocupado no significa ser rentable</Link>, el siguiente paso es incómodo de verdad: mirar los proyectos uno a uno y preguntarte si el precio tenía sentido con el coste real —no con el coste que te gustaría creer.",
+        "p1": "Si ya leíste por qué <LocaleLink>estar ocupado no significa ser rentable</LocaleLink>, el siguiente paso es incómodo de verdad: mirar los proyectos uno a uno y preguntarte si el precio tenía sentido con el coste real —no con el coste que te gustaría creer.",
         "p2": "Aquí vas a encontrar <strong>modelos de pricing con pros y contras</strong>, un cálculo de margen que puedes llevar a una hoja sin filosofía, un protocolo de alcance que evita trabajar gratis por omisión, y una forma de enmarcar el trabajo en ciclos cortos para que el tiempo deje de ser un río sin orillas."
       },
       "section1": {
@@ -1875,7 +1875,7 @@
       "section5": {
         "title": "5. El modelo de sprint: de fee infinito a ciclos cerrados",
         "p1": "Trabajar por sprints (ciclos de 1 o 2 semanas) ayuda a que el tiempo no se dilate. En lugar de un proyecto de tres meses que se deforma, tienes 6 entregas de dos semanas con objetivos inamovibles. Lo notas cuando el equipo deja de preguntar “¿cuándo acaba esto?” y empieza a decir “esto entra en el sprint que viene”.",
-        "p2": "Si quieres conectar el calendario con la capacidad real de tu gente, la <Link>planificación de recursos del equipo</Link> cuenta cómo unir fechas y cabezas sin que nadie explote. Y para saber si el ritmo es el adecuado, el <Link>pacing de proyectos</Link> te da el pulso en tiempo real."
+        "p2": "Si quieres conectar el calendario con la capacidad real de tu gente, la <LocaleLink>planificación de recursos del equipo</LocaleLink> cuenta cómo unir fechas y cabezas sin que nadie explote. Y para saber si el ritmo es el adecuado, el <LocaleLink>pacing de proyectos</LocaleLink> te da el pulso en tiempo real."
       },
       "faq": {
         "title": "Preguntas frecuentes",

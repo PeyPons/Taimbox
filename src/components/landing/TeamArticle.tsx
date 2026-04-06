@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { localizedPathFromEs } from '@/i18n/publicPaths';
+import { i18nAsArray } from '@/lib/i18nReturnObjects';
 
 const P = 'commercial.team.page';
 
@@ -46,14 +47,16 @@ const ABSENCE_AVATAR_GRADIENTS: Record<string, string> = {
 /* ─── Mockup: Employee Profiles ─── */
 function MockProfiles() {
     const { t } = useTranslation('landing');
-    const employees = t(`${P}.mockProfiles.employees`, { returnObjects: true }) as {
+    const employees = i18nAsArray<{
         name: string;
         role: string;
         initials: string;
         hours: string;
         schedule: string;
-    }[];
-    const scheduleTypes = t(`${P}.mockProfiles.scheduleTypes`, { returnObjects: true }) as { label: string; value: string }[];
+    }>(t(`${P}.mockProfiles.employees`, { returnObjects: true }));
+    const scheduleTypes = i18nAsArray<{ label: string; value: string }>(
+        t(`${P}.mockProfiles.scheduleTypes`, { returnObjects: true }),
+    );
     const scheduleIcons = [Sun, Clock, Moon];
 
     return (
@@ -104,13 +107,13 @@ function MockProfiles() {
 /* ─── Mockup: Absences Calendar ─── */
 function MockAbsences() {
     const { t } = useTranslation('landing');
-    const rows = t(`${P}.mockAbsences.rows`, { returnObjects: true }) as {
+    const rows = i18nAsArray<{
         initials: string;
         name: string;
         detail: string;
         badge: string;
         tone: string;
-    }[];
+    }>(t(`${P}.mockAbsences.rows`, { returnObjects: true }));
 
     const rowClass = (tone: string) => {
         if (tone === 'red') return 'bg-red-500/10 border border-red-500/20';
@@ -173,12 +176,12 @@ function MockAbsences() {
 /* ─── Mockup: Capacity ─── */
 function MockCapacity() {
     const { t } = useTranslation('landing');
-    const team = t(`${P}.mockCapacity.team`, { returnObjects: true }) as {
+    const team = i18nAsArray<{
         name: string;
         available: number;
         total: number;
         tone: string;
-    }[];
+    }>(t(`${P}.mockCapacity.team`, { returnObjects: true }));
 
     const barText = (tone: string) => {
         if (tone === 'red') return { bar: 'bg-red-500', text: 'text-red-400' };
@@ -234,13 +237,13 @@ function MockCapacity() {
 /* ─── Mockup: Vista Tiempos ─── */
 function MockTiempos() {
     const { t } = useTranslation('landing');
-    const rows = t(`${P}.mockTiempos.rows`, { returnObjects: true }) as {
+    const rows = i18nAsArray<{
         name: string;
         task: string;
         client: string;
         time: string;
         active: boolean;
-    }[];
+    }>(t(`${P}.mockTiempos.rows`, { returnObjects: true }));
     const empty = t(`${P}.mockTiempos.empty`);
 
     return (
@@ -261,7 +264,7 @@ function MockTiempos() {
                         <div
                             className={`w-8 h-8 rounded-full bg-gradient-to-br ${TIEMPOS_GRADIENTS[i] ?? TIEMPOS_GRADIENTS[0]} flex items-center justify-center text-[10px] font-bold text-white shrink-0`}
                         >
-                            {r.name
+                            {(r.name ?? '')
                                 .split(' ')
                                 .map((n) => n[0])
                                 .join('')}
@@ -286,7 +289,7 @@ function MockTiempos() {
 /* ─── Mockup: Team Pulse ─── */
 function MockTeamPulse() {
     const { t } = useTranslation('landing');
-    const insights = t(`${P}.mockPulse.insights`, { returnObjects: true }) as string[];
+    const insights = i18nAsArray<string>(t(`${P}.mockPulse.insights`, { returnObjects: true }));
     const insightMeta = [
         { Icon: CheckCircle2, wrap: 'bg-emerald-500/10 border border-emerald-500/20', icon: 'text-emerald-400', text: 'text-emerald-200/80' },
         { Icon: AlertTriangle, wrap: 'bg-red-500/10 border border-red-500/20', icon: 'text-red-400', text: 'text-red-200/80' },
@@ -334,12 +337,12 @@ function MockTeamPulse() {
 /* ─── Main Article ─── */
 export function TeamArticle() {
     const { t, i18n } = useTranslation('landing');
-    const pills = t(`${P}.hero.pills`, { returnObjects: true }) as string[];
-    const s1Bullets = t(`${P}.s1.bullets`, { returnObjects: true }) as string[];
-    const s3Bullets = t(`${P}.s3.bullets`, { returnObjects: true }) as string[];
-    const s4Tiles = t(`${P}.s4.tiles`, { returnObjects: true }) as { label: string; desc: string }[];
-    const s5Tiles = t(`${P}.s5.tiles`, { returnObjects: true }) as { label: string; desc: string }[];
-    const ctaStats = t(`${P}.cta.stats`, { returnObjects: true }) as { num: string; label: string }[];
+    const pills = i18nAsArray<string>(t(`${P}.hero.pills`, { returnObjects: true }));
+    const s1Bullets = i18nAsArray<string>(t(`${P}.s1.bullets`, { returnObjects: true }));
+    const s3Bullets = i18nAsArray<string>(t(`${P}.s3.bullets`, { returnObjects: true }));
+    const s4Tiles = i18nAsArray<{ label: string; desc: string }>(t(`${P}.s4.tiles`, { returnObjects: true }));
+    const s5Tiles = i18nAsArray<{ label: string; desc: string }>(t(`${P}.s5.tiles`, { returnObjects: true }));
+    const ctaStats = i18nAsArray<{ num: string; label: string }>(t(`${P}.cta.stats`, { returnObjects: true }));
 
     const s1Icons = [Clock, CalendarDays, UserCog];
     const s4TileIcons = [Activity, Shield, TrendingUp, AlertTriangle];
