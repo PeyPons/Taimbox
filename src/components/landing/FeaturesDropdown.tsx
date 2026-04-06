@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { localizedPathFromEs } from '@/i18n/publicPaths';
 import {
     ChevronDown,
     LayoutDashboard,
@@ -13,75 +15,59 @@ import {
     Shield,
 } from 'lucide-react';
 
-const FEATURES = [
+const FEATURE_META = [
     {
-        title: 'Dashboard del Empleado',
-        href: '/dashboard-empleado',
-        description: 'Tu centro de control personal',
-        badge: 'Para empleados',
+        id: 'employeeDashboard' as const,
+        hrefEs: '/dashboard-empleado',
         badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
         icon: LayoutDashboard,
         gradient: 'from-indigo-500 to-purple-500',
     },
     {
-        title: 'Planificador de Recursos',
-        href: '/planificador-recursos',
-        description: 'Visualiza cada hora de tu equipo',
-        badge: 'Para directores',
+        id: 'resourcePlanner' as const,
+        hrefEs: '/planificador-recursos',
         badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
         icon: CalendarRange,
         gradient: 'from-indigo-500 to-blue-500',
     },
     {
-        title: 'Gestión de Equipos',
-        href: '/gestion-equipos',
-        description: 'Horarios, ausencias, capacidad y tiempos en vivo',
-        badge: 'Para RRHH',
+        id: 'teamManagement' as const,
+        hrefEs: '/gestion-equipos',
         badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
         icon: Users,
         gradient: 'from-blue-500 to-cyan-500',
     },
     {
-        title: 'Reportes y Rentabilidad',
-        href: '/reportes-rentabilidad',
-        description: 'Ingreso devengado, ritmo por proyecto y margen al céntimo',
-        badge: 'Para financieros',
+        id: 'reports' as const,
+        hrefEs: '/reportes-rentabilidad',
         badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
         icon: BarChart3,
         gradient: 'from-emerald-500 to-teal-500',
     },
     {
-        title: 'Proyectos y Deadlines',
-        href: '/control-proyectos',
-        description: 'Objetivos mensuales y sugerencias de redistribución',
-        badge: 'Para project managers',
+        id: 'projects' as const,
+        hrefEs: '/control-proyectos',
         badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
         icon: FolderKanban,
         gradient: 'from-amber-500 to-orange-500',
     },
     {
-        title: 'Integraciones',
-        href: '/integraciones',
-        description: 'Conecta todo tu ecosistema',
-        badge: 'Para equipos técnicos',
+        id: 'integrations' as const,
+        hrefEs: '/integraciones',
         badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
         icon: Plug,
         gradient: 'from-cyan-500 to-blue-500',
     },
     {
-        title: 'Monitor de presupuestos',
-        href: '/monitor-ppc',
-        description: 'Controla el gasto publicitario de tus clientes',
-        badge: 'Plan Business',
+        id: 'ppc' as const,
+        hrefEs: '/monitor-ppc',
         badgeColor: 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/30',
         icon: DollarSign,
         gradient: 'from-fuchsia-500 to-pink-500',
     },
     {
-        title: 'Seguridad y Privacidad',
-        href: '/seguridad',
-        description: 'Infraestructura, cifrado AES-256 y aislamiento RLS',
-        badge: 'Grado Enterprise',
+        id: 'security' as const,
+        hrefEs: '/seguridad',
         badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
         icon: Shield,
         gradient: 'from-emerald-500 to-teal-500',
@@ -89,6 +75,7 @@ const FEATURES = [
 ];
 
 export function FeaturesDropdown() {
+    const { t, i18n } = useTranslation('landing');
     const [isOpen, setIsOpen] = useState(false);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -125,7 +112,7 @@ export function FeaturesDropdown() {
                 onClick={handleClick}
                 className="flex items-center gap-1 text-sm text-indigo-200 hover:text-white transition-colors font-medium"
             >
-                Funcionalidades
+                {t('header.featuresTrigger')}
                 <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
 
@@ -143,21 +130,22 @@ export function FeaturesDropdown() {
                     {/* Header */}
                     <div className="px-5 pt-4 pb-3 border-b border-white/10">
                         <p className="text-xs font-semibold uppercase tracking-wider text-indigo-300/90">
-                            Explora por rol
+                            {t('features.exploreByRole')}
                         </p>
                         <p className="text-[10px] text-slate-400 mt-0.5">
-                            Cada funcionalidad diseñada para un perfil específico
+                            {t('features.exploreSubtitle')}
                         </p>
                     </div>
 
                     {/* Feature Grid */}
                     <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                        {FEATURES.map((feature) => {
+                        {FEATURE_META.map((feature) => {
                             const Icon = feature.icon;
+                            const href = localizedPathFromEs(feature.hrefEs, i18n.language);
                             return (
                                 <Link
-                                    key={feature.href}
-                                    to={feature.href}
+                                    key={feature.hrefEs}
+                                    to={href}
                                     onClick={() => setIsOpen(false)}
                                     className="group flex items-start gap-3 rounded-xl p-3 hover:bg-white/5 transition-all duration-200"
                                 >
@@ -167,14 +155,14 @@ export function FeaturesDropdown() {
                                     <div className="min-w-0 flex-1">
                                         <div className="flex items-center gap-2 mb-0.5">
                                             <p className="text-sm text-white font-semibold group-hover:text-indigo-200 transition-colors truncate">
-                                                {feature.title}
+                                                {t(`features.items.${feature.id}.title`)}
                                             </p>
                                         </div>
                                         <p className="text-[11px] text-slate-400 leading-snug mb-1">
-                                            {feature.description}
+                                            {t(`features.items.${feature.id}.description`)}
                                         </p>
                                         <span className={`inline-block text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${feature.badgeColor}`}>
-                                            {feature.badge}
+                                            {t(`features.items.${feature.id}.badge`)}
                                         </span>
                                     </div>
                                 </Link>
@@ -185,19 +173,19 @@ export function FeaturesDropdown() {
                     {/* Footer */}
                     <div className="px-5 py-3 border-t border-white/10 bg-white/[0.02] flex items-center justify-between">
                         <Link
-                            to="/guia"
+                            to={localizedPathFromEs('/guia', i18n.language)}
                             onClick={() => setIsOpen(false)}
                             className="text-xs text-indigo-300 hover:text-white transition-colors font-medium flex items-center gap-1"
                         >
-                            Guía técnica completa
+                            {t('features.guideFull')}
                             <ArrowRight className="h-3 w-3" />
                         </Link>
                         <Link
-                            to="/por-que-timeboxing"
+                            to={localizedPathFromEs('/por-que-timeboxing', i18n.language)}
                             onClick={() => setIsOpen(false)}
                             className="text-xs text-slate-400 hover:text-white transition-colors"
                         >
-                            ¿Por qué Taimbox?
+                            {t('features.whyTaimbox')}
                         </Link>
                     </div>
                 </div>

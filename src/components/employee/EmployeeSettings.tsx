@@ -1,5 +1,6 @@
 // Componente de ajustes de cuenta del empleado
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '@/contexts/AppContext';
 import { supabase } from '@/lib/supabase';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
@@ -7,17 +8,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Settings, Lock, User, RefreshCw } from 'lucide-react';
+import { Settings, Lock, User, RefreshCw, Globe, Check } from 'lucide-react';
 import { toast } from '@/lib/notify';
 
 interface EmployeeSettingsProps {
   employeeId: string;
 }
 
+const LANGUAGES = [
+  { code: 'es', label: 'Español', flag: '🇪🇸' },
+  { code: 'en', label: 'English', flag: '🇺🇸' },
+] as const;
+
 export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
   const { employees, updateEmployee, currentUser } = useApp();
+  const { i18n } = useTranslation();
   const employee = employees.find(e => e.id === employeeId);
   const [open, setOpen] = useState(false);
+  const currentLang = i18n.language.startsWith('en') ? 'en' : 'es';
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Estados para contraseña
@@ -172,6 +180,10 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
                 <div className="flex gap-2">
                   <Input
                     id="avatar-phrase"
+                    name="avatar-seed-phrase"
+                    autoComplete="off"
+                    data-1p-ignore
+                    data-lpignore="true"
                     placeholder="Ej: Mi nombre es Alex"
                     value={avatarPhrase}
                     onChange={(e) => handleAvatarPhraseChange(e.target.value)}
@@ -196,6 +208,45 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
                 </p>
               </div>
             </div>
+          </div>
+
+          <div className="h-px bg-slate-200" />
+
+          {/* Sección Idioma */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <Globe className="h-4 w-4" />
+              Idioma / Language
+            </div>
+            <div className="flex gap-2">
+              {LANGUAGES.map((lang) => (
+                <button
+                  key={lang.code}
+                  type="button"
+                  onClick={() => {
+                    if (lang.code !== currentLang) {
+                      i18n.changeLanguage(lang.code);
+                      localStorage.setItem('i18nextLng', lang.code);
+                      toast.success(lang.code === 'en' ? 'Language changed to English' : 'Idioma cambiado a Español');
+                    }
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 text-sm font-medium transition-all duration-200 ${
+                    currentLang === lang.code
+                      ? 'border-primary bg-primary/5 text-primary shadow-sm'
+                      : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="text-lg">{lang.flag}</span>
+                  <span>{lang.label}</span>
+                  {currentLang === lang.code && <Check className="h-4 w-4 ml-1" />}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-slate-500">
+              {currentLang === 'en'
+                ? 'Changes the interface language. This preference is saved in your browser.'
+                : 'Cambia el idioma de la interfaz. Esta preferencia se guarda en tu navegador.'}
+            </p>
           </div>
 
           <div className="h-px bg-slate-200" />

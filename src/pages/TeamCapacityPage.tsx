@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
@@ -48,6 +49,7 @@ interface EmployeeCapacity {
 }
 
 export default function TeamCapacityPage() {
+    const { t } = useTranslation('app');
     const { employees, allocations, absences, teamEvents } = useApp();
     const { currentAgency } = useAgency();
     const { selectedDepartmentId } = useDepartmentView();
@@ -204,11 +206,11 @@ export default function TeamCapacityPage() {
     }, [teamCapacity, highAvailability, overloaded]);
 
     const getStatusStyles = (status: string, rate: number) => {
-        if (status === 'away') return { bg: 'bg-slate-100', border: 'border-slate-200', text: 'text-slate-500', icon: Users, label: 'Ausente' };
-        if (rate >= 100) return { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', icon: AlertTriangle, label: 'Sobrecarga' };
-        if (rate > 85) return { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', icon: Clock, label: 'Ocupado' };
-        if (rate > 50) return { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', icon: TrendingUp, label: 'Productivo' };
-        return { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', icon: CheckCircle2, label: 'Disponible' };
+        if (status === 'away') return { bg: 'bg-slate-100', border: 'border-slate-200', text: 'text-slate-500', icon: Users, label: t('teamCapacity.status.away', 'Ausente') };
+        if (rate >= 100) return { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', icon: AlertTriangle, label: t('teamCapacity.status.overloaded', 'Sobrecarga') };
+        if (rate > 85) return { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', icon: Clock, label: t('teamCapacity.status.busy', 'Ocupado') };
+        if (rate > 50) return { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', icon: TrendingUp, label: t('teamCapacity.status.productive', 'Productivo') };
+        return { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', icon: CheckCircle2, label: t('teamCapacity.status.available', 'Disponible') };
     };
 
     const EmployeeCard = ({ emp }: { emp: EmployeeCapacity }) => {
@@ -252,7 +254,7 @@ export default function TeamCapacityPage() {
 
                         <div className="mt-3 space-y-2">
                             <div className="flex items-center justify-between text-xs">
-                                <span className="text-slate-500 font-medium">Ocupación</span>
+                                <span className="text-slate-500 font-medium">{t('teamCapacity.card.occupancy', 'Ocupación')}</span>
                                 <span className={cn("font-bold", styles.text)}>
                                     {Math.round(emp.occupancyRate)}%
                                 </span>
@@ -270,18 +272,18 @@ export default function TeamCapacityPage() {
                                     {hasReductions && (
                                         <span className="text-[10px] text-amber-600 flex items-center gap-1">
                                             <Calendar className="h-3 w-3" />
-                                            -{(emp.absenceReduction + emp.eventReduction).toFixed(0)}h (ausencias/eventos)
+                                            {t('teamCapacity.card.absences', { hours: (emp.absenceReduction + emp.eventReduction).toFixed(0), defaultValue: `-${(emp.absenceReduction + emp.eventReduction).toFixed(0)}h (ausencias/eventos)` })}
                                         </span>
                                     )}
                                     <span className="text-[10px] text-slate-400">
-                                        {emp.pendingTasks} tareas planificadas
+                                        {t('teamCapacity.card.pendingTasks', { count: emp.pendingTasks, defaultValue: `${emp.pendingTasks} tareas planificadas` })}
                                     </span>
                                 </div>
                                 <div className="text-right">
                                     <div className={cn("text-sm font-bold", emp.availableHours > (viewMode === 'week' ? 4 : 10) ? "text-emerald-600" : "text-slate-600")}>
                                         {Math.round(emp.availableHours)}h
                                     </div>
-                                    <div className="text-[9px] text-slate-400 font-medium uppercase">Libres</div>
+                                    <div className="text-[9px] text-slate-400 font-medium uppercase">{t('teamCapacity.card.free', 'Libres')}</div>
                                 </div>
                             </div>
                         </div>
@@ -294,7 +296,7 @@ export default function TeamCapacityPage() {
     return (
         <>
             <Helmet>
-                <title>Disponibilidad del equipo | Taimbox</title>
+                <title>{t('teamCapacity.metaTitle', 'Disponibilidad del equipo | Taimbox')}</title>
             </Helmet>
 
             <div className="flex flex-col h-full space-y-6 p-6 md:p-8 max-w-[1600px] mx-auto w-full">
@@ -303,11 +305,11 @@ export default function TeamCapacityPage() {
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
                             <Users className="h-8 w-8 text-primary" />
-                            Disponibilidad del equipo
+                            {t('teamCapacity.title', 'Disponibilidad del equipo')}
                         </h1>
                         <p className="text-muted-foreground mt-1 flex items-center gap-2">
                             <CalendarDays className="h-4 w-4" />
-                            Balance de carga para <span className="font-bold text-slate-900 capitalize">{periodLabel}</span>
+                            {t('teamCapacity.subtitle', 'Balance de carga para')} <span className="font-bold text-slate-900 capitalize">{periodLabel}</span>
                         </p>
                     </div>
 
@@ -319,7 +321,7 @@ export default function TeamCapacityPage() {
                             onClick={() => setViewMode('week')}
                             className={cn("h-8 text-xs px-4 rounded-md transition-all", viewMode === 'week' && "bg-white shadow-sm text-primary font-bold")}
                         >
-                            Esta Semana
+                            {t('teamCapacity.viewModes.week', 'Esta Semana')}
                         </Button>
                         <Button
                             variant={viewMode === 'month' ? 'outline' : 'ghost'}
@@ -327,7 +329,7 @@ export default function TeamCapacityPage() {
                             onClick={() => setViewMode('month')}
                             className={cn("h-8 text-xs px-4 rounded-md transition-all", viewMode === 'month' && "bg-white shadow-sm text-primary font-bold")}
                         >
-                            Este Mes
+                            {t('teamCapacity.viewModes.month', 'Este Mes')}
                         </Button>
                     </div>
                 </div>
@@ -343,7 +345,7 @@ export default function TeamCapacityPage() {
                                 </div>
                                 <div>
                                     <p className="text-2xl font-bold text-slate-900">{stats.availableCount}</p>
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Alta disponibilidad</p>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{t('teamCapacity.stats.highAvailability', 'Alta disponibilidad')}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -358,7 +360,7 @@ export default function TeamCapacityPage() {
                                 </div>
                                 <div>
                                     <p className="text-2xl font-bold text-slate-900">{Math.round(stats.totalAvailableHours)}h</p>
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Capacidad disponible</p>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{t('teamCapacity.stats.availableCapacity', 'Capacidad disponible')}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -373,7 +375,7 @@ export default function TeamCapacityPage() {
                                 </div>
                                 <div>
                                     <p className="text-2xl font-bold text-slate-900">{stats.globalOccupancy}%</p>
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Ocupación global</p>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{t('teamCapacity.stats.globalOccupancy', 'Ocupación global')}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -388,7 +390,7 @@ export default function TeamCapacityPage() {
                                 </div>
                                 <div>
                                     <p className="text-2xl font-bold text-slate-900">{stats.overloadedCount}</p>
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">En sobrecarga</p>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{t('teamCapacity.stats.overloaded', 'En sobrecarga')}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -402,17 +404,17 @@ export default function TeamCapacityPage() {
                         <div>
                             <div className="flex items-center gap-2 mb-1">
                                 <Flame className="h-5 w-5 text-orange-500" />
-                                <h3 className="text-lg font-bold text-slate-800">Alta disponibilidad</h3>
+                                <h3 className="text-lg font-bold text-slate-800">{t('teamCapacity.sections.highAvailability.title', 'Alta disponibilidad')}</h3>
                             </div>
                             <p className="text-sm text-slate-500">
-                                Miembros con +{viewMode === 'week' ? '4' : '10'}h libres {viewMode === 'week' ? 'esta semana' : 'este mes'}
+                                {viewMode === 'week' ? t('teamCapacity.sections.highAvailability.subtitleWeek', 'Miembros con +4h libres esta semana') : t('teamCapacity.sections.highAvailability.subtitleMonth', 'Miembros con +10h libres este mes')}
                             </p>
                         </div>
 
                         {highAvailability.length === 0 ? (
                             <div className="text-center py-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
                                 <Zap className="h-12 w-12 mx-auto mb-3 text-slate-300" />
-                                <p className="text-slate-500 font-medium">Todo el equipo está ocupado</p>
+                                <p className="text-slate-500 font-medium">{t('teamCapacity.sections.highAvailability.emptyState', 'Todo el equipo está ocupado')}</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 gap-4">
@@ -425,8 +427,8 @@ export default function TeamCapacityPage() {
                         {moderate.length > 0 && (
                             <>
                                 <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                                    <h4 className="text-sm font-bold text-slate-600 uppercase tracking-wider">Disponibilidad moderada</h4>
-                                    <Badge variant="outline" className="text-[10px]">{moderate.length} personas</Badge>
+                                    <h4 className="text-sm font-bold text-slate-600 uppercase tracking-wider">{t('teamCapacity.sections.moderate', 'Disponibilidad moderada')}</h4>
+                                    <Badge variant="outline" className="text-[10px]">{moderate.length} {t('teamCapacity.sections.persons', 'personas')}</Badge>
                                 </div>
                                 <div className="grid grid-cols-1 gap-3">
                                     {moderate.map(emp => (
@@ -442,9 +444,9 @@ export default function TeamCapacityPage() {
                         <div>
                             <div className="flex items-center gap-2 mb-1">
                                 <Zap className="h-5 w-5 text-indigo-500" />
-                                <h3 className="text-lg font-bold text-slate-800">Carga crítica</h3>
+                                <h3 className="text-lg font-bold text-slate-800">{t('teamCapacity.sections.criticalLoad.title', 'Carga crítica')}</h3>
                             </div>
-                            <p className="text-sm text-slate-500">Miembros con poca o ninguna disponibilidad</p>
+                            <p className="text-sm text-slate-500">{t('teamCapacity.sections.criticalLoad.subtitle', 'Miembros con poca o ninguna disponibilidad')}</p>
                         </div>
 
                         <div className="space-y-6">
@@ -452,7 +454,7 @@ export default function TeamCapacityPage() {
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between">
                                         <h4 className="text-xs font-bold text-red-600 uppercase tracking-widest flex items-center gap-2">
-                                            <AlertTriangle className="h-3 w-3" /> Sobrecarga (≥100%)
+                                            <AlertTriangle className="h-3 w-3" /> {t('teamCapacity.sections.criticalLoad.overload', 'Sobrecarga (≥100%)')}
                                         </h4>
                                     </div>
                                     <div className="grid grid-cols-1 gap-3">
@@ -466,7 +468,7 @@ export default function TeamCapacityPage() {
                             {busyTeam.length > 0 && (
                                 <div className="space-y-3">
                                     <h4 className="text-xs font-bold text-amber-600 uppercase tracking-widest flex items-center gap-2">
-                                        <Clock className="h-3 w-3" /> Muy ocupado (85-99%)
+                                        <Clock className="h-3 w-3" /> {t('teamCapacity.sections.criticalLoad.busy', 'Muy ocupado (85-99%)')}
                                     </h4>
                                     <div className="grid grid-cols-1 gap-3">
                                         {busyTeam.map(emp => (
@@ -479,14 +481,14 @@ export default function TeamCapacityPage() {
                             {overloaded.length === 0 && busyTeam.length === 0 && (
                                 <div className="text-center py-12 bg-emerald-50/50 rounded-2xl border-2 border-dashed border-emerald-100">
                                     <CheckCircle2 className="h-12 w-12 mx-auto mb-3 text-emerald-300" />
-                                    <p className="text-emerald-700 font-medium">Nadie está sobrecargado</p>
+                                    <p className="text-emerald-700 font-medium">{t('teamCapacity.sections.criticalLoad.emptyState', 'Nadie está sobrecargado')}</p>
                                 </div>
                             )}
                         </div>
 
                         {away.length > 0 && (
                             <div className="pt-8 space-y-3">
-                                <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Ausencias actuales</h4>
+                                <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wider">{t('teamCapacity.sections.away', 'Ausencias actuales')}</h4>
                                 <div className="grid grid-cols-1 gap-3">
                                     {away.map(emp => (
                                         <EmployeeCard key={emp.id} emp={emp} />

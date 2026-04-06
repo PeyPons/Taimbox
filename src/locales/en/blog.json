@@ -1,0 +1,1950 @@
+{
+  "index": {
+    "title": "Templates, KPIs & planning blog | Taimbox",
+    "metaDescription": "Explore the Taimbox blog: free templates, KPIs, and planning guides for agencies. Filter by topic and find practical resources in minutes.",
+    "badge": "Guides & resources",
+    "h1": "Blog",
+    "intro": "Practical guides on project planning, timeboxing, and resource management for agencies. Free templates, metrics, and frameworks you can apply right away.",
+    "statPublished": "Published",
+    "statMinutes": "Reading minutes",
+    "statTopics": "Topics",
+    "featuredLabel": "Featured article",
+    "readFeatured": "Read featured",
+    "readMinutes": "{{count}} min read",
+    "readMinutesShort": "{{count}} min",
+    "filtersTitle": "Find articles by topic",
+    "searchPlaceholder": "Search by title or content...",
+    "categoryLabel": "Category:",
+    "categories": {
+      "todos": "All",
+      "plantillas": "Templates",
+      "kpis": "KPIs",
+      "planificacion": "Planning",
+      "productividad": "Productivity",
+      "gestion": "Management"
+    },
+    "emptyTitle": "No results for that filter.",
+    "emptyHint": "Try another keyword or change the category.",
+    "readCta": "Read"
+  },
+  "components": {
+    "toc": {
+      "title": "Contents of this guide"
+    },
+    "readingTime": {
+      "text": "~{{count}} min read",
+      "aria": "Estimated reading time: {{count}} minutes"
+    },
+    "relatedPost": {
+      "label": "On a similar topic",
+      "aria": "Related article: {{title}}"
+    },
+    "scopeProtocolo": {
+      "step1": {
+        "title": "RECORD",
+        "body": "Every request out of scope is recorded at the moment. Without record, there's no possible conversation."
+      },
+      "step2": {
+        "title": "QUANTIFY",
+        "body": "Estimate time before accepting. Without a number, there's no possible price."
+      },
+      "step3": {
+        "title": "COMMUNICATE",
+        "body": "Inform the client before executing, not after. Always."
+      },
+      "quote": "«Shall we add it by adjusting the budget, or leave it for the next sprint?»",
+      "caption": "Three-step scope protocol: the footer phrase turns conflict into a bifurcation, not a wall."
+    },
+    "cargaTrabajoFramework": {
+      "caption": "6-step framework: from invisibility to sustainable workload",
+      "footer": "Goal: visibility + explicit priorities + recovery between peaks",
+      "steps": [
+        {
+          "title": "Visibility",
+          "subtitle": "Map real workload"
+        },
+        {
+          "title": "Priority",
+          "subtitle": "Team Eisenhower"
+        },
+        {
+          "title": "Allocation",
+          "subtitle": "Capacity + skill"
+        },
+        {
+          "title": "Limits",
+          "subtitle": "No to scope creep"
+        },
+        {
+          "title": "Pace",
+          "subtitle": "Blocks and deep work"
+        },
+        {
+          "title": "Review",
+          "subtitle": "Workload check-ins"
+        }
+      ]
+    },
+    "senalesCargaAlerta": {
+      "caption": "Early signs: behavior + numbers",
+      "items": [
+        "Less participation",
+        "Irregular quality",
+        "Slipping deadlines",
+        "Uneven workload metrics"
+      ]
+    },
+    "parkinsonLawVisual": {
+      "p1": "The same work expands to fill the available time",
+      "week": "Allotted time: 1 week",
+      "weekUsed": "Week is used",
+      "day": "Allotted time: 1 day",
+      "dayUsed": "Day is used",
+      "footer": "Same task, different deadline → work adapts to given time"
+    },
+    "ocupacionChart": {
+      "title": "Team utilization vs profitability (conceptual model)",
+      "desc": "Animated curve starting at negative due to fixed costs, crossing break-even at 34%, peaking at 72%, and collapsing after 85%.",
+      "zones": {
+        "healthy": "Healthy",
+        "friction": "Friction",
+        "collapse": "Collapse"
+      },
+      "breakEven": "break-even",
+      "xAxis": "Team utilization rate →",
+      "yAxis": "Profitability / net margin →",
+      "peak": "Peak ~72%",
+      "fixedCost": "Fixed cost",
+      "ariaPause": "Pause animation",
+      "ariaPlay": "Resume animation",
+      "warnings": {
+        "fragmentation": {
+          "label": "Capacity lost by fragmentation:",
+          "text": "magnitude order of ~240,000 €/year in a 10-person team (conceptual model; varies by mix and rates)."
+        },
+        "burnout": {
+          "label": "Replacing a burnt-out profile",
+          "text": "usually costs between 50% and 200% of their annual salary —before counting the operational gap."
+        }
+      },
+      "legend": {
+        "healthy": {
+          "label": "Healthy range (50–75%):",
+          "text": "Room for unforeseen events and Deep Work."
+        },
+        "friction": {
+          "label": "Friction zone (75–85%):",
+          "text": "Loss of focus and cognitive fatigue."
+        },
+        "collapse": {
+          "label": "Margin collapse (>85%):",
+          "text": "Burnout, rework, and costly turnover."
+        }
+      },
+      "caption": "Conceptual model based on 2025-2026 industry benchmarks. Profitability drops above 85% because friction cost exceeds marginal revenue."
+    }
+  },
+  "posts": {
+    "whatIsTimeboxing": {
+      "badge": "Definitive guide",
+      "title": "What is timeboxing? The definitive productivity guide for teams",
+      "intro": {
+        "p1": "We have all dealt with that task that was supposed to take 30 minutes and somehow swallowed the whole day thanks to distractions or perfectionism. If we do not set rules or limits, work expands without control. There is even a law for this: <strong>Parkinson’s Law</strong>, which states that <em>“work expands so as to fill the time available for its completion”</em>.",
+        "callout": "To fight this loss of time and resources, the most efficient companies and high‑performance professionals use a ruthless strategy: <strong>timeboxing</strong>.",
+        "p2": "In this definitive guide we will break down what timeboxing is, how to implement it step by step in your daily routine, how to scale it to your whole team and, most importantly, how to turn this productivity technique into <strong>real profitability for your business</strong>."
+      },
+      "section1": {
+        "title": "1. What is timeboxing and how is it different?",
+        "p1": "<strong>Timeboxing</strong> is a goal‑oriented time‑management strategy where you assign a strict, fixed and maximum period of time (a “time box” or <em>timebox</em>) to a specific task or activity. When the time is up, you stop, regardless of whether the task is 100% finished or not. In an agency you notice it when the “I will finish it later” lasts exactly as long as the timebox: the timer goes off and the team switches context without debate.",
+        "p2": "This methodology flips traditional work on its head with a <strong>radical inversion</strong>:",
+        "list": {
+          "traditional": "<strong>Traditional approach:</strong> scope is fixed (it has to be perfect) and time is variable (you take as long as it takes).",
+          "timeboxing": "<strong>Timeboxing approach:</strong> time is fixed (you have exactly 45 minutes) and scope is variable (you do the best work you can within that limit)."
+        },
+        "comparison": {
+          "title": "Timeboxing vs. time blocking: they are not the same",
+          "p1": "It is easy to mix them up, but there is a crucial difference:",
+          "timeBlocking": {
+            "title": "Time blocking",
+            "p1": "Blocking out a slot in your calendar (for example, “from 10:00 to 12:00 I will work on project X”)."
+          },
+          "timeboxing": {
+            "title": "Timeboxing",
+            "p1": "Adds a hard limit and a target (for example, “at 11:30 the draft is done and I move on”)."
+          }
+        }
+      },
+      "section2": {
+        "title": "2. Rigid vs. flexible timeboxes",
+        "p1": "Before you start drawing your time boxes, you need to decide what kind of approach the task in front of you needs. The scar here is using a “hard” box for a creative review: if there was no decision to close, the design breaks and the team pays for it the following week.",
+        "hard": {
+          "title": "Hard timebox",
+          "p1": "It means you <strong>must stop working</strong> when the timer goes off.",
+          "when": "<strong>When to use it:</strong> tasks prone to perfectionism (design), research or tightly limited meetings.",
+          "benefit": "<strong>The benefit:</strong> it cures toxic perfectionism and protects the rest of the day from cascading delays."
+        },
+        "soft": {
+          "title": "Soft timebox",
+          "p1": "The limit acts as a <strong>warning or checkpoint</strong>. You know you have to start wrapping up, but you have some slack to finish properly.",
+          "when": "<strong>When to use it:</strong> complex creative work (writing, development) or client deliveries with fixed dates."
+        },
+        "capsule": {
+          "title": "Taimbox capsule: see and control your week",
+          "p1": "Timeboxing theory fails if it only lives in your head. In <strong>Taimbox</strong> we have designed a Resource Planner that lets managers and employees “draw” these time boxes visually.",
+          "cta": "Explore the Resource Planner"
+        }
+      },
+      "section3": {
+        "title": "3. The neuroscience: why timeboxing works",
+        "p1": "Harvard Business Review listed timeboxing as the number‑one productivity skill. Why? Because of its direct impact on how our brain works. You can feel it when, after two well‑placed boxes, the mental sense of urgency calms down and the “real” work finally shows up.",
+        "cards": {
+          "decisionFatigue": {
+            "title": "Kills decision fatigue",
+            "p1": "By planning your time boxes the day before, you erase the daily “what should I do now?” question. Your brain just executes the plan."
+          },
+          "flowState": {
+            "title": "Triggers flow state",
+            "p1": "Knowing you have limited time creates a healthy sense of urgency, pushing your brain to ignore distractions and focus."
+          },
+          "reward": {
+            "title": "Rewards completion",
+            "p1": "Every time you finish a box, your brain releases dopamine, keeping you motivated for the next task in your day."
+          }
+        }
+      },
+      "section4": {
+        "title": "4. How to apply timeboxing step by step",
+        "steps": {
+          "1": {
+            "title": "Identify and split the task",
+            "p1": "If a task will take more than three hours, split it. Oversized blocks invite distraction. The scar: if you split too late, you freeze progress and the client sneaks in changes just when you thought things were “almost done”.",
+            "example": "<strong>B2B example:</strong> instead of four hours of “create proposal”, use “research” (45 min), “writing” (90 min) and “review” (30 min)."
+          },
+          "2": {
+            "title": "Set the timebox and a clear goal",
+            "p1": "Decide how long it will last and what must be strictly finished when it ends.",
+            "example": "<strong>Example:</strong> “45 minutes. Goal: have a bullet‑point outline of the five key points.”"
+          },
+          "3": {
+            "title": "Set up the environment and execute",
+            "p1": "Silence notifications, start a real timer and, at the end, check whether you had too much or too little time. That feedback loop will sharpen your future estimates."
+          }
+        },
+        "capsule": {
+          "title": "Taimbox capsule: the built‑in timer",
+          "p1": "Forget about using your phone’s timer. In the Taimbox Employee Dashboard, each task has a native timer linked to your agency’s projects.",
+          "cta": "Explore the Employee Dashboard"
+        }
+      },
+      "section5": {
+        "title": "5. Timeboxing for teams: from tasks to profitability",
+        "p1": "Timeboxing at an individual level makes you fast. <strong>Timeboxing as a team</strong> makes your company more profitable. When you coordinate dozens of employees, you make sure the time invested in a client never silently eats the whole budget. The scar appears when “everything looks fine” and yet the project keeps burning hours due to last‑minute changes: at that point you need a box and controls, not hope.",
+        "cards": {
+          "leaks": {
+            "title": "Spotting leaks",
+            "p1": "If an “audit box” is estimated at two hours but the team routinely spends four, as a manager you have just uncovered a bottleneck and a profitability leak."
+          },
+          "capacity": {
+            "title": "Operational capacity",
+            "p1": "With predefined blocks it becomes impossible to overload someone. A week has 40 hours; if the boxes add up to 42, the system flags it and prevents <em>burnout</em> before it happens."
+          }
+        },
+        "p2": "At team scale, timeboxing is just one piece of the puzzle: it also matters who holds the critical tasks, how you negotiate scope, and which metrics you look at before someone says “I cannot keep this pace”. If you want to connect the technique to workload distribution, early warning signals and a culture of healthy limits, this guide on <Link>avoiding burnout with timeboxing</Link> goes deeper into workload management.",
+        "capsule": {
+          "title": "Taimbox capsule: turning it into financial impact",
+          "p1": "Taimbox is the only software that crosses the time spent in these boxes with financial data. Through native integrations we combine labour costs, ad spend and revenue to give you real‑time margin reports.",
+          "cta": "See integrations and finance"
+        }
+      },
+      "section6": {
+        "title": "6. Timeboxing in business meetings",
+        "p1": "Tired of endless meetings? Timeboxing is a simple way to keep sessions from dragging on without decisions. The scar is the meeting that “finishes on time” but leaves decisions hanging, only to reappear in Slack as scattered comments.",
+        "list": {
+          "item1": "<strong>Time‑boxed agenda:</strong> assign minutes to each topic (for example: intro 5 min, analysis 15 min, next steps 10 min).",
+          "item2": "<strong>The ruthless moderator:</strong> one person watches the clock and says “two minutes left, let’s decide”.",
+          "item3": "<strong>Hard rule:</strong> if the time is up and there is no decision, you park the topic. The meeting always moves forward."
+        }
+      },
+      "faq": {
+        "title": "Frequently asked questions about timeboxing",
+        "q1": {
+          "title": "What is Parkinson’s Law?",
+          "p1": "It says that “work expands so as to fill the time available”. If you give yourself a week to do a two‑hour report, it will take a week. Timeboxing is the antidote."
+        },
+        "q2": {
+          "title": "How long should a timebox last?",
+          "p1": "There is no magic number, but neuroscience suggests blocks between 25 minutes (Pomodoro style) and 90 minutes are ideal for <em>deep work</em> without mental fatigue."
+        },
+        "q3": {
+          "title": "Does it work for creative work?",
+          "p1": "Absolutely. Setting a limit protects you from “infinite perfectionism”. It forces you to finish a base draft that you can then iterate on instead of getting stuck staring at a blank page."
+        }
+      },
+      "cta": {
+        "title": "Start building real profitability",
+        "p1": "Leaving time to chance is leaving profit to chance. Join the agencies that already operate with disciplined efficiency.",
+        "button": "Discover Taimbox",
+        "note": "Written by Taimbox’s analysis team — experts in resource management and profitability."
+      },
+      "toc": {
+        "queEsDiferencia": "1. What is Timeboxing and how is it different?",
+        "bloquesRigidosFlexibles": "2. Rigid vs flexible time blocks",
+        "neurociencia": "3. The neuroscience: why it works",
+        "implementacionPasoAPaso": "4. How to apply Timeboxing step by step",
+        "equiposRentabilidad": "5. Timeboxing for teams: from tasks to profitability",
+        "timeboxingReuniones": "6. Timeboxing in meetings",
+        "preguntasFrecuentes": "Frequently asked questions",
+        "ctaRentabilidad": "Start improving profitability"
+      },
+      "meta": {
+        "headline": "What is Timeboxing: The Definitive Productivity Guide for Companies",
+        "description": "Discover what Timeboxing is, the number-one time management technique. Learn how to use time boxes to increase the profitability of your agency or company.",
+        "softwareDescription": "The resource planner designed for Timeboxing and profitability in service agencies."
+      }
+    },
+    "porQueAgenciaPierdeRentabilidad": {
+      "badge": "Management & profitability",
+      "title": "Why your agency loses profitability even when the team is always busy",
+      "tldr": {
+        "title": "TL;DR — The essentials in 3 points",
+        "item1": "Running your team at 100% utilisation does not mean being more profitable — above roughly 80%, every extra hour creates hidden costs that erode margin faster than revenue grows.",
+        "item2": "Context switching can eat up a huge part of real productive capacity — in some environments approaching 40%. In a five‑person agency, that’s like paying two salaries that don’t generate billable value.",
+        "item3": "Agency profitability is not built by working more hours — it’s built by controlling what kind of work fills each hour and plugging the holes that never show up explicitly in the P&L."
+      },
+      "intro": {
+        "p1": "The project board is always full. Clients sign off with a “looks good”. The team arrives early and leaves late. And yet, at the end of the month, the margin doesn’t match the effort you see in the room or in the chat.",
+        "p2": {
+          "part1": "You’re not crazy:",
+          "strong": "being busy and being profitable are two different things",
+          "part2": ". Confusing them is the most common —and most expensive— mistake in agency management. Below you’ll see why high utilisation can destroy margin, the role context switching plays, how the “always available” digital culture drains focus, where non-billable hours go, and which metrics to watch before you make another blind decision."
+        }
+      },
+      "section1": {
+        "title": "1. The utilisation trap: why 100% destroys margins",
+        "p1": {
+          "part1": "It’s tempting to think that if everyone is maxed out, the agency makes more money. The problem is that",
+          "strong": "without slack there is no reaction capacity",
+          "part2": ": a single unexpected event stops being an exception and becomes the norm — funded with hours that were in no budget."
+        },
+        "p2": "On Friday at 7:45 p.m. your senior designer doesn’t say “I can’t”. She just stops sending GIFs on Slack, answers with a dry “ok”, and by the time the channel pings again, the delay has already jumped to the next deliverable. That delay isn’t drama; it’s margin evaporating.",
+        "p3": {
+          "part1": "Think of a 15‑person agency with stable accounts: if average utilisation creeps up to 92% for three months in a row, you’re not seeing “more commitment”; you’re seeing",
+          "strong": "a system with no buffer",
+          "part2": ". Any campaign that shifts, any sick leave, any estimation error gets paid for in margin or quality —often both."
+        },
+        "p4": {
+          "part1": "The",
+          "strong": "utilisation rate",
+          "part2": "—in the most useful version for leadership— is usually expressed as:",
+          "em": "billable hours worked / total available hours × 100",
+          "part3": ". Note: “billable” is not the same as “busy”: you can spend time in internal meetings, training or tool work and stay “busy” without any of that ever hitting an invoice."
+        },
+        "sub1": {
+          "title": "What utilisation is and what “healthy” looks like",
+          "p1": {
+            "part1": "In practice, industry references often place the sweet spot",
+            "strong": "between 70% and 80%",
+            "part2": "for many productive roles in service agencies. Below that you have idle capacity; above it, the system starts paying invisible bills: errors, rework and sustained pressure."
+          }
+        },
+        "sub2": {
+          "title": "What happens when you push past that threshold",
+          "li1": {
+            "part1": "Every unexpected event generates",
+            "strong": "unplanned overtime",
+            "part2": ": the cost is real even if it doesn’t have its own line in the project spreadsheet."
+          },
+          "li2": {
+            "part1": "Quality drops under sustained pressure and",
+            "strong": "rework",
+            "part2": "appears —again, real cost that never existed in the original budget."
+          },
+          "li3": {
+            "part1": "Cumulative exhaustion increases",
+            "strong": "turnover",
+            "part2": ". And turnover, in euros, is brutal."
+          }
+        },
+        "sub3": {
+          "title": "The real cost of turnover nobody books in the P&L",
+          "p1": {
+            "part1": "According to studies by",
+            "strong1": "SHRM",
+            "part2": "(Society for Human Resource Management), replacing an employee can cost",
+            "strong2": "between 50% and 200% of their annual salary",
+            "part3": "depending on the role. For someone with a fully‑loaded annual cost around €30,000, you’re looking at a very wide range: from €15,000 to €60,000 per departure, before counting the period when the seat is not performing at 100%."
+          },
+          "p2": {
+            "part1": "Uncomfortable question:",
+            "em": "how many voluntary leavers has your agency had this year? Does that cost show up clearly in any dashboard?"
+          }
+        },
+        "sub4": {
+          "p1": {
+            "part1": "Look at the red area in the chart:",
+            "strong": "that drop is the cost of losing your best creative",
+            "part2": "because you forced them to live in the quadrant of permanent urgency. It’s not an abstract number: it’s the bill for someone who can no longer sustain the pace, and the margin goes before the spreadsheet warns you."
+          },
+          "p2": "When the curve drops again on the right, it’s rarely because the work is “bad”: it’s because the system leaves no room to think clearly —and that’s where the unbudgeted rework begins."
+        }
+      },
+      "section2": {
+        "title": "2. The invisible cost that destroys the most money: context switching",
+        "p1": {
+          "part1": "",
+          "strong1": "Context switching",
+          "part2": "is the mental jump between tasks or projects that don’t share the same frame. It’s not “doing several things at once”: it’s",
+          "strong2": "leaving your head in one place and having to plug it back in",
+          "part3": "somewhere else. In agencies the damage multiplies: the same person drags several briefs at once, with different brand tones, rhythms and urgencies."
+        },
+        "p2": "It happens like this: you’re closing a layout and a “can you send it in 20 minutes?” pings from another client. There’s no ticket, no context, and when you go back to your original task it’s no longer the same morning.",
+        "sub1": {
+          "title": "The numbers behind it",
+          "li1": {
+            "part1": "Research by",
+            "strong1": "the University of California, Irvine",
+            "part2": "(Gloria Mark and team) puts the average time to regain deep focus after a relevant interruption at around",
+            "strong2": "23–25 minutes",
+            "part3": ". This isn’t a minor productivity‑hacks detail; it’s core attention‑economy data."
+          },
+          "li2": {
+            "part1": "Syntheses of cognitive‑productivity studies in knowledge teams suggest that dispersion can burn through",
+            "strong": "a very high fraction",
+            "part2": "of available time — to the point many teams describe it as “almost half the day in task‑switching”."
+          },
+          "li3": {
+            "part1": "Translated into euros (hypothetical example, just for magnitude): if someone with a fully‑loaded cost of €50,000 a year loses a big chunk of their capacity to dispersion,",
+            "strong": "you’re not losing “a bit of focus”",
+            "part2": ": you’re financing capacity that never gets billed."
+          }
+        },
+        "sub2": {
+          "title": "The 30‑second exercise",
+          "p1": {
+            "part1": "Think of one person on your team: how many active projects they carry at once, how many client or internal interruptions they get each day, and what happens when you multiply that by weeks. You don’t need a perfect spreadsheet:",
+            "strong": "the mental exercise hurts enough",
+            "part2": "to trigger decisions."
+          }
+        },
+        "sub3": {
+          "title": "The interruptions nobody tracks",
+          "li1": "Client messages in channels where fast replies are implicitly treated as urgent.",
+          "li2": "Emails squeezed between meetings that break deep‑work blocks.",
+          "li3": "Last‑minute priority changes with no ticket or record.",
+          "li4": "“Quick” verbal requests that never make it into any estimate.",
+          "p1": {
+            "part1": "None of these lines shows up as a budget item for the client; all of them compete for the same attention that should be going into billable value. So the problem isn’t “people check their phones”: it’s that the working model",
+            "strong": "rewards reactivity",
+            "part2": "and makes good work more expensive."
+          }
+        }
+      },
+      "section3": {
+        "title": "3. The culture behind it: digital presenteeism",
+        "p1": {
+          "part1": "Classic presenteeism — being in the office even when you’re not performing — has mutated into",
+          "strong1": "“always online”",
+          "part2": ": permanently green status, inbox open and the feeling that replying late equals failing. The result is the same:",
+          "strong2": "the appearance of availability replaces the delivery of measurable value",
+          "part3": "."
+        },
+        "p2": "You see it in chat: everyone is “green” and yet no one finishes a deliverable. In feedback meetings, comments sound rushed, not thoughtful: “just a quick tweak” ends up as a full round of rework that never fit into the plan.",
+        "sub1": {
+          "title": "How it gets reinforced without bad intentions",
+          "p1": "Most managers don’t do it on purpose. It’s usually a mix of habits that look harmless on the surface:",
+          "li1": "Messages outside working hours that “don’t require” a reply but create implicit pressure.",
+          "li2": "Replying to clients in channels the whole team sees, normalising total availability.",
+          "li3": "Praising fast responses over the quality of the deliverable or the thinking behind it."
+        },
+        "sub2": {
+          "title": "Three leadership shifts (without buying anything)",
+          "li1": "Define synchronous vs asynchronous channels — and enforce the rule from the top.",
+          "li2": "Protect interruption‑free blocks in the team’s calendar.",
+          "li3": "Reward outcomes instead of digital presence time."
+        }
+      },
+      "section4": {
+        "title": "4. Non‑billable hours: the black hole of margins",
+        "p1": {
+          "part1": "",
+          "strong": "Non‑billable hours",
+          "part2": "are the hours you work but never add to an invoice. Many agencies know they exist in theory; few measure them rigorously, so they rarely budget for them properly. The result is a P&L that looks “reasonable” until you start adding up everything that never got billed."
+        },
+        "p2": {
+          "part1": "In creative and marketing agencies, sector references suggest these hours can represent",
+          "strong": "between 30% and 50%",
+          "part2": "of total time worked. If your ratio drops below certain thresholds, the problem stops being “a bad month” and becomes structural."
+        },
+        "p3": "Look at your calendar: there’s a 45‑minute “alignment” block nobody names as a deliverable, but everyone leaves with new actions. Added up, that’s time that never gets sold and ends up eating the project’s margin.",
+        "sub1": {
+          "title": "Categories that usually weigh the most",
+          "li1": "Internal coordination meetings with no clear deliverable — half an hour that wasn’t in the budget.",
+          "li2": "Fixes caused by weak or incomplete briefs — you redo work instead of moving forward.",
+          "li3": "Pre‑sales that never close — every “I’ll send it over later” is cost with no return.",
+          "p1": {
+            "part1": "If you want to bring order to",
+            "strong": "who does what and on what timeline",
+            "part2": ", the guide on",
+            "link": "team resource planning",
+            "part3": "connects schedule, budget and capacity instead of treating them as three separate worlds. It also helps you catch two usual shadows: tool‑management time (uploading files, permissions, statuses) and out‑of‑scope communication that creeps in through chat."
+          }
+        },
+        "sub2": {
+          "title": "How to calculate your billable‑hours ratio",
+          "p1": {
+            "part1": "Useful formula:",
+            "em": "(hours billed to clients in the last month / total hours worked in the last month) × 100",
+            "part2": ". As a rough guide: above",
+            "strong1": "65%",
+            "part3": "you’re usually in “normal” territory; between 50% and 65% there’s room for improvement; below",
+            "strong2": "50%",
+            "part4": "it’s safer to assume the problem is systemic, not just a bad month."
+          }
+        }
+      },
+      "section5": {
+        "title": "5. Silent scope creep: how projects eat their own margin",
+        "p1": {
+          "part1": "",
+          "strong": "Scope creep",
+          "part2": "is scope expanding without a matching budget adjustment. In agencies it’s almost a constant: the relationship continues, request after request lands, and the fear of “breaking the vibe” makes a lot of things quietly free."
+        },
+        "p2": "The moment is almost always the same: the client drops a “just a small change” late in the afternoon. It sounds harmless… until that sentence turns into new rounds of review, re‑estimation and another feedback loop that no longer fits in the margin.",
+        "p3": {
+          "part1": "If the work doesn’t have a clear",
+          "strong": "time container",
+          "part2": ", it tends to expand. This is where the",
+          "link": "Parkinson’s Law and project deadlines",
+          "part3": "comes in: without hard stops, effort fills the available space and margin disappears into “polishing details”."
+        },
+        "sub1": {
+          "title": "How to quantify it without over‑engineering",
+          "p1": {
+            "part1": "Compare estimated vs actual hours across your last ten projects. If average deviation is above",
+            "strong": "20–30%",
+            "part2": ", scope is drifting systematically — not because of one bad month but because of a pattern."
+          }
+        },
+        "sub2": {
+          "title": "Why it’s a symptom, not “bad luck”",
+          "p1": {
+            "part1": "The problem is rarely “the client is impossible”. Much more often, there are no clear boundaries and no single place where what’s in‑scope and out‑of‑scope gets recorded. The fix lives in",
+            "strong": "process and conversation",
+            "part2": ", not in individual heroics."
+          }
+        }
+      },
+      "section6": {
+        "title": "6. The metrics that actually predict whether your agency is profitable",
+        "p1": {
+          "part1": "Revenue can grow while profit stays flat: without project‑level margin, you’re just moving volume. The table below is a monthly compass; if you want to dig into operational detail, the piece on",
+          "link1": "performance KPIs for marketing agencies",
+          "part2": "unpacks each ratio with examples. To move from diagnosis to per‑project numbers, it’s also worth reading",
+          "link2": "how to measure real project profitability",
+          "part3": "."
+        },
+        "p2": "You’ll notice it in leadership meetings: if the recurring question is “how many hours did we sell?”, you’re probably managing the symptom, not the cause. The P&L doesn’t negotiate; it moves with project‑level margin.",
+        "table": {
+          "header": {
+            "metric": "Metric",
+            "formula": "Formula",
+            "healthy": "Healthy range",
+            "warning": "Warning sign"
+          },
+          "rows": {
+            "utilization": {
+              "metric": "Utilisation rate",
+              "formula": "Billable hours / total hours × 100",
+              "healthy": "70–80%",
+              "warning": "> 85% sustained"
+            },
+            "grossMargin": {
+              "metric": "Gross margin per project",
+              "formula": "(Revenue − direct cost) / revenue × 100",
+              "healthy": "> 50%",
+              "warning": "< 40%"
+            },
+            "budgetDeviation": {
+              "metric": "Budget deviation",
+              "formula": "(Actual hours − estimated hours) / estimated × 100",
+              "healthy": "< 15% on average",
+              "warning": "> 30% as a habit"
+            },
+            "revenuePerEmployee": {
+              "metric": "Revenue per employee",
+              "formula": "Total revenue / # employees (annual)",
+              "healthy": "€60k–€120k/year",
+              "warning": "< €50k/year"
+            },
+            "billableRatio": {
+              "metric": "Billable‑hours ratio",
+              "formula": "Billable hours / total hours × 100",
+              "healthy": "> 65%",
+              "warning": "< 50%"
+            },
+            "turnover": {
+              "metric": "Voluntary turnover rate",
+              "formula": "Voluntary leavers / average headcount × 100",
+              "healthy": "< 15% per year",
+              "warning": "> 20% per year"
+            }
+          }
+        },
+        "sub1": {
+          "title": "The most common mistake: measuring revenue instead of margin",
+          "p1": {
+            "part1": "You can bill a lot and still end up with ridiculous margins if direct costs eat the project alive. Revenue is useful vanity for the slide; ",
+            "strong": "margin per project and per service type",
+            "part2": "is what lets you decide what to sell, at what price and with which team."
+          }
+        }
+      },
+      "section7": {
+        "title": "7. What to change this week to start recovering margin",
+        "p1": "Monday at 9 a.m., when the team is still facing the first wave of messages, you don’t need a new framework; you need to break a habit. What you measure this week will tell you where margin is leaking.",
+        "li1": {
+          "strong": "Audit your last ten invoices:",
+          "part2": "compare estimated vs actual hours. If average deviation is above 20%, you have an estimation or scope problem you can quantify."
+        },
+        "li2": {
+          "strong": "Calculate your billable‑hours ratio.",
+          "part2": "If you don’t have data, the first fix is making hours visible — not buying more software."
+        },
+        "li3": {
+          "strong": "Cancel one weekly internal meeting",
+          "part2": "and replace it with a written update. See whether communication really gets worse; in many cases, nothing happens."
+        },
+        "li4": {
+          "strong": "Define a minimum scope protocol:",
+          "part2": "any request outside the original agreement gets written down before execution, even if it looks small."
+        },
+        "p2": "And an uncomfortable truth: if your team lives at 90–100% utilisation, there is no buffer — only delay funded with quality and margin. Adjust that target before trying to “win more utilisation”."
+      },
+      "faq": {
+        "title": "Frequently asked questions",
+        "q1": {
+          "question": "What utilisation rate is healthy in an agency?",
+          "answer": "In practice, industry references often place the sweet spot between 70% and 80%. Below that you have idle capacity; above it, the team starts generating hidden costs through errors, rework and burnout that eat margin faster than revenue grows. You’ll notice it when “everything looks fine” until a team channel suddenly goes quiet and deliverables start arriving late."
+        },
+        "q2": {
+          "question": "How do I know if context switching is killing my agency’s profitability?",
+          "answer": "The most direct indicator is comparing estimated vs actual hours across your last 10 projects. If average deviation is above 20%, context switching and unplanned interruptions are part of the problem. You can also ask the team directly how many projects each person handles simultaneously."
+        },
+        "q3": {
+          "question": "How many non‑billable hours does an agency usually have?",
+          "answer": "It depends heavily on the model, but in creative and marketing agencies non‑billable hours can represent between 30% and 50% of total hours worked. The only way to know in your case is to calculate the ratio: billable hours / total hours worked × 100."
+        },
+        "q4": {
+          "question": "What’s the difference between utilisation and profitability in an agency?",
+          "answer": "Utilisation measures the percentage of time the team is working. Profitability measures how much margin that work generates. They’re different variables: a team can be at 100% utilisation with negative margins if there’s lots of rework, non‑billable time or uncontrolled scope creep."
+        }
+      },
+      "toc": {
+        "tasaUtilizacion": "1. The occupancy trap",
+        "contextSwitching": "2. Context switching",
+        "presencialismoDigital": "3. Digital presenteeism",
+        "horasNoFacturables": "4. Non-billable hours",
+        "scopeCreep": "5. Scope creep",
+        "metricasRentabilidad": "6. Profitable metrics",
+        "accionesInmediatas": "7. What to change this week",
+        "preguntasFrecuentes": "Frequently asked questions"
+      },
+      "meta": {
+        "headline": "Why your agency loses profitability even when the team is always busy",
+        "description": "We analyze why your agency loses profitability."
+      },
+      "faqItems": [
+        {
+          "q": "What utilization rate is healthy in an agency?",
+          "a": "The standard industry reference sets the optimal range between 70% and 80%. Below that threshold, there is idle capacity; above it, the team starts generating hidden costs from errors, rework, and burnout that erode the margin faster than revenue grows."
+        },
+        {
+          "q": "How do I know if my agency is losing profitability due to context switching?",
+          "a": "The most direct indicator is comparing estimated hours with actual hours in your last 10 projects. If the average deviation exceeds 20%, context switching and unplanned interruptions are part of the problem. You can also directly ask the team how many projects each person handles simultaneously."
+        },
+        {
+          "q": "How many non-billable hours does an average agency have?",
+          "a": "It depends a lot on the model, but in creative services agencies, non-billable hours can represent between 30% and 50% of the total hours worked. The way to find out in your case is to calculate the ratio: billed hours / total hours worked × 100."
+        },
+        {
+          "q": "What is the difference between occupancy and profitability in an agency?",
+          "a": "Occupancy measures the percentage of time the team is working. Profitability measures how much margin that work generates. They are different variables: a team can be at 100% occupancy and have negative margins if there is a lot of rework, non-billable hours, or uncontrolled scope creep."
+        }
+      ]
+    },
+    "kpisAgenciasMarketing": {
+      "badge": "KPIs & operations",
+      "title": "KPIs for marketing agencies: 5 metrics that really matter in 2026",
+      "intro": {
+        "p1": "Measuring productivity in a factory is simple: you count units produced. In a creative or marketing agency, it is a minefield. Is being busy the same as being productive? Not necessarily. If your team is at full capacity but projects do not ship or margin disappears, the problem is usually visibility, not effort.",
+        "p2": "In 2026, the question is no longer just which KPI to look at: it is how much time it will cost you to measure it properly every week. The hidden cost is not the formula; it is the friction: chasing data, reconciling spreadsheets, and convincing everyone to fill in the same template.",
+        "callout": {
+          "prefix": "We go deep into timelines, Gantt charts, and resources in",
+          "linkText": "Project planning: schedule, budget, and resources",
+          "suffix": ". In this article the focus is what to measure, how often, and what to do when the number looks bad."
+        }
+      },
+      "table": {
+        "title": "Quick table: what each KPI measures and what decision it enables",
+        "descriptionPrefix": "Third column is deliberately",
+        "descriptionStrong": "executive",
+        "descriptionSuffix": ": if the KPI does not help you take an uncomfortable decision (hire, raise prices, cut scope), it is not a KPI; it is decoration. In practice, you notice it when the leadership team looks at the number and the conversation stalls at “okay… so now what?”.",
+        "headers": {
+          "kpi": "KPI",
+          "measure": "What it measures",
+          "decision": "Decision it enables"
+        },
+        "rows": {
+          "utilizacion": {
+            "kpi": "Utilisation",
+            "measure": "Hours of productive work (client/production) versus net capacity.",
+            "decision": "Decide whether to hire, slow down sales, or move hours from internal work to client work."
+          },
+          "rentabilidad": {
+            "kpi": "Profitability + pacing",
+            "measure": "Margin per project and pace of hour consumption versus the month.",
+            "decision": "Decide whether to raise the fee, cut scope, or re‑plan before invoicing."
+          },
+          "estimadoReal": {
+            "kpi": "Estimated vs actual",
+            "measure": "Accuracy of budgets and plans.",
+            "decision": "Decide buffers and budget templates by type of deliverable."
+          },
+          "capacidadArea": {
+            "kpi": "Capacity by area",
+            "measure": "Where the bottleneck really is (Paid, Design, etc.).",
+            "decision": "Decide whether to outsource, reassign between departments, or renegotiate deadlines."
+          },
+          "okrs": {
+            "kpi": "OKRs / goals",
+            "measure": "Whether effort turns into business outcomes.",
+            "decision": "Decide whether key results are measuring activity or impact; align strategy and margin."
+          }
+        }
+      },
+      "sections": {
+        "utilizacion": {
+          "title": "1. Utilisation rate (productive load vs. capacity)",
+          "p1": {
+            "prefix": "This is the operational KPI par excellence: what share of the team’s available time goes to work that feeds revenue or production versus real capacity (after subtracting absences). Typical formula:",
+            "strong": "(client or production hours / net available hours) × 100",
+            "suffix": ". Agree as a team what counts as “available” and which hours are client vs. internal so the number is comparable month to month."
+          },
+          "p2": "A rough benchmark in many service agencies is 70–85%; your business mix (retainers, one‑off projects, internal R&D) changes the target. It is not an absolute truth. You feel it when “we are slammed” in the stand‑up… but two days later the project is already late and margin starts to shake.",
+          "p3": {
+            "strong": "If you do it manually:",
+            "text": " you can get the same number with pen and paper or a spreadsheet: hours per person and week, net capacity (after absences), and what share goes to client or production work versus total. It is tedious, but the KPI is the same; the cost is the time it takes to update it every week. A starting structure —inventory of hours, grid, and load %— lives in the",
+            "linkText": "resource planning template for agencies",
+            "suffix": " (Excel or Sheets, ready to download)."
+          },
+          "p4": {
+            "prefix": "In",
+            "strong": "Taimbox",
+            "suffix": " you see per‑person weekly load versus capacity in the team‑capacity board and planning views, without relying on a parallel spreadsheet that goes stale."
+          },
+          "warning": {
+            "title": "If the number is high or low",
+            "high": {
+              "strong": "Above ~90%:",
+              "text": " do not celebrate being “full”. It is a risk signal for burnout and errors. Raise prices, hire, or slow down sales in the short term; sustained overwork precedes talent churn."
+            },
+            "low": {
+              "strong": "Well below the expected range:",
+              "text": " review pipeline and pricing, and whether too many hours live in internal work or admin that could be turned into client work with better packaging."
+            }
+          }
+        },
+        "rentabilidad": {
+          "title": "2. Profitability per project and pacing (rhythm)",
+          "p1": {
+            "prefix": "Not all monthly retainers are created equal: some look juicy until you add up endless revisions. Profitability per project relates",
+            "strong1": "revenue",
+            "middle": " (fee, accrual) with",
+            "strong2": "hour cost",
+            "suffix": " and tells you whether that client is sustainable."
+          },
+          "p2": "In 2026, agencies cannot wait until month‑end close to find out whether a project has eaten the margin. You need pacing: comparing hour consumption with time elapsed in the month (are you ahead of or behind the ideal pace?). If you are already off‑track halfway through the month, the conversation with the client still has time. The typical scar: “we’re fine” until day 12, and suddenly everyone is asking about the same project… with the spreadsheet already in multiple versions and the client in emergency mode.",
+          "example": {
+            "title": "Example with numbers (mid‑month)",
+            "text": {
+              "prefix": "You have a fee of",
+              "strong1": "60 h",
+              "middle1": " for the month. On day",
+              "strong2": "15",
+              "middle2": " roughly",
+              "strong3": "~50%",
+              "middle3": " of the calendar has passed: at that “balanced” pace you would have around",
+              "strong4": "30 h",
+              "suffix": " burned (half the allowance). If by that date the team has logged 40 h, you are 10 h above the expected pace; in a single metric, pacing is around 133% versus time elapsed (40 vs. 30: you have used 40/60 of the fee when the clock only marks 50% of the month)."
+            }
+          },
+          "p3": {
+            "strong": "If you do it in Excel:",
+            "text": " a single row per project with monthly fee, hours consumed, budgeted hours, and a column with the percentage of month elapsed is enough; if hours grow faster than the calendar, pacing is off. The trick is keeping data up to date without fighting five versions of the same sheet."
+          },
+          "p4": {
+            "prefix": "In",
+            "strong1": "Taimbox",
+            "middle": ",",
+            "strong2": "financial health",
+            "middle2": " and the",
+            "linkText": "profitability reports",
+            "suffix": " connect budgeted hours, fee, and consumption pace so you do not find out too late."
+          },
+          "warning": {
+            "title": "If the number is high or low",
+            "strong1": "Pacing in the red halfway through the month:",
+            "text1": " talk scope, pause work, or reprioritise the team",
+            "em": "before",
+            "middle": " closing the month.",
+            "strong2": " High margin but operational chaos:",
+            "text2": " enjoy the margin but document the process; it may not repeat if the team cannot sustain the rhythm."
+          }
+        },
+        "estimacion": {
+          "title": "3. Deviation between estimate and reality",
+          "p1": {
+            "prefix": "A useful formula:",
+            "strong1": "(actual hours − estimated hours) / estimated hours",
+            "middle": " by type of work or project. It is there to help you",
+            "strong2": "learn to budget",
+            "suffix": ", not to publicly punish the project manager: if design always runs 20% over, the next budget carries that buffer explicitly. In real life, the director asks about it when you are already in the “one more round” phase and you still do not know whether the deviation was a one‑off or the pattern."
+          },
+          "p2": "If you do it manually: a table in Excel (or your ERP) with estimated and actual by project or deliverable type; a discipline‑level filter shows whether the deviation is systematic. Project retrospectives at closing time are when you update the ratios for the next budget.",
+          "warning": {
+            "title": "If the number is high or low",
+            "strong1": "Systematic deviation (e.g. +20%) for a type of deliverable:",
+            "text1": " add buffer in the budget template and a short scope checklist in the proposal.",
+            "strong2": " If you always “nail it” by luck:",
+            "text2": " check whether you are over‑assigning unlogged internal hours."
+          }
+        },
+        "departamento": {
+          "title": "4. Capacity by department or skill",
+          "p1": "Sometimes the agency is “at full capacity”, but only one area (Paid, production, design) is dragging the bottleneck. Without this view, you mix gut feeling with data and decide too late. You see it when the rest of the team is “green” for the week… and design/production is drowning in a queue nobody sees until deliveries are late.",
+          "p2": {
+            "strong": "If you do it manually:",
+            "text": " a simple matrix (even in Excel) with departments in rows and hours loaded or % capacity per week; or a short weekly meeting where each lead states their team’s status (green/amber/red). Without per‑area granularity, you only see the average and have no idea where to add support."
+          },
+          "warning": {
+            "title": "If the number is high or low",
+            "strong1": "A single department in the red:",
+            "text1": " reassign between areas, outsource a piece, or renegotiate deadlines with the client.",
+            "strong2": " Everyone in the green but weak revenue:",
+            "text2": " the problem is pipeline or pricing, not hours capacity."
+          }
+        },
+        "okrs": {
+          "title": "5. Alignment with OKRs and quarterly goals",
+          "p1": {
+            "prefix": "Productivity is not just “logging hours”: it is moving towards goals that matter for the business. This KPI measures",
+            "strong": "effectiveness",
+            "suffix": " (are we going where we said we would?), not just efficiency. If utilisation is high but strategic results do not show up, something is mis‑aligning priorities. You notice it when OKRs look “green” on deliverables… but margin and retention stay flat and you have to explain why to leadership."
+          },
+          "p2": "If you do it manually: a table with key results, owner, and % progress (Notion, Google Sheets, or Excel) plus an honest quarterly review. The key is that KRs do not just measure activity: if margin goes up but business outcomes do not, the strategic indicator is poorly chosen.",
+          "warning": {
+            "title": "If the number is high or low",
+            "strong1": "OKRs “green” but poor margin:",
+            "text1": " review whether key results measure activity (meetings, deliverables) instead of business outcome.",
+            "strong2": " Strong margin but OKRs in the red:",
+            "text2": " you may be over‑optimising the short term and neglecting strategic position (brand, product, retention)."
+          }
+        },
+        "excelVsTaimbox": {
+          "title": "Excel vs. an integrated tool: friction and time",
+          "p1": {
+            "strong": "Yes, you can close this tab and stick with Excel.",
+            "text": " Everything above applies with method, meetings, and templates: the educational value does not depend on a specific tool. If you already have sheets that reconcile and a weekly ritual that feeds them, you do not need to change anything just because you read this article."
+          },
+          "p2": {
+            "prefix": "Where most teams get stuck is not the formula; it is the cost of maintaining it:",
+            "strong": "data archaeology",
+            "suffix": " — chasing people to log hours, reconciling versions, and tying the monthly fee to hours consumed when the project’s pace drifted ten days ago. The problem is not only that Excel is static; it is that an agency’s day‑to‑day is liquid. At some point that liquidity blows up in your face: by Monday you already have “version 4”, Tuesday brings changes, and by Thursday nobody wants to touch the file."
+          },
+          "p3": "In 2026 the industry is moving towards tools that reduce manual reporting work; what matters for your agency is whether the metric is born from how you work (planning and hour tracking in flow), not from a Monday spent “building the dashboard”.",
+          "p4": {
+            "prefix": "That is where an",
+            "strong1": "integrated platform",
+            "middle": " comes in: it does not replace human judgement, but it concentrates planning and the reading of load and margin so you spend meetings deciding, not arguing over whether the number is from Excel version 3 or 4. In",
+            "strong2": "Taimbox",
+            "suffix": ", the metrics you used to build by hand are derived from planning and time tracking in the same flow, with far less friction than reconciling sheets every Monday."
+          },
+          "callout": {
+            "prefix": "The value is not just the data: it is the",
+            "strong": "near‑zero friction",
+            "suffix": " when metrics are derived from planning and time tracking in the same place."
+          }
+        },
+        "links": {
+          "title": "If you want to see it in the product",
+          "p1": {
+            "prefix": "The",
+            "linkText": "feature guide",
+            "suffix": " walks through planner, reports, and team views similar to what we have described above (capacity, profitability, departments). If you are the type who prefers “seeing it once” before building yet another spreadsheet from scratch, this is where it fits."
+          },
+          "buttons": {
+            "planner": "Planner",
+            "reports": "Profitability reports",
+            "integrations": "Integrations"
+          }
+        },
+        "closing": {
+          "p1": {
+            "prefix": "Measuring productivity is not about policing the team: it is about giving them visibility so profitable work is visible and the agency is sustainable. When work stretches without limits, the same conversation tends to bring up",
+            "linkParkinson": "Parkinson’s Law",
+            "middle": " and",
+            "linkTimeboxing": "timeboxing",
+            "suffix": ": time limits and deadlines as a cultural counterweight."
+          },
+          "cta": {
+            "title": "Profitability with clear numbers",
+            "text": {
+              "prefix": "Capacity and project pace in a single flow in",
+              "strong": "Taimbox",
+              "suffix": ", for those who have already closed Excel on Mondays. No commitment to get started."
+            },
+            "caption": "The final scar is usually the same: the day you ask “why isn’t the margin showing up?”, the answer is “because the month ran away from us”, and you want the number to tell you where it leaked.",
+            "buttons": {
+              "reports": "See profitability and forecast",
+              "planner": "Resource planner"
+            },
+            "pricingLink": "See pricing and plans"
+          },
+          "signature": "Written by the Taimbox team — Resource management and profitability for agencies."
+        }
+      },
+      "toc": {
+        "metricasFinancieras": "1. Financial metrics",
+        "metricasOperativas": "2. Operational metrics",
+        "metricasEquipo": "3. Team metrics",
+        "preguntasFrecuentes": "Frequently asked questions"
+      },
+      "meta": {
+        "headline": "The 15 essential KPIs for marketing agencies in 2026",
+        "description": "Complete guide to financial and operational metrics to measure the health of your marketing agency and make data-driven decisions."
+      }
+    },
+    "plantillaPlanificacionRecursos": {
+      "hero": {
+        "badge": "Free resources",
+        "title": "Free resource‑planning template for agencies",
+        "p1": "Every agency starts the same way: an Excel file with names in columns, projects in rows, and a formula summing hours. It works while the team still fits on one screen. Once it does not, the problem is not the sheet itself: it is the time it takes to keep it alive and how easily it hides overloads.",
+        "p2": "This article is not an “Excel vs. software” pitch: it is a guide to build the most useful template you can, understand where it starts to fail, and know which criteria to keep if you later move to an integrated tool. At the end you will find an .xlsx template with five sheets ready to use: instructions, team, projects, weekly allocation, and insights with conditional formatting and KPIs.",
+        "p3": "If you have been comparing free resource‑planning templates, this one is designed for real agency use: it does not just distribute hours; it also crosses net capacity, pacing, cost, and margin.",
+        "metricsPrefix": "If you are looking for the metrics that go with this template, we go deeper in",
+        "metricsLink": "KPIs for marketing agencies: 5 metrics that really matter in 2026",
+        "metricsSuffix": ". Here the focus is on the sheet structure, the formulas, and the moment when it stops being worth the effort.",
+        "downloadCta": ".xlsx template download",
+        "downloadHint": "5 sheets, native formulas, conditional formatting, dropdowns, and cell protection. Works in Excel and Google Sheets."
+      },
+      "sections": {
+        "intro": {
+          "title": "1. Why Excel is every agency’s “first love”",
+          "p1": "Zero cost, total flexibility, and a learning curve the team already mastered. For five people and four clients, a well‑designed sheet is enough to see who is loaded and where there is slack. Nobody has to justify a licence or set up permissions: you open, type, and share. The scar is when “version 4” arrives by email on Tuesday and nobody knows which one reflects reality.",
+          "p2": "The romance lasts as long as maintenance is anecdotal. With eight or ten people, several simultaneous projects, and a couple of recent hires, the picture changes: someone has to become the sheet’s gatekeeper. Updating who is working on what, chasing those who do not log their hours, and spotting that a formula drifted three weeks ago.",
+          "p3": "That gatekeeper role usually lands on the traffic manager or PM. And there you get an invisible cost: the hours they spend on the sheet do not go to account management or production. The “free” tool charges a toll in billable people’s time.",
+          "callout": "In productivity studies on service agencies, middle managers spend between 3 and 6 hours a week on manual reporting (preparing data, reconciling versions, updating dashboards). Time that is neither billed nor seen as a “cost” until you measure it."
+        },
+        "capacity": {
+          "title": "2. Gross vs. net capacity: the first formula that matters",
+          "p1": "Gross capacity is the contract: usually 40 h/week. Net capacity is what is left for client or production work after subtracting recurring meetings, training, internal admin, and one‑off absences (vacations, holidays, sick leave). The scar appears when you compare “gross vs. assigned”, the team is exhausted, and the number still looks comfortably green.",
+          "p2": "The difference matters because if you compare assigned hours against gross capacity, utilization always looks low and “there is room” that in reality does not exist. It is the most common error in agency templates and the one that hides the most overload.",
+          "exampleTitle": "Example with numbers",
+          "table": {
+            "headers": {
+              "person": "Person",
+              "gross": "Gross (h)",
+              "meetings": "Meetings",
+              "admin": "Admin",
+              "absences": "Absences",
+              "net": "Net (h)"
+            },
+            "rows": {
+              "ana": "Ana L. (Paid Media)",
+              "luis": "Luis G. (Design)",
+              "maria": "María P. (Accounts)"
+            }
+          },
+          "exampleNote": "Ana has 32 real hours for client work, not 40. If you assign her 35 project hours, she is not “at 87%”: she is at 109% of her real capacity, and that turns into invisible overtime.",
+          "formulaTitle": "Template formula (\"Team\" sheet, column G)",
+          "formulaNote": "In other words: Working hours − Meetings − Admin − Absences. Four subtraction columns; net capacity updates automatically as you fill in the others."
+        },
+        "anatomy": {
+          "title": "3. Template anatomy: four sheets and how they connect",
+          "intro": "A professional structure rests on four linked sheets (plus one with instructions): team inventory, project catalog, weekly allocation grid, and insights dashboard. Each feeds the next; if one fails, the final picture stops making sense. You notice it when a sheet “has not been touched” and the KPIs still change… because a formula was pointing at the wrong range.",
+          "sheetTeam": {
+            "title": "\"Team\" sheet — Capacity inventory",
+            "body": "Here you define who you are and how many real hours each person has. Eight columns: person, role, working hours, meetings, admin/training, weekly absences, net capacity (automatic formula), and internal hourly cost. The totals row sums working hours, meetings, admin, absences, and net capacity for the whole team.",
+            "note": "Key: keep the “Weekly absences” column up to date when someone has holidays or time off. If it is ignored, the utilization % in Insights starts lying quietly."
+          },
+          "sheetProjects": {
+            "title": "\"Projects\" sheet — Fee, budget, and margin",
+            "body": "Each project (or client‑service combo) takes one row. You fill in name, type (Retainer / Project / Internal via dropdown), monthly fee, and budgeted monthly hours. The calculation columns do the rest:",
+            "points": {
+              "hoursAssigned": "Weekly hours assigned: automatic sum from the Allocation sheet (SUMIF).",
+              "pacing": "Pacing (%): hours assigned this week vs. average weekly budget (monthly hours ÷ 4). If it goes over 100%, you are running ahead of budget.",
+              "cost": "Estimated weekly cost: crosses assigned hours with each person’s hourly cost (SUMPRODUCT × VLOOKUP).",
+              "margin": "Estimated monthly margin: fee − (weekly cost × 4). If it is negative, the cell turns red."
+            },
+            "note": "Key: margin is an estimate based on current allocation; it does not replace the actual accounting close, but it flags trend changes before it is too late."
+          },
+          "sheetAssignment": {
+            "title": "\"Allocation\" sheet — The weekly grid",
+            "body1": "The cross between people × projects × week. Each row is an allocation block: who, on which project, which week, how many hours, and a free‑text note. The Person and Project columns use dropdowns linked to the Team and Projects sheets, which prevents typos that would break SUMIF formulas.",
+            "body2": "The template includes two weeks of sample data (W12 and W13) with 8 people and 6 projects distributed in a realistic way, plus 20 empty rows with dropdowns already configured so you can start filling them in right away.",
+            "note": "Key: the granularity level. Weeks tend to be the sweet spot in agencies; days are too fine‑grained to maintain in Excel and months are too coarse to spot spikes."
+          },
+          "sheetInsights": {
+            "title": "\"Insights\" sheet — Alerts and KPI dashboard",
+            "body": "Everything is automatic: department, net capacity, assigned hours, free hours, utilization (%), status, weekly cost, and number of projects per person. The utilization column uses real conditional formatting with three colour levels:",
+            "badges": {
+              "optimal": "70–90% → green",
+              "risk": "> 90% → amber",
+              "overload": "≥ 100% → red"
+            },
+            "status": "The \"Status\" column goes one step further with four levels: ✅ OPTIMAL, ⚠️ AT RISK, ⛔ OVERLOADED, and 💤 UNDER‑LOADED.",
+            "kpis": "Below the table you get a summary KPI block: average team utilization, people at risk or overloaded, total free hours, total weekly cost, and the estimated Excel tax (weekly and annual, in red).",
+            "note": "Key: look at this sheet at the start of each week, not at the end of the month. Early alerts are what separate a decorative template from an operational one."
+          },
+          "mockup": {
+            "caption": "Mock‑up: weekly grid (visual example)",
+            "headers": {
+              "person": "Person",
+              "netCapacity": "Net cap. (h)",
+              "assigned": "Assigned h.",
+              "free": "Free h.",
+              "utilization": "Utilization",
+              "status": "Status"
+            },
+            "rows": {
+              "ana": {
+                "name": "Ana L.",
+                "status": "⚠️ AT RISK"
+              },
+              "luis": {
+                "name": "Luis G.",
+                "status": "⚠️ AT RISK"
+              },
+              "maria": {
+                "name": "María P.",
+                "status": "⛔ OVERLOADED"
+              },
+              "jorge": {
+                "name": "Jorge N.",
+                "status": "⚠️ AT RISK"
+              }
+            }
+          },
+          "downloadCta": "Download template with all four sheets"
+        },
+        "utilization": {
+          "title": "4. Utilization formula and conditional formatting",
+          "intro": "The central metric in the template is the utilization rate: what share of a person’s net capacity is assigned to projects. The formula is straightforward:",
+          "masterFormulaTitle": "Master formula (\"Insights\" sheet, column F)",
+          "masterFormulaNote": "Where D2 is assigned hours (calculated with SUMIF from Allocation) and C2 is net capacity (brought in from Team). IFERROR avoids #DIV/0! when net capacity is zero.",
+          "conditionalTitle": "Conditional formatting (three colour levels)",
+          "conditionalIntro": "The template applies native conditional formatting to the utilization column. Excel and Google Sheets both interpret it out of the box:",
+          "conditionalPoints": {
+            "optimal": "Green (70–90%): sweet spot, there is still buffer for surprises.",
+            "risk": "Amber (> 90%): risk zone, any surprise will overflow capacity.",
+            "overload": "Red (≥ 100%): declared overload, the person has no hours left."
+          },
+          "statusTitle": "\"Status\" column (four levels with nested IF formula)",
+          "statusNote": "Four states you can read at a glance. “Under‑loaded” does not mean the person is not working; they might be in training or have absences that week. The value is in the pattern across several weeks.",
+          "exampleTitle": "Worked example (week 12)",
+          "exampleBody": "María has 29 net hours (40 − 8 meetings − 3 admin). This week she has 29 hours assigned across four projects. Utilization: 29 / 29 = 100%. Status: ⛔ OVERLOADED. She has no free hour for anything unexpected. If a client demands something urgent, someone will do unpaid overtime or a deliverable will slip."
+        },
+        "pacing": {
+          "title": "5. Project pacing and estimated margin",
+          "p1": "The Projects sheet adds two metrics a simple grid usually lacks: pacing (the rate at which you are burning hours) and estimated monthly margin. The scar is when Excel tells you pacing is fine… and the fee is still gone in hours before the month is over.",
+          "p2": "Pacing compares hours assigned this week with what “should” be assigned if you spread the monthly budget evenly (budgeted hours ÷ 4 weeks). A pacing of 120% means you are burning hours 20% faster than planned; if that continues, the fee will run out before month‑end.",
+          "exampleTitle": "Example: “Brand Beta — Website” project",
+          "table": {
+            "headers": {
+              "metric": "Metric",
+              "value": "Value"
+            },
+            "rows": {
+              "fee": {
+                "label": "Monthly fee",
+                "value": "€8,000"
+              },
+              "budgetedHours": {
+                "label": "Budgeted hours / month",
+                "value": "100 h"
+              },
+              "weeklyAverage": {
+                "label": "Budgeted weekly average",
+                "value": "25 h (100 ÷ 4)"
+              },
+              "assignedThisWeek": {
+                "label": "Hours assigned this week",
+                "value": "30 h"
+              },
+              "pacing": {
+                "label": "Pacing",
+                "value": "120%"
+              },
+              "margin": {
+                "label": "Estimated monthly margin",
+                "value": "8,000 − (weekly cost × 4)"
+              }
+            }
+          },
+          "note": "If pacing stays above 100% for two weeks in a row, it is a clear sign that scope has expanded or the estimate was too low. Conditional formatting paints the cell amber (>100%) or red (>120%) so it stands out."
+        },
+        "excelTax": {
+          "title": "6. The \"Excel tax\": how much it costs to maintain the sheet",
+          "p1": "If a PM with an hourly cost of €40 spends 4 hours a week updating the Excel (chasing data, fixing formulas, reconciling versions, preparing the summary for the workload meeting), the direct cost is. The scar: when reporting takes more time than the decisions it is supposed to support.",
+          "formula": "4 h × €40/h × 4 weeks = €640/month",
+          "formulaNote": "That is €7,680/year to keep a static file alive. If two people touch it regularly, multiply.",
+          "p2": "It is not “free”: it is a fixed tax on margin that never shows up on any cost line because nobody bills it. On top of that you have what the PM is not doing while feeding the sheet: account management, scope negotiation, time with the creative team.",
+          "p3": "The template includes this calculation in the Insights KPI block (4 × PM hourly cost × 52 weeks) so the number is visible every time the file is opened."
+        },
+        "ceiling": {
+          "title": "7. Glass ceiling: three points where the sheet breaks",
+          "blocks": {
+            "dataArcheology": {
+              "title": "1. Data archaeology",
+              "body": "Chasing the whole team to fill in hours, reconciling file versions, and discovering that last week’s sheet never got updated. The data exists, but getting to it costs more than the value it provides. The scar is when the “key number” shows up right after the meeting where you needed it most."
+            },
+            "realityGap": {
+              "title": "2. Disconnect from reality",
+              "body": "Excel says hours are assigned, but it has no idea whether tasks are executed or whether project margin is sliding. You can have “100% allocation” and still discover at month‑end that the fee was burned by week two. There is no real‑time pacing, only whatever you manually calculate."
+            },
+            "humanError": {
+              "title": "3. Human formula error",
+              "body": "A cell deleted by mistake, a row copied poorly, or a range shifted when inserting columns. The result: a designer has been at 140% load for three weeks and nobody saw it because the formula was pointing at the wrong range. By the time you catch it, the damage is done. Cell protection in the template reduces this risk but does not eliminate it entirely."
+            }
+          },
+          "conclusion": "None of these problems are Excel’s fault as a tool; they are symptoms of a manual flow. Any sheet, no matter how well‑designed, needs someone feeding it on time and nobody breaking it by mistake. In small teams the cost is manageable; as you scale, it becomes an operational risk."
+        },
+        "validation": {
+          "title": "8. Data validation and protection: how not to break the sheet",
+          "intro": "Roughly 80% of errors in a resource template come from two places: someone types a name with a different accent so SUMIF does not match, or someone deletes a formula by accident. The template includes two mechanisms to reduce both. You feel it when someone “just looks” at a cell and silently breaks the margin calculation.",
+          "dropdowns": {
+            "title": "Dropdowns (data validation)",
+            "body": "The \"Person\" and \"Project\" columns in the Allocation sheet use dropdown lists linked to the names in the Team and Projects sheets. When you click a cell, a little arrow appears and you pick from the list instead of typing. This guarantees the name matches the source sheet character for character so SUMIF, VLOOKUP, and COUNTIF all work.",
+            "note": "If you need to add a new person or project, add it to the relevant sheet first and then extend the dropdown list range (Data → Data validation)."
+          },
+          "protection": {
+            "title": "Cell protection",
+            "body": "All formula cells (Net capacity, Utilization, Status, Margin, KPIs…) are protected: if you try to type over them, Excel warns you. Input cells (name, hours, notes) remain unlocked. You can turn protection off without a password (Review → Unprotect sheet) if you need to adjust something, but while it is on it prevents accidental deletion.",
+            "note": "In Google Sheets, when you import the .xlsx file, protection becomes native \"protected ranges\" with the same effect."
+          }
+        },
+        "scale": {
+          "title": "9. How to scale the template week by week",
+          "intro": "The template ships with two example weeks (W12 and W13). To add a new week, the process is:",
+          "steps": {
+            "step1": "\"Team\" sheet: review the \"Weekly absences\" column. If someone has holidays or a bank holiday, update their hours. Net capacity recalculates automatically.",
+            "step2": "\"Allocation\" sheet: add new rows for the following week. Use the Person and Project dropdowns. You can copy rows from the previous week and change the \"Week\" column and hours.",
+            "step3": "\"Insights\" sheet: do not touch anything. SUMIF formulas add up all Allocation rows regardless of week, so the dashboard updates itself."
+          },
+          "trickTitle": "Tip: filter by week",
+          "trickBody": "All data sheets have filters enabled. In Allocation you can filter by the \"Week\" column to see only the current week. In Insights you can filter by department to review a specific team’s load. Template totals always sum the full range, but visual filters let you focus on what matters for each meeting.",
+          "limitation": "Limitation: because Insights sums all weeks, if you leave old Allocation rows in place, accumulated hours will grow week after week. For a \"this week only\" dashboard, filter or delete old week rows. This is one of the frictions of a manual model that an integrated tool solves automatically."
+        },
+        "sheetsVsExcel": {
+          "title": "10. Google Sheets vs. Excel: does anything change?",
+          "intro": "The template works in both; the formulas are compatible. The meaningful difference is operational:",
+          "points": {
+            "collaboration": "Real‑time collaboration: Sheets lets several people edit at once, which reduces the “v3 or v4?” problem. It does not, however, remove the risk of overwriting cells or breaking a formula by mistake.",
+            "history": "Change history: Sheets saves versions automatically. Excel does too if you use OneDrive/SharePoint. In practice both cover the “who broke row 12?” case.",
+            "dropdownProtection": "Dropdowns and protection: when you import the .xlsx into Google Sheets, dropdowns become native data‑validation lists and protection becomes protected ranges. No need to reconfigure anything.",
+            "performance": "Performance: with many rows and cross formulas, local Excel is usually smoother than Sheets in the browser. For templates covering 5–30 people, the difference is negligible."
+          },
+          "conclusion": "Bottom line: the file format does not matter. The ceiling is the manual model, not whether you open .xlsx locally or import it into Drive."
+        },
+        "evolution": {
+          "title": "11. Evolution: from filling cells to passive planning",
+          "p1": "The logic you have just structured — net capacity, allocation grid, pacing, margin, and utilization — is exactly the same logic an integrated system uses. The difference is who maintains it: you by hand, or the tool in the background.",
+          "p2": "In Taimbox, you drag blocks in the hourly planner. Utilization reports, department‑level workload, and project‑level margin all flow from that movement without someone re‑importing numbers every Monday. The criteria are yours; the data‑crunching stops depending on copy‑paste.",
+          "p3": "This is not about “throwing Excel away” on day one: it is about moving the mental template (and the formulas) into a place where the data does not drift. The natural evolution once the team no longer fits comfortably in shared rows and columns.",
+          "calloutBody": "Passive planning: you plan; Taimbox calculates utilization, margin, and capacity in the background. The metrics you used to build manually now emerge from how you actually work, without reconciling sheets.",
+          "calloutNote": "The profitability reports and the resource planner each have their own landing pages that go into the details."
+        }
+      },
+      "faq": {
+        "title": "Frequently asked questions",
+        "items": {
+          "needMacros": {
+            "question": "Do I need macros or VBA for the template to work?",
+            "answer": "No. It only uses standard formulas (SUM, IF, SUMIF, VLOOKUP, SUMPRODUCT, COUNTIF) and native conditional formatting. It works in Excel, LibreOffice, and Google Sheets without enabling macros."
+          },
+          "frequency": {
+            "question": "How often do I need to update the template?",
+            "answer": "Ideally at the start of each week (or the end of the previous one): adjust absences in the Team sheet and add allocations for the new week. Weekly cadence gives you time to react before overload turns into a crisis."
+          },
+          "whenExcelBreaks": {
+            "question": "From how many people does Excel stop being practical?",
+            "answer": "There is no magic number; it depends more on the pace of change (new projects, staff changes) than on headcount. In practice many agencies feel the friction between roughly 8 and 15 people with several parallel projects: from that point on, weekly maintenance stops paying off."
+          },
+          "kanban": {
+            "question": "Can I use this template alongside a Kanban board (Trello, Asana…)?",
+            "answer": "Yes. The board manages the flow of tasks; the resource template manages hours and capacity. They complement each other: the board tells you what is being worked on and the template tells you who has hours left to do it."
+          },
+          "healthyRange": {
+            "question": "What utilization range is “healthy” in an agency?",
+            "answer": "As a rough guide, 70–85% of net capacity in many service agencies. Below that, you may have pipeline issues; above 90% you start to see burnout and errors. The ideal point depends on your mix of work (retainers, one‑off projects, internal R&D)."
+          },
+          "gantt": {
+            "question": "What is the difference between this template and a Gantt chart?",
+            "answerPrefix": "A Gantt chart orders tasks on a",
+            "answerLink": "project timeline (who does what and when)",
+            "answerSuffix": "; the resource template focuses on capacity and workload (how many hours each person has and how many are assigned). On complex projects, the two views complement one another."
+          },
+          "pacingMonths": {
+            "question": "Does pacing account for months having different lengths?",
+            "answer": "The formula divides budgeted hours by 4 weeks as an approximation. In months with 5 working weeks, real pacing will be slightly lower than shown. For most agencies this is accurate enough; if you need day‑level precision, an integrated system is a better fit."
+          },
+          "updateDropdowns": {
+            "question": "How do I update dropdowns when I add a new person or project?",
+            "answer": "In Excel: go to the Allocation sheet, select the column with the dropdown, Data → Data validation, and extend the list range. In Google Sheets: click the cell, dropdown icon, edit list. Names must match exactly those in the Team or Projects sheets."
+          }
+        }
+      },
+      "summary": {
+        "title": "Summary: what changes with a well‑built template",
+        "p1": "The difference between an agency that “thinks it is doing fine” and one that knows it is usually lives in a handful of Excel columns: net capacity, assigned hours, utilization, pacing, and margin. It is not rocket science: it is data discipline, dropdowns so nothing breaks, protection so you do not overwrite what matters, and weekly review.",
+        "p2": "When that discipline no longer scales with a sheet, the same logic can live in a tool that updates numbers passively. The criteria you have just learned do not expire; the medium you apply them in can evolve.",
+        "links": {
+          "prefix": "The KPIs that go with this template — utilization, pacing, estimated vs. actual — are covered in more depth in",
+          "kpis": "KPIs for marketing agencies",
+          "middle1": ". Time‑management that keeps tasks from expanding without control appears in",
+          "parkinson": "Parkinson’s Law",
+          "middle2": "and",
+          "timeboxing": "timeboxing",
+          "middle3": ". The global picture of schedule + budget + team comes together in",
+          "projects": "project planning",
+          "suffix": "."
+        }
+      },
+      "cta": {
+        "links": {
+          "planner": "Planner",
+          "reports": "Profitability reports",
+          "guide": "Feature guide"
+        },
+        "mainTitle": "The template is the first step; the planner is the next one",
+        "mainSubtitle": "Capacity, allocation, pacing, and utilization without maintaining the sheet by hand. You can explore Taimbox with no commitment.",
+        "primaryCta": "How Taimbox automates your template",
+        "secondaryCta": "Download .xlsx template",
+        "pricingLink": "See plans and pricing",
+        "footerNote": "Written by the Taimbox team — Resource management and profitability for agencies."
+      },
+      "toc": {
+        "introExcel": "1. Excel as a first step",
+        "capacidadBrutaNeta": "2. Gross vs net capacity",
+        "anatomiaPlantilla": "3. Template anatomy",
+        "formulaUtilizacion": "4. Utilization formula",
+        "pacingProyecto": "5. Project pacing",
+        "impuestoExcel": "6. The Excel tax",
+        "techoCristal": "7. The glass ceiling",
+        "validacionProteccion": "8. Validation and protection",
+        "escalarSemana": "9. Scaling week by week",
+        "googleSheets": "10. Google Sheets vs Excel",
+        "evolucionTaimbox": "11. Evolution to Taimbox",
+        "preguntasFrecuentes": "Frequently asked questions"
+      },
+      "meta": {
+        "headline": "Free agency resource planning template",
+        "description": "Download our Excel/Google Sheets template to manage your team's capacity, project pacing, and agency margin."
+      }
+    },
+    "planificacionProyectos": {
+      "badge": "Practical guide",
+      "title": "Project planning: schedule, budget, and resources",
+      "intro": {
+        "p1": "You have seen the pattern again and again: the schedule says the project ends in March, but in April people are still being reassigned. The budget was approved in January and by June you discover you have burned twice the planned hours. Project management stays in the task board and nobody connects those tasks with who does what, how many hours each person has, and what margin the project leaves.",
+        "callout": "When schedule, budget, and resources are not aligned, projects get delayed, costs explode, or the team ends up overloaded. This guide walks through how to connect the three pieces: schedule, project budgets, and team capacity, with practical examples and a review of the tools that actually help."
+      },
+      "section1": {
+        "title": "1. What is project planning",
+        "p1": "Project planning is the part of project management where you define what needs to be done, in what order, with which resources, and within what timeframes. It is not just a task list: it is deciding the phases of a project, assigning responsibilities, estimating time and costs, and setting a clear framework for monitoring and evaluation. The scar appears when nobody really “agrees” on it and the project is redefined at the first crisis.",
+        "p2": "In practice, planning is usually organized into phases. Although each methodology names them differently (classic project management, Scrum, etc.), there is usually a start (scope and objectives), a planning phase (schedule, budget, resources), execution, and closure. What matters here is that in the planning phase you build the schedule, set the project budget, and decide how resources will cover the work.",
+        "phasesTitle": "The phases of a project (summary)",
+        "phaseStartTitle": "Start",
+        "phaseStartText": "Scope and objectives",
+        "phasePlanningTitle": "Planning",
+        "phasePlanningText": "Schedule, budget, resources",
+        "phaseExecutionTitle": "Execution",
+        "phaseExecutionText": "Monitoring and adjustments",
+        "phaseCloseTitle": "Closure",
+        "phaseCloseText": "Evaluation and lessons learned",
+        "p3": "Without that foundation, the project becomes a chain of emergencies: you do not know whether you are on track until invoicing arrives or the client complains. That is why it makes sense to treat schedule, budget, and resources as a single system, not as three separate documents."
+      },
+      "section2": {
+        "title": "2. The schedule and the Gantt chart",
+        "p1": "A project schedule is the timeline of milestones and tasks: what is done and when. The most visual way to represent it is the Gantt chart: bars over a time scale that show the duration of each activity and, in many tools, the dependencies between them. It lets you see at a glance whether dates fit together and which tasks are critical. The scar is that the Gantt “fits” on screen… but when emergencies repeat, the same resource appears in three places at once.",
+        "p2": "A well‑used Gantt chart helps you answer questions such as: when does each phase start and end? Which tasks block others? Are there obvious gaps or overlaps? Tools like online timelines or project‑management software usually include a Gantt view; you can also build a Gantt chart in Excel with a template or use a dedicated tool. The key is that the schedule is credible: it reflects real dependencies and, as far as possible, is aligned with the capacity of the people who will do the work.",
+        "compareTitle": "Task‑only schedule vs. schedule with resources",
+        "compareIntro": "A classic Gantt shows deadlines; it usually does not show who does what or how many hours each person has.",
+        "onlyTasksTitle": "Only tasks and deadlines",
+        "onlyTasksText": "You see dates and dependencies. You do not see whether the same person is on three projects in the same week.",
+        "tasksResourcesTitle": "Tasks + resources and hours",
+        "tasksResourcesText": "A schedule aligned with capacity: who does what and with how many hours. It prevents hidden overloads.",
+        "limitationTitle": "A common limitation of Gantt charts",
+        "limitationText": "You can have a perfect schedule on paper and, in reality, three projects all asking for the same resource in the same week. That is why the logical next step is to connect the schedule with resources: who does what and with how many hours."
+      },
+      "section3": {
+        "title": "3. Project budget",
+        "p1": "A project budget sets how much you are going to spend (or invest in hours and costs) to deliver the agreed scope. In many agencies and service teams, project budgets are built from hours: estimated hours by role or person, multiplied by a cost or selling rate. A project budget matrix can be broken down by phase, by work package, or by month, depending on how you bill or track performance. The scar is often that January when “X hours” are approved, and at the first scope change that number stops protecting you.",
+        "p2": "The relationship with the schedule is direct: if the schedule lengthens, actual hours tend to spike and the budget drifts. The classic project‑management triangle (scope, time, cost) is still alive: change one, and you typically affect the others.",
+        "triangleTitle": "The scope–time–cost triangle",
+        "triangleScopeTitle": "Scope",
+        "triangleScopeText": "What is delivered (deliverables, requirements)",
+        "triangleTimeTitle": "Time",
+        "triangleTimeText": "Deadlines and schedule",
+        "triangleCostTitle": "Cost",
+        "triangleCostText": "Budget (hours × rate, other costs)",
+        "triangleNote": "Changing one usually impacts the other two. That is why the budget should be tied to the same phases and tasks as the schedule.",
+        "p3": "That is why it makes sense for the budget not to be a standalone number, but hours and costs assigned to the same phases and tasks you already have in the schedule. Then, when you do tracking, you can compare budgeted hours with actual hours and see whether the project is still within margin."
+      },
+      "section4": {
+        "title": "4. Resources and capacity",
+        "p1": "The resources to deliver a project are, in most cases, people: their time and their capacity. Team capacity is the number of hours available in a period (day, week, month) after subtracting holidays, sick leave, and other absences. If you are not clear on how many hours each person has per week, it is very easy to assign more work than they can do or, conversely, leave capacity unused. What hurts is planning with “gross capacity” and discovering two weeks later that the real net capacity was much lower.",
+        "p2": "Hour allocation is the bridge between schedule and budget: who spends how many hours on which project each week. When that allocation is made explicitly (for example with a weekly or monthly hour‑based planner), you can see overloads and under‑utilization before they become delays or eaten‑up margins.",
+        "noVisibilityTitle": "No visibility on capacity",
+        "noVisibilityText": "You assign tasks without knowing how many hours each person has. The result: overload, delays, and margins disappearing with nobody noticing in time.",
+        "capacityPlanningTitle": "Hour‑based planning",
+        "capacityPlanningText": "You see who has how many free hours and how many assigned hours per project. You spot overloads before they happen and adjust schedule or scope.",
+        "p3": "This way of working is very close to timeboxing: assigning specific time blocks to projects or tasks instead of just listing tasks without time. We go deeper into the technique in the guide on what timeboxing is.",
+        "timeboxingLink": "what timeboxing is",
+        "capsuleTitle": "💡 Taimbox capsule: Schedule and capacity in one place",
+        "capsuleText": "In Taimbox, the planner shows week by week who does what and with how many hours. That way you connect schedule, project budgets, and resources without having to juggle three tools.",
+        "capsuleCta": "See the resource planner",
+        "summaryText": "In short: the schedule tells you when; the budget, how much; resources and capacity, who and with how many hours. Connecting all three prevents projects from living only in the task board and profitability being discovered when it is already too late."
+      },
+      "section5": {
+        "title": "5. Monitoring, KPIs, and project dashboard",
+        "p1": "Monitoring and evaluating projects means comparing plan and reality: progress, hours burned, costs, and, where relevant, client satisfaction. This is what indicators are for: a project KPI might be progress versus plan, actual hours versus budgeted hours, or the project’s current margin. The scar is when the dashboard “proves you right” too late: the client is already upset and you have already burned through the buffer.",
+        "kpiProgressTitle": "Progress vs. plan",
+        "kpiProgressText": "Are we where we should be? Percentage of tasks or milestones completed versus the schedule.",
+        "kpiHoursTitle": "Actual vs. budgeted hours",
+        "kpiHoursText": "Are we overshooting hours? If actual hours exceed planned hours, margin falls.",
+        "kpiMarginTitle": "Project margin",
+        "kpiMarginText": "Revenue minus costs (hours × rate, etc.). The indicator that connects time and profitability.",
+        "p2": "A worthwhile project dashboard usually shows at least: the status of each project (on track, at risk, delayed), assigned hours vs. actual hours (or vs. budget), and workload per person or team. That way you see whether a project is eating more hours than planned and whether someone is over‑assigned.",
+        "p3": "In a small or mid‑sized agency, having a single place where you can cross schedule, budget, and actual hours often makes the difference between reacting in time and finding out only once the client is already upset."
+      },
+      "section6": {
+        "title": "6. Project‑management tools",
+        "p1": "Project‑management tools solve different needs. Kanban‑style boards (Trello, Asana, ClickUp, Notion for projects) are very useful for task status and workflow; many also include a schedule or Gantt‑chart view. The scar is having “three truths”: one for tasks, one for hours, and one for margin, and ending up deciding by gut feel in every crisis.",
+        "toolsTitle": "What does each type of tool solve?",
+        "toolsBoardsTitle": "Boards and Gantt charts",
+        "toolsBoardsText": "Task status, workflow, dependencies, and deadlines. They usually do not show capacity or hours per person or margin by project.",
+        "toolsPlanningTitle": "Hour‑ and resource‑based planning",
+        "toolsPlanningText": "Who does what and with how many hours. Project budgets tied to those hours and margin reports (planned vs. actual).",
+        "p2": "To connect time, capacity, and profitability you need tools that work explicitly with hours. In Taimbox we focus on that layer: hour‑based resource planning, a schedule of who does what each week, and profitability reports by project and client.",
+        "capsuleTitle": "📊 Taimbox capsule: Planner + profitability reports",
+        "capsuleText": "Plan by hours in the planner, track progress in the dashboard, and review margin by project and client in the profitability reports. All in a single platform.",
+        "capsulePlannerCta": "Planner",
+        "capsuleReportsCta": "Profitability reports",
+        "pricesIntro": "Details on plans and pricing are on the",
+        "pricesLink": "pricing page"
+      },
+      "section7": {
+        "summary": {
+          "p1": "Solid project planning means aligning schedule, budget, and resources: what is done and when, how much it costs, and who does it with how many hours. The Gantt chart and schedule are the visual foundation; project budgets and hour allocation are what keep things from remaining only intentions. Tracking with KPIs and a simple dashboard lets you correct course before the project goes completely off the rails.",
+          "p2": "If your agency or team already uses task boards but you are missing that link between time, capacity, and profitability, trying an hour‑based planner may be the logical next step."
+        },
+        "faqTitle": "Frequently asked questions about project planning",
+        "faq1Question": "Is a Gantt chart enough to manage a project?",
+        "faq1Answer": "For deadlines and dependencies, yes. To know whether you will hit the budget and whether your team has real capacity, no: you need to cross the schedule with hours per person and the project budget.",
+        "faq2Question": "Which project KPI makes the most sense in an agency?",
+        "faq2Answer": "Actual vs. budgeted hours and margin by project (or by client). These are the ones that connect time and profitability. Progress versus schedule helps, but without hours and margin you cannot see whether the project is profitable.",
+        "faq3Question": "Can I use a Kanban board and an hour‑based planner at the same time?",
+        "faq3Answer": "Yes. Many teams use Trello, Asana, or similar for day‑to‑day task management and an hour‑based planning tool (such as Taimbox) for capacity, budget, and margin. They complement each other: the board for workflow, the planner for time and money.",
+        "ctaTitle": "Plan by hours and regain control of margin",
+        "ctaText": "Schedule, budget, and resources in one place; you can explore Taimbox with no commitment.",
+        "ctaButton": "See the resource planner",
+        "authorNote": "Written by the Taimbox team — Resource management and profitability for agencies."
+      },
+      "toc": {
+        "queEs": "1. What is Project Planning",
+        "cronograma": "2. Schedule and Gantt Chart",
+        "presupuesto": "3. Project Budget",
+        "recursos": "4. Resources and Capacity",
+        "seguimiento": "5. Monitoring, KPIs, and Dashboard",
+        "herramientas": "6. Project Management Tools",
+        "faq": "Frequently Asked Questions",
+        "cta": "Plan by Hours"
+      },
+      "meta": {
+        "headline": "Project Planning: Schedule, Budget, and Resources (Practical Guide)",
+        "description": "Practical guide to combine schedule, budget, and team capacity. Includes Gantt charts, project phases, KPIs, and PM tools."
+      }
+    },
+    "leyParkinson": {
+      "badge": "Complete guide",
+      "title": "Parkinson’s Law: what it is, examples, and how to fight it",
+      "intro": {
+        "paragraph1": {
+          "part1": "If you have ever had a full week to finish a report and delivered it on Friday at 6 pm, or a single day for the same task and closed it in a few hours, you have lived",
+          "highlight": "Parkinson’s Law",
+          "part2": " first‑hand: work expands to fill the time available for its completion. It is not a physical or mathematical law, but it describes a behaviour pattern so common that once you see it, it changes how you plan and how you manage teams."
+        },
+        "highlightBox": {
+          "part1": "In this guide we go through the classic time formulation, the",
+          "originHighlight": "sociological origin",
+          "part2": " (a critique of bureaucracy), the",
+          "secondLawHighlight": "second law",
+          "part3": " on expenses and income, the",
+          "trivialityHighlight": "law of triviality",
+          "part4": " in meetings, examples, evidence, business consequences, and antidotes: timeboxing, short deadlines, and explicit limits."
+        }
+      },
+      "sections": {
+        "whatIs": {
+          "title": "1. What Parkinson’s Law is",
+          "paragraph1": {
+            "part1": "",
+            "highlight1": "Parkinson’s Law",
+            "part2": " is a principle about time use formulated by British historian and writer",
+            "highlight2": " Cyril Northcote Parkinson",
+            "part3": " in an article published in The Economist in 1955. He later developed it in the book Parkinson’s Law: The Pursuit of Progress (1957). The central idea is that the time we spend on a task tends to expand to fill the time we are given, not the time the task objectively requires. The scar is often “same deliverable, more rounds”: you decide with good timing… and it grows as if no one had defined a ceiling."
+          },
+          "paragraph2": "In practice: if you give a week for a draft, people will use the week; if you give a day for the same draft, many times the result is delivered in a day. The task “grows” or “expands” to fill the time available, driven by inertia, perfectionism, distractions, or lack of clear limits.",
+          "paragraph3": {
+            "part1": "The law does not say that work is worse when done in less time; in many cases, a shorter deadline forces you to prioritise and avoid unnecessary work. What it describes is a",
+            "highlight": " behaviour pattern",
+            "part2": ": in the absence of a strict limit, we tend to use all the time we are given."
+          }
+        },
+        "formulation": {
+          "title": "2. The exact formulation and its origin",
+          "paragraph1": {
+            "part1": "The sentence that sums up the law is:",
+            "quote": " “Work expands so as to fill the time available for its completion”. Parkinson illustrated it with bureaucratic examples (committees that meet until time is up, procedures that take exactly as long as office hours), but the law applies to any kind of task: reports, meetings, projects, emails, or decisions. You notice it when you put “2 days” in the plan and on day three people are still polishing details that do not change the decision.",
+            "part2": ""
+          },
+          "quoteBox": {
+            "text": "\"Work expands so as to fill the time available for its completion.\"",
+            "attribution": "C. Northcote Parkinson, The Economist, 1955"
+          },
+          "caption": "Below we develop the rest of Parkinson’s framework: bureaucratic origin, financial second law, and the law of triviality."
+        },
+        "origin": {
+          "title": "Sociological origin: it is not just “lack of focus”",
+          "paragraph1": {
+            "part1": "Parkinson formulated the time law in a context of",
+            "highlight": " critique of bureaucracy",
+            "part2": ", not as a self‑help manual. His lens was sociological: organisations tend to generate work and roles that perpetuate themselves even when the real function (ships, services, clients) does not grow at the same pace. In agencies you see it when the “alignment committee” reappears every week even though nobody leaves with a clear decision."
+          },
+          "paragraph2": {
+            "part1": "One example he himself popularised is that of the",
+            "highlight1": " British naval administration",
+            "part2": ": between 1914 and 1928 office staff grew steadily (at an annual rate on the order of 5–7% in different branches cited in his analysis) while the number of",
+            "highlight2": " ships in service dropped dramatically",
+            "part3": ". The message is not a statistic for an exam but an illustration: the administrative apparatus can swell regardless of the “output” it is supposed to serve."
+          },
+          "highlightBox": {
+            "part1": "Parkinson’s Law is not just a mental trap: it is a",
+            "highlight": " structural defect",
+            "part2": " in organisations that tend to create unnecessary work or add layers to justify their existence. Fighting it is not just about “concentrating harder”: you need to review committees, approvals, headcount, and workloads that manufacture work without value."
+          },
+          "paragraph3": {
+            "part1": "That is why the antidotes work on two fronts: personal habits (timeboxing, deadlines) and",
+            "highlight": " organisational design",
+            "part2": " (fewer mandatory meetings, fewer procedures, clear budgets and roles). In agency teams, if you only ask for “more discipline” but the system keeps adding meetings and layers, the law keeps winning."
+          }
+        },
+        "secondLaw": {
+          "title": "Parkinson’s second law: expenses and income",
+          "paragraph1": {
+            "part1": "In the same book and essays, Parkinson stated a mirror law to the time one:",
+            "highlight1": " “Expenditure rises to meet income”",
+            "part2": " (equivalently: spending rises to match available income). It is the financial parallel to “work fills the time”: money tends to",
+            "highlight2": " disperse",
+            "part3": " as long as there is perceived balance, not because every expense is rational. The scar is often the “unused contingencies” that turn into “extra spending” at the end of the month."
+          },
+          "paragraph2": {
+            "part1": "In a company you see it in budgets that get burned because “there was remaining budget”; personally, in the effect where your salary goes up and a few months later your lifestyle has readjusted to the new limit.",
+            "highlight": " Apply this principle to your personal budget:",
+            "part2": " if you do not allocate a specific destination to each part of your income (automatic savings, cap on variable pay, emergency fund), money tends to “expand” into small expenses until it exhausts what is available, just as work fills the deadline."
+          },
+          "paragraph3": {
+            "part1": "The antidotes are analogous to those for time:",
+            "highlight1": " caps",
+            "highlight2": " automatic rules",
+            "part2": " (transfers on payday), and",
+            "highlight3": " periodic review",
+            "part3": ", not just occasional willpower."
+          }
+        },
+        "examples": {
+          "title": "3. Examples of Parkinson’s Law in daily life and business",
+          "paragraph": "Recognising the law in concrete situations helps you fight it. Some typical examples: it looks very much like that “I’ll have it for you today” that ends up being “for this afternoon” because the slack disappeared and nobody said so.",
+          "cards": {
+            "reports": {
+              "title": "Reports and deliverables",
+              "description": "Same report: with “by Friday” it gets delivered on Friday; with “for this afternoon” it is often closed in a few hours. The essential content tends to be similar; what changes is the time consumed."
+            },
+            "meetings": {
+              "title": "Meetings",
+              "description": "A meeting scheduled for one hour tends to last one hour. If you call it for 30 minutes, many times it is resolved in 30 minutes. The agenda adapts to the time available."
+            },
+            "projects": {
+              "title": "Projects and sprints",
+              "description": "A project with “no fixed deadline” drags on. A two‑week sprint usually ships in two weeks; if the same team has one week, it prioritises and ships less scope but on time."
+            },
+            "budget": {
+              "title": "Hourly budgets",
+              "description": "If a client pays “whatever it takes”, hours explode. If the budget is “X maximum hours”, the work adapts to that ceiling and you make clearer decisions about what to include."
+            }
+          }
+        },
+        "triviality": {
+          "title": "The law of triviality (bike‑shed effect)",
+          "paragraph1": {
+            "part1": "Parkinson described another phenomenon that explains why meetings eat up the week without moving the important work: the",
+            "highlight1": " law of triviality",
+            "part2": " (often illustrated in the English‑language literature with the “bike‑shed priority”). In a committee, the group spends a disproportionate amount of time on topics that are",
+            "highlight2": " easy to understand",
+            "part3": " (the colour of a shed, a formatting detail) but little or no time on complex, critical decisions (for example, a deep technical design) because they demand cognitive effort and involve risk. The scar shows up when the meeting ends “with consensus” but nobody can say what decision was made for the client."
+          },
+          "warningBox": {
+            "title": "Beware of the bike‑shed effect:",
+            "body": " do not let the ease of discussing a trivial topic consume the time reserved for your project’s strategic decisions. If the meeting only moves forward on comfortable details, Parkinson’s time law is being fulfilled in the wrong place."
+          },
+          "howTo": {
+            "title": "How to cut meeting time this week:",
+            "body": " agenda with explicit priorities (critical items first, time‑boxed), a hard time limit, and a “decide or park it” rule: if the topic is not core, document it and move on. That way you reduce the time the group spends on what is easy to opine on but low‑impact."
+          }
+        },
+        "evidence": {
+          "title": "4. Empirical evidence and studies",
+          "paragraph": "Parkinson’s observation was mostly qualitative (bureaucracy and committees). In recent decades, research in psychology and time‑management has provided indirect support: and in day‑to‑day practice it shows up in the way a clear deadline stops the team “optimising out of fear” and starts shipping.",
+          "bullets": {
+            "deadlines": {
+              "title": "Deadlines and performance:",
+              "body": " in many studies, shorter, clearer deadlines are associated with better focus and with work not stretching out indefinitely."
+            },
+            "availableTime": {
+              "title": "Effect of available time:",
+              "body": " when there is more time, people tend to spend more time on the task (review, perfectionism, secondary tasks), which fits the idea that work “fills” the time."
+            },
+            "timeboxing": {
+              "title": "Timeboxing and productivity:",
+              "body": " techniques that set a maximum time (timeboxing, Pomodoro) often improve the sense of control and on‑time delivery, without necessarily hurting quality."
+            }
+          },
+          "paragraph2": "The law is not an absolute truth in every context: very complex or creative tasks may need exploration time. But as a general rule in knowledge‑work and office environments, the pattern repeats again and again."
+        },
+        "consequences": {
+          "title": "5. Consequences of Parkinson’s Law in companies and teams",
+          "paragraph": "If you do not actively manage time, the law translates into delays, cost overruns, and lost focus: the typical scar is that “everything was under control” until the client asks to see something working and there are no open slots left.",
+          "risksTitle": "Typical risks",
+          "risks": {
+            "projects": "Projects that drag on because “there is still time” until the final date.",
+            "meetings": "Meetings that always take the full hour even though the topic could be closed in 20 minutes.",
+            "budget": "Hourly budgets that get fully burned even when the scope does not justify it.",
+            "perfectionism": "Perfectionism and rework when there is no explicit time limit per task."
+          },
+          "paragraph2": "In agencies and teams that bill or plan by hours, this directly translates into lower profitability and clients who feel that “the full budget is always used”. Setting clear limits (timeboxing, intermediate deadlines, shorter meetings) is a way to flip the law in your favour."
+        },
+        "antidotes": {
+          "title": "6. Antidotes: timeboxing, deadlines, and explicit limits",
+          "paragraph": "Parkinson’s Law is not fatal: you can use it in your favour by reducing the “available” time and making the work adapt to that limit. The most effective practices are: you feel the change when you move from “when it is ready” to “this block ends here”, and work finally stops expanding without permission.",
+          "cards": {
+            "timeboxing": {
+              "title": "Timeboxing",
+              "description": "Assigning a fixed maximum time to each task (e.g. 45 minutes for the draft). When time is up, you move on to the next task. Work stops expanding because the ceiling is defined."
+            },
+            "deadlines": {
+              "title": "Short and intermediate deadlines",
+              "description": "Instead of “deliver whenever you can”, define concrete milestones (e.g. first draft in 2 days, review in 1 day). Work is split into blocks that do not drag out."
+            },
+            "meetings": {
+              "title": "Meetings with fixed length and time‑boxed agenda",
+              "description": "Schedule 25‑ or 30‑minute meetings instead of one hour, and assign minutes to each agenda item. The meeting ends when the time is up, not when “the topic is exhausted”."
+            }
+          },
+          "capsule": {
+            "title": "Taimbox capsule: timeboxing as a team",
+            "body": "In Taimbox you plan in hours and define time boxes per task and per person. That way you prevent work from expanding unchecked and connect time with project profitability.",
+            "button": "Timeboxing guide"
+          }
+        },
+        "application": {
+          "title": "7. How to apply this in teams and agencies",
+          "paragraph": "Individually, each person can use timeboxing or personal deadlines. At team and agency level, limits need to be visible and shared: the final scar is when the limit is written on paper, but in practice by Friday mid‑morning nobody respects it anymore.",
+          "bullets": {
+            "planner": "An hour‑based planner where you can see time assigned per task and per person.",
+            "budget": "Hourly budgets per project with alerts as you approach the limit.",
+            "meetings": "Meetings with predefined duration and agenda.",
+            "reviews": "Regular reviews of “hours spent vs. budgeted hours” to detect when work is expanding beyond plan."
+          },
+          "paragraph2": "When everyone works with the same logic of “fixed time, variable scope”, Parkinson’s Law stops being a trap and becomes a lever: less wasted time, more predictability, and better margins."
+        },
+        "summary": {
+          "paragraph1": {
+            "part1": "Parkinson’s Law states that work expands to fill the time available; in the same framework, the second law links",
+            "highlight1": " expenses and income",
+            "part2": ", and the law of triviality explains the time lost in irrelevant debates. Knowing these three dimensions (time, money, meeting focus) lets you act both on personal habits and on",
+            "highlight2": " team and process structure",
+            "part3": "."
+          },
+          "paragraph2": "The classic antidotes are timeboxing, short deadlines, and explicit limits; in agencies, an hour‑based planner and clear budgets improve predictability and profitability."
+        },
+        "faq": {
+          "title": "Frequently asked questions about Parkinson’s Law",
+          "items": {
+            "scientific": {
+              "question": "Is Parkinson’s Law scientific?",
+              "answer": "It is an observation about human behaviour, not a physical law. It has indirect support in psychology and time‑management studies (deadlines, timeboxing), but it is mostly used as a practical principle for designing deadlines and limits."
+            },
+            "quality": {
+              "question": "If I give less time, does quality get worse?",
+              "answer": "Not necessarily. Often a short deadline forces you to prioritise what matters and avoid superfluous work. The key is that the deadline is realistic for the expected outcome; if it is impossible, it generates stress and errors. Timeboxing with 25‑ to 90‑minute blocks tends to maintain or improve focus without sacrificing quality."
+            },
+            "timeboxingRelation": {
+              "question": "How does it relate to timeboxing?",
+              "answer": "Timeboxing is one of the most direct antidotes: you set a maximum time for a task and, when it is over, you move on. Work cannot expand beyond that limit. That is why many productivity guides cite Parkinson’s Law as a motivation to use timeboxing."
+            },
+            "secondLaw": {
+              "question": "What is Parkinson’s second law about money?",
+              "answer": "It is the observation that expenses tend to rise to fill the available income, in parallel with the first law (work fills the time). In personal or business finances, you mitigate it with caps, automatic rules, and periodic review, not just good intentions."
+            }
+          }
+        },
+        "cta": {
+          "title": "Let time work for you, not against you",
+          "description": "Hour‑based planning, clear limits, and visible margin; you can try Taimbox with no commitment.",
+          "button": "See the resource planner",
+          "signature": "Written by the Taimbox team — Resource management and profitability for agencies."
+        }
+      },
+      "toc": {
+        "queEs": "1. What is Parkinson's Law",
+        "formulacion": "2. Exact Formulation and Origin",
+        "burocracia": "Bureaucratic Origin and Structure",
+        "segundaLey": "Second Law: Expenses and Income",
+        "ejemplos": "3. Daily and Business Examples",
+        "trivialidad": "Law of Triviality (Bike-shedding Effect)",
+        "evidencia": "4. Empirical Evidence and Studies",
+        "consecuencias": "5. Consequences for Companies and Teams",
+        "antidotos": "6. Antidotes: Timeboxing and Deadlines",
+        "aplicacion": "7. How to Apply in Teams and Agencies",
+        "faq": "Frequently Asked Questions",
+        "cta": "Make Time Work for You"
+      },
+      "meta": {
+        "headline": "Parkinson's Law: What It Is, Examples, and How to Fight It",
+        "description": "Complete guide on Parkinson's Law: time, bureaucratic origin, second law of spending, law of triviality, evidence, and antidotes."
+      }
+    },
+    "gestionCargaTrabajoEquipo": {
+      "badge": "Teams and workplace well-being",
+      "title": "How to manage your team's workload without burnout",
+      "intro": {
+        "p1": "Reports from Gallup and Workhuman (2024) paint a tough picture: a large majority of people say they have felt symptoms of professional burnout at least once. In marketing and agencies, it's not uncommon to find teams where nearly half describe a constant tension, not just a one-off bad month. There, the problem stops being 'anecdotal' and becomes both an operations and a people issue.",
+        "p2": "What fails is almost never that 'no work is being done'. What fails is that work is badly distributed, nobody sees at a glance who is carrying what, and clear limits are missing when a new request comes in. Below you will find definitions that clarify the mess between 'who does what' and 'with what means', signs to detect saturation before collapse, a six-step framework you can steal for your next meeting, and a table of metrics to stop guessing.",
+        "capsule": "Load doesn't float in a vacuum: it lives inside project planning —dates, dependencies, who is available when—. If you want that map with calm, it's all tied together in project planning. To wrap up with figures that serve in a numbers meeting, the agency performance KPIs go into detail. And if it frustrates you that everything 'drags on', Parkinson's Law and deadlines tells you why, without clear caps, work fills all the space you give it."
+      },
+      "sections": {
+        "map": {
+          "title": "1. Quick map (if you want to skip ahead)",
+          "p1": "Each block gets straight to the point. If you already have something clear, move on to the next. You notice it when on Monday they sell you 'tranquility'... and by 11 AM there are two emergencies fighting for the same designer."
+        },
+        "whatIs": {
+          "title": "2. What is workload really? (and why it's not just 'having a lot of work')",
+          "p1": "Many teams confuse high load with poorly managed load. Managing the load is, in practice, planning who does what, distributing wisely and looking at whether that's sustainable over time."
+        },
+        "causes": {
+          "title": "3. The real causes of burnout (that managers often don't see)",
+          "p1": "Short-term stress —a launch, a campaign that takes off— can be brutal and yet bearable if there's a break afterwards and the rules are clear. Burnout is another story: it stays, disconnects you from work, and makes you feel like you're performing less even though you're still working hard."
+        },
+        "signals": {
+          "title": "4. How to detect that your team is at risk: early warning signs",
+          "p1": "How to know if the team is on the edge before someone explodes? Mix intuition with numbers. Many people don't say 'I can't take it anymore' until very late."
+        },
+        "framework": {
+          "title": "5. Framework for managing workload sustainably",
+          "p1": "Six steps you can apply next Monday, even with the same tools as always. Distributing well isn't giving everyone the same number of tasks: it's distributing according to real capacity, skill, and the current state of each person."
+        },
+        "manager": {
+          "title": "6. The manager's role: leading without burning out the team",
+          "p1": "Burnout isn't a 'personal issue' to be fixed with more willpower. It's largely a matter of culture and leadership: what you allow in meetings, how you react when someone asks for room, and if recognition only comes when there's a fire."
+        },
+        "installed": {
+          "title": "7. Burnout already set in: what to do when it's too late to prevent",
+          "p1": "If you're already in a 'burnt-out team' phase, the worst mistake is downplaying it with clichés. You have to act on several fronts at once —load, expectations, and support."
+        },
+        "metrics": {
+          "title": "8. Metrics that every manager should have under control",
+          "p1": "If you want to measure load without sticking to 'I think they're on the edge', this table is a good starting point. The percentages are indicative: what works in a consulting firm doesn't necessarily work in a production house."
+        },
+        "tools": {
+          "title": "9. Tools that usually help (by type, without brands)",
+          "p1": "I'm not going to sell you a specific name: what matters is what hole you're plugging. Do you need to see who is carrying what? Are you missing real hours vs budget? Or is it knowing the mood before it explodes in public?"
+        },
+        "conclusion": {
+          "title": "10. Conclusion",
+          "p1": "Burnout isn't that people 'can't hack it'. It's often the picture of a workload distribution and limits that aren't measurement-ready. The good part is that there are concrete things you can do: see the load, decide priorities out loud, distribute wisely, cut scope when needed, protect focus, and review how the week is going."
+        }
+      },
+      "faq": {
+        "title": "Frequently Asked Questions",
+        "q1": {
+          "q": "How much is too much workload?",
+          "a": "There's no magic number; it depends on the role. But watch out if utilization stays well above ~85% for a long time, if estimate and real never match, or if deadlines start slipping all at once."
+        },
+        "q2": {
+          "q": "How do I know if my team has burnout?",
+          "a": "Cross-reference what you see (fatigue, cynicism, dropping quality, people shutting down) with what the data measures: deadlines, distribution of major tasks, who accumulates risk."
+        },
+        "q3": {
+          "q": "What is the difference between stress and burnout?",
+          "a": "Stress can have an expiration date: the launch ends and tension drops. Burnout stays: fatigue you don't recover from with a weekend, lack of interest in work, and a feeling of going slower despite your effort."
+        },
+        "q4": {
+          "q": "How to distribute tasks equitably in an agency?",
+          "a": "'Equitable' isn't distributing the same number of tickets. It's that risk and effort are distributed: real capacity, skill, how critical each assignment is, and what phase the project is in."
+        },
+        "q5": {
+          "q": "Is there any essential tool for workload?",
+          "a": "No tool saves a team without agreements. What counts is deciding where 'the truth' lies (board, sheet, ERP) and sticking to it as a team."
+        }
+      },
+      "cta": {
+        "p1": "If you're curious about moving from intuition to numbers that serve in a committee, here are two reads that usually close the circle: Agency performance KPIs and Project planning."
+      },
+      "meta": {
+        "seoTitle": "How to manage team workload without burnout (2026 Guide)",
+        "headline": "How to manage your team's workload without burnout",
+        "description": {
+          "p1": "Reports from Gallup and Workhuman (2024) paint a tough picture: a large majority of people say they have felt symptoms of professional burnout at least once. In marketing and agencies, it's not uncommon to find teams where nearly half describe a constant tension, not just a one-off bad month. There, the problem stops being 'anecdotal' and becomes both an operations and a people issue.",
+          "p2": "What fails is almost never that 'no work is being done'. What fails is that work is badly distributed, nobody sees at a glance who is carrying what, and clear limits are missing when a new request comes in. Below you will find definitions that clarify the mess between 'who does what' and 'with what means', signs to detect saturation before collapse, a six-step framework you can steal for your next meeting, and a table of metrics to stop guessing.",
+          "capsule": "Load doesn't float in a vacuum: it lives inside project planning —dates, dependencies, who is available when—. If you want that map with calm, it's all tied together in project planning. To wrap up with figures that serve in a numbers meeting, the agency performance KPIs go into detail. And if it frustrates you that everything 'drags on', Parkinson's Law and deadlines tells you why, without clear caps, work fills all the space you give it."
+        }
+      },
+      "toc": {
+        "loQueAprenderas": "1. Quick map",
+        "queEsCargaTrabajo": "2. What is workload",
+        "causasBurnoutEquipos": "3. Burnout causes",
+        "senalesEquipoRiesgo": "4. Risk signals",
+        "frameworkGestionSostenible": "5. 6-step Framework",
+        "rolManagerEquipo": "6. Manager role",
+        "burnoutInstalado": "7. Burnout already present",
+        "metricasCargaEquipo": "8. Key metrics",
+        "herramientasWorkload": "9. Tools",
+        "conclusionGestionCarga": "10. Conclusion",
+        "preguntasFrecuentes": "Frequently asked questions"
+      },
+      "faqItems": [
+        {
+          "q": "How much is too much workload?",
+          "a": "There is no magic number: it depends on the role. But watch out if utilization stays well above ~85% for a long time, if estimate and actual never match, if there is more rework, or if deadlines start falling all at once. In practice, \"too much\" is when it stops being a peak and becomes a breathless routine."
+        },
+        {
+          "q": "How do I know if my team has burnout?",
+          "a": "Cross what you see (fatigue, cynicism, declining quality, people closing themselves off) with what the data measures: deadlines, distribution of heavy tasks, who accumulates risk. And don't wait for someone to say it in a meeting: ask often and leave room for honest answers."
+        },
+        {
+          "q": "What is the difference between stress and burnout?",
+          "a": "Stress can come with an expiration date: the launch ends and tension drops. Burnout stays: exhaustion that you don't recover from with a weekend, reluctance to work, and the feeling of going slower despite trying harder. That's when you need to touch the system, not just 'more endurance'."
+        },
+        {
+          "q": "How to distribute tasks equitably in an agency?",
+          "a": " \"Equitable\" is not distributing the same number of tickets. It is that risk and effort live distributed: real capacity, skill, how critical each assignment is, and what phase the project is in. Rotate what weighs so it doesn't always fall on the same two profiles."
+        },
+        {
+          "q": "Is there any essential tool for workload?",
+          "a": "None saves a team without agreements. What counts is deciding where 'the truth' is (board, sheet, ERP) and fulfilling it among everyone. Choose categories — tasks, hours, Gantt, surveys — according to what you are not seeing right now."
+        }
+      ],
+      "howTo": {
+        "title": "Framework to manage team workload without burnout",
+        "desc": "Six steps to visualize workload, prioritize, distribute with criteria, set scope boundaries, protect focus, and review periodically.",
+        "steps": [
+          {
+            "name": "Map real workload",
+            "text": "Unify tasks, estimates, owners, and dates in a common view (Kanban, Gantt, or sheet) to detect human bottlenecks."
+          },
+          {
+            "name": "Prioritize with Eisenhower matrix",
+            "text": "Differentiate urgent and important at the team level; protect time for important-not-urgent and eliminate or delegate what doesn't contribute."
+          },
+          {
+            "name": "Redistribute with criteria",
+            "text": "Distribute according to net capacity, skills, criticality, and current state of each person; rotate high-risk tasks."
+          },
+          {
+            "name": "Set boundaries to scope",
+            "text": "When facing new requests, ask what stops being done; manage scope creep explicitly."
+          },
+          {
+            "name": "Protect rhythms and focus blocks",
+            "text": "Use timeboxing and deep work blocks; agree on interruption rules and buffers between projects."
+          },
+          {
+            "name": "Review workload regularly",
+            "text": "Brief weekly or biweekly workload check-ins (1-5 scale) without waiting for crises."
+          }
+        ]
+      },
+      "software": {
+        "name": "Taimbox",
+        "desc": "Agency resource and time planner. Timeboxing, hourly schedule, and profitability reports."
+      }
+    },
+    "comoMedirRentabilidadProyecto": {
+      "toc": {
+        "techoHoras": "1. Ceiling of selling hours",
+        "modelosPricing": "2. Pricing models",
+        "calcularRentabilidad": "3. Calculating profitability",
+        "scopeCreepProtocolo": "4. Scope protocol",
+        "modeloSprint": "5. The sprint model",
+        "preguntasFrecuentes": "Frequently Asked Questions"
+      },
+      "meta": {
+        "headline": "How to measure the real profitability per project in your agency (and stop selling hours)",
+        "description": "From selling time to selling value: how to calculate the real margin per project, compare pricing models and protect your profits against scope creep.",
+        "seoTitle": "How to measure per-project profitability in an agency and stop selling hours"
+      },
+      "badge": "Profitability and pricing",
+      "title": "How to measure real profitability per project in your agency (and stop selling hours)",
+      "tldr": {
+        "title": "TL;DR — The essentials in 3 points",
+        "item1": "Selling hours has a natural ceiling: there are only so many hours in a day per person. Agencies that gain margin without inflating headcount have usually changed **what they sell**, not how much they sweat.",
+        "item2": "The **gross margin per project** is the metric that separates those who bill a lot from those who keep the money. Doing this exercise with your last ten projects is usually both uncomfortable and useful.",
+        "item3": "Scope creep isn't just 'difficult clients': it's a lack of a container. A three-step protocol —record, quantify, communicate— can be set in motion without waiting for the next quarter."
+      },
+      "intro": {
+        "p1": "If you've already read why <Link>being busy doesn't mean being profitable</Link>, the next step is truly uncomfortable: looking at projects one by one and asking yourself if the price made sense with the real cost —not with the cost you'd like to believe.",
+        "p2": "Here you will find <strong>pricing models with pros and cons</strong>, a margin calculation you can take to a spreadsheet without philosophy, a scope protocol that avoids working for free by omission, and a way to frame work in short cycles so that time stops being a river without banks."
+      },
+      "section1": {
+        "title": "1. Why selling hours has a ceiling and how to break it",
+        "p1": "When price is tied to time, <strong>efficiency penalizes itself</strong>: if the team does in two hours what used to take four, you bill half for the same result. This perverse incentive explains why many agencies get trapped in a race for more hours or more heads.",
+        "p2": "You'll find it in the 'good news': the team improves the process, reduces times, and yet the month doesn't deliver because billing also drops. It's the ceiling speaking clearly, not you losing motivation.",
+        "p3": "In addition, the hourly price is easy to compare between providers; the price tied to a <strong>result with defined scope</strong> is not so much. That changes the conversation —if you have the authority and data to sustain it.",
+        "sub": {
+          "title": "Value-based pricing: when it's realistic",
+          "p1": "Decoupling price from time and moving it closer to the impact for the client can increase margin without increasing headcount. It works if you have data from previous results and a proven track record; without that, it's a difficult negotiation to win. In the end, it's about selling the solution to the problem, not the time it takes to type it up."
+        }
+      },
+      "section2": {
+        "title": "2. Pricing models: pros, cons, and the hybrid model",
+        "p1": "There is no perfect model, but there are models that attract the problems you don't want. The typical scar is the fee that seems stable until the client asks for 'a little favor' every three days and the margin disappears.",
+        "hourly": {
+          "title": "Hourly price / Time & Materials",
+          "pros": "Certainty of collection for every minute invested.",
+          "cons": "Penalizes efficiency and makes it difficult for the client to forecast income."
+        },
+        "fixed": {
+          "title": "Fixed price per project",
+          "pros": "Total clarity for the client and a reward for speed if you have smooth processes.",
+          "cons": "The agency assumes all the risk of deviation (scope creep)."
+        },
+        "retainer": {
+          "title": "Monthly retainer (Recurring Fee)",
+          "pros": "Cash flow predictability and long-term relationship.",
+          "cons": "Tendency towards client 'comfort' (asking for too much) and agency 'relaxation' (measuring too little)."
+        },
+        "hybrid": {
+          "title": "The hybrid model: the best of both worlds",
+          "p1": "Most profitable agencies use a mix: a **base fee** for maintenance and **fixed projects** for new initiatives or peaks in work. This ensures an income floor and protects the margin from extras."
+        }
+      },
+      "section3": {
+        "title": "3. How to calculate real gross margin per project",
+        "p1": "Note: the agency's net margin (what's left after paying for office, software, and administration) matters, but the battle is won in the **gross margin per project**. If the project alone doesn't leave room to breathe, the agency has no future.",
+        "formula": {
+          "title": "The basic formula",
+          "text": "(Project Revenue − Direct Costs) / Revenue × 100",
+          "p1": "Where **direct cost** includes team hours (at fully loaded cost: salary + social security + extras), freelancers, and specific tools for the assignment."
+        },
+        "benchmark": {
+          "title": "Quick references",
+          "healthy": "Healthy: > 50-60%. You have room to cover overhead and grow.",
+          "danger": "Danger: < 35-40%. The project barely pays for its own execution; you are subsidizing the client with your structure."
+        }
+      },
+      "section4": {
+        "title": "4. The three-step scope protocol",
+        "p1": "Scope creep (growing scope) destroys more margins than bad luck. It isn't stopped with anger; it's stopped with a container. The scar is the 'but this was already in' that they tell you when you try to bill for the fifth revision.",
+        "steps": {
+          "1": "<strong>Record:</strong> nothing is accepted by chat or word of mouth without it entering the management system.",
+          "2": "<strong>Quantify:</strong> how many hours is it? what impact does it have on the final date?",
+          "3": "<strong>Communicate:</strong> 'This is outside the original scope. We can do it by adding X to the budget or removing Y from the current queue.' The client chooses, you don't lose."
+        }
+      },
+      "section5": {
+        "title": "5. The sprint model: from infinite fee to closed cycles",
+        "p1": "Working by sprints (1 or 2 week cycles) helps time not to dilate. Instead of a three-month project that gets deformed, you have six two-week deliveries with fixed objectives. You notice it when the team stops asking 'when does this end?' and starts saying 'this goes into the next sprint'.",
+        "p2": "If you want to connect the calendar with your people's real capacity, the <Link>team resource planning</Link> tells you how to join dates and heads without anyone exploding. And to know if the pace is right, <Link>project pacing</Link> gives you the pulse in real time."
+      },
+      "faq": {
+        "title": "Frequently Asked Questions",
+        "q1": {
+          "q": "What gross margin should a marketing agency have?",
+          "a": "The usual benchmark in service agencies sets a healthy gross margin above 50% per project. Below 40%, the project hardly covers indirect costs and overhead sustainably."
+        },
+        "q2": {
+          "q": "How is extra work outside the scope billed in an agency?",
+          "a": "The most effective process has three steps: record the request at the time, estimate the time before accepting, and communicate the impact to the client before executing."
+        },
+        "q3": {
+          "q": "Which is better for an agency: retainer or price per project?",
+          "a": "It depends. Retainer offers predictability; price per project rewards efficiency. The hybrid model —60% recurring, 40% projects— is usually the most balanced."
+        }
+      },
+      "cta": {
+        "title": "Start measuring today",
+        "p1": "Don't wait for Excel to warn you that there's no margin left. Profitability is built decision by decision.",
+        "button": "View profitability tools"
+      },
+      "faqItems": [
+        {
+          "q": "What gross margin should a marketing agency have?",
+          "a": "The standard reference in service agencies sets a healthy gross margin above 50% per project. Below 40%, the project hardly covers indirect costs and overhead sustainably. Gross margin is calculated as (revenue – direct cost) / revenue × 100."
+        },
+        {
+          "q": "How is extra work outside the scope charged in an agency?",
+          "a": "The most effective process has three steps: log the request at the moment, estimate the time before accepting, and communicate the impact to the client before executing. The question that changes the conversation is: 'Do we add it by adjusting the budget, or leave it for the next sprint?'"
+        },
+        {
+          "q": "What is better for an agency: retainer or price per project?",
+          "a": "It depends on the type of service. Retainers work best for continuous and well-defined services (SEO, social media management). Per-project pricing works better for one-off jobs with variable scope. Industry data suggests that the hybrid model — 60-70% retainer, 30-40% projects — offers the best balance between predictability and flexibility."
+        },
+        {
+          "q": "How can I know which projects are most profitable in my agency?",
+          "a": "By calculating the real gross margin of your last 10-15 projects: (revenue – total direct cost) / revenue × 100. The pattern that almost always emerges is the same: 2-3 types of projects concentrate 80% of the margin. This information is the basis for any strategic service portfolio decision."
+        },
+        {
+          "q": "What is value-based pricing and when to apply it?",
+          "a": "It is a model where the price is set based on the value the work generates for the client, not the time invested. It makes sense when the agency has data from previous results and a demonstrable track record that justifies the price. Without those conditions, it is difficult to sustain in negotiation."
+        }
+      ],
+      "howTo": {
+        "title": "How to calculate real per-project profitability in an agency",
+        "desc": "Four steps for real cost, gross margin, project comparison, and time control by phases.",
+        "steps": [
+          {
+            "name": "Define the real cost of the project",
+            "text": "Includes team hours at loaded cost, freelancers, attributable overhead, internal meetings, and unbudgeted corrections."
+          },
+          {
+            "name": "Calculate gross margin per project",
+            "text": "Gross margin (%) = (revenue − total direct cost) / revenue × 100. Reference: above 50% is usually healthy."
+          },
+          {
+            "name": "Compare projects with each other to find the pattern",
+            "text": "With 10–15 recent projects, identify which types of assignments concentrate margin and which ones consume it."
+          },
+          {
+            "name": "Introduce time as a control variable",
+            "text": "Assign hours by phase before execution; timeboxing prevents work from expanding without limit (Parkinson's Law)."
+          }
+        ]
+      },
+      "software": {
+        "name": "Taimbox",
+        "desc": "Agency resource and time planner. Timeboxing, hourly schedule, and profitability reports."
+      }
+    }
+  }
+}

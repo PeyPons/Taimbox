@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { BlogVariant } from './blogVariants';
 
 interface BlogRelatedPostProps {
@@ -17,6 +18,7 @@ export function BlogRelatedPost({
   className = '',
   variant = 'default',
 }: BlogRelatedPostProps) {
+  const { t } = useTranslation('blog');
   const isEditorial = variant === 'editorial';
   const shell = isEditorial
     ? 'rounded-2xl border border-slate-200 bg-slate-50 p-5 sm:p-6 transition-all duration-300 hover:border-slate-300 hover:bg-white shadow-sm'
@@ -32,8 +34,8 @@ export function BlogRelatedPost({
 
   return (
     <div className={`${shell} ${className}`}>
-      <p className={label}>En la misma línea</p>
-      <Link to={href} className="group block" aria-label={`Artículo relacionado: ${title}`}>
+      <p className={label}>{t('components.relatedPost.label')}</p>
+      <Link to={href} className="group block" aria-label={t('components.relatedPost.aria', { title })}>
         <h3 className={h3}>{title}</h3>
         <p className={desc}>{description}</p>
         <span className={arrow} aria-hidden="true">

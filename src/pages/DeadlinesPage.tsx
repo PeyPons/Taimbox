@@ -47,8 +47,10 @@ import { useDeadlinesRedistribution } from '@/hooks/useDeadlinesRedistribution';
 import { useDeadlinesPageData } from '@/hooks/useDeadlinesPageData';
 import { useDeadlinesEditing } from '@/hooks/useDeadlinesEditing';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 
 export default function DeadlinesPage() {
+  const { t } = useAppTranslation();
   const { projects, clients } = useAppProjects();
   const { employees, currentUser } = useAppEmployees();
   const { absences, teamEvents } = useAppAbsencesAndEvents();
@@ -204,7 +206,7 @@ export default function DeadlinesPage() {
             ? { ...a, ...assignmentData, month: selectedMonth, name: data.name, hours: data.hours, affectsAll: data.affectsAll, affectedEmployeeIds: data.affectedEmployeeIds || [], employeeId: editingGlobal.employeeId }
             : a
         ));
-        toast.success('Asignación global actualizada');
+        toast.success(t('app.deadlines.toasts.globalAssignment.updated'));
       } else {
         const { data: inserted, error } = await supabase
           .from('global_assignments')
@@ -225,11 +227,12 @@ export default function DeadlinesPage() {
             employeeId: (inserted as { employee_id?: string; created_by?: string }).employee_id || (inserted as { created_by?: string }).created_by
           }]);
         }
-        toast.success('Asignación global creada');
+        toast.success(t('app.deadlines.toasts.globalAssignment.created'));
       }
     } catch (error) {
       console.error('Error guardando asignación global:', error);
-      const errorMessage = (error as Error)?.message || 'Error al guardar asignación global';
+      const fallbackMessage = t('app.deadlines.toasts.globalAssignment.saveError');
+      const errorMessage = (error as Error)?.message || fallbackMessage;
       toast.error(errorMessage);
     }
   };
@@ -497,7 +500,7 @@ export default function DeadlinesPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-slate-400">Cargando deadlines...</div>
+        <div className="text-slate-400">{t('app.deadlines.loading')}</div>
       </div>
     );
   }
@@ -536,14 +539,14 @@ export default function DeadlinesPage() {
                   onClick={onClick}
                 >
                   <Filter className="h-4 w-4" />
-                  Filtros
+                  {t('app.deadlines.filters.button')}
                 </Button>
               )}
             />
             {canEditDeadlines && (
               <Button variant="outline" size="sm" className="h-11 px-4 gap-1" onClick={() => openGlobalDialog()}>
                 <Plus className="h-4 w-4" />
-                Global
+                {t('app.deadlines.globalAssignments.button')}
               </Button>
             )}
           </div>
@@ -583,7 +586,7 @@ export default function DeadlinesPage() {
               setEditingDeadline(deadline);
               setConfirmAction({ type: 'delete_deadline', id: deadline.id });
             } else {
-              toast.info('No hay configuración guardada para eliminar');
+              toast.info(t('app.deadlines.toasts.noConfigToDelete'));
             }
           }}
         />

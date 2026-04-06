@@ -1,24 +1,12 @@
-import { Helmet } from 'react-helmet-async';
 import { IntegrationsArticle } from '@/components/landing/IntegrationsArticle';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
+import { CommercialSeoTags } from '@/seo/CommercialSeoTags';
 
 export default function IntegrationsLandingPage() {
     return (
         <>
-            <Helmet>
-                <title>Integraciones: Google Ads, Meta Ads y CRM | Taimbox</title>
-                <meta name="description" content="Conecta Taimbox con las herramientas clave de tu empresa. Sincronización nativa con plataformas publicitarias para un control financiero y de gastos total." />
-                <link rel="canonical" href="/integraciones" />
-                <script type="application/ld+json">
-                    {JSON.stringify({
-                        '@context': 'https://schema.org',
-                        '@type': 'WebPage',
-                        name: 'Integraciones — Taimbox',
-                        description: 'Conecta Taimbox con las herramientas clave de tu empresa. Sincronización nativa con plataformas publicitarias para un control financiero y de gastos total.',
-                    })}
-                </script>
-            </Helmet>
+            <CommercialSeoTags pathEs="/integraciones" pageKey="integrations" />
 
             <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 relative overflow-hidden">
                 <div className="absolute inset-0 overflow-hidden">

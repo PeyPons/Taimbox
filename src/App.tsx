@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
+import "./i18n/config";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AgencyProvider } from "@/contexts/AgencyContext";
 import { PrivacyDemoProvider } from "@/contexts/PrivacyDemoContext";
@@ -61,6 +62,7 @@ import { PlanGuard } from "./components/auth/PlanGuard";
 import { BrandingEffect } from "./components/layout/BrandingEffect";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { CookieBanner } from "./components/landing/CookieBanner";
+import { PublicLocaleSync } from "@/i18n/PublicLocaleSync";
 
 // Loading fallback para páginas lazy
 const PageLoader = () => (
@@ -144,6 +146,7 @@ const App = () => (
                   <TooltipProvider>
                     <BrandingEffect />
                     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                    <PublicLocaleSync />
                     <Toaster />
                     <NotificationProvider>
                       <NotificationEngineHost />
@@ -195,6 +198,35 @@ const App = () => (
 
                         {/* Presentación interna (oculta, no enlazada) */}
                         <Route path="/pitch" element={<PresentationPage />} />
+
+                        {/* Páginas públicas en inglés (/en/...) */}
+                        <Route path="/en" element={<LandingPage />} />
+                        <Route path="/en/why-taimbox" element={<ArticlePage />} />
+                        <Route path="/en/blog" element={<BlogPage />} />
+                        <Route path="/en/blog/what-is-timeboxing" element={<WhatIsTimeboxingPage />} />
+                        <Route path="/en/blog/project-planning-schedule-resources" element={<PlanificacionProyectosCronogramaRecursosPage />} />
+                        <Route path="/en/blog/parkinsons-law" element={<LeyParkinsonPage />} />
+                        <Route path="/en/blog/marketing-agency-kpis-2026" element={<KpisAgenciasMarketingPage />} />
+                        <Route path="/en/blog/agency-resource-planning-template" element={<PlantillaPlanificacionRecursosPage />} />
+                        <Route path="/en/blog/why-agency-loses-profitability-busy-team" element={<PorQueAgenciaPierdeRentabilidadPage />} />
+                        <Route path="/en/blog/measure-project-profitability-stop-selling-hours" element={<ComoMedirRentabilidadProyectoPage />} />
+                        <Route path="/en/blog/workload-management-without-burnout" element={<GestionCargaTrabajoEquipoPage />} />
+                        <Route path="/en/employee-dashboard" element={<EmployeeDashboardLandingPage />} />
+                        <Route path="/en/resource-planner" element={<PlannerLandingPage />} />
+                        <Route path="/en/team-management" element={<TeamLandingPage />} />
+                        <Route path="/en/reports-profitability" element={<ReportsLandingPage />} />
+                        <Route path="/en/project-control" element={<ProjectsLandingPage />} />
+                        <Route path="/en/integrations" element={<IntegrationsLandingPage />} />
+                        <Route path="/en/ppc-monitor" element={<PpcMonitorLandingPage />} />
+                        <Route path="/en/security" element={<SecurityLandingPage />} />
+                        <Route path="/en/privacy" element={<PrivacyPolicyPage />} />
+                        <Route path="/en/terms" element={<TermsOfServicePage />} />
+                        <Route path="/en/pricing" element={<PreciosPage />} />
+                        <Route path="/en/guide" element={<GuiaPage />} />
+                        <Route path="/en/guide/:section" element={<GuiaPage />} />
+                        <Route path="/en/contact" element={<ContactoPage />} />
+                        <Route path="/en/api-docs" element={<ApiDocsPage />} />
+                        <Route path="/en/pitch" element={<PresentationPage />} />
 
                         {/* Ruta pública Login */}
                         <Route path="/login" element={<Login />} />

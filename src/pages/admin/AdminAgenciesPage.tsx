@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useAppTranslation } from "@/hooks/useAppTranslation";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,6 +45,7 @@ interface AgencyRow {
 }
 
 export default function AdminAgenciesPage() {
+  const { t } = useAppTranslation();
   const navigate = useNavigate();
   const [agencies, setAgencies] = useState<AgencyRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,7 @@ export default function AdminAgenciesPage() {
       setAgencies((data as AgencyRow[]) || []);
     } catch (e: unknown) {
       console.error("[AdminAgenciesPage] Error listing agencies:", e);
-      toast.error("Error al cargar agencias");
+      toast.error(t("admin.agencies.errLoad", "Error al cargar agencias"));
       setAgencies([]);
     } finally {
       setLoading(false);
@@ -92,7 +94,7 @@ export default function AdminAgenciesPage() {
       );
     } catch (e: unknown) {
       console.error("[AdminAgenciesPage] Error setting plan:", e);
-      toast.error("Error al cambiar plan");
+      toast.error(t("admin.agencies.errPlan", "Error al cambiar plan"));
     } finally {
       setSettingPlanId(null);
     }
@@ -110,13 +112,13 @@ export default function AdminAgenciesPage() {
         p_status: newStatus,
       });
       if (error) throw error;
-      toast.success(newStatus === "suspended" ? "Agencia suspendida" : "Agencia reactivada");
+      toast.success(newStatus === "suspended" ? t("admin.agencies.suspendedSuccess", "Agencia suspendida") : t("admin.agencies.reactivated", "Agencia reactivada"));
       setAgencies((prev) =>
         prev.map((a) => (a.id === agencyId ? { ...a, status: newStatus } : a))
       );
     } catch (e: unknown) {
       console.error("[AdminAgenciesPage] Error updating status:", e);
-      toast.error("Error al actualizar estado");
+      toast.error(t("admin.agencies.errStatus", "Error al actualizar estado"));
     } finally {
       setUpdatingId(null);
     }
@@ -129,11 +131,11 @@ export default function AdminAgenciesPage() {
         p_agency_id: agencyId,
       });
       if (error) throw error;
-      toast.success("Redirigiendo a la app con la agencia seleccionada");
+      toast.success(t("admin.agencies.redirecting", "Redirigiendo a la app con la agencia seleccionada"));
       navigate(`/dashboard?agency=${agencyId}`);
     } catch (e: unknown) {
       console.error("[AdminAgenciesPage] Error accediendo como agencia:", e);
-      toast.error("No se pudo acceder como esta agencia");
+      toast.error(t("admin.agencies.errImpersonate", "No se pudo acceder como esta agencia"));
       setImpersonatingId(null);
     }
   };
@@ -171,7 +173,7 @@ export default function AdminAgenciesPage() {
   const subscriptionLabel = (s: string | null | undefined) => {
     if (!s) return "—";
     const map: Record<string, string> = {
-      active: "Activa",
+      active: t("admin.agencies.active", "Activa"),
       trialing: "Prueba",
       past_due: "Pago pendiente",
       canceled: "Cancelada",
@@ -197,7 +199,7 @@ export default function AdminAgenciesPage() {
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
-                  placeholder="Buscar por nombre o slug..."
+                  placeholder={t("admin.agencies.searchPlaceholder", "Buscar por nombre o slug...")}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-9"
@@ -243,17 +245,17 @@ export default function AdminAgenciesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Suscripción</TableHead>
-                  <TableHead>Trial hasta</TableHead>
-                  <TableHead>Setup</TableHead>
-                  <TableHead>Empleados</TableHead>
-                  <TableHead>Proyectos</TableHead>
-                  <TableHead>Creación</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
+                  <TableHead>{t("common.name", "Nombre")}</TableHead>
+                  <TableHead>{t("common.slug", "Slug")}</TableHead>
+                  <TableHead>{t("common.status", "Estado")}</TableHead>
+                  <TableHead>{t("common.plan", "Plan")}</TableHead>
+                  <TableHead>{t("common.subscription", "Suscripción")}</TableHead>
+                  <TableHead>{t("admin.agencies.trialEnd", "Trial hasta")}</TableHead>
+                  <TableHead>{t("admin.agencies.setup", "Setup")}</TableHead>
+                  <TableHead>{t("admin.agencies.employees", "Empleados")}</TableHead>
+                  <TableHead>{t("admin.agencies.projects", "Proyectos")}</TableHead>
+                  <TableHead>{t("common.createdAt", "Creación")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions", "Acciones")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -263,7 +265,7 @@ export default function AdminAgenciesPage() {
                     <TableCell className="text-slate-600">{agency.slug}</TableCell>
                     <TableCell>
                       <Badge variant={agency.status === "suspended" ? "destructive" : "default"}>
-                        {agency.status === "suspended" ? "Suspendida" : "Activa"}
+                        {agency.status === "suspended" ? t("admin.agencies.suspended", "Suspendida") : t("admin.agencies.active", "Activa")}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -277,9 +279,9 @@ export default function AdminAgenciesPage() {
                     </TableCell>
                     <TableCell>
                       {agency.setup_completed ? (
-                        <span className="text-green-600">Completado</span>
+                        <span className="text-green-600">{t("admin.agencies.completed", "Completado")}</span>
                       ) : (
-                        <span className="text-amber-600">Pendiente</span>
+                        <span className="text-amber-600">{t("common.pending", "Pendiente")}</span>
                       )}
                     </TableCell>
                     <TableCell>{agency.employees_count}</TableCell>
@@ -321,14 +323,14 @@ export default function AdminAgenciesPage() {
                           className="gap-1"
                           onClick={() => accessAsAgency(agency.id)}
                           disabled={impersonatingId === agency.id}
-                          title="Ver la app como si fueras de esta agencia"
+                          title={t("admin.agencies.impersonate", "Ver la app como si fueras de esta agencia")}
                         >
                           {impersonatingId === agency.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <>
                               <LogIn className="h-4 w-4" />
-                              Entrar
+                              {t("common.enter", "Entrar")}
                             </>
                           )}
                         </Button>

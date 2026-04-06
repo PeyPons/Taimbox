@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import { useAppTranslation } from "@/hooks/useAppTranslation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ interface PlatformAdminRow {
 }
 
 export default function AdminAdminsPage() {
+  const { t } = useAppTranslation();
   const { user: currentUser } = useAuth();
   const [admins, setAdmins] = useState<PlatformAdminRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +54,7 @@ export default function AdminAdminsPage() {
       setAdmins((data as PlatformAdminRow[]) || []);
     } catch (e: unknown) {
       console.error("[AdminAdminsPage] Error listing admins:", e);
-      toast.error("Error al cargar administradores");
+      toast.error(t("admin.admins.errLoad", "Error al cargar administradores"));
       setAdmins([]);
     } finally {
       setLoading(false);
@@ -67,7 +69,7 @@ export default function AdminAdminsPage() {
     e?.preventDefault();
     const email = addEmail.trim().toLowerCase();
     if (!email) {
-      toast.error("Indica un email");
+      toast.error(t("admin.admins.errEmail", "Indica un email"));
       return;
     }
     setAdding(true);
@@ -85,7 +87,7 @@ export default function AdminAdminsPage() {
         throw new Error(msg);
       }
       if (data?.error) throw new Error(data.error);
-      toast.success("Administrador añadido correctamente");
+      toast.success(t("admin.admins.successAdd", "Administrador añadido correctamente"));
       setAddOpen(false);
       setAddEmail("");
       setAddPassword("");
@@ -93,13 +95,13 @@ export default function AdminAdminsPage() {
       setAddRole("admin");
       fetchAdmins();
     } catch (err: unknown) {
-      let msg = err instanceof Error ? err.message : "Error al añadir";
+      let msg = err instanceof Error ? err.message : t("admin.admins.errAdd", "Error al añadir");
       if (
         msg.includes("500") ||
         msg.toLowerCase().includes("internal server error") ||
         msg.toLowerCase().includes("failed to fetch")
       ) {
-        msg += " Revisa en el servidor: docker logs supabase-edge-functions";
+        msg += t("admin.admins.errServer", " Revisa en el servidor: docker logs supabase-edge-functions");
       }
       toast.error(msg);
     } finally {
@@ -114,10 +116,10 @@ export default function AdminAdminsPage() {
         p_user_id: userId,
       });
       if (error) throw error;
-      toast.success("Administrador quitado del panel");
+      toast.success(t("admin.admins.successRemove", "Administrador quitado del panel"));
       fetchAdmins();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Error al quitar";
+      const msg = e instanceof Error ? e.message : t("admin.admins.errRemove", "Error al quitar");
       toast.error(msg);
     } finally {
       setRemovingId(null);
@@ -164,7 +166,7 @@ export default function AdminAdminsPage() {
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Añadir administrador</DialogTitle>
+                    <DialogTitle>{t("admin.admins.addBtn", "Añadir administrador")}</DialogTitle>
                     <DialogDescription>
                       Si indicas contraseña, se creará la cuenta (el usuario podrá entrar con ese email y contraseña). Si no, el usuario debe existir ya en el sistema.
                     </DialogDescription>
@@ -172,40 +174,40 @@ export default function AdminAdminsPage() {
                   <form onSubmit={handleAdd}>
                     <div className="grid gap-4 py-4">
                       <div className="grid gap-2">
-                        <Label htmlFor="admin-email">Email</Label>
+                        <Label htmlFor="admin-email">{t("common.email", "Email")}</Label>
                         <Input
                           id="admin-email"
                           type="email"
                           autoComplete="email"
-                          placeholder="usuario@ejemplo.com"
+                          placeholder={t("admin.admins.emailPlaceholder", "usuario@ejemplo.com")}
                           value={addEmail}
                           onChange={(e) => setAddEmail(e.target.value)}
                         />
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="admin-password">Contraseña (opcional)</Label>
+                        <Label htmlFor="admin-password">{t("admin.admins.pwdOptional", "Contraseña (opcional)")}</Label>
                         <Input
                           id="admin-password"
                           type="password"
                           autoComplete="new-password"
-                          placeholder="Mín. 6 caracteres para crear cuenta nueva"
+                          placeholder={t("admin.admins.pwdPlaceholder", "Mín. 6 caracteres para crear cuenta nueva")}
                           value={addPassword}
                           onChange={(e) => setAddPassword(e.target.value)}
                         />
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="admin-name">Nombre (opcional)</Label>
+                        <Label htmlFor="admin-name">{t("admin.admins.nameOptional", "Nombre (opcional)")}</Label>
                         <Input
                           id="admin-name"
                           type="text"
                           autoComplete="name"
-                          placeholder="Nombre para mostrar"
+                          placeholder={t("admin.admins.namePlaceholder", "Nombre para mostrar")}
                           value={addName}
                           onChange={(e) => setAddName(e.target.value)}
                         />
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="admin-role">Rol (opcional)</Label>
+                        <Label htmlFor="admin-role">{t("admin.admins.roleOptional", "Rol (opcional)")}</Label>
                         <Input
                           id="admin-role"
                           placeholder="admin"
@@ -222,7 +224,7 @@ export default function AdminAdminsPage() {
                         {adding ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
-                          "Añadir"
+                          t("common.add", "Añadir")
                         )}
                       </Button>
                     </DialogFooter>
@@ -244,10 +246,10 @@ export default function AdminAdminsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-8" />
-                  <TableHead>Email</TableHead>
-                  <TableHead>Rol</TableHead>
-                  <TableHead>Fecha alta</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
+                  <TableHead>{t("common.email", "Email")}</TableHead>
+                  <TableHead>{t("common.role", "Rol")}</TableHead>
+                  <TableHead>{t("admin.admins.createdAt", "Fecha alta")}</TableHead>
+                  <TableHead className="text-right">{t("common.actions", "Acciones")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -261,7 +263,7 @@ export default function AdminAdminsPage() {
                         <span className="text-slate-400">ID: {admin.user_id.slice(0, 8)}…</span>
                       )}
                       {isCurrentUser(admin.user_id) && (
-                        <span className="ml-2 text-xs text-slate-500">(tú)</span>
+                        <span className="ml-2 text-xs text-slate-500">{t("admin.admins.you", "(tú)")}</span>
                       )}
                     </TableCell>
                     <TableCell className="text-slate-600">{admin.role}</TableCell>
@@ -276,8 +278,8 @@ export default function AdminAdminsPage() {
                           disabled={removingId === admin.user_id || isCurrentUser(admin.user_id)}
                           title={
                             isCurrentUser(admin.user_id)
-                              ? "No puedes quitarte a ti mismo"
-                              : "Quitar acceso de administrador"
+                              ? t("admin.admins.cannotRemoveSelf", "No puedes quitarte a ti mismo")
+                              : t("admin.admins.removeAccess", "Quitar acceso de administrador")
                           }
                         >
                           {removingId === admin.user_id ? (

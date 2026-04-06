@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,27 +11,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/lib/notify";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Rocket, LogIn } from "lucide-react";
+import { useAppTranslation } from "@/hooks/useAppTranslation";
 
-// Schema de Login
-const loginFormSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(1, 'La contraseña es obligatoria'),
-});
+type LoginFormValues = {
+  email: string;
+  password: string;
+};
 
-// Schema de Registro
-const registerFormSchema = z.object({
-  name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
-  email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
-  confirmPassword: z.string().min(6, 'Confirma tu contraseña'),
-  agencyName: z.string().min(2, 'El nombre de la empresa es obligatorio'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Las contraseñas no coinciden",
-  path: ["confirmPassword"],
-});
-
-type LoginFormValues = z.infer<typeof loginFormSchema>;
-type RegisterFormValues = z.infer<typeof registerFormSchema>;
+type RegisterFormValues = {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  agencyName: string;
+};
 
 export default function Login() {
   const navigate = useNavigate();
@@ -44,6 +37,33 @@ export default function Login() {
   const [forgotEmail, setForgotEmail] = useState('');
   const [isSendingReset, setIsSendingReset] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const { t } = useAppTranslation();
+
+  const loginFormSchema = useMemo(
+    () =>
+      z.object({
+        email: z.string().email(t("auth.login.errors.invalidEmail")),
+        password: z.string().min(1, t("auth.login.errors.passwordRequired")),
+      }),
+    [t]
+  );
+
+  const registerFormSchema = useMemo(
+    () =>
+      z
+        .object({
+          name: z.string().min(2, t("auth.register.errors.nameTooShort")),
+          email: z.string().email(t("auth.register.errors.invalidEmail")),
+          password: z.string().min(6, t("auth.register.errors.passwordTooShort")),
+          confirmPassword: z.string().min(6, t("auth.register.errors.confirmPasswordRequired")),
+          agencyName: z.string().min(2, t("auth.register.errors.agencyNameRequired")),
+        })
+        .refine((data) => data.password === data.confirmPassword, {
+          message: t("auth.register.errors.passwordsDontMatch"),
+          path: ["confirmPassword"],
+        }),
+    [t]
+  );
 
   // Obtener la ruta de origen desde el state de navegación
   const from = (location.state as { from?: { pathname?: string } })?.from?.pathname || "/dashboard";
@@ -88,9 +108,14 @@ export default function Login() {
     });
 
     if (error) {
-      toast.error("Error de acceso: " + error.message);
+      toast.error(
+        t("auth.login.toast.error", {
+          // @ts-expect-error i18next interpolation
+          message: error.message,
+        })
+      );
     } else {
-      toast.success("¡Bienvenido!");
+      toast.success(t("auth.login.toast.success"));
       setTimeout(() => {
         navigate(from, { replace: true });
       }, 100);
@@ -99,7 +124,7 @@ export default function Login() {
 
   const onForgotPassword = async () => {
     if (!forgotEmail || !forgotEmail.trim()) {
-      toast.error('Introduce tu email');
+      toast.error(t("auth.forgotPassword.toast.missingEmail"));
       return;
     }
 
@@ -109,9 +134,9 @@ export default function Login() {
         body: { email: forgotEmail.trim() },
       });
       setResetSent(true);
-      toast.success('Si el email existe en nuestro sistema, recibirás un enlace de recuperación.');
+      toast.success(t("auth.forgotPassword.toast.success"));
     } catch {
-      toast.success('Si el email existe en nuestro sistema, recibirás un enlace de recuperación.');
+      toast.success(t("auth.forgotPassword.toast.success"));
     } finally {
       setIsSendingReset(false);
     }
@@ -169,7 +194,7 @@ export default function Login() {
       if (agencyExists) {
         registerForm.setError('agencyName', {
           type: 'manual',
-          message: 'Esta empresa ya existe. Por favor, elige otro nombre.'
+          message: t("auth.register.errors.agencyAlreadyExists"),
         });
         setIsRegistering(false);
         return;
@@ -189,7 +214,7 @@ export default function Login() {
         console.error('Error en registro:', error);
 
         // Extraer mensaje de error
-        let errorMessage = 'Error al registrar';
+        let errorMessage = t("auth.register.toast.genericError");
         if (error.message) {
           errorMessage = error.message;
         } else if (error.context?.body) {
@@ -212,7 +237,7 @@ export default function Login() {
         return;
       }
 
-      toast.success("¡Cuenta creada! Iniciando sesión...");
+      toast.success(t("auth.register.toast.success"));
 
       // Auto-login con las credenciales recién creadas
       const { error: loginError } = await supabase.auth.signInWithPassword({
@@ -221,7 +246,7 @@ export default function Login() {
       });
 
       if (loginError) {
-        toast.error("Cuenta creada pero hubo un error al iniciar sesión. Por favor, inicia sesión manualmente.");
+        toast.error(t("auth.register.toast.loginAfterRegisterError"));
         setActiveTab('login');
         return;
       }
@@ -233,7 +258,7 @@ export default function Login() {
 
     } catch (err) {
       console.error('Error inesperado:', err);
-      toast.error('Error inesperado. Por favor, inténtalo de nuevo.');
+      toast.error(t("auth.register.toast.unexpectedError"));
     } finally {
       setIsRegistering(false);
     }
@@ -250,9 +275,11 @@ export default function Login() {
               </svg>
             </div>
           </div>
-          <CardTitle className="text-2xl text-center font-bold text-slate-900">Taimbox</CardTitle>
+          <CardTitle className="text-2xl text-center font-bold text-slate-900">
+            {t("auth.brand")}
+          </CardTitle>
           <CardDescription className="text-center text-slate-500">
-            Gestiona tu equipo y proyectos
+            {t("auth.tagline")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -260,11 +287,11 @@ export default function Login() {
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="login" className="gap-2">
                 <LogIn className="h-4 w-4" />
-                Acceder
+                {t("auth.tabs.login")}
               </TabsTrigger>
               <TabsTrigger value="register" className="gap-2">
                 <Rocket className="h-4 w-4" />
-                Registrarse
+                {t("auth.tabs.register")}
               </TabsTrigger>
             </TabsList>
 
@@ -277,11 +304,11 @@ export default function Login() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>{t("auth.login.fields.email.label")}</FormLabel>
                         <FormControl>
                           <Input
                             type="email"
-                            placeholder="usuario@empresa.com"
+                            placeholder={t("auth.login.fields.email.placeholder")}
                             className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                             {...field}
                           />
@@ -295,11 +322,11 @@ export default function Login() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Contraseña</FormLabel>
+                        <FormLabel>{t("auth.login.fields.password.label")}</FormLabel>
                         <FormControl>
                           <Input
                             type="password"
-                            placeholder="••••••••"
+                            placeholder={t("auth.login.fields.password.placeholder")}
                             className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                             {...field}
                           />
@@ -313,7 +340,9 @@ export default function Login() {
                     className="w-full bg-primary hover:bg-primary/90 text-white font-medium"
                     disabled={loginForm.formState.isSubmitting}
                   >
-                    {loginForm.formState.isSubmitting ? "Entrando..." : "Acceder"}
+                    {loginForm.formState.isSubmitting
+                      ? t("auth.login.actions.submitting")
+                      : t("auth.login.actions.submit")}
                   </Button>
                 </form>
               </Form>
@@ -326,30 +355,32 @@ export default function Login() {
                     onClick={() => setShowForgotPassword(true)}
                     className="text-sm text-primary hover:text-primary/80 hover:underline transition-colors"
                   >
-                    ¿Olvidaste tu contraseña?
+                    {t("auth.forgotPassword.link")}
                   </button>
                 ) : resetSent ? (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800">
-                    <p className="font-medium mb-1">Revisa tu bandeja de entrada</p>
+                    <p className="font-medium mb-1">
+                      {t("auth.forgotPassword.success.title")}
+                    </p>
                     <p className="text-green-600 text-xs">
-                      Si el email está registrado, recibirás un enlace para restablecer tu contraseña.
+                      {t("auth.forgotPassword.success.body")}
                     </p>
                     <button
                       type="button"
                       onClick={() => { setShowForgotPassword(false); setResetSent(false); setForgotEmail(''); }}
                       className="mt-2 text-xs text-primary hover:underline"
                     >
-                      Volver al inicio de sesión
+                      {t("auth.forgotPassword.success.backToLogin")}
                     </button>
                   </div>
                 ) : (
                   <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
                     <p className="text-sm text-slate-600">
-                      Introduce tu email y te enviaremos un enlace para restablecer tu contraseña.
+                      {t("auth.forgotPassword.description")}
                     </p>
                     <Input
                       type="email"
-                      placeholder="tu@empresa.com"
+                      placeholder={t("auth.forgotPassword.emailPlaceholder")}
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
                       className="bg-white border-slate-200 focus:border-indigo-500"
@@ -363,7 +394,7 @@ export default function Login() {
                         className="flex-1"
                         onClick={() => { setShowForgotPassword(false); setForgotEmail(''); }}
                       >
-                        Cancelar
+                        {t("auth.forgotPassword.actions.cancel")}
                       </Button>
                       <Button
                         type="button"
@@ -372,7 +403,9 @@ export default function Login() {
                         onClick={onForgotPassword}
                         disabled={isSendingReset}
                       >
-                        {isSendingReset ? "Enviando..." : "Enviar enlace"}
+                        {isSendingReset
+                          ? t("auth.forgotPassword.actions.sending")
+                          : t("auth.forgotPassword.actions.sendLink")}
                       </Button>
                     </div>
                   </div>
@@ -389,10 +422,10 @@ export default function Login() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Tu nombre</FormLabel>
+                        <FormLabel>{t("auth.register.fields.name.label")}</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Juan García"
+                            placeholder={t("auth.register.fields.name.placeholder")}
                             className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                             {...field}
                           />
@@ -406,11 +439,11 @@ export default function Login() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>{t("auth.register.fields.email.label")}</FormLabel>
                         <FormControl>
                           <Input
                             type="email"
-                            placeholder="tu@empresa.com"
+                            placeholder={t("auth.register.fields.email.placeholder")}
                             className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                             {...field}
                             onBlur={(e) => checkAvailability('email', e.target.value)}
@@ -426,7 +459,7 @@ export default function Login() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Contraseña (mín 6)</FormLabel>
+                          <FormLabel>{t("auth.register.fields.password.label")}</FormLabel>
                           <FormControl>
                             <Input
                               type="password"
@@ -444,7 +477,7 @@ export default function Login() {
                       name="confirmPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Confirmar</FormLabel>
+                          <FormLabel>{t("auth.register.fields.confirmPassword.label")}</FormLabel>
                           <FormControl>
                             <Input
                               type="password"
@@ -463,10 +496,10 @@ export default function Login() {
                     name="agencyName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nombre de tu empresa</FormLabel>
+                        <FormLabel>{t("auth.register.fields.agencyName.label")}</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Mi Agencia"
+                            placeholder={t("auth.register.fields.agencyName.placeholder")}
                             className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                             {...field}
                             onBlur={(e) => checkAvailability('agencyName', e.target.value)}
@@ -481,10 +514,12 @@ export default function Login() {
                     className="w-full bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90 text-white font-medium"
                     disabled={isRegistering}
                   >
-                    {isRegistering ? "Creando cuenta..." : "Crear cuenta gratis"}
+                    {isRegistering
+                      ? t("auth.register.actions.submitting")
+                      : t("auth.register.actions.submit")}
                   </Button>
                   <p className="text-xs text-center text-slate-500">
-                    Al registrarte, crearás una nueva empresa y serás el administrador,
+                    {t("auth.register.footer")}
                   </p>
                 </form>
               </Form>

@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
-/**
- * Recurso gráfico animado para el artículo de la Ley de Parkinson.
- * Muestra cómo "el trabajo se expande hasta llenar el tiempo disponible":
- * dos barras (1 semana vs 1 día) que se llenan con la misma animación.
- */
 export function ParkinsonLawVisual() {
   const [start, setStart] = useState(false);
+  const { t } = useTranslation('blog');
+  const compKey = 'components.parkinsonLawVisual';
 
   useEffect(() => {
     const t = setTimeout(() => setStart(true), 400);
@@ -16,13 +14,13 @@ export function ParkinsonLawVisual() {
   return (
     <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/40 p-5 sm:p-8 overflow-hidden">
       <p className="text-center text-indigo-200/90 text-sm font-medium mb-6">
-        El mismo trabajo se expande hasta llenar el tiempo disponible
+        {t(`${compKey}.p1`)}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
         <div>
           <div className="flex justify-between text-xs text-indigo-300/90 mb-2">
-            <span>Tiempo asignado: 1 semana</span>
-            <span className="text-amber-300/90">Se usa la semana</span>
+            <span>{t(`${compKey}.week`)}</span>
+            <span className="text-amber-300/90">{t(`${compKey}.weekUsed`)}</span>
           </div>
           <div className="h-10 rounded-lg bg-white/10 border border-white/10 overflow-hidden">
             <div
@@ -33,8 +31,8 @@ export function ParkinsonLawVisual() {
         </div>
         <div>
           <div className="flex justify-between text-xs text-indigo-300/90 mb-2">
-            <span>Tiempo asignado: 1 día</span>
-            <span className="text-emerald-300/90">Se usa el día</span>
+            <span>{t(`${compKey}.day`)}</span>
+            <span className="text-emerald-300/90">{t(`${compKey}.dayUsed`)}</span>
           </div>
           <div className="h-10 rounded-lg bg-white/10 border border-white/10 overflow-hidden">
             <div
@@ -45,7 +43,7 @@ export function ParkinsonLawVisual() {
         </div>
       </div>
       <p className="text-center text-indigo-300/80 text-xs mt-4 italic">
-        Misma tarea, distinto plazo → el trabajo se adapta al tiempo dado
+        {t(`${compKey}.footer`)}
       </p>
     </div>
   );

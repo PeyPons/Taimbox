@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppAbsencesAndEvents, useAppAllocationActions, useAppAllocations, useAppEmployees, useAppProjects, useAppWeeklyFeedback } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
@@ -35,6 +36,7 @@ import { useWeeklyForecastRedistribution } from '@/hooks/useWeeklyForecastRedist
 import { WeeklyForecastTransfersFilters } from '@/components/weekly-forecast/WeeklyForecastTransfersFilters';
 
 export default function WeeklyForecastPage() {
+  const { t } = useTranslation('app');
   const { projects, clients } = useAppProjects();
   const { allocations, getEmployeeLoadForWeek, ensureMonthLoaded } = useAppAllocations();
   const { employees, currentUser } = useAppEmployees();
@@ -180,8 +182,8 @@ export default function WeeklyForecastPage() {
     <div className="max-w-7xl mx-auto p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Previsión mensual</h1>
-        <p className="text-slate-500 mt-1">Seguimiento de horas contratadas y redistribución de carga</p>
+        <h1 className="text-3xl font-bold text-slate-900">{t('weeklyForecast.title', 'Previsión mensual')}</h1>
+        <p className="text-slate-500 mt-1">{t('weeklyForecast.subtitle', 'Seguimiento de horas contratadas y redistribución de carga')}</p>
       </div>
 
       {/* Control de mes */}
@@ -195,7 +197,7 @@ export default function WeeklyForecastPage() {
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="sm" onClick={handleToday} className="h-7 text-xs px-2">
-            <CalendarDays className="h-3.5 w-3.5 mr-1.5" />Mes actual
+            <CalendarDays className="h-3.5 w-3.5 mr-1.5" />{t('weeklyForecast.monthCurrent', 'Mes actual')}
           </Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleNextMonth}>
             <ChevronRight className="h-4 w-4" />
@@ -208,23 +210,23 @@ export default function WeeklyForecastPage() {
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="traffic" className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
-            Semáforo
+            {t('weeklyForecast.tabs.traffic', 'Semáforo')}
           </TabsTrigger>
           <TabsTrigger value="transfers" className="flex items-center gap-2">
             <ArrowUpDown className="h-4 w-4" />
-            Transferencias
+            {t('weeklyForecast.tabs.transfers', 'Transferencias')}
           </TabsTrigger>
           <TabsTrigger value="blockers" className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4" />
-            Bloqueos
+            {t('weeklyForecast.tabs.blockers', 'Bloqueos')}
           </TabsTrigger>
           <TabsTrigger value="redistribute" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Redistribución
+            {t('weeklyForecast.tabs.redistribute', 'Redistribución')}
           </TabsTrigger>
           <TabsTrigger value="activity" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
-            Historial
+            {t('weeklyForecast.tabs.activity', 'Historial')}
           </TabsTrigger>
         </TabsList>
 

@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { AlertTriangle } from 'lucide-react';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 
 export function SubscriptionSoftLockBanner() {
   const { isSoftLocked } = useSubscriptionLimits();
+  const { t } = useAppTranslation();
 
   if (!isSoftLocked) return null;
 
@@ -14,13 +16,13 @@ export function SubscriptionSoftLockBanner() {
     >
       <AlertTriangle className="h-5 w-5 shrink-0" />
       <span>
-        Tu agencia excede los límites del Plan Starter. Pasa a Pro o Business para volver a planificar.
+        {t('layout.subscriptionBanner.exceeds', 'Tu agencia excede los límites del Plan Starter. Pasa a Pro o Business para volver a planificar.')}
       </span>
       <Link
         to="/agency?tab=billing"
         className="ml-2 underline font-semibold hover:no-underline"
       >
-        Ver planes
+        {t('layout.subscriptionBanner.viewPlans', 'Ver planes')}
       </Link>
     </div>
   );

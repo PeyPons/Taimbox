@@ -29,6 +29,7 @@ import {
 import { ArrowLeft, Loader2, Users, Shield, Crown, AlertTriangle, Trash2, UserCheck, UserX, UserPlus, Check, ChevronDown } from 'lucide-react';
 import { toast } from '@/lib/notify';
 import { cn } from '@/lib/utils';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 
 export default function AgencyManagementPage() {
   const { id } = useParams<{ id: string }>();
@@ -41,6 +42,7 @@ export default function AgencyManagementPage() {
     transferAgencyOwnership
   } = useAgency();
   const { permissions } = usePermissions();
+  const { t } = useAppTranslation();
 
   const [members, setMembers] = useState<AgencyMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -88,16 +90,16 @@ export default function AgencyManagementPage() {
   // Verificar permisos y redirigir si es necesario
   useEffect(() => {
     if (!hasAccess) {
-      toast.error('No tienes permisos para acceder a esta página');
+      toast.error(t('agencyManagement.toast.noPermission', 'No tienes permisos para acceder a esta página'));
       navigate('/agencies');
       return;
     }
 
     if (agencyId && !hasAgencyAccess) {
-      toast.error('No tienes acceso a esta agencia');
+      toast.error(t('agencyManagement.toast.noAccess', 'No tienes acceso a esta agencia'));
       navigate('/agencies');
     }
-  }, [hasAccess, hasAgencyAccess, agencyId, navigate]);
+  }, [hasAccess, hasAgencyAccess, agencyId, navigate, t]);
 
   // Cargar miembros cuando cambie agencyId
   useEffect(() => {
@@ -126,7 +128,7 @@ export default function AgencyManagementPage() {
         }
       } catch (error: any) {
         console.error('[AgencyManagementPage] Error cargando miembros:', error);
-        toast.error(error.message || 'Error al cargar los miembros');
+        toast.error(error.message || t('agencyManagement.toast.loadError', 'Error al cargar los miembros'));
         setMembers([]);
       } finally {
         setIsLoading(false);
@@ -148,7 +150,7 @@ export default function AgencyManagementPage() {
     // Validar que no se elimine al último admin
     const adminMembers = members.filter(m => m.isAdmin);
     if (adminMembers.length === 1 && memberToDelete.isAdmin) {
-      toast.error('No puedes eliminar al último administrador de la agencia');
+      toast.error(t('agencyManagement.toast.lastAdminError', 'No puedes eliminar al último administrador de la agencia'));
       setIsDeleteDialogOpen(false);
       setMemberToDelete(null);
       return;
@@ -158,9 +160,9 @@ export default function AgencyManagementPage() {
     try {
       const result = await removeUserFromAgency(memberToDelete.userId, agencyId);
       if (result.completelyRemoved) {
-        toast.success('Usuario eliminado completamente del sistema');
+        toast.success(t('agencyManagement.toast.userDeleted', 'Usuario eliminado completamente del sistema'));
       } else {
-        toast.success('Usuario desvinculado de esta agencia');
+        toast.success(t('agencyManagement.toast.userUnlinked', 'Usuario desvinculado de esta agencia'));
       }
       setIsDeleteDialogOpen(false);
       setMemberToDelete(null);
@@ -172,7 +174,7 @@ export default function AgencyManagementPage() {
       setMembers(membersData);
     } catch (error: any) {
       console.error('Error eliminando miembro:', error);
-      toast.error(error.message || 'Error al eliminar el miembro');
+      toast.error(error.message || t('agencyManagement.toast.deleteError', 'Error al eliminar el miembro'));
     } finally {
       setIsRemoving(false);
     }
@@ -184,7 +186,7 @@ export default function AgencyManagementPage() {
     setIsTransferring(true);
     try {
       await transferAgencyOwnership(selectedNewOwnerId, agencyId);
-      toast.success('Propiedad de la agencia transferida correctamente');
+      toast.success(t('agencyManagement.toast.transferSuccess', 'Propiedad de la agencia transferida correctamente'));
       setIsTransferDialogOpen(false);
       setSelectedNewOwnerId('');
 
@@ -195,7 +197,7 @@ export default function AgencyManagementPage() {
       setMembers(membersData);
     } catch (error: any) {
       console.error('Error transfiriendo propiedad:', error);
-      toast.error(error.message || 'Error al transferir la propiedad');
+      toast.error(error.message || t('agencyManagement.toast.transferError', 'Error al transferir la propiedad'));
     } finally {
       setIsTransferring(false);
     }
@@ -229,7 +231,7 @@ export default function AgencyManagementPage() {
 
   const agencyName = currentAgency?.id === agencyId
     ? currentAgency?.name
-    : availableAgencies?.find(a => a.agencyId === agencyId)?.agencyName || 'Agencia';
+    : availableAgencies?.find(a => a.agencyId === agencyId)?.agencyName || t('agencyManagement.stats.agencyFallback', 'Agencia');
 
   if (!hasAccess) {
     return null;
@@ -247,16 +249,16 @@ export default function AgencyManagementPage() {
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Volver
+            {t('agencyManagement.back', 'Volver')}
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Gestión de Agencia</h1>
+            <h1 className="text-3xl font-bold text-slate-900">{t('agencyManagement.title', 'Gestión de Agencia')}</h1>
             <p className="text-slate-600 mt-1">{agencyName}</p>
           </div>
         </div>
         <Button onClick={() => setIsInviteDialogOpen(true)}>
           <UserPlus className="h-4 w-4 mr-2" />
-          Invitar Usuario
+          {t('agencyManagement.buttons.invite', 'Invitar Usuario')}
         </Button>
       </div>
 
@@ -264,7 +266,7 @@ export default function AgencyManagementPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-600">Total miembros</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600">{t('agencyManagement.stats.total', 'Total miembros')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-900">{stats.total}</div>
@@ -273,7 +275,7 @@ export default function AgencyManagementPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-600">Activos</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600">{t('agencyManagement.stats.active', 'Activos')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{stats.active}</div>
@@ -282,7 +284,7 @@ export default function AgencyManagementPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-600">Administradores</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600">{t('agencyManagement.stats.admins', 'Administradores')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary">{stats.admins}</div>
@@ -291,7 +293,7 @@ export default function AgencyManagementPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-600">Inactivos</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600">{t('agencyManagement.stats.inactive', 'Inactivos')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-400">{stats.inactive}</div>
@@ -306,10 +308,10 @@ export default function AgencyManagementPage() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                Miembros de la agencia
+                {t('agencyManagement.members.title', 'Miembros de la agencia')}
               </CardTitle>
               <CardDescription>
-                Gestiona los miembros de la agencia y sus roles
+                {t('agencyManagement.members.description', 'Gestiona los miembros de la agencia y sus roles')}
               </CardDescription>
             </div>
             {/* Botón para transferir propiedad - solo si hay más de un miembro */}
@@ -321,7 +323,7 @@ export default function AgencyManagementPage() {
                 className="gap-2"
               >
                 <Crown className="h-4 w-4" />
-                Transferir propiedad
+                {t('agencyManagement.buttons.transfer', 'Transferir propiedad')}
               </Button>
             )}
           </div>
@@ -333,18 +335,18 @@ export default function AgencyManagementPage() {
             </div>
           ) : members.length === 0 ? (
             <div className="text-center py-8 text-slate-500">
-              No hay miembros en esta agencia
+              {t('agencyManagement.members.empty', 'No hay miembros en esta agencia')}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Rol</TableHead>
-                  <TableHead>Departamento</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
+                  <TableHead>{t('agencyManagement.table.name', 'Nombre')}</TableHead>
+                  <TableHead>{t('agencyManagement.table.email', 'Email')}</TableHead>
+                  <TableHead>{t('agencyManagement.table.role', 'Rol')}</TableHead>
+                  <TableHead>{t('agencyManagement.table.department', 'Departamento')}</TableHead>
+                  <TableHead>{t('agencyManagement.table.status', 'Estado')}</TableHead>
+                  <TableHead className="text-right">{t('agencyManagement.table.actions', 'Acciones')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -356,13 +358,13 @@ export default function AgencyManagementPage() {
                         {member.isPrimary && (
                           <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
                             <Crown className="h-3 w-3 mr-1" />
-                            Owner
+                            {t('agencyManagement.table.owner', 'Owner')}
                           </Badge>
                         )}
                         {member.isAdmin && !member.isPrimary && (
                           <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
                             <Shield className="h-3 w-3 mr-1" />
-                            Admin
+                            {t('agencyManagement.table.admin', 'Admin')}
                           </Badge>
                         )}
                       </div>
@@ -374,12 +376,12 @@ export default function AgencyManagementPage() {
                       {member.isActive ? (
                         <Badge className="bg-green-100 text-green-700">
                           <UserCheck className="h-3 w-3 mr-1" />
-                          Activo
+                          {t('agencyManagement.table.active', 'Activo')}
                         </Badge>
                       ) : (
                         <Badge variant="secondary" className="bg-slate-100 text-slate-500">
                           <UserX className="h-3 w-3 mr-1" />
-                          Inactivo
+                          {t('agencyManagement.table.inactive', 'Inactivo')}
                         </Badge>
                       )}
                     </TableCell>
@@ -407,18 +409,18 @@ export default function AgencyManagementPage() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar miembro de la agencia?</AlertDialogTitle>
+            <AlertDialogTitle>{t('agencyManagement.dialogs.deleteTitle', '¿Eliminar miembro de la agencia?')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción desvinculará a {memberToDelete?.name} de esta agencia.
+              {t('agencyManagement.dialogs.deleteDesc', { name: memberToDelete?.name, defaultValue: `Esta acción desvinculará a ${memberToDelete?.name} de esta agencia.` })}
               {memberToDelete?.isAdmin && stats.admins === 1 && (
                 <span className="block mt-2 text-red-600 font-medium">
-                  ⚠️ Este es el último administrador. No puedes eliminarlo.
+                  {t('agencyManagement.dialogs.lastAdminWarning', '⚠️ Este es el último administrador. No puedes eliminarlo.')}
                 </span>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isRemoving}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={isRemoving}>{t('common.cancel', 'Cancelar')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
               disabled={isRemoving || (memberToDelete?.isAdmin && stats.admins === 1)}
@@ -427,10 +429,10 @@ export default function AgencyManagementPage() {
               {isRemoving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Eliminando...
+                  {t('agencyManagement.buttons.deleting', 'Eliminando...')}
                 </>
               ) : (
-                'Eliminar de la Agencia'
+                t('agencyManagement.buttons.delete', 'Eliminar de la Agencia')
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -443,20 +445,20 @@ export default function AgencyManagementPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Crown className="h-5 w-5 text-amber-600" />
-              Transferir propiedad de la agencia
+              {t('agencyManagement.dialogs.transferTitle', 'Transferir propiedad de la agencia')}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Selecciona el nuevo propietario de la agencia. El propietario actual perderá sus privilegios de propietario.
+              {t('agencyManagement.dialogs.transferDesc', 'Selecciona el nuevo propietario de la agencia. El propietario actual perderá sus privilegios de propietario.')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
             <label className="text-sm font-medium text-slate-700 mb-2 block">
-              Nuevo propietario
+              {t('agencyManagement.dialogs.newOwnerLabel', 'Nuevo propietario')}
             </label>
             <Popover open={openNewOwner} onOpenChange={setOpenNewOwner}>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full justify-between font-normal">
-                  <span className="truncate">{selectedNewOwnerId ? (members.find(m => m.userId === selectedNewOwnerId)?.name ?? 'Selecciona un miembro') : 'Selecciona un miembro'}</span>
+                  <span className="truncate">{selectedNewOwnerId ? (members.find(m => m.userId === selectedNewOwnerId)?.name ?? t('agencyManagement.dialogs.selectMember', 'Selecciona un miembro')) : t('agencyManagement.dialogs.selectMember', 'Selecciona un miembro')}</span>
                   <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                 </Button>
               </PopoverTrigger>
@@ -473,7 +475,7 @@ export default function AgencyManagementPage() {
                               {member.name}
                               {member.isAdmin && (
                                 <Badge variant="outline" className="text-xs">
-                                  Admin
+                                  {t('agencyManagement.table.admin', 'Admin')}
                                 </Badge>
                               )}
                             </div>
@@ -489,15 +491,15 @@ export default function AgencyManagementPage() {
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
                   <div className="text-sm text-amber-800">
-                    <p className="font-medium mb-1">Advertencia</p>
-                    <p>Esta acción transferirá la propiedad de la agencia al miembro seleccionado.</p>
+                    <p className="font-medium mb-1">{t('agencyManagement.dialogs.warningTitle', 'Advertencia')}</p>
+                    <p>{t('agencyManagement.dialogs.warningDesc', 'Esta acción transferirá la propiedad de la agencia al miembro seleccionado.')}</p>
                   </div>
                 </div>
               </div>
             )}
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isTransferring}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={isTransferring}>{t('common.cancel', 'Cancelar')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleTransferOwnership}
               disabled={isTransferring || !selectedNewOwnerId}
@@ -506,12 +508,12 @@ export default function AgencyManagementPage() {
               {isTransferring ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Transfiriendo...
+                  {t('agencyManagement.buttons.transferring', 'Transfiriendo...')}
                 </>
               ) : (
                 <>
                   <Crown className="h-4 w-4 mr-2" />
-                  Transferir propiedad
+                  {t('agencyManagement.buttons.transfer', 'Transferir propiedad')}
                 </>
               )}
             </AlertDialogAction>
@@ -524,7 +526,6 @@ export default function AgencyManagementPage() {
         open={isInviteDialogOpen}
         onOpenChange={setIsInviteDialogOpen}
         onSuccess={handleInviteSuccess}
-        agencyId={agencyId || undefined}
       />
     </div>
   );

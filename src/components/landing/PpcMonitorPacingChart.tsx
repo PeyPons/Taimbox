@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import { useTranslation, Trans } from 'react-i18next';
 
 /**
  * Modelo conceptual: pacing de gasto PPC (gasto acumulado vs ritmo ideal lineal del mes).
@@ -14,20 +15,16 @@ const STEP = 0.4;
 const SAMPLE_COUNT = Math.floor(100 / STEP) + 1;
 
 const REFERENCE_BUDGET_EUR = 10000;
-const EUR_FORMATTER = new Intl.NumberFormat('es-ES', {
-  style: 'currency',
-  currency: 'EUR',
-  maximumFractionDigits: 0,
-});
 
 const DURATION_DRAW_MS = 8200;
 const PAUSE_END_MS = 10000;
 const CYCLE_MS = DURATION_DRAW_MS + PAUSE_END_MS;
 
+const P = 'commercial.ppc.page.chart';
+
 /** % de mes transcurrido t∈[0,100] → % de presupuesto gastado acumulado (conceptual, puede >100). */
 function spendPctAtMonth(t: number): number {
   const u = Math.min(100, Math.max(0, t));
-  // Ajustado para cuadrar con el ejemplo del landing: fin de mes ~125% del presupuesto (12.500€ sobre 10.000€).
   const k = 0.25;
   return u * (1 + k * (u / 100) * (u / 100));
 }
@@ -78,12 +75,24 @@ const GRID_LINES = [0, 35, 70, 100, 130].map((pct) => ({
 }));
 
 export function PpcMonitorPacingChart() {
+  const { t, i18n } = useTranslation('landing');
   const pathRef = useRef<SVGPathElement>(null);
   const pathGlowRef = useRef<SVGPathElement>(null);
   const dotRef = useRef<SVGCircleElement>(null);
   const labelRef = useRef<SVGTextElement>(null);
   const overrunRef = useRef<SVGTextElement>(null);
   const rafRef = useRef(0);
+
+  const locale = i18n.language.startsWith('en') ? 'en-GB' : 'es-ES';
+  const formatter = useMemo(
+    () =>
+      new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: 'EUR',
+        maximumFractionDigits: 0,
+      }),
+    [locale],
+  );
 
   useEffect(() => {
     const pathEl = pathRef.current;
@@ -94,6 +103,7 @@ export function PpcMonitorPacingChart() {
     if (!pathEl || !glowEl || !dotEl || !labelEl || !overrunEl) return;
 
     let startTime: number | null = null;
+    const deltaPrefix = t(`${P}.deltaPrefix`);
 
     const tick = (now: number) => {
       if (startTime === null) startTime = now;
@@ -120,19 +130,17 @@ export function PpcMonitorPacingChart() {
 
       const spentAmount = (pt.spent / 100) * REFERENCE_BUDGET_EUR;
 
-      // Importe encima del punto; Δ debajo del punto (evita solaparse en la esquina final).
       const labelY = Math.max(PAD.t + 14, pt.py - 16);
       labelEl.setAttribute('x', String(pt.px));
       labelEl.setAttribute('y', String(labelY));
-      labelEl.textContent = EUR_FORMATTER.format(spentAmount);
+      labelEl.textContent = formatter.format(spentAmount);
       labelEl.setAttribute('fill', zoneDotColor(pt.t, pt.spent));
 
-      // Diferencia vs presupuesto (en corchetes), siempre bajo el punto para no chocar con el importe.
       const diff = spentAmount - REFERENCE_BUDGET_EUR;
       const over = Math.max(0, diff);
-      const overStr = EUR_FORMATTER.format(over).replace(/\s/g, '');
-      const bracket = over > 0 ? `[+${overStr}]` : '[0€]';
-      overrunEl.textContent = `Δ ${bracket}`;
+      const overStr = formatter.format(over).replace(/\s/g, '');
+      const bracket = over > 0 ? `[+${overStr}]` : `[${formatter.format(0)}]`;
+      overrunEl.textContent = `${deltaPrefix}${bracket}`;
       overrunEl.setAttribute('fill', over > 0 ? 'rgb(248 113 113)' : 'rgb(148 163 184)');
       overrunEl.setAttribute('text-anchor', 'middle');
       overrunEl.setAttribute('x', String(pt.px));
@@ -144,7 +152,7 @@ export function PpcMonitorPacingChart() {
 
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, []);
+  }, [formatter, t, i18n.language]);
 
   const gx1 = PAD.l;
   const gx2 = W - PAD.r;
@@ -161,7 +169,7 @@ export function PpcMonitorPacingChart() {
           role="img"
           aria-hidden
         >
-          <title>Pacing de gasto vs ritmo ideal del mes</title>
+          <title>{t(`${P}.title`)}</title>
           <defs>
             <linearGradient id="ppc-ideal" x1={gx1} y1={PAD.t} x2={gx2} y2={PAD.t + INNER_H} gradientUnits="userSpaceOnUse">
               <stop offset="0%" stopColor="rgb(148 163 184)" stopOpacity="0.35" />
@@ -189,12 +197,10 @@ export function PpcMonitorPacingChart() {
             </filter>
           </defs>
 
-          {/* Zonas de fondo */}
           <rect x={xMonth(0)} y={PAD.t} width={xMonth(50) - xMonth(0)} height={INNER_H} fill="rgb(16 185 129 / 0.07)" />
           <rect x={xMonth(50)} y={PAD.t} width={xMonth(80) - xMonth(50)} height={INNER_H} fill="rgb(251 191 36 / 0.05)" />
           <rect x={xMonth(80)} y={PAD.t} width={xMonth(100) - xMonth(80)} height={INNER_H} fill="rgb(251 113 133 / 0.07)" />
 
-          {/* Rejilla horizontal */}
           {GRID_LINES.map(({ pct, y }, i) => (
             <line
               key={i}
@@ -208,7 +214,6 @@ export function PpcMonitorPacingChart() {
             />
           ))}
 
-          {/* Etiquetas de eje Y */}
           {GRID_LINES.map(({ pct, y }, i) => (
             <text
               key={`y-${i}`}
@@ -223,7 +228,6 @@ export function PpcMonitorPacingChart() {
             </text>
           ))}
 
-          {/* Ejes */}
           <line
             x1={PAD.l}
             y1={PAD.t + INNER_H}
@@ -243,7 +247,7 @@ export function PpcMonitorPacingChart() {
             fontWeight={500}
             fontFamily="ui-sans-serif, system-ui, sans-serif"
           >
-            Mes transcurrido →
+            {t(`${P}.axisX`)}
           </text>
           <text
             x={18}
@@ -255,10 +259,9 @@ export function PpcMonitorPacingChart() {
             fontFamily="ui-sans-serif, system-ui, sans-serif"
             transform={`rotate(-90 18 ${H / 2})`}
           >
-            Gasto acumulado (% del presupuesto) →
+            {t(`${P}.axisY`)}
           </text>
 
-          {/* Ritmo ideal */}
           <path
             d={IDEAL_D}
             fill="none"
@@ -268,7 +271,6 @@ export function PpcMonitorPacingChart() {
             strokeLinecap="round"
           />
 
-          {/* Glow bajo la curva real */}
           <path
             ref={pathGlowRef}
             d={`M${POINTS[0].px.toFixed(1)} ${POINTS[0].py.toFixed(1)}`}
@@ -281,7 +283,6 @@ export function PpcMonitorPacingChart() {
             filter="url(#ppc-glow)"
           />
 
-          {/* Curva real */}
           <path
             ref={pathRef}
             d={`M${POINTS[0].px.toFixed(1)} ${POINTS[0].py.toFixed(1)}`}
@@ -314,10 +315,9 @@ export function PpcMonitorPacingChart() {
             fontWeight={700}
             fontFamily="ui-sans-serif, system-ui, sans-serif"
           >
-            0€
+            {formatter.format(0)}
           </text>
 
-          {/* Sobrecoste (Δ) bajo el punto; posición se actualiza en cada frame */}
           <text
             ref={overrunRef}
             x={POINTS[0].px}
@@ -328,11 +328,11 @@ export function PpcMonitorPacingChart() {
             fontWeight={700}
             fontFamily="ui-sans-serif, system-ui, sans-serif"
           >
-            Δ [0€]
+            {`${t(`${P}.deltaPrefix`)}[${formatter.format(0)}]`}
           </text>
 
           <text x={PAD.l} y={PAD.t + INNER_H + 22} fill="rgb(148 163 184)" fontSize={11} fontFamily="ui-sans-serif, system-ui, sans-serif">
-            0%
+            {t(`${P}.monthStart`)}
           </text>
           <text
             x={W - PAD.r}
@@ -342,7 +342,7 @@ export function PpcMonitorPacingChart() {
             fontSize={11}
             fontFamily="ui-sans-serif, system-ui, sans-serif"
           >
-            100% mes
+            {t(`${P}.monthEnd`)}
           </text>
         </svg>
       </div>
@@ -351,15 +351,19 @@ export function PpcMonitorPacingChart() {
         <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-300/90">
           <span className="inline-flex items-center gap-1.5">
             <span className="h-px w-5 bg-slate-300/80 border-t border-dashed border-slate-300/80" />
-            Ritmo ideal
+            {t(`${P}.legendIdeal`)}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <span className="h-[3px] w-5 rounded-full bg-gradient-to-r from-emerald-400 via-amber-300 to-rose-400" />
-            Gasto real acumulado
+            {t(`${P}.legendActual`)}
           </span>
         </div>
         <p className="text-xs sm:text-sm text-slate-200/95 leading-relaxed m-0">
-          <strong className="text-white">Lectura rápida:</strong> al ser acumulado, la curva siempre sube. Si la línea sólida se va por encima de la discontinua, vas gastando por encima del ritmo que te permite cerrar el mes en presupuesto.
+          <Trans
+            i18nKey={`${P}.footer`}
+            ns="landing"
+            components={{ strong: <strong className="text-white" /> }}
+          />
         </p>
       </div>
     </div>

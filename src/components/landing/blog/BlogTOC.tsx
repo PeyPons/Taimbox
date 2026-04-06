@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { List, ChevronDown, ChevronUp } from 'lucide-react';
 import type { BlogVariant } from './blogVariants';
 
@@ -15,6 +16,7 @@ interface BlogTOCProps {
 }
 
 export function BlogTOC({ items, className = '', variant = 'default' }: BlogTOCProps) {
+  const { t } = useTranslation('blog');
   const [open, setOpen] = useState(false);
   const isEditorial = variant === 'editorial';
 
@@ -42,7 +44,7 @@ export function BlogTOC({ items, className = '', variant = 'default' }: BlogTOCP
       >
         <span className={titleRow}>
           <List className={iconClass} />
-          Contenido de esta guía
+          {t('components.toc.title')}
         </span>
         <span className={`sm:hidden ${btnChevron}`}>
           {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}

@@ -26,6 +26,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Check } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 
 interface KeyResultItem {
     id: string;
@@ -44,6 +45,7 @@ export default function OkrsPage() {
     const { professionalGoals, addProfessionalGoal, updateProfessionalGoal, deleteProfessionalGoal } = useGoals();
     const { hasPermission } = usePermissions();
     const { formatName: formatProjectName } = useProjectAliasing();
+    const { t } = useAppTranslation();
 
     const departments = useMemo(() => normalizeDepartments(currentAgency?.settings?.departments), [currentAgency?.settings?.departments]);
     const employeesForView = useMemo(() => {
@@ -335,10 +337,10 @@ export default function OkrsPage() {
     };
 
     const getOkrStatus = (progress: number) => {
-        if (progress >= 100) return { label: 'Completado', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' };
-        if (progress >= 60) return { label: 'En buen camino', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' };
-        if (progress >= 30) return { label: 'En progreso', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' };
-        return { label: 'Iniciado', color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-200' };
+        if (progress >= 100) return { label: t('okrs.status.completed', 'Completado'), color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' };
+        if (progress >= 60) return { label: t('okrs.status.onTrack', 'En buen camino'), color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' };
+        if (progress >= 30) return { label: t('okrs.status.inProgress', 'En progreso'), color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' };
+        return { label: t('okrs.status.started', 'Iniciado'), color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-200' };
     };
 
     return (
@@ -347,17 +349,17 @@ export default function OkrsPage() {
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
                         <Target className="h-8 w-8 text-primary" />
-                        Objetivos y resultados clave (OKRs)
+                        {t('okrs.title', 'Objetivos y resultados clave (OKRs)')}
                     </h1>
                     <p className="text-muted-foreground mt-1">
-                        Gestiona y monitoriza los objetivos estratégicos y el rendimiento del equipo.
+                        {t('okrs.description', 'Gestiona y monitoriza los objetivos estratégicos y el rendimiento del equipo.')}
                     </p>
                 </div>
 
                 <div className="flex items-center gap-2">
                     <Button onClick={() => openCreateDialog(activeTab === 'projects' ? 'project' : 'personal')} className="gap-2 shadow-sm bg-primary hover:bg-primary/90">
                         <Plus className="h-4 w-4" />
-                        Nuevo objetivo
+                        {t('okrs.newGoal', 'Nuevo objetivo')}
                     </Button>
                 </div>
             </div>
@@ -367,11 +369,11 @@ export default function OkrsPage() {
                     <TabsList className="h-10 bg-slate-100/50">
                         <TabsTrigger value="projects" className="gap-2 px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
                             <Briefcase className="h-4 w-4" />
-                            Proyectos
+                            {t('okrs.tabs.projects', 'Proyectos')}
                         </TabsTrigger>
                         <TabsTrigger value="personal" className="gap-2 px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm">
                             <User className="h-4 w-4" />
-                            Mis objetivos
+                            {t('okrs.tabs.personal', 'Mis objetivos')}
                         </TabsTrigger>
                     </TabsList>
                 </Tabs>
@@ -381,13 +383,13 @@ export default function OkrsPage() {
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" role="combobox" className="w-[200px] justify-between h-9 bg-slate-50 border-slate-200">
-                                    {employees.find((e) => e.id === adminSelectedEmployeeId)?.name || "Seleccionar empleado..."}
+                                    {employees.find((e) => e.id === adminSelectedEmployeeId)?.name || t('okrs.selectEmployee', "Seleccionar empleado...")}
                                     <User className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-[200px] p-0">
                                 <Command>
-                                    <CommandInput placeholder="Buscar empleado..." />
+                                    <CommandInput placeholder={t('okrs.searchEmployee', "Buscar empleado...")} />
                                     <CommandList>
                                         <CommandGroup>
                                             {employeesForView.filter(e => e.isActive).map((employee) => (
@@ -406,7 +408,7 @@ export default function OkrsPage() {
                     <div className="relative flex-1 md:flex-none">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
                         <Input
-                            placeholder="Buscar..."
+                            placeholder={t('okrs.search', "Buscar...")}
                             className="pl-9 h-9 w-full md:w-[250px] bg-slate-50 border-slate-200"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -434,7 +436,7 @@ export default function OkrsPage() {
                                                 {client ? (
                                                     <SensitiveText kind="account" id={client.id}>{client.name}</SensitiveText>
                                                 ) : (
-                                                    'Interno'
+                                                    t('okrs.internal', 'Interno')
                                                 )}
                                             </Badge>
                                             <CardTitle className="text-xl font-bold text-slate-900 leading-tight">
@@ -445,7 +447,7 @@ export default function OkrsPage() {
                                             <div className={cn("text-3xl font-black tracking-tight", totalProgress >= 100 ? "text-emerald-600" : "text-slate-900")}>
                                                 {Math.round(totalProgress)}%
                                             </div>
-                                            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Global</span>
+                                            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">{t('okrs.global', 'Global')}</span>
                                         </div>
                                     </div>
                                 </CardHeader>
@@ -453,7 +455,7 @@ export default function OkrsPage() {
                                     {/* STRATEGIC OBJECTIVES */}
                                     <div className="space-y-4">
                                         <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                                            <Target className="h-3 w-3" /> Objetivos estratégicos
+                                            <Target className="h-3 w-3" /> {t('okrs.strategicObjectives', 'Objetivos estratégicos')}
                                         </h5>
                                         {activeOkrs.map(okr => {
                                             const status = getOkrStatus(okr.progress);
@@ -508,7 +510,7 @@ export default function OkrsPage() {
                                         </Badge>
                                         <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
                                             <Calendar className="h-3 w-3" />
-                                            {goal.dueDate ? new Date(goal.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Sin fecha'}
+                                            {goal.dueDate ? new Date(goal.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : t('okrs.noDate', 'Sin fecha')}
                                         </span>
                                     </div>
                                     <CardTitle className="text-lg font-bold text-slate-900 leading-snug">
@@ -524,14 +526,14 @@ export default function OkrsPage() {
 
                                     <div>
                                         <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                                            <CheckSquare className="h-3 w-3" /> Resultados clave
+                                            <CheckSquare className="h-3 w-3" /> {t('okrs.keyResults', 'Resultados clave')}
                                         </h5>
                                         {renderKeyResultsList(goal)}
                                     </div>
 
                                     <div className="space-y-2 pt-2">
                                         <div className="flex justify-between items-end text-xs text-slate-500">
-                                            <span>Progreso General</span>
+                                            <span>{t('okrs.generalProgress', 'Progreso General')}</span>
                                             <div className="flex items-baseline gap-1">
                                                 <span className="text-2xl font-bold text-slate-900">{goal.progress}</span>
                                                 <span className="text-xs">%</span>
@@ -550,16 +552,16 @@ export default function OkrsPage() {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>{editingGoal ? 'Editar objetivo' : 'Crear nuevo objetivo'}</DialogTitle>
+                        <DialogTitle>{editingGoal ? t('okrs.dialog.editTitle', 'Editar objetivo') : t('okrs.dialog.createTitle', 'Crear nuevo objetivo')}</DialogTitle>
                         <DialogDescription>
-                            {goalType === 'project' ? 'Objetivo asociado a un proyecto activo.' : 'Objetivo de desarrollo profesional.'}
+                            {goalType === 'project' ? t('okrs.dialog.projectDesc', 'Objetivo asociado a un proyecto activo.') : t('okrs.dialog.personalDesc', 'Objetivo de desarrollo profesional.')}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-6 py-4">
                         {goalType === 'project' && !editingGoal && (
                             <div className="space-y-2">
-                                <Label>Proyecto</Label>
+                                <Label>{t('okrs.dialog.projectLabel', 'Proyecto')}</Label>
                                 <Popover open={openFormProject} onOpenChange={setOpenFormProject}>
                                     <PopoverTrigger asChild>
                                         <Button variant="outline" className="w-full justify-between font-normal">
@@ -569,7 +571,7 @@ export default function OkrsPage() {
                                                         {formatProjectName(projects.find(p => p.id === formData.projectId)?.name || '')}
                                                     </SensitiveText>
                                                 ) : (
-                                                    'seleccionar proyecto...'
+                                                    t('okrs.dialog.selectProject', 'seleccionar proyecto...')
                                                 )}
                                             </span>
                                             <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
@@ -592,9 +594,9 @@ export default function OkrsPage() {
                         )}
 
                         <div className="space-y-2">
-                            <Label>Objetivo principal</Label>
+                            <Label>{t('okrs.dialog.mainObjective', 'Objetivo principal')}</Label>
                             <Input
-                                placeholder="Ej: mejorar skills de React..."
+                                placeholder={t('okrs.dialog.objectivePlaceholder', 'Ej: mejorar skills de React...')}
                                 value={formData.title}
                                 onChange={e => setFormData(p => ({ ...p, title: e.target.value }))}
                             />
@@ -602,7 +604,7 @@ export default function OkrsPage() {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Fecha límite</Label>
+                                <Label>{t('okrs.dialog.deadline', 'Fecha límite')}</Label>
                                 <div className="relative">
                                     <Input
                                         type="date"
@@ -614,7 +616,7 @@ export default function OkrsPage() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label>Enlace formación (opcional)</Label>
+                                <Label>{t('okrs.dialog.trainingLink', 'Enlace formación (opcional)')}</Label>
                                 <div className="relative">
                                     <Input
                                         placeholder="https://..."
@@ -633,9 +635,9 @@ export default function OkrsPage() {
                                     <div className="flex justify-between items-center text-sm">
                                         <div className="flex items-center gap-2 text-primary font-medium">
                                             <Target className="h-4 w-4" />
-                                            Resultados clave
+                                            {t('okrs.keyResults', 'Resultados clave')}
                                         </div>
-                                        <span className="font-bold text-slate-900">{formData.progress}% completado</span>
+                                        <span className="font-bold text-slate-900">{formData.progress}% {t('okrs.dialog.completedPrefix', 'completado')}</span>
                                     </div>
                                     <Progress value={formData.progress} className="h-2" />
                                 </div>
@@ -666,7 +668,7 @@ export default function OkrsPage() {
                                                     value={kr.text}
                                                     onChange={(e) => handleUpdateKeyResult(kr.id, { text: e.target.value })}
                                                     className="bg-transparent border-0 h-auto p-0 focus-visible:ring-0 shadow-none font-medium text-slate-700 placeholder:text-slate-400"
-                                                    placeholder="descripción del resultado..."
+                                                    placeholder={t('okrs.dialog.descPlaceholder', "descripción del resultado...")}
                                                 />
                                             </div>
 
@@ -687,7 +689,7 @@ export default function OkrsPage() {
                                             <Popover open={openNewKrType} onOpenChange={setOpenNewKrType}>
                                                 <PopoverTrigger asChild>
                                                     <Button variant="outline" className="w-[100px] h-9 border-0 bg-white shadow-sm justify-between font-normal">
-                                                        <span>{newKrType === 'check' ? 'Check' : 'Numérico'}</span>
+                                                        <span>{newKrType === 'check' ? t('okrs.dialog.check', 'Check') : t('okrs.dialog.numeric', 'Numérico')}</span>
                                                         <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
                                                     </Button>
                                                 </PopoverTrigger>
@@ -697,11 +699,11 @@ export default function OkrsPage() {
                                                             <CommandGroup>
                                                                 <CommandItem value="Check" onSelect={() => { setNewKrType('check'); setOpenNewKrType(false); }}>
                                                                     <Check className={cn('mr-2 h-4 w-4 shrink-0', newKrType === 'check' ? 'opacity-100' : 'opacity-0')} />
-                                                                    Check
+                                                                    {t('okrs.dialog.check', 'Check')}
                                                                 </CommandItem>
                                                                 <CommandItem value="Numérico" onSelect={() => { setNewKrType('numeric'); setOpenNewKrType(false); }}>
                                                                     <Check className={cn('mr-2 h-4 w-4 shrink-0', newKrType === 'numeric' ? 'opacity-100' : 'opacity-0')} />
-                                                                    Numérico
+                                                                    {t('okrs.dialog.numeric', 'Numérico')}
                                                                 </CommandItem>
                                                             </CommandGroup>
                                                         </CommandList>
@@ -721,7 +723,7 @@ export default function OkrsPage() {
                                         )}
 
                                         <Input
-                                            placeholder={newKrType === 'numeric' ? "Ej: Completar módulos de curso..." : "Ej: Completar curso..."}
+                                            placeholder={newKrType === 'numeric' ? t('okrs.dialog.numericPlaceholder', "Ej: Completar módulos de curso...") : t('okrs.dialog.checkPlaceholder', "Ej: Completar curso...")}
                                             value={newKrText}
                                             onChange={e => setNewKrText(e.target.value)}
                                             className="flex-1 h-9 bg-white border-0 shadow-sm"
@@ -740,12 +742,12 @@ export default function OkrsPage() {
                     <DialogFooter className="flex justify-between sm:justify-between">
                         {editingGoal ? (
                             <Button variant="destructive" size="sm" onClick={handleDeleteClick} className="gap-2">
-                                <Trash2 className="h-4 w-4" /> Eliminar
+                                <Trash2 className="h-4 w-4" /> {t('okrs.delete', 'Eliminar')}
                             </Button>
                         ) : <div></div>}
                         <div className="flex gap-2">
-                            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-                            <Button onClick={handleSave}>Guardar</Button>
+                            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>{t('okrs.cancel', 'Cancelar')}</Button>
+                            <Button onClick={handleSave}>{t('okrs.save', 'Guardar')}</Button>
                         </div>
                     </DialogFooter>
                 </DialogContent>
@@ -754,15 +756,15 @@ export default function OkrsPage() {
             <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('okrs.alert.title', '¿Estás completamente seguro?')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Esta acción no se puede deshacer. Se eliminará el objetivo permanentemente.
+                            {t('okrs.alert.description', 'Esta acción no se puede deshacer. Se eliminará el objetivo permanentemente.')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogCancel>{t('okrs.cancel', 'Cancelar')}</AlertDialogCancel>
                         <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
-                            Eliminar
+                            {t('okrs.delete', 'Eliminar')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

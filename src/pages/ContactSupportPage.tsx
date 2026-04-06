@@ -22,6 +22,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/lib/notify";
 import { useAgency } from "@/contexts/AgencyContext";
+import { useAppTranslation } from "@/hooks/useAppTranslation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Loader2, MessageCircle, CheckCircle, Eye, Send } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,15 +44,10 @@ interface MyTicketReply {
   is_from_support: boolean;
 }
 
-const statusLabel: Record<string, string> = {
-  open: "Abierto",
-  in_progress: "En curso",
-  closed: "Cerrado",
-};
-
 export default function ContactSupportPage() {
   const { currentAgency } = useAgency();
   const { user: authUser } = useAuth();
+  const { t, i18n } = useAppTranslation();
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -68,6 +64,22 @@ export default function ContactSupportPage() {
   const [replyKey, setReplyKey] = useState(0);
   const [sendingReply, setSendingReply] = useState(false);
 
+  const getStatusLabel = (status: string) => {
+    if (status === "open") return t("app.support.contact.status.open");
+    if (status === "in_progress") return t("app.support.contact.status.inProgress");
+    if (status === "closed") return t("app.support.contact.status.closed");
+    return status;
+  };
+
+  const formatDate = (s: string) => {
+    try {
+      const locale = i18n.language === "en" ? "en-GB" : "es-ES";
+      return new Date(s).toLocaleString(locale, { dateStyle: "short", timeStyle: "short" });
+    } catch {
+      return s;
+    }
+  };
+
   const fetchMyTickets = useCallback(async () => {
     setLoadingTickets(true);
     try {
@@ -76,12 +88,12 @@ export default function ContactSupportPage() {
       setMyTickets((data as MyTicketRow[]) || []);
     } catch (e) {
       console.error("[ContactSupportPage] Error listing tickets:", e);
-      toast.error("Error al cargar tus tickets");
+      toast.error(t("app.support.contact.toasts.loadTicketsError"));
       setMyTickets([]);
     } finally {
       setLoadingTickets(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (currentAgency?.id) fetchMyTickets();
@@ -122,15 +134,15 @@ export default function ContactSupportPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentAgency?.id) {
-      toast.error("Selecciona una agencia para enviar la solicitud.");
+      toast.error(t("app.support.contact.toasts.agencyRequired"));
       return;
     }
     if (!subject.trim()) {
-      toast.error("El asunto es obligatorio.");
+      toast.error(t("app.support.contact.toasts.subjectRequired"));
       return;
     }
     if (!message.trim()) {
-      toast.error("El mensaje es obligatorio.");
+      toast.error(t("app.support.contact.toasts.messageRequired"));
       return;
     }
     setLoading(true);
@@ -145,11 +157,11 @@ export default function ContactSupportPage() {
       setSubject("");
       setMessage("");
       setMessageKey((k) => k + 1);
-      toast.success("Solicitud enviada. Te responderemos lo antes posible.");
+      toast.success(t("app.support.contact.toasts.createSuccess"));
       fetchMyTickets();
     } catch (e: unknown) {
       console.error("[ContactSupportPage] Error:", e);
-      toast.error("Error al enviar la solicitud. Inténtalo de nuevo.");
+      toast.error(t("app.support.contact.toasts.createError"));
     } finally {
       setLoading(false);
     }
@@ -157,7 +169,7 @@ export default function ContactSupportPage() {
 
   const sendReply = async () => {
     if (!selectedTicketId || !replyText?.trim()) {
-      toast.error("Escribe un mensaje");
+      toast.error(t("app.support.contact.toasts.replyRequired"));
       return;
     }
     setSendingReply(true);
@@ -167,7 +179,7 @@ export default function ContactSupportPage() {
         p_message: replyText.trim(),
       });
       if (error) throw error;
-      toast.success("Respuesta enviada");
+      toast.success(t("app.support.contact.toasts.replySuccess"));
       setReplyText("");
       setReplyKey((k) => k + 1);
       const { data } = await supabase.rpc("list_my_support_ticket_replies", {
@@ -176,17 +188,9 @@ export default function ContactSupportPage() {
       setReplies((data as MyTicketReply[]) || []);
     } catch (e: unknown) {
       console.error("[ContactSupportPage] Error sending reply:", e);
-      toast.error("Error al enviar la respuesta");
+      toast.error(t("app.support.contact.toasts.replyError"));
     } finally {
       setSendingReply(false);
-    }
-  };
-
-  const formatDate = (s: string) => {
-    try {
-      return new Date(s).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" });
-    } catch {
-      return s;
     }
   };
 
@@ -195,7 +199,9 @@ export default function ContactSupportPage() {
       <div className="max-w-3xl mx-auto p-6">
         <Card>
           <CardContent className="pt-6">
-            <p className="text-slate-600">Selecciona una agencia para contactar con soporte.</p>
+            <p className="text-slate-600">
+              {t("app.support.contact.noAgencySelected")}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -205,10 +211,11 @@ export default function ContactSupportPage() {
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Soporte</h1>
+        <h1 className="text-2xl font-bold text-slate-900">
+          {t("app.support.contact.title")}
+        </h1>
         <p className="text-slate-600 mt-1">
-          Envía solicitudes y sigue el estado de tus tickets para la agencia{" "}
-          <strong>{currentAgency.name}</strong>.
+          {t("app.support.contact.subtitle", { agency: currentAgency.name })}
         </p>
       </div>
 
@@ -218,32 +225,36 @@ export default function ContactSupportPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <MessageCircle className="h-5 w-5 text-primary" />
-              Nueva solicitud
+              {t("app.support.contact.form.title")}
             </CardTitle>
             <CardDescription>
-              Describe tu consulta o incidencia. El equipo de soporte te responderá aquí.
+              {t("app.support.contact.form.description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="subject">Asunto</Label>
+                <Label htmlFor="subject">
+                  {t("app.support.contact.form.subjectLabel")}
+                </Label>
                 <Input
                   id="subject"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Ej: Problema con la sincronización de anuncios"
+                  placeholder={t("app.support.contact.form.subjectPlaceholder")}
                   maxLength={200}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="message">Mensaje</Label>
+                <Label htmlFor="message">
+                  {t("app.support.contact.form.messageLabel")}
+                </Label>
                 <SupportMessageEditor
                   key={messageKey}
                   id="message"
                   value={message}
                   onChange={setMessage}
-                  placeholder="Describe tu consulta o incidencia con el mayor detalle posible…"
+                  placeholder={t("app.support.contact.form.messagePlaceholder")}
                   minHeight="140px"
                 />
               </div>
@@ -251,10 +262,10 @@ export default function ContactSupportPage() {
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Enviando...
+                    {t("app.support.contact.form.submitting")}
                   </>
                 ) : (
-                  "Enviar solicitud"
+                  t("app.support.contact.form.submit")
                 )}
               </Button>
             </form>
@@ -265,13 +276,15 @@ export default function ContactSupportPage() {
           <CardContent className="pt-6 flex flex-col items-center text-center gap-4">
             <CheckCircle className="h-12 w-12 text-emerald-500" />
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Solicitud enviada</h2>
+              <h2 className="text-lg font-semibold text-slate-900">
+                {t("app.support.contact.form.successTitle")}
+              </h2>
               <p className="text-slate-600 mt-1">
-                Puedes ver el estado y las respuestas en &quot;Mis tickets&quot;.
+                {t("app.support.contact.form.successBody")}
               </p>
             </div>
             <Button variant="outline" onClick={() => setSent(false)}>
-              Enviar otra solicitud
+              {t("app.support.contact.form.successCta")}
             </Button>
           </CardContent>
         </Card>
@@ -280,9 +293,11 @@ export default function ContactSupportPage() {
       {/* Mis tickets */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Mis tickets</CardTitle>
+          <CardTitle className="text-lg">
+            {t("app.support.contact.tickets.title")}
+          </CardTitle>
           <CardDescription>
-            Listado de tus solicitudes. Haz clic en &quot;Ver&quot; para ver detalle y responder.
+            {t("app.support.contact.tickets.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -291,14 +306,22 @@ export default function ContactSupportPage() {
               <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
             </div>
           ) : myTickets.length === 0 ? (
-            <p className="text-slate-500 text-center py-6">No tienes ningún ticket.</p>
+            <p className="text-slate-500 text-center py-6">
+              {t("app.support.contact.tickets.empty")}
+            </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Asunto</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Creado</TableHead>
+                  <TableHead>
+                    {t("app.support.contact.tickets.columns.subject")}
+                  </TableHead>
+                  <TableHead>
+                    {t("app.support.contact.tickets.columns.status")}
+                  </TableHead>
+                  <TableHead>
+                    {t("app.support.contact.tickets.columns.createdAt")}
+                  </TableHead>
                   <TableHead className="w-[80px]" />
                 </TableRow>
               </TableHeader>
@@ -323,7 +346,7 @@ export default function ContactSupportPage() {
                               : "outline"
                         }
                       >
-                        {statusLabel[t.status] ?? t.status}
+                        {getStatusLabel(t.status)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-slate-500 text-sm">{formatDate(t.created_at)}</TableCell>
@@ -335,7 +358,7 @@ export default function ContactSupportPage() {
                         onClick={() => setSelectedTicketId(t.id)}
                       >
                         <Eye className="h-4 w-4" />
-                        Ver
+                        {t("app.support.contact.tickets.view")}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -350,7 +373,7 @@ export default function ContactSupportPage() {
       <Sheet open={!!selectedTicketId} onOpenChange={(open) => !open && setSelectedTicketId(null)}>
         <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Detalle del ticket</SheetTitle>
+            <SheetTitle>{t("app.support.contact.detail.title")}</SheetTitle>
           </SheetHeader>
           {loadingDetail ? (
             <div className="flex items-center justify-center py-12">
@@ -360,11 +383,15 @@ export default function ContactSupportPage() {
             <div className="space-y-6 mt-6">
               <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 space-y-3">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400 mb-0.5">Asunto</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400 mb-0.5">
+                    {t("app.support.contact.detail.subjectLabel")}
+                  </p>
                   <p className="font-medium text-slate-900">{ticketDetail.subject}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400 mb-0.5">Mensaje inicial</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400 mb-0.5">
+                    {t("app.support.contact.detail.initialMessageLabel")}
+                  </p>
                   <SupportMessageContent content={ticketDetail.message} />
                 </div>
                 <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-200">
@@ -377,16 +404,23 @@ export default function ContactSupportPage() {
                           : "outline"
                     }
                   >
-                    {statusLabel[ticketDetail.status] ?? ticketDetail.status}
+                    {getStatusLabel(ticketDetail.status)}
                   </Badge>
-                  <span className="text-xs text-slate-500">Creado {formatDate(ticketDetail.created_at)}</span>
+                  <span className="text-xs text-slate-500">
+                    {t("app.support.contact.detail.status.createdAtPrefix")}{" "}
+                    {formatDate(ticketDetail.created_at)}
+                  </span>
                 </div>
               </div>
 
               <div className="border-t border-slate-200 pt-4">
-                <h3 className="text-sm font-semibold text-slate-800 mb-3">Conversación</h3>
+                <h3 className="text-sm font-semibold text-slate-800 mb-3">
+                  {t("app.support.contact.detail.conversationTitle")}
+                </h3>
                 {replies.length === 0 ? (
-                  <p className="text-slate-500 text-sm py-4">Aún no hay respuestas. El equipo de soporte te responderá aquí.</p>
+                  <p className="text-slate-500 text-sm py-4">
+                    {t("app.support.contact.detail.conversationEmpty")}
+                  </p>
                 ) : (
                   <ul className="space-y-4 mb-5">
                     {replies.map((r) => {
@@ -395,8 +429,11 @@ export default function ContactSupportPage() {
                         (r.author_display === authUser.email ||
                           r.author_display?.toLowerCase() === authUser.email?.toLowerCase());
                       const displayName = isCurrentUser
-                        ? "Tú"
-                        : r.author_display || (r.is_from_support ? "Soporte" : "Tú");
+                        ? t("app.support.contact.author.you")
+                        : r.author_display ||
+                          (r.is_from_support
+                            ? t("app.support.contact.author.support")
+                            : t("app.support.contact.author.you"));
                       return (
                         <li
                           key={r.id}
@@ -433,7 +470,7 @@ export default function ContactSupportPage() {
                       key={replyKey}
                       value={replyText}
                       onChange={setReplyText}
-                      placeholder="Escribe tu respuesta…"
+                      placeholder={t("app.support.contact.detail.replyPlaceholder")}
                       minHeight="100px"
                     />
                     <Button
@@ -447,7 +484,7 @@ export default function ContactSupportPage() {
                       ) : (
                         <>
                           <Send className="h-4 w-4" />
-                          Enviar respuesta
+                          {t("app.support.contact.detail.replyButton")}
                         </>
                       )}
                     </Button>
@@ -456,7 +493,9 @@ export default function ContactSupportPage() {
               </div>
             </div>
           ) : (
-            <p className="text-slate-500 py-8">No se pudo cargar el ticket.</p>
+            <p className="text-slate-500 py-8">
+              {t("app.support.contact.detail.loadError")}
+            </p>
           )}
         </SheetContent>
       </Sheet>

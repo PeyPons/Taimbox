@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Loader2, MessageSquarePlus, Eye } from "lucide-react";
+import { useAppTranslation } from "@/hooks/useAppTranslation";
 import { toast } from "@/lib/notify";
 import { SupportMessageContent } from "@/components/support/SupportMessageContent";
 
@@ -70,6 +71,7 @@ interface TicketReply {
 }
 
 export default function AdminSupportPage() {
+  const { t } = useAppTranslation();
   const [tickets, setTickets] = useState<SupportTicketRow[]>([]);
   const [agencies, setAgencies] = useState<AgencyOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,7 +104,7 @@ export default function AdminSupportPage() {
       setTickets((data as SupportTicketRow[]) || []);
     } catch (e: unknown) {
       console.error("[AdminSupportPage] Error listing tickets:", e);
-      toast.error("Error al cargar tickets");
+      toast.error(t("admin.support.errLoad", "Error al cargar tickets"));
       setTickets([]);
     } finally {
       setLoading(false);
@@ -155,7 +157,7 @@ export default function AdminSupportPage() {
       } catch (e) {
         if (!cancelled) {
           console.error("[AdminSupportPage] Error loading ticket detail:", e);
-          toast.error("Error al cargar el ticket");
+          toast.error(t("admin.support.errLoadTicket", "Error al cargar el ticket"));
         }
       } finally {
         if (!cancelled) setLoadingDetail(false);
@@ -172,13 +174,13 @@ export default function AdminSupportPage() {
         p_status: newStatus,
       });
       if (error) throw error;
-      toast.success("Estado actualizado");
+      toast.success(t("admin.support.statusUpdated", "Estado actualizado"));
       setTickets((prev) =>
         prev.map((t) => (t.id === ticketId ? { ...t, status: newStatus } : t))
       );
     } catch (e: unknown) {
       console.error("[AdminSupportPage] Error updating status:", e);
-      toast.error("Error al actualizar estado");
+      toast.error(t("admin.support.errUpdateStatus", "Error al actualizar estado"));
     } finally {
       setUpdatingId(null);
     }
@@ -186,7 +188,7 @@ export default function AdminSupportPage() {
 
   const addReply = async () => {
     if (!selectedTicketId || !replyMessage?.trim()) {
-      toast.error("Escribe un mensaje");
+      toast.error(t("admin.support.writeMessage", "Escribe un mensaje"));
       return;
     }
     setAddingReply(true);
@@ -197,7 +199,7 @@ export default function AdminSupportPage() {
         p_internal: replyIsInternal,
       });
       if (error) throw error;
-      toast.success(replyIsInternal ? "Comentario interno añadido" : "Respuesta enviada al usuario");
+      toast.success(replyIsInternal ? t("admin.support.internalReplyAdded", "Comentario interno añadido") : t("admin.support.replyAdded", "Respuesta enviada al usuario"));
       setReplyMessage("");
       setReplyKey((k) => k + 1);
       const { data } = await supabase.rpc("admin_list_support_ticket_replies", {
@@ -206,7 +208,7 @@ export default function AdminSupportPage() {
       setReplies((data as TicketReply[]) || []);
     } catch (e: unknown) {
       console.error("[AdminSupportPage] Error adding reply:", e);
-      toast.error("Error al añadir respuesta");
+      toast.error(t("admin.support.errAddReply", "Error al añadir respuesta"));
     } finally {
       setAddingReply(false);
     }
@@ -221,14 +223,14 @@ export default function AdminSupportPage() {
         p_status: newStatus,
       });
       if (error) throw error;
-      toast.success("Estado actualizado");
+      toast.success(t("admin.support.statusUpdated", "Estado actualizado"));
       setTicketDetail((prev) => (prev ? { ...prev, status: newStatus } : null));
       setTickets((prev) =>
         prev.map((t) => (t.id === ticketDetail.id ? { ...t, status: newStatus } : t))
       );
     } catch (e: unknown) {
       console.error("[AdminSupportPage] Error updating status:", e);
-      toast.error("Error al actualizar estado");
+      toast.error(t("admin.support.errUpdateStatus", "Error al actualizar estado"));
     } finally {
       setUpdatingId(null);
     }
@@ -236,7 +238,7 @@ export default function AdminSupportPage() {
 
   const createTicket = async () => {
     if (!createAgencyId?.trim() || !createSubject?.trim() || !createMessage?.trim()) {
-      toast.error("Agencia, asunto y mensaje son obligatorios");
+      toast.error(t("admin.support.allFieldsReq", "Agencia, asunto y mensaje son obligatorios"));
       return;
     }
     setCreating(true);
@@ -247,7 +249,7 @@ export default function AdminSupportPage() {
         p_message: createMessage.trim(),
       });
       if (error) throw error;
-      toast.success("Ticket creado");
+      toast.success(t("admin.support.ticketCreated", "Ticket creado"));
       setCreateSubject("");
       setCreateMessage("");
       setCreateMessageKey((k) => k + 1);
@@ -255,7 +257,7 @@ export default function AdminSupportPage() {
       fetchTickets();
     } catch (e: unknown) {
       console.error("[AdminSupportPage] Error creating ticket:", e);
-      toast.error("Error al crear ticket");
+      toast.error(t("admin.support.errCreateTicket", "Error al crear ticket"));
     } finally {
       setCreating(false);
     }
@@ -273,16 +275,16 @@ export default function AdminSupportPage() {
   };
 
   const statusLabel: Record<string, string> = {
-    open: "Abierto",
-    in_progress: "En curso",
-    closed: "Cerrado",
+    open: t("admin.support.statusOpen", "Abierto"),
+    in_progress: t("admin.support.statusInProgress", "En curso"),
+    closed: t("admin.support.statusClosed", "Cerrado"),
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Soporte</h1>
+          <h1 className="text-2xl font-bold text-slate-900">{t("admin.support.title", "Soporte")}</h1>
           <p className="text-slate-600 mt-1">
             Tickets de soporte por agencia. Crear y gestionar estado.
           </p>
@@ -296,14 +298,14 @@ export default function AdminSupportPage() {
       {formOpen && (
         <Card>
           <CardHeader>
-            <CardTitle>Crear ticket</CardTitle>
+            <CardTitle>{t("admin.support.createTitle", "Crear ticket")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-slate-700">Agencia</label>
+              <label className="text-sm font-medium text-slate-700">{t("common.agency", "Agencia")}</label>
               <Select value={createAgencyId} onValueChange={setCreateAgencyId}>
                 <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Seleccionar agencia" />
+                  <SelectValue placeholder={t("admin.support.selectAgency", "Seleccionar agencia")} />
                 </SelectTrigger>
                 <SelectContent>
                   {agencies.map((a) => (
@@ -315,16 +317,16 @@ export default function AdminSupportPage() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700">Asunto</label>
+              <label className="text-sm font-medium text-slate-700">{t("admin.support.subject", "Asunto")}</label>
               <Input
                 value={createSubject}
                 onChange={(e) => setCreateSubject(e.target.value)}
-                placeholder="Asunto del ticket"
+                placeholder={t("admin.support.subjectPlaceholder", "Asunto del ticket")}
                 className="mt-1"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700">Mensaje</label>
+              <label className="text-sm font-medium text-slate-700">{t("common.message", "Mensaje")}</label>
               <SupportMessageEditor
                 key={createMessageKey}
                 value={createMessage}
@@ -362,7 +364,7 @@ export default function AdminSupportPage() {
             </Select>
             <Select value={agencyFilter} onValueChange={setAgencyFilter}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Agencia" />
+                <SelectValue placeholder={t("common.agency", "Agencia")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas las agencias</SelectItem>
@@ -389,8 +391,8 @@ export default function AdminSupportPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Agencia</TableHead>
-                  <TableHead>Asunto</TableHead>
+                  <TableHead>{t("common.agency", "Agencia")}</TableHead>
+                  <TableHead>{t("admin.support.subject", "Asunto")}</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Creado</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
@@ -466,7 +468,7 @@ export default function AdminSupportPage() {
       <Sheet open={!!selectedTicketId} onOpenChange={(open) => !open && setSelectedTicketId(null)}>
         <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Detalle del ticket</SheetTitle>
+            <SheetTitle>{t("admin.support.detailTitle", "Detalle del ticket")}</SheetTitle>
           </SheetHeader>
           {loadingDetail ? (
             <div className="flex items-center justify-center py-12">
@@ -476,15 +478,15 @@ export default function AdminSupportPage() {
             <div className="space-y-6 mt-6">
               <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 space-y-3">
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                  <span className="text-slate-500">Agencia</span>
+                  <span className="text-slate-500">{t("common.agency", "Agencia")}</span>
                   <span className="font-medium text-slate-900">{ticketDetail.agency_name}</span>
                 </div>
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400 mb-0.5">Asunto</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400 mb-0.5">{t("admin.support.subject", "Asunto")}</p>
                   <p className="font-medium text-slate-900">{ticketDetail.subject}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400 mb-0.5">Mensaje inicial</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400 mb-0.5">{t("admin.support.initialMessage", "Mensaje inicial")}</p>
                   <SupportMessageContent content={ticketDetail.message} />
                 </div>
                 <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-200">
@@ -518,17 +520,16 @@ export default function AdminSupportPage() {
               <div className="border-t border-slate-200 pt-4">
                 <h3 className="text-sm font-semibold text-slate-800 mb-3">Conversación</h3>
                 {replies.length === 0 ? (
-                  <p className="text-slate-500 text-sm py-4">Sin comentarios aún.</p>
+                  <p className="text-slate-500 text-sm py-4">{t("admin.support.noReplies", "Sin comentarios aún.")}</p>
                 ) : (
                   <ul className="space-y-4 mb-5">
                     {replies.map((r) => (
                       <li
                         key={r.id}
-                        className={`flex gap-3 rounded-lg border p-3 text-sm ${
-                          r.is_internal
-                            ? "border-amber-200 bg-amber-50/50"
-                            : "border-primary/20 bg-primary/5"
-                        }`}
+                        className={`flex gap-3 rounded-lg border p-3 text-sm ${r.is_internal
+                          ? "border-amber-200 bg-amber-50/50"
+                          : "border-primary/20 bg-primary/5"
+                          }`}
                       >
                         <Avatar className="h-8 w-8 shrink-0 border border-slate-200">
                           <AvatarFallback className="bg-slate-200 text-slate-600 text-xs">
@@ -559,7 +560,7 @@ export default function AdminSupportPage() {
                     key={replyKey}
                     value={replyMessage}
                     onChange={setReplyMessage}
-                    placeholder={replyIsInternal ? "Nota interna (solo visible para admin)…" : "Respuesta visible para la agencia…"}
+                    placeholder={replyIsInternal ? t("admin.support.internalNotePlaceholder", "Nota interna (solo visible para admin)…") : t("admin.support.replyPlaceholder", "Respuesta visible para la agencia…")}
                     minHeight="100px"
                   />
                   <div className="flex flex-wrap items-center gap-3">
@@ -573,7 +574,7 @@ export default function AdminSupportPage() {
                       Solo interno (no visible para la agencia)
                     </label>
                     <Button size="sm" onClick={addReply} disabled={addingReply || !replyMessage?.trim()}>
-                      {addingReply ? <Loader2 className="h-4 w-4 animate-spin" /> : replyIsInternal ? "Enviar comentario interno" : "Enviar respuesta al usuario"}
+                      {addingReply ? <Loader2 className="h-4 w-4 animate-spin" /> : replyIsInternal ? t("admin.support.sendInternal", "Enviar comentario interno") : t("admin.support.sendReply", "Enviar respuesta al usuario")}
                     </Button>
                   </div>
                 </div>

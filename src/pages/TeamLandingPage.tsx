@@ -1,24 +1,12 @@
-import { Helmet } from 'react-helmet-async';
 import { TeamArticle } from '@/components/landing/TeamArticle';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
+import { CommercialSeoTags } from '@/seo/CommercialSeoTags';
 
 export default function TeamLandingPage() {
     return (
         <>
-            <Helmet>
-                <title>Gestión de Equipos y Colaboración Empresarial | Taimbox</title>
-                <meta name="description" content="La herramienta definitiva para coordinar equipos en empresas de servicios. Control de ausencias, roles y asignación de tareas en una plataforma en la nube." />
-                <link rel="canonical" href="/gestion-equipos" />
-                <script type="application/ld+json">
-                    {JSON.stringify({
-                        '@context': 'https://schema.org',
-                        '@type': 'WebPage',
-                        name: 'Gestión de Equipos — Taimbox',
-                        description: 'La herramienta definitiva para coordinar equipos en empresas de servicios. Control de ausencias, roles y asignación de tareas en una plataforma en la nube.',
-                    })}
-                </script>
-            </Helmet>
+            <CommercialSeoTags pathEs="/gestion-equipos" pageKey="team" />
 
             <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 relative overflow-hidden">
                 <div className="absolute inset-0 overflow-hidden">

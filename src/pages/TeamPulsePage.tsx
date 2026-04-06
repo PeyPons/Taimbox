@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
@@ -17,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/lib/notify';
 
 export default function TeamPulsePage() {
+    const { t } = useTranslation('app');
     const { employees, allocations, projects, clients, isLoading, refreshData } = useApp();
     const { currentAgency } = useAgency();
     const { selectedDepartmentId } = useDepartmentView();
@@ -115,14 +117,14 @@ export default function TeamPulsePage() {
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
                         <Calendar className="h-6 w-6 text-slate-400" />
-                        Resumen Diario
+                        {t('team.pulse.dailySummary', 'Resumen Diario')}
                     </h1>
-                    <p className="text-slate-500 text-sm">Progreso del equipo hoy</p>
+                    <p className="text-slate-500 text-sm">{t('team.pulse.teamProgress', 'Progreso del equipo hoy')}</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={() => refreshData(true)} disabled={isLoading}>
                         <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
-                        Actualizar
+                        {t('team.pulse.update', 'Actualizar')}
                     </Button>
                 </div>
             </div>
@@ -149,7 +151,7 @@ export default function TeamPulsePage() {
                                         </Avatar>
                                         <div className="min-w-0">
                                             <h3 className="font-bold text-slate-800 truncate leading-tight">{employee.name}</h3>
-                                            <p className="text-xs text-slate-500">{completedTasks.length} tareas completadas</p>
+                                            <p className="text-xs text-slate-500">{t('team.pulse.completedTasks', { count: completedTasks.length, defaultValue: '{{count}} tareas completadas' })}</p>
                                         </div>
                                     </div>
 
@@ -176,7 +178,7 @@ export default function TeamPulsePage() {
                                         {completedTasks.length > 0 && (
                                             <div className="space-y-2">
                                                 <div className="flex items-center justify-between text-xs text-slate-400 font-medium uppercase tracking-wider px-1">
-                                                    <span>Log Hoy ({completedTasks.length})</span>
+                                                    <span>{t('team.pulse.dailyLog', { count: completedTasks.length, defaultValue: 'Log Hoy ({{count}})' })}</span>
                                                     <span>{completedTasks.reduce((s, t) => s + (t.hoursActual || 0), 0).toFixed(1)}h</span>
                                                 </div>
                                                 <div className="space-y-1.5 opacity-75 grayscale hover:grayscale-0 transition-all">
@@ -199,12 +201,12 @@ export default function TeamPulsePage() {
                                         <div className="space-y-2">
                                             <div className="text-xs text-slate-400 font-medium uppercase tracking-wider px-1 flex items-center gap-2">
                                                 <AlertCircle className="h-3 w-3" />
-                                                Cola ({pendingTasks.length})
+                                                {t('team.pulse.queue', { count: pendingTasks.length, defaultValue: 'Cola ({{count}})' })}
                                             </div>
                                             <div className="space-y-2">
                                                 {pendingTasks.length === 0 ? (
                                                     <div className="text-center py-4 text-xs text-slate-300 italic">
-                                                        Nada en cola
+                                                        {t('team.pulse.nothingInQueue', 'Nada en cola')}
                                                     </div>
                                                 ) : (
                                                     pendingTasks.map(task => (

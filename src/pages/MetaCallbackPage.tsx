@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/lib/supabase';
 import { invokeEdgeFunctionWithRetry } from '@/lib/invokeEdgeFunction';
 import { useAgency } from '@/contexts/AgencyContext';
@@ -10,6 +11,7 @@ export default function MetaCallbackPage() {
     const navigate = useNavigate();
     const { currentAgency, refreshAgency } = useAgency();
     const processedRef = useRef(false);
+    const { t } = useTranslation('app');
 
     useEffect(() => {
         const handleCallback = async () => {
@@ -25,15 +27,17 @@ export default function MetaCallbackPage() {
                 console.error('Error OAuth Meta:', error, errorReason, errorDescription);
                 toast.error(
                     error === 'access_denied'
-                        ? 'No se pudo conectar con Meta. Acceso denegado.'
-                        : `Error de Meta: ${errorDescription || error}`
+                        ? t('app.auth.oauth.meta.denied')
+                        : t('app.auth.oauth.meta.genericError', {
+                              error: errorDescription || error,
+                          })
                 );
                 navigate('/agency?tab=integrations');
                 return;
             }
 
             if (!code) {
-                toast.error('Respuesta inválida de Meta.');
+                toast.error(t('app.auth.oauth.meta.invalidResponse'));
                 navigate('/agency?tab=integrations');
                 return;
             }
@@ -55,7 +59,7 @@ export default function MetaCallbackPage() {
 
             if (!agencyId) agencyId = currentAgency?.id || stateFromUrl || null;
             if (!agencyId) {
-                toast.error('No se pudo identificar la agencia. Vuelve a intentar desde Integraciones.');
+                toast.error(t('app.auth.oauth.meta.missingAgency'));
                 navigate('/agency?tab=integrations');
                 return;
             }
@@ -82,29 +86,33 @@ export default function MetaCallbackPage() {
                     console.warn('list-meta-accounts tras OAuth:', e);
                 }
 
-                toast.success('¡Meta Ads vinculado correctamente!');
+                toast.success(t('app.auth.oauth.meta.success'));
                 await refreshAgency();
                 navigate('/agency?tab=integrations');
             } catch (err: unknown) {
                 console.error('Error intercambiando token Meta:', err);
-                let msg = err instanceof Error ? err.message : 'Inténtalo de nuevo.';
-                if (/name resolution|getaddrinfo/i.test(msg)) {
-                    msg =
-                        'El servidor de integraciones no pudo resolver red/DNS (503). Revisa DNS del contenedor edge-functions o reintenta en unos segundos.';
+                let message =
+                    err instanceof Error ? err.message : t('app.auth.oauth.common.tryAgain');
+                if (/name resolution|getaddrinfo/i.test(message)) {
+                    message = t('app.auth.oauth.meta.dnsError');
                 }
-                toast.error(`Error al vincular Meta: ${msg}`);
+                toast.error(t('app.auth.oauth.meta.linkError', { message }));
                 navigate('/agency?tab=integrations');
             }
         };
 
         handleCallback();
-    }, [searchParams, navigate, currentAgency, refreshAgency]);
+    }, [searchParams, navigate, currentAgency, refreshAgency, t]);
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
             <div className="h-8 w-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
-            <p className="text-slate-600 font-medium mt-4">Vinculando con Meta Ads...</p>
-            <p className="text-slate-400 text-sm mt-2">Por favor, no cierres esta ventana.</p>
+            <p className="text-slate-600 font-medium mt-4">
+                {t('app.auth.oauth.meta.loadingTitle')}
+            </p>
+            <p className="text-slate-400 text-sm mt-2">
+                {t('app.auth.oauth.meta.loadingSubtitle')}
+            </p>
         </div>
     );
 }

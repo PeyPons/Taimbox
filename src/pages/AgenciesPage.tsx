@@ -8,11 +8,13 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Badge } from '@/components/ui/badge';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 
 export default function AgenciesPage() {
   const { availableAgencies, currentAgency, switchAgency, isLoading } = useAgency();
   const { hasPermission } = usePermissions();
   const navigate = useNavigate();
+  const { t } = useAppTranslation();
 
   const [isSwitching, setIsSwitching] = useState<string | null>(null);
 
@@ -22,14 +24,14 @@ export default function AgenciesPage() {
     setIsSwitching(agencyId);
     try {
       await switchAgency(agencyId);
-      toast.success('Agencia cambiada correctamente');
+      toast.success(t('agencies.toast.switchSuccess', 'Agencia cambiada correctamente'));
       // Disparar evento para que AppContext recargue datos
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('agency-changed'));
       }, 100);
     } catch (error: any) {
       console.error('Error cambiando agencia:', error);
-      toast.error(error.message || 'Error al cambiar de agencia');
+      toast.error(error.message || t('agencies.toast.switchError', 'Error al cambiar de agencia'));
     } finally {
       setIsSwitching(null);
     }
@@ -50,18 +52,18 @@ export default function AgenciesPage() {
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Mis Agencias</h1>
+          <h1 className="text-3xl font-bold text-slate-900">{t('agencies.title', 'Mis Agencias')}</h1>
           <p className="text-slate-600 mt-1">
             {hasMultipleAgencies
-              ? `Tienes acceso a ${availableAgencies.length} agencias`
-              : 'Gestiona tu agencia actual'
+              ? t('agencies.accessCount_other', { count: availableAgencies.length, defaultValue: `Tienes acceso a ${availableAgencies.length} agencias` })
+              : t('agencies.manageCurrent', 'Gestiona tu agencia actual')
             }
           </p>
         </div>
         {hasPermission('can_access_agency_settings') && (
           <Button onClick={() => navigate('/agencies?action=create')} className="gap-2 shrink-0">
             <Plus className="h-4 w-4" />
-            Crear nueva agencia
+            {t('agencies.createNew', 'Crear nueva agencia')}
           </Button>
         )}
       </div>
@@ -75,8 +77,8 @@ export default function AgenciesPage() {
                 <Building2 className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-xl">{currentAgency?.name || 'Mi Agencia'}</CardTitle>
-                <p className="text-sm text-slate-500 mt-1">Agencia actual</p>
+                <CardTitle className="text-xl">{currentAgency?.name || t('agencies.myAgency', 'Mi Agencia')}</CardTitle>
+                <p className="text-sm text-slate-500 mt-1">{t('agencies.currentAgencyText', 'Agencia actual')}</p>
               </div>
             </div>
           </CardHeader>
@@ -89,7 +91,7 @@ export default function AgenciesPage() {
                   className="gap-2"
                 >
                   <Users className="h-4 w-4" />
-                  Equipo
+                  {t('agencies.buttons.team', 'Equipo')}
                 </Button>
               )}
               {hasPermission('can_access_agency_settings') && (
@@ -99,7 +101,7 @@ export default function AgenciesPage() {
                   className="gap-2"
                 >
                   <Shield className="h-4 w-4" />
-                  Administradores
+                  {t('agencies.buttons.admins', 'Administradores')}
                 </Button>
               )}
               <Button
@@ -108,7 +110,7 @@ export default function AgenciesPage() {
                 className="gap-2"
               >
                 <Settings className="h-4 w-4" />
-                Configuración
+                {t('agencies.buttons.settings', 'Configuración')}
               </Button>
             </div>
           </CardContent>
@@ -141,7 +143,7 @@ export default function AgenciesPage() {
                     {isCurrent && (
                       <Badge variant="default" className="text-xs">
                         <Check className="h-3 w-3 mr-1" />
-                        Actual
+                        {t('agencies.currentBadge', 'Actual')}
                       </Badge>
                     )}
                   </div>
@@ -158,10 +160,10 @@ export default function AgenciesPage() {
                         {isSwitchingThis ? (
                           <>
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Cambiando...
+                            {t('agencies.buttons.switching', 'Cambiando...')}
                           </>
                         ) : (
-                          'Cambiar a esta agencia'
+                          t('agencies.buttons.switchToThis', 'Cambiar a esta agencia')
                         )}
                       </Button>
                     )}
@@ -175,7 +177,7 @@ export default function AgenciesPage() {
                             onClick={() => navigate('/team')}
                           >
                             <Users className="h-4 w-4 mr-2" />
-                            Equipo
+                            {t('agencies.buttons.team', 'Equipo')}
                           </Button>
                         )}
                         {hasPermission('can_access_agency_settings') && (
@@ -185,7 +187,7 @@ export default function AgenciesPage() {
                             onClick={() => navigate(`/agencies/${agency.agencyId}/manage`)}
                           >
                             <Shield className="h-4 w-4 mr-2" />
-                            Admins
+                            {t('agencies.buttons.adminsShort', 'Admins')}
                           </Button>
                         )}
                         <Button
@@ -194,7 +196,7 @@ export default function AgenciesPage() {
                           onClick={() => navigate('/agency')}
                         >
                           <Settings className="h-4 w-4 mr-2" />
-                          Config
+                          {t('agencies.buttons.settingsShort', 'Config')}
                         </Button>
                       </div>
                     )}

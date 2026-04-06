@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Eye, ChevronDown, Check, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 
 interface DepartmentViewSelectorProps {
   /** En true, se muestra sin borde superior ni padding extra para integrar en una fila (ej. junto al nombre de la agencia) */
@@ -22,6 +23,7 @@ export function DepartmentViewSelector({ inline }: DepartmentViewSelectorProps) 
   const { currentAgency } = useAgency();
   const { selectedDepartmentId, setSelectedDepartmentId } = useDepartmentView();
   const departments = normalizeDepartments(currentAgency?.settings?.departments);
+  const { t } = useAppTranslation();
 
   if (!departments.length) return null;
 
@@ -47,7 +49,7 @@ export function DepartmentViewSelector({ inline }: DepartmentViewSelectorProps) 
             <div className="flex items-center gap-1 min-w-0 flex-1">
               <Eye className={cn("shrink-0 text-slate-400", inline ? "h-3 w-3" : "h-3.5 w-3.5")} />
               <span className={cn("truncate font-medium", inline ? "text-[11px]" : "text-xs")}>
-                {selectedDept ? selectedDept.name : 'Vista Global'}
+                {selectedDept ? selectedDept.name : t('layout.departmentSelector.globalView', 'Vista Global')}
               </span>
               {selectedDept && (
                 <span
@@ -60,7 +62,7 @@ export function DepartmentViewSelector({ inline }: DepartmentViewSelectorProps) 
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56 bg-slate-800 border-slate-700">
-          <DropdownMenuLabel className="text-slate-300 text-xs">Vista por departamento</DropdownMenuLabel>
+          <DropdownMenuLabel className="text-slate-300 text-xs">{t('layout.departmentSelector.byDepartment', 'Vista por departamento')}</DropdownMenuLabel>
           <DropdownMenuSeparator className="bg-slate-700" />
           <DropdownMenuItem
             onClick={() => setSelectedDepartmentId(null)}
@@ -70,7 +72,7 @@ export function DepartmentViewSelector({ inline }: DepartmentViewSelectorProps) 
             )}
           >
             <Globe className="h-3.5 w-3.5 mr-2 text-slate-400" />
-            <span>Vista Global</span>
+            <span>{t('layout.departmentSelector.globalView', 'Vista Global')}</span>
             {!selectedDepartmentId && <Check className="h-3.5 w-3.5 ml-auto" />}
           </DropdownMenuItem>
           <DropdownMenuSeparator className="bg-slate-700" />

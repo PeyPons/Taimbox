@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -43,31 +43,91 @@ import { DemoWeeklyForecastPage } from '@/components/demo/DemoWeeklyForecastPage
 import { DemoProvider } from '@/contexts/DemoContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Helmet } from 'react-helmet-async';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
+import { SeoTags } from '@/seo/SeoTags';
 import { CalendarPreview } from '@/components/landing/CalendarPreview';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
+import { localizedPathFromEs } from '@/i18n/publicPaths';
+
+type HomeCarouselJson = {
+  label: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  featureList: string[];
+  example: string;
+  stat: string;
+  statLabel: string;
+  landingUrl: string;
+};
+
+type HomeFaqJson = {
+  question: string;
+  answer?: string;
+  answerBefore?: string;
+  answerLinkText?: string;
+  answerAfter?: string;
+  answerLinkPath?: string;
+};
+
+const FEATURE_CAROUSEL_META: { icon: typeof Calendar; color: string }[] = [
+  { icon: Calendar, color: 'from-indigo-500 to-purple-500' },
+  { icon: Link2, color: 'from-purple-500 to-pink-500' },
+  { icon: Target, color: 'from-amber-500 to-orange-500' },
+  { icon: Users, color: 'from-blue-500 to-cyan-500' },
+  { icon: Clock, color: 'from-teal-500 to-emerald-500' },
+  { icon: FileText, color: 'from-violet-500 to-purple-500' },
+  { icon: Bell, color: 'from-yellow-500 to-amber-500' },
+  { icon: BarChart3, color: 'from-rose-500 to-pink-500' },
+];
+
 export default function LandingPage() {
+  const { t, i18n } = useTranslation('landing');
+  const lang = i18n.language.startsWith('en') ? 'en' : 'es';
   const [demoTab, setDemoTab] = useState('planner');
   const [activeFeature, setActiveFeature] = useState(0);
 
+  const homeFeatures = useMemo(() => {
+    const raw = t('home.featuresCarousel', { returnObjects: true }) as HomeCarouselJson[];
+    if (!Array.isArray(raw)) return [];
+    return raw.map((item, i) => {
+      const meta = FEATURE_CAROUSEL_META[i];
+      if (!meta) return null;
+      return { ...item, icon: meta.icon, color: meta.color };
+    }).filter((x): x is HomeCarouselJson & { icon: typeof Calendar; color: string } => x != null);
+  }, [t]);
+
+  const faqItems = useMemo(
+    () => t('home.faqItems', { returnObjects: true }) as HomeFaqJson[],
+    [t],
+  );
+
+  useEffect(() => {
+    if (homeFeatures.length === 0) return;
+    if (activeFeature >= homeFeatures.length) {
+      setActiveFeature(0);
+    }
+  }, [homeFeatures.length, activeFeature]);
+
   return (
     <>
-      <Helmet>
-        <title>Taimbox | Gestión de Recursos y Planificación de Equipos</title>
-        <meta name="description" content="Optimiza la rentabilidad de tu empresa con Taimbox. Gestión de recursos, planificación inteligente y control de márgenes." />
-        <script type="application/ld+json">
-          {JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'SoftwareApplication',
-            name: 'Taimbox',
-            applicationCategory: 'BusinessApplication',
-            description: 'Optimiza la rentabilidad de tu empresa con Taimbox. Gestión de recursos, planificación inteligente y control de márgenes.',
-            offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' }
-          })}
-        </script>
-      </Helmet>
+      <SeoTags
+        pathEs="/"
+        pathEn="/en"
+        title={t('home.seoTitle')}
+        description={t('home.seoDescription')}
+        lang={lang}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'SoftwareApplication',
+          name: 'Taimbox',
+          applicationCategory: 'BusinessApplication',
+          description: t('home.jsonLdDescription'),
+          offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+        } as Record<string, unknown>}
+      />
 
       <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 relative overflow-x-hidden min-w-0">
         <LandingHeader />
@@ -97,18 +157,18 @@ export default function LandingPage() {
               <div className="inline-flex items-center gap-2 px-3 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-indigo-500/40 via-purple-500/40 to-pink-500/40 backdrop-blur-md rounded-full text-white text-xs sm:text-base font-bold mb-6 sm:mb-12 border border-white/20 shadow-2xl shadow-indigo-500/30 animate-fade-in relative overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 <Sparkles className="h-3.5 w-3.5 sm:h-5 sm:w-5 animate-spin-slow relative z-10" />
-                <span className="whitespace-nowrap relative z-10">Tu equipo, tu tiempo, tu control</span>
+                <span className="whitespace-nowrap relative z-10">{t('home.heroBadge')}</span>
               </div>
 
               {/* Título principal: escalado para móvil */}
               <div className="relative mb-4 sm:mb-8">
                 <div className="absolute -inset-4 sm:-inset-8 bg-gradient-to-r from-indigo-600/30 via-purple-600/30 to-pink-600/30 blur-3xl opacity-60 -z-10 animate-pulse" />
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black mb-2 sm:mb-4 leading-[1.15] tracking-tight relative px-1">
-                  <span className="block text-white drop-shadow-2xl">El tiempo de tu</span>
+                  <span className="block text-white drop-shadow-2xl">{t('home.heroTitleLine1')}</span>
                   <span className="block relative">
                     <span className="absolute inset-0 bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 blur-xl opacity-50 animate-pulse" />
                     <span className="relative bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent animate-gradient bg-[length:200%_auto] drop-shadow-lg">
-                      equipo visualizado
+                      {t('home.heroTitleHighlight')}
                     </span>
                   </span>
                 </h1>
@@ -117,10 +177,18 @@ export default function LandingPage() {
               {/* Descripción: más legible en móvil */}
               <div className="mb-5 sm:mb-8 max-w-4xl mx-auto px-2 sm:px-4">
                 <p className="text-base sm:text-xl md:text-2xl lg:text-3xl text-indigo-100/90 leading-relaxed font-light mb-2">
-                  No más hojas de cálculo. No más adivinanzas.
+                  {t('home.heroSubtitleLine1')}
                 </p>
                 <p className="text-lg sm:text-2xl md:text-3xl lg:text-4xl text-white font-semibold leading-tight break-words">
-                  Ve quién hace qué, <span className="bg-gradient-to-r from-indigo-200 to-purple-200 bg-clip-text text-transparent">cuándo</span> y <span className="bg-gradient-to-r from-purple-200 to-pink-200 bg-clip-text text-transparent">por qué</span>.
+                  {t('home.heroSubtitleLine2Prefix')}{' '}
+                  <span className="bg-gradient-to-r from-indigo-200 to-purple-200 bg-clip-text text-transparent">
+                    {t('home.heroSubtitleLine2When')}
+                  </span>{' '}
+                  {t('home.heroSubtitleLine2And')}{' '}
+                  <span className="bg-gradient-to-r from-purple-200 to-pink-200 bg-clip-text text-transparent">
+                    {t('home.heroSubtitleLine2Why')}
+                  </span>
+                  .
                 </p>
               </div>
 
@@ -129,7 +197,7 @@ export default function LandingPage() {
                 <Link to="/login?tab=register" className="group relative">
                   <div className="absolute -inset-1 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300" />
                   <Button size="lg" className="relative w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 sm:px-10 py-5 sm:py-7 text-base sm:text-xl font-semibold shadow-2xl hover:shadow-indigo-500/50 transition-all transform hover:scale-105 min-h-[48px]">
-                    Empezar gratis
+                    {t('home.heroPrimaryCta')}
                     <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
@@ -139,12 +207,14 @@ export default function LandingPage() {
                     variant="outline"
                     className="w-full sm:w-auto px-5 sm:px-8 py-5 sm:py-7 text-sm sm:text-lg font-semibold border-2 border-white/30 text-white hover:text-white hover:bg-white/10 hover:border-white/50 bg-white/5 backdrop-blur-md shadow-xl min-h-[48px]"
                   >
-                    El coste de no medir (3 min)
+                    {t('home.heroSecondaryCta')}
                   </Button>
                 </Link>
               </div>
               <p className="text-center text-sm text-indigo-200/80">
-                <Link to="/precios" className="hover:text-white underline underline-offset-2">Ver planes y precios</Link>
+                <Link to="/precios" className="hover:text-white underline underline-offset-2">
+                  {t('home.heroPricingLink')}
+                </Link>
               </p>
 
               {/* Preview visual - Calendario completo (scroll interno en móvil) */}
@@ -162,7 +232,7 @@ export default function LandingPage() {
                         demoSection?.scrollIntoView({ behavior: 'smooth' });
                       }}
                     >
-                      Ver demo completa
+                      {t('home.heroCalendarButton')}
                       <ArrowRight className="ml-2 h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
@@ -177,30 +247,22 @@ export default function LandingPage() {
           <div className="text-center mb-6 sm:mb-8">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-3 px-4">
               <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
-                Funcionalidades que transforman
+                {t('home.featuresTitle')}
               </span>
             </h2>
             <p className="text-lg sm:text-xl text-white/70 max-w-2xl mx-auto">
-              Explora cada herramienta. Haz clic para ver detalles y ejemplos.
+              {t('home.featuresSubtitle')}
             </p>
             <Link to="/guia" className="inline-block mt-3 text-sm font-medium text-indigo-200 hover:text-white underline underline-offset-2 transition-colors">
-              Ver guía completa de todas las funcionalidades →
+              {t('home.featuresGuideLink')}
             </Link>
           </div>
 
           {/* Feature Bubbles Row */}
           {(() => {
-            const features = [
-              { icon: Calendar, label: 'Calendario', color: 'from-indigo-500 to-purple-500', title: 'Calendario Visual', subtitle: 'La vista principal de tu equipo', description: 'Ve quién hace qué, cuándo y por qué. Identifica sobrecargas al instante con un vistazo al calendario completo de tu equipo.', featureList: ['Vista semanal y mensual', 'Código de colores por proyecto', 'Reasignación ágil en 1 clic', 'Asistente: sugiere a quién pasar carga (nombre y proyectos en común)'], example: 'María está al 120% esta semana. El asistente detecta quién está saturado y te sugiere con nombre y apellido a quién pasarle la carga, cruzando los proyectos que tienen en común. Redistribución en segundos.', stat: '+40%', statLabel: 'visibilidad del equipo', landingUrl: '/planificador-recursos' },
-              { icon: Link2, label: 'Dependencias', color: 'from-purple-500 to-pink-500', title: 'Dependencias', subtitle: 'Gestión inteligente de bloqueos', description: 'Identifica al instante qué tareas impiden avanzar a tu equipo. Control estricto de bloqueos con gestión de dependencias integrada.', featureList: ['Control estricto de bloqueos', 'Identifica qué tareas impiden avanzar', 'Gestión de dependencias integrada', 'Avisos de tareas bloqueadas'], example: 'El diseño bloquea al desarrollo. Taimbox te avisa si una tarea está bloqueando a otra, para que actúes a tiempo.', stat: '100%', statLabel: 'visibilidad de bloqueos', landingUrl: '/planificador-recursos' },
-              { icon: Target, label: 'Deadlines', color: 'from-amber-500 to-orange-500', title: 'Deadlines', subtitle: 'Objetivos mensuales por proyecto', description: 'Define metas de horas por proyecto y empleado. Compara lo planificado vs ejecutado. Sugerencias de redistribución solo entre quien comparte proyectos, con límites de carga configurables.', featureList: ['Objetivos por proyecto', 'Seguimiento en tiempo real', 'Sugerencias de redistribución (solo proyectos en común)', 'Límites de carga: receptor y quien cede', 'Alertas de desviación'], example: 'El equipo tiene cargas desiguales. El sistema detecta quién puede ceder horas y a quién pasarlas — solo entre empleados que comparten proyectos — y te muestra el impacto antes de decidir.', stat: '85%', statLabel: 'cumplimiento de deadlines', landingUrl: '/control-proyectos' },
-              { icon: Users, label: 'Equipo', color: 'from-blue-500 to-cyan-500', title: 'Gestión de Equipo', subtitle: 'Todo sobre tu equipo en un lugar', description: 'Horarios, ausencias, vacaciones y capacidad. Cada empleado tiene su perfil completo.', featureList: ['Horarios personalizados', 'Gestión de ausencias', 'Capacidad mensual', 'Objetivos profesionales'], example: 'Juan tiene vacaciones la próxima semana. El sistema ya lo considera y no permite asignarle tareas en ese período.', stat: '0', statLabel: 'conflictos de agenda', landingUrl: '/gestion-equipos' },
-              { icon: Clock, label: 'Tiempos', color: 'from-teal-500 to-emerald-500', title: 'Tiempos y cronómetro', subtitle: 'Registro real por tarea', description: 'Cronómetro por tarea en planificador y Mi Día. Vista "Tiempos" para ver en qué está cada uno ahora mismo y parar desde un solo lugar.', featureList: ['Cronómetro por tarea', 'Horas con precisión de segundos', 'Vista equipo: quién está en qué', 'Parar desde sidebar o página Tiempos'], example: 'Ves que María lleva 1h 23m en "Diseño landing" y Carlos 45m en "Dev API". Puedes parar tu propio crono desde la página Tiempos sin cambiar de vista.', stat: 'En vivo', statLabel: 'estado del equipo', landingUrl: '/gestion-equipos' },
-              { icon: FileText, label: 'Weekly', color: 'from-violet-500 to-purple-500', title: 'Weekly Reports', subtitle: 'Cierre semanal y asistente de redistribución', description: 'Cada semana, el sistema genera un resumen con métricas. Asistente de redistribución rápida: te muestra quién tiene horas libres para que redistribuyas el trabajo en segundos.', featureList: ['Resumen semanal automático', 'Asistente de redistribución rápida', 'Quién tiene horas libres al instante', 'Comparativa semanal'], example: 'Carlos no completó 15h esta semana. El sistema te muestra quién tiene horas libres (Laura 10h, Pedro 5h) para que redistribuyas el trabajo en segundos.', stat: 'Segundos', statLabel: 'para redistribuir carga', landingUrl: '/reportes-rentabilidad' },
-              { icon: Bell, label: 'Alertas', color: 'from-yellow-500 to-amber-500', title: 'Indicadores y recordatorios', subtitle: 'Nunca más sorpresas', description: 'Indicadores visuales de sobrecarga, alertas de desviación de presupuesto y recordatorios de cierre de mes. Todo en pantalla para que actúes a tiempo.', featureList: ['Indicadores visuales de sobrecarga', 'Alertas de desviación de presupuesto', 'Recordatorios de cierre de mes', 'Avisos de bloqueos'], example: 'Ves en la vista que el proyecto lleva 60% completado y el mes avanza. Los indicadores te avisan para actuar antes del cierre.', stat: '60%', statLabel: 'problemas detectados antes', landingUrl: '/dashboard-empleado' },
-              { icon: BarChart3, label: 'Métricas', color: 'from-rose-500 to-pink-500', title: 'Métricas y Rentabilidad', subtitle: 'Decisiones basadas en datos', description: 'Seguimiento operativo, Rentabilidad (ingreso devengado, ritmo por proyecto, coste operativo/dinámico, presupuesto por deadline) y Capacidad de Equipo. Integración API.', featureList: ['Seguimiento operativo', 'Rentabilidad con ingreso devengado', 'Ritmo (pacing) y mes en curso/cerrado', 'Capacidad de Equipo', 'Integración API'], example: 'A mitad de mes ves el ingreso devengado y el ritmo: si un proyecto va por encima del tiempo transcurrido, aviso en rojo. Si ya cumplió el 100 % de horas, el fee total.', stat: '+78%', statLabel: 'precisión en estimaciones', landingUrl: '/reportes-rentabilidad' },
-            ];
+            const features = homeFeatures;
             const current = features[activeFeature];
+            if (!current) return null;
             const FeatureIcon = current.icon;
 
             return (
@@ -327,8 +389,8 @@ export default function LandingPage() {
                           <p className="text-xs text-indigo-200/90 italic">💡 {current.example}</p>
                         </div>
 
-                        <Link to={current.landingUrl} className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-300 hover:text-white transition-colors">
-                          Ver página completa
+                        <Link to={localizedPathFromEs(current.landingUrl, i18n.language)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-300 hover:text-white transition-colors">
+                          {t('home.featuresDesktopCta')}
                           <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
 
@@ -340,16 +402,18 @@ export default function LandingPage() {
                             onClick={() => setActiveFeature(prev => prev === 0 ? features.length - 1 : prev - 1)}
                           >
                             <ChevronLeft className="h-4 w-4 mr-1" />
-                            Anterior
+                            {t('home.featuresMobilePrev')}
                           </Button>
-                          <span className="text-xs text-white/50">{activeFeature + 1} / {features.length}</span>
+                          <span className="text-xs text-white/50">
+                            {activeFeature + 1} / {features.length}
+                          </span>
                           <Button
                             variant="outline"
                             size="sm"
                             className="bg-white/5 border-white/20 text-white hover:text-white hover:bg-white/10"
                             onClick={() => setActiveFeature(prev => prev === features.length - 1 ? 0 : prev + 1)}
                           >
-                            Siguiente
+                            {t('home.featuresMobileNext')}
                             <ChevronRight className="h-4 w-4 ml-1" />
                           </Button>
                         </div>
@@ -380,8 +444,8 @@ export default function LandingPage() {
                             <p className="text-sm text-indigo-200/90 italic">💡 {current.example}</p>
                           </div>
 
-                          <Link to={current.landingUrl} className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-300 hover:text-white transition-colors mt-2">
-                            Ver página completa de esta funcionalidad
+                          <Link to={localizedPathFromEs(current.landingUrl, i18n.language)} className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-300 hover:text-white transition-colors mt-2">
+                            {t('home.featuresDesktopCtaFull')}
                             <ArrowRight className="h-4 w-4" />
                           </Link>
                         </div>
@@ -431,12 +495,12 @@ export default function LandingPage() {
             <div className="text-center mb-10 sm:mb-14">
               <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-500/30 to-purple-500/30 backdrop-blur-sm rounded-full text-white text-sm font-semibold mb-4 border border-white/20">
                 <Plug className="h-4 w-4" />
-                <span>Conecta todo</span>
+                <span>{t('home.integrationsKicker')}</span>
               </div>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 px-4">
-                Tu flujo de trabajo,
+                {t('home.integrationsTitleLine1')}
                 <span className="block bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                  amplificado
+                  {t('home.integrationsTitleHighlight')}
                 </span>
               </h2>
             </div>
@@ -444,41 +508,41 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 relative">
               <div className="hidden md:block absolute top-1/2 left-[20%] right-[20%] h-px bg-gradient-to-r from-indigo-500/50 via-purple-500/50 to-blue-500/50" />
 
-              <div className="relative group">
-                <div className="bg-gradient-to-br from-indigo-600/20 to-purple-600/20 backdrop-blur-xl rounded-3xl p-8 text-center border border-indigo-500/30 hover:border-indigo-400/50 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/20">
-                  <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-xl shadow-indigo-500/40 group-hover:scale-110 transition-transform">
-                    <Download className="h-10 w-10 text-white" />
+              {(
+                t('home.integrationsCards', { returnObjects: true }) as { title: string; description: string }[]
+              ).map((card, idx) => {
+                const icons = [Download, Code, Calendar];
+                const Icon = icons[idx] ?? Download;
+                const wrapClass =
+                  idx === 0
+                    ? 'from-indigo-600/20 to-purple-600/20 border-indigo-500/30 hover:border-indigo-400/50 hover:shadow-indigo-500/20'
+                    : idx === 1
+                      ? 'from-purple-600/20 to-pink-600/20 border-purple-500/30 hover:border-purple-400/50 hover:shadow-purple-500/20'
+                      : 'from-blue-600/20 to-cyan-600/20 border-blue-500/30 hover:border-blue-400/50 hover:shadow-blue-500/20';
+                const iconGrad =
+                  idx === 0
+                    ? 'from-indigo-500 to-purple-600 shadow-indigo-500/40'
+                    : idx === 1
+                      ? 'from-purple-500 to-pink-600 shadow-purple-500/40'
+                      : 'from-blue-500 to-cyan-600 shadow-blue-500/40';
+                const textClass =
+                  idx === 0 ? 'text-indigo-200/80' : idx === 1 ? 'text-purple-200/80' : 'text-blue-200/80';
+                return (
+                  <div key={idx} className={idx === 1 ? 'relative group md:-mt-4' : 'relative group'}>
+                    <div
+                      className={`bg-gradient-to-br ${wrapClass} backdrop-blur-xl rounded-3xl p-8 text-center border transition-all hover:scale-105 hover:shadow-2xl`}
+                    >
+                      <div
+                        className={`w-20 h-20 bg-gradient-to-br ${iconGrad} rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-xl group-hover:scale-110 transition-transform`}
+                      >
+                        <Icon className="h-10 w-10 text-white" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-white mb-3">{card.title}</h3>
+                      <p className={`${textClass} text-base leading-relaxed`}>{card.description}</p>
+                    </div>
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-3">Exporta</h3>
-                  <p className="text-indigo-200/80 text-base leading-relaxed">
-                    Informes en PDF. Datos históricos e integración vía API REST.
-                  </p>
-                </div>
-              </div>
-
-              <div className="relative group md:-mt-4">
-                <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 backdrop-blur-xl rounded-3xl p-8 text-center border border-purple-500/30 hover:border-purple-400/50 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20">
-                  <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-xl shadow-purple-500/40 group-hover:scale-110 transition-transform">
-                    <Code className="h-10 w-10 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-3">Conecta</h3>
-                  <p className="text-purple-200/80 text-base leading-relaxed">
-                    API REST completa para integraciones personalizadas.
-                  </p>
-                </div>
-              </div>
-
-              <div className="relative group">
-                <div className="bg-gradient-to-br from-blue-600/20 to-cyan-600/20 backdrop-blur-xl rounded-3xl p-8 text-center border border-blue-500/30 hover:border-blue-400/50 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/20">
-                  <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-xl shadow-blue-500/40 group-hover:scale-110 transition-transform">
-                    <Calendar className="h-10 w-10 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-3">Sincroniza</h3>
-                  <p className="text-blue-200/80 text-base leading-relaxed">
-                    Conecta con calendarios externos en tiempo real.
-                  </p>
-                </div>
-              </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -489,11 +553,11 @@ export default function LandingPage() {
             <div className="text-center mb-10 sm:mb-14">
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 px-4">
                 <span className="bg-gradient-to-r from-red-300 via-white to-emerald-300 bg-clip-text text-transparent">
-                  ¿Cansado de gestionar el tiempo a ciegas?
+                  {t('home.problemsTitle')}
                 </span>
               </h2>
               <p className="text-lg text-white/70 max-w-xl mx-auto">
-                Transforma el caos en claridad
+                {t('home.problemsSubtitle')}
               </p>
             </div>
 
@@ -508,25 +572,15 @@ export default function LandingPage() {
                   <div className="w-12 h-12 bg-red-500/30 rounded-xl flex items-center justify-center">
                     <AlertTriangle className="h-6 w-6 text-red-400" />
                   </div>
-                  <h3 className="text-2xl font-bold text-white">Sin Taimbox</h3>
+                  <h3 className="text-2xl font-bold text-white">{t('home.problemsWithoutTitle')}</h3>
                 </div>
                 <div className="space-y-4">
-                  <div className="flex items-center gap-4 p-3 bg-red-500/10 rounded-xl border border-red-500/20">
-                    <Clock className="h-5 w-5 text-red-400 shrink-0" />
-                    <span className="text-white/90 font-medium">Sobrecargas detectadas tarde</span>
-                  </div>
-                  <div className="flex items-center gap-4 p-3 bg-red-500/10 rounded-xl border border-red-500/20">
-                    <AlertTriangle className="h-5 w-5 text-red-400 shrink-0" />
-                    <span className="text-white/90 font-medium">Estimaciones irrealistas</span>
-                  </div>
-                  <div className="flex items-center gap-4 p-3 bg-red-500/10 rounded-xl border border-red-500/20">
-                    <Users className="h-5 w-5 text-red-400 shrink-0" />
-                    <span className="text-white/90 font-medium">Reuniones interminables</span>
-                  </div>
-                  <div className="flex items-center gap-4 p-3 bg-red-500/10 rounded-xl border border-red-500/20">
-                    <Clock className="h-5 w-5 text-red-400 shrink-0" />
-                    <span className="text-white/90 font-medium">Tiempo trabajado no registrado</span>
-                  </div>
+                  {t<string[]>('home.problemsWithoutItems', { returnObjects: true }).map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-4 p-3 bg-red-500/10 rounded-xl border border-red-500/20">
+                      <Clock className="h-5 w-5 text-red-400 shrink-0" />
+                      <span className="text-white/90 font-medium">{item}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -536,25 +590,15 @@ export default function LandingPage() {
                   <div className="w-12 h-12 bg-emerald-500/30 rounded-xl flex items-center justify-center">
                     <CheckCircle2 className="h-6 w-6 text-emerald-400" />
                   </div>
-                  <h3 className="text-2xl font-bold text-white">Con Taimbox</h3>
+                  <h3 className="text-2xl font-bold text-white">{t('home.problemsWithTitle')}</h3>
                 </div>
                 <div className="space-y-4">
-                  <div className="flex items-center gap-4 p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
-                    <Zap className="h-5 w-5 text-emerald-400 shrink-0" />
-                    <span className="text-white/90 font-medium">Visibilidad en tiempo real</span>
-                  </div>
-                  <div className="flex items-center gap-4 p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
-                    <Clock className="h-5 w-5 text-emerald-400 shrink-0" />
-                    <span className="text-white/90 font-medium">Cronómetro por tarea y vista Tiempos del equipo</span>
-                  </div>
-                  <div className="flex items-center gap-4 p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
-                    <BarChart3 className="h-5 w-5 text-emerald-400 shrink-0" />
-                    <span className="text-white/90 font-medium">Métricas precisas</span>
-                  </div>
-                  <div className="flex items-center gap-4 p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
-                    <Target className="h-5 w-5 text-emerald-400 shrink-0" />
-                    <span className="text-white/90 font-medium">Decisiones informadas</span>
-                  </div>
+                  {t<string[]>('home.problemsWithItems', { returnObjects: true }).map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-4 p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                      <Zap className="h-5 w-5 text-emerald-400 shrink-0" />
+                      <span className="text-white/90 font-medium">{item}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -568,7 +612,7 @@ export default function LandingPage() {
                   demoSection?.scrollIntoView({ behavior: 'smooth' });
                 }}
               >
-                Ver cómo funciona
+                {t('home.problemsButton')}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
@@ -582,15 +626,15 @@ export default function LandingPage() {
             <div className="text-center mb-10 sm:mb-14">
               <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500/30 to-orange-500/30 backdrop-blur-sm rounded-full text-white text-sm font-semibold mb-4 border border-amber-400/40">
                 <Target className="h-4 w-4" />
-                <span>Deadlines</span>
+                <span>{t('home.deadlinesKicker')}</span>
               </div>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 px-4">
                 <span className="bg-gradient-to-r from-amber-300 via-orange-300 to-amber-300 bg-clip-text text-transparent">
-                  Cumple tus compromisos, siempre
+                  {t('home.deadlinesTitle')}
                 </span>
               </h2>
               <p className="text-lg text-amber-200/70 max-w-xl mx-auto">
-                Define, rastrea y logra tus objetivos mensuales
+                {t('home.deadlinesSubtitle')}
               </p>
             </div>
 
@@ -605,9 +649,9 @@ export default function LandingPage() {
                   <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center mb-4 shadow-xl shadow-amber-500/40 shrink-0">
                     <Target className="h-8 w-8 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Define</h3>
+                  <h3 className="text-xl font-bold text-white mb-2">{t('home.deadlinesStepDefineTitle')}</h3>
                   <p className="text-amber-200/70 text-sm m-0">
-                    Objetivos mensuales por proyecto y empleado
+                    {t('home.deadlinesStepDefineDesc')}
                   </p>
                 </div>
               </div>
@@ -618,9 +662,9 @@ export default function LandingPage() {
                   <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center mb-4 shadow-xl shadow-orange-500/40 shrink-0">
                     <Activity className="h-8 w-8 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Rastrea</h3>
+                  <h3 className="text-xl font-bold text-white mb-2">{t('home.deadlinesStepTrackTitle')}</h3>
                   <p className="text-orange-200/70 text-sm m-0">
-                    Compara planificado vs ejecutado en tiempo real
+                    {t('home.deadlinesStepTrackDesc')}
                   </p>
                 </div>
               </div>
@@ -631,9 +675,9 @@ export default function LandingPage() {
                   <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center mb-4 shadow-xl shadow-amber-500/40 shrink-0">
                     <TrendingUp className="h-8 w-8 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Logra</h3>
+                  <h3 className="text-xl font-bold text-white mb-2">{t('home.deadlinesStepAchieveTitle')}</h3>
                   <p className="text-amber-200/70 text-sm m-0">
-                    Sugerencias inteligentes de redistribución
+                    {t('home.deadlinesStepAchieveDesc')}
                   </p>
                 </div>
               </div>
@@ -649,7 +693,7 @@ export default function LandingPage() {
                   demoSection?.scrollIntoView({ behavior: 'smooth' });
                 }}
               >
-                Ver demo de Deadlines
+                {t('home.deadlinesButton')}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
@@ -664,15 +708,15 @@ export default function LandingPage() {
             <div className="text-center mb-10 sm:mb-14">
               <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500/30 to-teal-500/30 backdrop-blur-sm rounded-full text-white text-sm font-semibold mb-4 border border-emerald-400/40">
                 <Shield className="h-4 w-4" />
-                <span>Seguridad</span>
+                <span>{t('home.securityKicker')}</span>
               </div>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 px-4">
                 <span className="bg-gradient-to-r from-emerald-300 via-teal-300 to-emerald-300 bg-clip-text text-transparent">
-                  Tus datos, protegidos
+                  {t('home.securityTitle')}
                 </span>
               </h2>
               <p className="text-lg text-emerald-200/70 max-w-xl mx-auto">
-                Cumplimos los más altos estándares de seguridad
+                {t('home.securitySubtitle')}
               </p>
             </div>
 
@@ -680,16 +724,16 @@ export default function LandingPage() {
             <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-10">
               <div className="flex items-center gap-3 px-5 py-3 bg-emerald-500/20 rounded-2xl border border-emerald-500/30">
                 <Lock className="h-6 w-6 text-emerald-400" />
-                <span className="text-white font-semibold">TLS/SSL</span>
+                <span className="text-white font-semibold">{t('home.securityBadgeTls')}</span>
               </div>
               <div className="flex items-center gap-3 px-5 py-3 bg-emerald-500/20 rounded-2xl border border-emerald-500/30">
                 <Shield className="h-6 w-6 text-emerald-400" />
-                <span className="text-white font-semibold">GDPR</span>
+                <span className="text-white font-semibold">{t('home.securityBadgeGdpr')}</span>
               </div>
 
               <div className="flex items-center gap-3 px-5 py-3 bg-emerald-500/20 rounded-2xl border border-emerald-500/30">
                 <Activity className="h-6 w-6 text-emerald-400" />
-                <span className="text-white font-semibold">24/7</span>
+                <span className="text-white font-semibold">{t('home.securityBadge247')}</span>
               </div>
             </div>
 
@@ -700,9 +744,9 @@ export default function LandingPage() {
                   <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-emerald-500/40">
                     <Lock className="h-8 w-8 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Encriptación</h3>
+                  <h3 className="text-xl font-bold text-white mb-2">{t('home.securityCardEncryptionTitle')}</h3>
                   <p className="text-emerald-200/70 text-sm">
-                    Datos encriptados en tránsito y en reposo con algoritmos empresariales
+                    {t('home.securityCardEncryptionDesc')}
                   </p>
                 </div>
               </div>
@@ -712,9 +756,9 @@ export default function LandingPage() {
                   <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-teal-500/40">
                     <Shield className="h-8 w-8 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Privacidad</h3>
+                  <h3 className="text-xl font-bold text-white mb-2">{t('home.securityCardPrivacyTitle')}</h3>
                   <p className="text-teal-200/70 text-sm">
-                    Control total sobre tus datos. Exportación y eliminación cuando quieras.
+                    {t('home.securityCardPrivacyDesc')}
                   </p>
                 </div>
               </div>
@@ -724,9 +768,9 @@ export default function LandingPage() {
                   <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-emerald-500/40">
                     <Database className="h-8 w-8 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Infraestructura</h3>
+                  <h3 className="text-xl font-bold text-white mb-2">{t('home.securityCardInfraTitle')}</h3>
                   <p className="text-emerald-200/70 text-sm">
-                    Servidores certificados, backups diarios y monitoreo continuo
+                    {t('home.securityCardInfraDesc')}
                   </p>
                 </div>
               </div>
@@ -742,7 +786,7 @@ export default function LandingPage() {
                   demoSection?.scrollIntoView({ behavior: 'smooth' });
                 }}
               >
-                Ver demo
+                {t('home.securityButton')}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
@@ -755,13 +799,13 @@ export default function LandingPage() {
             <div className="text-center mb-6 sm:mb-8">
               <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-primary/100/20 backdrop-blur-sm rounded-full text-indigo-200 text-xs sm:text-sm font-medium mb-3 border border-indigo-400/30">
                 <Award className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span>Demo interactivo</span>
+                <span>{t('home.demoKicker')}</span>
               </div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 sm:mb-3 px-4">
-                Explora la plataforma en acción
+                {t('home.demoTitle')}
               </h2>
               <p className="text-sm sm:text-base text-indigo-200/90 max-w-2xl mx-auto px-4">
-                Datos de ejemplo. Cambia de módulo aquí abajo para ver Planificador, Dashboard, Weekly y Deadlines.
+                {t('home.demoSubtitle')}
               </p>
             </div>
 
@@ -771,7 +815,7 @@ export default function LandingPage() {
                   {/* Barra de navegación de la demo: en móvil scroll horizontal; en desktop grid 2x2 */}
                   <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-3 sm:px-4 py-3 sm:py-4 border-b-2 border-indigo-500/50">
                     <p className="text-indigo-100 text-xs sm:text-sm font-medium mb-2 sm:mb-3">
-                      Elige qué explorar:
+                      {t('home.demoChooseLabel')}
                     </p>
                     <TabsList className="w-full justify-start h-auto p-0 bg-transparent border-0 flex flex-nowrap sm:flex-wrap gap-2 sm:gap-3 rounded-none overflow-x-auto overflow-y-hidden custom-scrollbar min-h-[44px] -mx-1 px-1 sm:mx-0 sm:px-0">
                       <TabsTrigger
@@ -782,7 +826,7 @@ export default function LandingPage() {
                         )}
                       >
                         <LayoutGrid className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
-                        <span className="whitespace-nowrap">Planificador</span>
+                        <span className="whitespace-nowrap">{t('home.demoTabPlanner')}</span>
                       </TabsTrigger>
                       <TabsTrigger
                         value="dashboard"
@@ -792,7 +836,7 @@ export default function LandingPage() {
                         )}
                       >
                         <LayoutDashboard className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
-                        <span className="whitespace-nowrap">Dashboard</span>
+                        <span className="whitespace-nowrap">{t('home.demoTabDashboard')}</span>
                       </TabsTrigger>
                       <TabsTrigger
                         value="weeklys"
@@ -802,7 +846,7 @@ export default function LandingPage() {
                         )}
                       >
                         <CalendarCheck className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
-                        <span className="whitespace-nowrap">Weekly</span>
+                        <span className="whitespace-nowrap">{t('home.demoTabWeeklys')}</span>
                       </TabsTrigger>
                       <TabsTrigger
                         value="deadlines"
@@ -812,7 +856,7 @@ export default function LandingPage() {
                         )}
                       >
                         <Target className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
-                        <span className="whitespace-nowrap">Deadlines</span>
+                        <span className="whitespace-nowrap">{t('home.demoTabDeadlines')}</span>
                       </TabsTrigger>
                     </TabsList>
                   </div>
@@ -843,14 +887,19 @@ export default function LandingPage() {
           <div className="text-center mb-10 sm:mb-12">
             <h2 className="text-2xl sm:text-4xl md:text-5xl font-black text-white mb-4 sm:mb-6 px-2 sm:px-4">
               <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
-                Para equipos que valoran su tiempo
+                {t('home.audienceTitle')}
               </span>
             </h2>
             {/* Audience badges: adaptados a móvil */}
             <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-4">
-              <span className="px-3 sm:px-4 py-1.5 bg-primary/100/20 rounded-full text-indigo-200 text-xs sm:text-sm font-medium border border-indigo-500/30 text-center">Equipos de marketing digital</span>
-              <span className="px-3 sm:px-4 py-1.5 bg-purple-500/20 rounded-full text-purple-200 text-xs sm:text-sm font-medium border border-purple-500/30 text-center">Desarrolladores y diseñadores</span>
-              <span className="px-3 sm:px-4 py-1.5 bg-pink-500/20 rounded-full text-pink-200 text-xs sm:text-sm font-medium border border-pink-500/30 text-center">Cualquier equipo que coordine trabajo</span>
+              {t<string[]>('home.audienceBadges', { returnObjects: true }).map((badge, idx) => (
+                <span
+                  key={idx}
+                  className="px-3 sm:px-4 py-1.5 bg-primary/100/20 rounded-full text-indigo-200 text-xs sm:text-sm font-medium border border-indigo-500/30 text-center"
+                >
+                  {badge}
+                </span>
+              ))}
             </div>
           </div>
 
@@ -864,25 +913,15 @@ export default function LandingPage() {
                   <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
                     <Users className="h-6 w-6 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-white">Para líderes de equipo</h3>
+                  <h3 className="text-xl font-bold text-white">{t('home.useCasesLeaderTitle')}</h3>
                 </div>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-2.5 bg-primary/100/10 rounded-lg border border-indigo-500/20">
-                    <CheckCircle2 className="h-4 w-4 text-indigo-400 shrink-0" />
-                    <span className="text-sm text-white/90">Decisiones informadas sobre distribución</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-2.5 bg-primary/100/10 rounded-lg border border-indigo-500/20">
-                    <CheckCircle2 className="h-4 w-4 text-indigo-400 shrink-0" />
-                    <span className="text-sm text-white/90">Identifica quién necesita ayuda</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-2.5 bg-primary/100/10 rounded-lg border border-indigo-500/20">
-                    <CheckCircle2 className="h-4 w-4 text-indigo-400 shrink-0" />
-                    <span className="text-sm text-white/90">Reduce reuniones en un 70%</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-2.5 bg-primary/100/10 rounded-lg border border-indigo-500/20">
-                    <CheckCircle2 className="h-4 w-4 text-indigo-400 shrink-0" />
-                    <span className="text-sm text-white/90">Alertas automáticas de sobrecarga</span>
-                  </div>
+                  {t<string[]>('home.useCasesLeaderItems', { returnObjects: true }).map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-3 p-2.5 bg-primary/100/10 rounded-lg border border-indigo-500/20">
+                      <CheckCircle2 className="h-4 w-4 text-indigo-400 shrink-0" />
+                      <span className="text-sm text-white/90">{item}</span>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -894,25 +933,15 @@ export default function LandingPage() {
                   <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/30">
                     <Target className="h-6 w-6 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-white">Para project managers</h3>
+                  <h3 className="text-xl font-bold text-white">{t('home.useCasesPmTitle')}</h3>
                 </div>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-2.5 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                    <CheckCircle2 className="h-4 w-4 text-purple-400 shrink-0" />
-                    <span className="text-sm text-white/90">Gestión de múltiples proyectos</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-2.5 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                    <CheckCircle2 className="h-4 w-4 text-purple-400 shrink-0" />
-                    <span className="text-sm text-white/90">Visualiza dependencias y cuellos de botella</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-2.5 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                    <CheckCircle2 className="h-4 w-4 text-purple-400 shrink-0" />
-                    <span className="text-sm text-white/90">Control de presupuestos y horas</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-2.5 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                    <CheckCircle2 className="h-4 w-4 text-purple-400 shrink-0" />
-                    <span className="text-sm text-white/90">Seguimiento de deadlines</span>
-                  </div>
+                  {t<string[]>('home.useCasesPmItems', { returnObjects: true }).map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-3 p-2.5 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                      <CheckCircle2 className="h-4 w-4 text-purple-400 shrink-0" />
+                      <span className="text-sm text-white/90">{item}</span>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -924,25 +953,15 @@ export default function LandingPage() {
                   <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
                     <BarChart3 className="h-6 w-6 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-white">Para empleados</h3>
+                  <h3 className="text-xl font-bold text-white">{t('home.useCasesEmployeeTitle')}</h3>
                 </div>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-                    <span className="text-sm text-white/90">Vista clara de tu carga de trabajo</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-                    <span className="text-sm text-white/90">Priorización automática de tareas</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-                    <span className="text-sm text-white/90">Seguimiento de tu progreso</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-                    <span className="text-sm text-white/90">Sabes qué hacer y cuándo</span>
-                  </div>
+                  {t<string[]>('home.useCasesEmployeeItems', { returnObjects: true }).map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-3 p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                      <span className="text-sm text-white/90">{item}</span>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -951,33 +970,25 @@ export default function LandingPage() {
           <div className="bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-indigo-500/20 rounded-2xl border border-indigo-400/30 p-8 backdrop-blur-xl">
             <div className="text-center">
               <h3 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-                Resultados que hablan por sí solos
+                {t('home.resultsTitle')}
               </h3>
               <div className="grid md:grid-cols-3 gap-6 mt-8">
-                <div>
-                  <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-purple-300 mb-2">
-                    70%
-                  </div>
-                  <p className="text-indigo-200/80 text-sm">
-                    Reducción en reuniones de coordinación
-                  </p>
-                </div>
-                <div>
-                  <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-pink-300 mb-2">
-                    85%
-                  </div>
-                  <p className="text-indigo-200/80 text-sm">
-                    Mejora en precisión de estimaciones
-                  </p>
-                </div>
-                <div>
-                  <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-300 to-amber-300 mb-2">
-                    60%
-                  </div>
-                  <p className="text-indigo-200/80 text-sm">
-                    Más sobrecargas detectadas a tiempo
-                  </p>
-                </div>
+                {t<string[]>('home.resultsMetrics', { returnObjects: true }).map((label, idx) => {
+                  const values = ['70%', '85%', '60%'];
+                  const gradients = [
+                    'bg-gradient-to-r from-indigo-300 to-purple-300',
+                    'bg-gradient-to-r from-purple-300 to-pink-300',
+                    'bg-gradient-to-r from-pink-300 to-amber-300',
+                  ];
+                  return (
+                    <div key={idx}>
+                      <div className={`text-4xl font-black text-transparent bg-clip-text ${gradients[idx]} mb-2`}>
+                        {values[idx]}
+                      </div>
+                      <p className="text-indigo-200/80 text-sm">{label}</p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -988,163 +999,58 @@ export default function LandingPage() {
           <div className="text-center mb-8 sm:mb-12">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/100/20 backdrop-blur-sm rounded-full text-indigo-200 text-sm font-medium mb-3 sm:mb-4 border border-indigo-400/30">
               <HelpCircle className="h-4 w-4" />
-              <span>Preguntas frecuentes</span>
+              <span>{t('home.faqKicker')}</span>
             </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 sm:mb-5 px-4">
               <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
-                Resolvemos tus dudas
+                {t('home.faqTitle')}
               </span>
             </h2>
             <p className="text-base sm:text-lg text-white/90 max-w-2xl mx-auto px-4">
-              Todo lo que necesitas saber sobre nuestra plataforma.
+              {t('home.faqSubtitle')}
             </p>
           </div>
 
           <Card className="border-2 border-white/10 bg-white/5 backdrop-blur-xl">
             <CardContent className="p-4 sm:p-6">
               <Accordion type="single" collapsible className="w-full space-y-2">
-                <AccordionItem value="item-1" className="border-b border-white/10">
-                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
-                    <div className="flex items-center gap-3">
-                      <HelpCircle className="h-5 w-5 text-indigo-300 shrink-0" />
-                      <span className="font-semibold">¿Cómo funciona la plataforma?</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    Nuestra plataforma te permite visualizar y gestionar la carga de trabajo de tu equipo en tiempo real.
-                    Puedes planificar tareas, establecer deadlines, gestionar dependencias y recibir alertas automáticas
-                    cuando detectamos sobrecargas o problemas. Todo desde una interfaz visual e intuitiva que no requiere
-                    instalación de software adicional.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-2" className="border-b border-white/10">
-                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
-                    <div className="flex items-center gap-3">
-                      <HelpCircle className="h-5 w-5 text-indigo-300 shrink-0" />
-                      <span className="font-semibold">¿Necesito instalar algo?</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    No, nuestra plataforma es completamente web. Solo necesitas un navegador moderno y acceso a internet.
-                    Funciona en cualquier dispositivo: ordenador, tablet o móvil. No requiere instalación de software ni
-                    configuraciones complicadas.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-3" className="border-b border-white/10">
-                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
-                    <div className="flex items-center gap-3">
-                      <HelpCircle className="h-5 w-5 text-indigo-300 shrink-0" />
-                      <span className="font-semibold">¿Son seguros mis datos?</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    Absolutamente. Utilizamos encriptación de extremo a extremo para proteger tus datos tanto en tránsito
-                    como en reposo. Cumplimos con el GDPR y todos los estándares de seguridad internacionales. Tienes control
-                    total sobre tus datos y puedes exportarlos o eliminarlos en cualquier momento.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-4" className="border-b border-white/10">
-                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
-                    <div className="flex items-center gap-3">
-                      <HelpCircle className="h-5 w-5 text-indigo-300 shrink-0" />
-                      <span className="font-semibold">¿Puedo integrarlo con otras herramientas?</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    Sí, ofrecemos una API REST completa que te permite integrar la plataforma con tus herramientas existentes.
-                    La <Link to="/api-docs" className="text-indigo-300 hover:text-white underline underline-offset-2">documentación de la API</Link> incluye tutoriales paso a paso, autenticación por tokens, referencia de tablas con ejemplos de respuesta, SDK JavaScript y búsqueda rápida (Ctrl+K).
-                    También puedes exportar datos en múltiples formatos para trabajar con hojas de cálculo u otros sistemas.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-5" className="border-b border-white/10">
-                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
-                    <div className="flex items-center gap-3">
-                      <HelpCircle className="h-5 w-5 text-indigo-300 shrink-0" />
-                      <span className="font-semibold">¿Cuánto tiempo toma implementarlo?</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    La plataforma está lista para usar desde el primer día. Puedes empezar a añadir tu equipo y proyectos
-                    inmediatamente. La curva de aprendizaje es mínima gracias a nuestra interfaz intuitiva. La mayoría de
-                    los equipos están completamente operativos en menos de una semana.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-6" className="border-b border-white/10">
-                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
-                    <div className="flex items-center gap-3">
-                      <HelpCircle className="h-5 w-5 text-indigo-300 shrink-0" />
-                      <span className="font-semibold">¿Hay soporte técnico?</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    Sí, ofrecemos soporte técnico completo. Puedes contactarnos por correo electrónico y nuestro equipo te ayudará con
-                    cualquier duda o problema. Además, tenemos documentación completa, tutoriales y una comunidad activa
-                    donde puedes encontrar respuestas y compartir experiencias.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-7" className="border-b border-white/10">
-                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
-                    <div className="flex items-center gap-3">
-                      <Shield className="h-5 w-5 text-emerald-300 shrink-0" />
-                      <span className="font-semibold">¿Dónde se almacenan mis datos?</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    Tus datos se almacenan en servidores seguros ubicados en centros de datos con certificaciones internacionales de seguridad.
-                    Utilizamos infraestructura en la nube de nivel empresarial que garantiza alta disponibilidad, respaldo automático y
-                    protección física de los servidores. Todos los datos están encriptados y protegidos por múltiples capas de seguridad.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-8" className="border-b border-white/10">
-                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
-                    <div className="flex items-center gap-3">
-                      <Shield className="h-5 w-5 text-emerald-300 shrink-0" />
-                      <span className="font-semibold">¿Quién puede acceder a mis datos?</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    Solo tú y las personas de tu equipo a las que otorgues permisos específicos pueden acceder a los datos.
-                    Utilizamos un sistema de permisos granulares que te permite controlar exactamente qué puede ver y hacer cada usuario.
-                    Nuestro equipo técnico solo accede a los datos cuando es estrictamente necesario para proporcionar soporte,
-                    y siempre con tu autorización previa. Todos los accesos quedan registrados en un log de auditoría.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-9" className="border-b border-white/10">
-                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
-                    <div className="flex items-center gap-3">
-                      <Lock className="h-5 w-5 text-emerald-300 shrink-0" />
-                      <span className="font-semibold">¿Qué medidas de seguridad tienen las contraseñas?</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    Las contraseñas se almacenan utilizando algoritmos de hash seguros (bcrypt) que hacen imposible recuperar la contraseña original.
-                    Nunca almacenamos contraseñas en texto plano. Además, todas las conexiones utilizan encriptación TLS/SSL para proteger
-                    las credenciales durante el inicio de sesión. Te recomendamos usar contraseñas fuertes y únicas, y cambiarlas periódicamente.
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="item-10" className="border-b-0">
-                  <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
-                    <div className="flex items-center gap-3">
-                      <Database className="h-5 w-5 text-emerald-300 shrink-0" />
-                      <span className="font-semibold">¿Qué pasa si quiero eliminar todos mis datos?</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
-                    Puedes eliminar todos tus datos en cualquier momento desde la configuración de tu cuenta. El proceso de eliminación es
-                    completo e irreversible: se eliminan todos los datos asociados a tu cuenta, incluyendo proyectos, asignaciones,
-                    historial y cualquier otra información. También puedes exportar todos tus datos antes de eliminarlos si lo deseas.
-                    Este proceso cumple con el derecho al olvido establecido en el GDPR.
-                  </AccordionContent>
-                </AccordionItem>
+                {Array.isArray(faqItems) &&
+                  faqItems.map((item, idx) => {
+                    const FaqIcon = idx < 6 ? HelpCircle : idx < 8 ? Shield : idx === 8 ? Lock : Database;
+                    const iconClass =
+                      idx < 6 ? 'text-indigo-300' : idx < 10 ? 'text-emerald-300' : 'text-emerald-300';
+                    const isLast = idx === faqItems.length - 1;
+                    return (
+                      <AccordionItem
+                        key={idx}
+                        value={`item-${idx + 1}`}
+                        className={isLast ? 'border-b-0' : 'border-b border-white/10'}
+                      >
+                        <AccordionTrigger className="text-white hover:text-indigo-200 text-left py-4">
+                          <div className="flex items-center gap-3">
+                            <FaqIcon className={`h-5 w-5 shrink-0 ${iconClass}`} />
+                            <span className="font-semibold">{item.question}</span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="text-white/90 text-sm sm:text-base leading-relaxed pt-2 pb-4 pl-8">
+                          {item.answer ? (
+                            item.answer
+                          ) : (
+                            <>
+                              {item.answerBefore}
+                              <Link
+                                to={localizedPathFromEs(item.answerLinkPath ?? '/api-docs', i18n.language)}
+                                className="text-indigo-300 hover:text-white underline underline-offset-2"
+                              >
+                                {item.answerLinkText}
+                              </Link>
+                              {item.answerAfter}
+                            </>
+                          )}
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  })}
               </Accordion>
             </CardContent>
           </Card>
@@ -1155,7 +1061,7 @@ export default function LandingPage() {
                 size="lg"
                 className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-6 text-lg font-semibold shadow-2xl"
               >
-                Empezar gratis
+                {t('home.faqCta')}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
@@ -1170,24 +1076,20 @@ export default function LandingPage() {
             <div className="inline-block mb-3 sm:mb-4">
               <div className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
                 <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-                <span className="text-xs sm:text-sm font-semibold text-white">Sin compromiso</span>
+                <span className="text-xs sm:text-sm font-semibold text-white">{t('home.ctaBadgeLabel')}</span>
               </div>
             </div>
             <h2 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-3 sm:mb-6 leading-tight px-1">
-              ¿Listo para{' '}
-              <span className="bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
-                transformar
-              </span>
-              {' '}a tu equipo?
+              {t('home.ctaTitle')}
             </h2>
             <p className="text-base sm:text-xl md:text-2xl text-indigo-100 mb-6 sm:mb-10 font-light max-w-2xl mx-auto px-2">
-              Crea tu cuenta y descubre cómo gestionar el tiempo de tu equipo de forma inteligente.
+              {t('home.ctaSubtitle')}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center flex-wrap w-full sm:w-auto max-w-sm sm:max-w-none mx-auto">
               <Link to="/login?tab=register" className="group relative">
                 <div className="absolute -inset-1 bg-white rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300" />
                 <Button size="lg" className="relative w-full sm:w-auto bg-white text-primary hover:bg-slate-50 px-6 sm:px-10 py-5 sm:py-7 text-base sm:text-xl font-bold shadow-2xl hover:shadow-white/50 transition-all transform hover:scale-105 min-h-[48px]">
-                  Crear mi cuenta
+                  {t('home.ctaPrimary')}
                   <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
@@ -1197,7 +1099,7 @@ export default function LandingPage() {
                   variant="outline"
                   className="w-full sm:w-auto px-5 sm:px-8 py-5 sm:py-7 text-sm sm:text-lg font-semibold border-2 border-white/40 text-white hover:text-white hover:bg-white/20 hover:border-white/60 bg-white/10 backdrop-blur-md shadow-xl min-h-[48px]"
                 >
-                  Ver presentación de ROI
+                  {t('home.ctaPitch')}
                 </Button>
               </Link>
               <Button
@@ -1209,7 +1111,7 @@ export default function LandingPage() {
                   demoSection?.scrollIntoView({ behavior: 'smooth' });
                 }}
               >
-                Ver demo completa
+                {t('home.ctaDemo')}
               </Button>
             </div>
           </div>

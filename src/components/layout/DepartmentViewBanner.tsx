@@ -3,11 +3,13 @@ import { useDepartmentView } from '@/contexts/DepartmentViewContext';
 import { normalizeDepartments } from '@/utils/departmentUtils';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 
 export function DepartmentViewBanner() {
   const { currentAgency } = useAgency();
   const { selectedDepartmentId, clearDepartmentFilter } = useDepartmentView();
   const departments = normalizeDepartments(currentAgency?.settings?.departments);
+  const { t } = useAppTranslation();
 
   if (!selectedDepartmentId || !departments.length) return null;
 
@@ -26,7 +28,7 @@ export function DepartmentViewBanner() {
       }}
     >
       <span>
-        Estás viendo la vista filtrada de: <strong>{dept.name}</strong>. El resto de datos están ocultos.
+        {t('layout.departmentBanner.viewing', 'Estás viendo la vista filtrada de:')} <strong>{dept.name}</strong>. {t('layout.departmentBanner.hidden', 'El resto de datos están ocultos.')}
       </span>
       <Button
         size="sm"
@@ -36,7 +38,7 @@ export function DepartmentViewBanner() {
         onClick={clearDepartmentFilter}
       >
         <X className="h-3.5 w-3.5" />
-        Borrar filtro
+        {t('layout.departmentBanner.clear', 'Borrar filtro')}
       </Button>
     </div>
   );

@@ -1,7 +1,25 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Calendar, FileText, Code, HelpCircle, Mail, BookOpen, PlayCircle, LayoutDashboard, CalendarRange, Users, BarChart3, FolderKanban, Plug, Presentation, Shield, Scale, Newspaper, Tag } from 'lucide-react';
+import { localizedHashPath, localizedPathFromEs } from '@/i18n/publicPaths';
+
+const PRODUCT_LINKS = [
+  { hrefEs: '/precios', linkKey: 'pricing' as const, icon: Tag },
+  { hrefEs: '/pitch', linkKey: 'roi' as const, icon: Presentation },
+  { hrefEs: '/por-que-timeboxing', linkKey: 'why' as const, icon: BookOpen },
+  { hrefEs: '/blog', linkKey: 'blog' as const, icon: Newspaper },
+  { hrefEs: '/dashboard-empleado', linkKey: 'dashboard' as const, icon: LayoutDashboard },
+  { hrefEs: '/planificador-recursos', linkKey: 'planner' as const, icon: CalendarRange },
+  { hrefEs: '/gestion-equipos', linkKey: 'teams' as const, icon: Users },
+  { hrefEs: '/reportes-rentabilidad', linkKey: 'reports' as const, icon: BarChart3 },
+  { hrefEs: '/control-proyectos', linkKey: 'projects' as const, icon: FolderKanban },
+  { hrefEs: '/integraciones', linkKey: 'integrations' as const, icon: Plug },
+  { hrefEs: '/guia', linkKey: 'guide' as const, icon: FileText },
+  { hrefEs: '/api-docs', linkKey: 'api' as const, icon: Code },
+] as const;
 
 export function LandingFooter() {
+  const { t, i18n } = useTranslation('landing');
   const currentYear = new Date().getFullYear();
 
   const linkClass = 'text-sm text-indigo-200/80 hover:text-white flex items-center gap-2 transition-colors';
@@ -11,61 +29,60 @@ export function LandingFooter() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           {/* Brand */}
           <div className="lg:col-span-1">
-            <Link to="/" className="inline-flex items-center gap-2 text-white font-bold text-lg hover:text-indigo-200 transition-colors">
+            <Link to={localizedPathFromEs('/', i18n.language)} className="inline-flex items-center gap-2 text-white font-bold text-lg hover:text-indigo-200 transition-colors">
               <Calendar className="h-5 w-5 text-indigo-400" />
               Taimbox
             </Link>
             <p className="mt-2 text-xs text-indigo-200/80 max-w-xs leading-snug">
-              Sistema operativo financiero basado en tiempo para agencias. Gestiona el tiempo, no solo las tareas.
+              {t('footer.tagline')}
             </p>
           </div>
 
           {/* Producto: 2 columnas internas para no alargar */}
           <div className="lg:col-span-1">
-            <h4 className="text-white font-semibold text-sm mb-3">Producto</h4>
+            <h4 className="text-white font-semibold text-sm mb-3">{t('footer.productTitle')}</h4>
             <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-              <li><Link to="/precios" className={linkClass}><Tag className="h-3.5 w-3.5 shrink-0" /> Precios</Link></li>
-              <li><Link to="/pitch" className={linkClass}><Presentation className="h-3.5 w-3.5 shrink-0" /> ROI (3 min)</Link></li>
-              <li><Link to="/por-que-timeboxing" className={linkClass}><BookOpen className="h-3.5 w-3.5 shrink-0" /> Por qué</Link></li>
-              <li><Link to="/blog" className={linkClass}><Newspaper className="h-3.5 w-3.5 shrink-0" /> Blog</Link></li>
-              <li><Link to="/dashboard-empleado" className={linkClass}><LayoutDashboard className="h-3.5 w-3.5 shrink-0" /> Dashboard</Link></li>
-              <li><Link to="/planificador-recursos" className={linkClass}><CalendarRange className="h-3.5 w-3.5 shrink-0" /> Planificador</Link></li>
-              <li><Link to="/gestion-equipos" className={linkClass}><Users className="h-3.5 w-3.5 shrink-0" /> Equipos</Link></li>
-              <li><Link to="/reportes-rentabilidad" className={linkClass}><BarChart3 className="h-3.5 w-3.5 shrink-0" /> Reportes</Link></li>
-              <li><Link to="/control-proyectos" className={linkClass}><FolderKanban className="h-3.5 w-3.5 shrink-0" /> Proyectos</Link></li>
-              <li><Link to="/integraciones" className={linkClass}><Plug className="h-3.5 w-3.5 shrink-0" /> Integraciones</Link></li>
-              <li><Link to="/guia" className={linkClass}><FileText className="h-3.5 w-3.5 shrink-0" /> Guía</Link></li>
-              <li><Link to="/api-docs" className={linkClass}><Code className="h-3.5 w-3.5 shrink-0" /> API</Link></li>
-              <li className="col-span-2"><Link to="/#demo" className={linkClass}><PlayCircle className="h-3.5 w-3.5 shrink-0" /> Demo interactiva</Link></li>
+              {PRODUCT_LINKS.map(({ hrefEs, linkKey, icon: Icon }) => (
+                <li key={hrefEs}>
+                  <Link to={localizedPathFromEs(hrefEs, i18n.language)} className={linkClass}>
+                    <Icon className="h-3.5 w-3.5 shrink-0" /> {t(`footer.links.${linkKey}`)}
+                  </Link>
+                </li>
+              ))}
+              <li className="col-span-2">
+                <Link to={localizedHashPath('/#demo', i18n.language)} className={linkClass}>
+                  <PlayCircle className="h-3.5 w-3.5 shrink-0" /> {t('footer.links.demo')}
+                </Link>
+              </li>
             </ul>
           </div>
 
           {/* Soporte y Seguridad */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-3">Empresa</h4>
+            <h4 className="text-white font-semibold text-sm mb-3">{t('footer.companyTitle')}</h4>
             <ul className="space-y-1.5">
               <li>
-                <Link to="/seguridad" className={linkClass}>
+                <Link to={localizedPathFromEs('/seguridad', i18n.language)} className={linkClass}>
                   <Shield className="h-3.5 w-3.5 shrink-0" />
-                  Seguridad
+                  {t('footer.links.security')}
                 </Link>
               </li>
               <li>
                 <Link to="/soporte" className={linkClass}>
                   <HelpCircle className="h-3.5 w-3.5 shrink-0" />
-                  Contactar soporte
+                  {t('footer.links.support')}
                 </Link>
               </li>
               <li>
-                <Link to="/contacto" className={linkClass}>
+                <Link to={localizedPathFromEs('/contacto', i18n.language)} className={linkClass}>
                   <Mail className="h-3.5 w-3.5 shrink-0" />
-                  Contacto
+                  {t('footer.links.contact')}
                 </Link>
               </li>
               <li>
-                <a href="mailto:hola@taimbox.com" className={linkClass}>
+                <a href="mailto:hello@taimbox.com" className={linkClass}>
                   <Mail className="h-3.5 w-3.5 shrink-0" />
-                  hola@taimbox.com
+                  hello@taimbox.com
                 </a>
               </li>
             </ul>
@@ -73,20 +90,20 @@ export function LandingFooter() {
 
           {/* CTA principal: registro para nuevos usuarios */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-3">Empieza gratis</h4>
+            <h4 className="text-white font-semibold text-sm mb-3">{t('footer.ctaTitle')}</h4>
             <Link
               to="/login?tab=register"
               className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-semibold rounded-lg transition-all shadow-lg"
             >
-              Crear mi cuenta
+              {t('footer.ctaButton')}
             </Link>
             <p className="mt-2 text-xs text-indigo-200/60">
-              Prueba gratuita. Sin tarjeta de crédito.
+              {t('footer.ctaTrial')}
             </p>
             <p className="mt-2 text-xs text-indigo-200/70">
-              ¿Te parece caro?{' '}
-              <Link to="/pitch" className="text-white font-medium hover:underline underline-offset-2">
-                Recupera la inversión en el primer mes
+              {t('footer.ctaPitchLead')}{' '}
+              <Link to={localizedPathFromEs('/pitch', i18n.language)} className="text-white font-medium hover:underline underline-offset-2">
+                {t('footer.ctaPitch')}
               </Link>
             </p>
           </div>
@@ -94,31 +111,31 @@ export function LandingFooter() {
 
         <div className="mt-6 pt-5 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-3">
           <p className="text-xs text-indigo-200/60">
-            © {currentYear} Taimbox. Todos los derechos reservados.
+            {t('footer.copyright', { year: currentYear })}
           </p>
           <div className="flex flex-wrap gap-4 text-xs text-indigo-200/60 justify-center sm:justify-end">
-            <Link to="/privacidad" className="hover:text-white flex items-center gap-1.5 transition-colors">
+            <Link to={localizedPathFromEs('/privacidad', i18n.language)} className="hover:text-white flex items-center gap-1.5 transition-colors">
               <Shield className="h-3.5 w-3.5" />
-              Privacidad
+              {t('footer.privacy')}
             </Link>
-            <Link to="/condiciones" className="hover:text-white flex items-center gap-1.5 transition-colors">
+            <Link to={localizedPathFromEs('/condiciones', i18n.language)} className="hover:text-white flex items-center gap-1.5 transition-colors">
               <Scale className="h-3.5 w-3.5" />
-              Condiciones
+              {t('footer.terms')}
             </Link>
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent("open-cookie-preferences"))}
               className="hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer bg-transparent border-none"
             >
-              Cookies
+              {t('footer.cookies')}
             </button>
-            <Link to="/api-docs" className="hover:text-white flex items-center gap-1.5 transition-colors">
+            <Link to={localizedPathFromEs('/api-docs', i18n.language)} className="hover:text-white flex items-center gap-1.5 transition-colors">
               <Code className="h-3.5 w-3.5" />
-              API
+              {t('header.api')}
             </Link>
-            <Link to="/guia" className="hover:text-white flex items-center gap-1.5 transition-colors">
+            <Link to={localizedPathFromEs('/guia', i18n.language)} className="hover:text-white flex items-center gap-1.5 transition-colors">
               <FileText className="h-3.5 w-3.5" />
-              Guía
+              {t('header.guide')}
             </Link>
           </div>
         </div>

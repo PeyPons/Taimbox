@@ -1,24 +1,12 @@
-import { Helmet } from 'react-helmet-async';
 import { PlannerArticle } from '@/components/landing/PlannerArticle';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
+import { CommercialSeoTags } from '@/seo/CommercialSeoTags';
 
 export default function PlannerLandingPage() {
     return (
         <>
-            <Helmet>
-                <title>Planificador de Recursos y Capacidad para Empresas | Taimbox</title>
-                <meta name="description" content="Gestiona la carga de trabajo de tu equipo de forma visual. Evita cuellos de botella y optimiza la capacidad de tu empresa con planificación inteligente." />
-                <link rel="canonical" href="/planificador-recursos" />
-                <script type="application/ld+json">
-                    {JSON.stringify({
-                        '@context': 'https://schema.org',
-                        '@type': 'WebPage',
-                        name: 'Planificador de Recursos — Taimbox',
-                        description: 'Gestiona la carga de trabajo de tu equipo de forma visual. Evita cuellos de botella y optimiza la capacidad de tu empresa con planificación inteligente.',
-                    })}
-                </script>
-            </Helmet>
+            <CommercialSeoTags pathEs="/planificador-recursos" pageKey="planner" />
 
             <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 relative overflow-hidden">
                 <div className="absolute inset-0 overflow-hidden">

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -47,22 +47,36 @@ import {
   Activity,
   Timer,
 } from 'lucide-react';
-import { Helmet } from 'react-helmet-async';
+import { useTranslation, type TFunction } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { LandingHeader } from '@/components/landing/LandingHeader';
+import { localizedPathFromEs, pathEsToEn } from '@/i18n/publicPaths';
+import { SeoTags } from '@/seo/SeoTags';
 
-/* ─── SECTIONS DATA ─── */
-const SECTIONS: { slug: string; title: string; icon: React.ElementType; short: string; color: string }[] = [
-  { slug: 'planificador', title: 'Planificador', icon: Calendar, short: 'Calendario visual del equipo y asignación de tareas', color: 'from-indigo-500 to-purple-500' },
-  { slug: 'mi-espacio', title: 'Mi espacio', icon: LayoutGrid, short: 'Tu dashboard personal: carga, dependencias y control de planificación', color: 'from-purple-500 to-pink-500' },
-  { slug: 'deadlines', title: 'Deadlines', icon: Target, short: 'Objetivos mensuales por proyecto y empleado', color: 'from-amber-500 to-orange-500' },
-  { slug: 'informes', title: 'Informes', icon: BarChart3, short: 'Reportes, métricas y exportación de datos', color: 'from-rose-500 to-pink-500' },
-  { slug: 'weekly-forecast', title: 'Weekly Forecast', icon: FileText, short: 'Cierre semanal y redistribución inteligente de horas', color: 'from-violet-500 to-purple-500' },
-  { slug: 'equipo', title: 'Equipo', icon: Users, short: 'Miembros, ausencias, horarios y capacidad', color: 'from-blue-500 to-cyan-500' },
-  { slug: 'tiempos', title: 'Tiempos', icon: Timer, short: 'Cronómetro por tarea y vista en vivo del equipo', color: 'from-teal-500 to-emerald-500' },
-  { slug: 'clientes-proyectos', title: 'Clientes y proyectos', icon: Building2, short: 'Catálogo de clientes, proyectos y horas contratadas', color: 'from-slate-500 to-indigo-500' },
-  { slug: 'configuracion', title: 'Configuración', icon: Settings, short: 'Agencia, roles, permisos e integraciones', color: 'from-slate-600 to-slate-800' },
+/* ─── SECTIONS (iconos y gradientes fijos; títulos vía i18n) ─── */
+type GuideSection = { slug: string; title: string; short: string; icon: React.ElementType; color: string };
+
+const SECTION_META: { slug: string; icon: React.ElementType; color: string }[] = [
+  { slug: 'planificador', icon: Calendar, color: 'from-indigo-500 to-purple-500' },
+  { slug: 'mi-espacio', icon: LayoutGrid, color: 'from-purple-500 to-pink-500' },
+  { slug: 'deadlines', icon: Target, color: 'from-amber-500 to-orange-500' },
+  { slug: 'informes', icon: BarChart3, color: 'from-rose-500 to-pink-500' },
+  { slug: 'weekly-forecast', icon: FileText, color: 'from-violet-500 to-purple-500' },
+  { slug: 'equipo', icon: Users, color: 'from-blue-500 to-cyan-500' },
+  { slug: 'tiempos', icon: Timer, color: 'from-teal-500 to-emerald-500' },
+  { slug: 'clientes-proyectos', icon: Building2, color: 'from-slate-500 to-indigo-500' },
+  { slug: 'configuracion', icon: Settings, color: 'from-slate-600 to-slate-800' },
 ];
+
+function buildGuideSections(t: TFunction<'landing'>): GuideSection[] {
+  return SECTION_META.map(({ slug, icon, color }) => ({
+    slug,
+    icon,
+    color,
+    title: t(`guide.sections.${slug}.title`),
+    short: t(`guide.sections.${slug}.short`),
+  }));
+}
 
 /* ─── LAYOUT ─── */
 function GuiaLayout({ children, title, description }: { children: React.ReactNode; title?: string; description?: string }) {
@@ -91,9 +105,10 @@ function GuiaLayout({ children, title, description }: { children: React.ReactNod
 }
 
 /* ─── SECTION CARD (index) ─── */
-function SectionCard({ slug, title, icon: Icon, short, color }: typeof SECTIONS[0]) {
+function SectionCard({ slug, title, icon: Icon, short, color }: GuideSection) {
+  const { i18n } = useTranslation('landing');
   return (
-    <Link to={`/guia/${slug}`} className="block">
+    <Link to={localizedPathFromEs(`/guia/${slug}`, i18n.language)} className="block">
       <Card className="border-2 border-white/15 bg-gradient-to-br from-indigo-900/90 to-purple-900/90 backdrop-blur-xl hover:border-white/40 hover:scale-[1.02] hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300 group cursor-pointer">
         <CardContent className="p-5 sm:p-6 flex items-center gap-4 relative overflow-hidden">
           {/* Glow behind icon on hover */}
@@ -219,28 +234,29 @@ function InfoGrid({ items }: { items: { icon: React.ElementType; label: string; 
 }
 
 /* ─── PREV / NEXT NAV ─── */
-function SectionNav({ currentSlug }: { currentSlug: string }) {
-  const idx = SECTIONS.findIndex(s => s.slug === currentSlug);
-  const prev = idx > 0 ? SECTIONS[idx - 1] : null;
-  const next = idx < SECTIONS.length - 1 ? SECTIONS[idx + 1] : null;
+function SectionNav({ currentSlug, sections }: { currentSlug: string; sections: GuideSection[] }) {
+  const { t, i18n } = useTranslation('landing');
+  const idx = sections.findIndex((s) => s.slug === currentSlug);
+  const prev = idx > 0 ? sections[idx - 1] : null;
+  const next = idx < sections.length - 1 ? sections[idx + 1] : null;
   return (
     <div className="flex flex-col sm:flex-row gap-3 mt-10 mb-2">
       {prev ? (
-        <Link to={`/guia/${prev.slug}`} className="flex-1">
+        <Link to={localizedPathFromEs(`/guia/${prev.slug}`, i18n.language)} className="flex-1">
           <div className="p-4 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 hover:border-white/30 hover:scale-[1.02] hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300 group flex items-center gap-3">
             <ChevronLeft className="h-5 w-5 text-white/50 group-hover:text-white group-hover:-translate-x-0.5 transition-all duration-200 shrink-0" />
             <div className="min-w-0">
-              <div className="text-[11px] text-indigo-300/70 uppercase font-semibold tracking-wider">Anterior</div>
+              <div className="text-[11px] text-indigo-300/70 uppercase font-semibold tracking-wider">{t('guide.prev')}</div>
               <div className="text-sm font-bold text-white truncate">{prev.title}</div>
             </div>
           </div>
         </Link>
       ) : <div className="flex-1" />}
       {next ? (
-        <Link to={`/guia/${next.slug}`} className="flex-1">
+        <Link to={localizedPathFromEs(`/guia/${next.slug}`, i18n.language)} className="flex-1">
           <div className="p-4 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 hover:border-white/30 hover:scale-[1.02] hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300 group flex items-center gap-3 justify-end text-right">
             <div className="min-w-0">
-              <div className="text-[11px] text-indigo-300/70 uppercase font-semibold tracking-wider">Siguiente</div>
+              <div className="text-[11px] text-indigo-300/70 uppercase font-semibold tracking-wider">{t('guide.next')}</div>
               <div className="text-sm font-bold text-white truncate">{next.title}</div>
             </div>
             <ChevronRight className="h-5 w-5 text-white/50 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-200 shrink-0" />
@@ -256,136 +272,315 @@ function SectionNav({ currentSlug }: { currentSlug: string }) {
 function PlanificadorContent() {
   return (
     <>
-      <ContentBlock title="Qué es el Planificador">
-        <p>El Planificador es la <strong className="text-white">vista central</strong> de Taimbox. Muestra qué tareas tiene asignada cada persona en cada semana del mes, con código de colores por proyecto y alertas de sobrecarga en tiempo real.</p>
-        <ExampleBox>María está al 120% esta semana. Con un vistazo al calendario ves que tiene 3 proyectos superpuestos y puedes redistribuir antes de que sea tarde.</ExampleBox>
+      const { t } = useTranslation('landing');
+      <ContentBlock title={t('landing:guide.content.planificador.intro.title')}>
+        <p>
+          {t('landing:guide.content.planificador.intro.bodyBefore')}
+          <strong className="text-white">{t('landing:guide.content.planificador.intro.bodyStrong')}</strong>
+          {t('landing:guide.content.planificador.intro.bodyAfter')}
+        </p>
+        <ExampleBox>{t('landing:guide.content.planificador.intro.example')}</ExampleBox>
       </ContentBlock>
 
-      <ContentBlock title="Vistas disponibles">
+      <ContentBlock title={t('landing:guide.content.planificador.views.title')}>
         <div className="grid sm:grid-cols-2 gap-3">
-          <FeatureCard icon={Calendar} title="Vista semanal" description="Una columna por empleado con las horas planificadas. Ideal para ver la carga de un vistazo rápido." color="from-indigo-500 to-blue-500" />
-          <FeatureCard icon={Layers} title="Vista mensual" description="Tarjetas por semana con listado de tareas completadas y pendientes. Perfecto para visión global del mes." color="from-purple-500 to-pink-500" />
-          <FeatureCard icon={LayoutGrid} title="Vista móvil" description="Tarjetas por empleado y selector de semana. Diseñada para tacto con áreas mínimas de 44px." color="from-emerald-500 to-teal-500" />
-          <FeatureCard icon={Eye} title="Panel de proyecto" description="Al hacer clic en un proyecto ves presupuesto total, equipo asignado, barra de progreso y alertas." color="from-amber-500 to-orange-500" />
+          <FeatureCard
+            icon={Calendar}
+            title={t('landing:guide.content.planificador.views.weekly.title')}
+            description={t('landing:guide.content.planificador.views.weekly.description')}
+            color="from-indigo-500 to-blue-500"
+          />
+          <FeatureCard
+            icon={Layers}
+            title={t('landing:guide.content.planificador.views.monthly.title')}
+            description={t('landing:guide.content.planificador.views.monthly.description')}
+            color="from-purple-500 to-pink-500"
+          />
+          <FeatureCard
+            icon={LayoutGrid}
+            title={t('landing:guide.content.planificador.views.mobile.title')}
+            description={t('landing:guide.content.planificador.views.mobile.description')}
+            color="from-emerald-500 to-teal-500"
+          />
+          <FeatureCard
+            icon={Eye}
+            title={t('landing:guide.content.planificador.views.projectPanel.title')}
+            description={t('landing:guide.content.planificador.views.projectPanel.description')}
+            color="from-amber-500 to-orange-500"
+          />
         </div>
       </ContentBlock>
 
-      <ContentBlock title="Cómo añadir una tarea">
-        <StepList steps={[
-          { title: 'Pulsa el botón +', description: 'En la cabecera de la semana o en el botón "Añadir" de la vista semanal.' },
-          { title: 'Selecciona el proyecto', description: 'Busca entre tus proyectos activos. Verás las horas disponibles y el porcentaje usado en cada uno.' },
-          { title: 'Nombre, horas y semana', description: 'Escribe el nombre de la tarea, las horas estimadas y en qué semana va.' },
-          { title: 'Dependencias (opcional)', description: 'Si la tarea depende de otra, selecciónala. El sistema avisará si la dependencia no está lista.' },
-          { title: 'Guardar', description: 'La tarea aparece en el calendario inmediatamente y las barras de carga se actualizan en tiempo real.' },
-        ]} />
+      <ContentBlock title={t('landing:guide.content.planificador.addTask.title')}>
+        <StepList
+          steps={[
+            {
+              title: t('landing:guide.content.planificador.addTask.step1Title'),
+              description: t('landing:guide.content.planificador.addTask.step1Description'),
+            },
+            {
+              title: t('landing:guide.content.planificador.addTask.step2Title'),
+              description: t('landing:guide.content.planificador.addTask.step2Description'),
+            },
+            {
+              title: t('landing:guide.content.planificador.addTask.step3Title'),
+              description: t('landing:guide.content.planificador.addTask.step3Description'),
+            },
+            {
+              title: t('landing:guide.content.planificador.addTask.step4Title'),
+              description: t('landing:guide.content.planificador.addTask.step4Description'),
+            },
+            {
+              title: t('landing:guide.content.planificador.addTask.step5Title'),
+              description: t('landing:guide.content.planificador.addTask.step5Description'),
+            },
+          ]}
+        />
       </ContentBlock>
 
-      <ContentBlock title="Indicadores de carga">
-        <InfoGrid items={[
-          { icon: CheckCircle2, label: 'Saludable', value: '< 85%', color: 'bg-emerald-500/15 border-emerald-400/25 text-emerald-300' },
-          { icon: AlertTriangle, label: 'Aviso', value: '85-100%', color: 'bg-amber-500/15 border-amber-400/25 text-amber-300' },
-          { icon: AlertTriangle, label: 'Sobrecarga', value: '> 100%', color: 'bg-red-500/15 border-red-400/25 text-red-300' },
-          { icon: Gauge, label: 'Barra visual', value: 'Tiempo real', color: 'bg-blue-500/15 border-blue-400/25 text-blue-300' },
-        ]} />
+      <ContentBlock title={t('landing:guide.content.planificador.indicators.title')}>
+        <InfoGrid
+          items={[
+            {
+              icon: CheckCircle2,
+              label: t('landing:guide.content.planificador.indicators.healthyLabel'),
+              value: t('landing:guide.content.planificador.indicators.healthyValue'),
+              color: 'bg-emerald-500/15 border-emerald-400/25 text-emerald-300',
+            },
+            {
+              icon: AlertTriangle,
+              label: t('landing:guide.content.planificador.indicators.warningLabel'),
+              value: t('landing:guide.content.planificador.indicators.warningValue'),
+              color: 'bg-amber-500/15 border-amber-400/25 text-amber-300',
+            },
+            {
+              icon: AlertTriangle,
+              label: t('landing:guide.content.planificador.indicators.overloadLabel'),
+              value: t('landing:guide.content.planificador.indicators.overloadValue'),
+              color: 'bg-red-500/15 border-red-400/25 text-red-300',
+            },
+            {
+              icon: Gauge,
+              label: t('landing:guide.content.planificador.indicators.gaugeLabel'),
+              value: t('landing:guide.content.planificador.indicators.gaugeValue'),
+              color: 'bg-blue-500/15 border-blue-400/25 text-blue-300',
+            },
+          ]}
+        />
         <div className="mt-3" />
-        <TipBox>La barra de progreso se actualiza en tiempo real al añadir, completar o mover tareas. Si un empleado está en rojo, puedes hacer clic en su celda para abrir el panel de tareas y redistribuir.</TipBox>
+        <TipBox>{t('landing:guide.content.planificador.indicators.tip')}</TipBox>
       </ContentBlock>
 
-      <ContentBlock title="Dependencias entre tareas">
-        <p>Puedes marcar que una tarea <strong className="text-white">depende de otra</strong> (por ejemplo, Diseño bloquea a Desarrollo). El sistema muestra:</p>
+      <ContentBlock title={t('landing:guide.content.planificador.dependencies.title')}>
+        <p>
+          {t('landing:guide.content.planificador.dependencies.bodyBefore')}
+          <strong className="text-white">{t('landing:guide.content.planificador.dependencies.bodyStrong')}</strong>
+          {t('landing:guide.content.planificador.dependencies.bodyAfter')}
+        </p>
         <div className="grid sm:grid-cols-2 gap-3 mt-3">
-          <FeatureCard icon={GitBranch} title="Quién te bloquea" description="Badge visible en la tarea con el nombre del compañero y si su tarea ya está completada." color="from-amber-500 to-orange-500" />
-          <FeatureCard icon={Bell} title="A quién bloqueas" description="Si tu tarea bloquea a otros, lo verás con un icono de usuarios esperando." color="from-rose-500 to-red-500" />
+          <FeatureCard
+            icon={GitBranch}
+            title={t('landing:guide.content.planificador.dependencies.whoBlocksYouTitle')}
+            description={t('landing:guide.content.planificador.dependencies.whoBlocksYouDescription')}
+            color="from-amber-500 to-orange-500"
+          />
+          <FeatureCard
+            icon={Bell}
+            title={t('landing:guide.content.planificador.dependencies.whomYouBlockTitle')}
+            description={t('landing:guide.content.planificador.dependencies.whomYouBlockDescription')}
+            color="from-rose-500 to-red-500"
+          />
         </div>
         <div className="mt-3" />
-        <WarningBox>Si una dependencia no está completada, la tarea dependiente se resalta en ámbar para que no la olvides.</WarningBox>
+        <WarningBox>{t('landing:guide.content.planificador.dependencies.warning')}</WarningBox>
       </ContentBlock>
     </>
   );
 }
 
 function MiEspacioContent() {
+  const { t } = useTranslation('landing');
   return (
     <>
-      <ContentBlock title="Qué es Mi espacio">
-        <p>Mi espacio es tu <strong className="text-white">dashboard personal</strong>. Aquí ves tu carga de trabajo, tus proyectos, el control de planificación y las dependencias del día o de la semana.</p>
-        <ExampleBox>Es lunes por la mañana. Abres Mi espacio y ves que tienes 3 tareas que bloquean a compañeros. Sabes exactamente por dónde empezar.</ExampleBox>
+      <ContentBlock title={t('guide.content.miEspacio.introTitle')}>
+        <p>
+          {t('guide.content.miEspacio.introBody.beforeHighlight')}{' '}
+          <strong className="text-white">{t('guide.content.miEspacio.introBody.highlight')}</strong>
+          {t('guide.content.miEspacio.introBody.afterHighlight')}
+        </p>
+        <ExampleBox>{t('guide.content.miEspacio.introExample')}</ExampleBox>
       </ContentBlock>
 
-      <ContentBlock title="Pestañas principales">
+      <ContentBlock title={t('guide.content.miEspacio.tabsTitle')}>
         <div className="grid sm:grid-cols-2 gap-3">
-          <FeatureCard icon={AlertTriangle} title="Dependencias" description="Tareas que te bloquean o que bloqueas a otros. Insights para saber qué hacer primero." color="from-orange-500 to-amber-500" />
-          <FeatureCard icon={FolderOpen} title="Mis proyectos" description="Vista de tu semana con tareas agrupadas por proyecto. Ve rápidamente qué tienes pendiente en cada uno." color="from-indigo-500 to-blue-500" />
-          <FeatureCard icon={Target} title="Control de planificación" description="Alertas cuando lo planificado no coincide con el deadline. Te dice si te faltan o sobran horas." color="from-red-500 to-rose-500" />
-          <FeatureCard icon={Users} title="Compañeros" description="Vista de colaboración y carga del equipo. Ve quién está sobrecargado y quién tiene disponibilidad." color="from-blue-500 to-cyan-500" />
-          <FeatureCard icon={TrendingUp} title="Mis métricas" description="Balance mensual (horas estimadas vs reales) e índice de fiabilidad de estimaciones." color="from-emerald-500 to-teal-500" />
+          <FeatureCard
+            icon={AlertTriangle}
+            title={t('guide.content.miEspacio.tabs.dependencies.title')}
+            description={t('guide.content.miEspacio.tabs.dependencies.description')}
+            color="from-orange-500 to-amber-500"
+          />
+          <FeatureCard
+            icon={FolderOpen}
+            title={t('guide.content.miEspacio.tabs.projects.title')}
+            description={t('guide.content.miEspacio.tabs.projects.description')}
+            color="from-indigo-500 to-blue-500"
+          />
+          <FeatureCard
+            icon={Target}
+            title={t('guide.content.miEspacio.tabs.planning.title')}
+            description={t('guide.content.miEspacio.tabs.planning.description')}
+            color="from-red-500 to-rose-500"
+          />
+          <FeatureCard
+            icon={Users}
+            title={t('guide.content.miEspacio.tabs.teammates.title')}
+            description={t('guide.content.miEspacio.tabs.teammates.description')}
+            color="from-blue-500 to-cyan-500"
+          />
+          <FeatureCard
+            icon={TrendingUp}
+            title={t('guide.content.miEspacio.tabs.metrics.title')}
+            description={t('guide.content.miEspacio.tabs.metrics.description')}
+            color="from-emerald-500 to-teal-500"
+          />
         </div>
       </ContentBlock>
 
-      <ContentBlock title="Control de planificación en detalle">
-        <p>Detecta <strong className="text-white">variaciones</strong> entre lo que tienes en el deadline y lo realmente planificado/computado. Cada alerta muestra:</p>
+      <ContentBlock title={t('guide.content.miEspacio.planningDetailTitle')}>
+        <p>
+          {t('guide.content.miEspacio.planningDetailBody.beforeHighlight')}{' '}
+          <strong className="text-white">{t('guide.content.miEspacio.planningDetailBody.highlight')}</strong>{' '}
+          {t('guide.content.miEspacio.planningDetailBody.afterHighlight')}
+        </p>
         <StepList steps={[
-          { title: 'Proyecto con variación', description: 'El nombre del proyecto y la diferencia en horas (déficit o exceso).' },
-          { title: 'Tus datos (TU)', description: 'Deadline asignado, horas planificadas, horas computadas y balance. Si te faltan horas por planificar, se muestra un aviso rojo.' },
-          { title: 'Estado del equipo', description: 'Al expandir ves a los compañeros que también trabajan en ese proyecto con su propio balance.' },
+          {
+            title: t('guide.content.miEspacio.planningDetailSteps.projectTitle'),
+            description: t('guide.content.miEspacio.planningDetailSteps.projectDescription'),
+          },
+          {
+            title: t('guide.content.miEspacio.planningDetailSteps.yourDataTitle'),
+            description: t('guide.content.miEspacio.planningDetailSteps.yourDataDescription'),
+          },
+          {
+            title: t('guide.content.miEspacio.planningDetailSteps.teamTitle'),
+            description: t('guide.content.miEspacio.planningDetailSteps.teamDescription'),
+          },
         ]} />
         <div className="mt-3" />
-        <WarningBox>Si ves déficit (rojo), significa que aún no has planificado todas las horas que el deadline te asigna en ese proyecto. Añade tareas desde el planificador para cubrir la diferencia.</WarningBox>
+        <WarningBox>{t('guide.content.miEspacio.planningDetailWarning')}</WarningBox>
       </ContentBlock>
 
-      <ContentBlock title="Acciones rápidas">
+      <ContentBlock title={t('guide.content.miEspacio.quickActionsTitle')}>
         <div className="grid sm:grid-cols-2 gap-3">
-          <FeatureCard icon={Clock} title="Registrar gestión interna" description="Reuniones, formaciones u otras tareas no facturables. Se crean como tareas de gestión interna." color="from-slate-500 to-slate-700" />
-          <FeatureCard icon={Plus} title="Añadir tareas" description="Acceso rápido al mismo flujo de añadir tarea del planificador, sin salir de tu dashboard." color="from-indigo-500 to-purple-500" />
+          <FeatureCard
+            icon={Clock}
+            title={t('guide.content.miEspacio.quickActions.internalTitle')}
+            description={t('guide.content.miEspacio.quickActions.internalDescription')}
+            color="from-slate-500 to-slate-700"
+          />
+          <FeatureCard
+            icon={Plus}
+            title={t('guide.content.miEspacio.quickActions.addTasksTitle')}
+            description={t('guide.content.miEspacio.quickActions.addTasksDescription')}
+            color="from-indigo-500 to-purple-500"
+          />
         </div>
         <div className="mt-3" />
-        <TipBox>Puedes abrir cualquier celda de semana para ver el panel completo de tareas con opciones de editar, completar y transferir.</TipBox>
+        <TipBox>{t('guide.content.miEspacio.quickActionsTip')}</TipBox>
       </ContentBlock>
     </>
   );
 }
 
 function DeadlinesContent() {
+  const { t } = useTranslation('landing');
   return (
     <>
-      <ContentBlock title="Qué son los Deadlines">
-        <p>Los Deadlines definen los <strong className="text-white">objetivos de horas</strong> por mes, por proyecto y por empleado. Son la referencia para comparar lo que debía hacerse frente a lo planificado y lo computado.</p>
-        <ExampleBox>Tu proyecto &quot;SEO Mensual&quot; tiene 35h contratadas. En Deadlines repartes: 16h para Ana, 12h para Pedro y 7h para ti. El sistema sabe cuánto le toca a cada uno.</ExampleBox>
+      <ContentBlock title={t('guide.content.deadlines.introTitle')}>
+        <p>{t('guide.content.deadlines.introBody')}</p>
+        <ExampleBox>{t('guide.content.deadlines.introExample')}</ExampleBox>
       </ContentBlock>
 
-      <ContentBlock title="Funcionalidades">
+      <ContentBlock title={t('guide.content.deadlines.featuresTitle')}>
         <div className="grid sm:grid-cols-2 gap-3">
-          <FeatureCard icon={Users} title="Asignar horas" description="Distribuye las horas del proyecto entre los miembros del equipo para cada mes." color="from-indigo-500 to-blue-500" />
-          <FeatureCard icon={DollarSign} title="Ajuste de presupuesto" description="Override del budget por proyecto y mes si el cliente cambia las horas contratadas." color="from-amber-500 to-orange-500" />
-          <FeatureCard icon={Filter} title="Filtros avanzados" description="Filtra por tipo de proyecto, empleado, orden. Oculta proyectos sin asignar." color="from-slate-500 to-indigo-500" />
-          <FeatureCard icon={Pencil} title="Edición rápida" description="Toca un proyecto para editar horas por persona, notas y visibilidad. En móvil se abre un Sheet." color="from-purple-500 to-pink-500" />
+          <FeatureCard
+            icon={Users}
+            title={t('guide.content.deadlines.featuresAssignHoursTitle')}
+            description={t('guide.content.deadlines.featuresAssignHoursDesc')}
+            color="from-indigo-500 to-blue-500"
+          />
+          <FeatureCard
+            icon={DollarSign}
+            title={t('guide.content.deadlines.featuresAdjustBudgetTitle')}
+            description={t('guide.content.deadlines.featuresAdjustBudgetDesc')}
+            color="from-amber-500 to-orange-500"
+          />
+          <FeatureCard
+            icon={Filter}
+            title={t('guide.content.deadlines.featuresFiltersTitle')}
+            description={t('guide.content.deadlines.featuresFiltersDesc')}
+            color="from-slate-500 to-indigo-500"
+          />
+          <FeatureCard
+            icon={Pencil}
+            title={t('guide.content.deadlines.featuresQuickEditTitle')}
+            description={t('guide.content.deadlines.featuresQuickEditDesc')}
+            color="from-purple-500 to-pink-500"
+          />
         </div>
       </ContentBlock>
 
-      <ContentBlock title="Relación con el Planificador">
-        <p>Lo que configuras en Deadlines es lo que el Planificador y el Control de planificación de Mi espacio usan para mostrar si vas bien o si te faltan/sobran horas.</p>
-        <WarningBox>Si no defines deadlines para un proyecto, no aparecerán alertas de coherencia para ese proyecto en Mi espacio. Los proyectos sin deadline se muestran como &quot;sin límite&quot;.</WarningBox>
+      <ContentBlock title={t('guide.content.deadlines.relationTitle')}>
+        <p>{t('guide.content.deadlines.relationBody')}</p>
+        <WarningBox>{t('guide.content.deadlines.relationWarning')}</WarningBox>
         <div className="mt-3" />
-        <TipBox>Configura los deadlines al inicio de cada mes para tener alertas precisas durante todo el periodo.</TipBox>
+        <TipBox>{t('guide.content.deadlines.relationTip')}</TipBox>
       </ContentBlock>
     </>
   );
 }
 
 function InformesContent() {
+  const { t } = useTranslation('landing');
+
   return (
     <>
-      <ContentBlock title="Qué son los Informes">
-        <p>Los informes se organizan en <strong className="text-white">Seguimiento</strong>: Seguimiento operativo, Rentabilidad y Capacidad de Equipo. Permiten consultar datos históricos y exportar vía API.</p>
+      <ContentBlock title={t('guide.content.informes.introTitle')}>
+        <p>{t('guide.content.informes.introBody')}</p>
       </ContentBlock>
 
-      <ContentBlock title="Secciones disponibles">
+      <ContentBlock title={t('guide.content.informes.sectionsTitle')}>
         <div className="grid sm:grid-cols-2 gap-3">
-          <FeatureCard icon={Activity} title="Seguimiento operativo" description="Coherencia planificación vs deadlines por proyecto, filtros por proyecto y empleado, navegación por mes y proyectos en alerta que explican por qué estás en riesgo." color="from-indigo-500 to-blue-500" />
-          <FeatureCard icon={BarChart3} title="Rentabilidad" description="Ingreso devengado en mes en curso, ritmo (pacing), coste operativo o dinámico, presupuesto efectivo por deadline y margen por proyecto/empleado. Navegación por mes con badge Mes en curso/Mes cerrado." color="from-emerald-500 to-teal-500" />
-          <FeatureCard icon={BarChart3} title="Capacidad de Equipo" description="Mapa de calor semanal, ocupación media y tareas bloqueadas por dependencias." color="from-blue-500 to-cyan-500" />
-          <FeatureCard icon={Download} title="Exportación" description="Datos históricos e integración vía API REST para otros formatos." color="from-emerald-500 to-teal-500" />
-          <FeatureCard icon={Filter} title="Filtros" description="En Coherencia: por proyecto y empleado (respetando la vista por departamento del Sidebar). En el resto de vistas: por período y contexto." color="from-purple-500 to-pink-500" />
+          <FeatureCard
+            icon={Activity}
+            title={t('guide.content.informes.operationalTitle')}
+            description={t('guide.content.informes.operationalDesc')}
+            color="from-indigo-500 to-blue-500"
+          />
+          <FeatureCard
+            icon={BarChart3}
+            title={t('guide.content.informes.profitTitle')}
+            description={t('guide.content.informes.profitDesc')}
+            color="from-emerald-500 to-teal-500"
+          />
+          <FeatureCard
+            icon={BarChart3}
+            title={t('guide.content.informes.capacityTitle')}
+            description={t('guide.content.informes.capacityDesc')}
+            color="from-blue-500 to-cyan-500"
+          />
+          <FeatureCard
+            icon={Download}
+            title={t('guide.content.informes.exportTitle')}
+            description={t('guide.content.informes.exportDesc')}
+            color="from-emerald-500 to-teal-500"
+          />
+          <FeatureCard
+            icon={Filter}
+            title={t('guide.content.informes.filtersTitle')}
+            description={t('guide.content.informes.filtersDesc')}
+            color="from-purple-500 to-pink-500"
+          />
         </div>
       </ContentBlock>
     </>
@@ -393,88 +588,123 @@ function InformesContent() {
 }
 
 function WeeklyContent() {
+  const { t } = useTranslation('landing');
+  const howSteps = t('guide.content.weeklyForecast.howSteps', { returnObjects: true }) as {
+    title: string;
+    description: string;
+  }[];
+
   return (
     <>
-      <ContentBlock title="Qué es Weekly Forecast">
-        <p><strong className="text-white">Weekly Forecast</strong> (menú <strong className="text-white">Seguimiento</strong>) es la previsión y el cierre de <em>equipo</em>: resumen por persona, ajustes y redistribución. Por otro lado, el botón <strong className="text-white">Weekly</strong> en <strong className="text-white">Mi espacio</strong> es la revisión <em>personal</em> de tareas de semanas ya cerradas: completar, mover a otra semana (varios meses adelante), distribuir o registrar horas hechas y planificar el resto en la semana que elijas.</p>
-        <ExampleBox>Carlos no completó 15h esta semana. El sistema detecta que Laura tiene 10h libres y Pedro 5h, y sugiere redistribuir el trabajo automáticamente.</ExampleBox>
+      <ContentBlock title={t('guide.content.weeklyForecast.introTitle')}>
+        <p>{t('guide.content.weeklyForecast.introBody')}</p>
+        <ExampleBox>{t('guide.content.weeklyForecast.introExample')}</ExampleBox>
       </ContentBlock>
 
-      <ContentBlock title="Dónde acceder">
-        <p>Weekly Forecast está en el menú lateral bajo <strong className="text-white">Seguimiento</strong> (junto a Seguimiento operativo, Rentabilidad y Capacidad de Equipo). Solo visible si tienes permiso de capacidad de equipo.</p>
+      <ContentBlock title={t('guide.content.weeklyForecast.accessTitle')}>
+        <p>{t('guide.content.weeklyForecast.accessBody')}</p>
       </ContentBlock>
 
-      <ContentBlock title="Cómo funciona">
-        <StepList steps={[
-          { title: 'Revisar la semana', description: 'Ves un resumen por empleado y por proyecto con horas estimadas, reales y computadas.' },
-          { title: 'Ajustar horas', description: 'Si hace falta, corriges horas reales antes del cierre. Puedes ajustar por tarea individual.' },
-          { title: 'Redistribuir pendientes', description: 'Las horas no completadas se pueden redistribuir a compañeros con disponibilidad, de forma sugerida o automática.' },
-          { title: 'Cerrar semana', description: 'Al confirmar, las tareas completadas se marcan y los ajustes se reflejan en el planificador para la semana siguiente.' },
-        ]} />
+      <ContentBlock title={t('guide.content.weeklyForecast.howTitle')}>
+        <StepList steps={howSteps} />
       </ContentBlock>
 
-      <ContentBlock title="Integración con el Planificador">
-        <p>Todo lo que ocurre en Weekly se refleja en el calendario: tareas completadas, horas ajustadas y redistribuciones aparecen con un <strong className="text-white">badge &quot;Weekly&quot;</strong> en el planificador.</p>
-        <WarningBox>Si el módulo Weekly no está activado en tu agencia, esta opción no aparecerá en el menú. Un administrador puede activarlo desde Configuración.</WarningBox>
+      <ContentBlock title={t('guide.content.weeklyForecast.integrationTitle')}>
+        <p>{t('guide.content.weeklyForecast.integrationBody')}</p>
+        <WarningBox>{t('guide.content.weeklyForecast.integrationWarning')}</WarningBox>
       </ContentBlock>
     </>
   );
 }
 
 function EquipoContent() {
+  const { t } = useTranslation();
   return (
     <>
-      <ContentBlock title="Qué es la sección Equipo">
-        <p>En Equipo se gestionan los <strong className="text-white">miembros de la agencia</strong>: alta, edición, horarios, ausencias y capacidad. También puedes ver Team Capacity (capacidad del equipo) y Team Pulse si tu agencia tiene esas opciones.</p>
+      <ContentBlock title={t('landing:guide.content.equipo.introTitle')}>
+        <p>{t('landing:guide.content.equipo.introBody')}</p>
       </ContentBlock>
 
-      <ContentBlock title="Funcionalidades">
+      <ContentBlock title={t('landing:guide.content.equipo.featuresTitle')}>
         <div className="grid sm:grid-cols-2 gap-3">
-          <FeatureCard icon={Users} title="Listado de empleados" description="Nombre, rol, avatar y datos de contacto. Busca y filtra rápidamente." color="from-blue-500 to-cyan-500" />
-          <FeatureCard icon={Clock} title="Horarios personalizados" description="Configura horas laborables por día (lunes a domingo) para calcular capacidad real." color="from-indigo-500 to-blue-500" />
-          <FeatureCard icon={CalendarOff} title="Ausencias y vacaciones" description="Fechas de inicio y fin. El planificador descuenta capacidad automáticamente." color="from-amber-500 to-orange-500" />
-          <FeatureCard icon={Gauge} title="Capacidad" description="Capacidad mensual y semanal derivada del horario y las ausencias registradas." color="from-emerald-500 to-teal-500" />
+          <FeatureCard icon={Users} title={t('landing:guide.content.equipo.listTitle')} description={t('landing:guide.content.equipo.listDesc')} color="from-blue-500 to-cyan-500" />
+          <FeatureCard icon={Clock} title={t('landing:guide.content.equipo.schedulesTitle')} description={t('landing:guide.content.equipo.schedulesDesc')} color="from-indigo-500 to-blue-500" />
+          <FeatureCard icon={CalendarOff} title={t('landing:guide.content.equipo.absencesTitle')} description={t('landing:guide.content.equipo.absencesDesc')} color="from-amber-500 to-orange-500" />
+          <FeatureCard icon={Gauge} title={t('landing:guide.content.equipo.capacityTitle')} description={t('landing:guide.content.equipo.capacityDesc')} color="from-emerald-500 to-teal-500" />
         </div>
       </ContentBlock>
 
-      <ContentBlock title="Alta de empleados">
+      <ContentBlock title={t('landing:guide.content.equipo.createTitle')}>
         <StepList steps={[
-          { title: 'Crear empleado', description: 'Rellena nombre, email, rol y horario laboral.' },
-          { title: 'Crear usuario de acceso', description: 'Se genera automáticamente el usuario para que pueda entrar a la plataforma.' },
-          { title: 'Asignar permisos', description: 'Los permisos se heredan del rol asignado (administrador, manager, empleado, etc.).' },
+          { title: t('landing:guide.content.equipo.createStep1Title'), description: t('landing:guide.content.equipo.createStep1Desc') },
+          { title: t('landing:guide.content.equipo.createStep2Title'), description: t('landing:guide.content.equipo.createStep2Desc') },
+          { title: t('landing:guide.content.equipo.createStep3Title'), description: t('landing:guide.content.equipo.createStep3Desc') },
         ]} />
         <div className="mt-3" />
-        <TipBox>Si un empleado tiene vacaciones la próxima semana, el sistema ya lo considera y no permite asignarle tareas en ese periodo.</TipBox>
+        <TipBox>{t('landing:guide.content.equipo.tip')}</TipBox>
       </ContentBlock>
     </>
   );
 }
 
 function TiemposContent() {
+  const { t } = useTranslation('landing');
   return (
     <>
-      <ContentBlock title="Qué es Tiempos">
-        <p>El módulo de <strong className="text-white">Tiempos</strong> permite registrar las horas reales trabajadas por tarea mediante un <strong className="text-white">cronómetro</strong>. Puedes ver en qué está cada persona del equipo ahora mismo en la página Tiempos (menú Equipo) y parar tu propio crono desde el sidebar o desde esa página. El total del día se muestra en todo momento.</p>
-        <ExampleBox>María lleva 1h 23m en "Diseño landing" (Acme). Desde la página Tiempos ves a todo el equipo; si eres tú quien tiene el crono activo, puedes pararlo con un clic sin ir al planificador.</ExampleBox>
+      <ContentBlock title={t('guide.content.tiempos.introTitle')}>
+        <p>{t('guide.content.tiempos.introBody')}</p>
+        <ExampleBox>{t('guide.content.tiempos.introExample')}</ExampleBox>
       </ContentBlock>
 
-      <ContentBlock title="Dónde está">
+      <ContentBlock title={t('guide.content.tiempos.whereTitle')}>
         <div className="grid sm:grid-cols-2 gap-3">
-          <FeatureCard icon={Calendar} title="Planificador" description="Cronómetro por tarea en vista semanal y mensual. Solo ves y controlas tu propio tiempo." color="from-indigo-500 to-purple-500" />
-          <FeatureCard icon={LayoutGrid} title="Mi Día" description="En el dashboard personal, cada tarea del día puede llevar su cronómetro para registrar horas reales." color="from-purple-500 to-pink-500" />
-          <FeatureCard icon={Clock} title="Sidebar" description="Cuando tienes un crono activo, el bloque muestra la tarea, cliente, tiempo en curso y botón Parar. También el total del día." color="from-teal-500 to-emerald-500" />
-          <FeatureCard icon={Users} title="Página Tiempos" description="En Equipo → Tiempos verás en qué está cada persona: tarea, cliente y tiempo transcurrido. Parar tu crono desde ahí." color="from-blue-500 to-cyan-500" />
+          <FeatureCard
+            icon={Calendar}
+            title={t('guide.content.tiempos.wherePlannerTitle')}
+            description={t('guide.content.tiempos.wherePlannerDescription')}
+            color="from-indigo-500 to-purple-500"
+          />
+          <FeatureCard
+            icon={LayoutGrid}
+            title={t('guide.content.tiempos.whereMyDayTitle')}
+            description={t('guide.content.tiempos.whereMyDayDescription')}
+            color="from-purple-500 to-pink-500"
+          />
+          <FeatureCard
+            icon={Clock}
+            title={t('guide.content.tiempos.whereSidebarTitle')}
+            description={t('guide.content.tiempos.whereSidebarDescription')}
+            color="from-teal-500 to-emerald-500"
+          />
+          <FeatureCard
+            icon={Users}
+            title={t('guide.content.tiempos.whereTimesPageTitle')}
+            description={t('guide.content.tiempos.whereTimesPageDescription')}
+            color="from-blue-500 to-cyan-500"
+          />
         </div>
         <div className="mt-3" />
-        <TipBox>La página Tiempos y el cronómetro solo aparecen si tu agencia tiene activado el módulo &quot;Cronómetro de tareas&quot; en Configuración.</TipBox>
+        <TipBox>{t('guide.content.tiempos.whereTip')}</TipBox>
       </ContentBlock>
 
-      <ContentBlock title="Cómo usar">
+      <ContentBlock title={t('guide.content.tiempos.howTitle')}>
         <StepList steps={[
-          { title: 'Iniciar', description: 'En el planificador o Mi Día, pulsa Play en la tarea que quieras cronometrar. Solo puede haber un crono activo por persona.' },
-          { title: 'Parar', description: 'Pulsa Stop en la misma tarea, en el sidebar o en la página Tiempos. Las horas se guardan con precisión de segundos en time_entries.' },
-          { title: 'Cambiar de tarea', description: 'Si inicias el crono en otra tarea, el anterior se cierra automáticamente y se registran sus horas antes de empezar el nuevo.' },
-          { title: 'Total del día', description: 'El sidebar y cada cronómetro muestran el total de horas registradas hoy para esa tarea (base + sesión actual si está en marcha).' },
+          {
+            title: t('guide.content.tiempos.howStartTitle'),
+            description: t('guide.content.tiempos.howStartDescription'),
+          },
+          {
+            title: t('guide.content.tiempos.howStopTitle'),
+            description: t('guide.content.tiempos.howStopDescription'),
+          },
+          {
+            title: t('guide.content.tiempos.howChangeTitle'),
+            description: t('guide.content.tiempos.howChangeDescription'),
+          },
+          {
+            title: t('guide.content.tiempos.howTotalTitle'),
+            description: t('guide.content.tiempos.howTotalDescription'),
+          },
         ]} />
       </ContentBlock>
     </>
@@ -482,77 +712,129 @@ function TiemposContent() {
 }
 
 function ClientesContent() {
+  const { t } = useTranslation('landing');
   return (
     <>
-      <ContentBlock title="Qué son Clientes y Proyectos">
-        <p>Es el <strong className="text-white">catálogo</strong> de clientes de la agencia y de los proyectos asociados. Cada proyecto tiene horas contratadas (presupuesto), mínimo de horas si aplica y estado.</p>
-        <ExampleBox>Un cliente puede tener varios proyectos: por ejemplo SEO Mensual (35h), Paid Media (20h) y Contenido (15h). Cada uno con su presupuesto y estado independiente.</ExampleBox>
+      <ContentBlock title={t('guide.content.clientesProyectos.introTitle')}>
+        <p>{t('guide.content.clientesProyectos.introBody')}</p>
+        <ExampleBox>{t('guide.content.clientesProyectos.introExample')}</ExampleBox>
       </ContentBlock>
 
-      <ContentBlock title="Funcionalidades">
+      <ContentBlock title={t('guide.content.clientesProyectos.featuresTitle')}>
         <div className="grid sm:grid-cols-2 gap-3">
-          <FeatureCard icon={Building2} title="Clientes" description="Nombre, datos de facturación, color identificativo y proyectos vinculados." color="from-slate-500 to-indigo-500" />
-          <FeatureCard icon={FolderOpen} title="Proyectos" description="Nombre, cliente, horas contratadas (budget), mínimo, fee mensual y estado (activo/pausado/completado)." color="from-indigo-500 to-purple-500" />
-          <FeatureCard icon={Tag} title="Alias de proyectos" description="Reglas para mostrar nombres abreviados (ej. Kit Digital → KD:) en planificador e informes." color="from-purple-500 to-pink-500" />
-          <FeatureCard icon={ToggleLeft} title="Estado del proyecto" description="Si archivas un proyecto deja de aparecer en asignación nueva pero conserva el histórico." color="from-amber-500 to-orange-500" />
+          <FeatureCard
+            icon={Building2}
+            title={t('guide.content.clientesProyectos.featuresClientsTitle')}
+            description={t('guide.content.clientesProyectos.featuresClientsDesc')}
+            color="from-slate-500 to-indigo-500"
+          />
+          <FeatureCard
+            icon={FolderOpen}
+            title={t('guide.content.clientesProyectos.featuresProjectsTitle')}
+            description={t('guide.content.clientesProyectos.featuresProjectsDesc')}
+            color="from-indigo-500 to-purple-500"
+          />
+          <FeatureCard
+            icon={Tag}
+            title={t('guide.content.clientesProyectos.featuresAliasesTitle')}
+            description={t('guide.content.clientesProyectos.featuresAliasesDesc')}
+            color="from-purple-500 to-pink-500"
+          />
+          <FeatureCard
+            icon={ToggleLeft}
+            title={t('guide.content.clientesProyectos.featuresStatusTitle')}
+            description={t('guide.content.clientesProyectos.featuresStatusDesc')}
+            color="from-amber-500 to-orange-500"
+          />
         </div>
       </ContentBlock>
 
-      <ContentBlock title="Relación con el Planificador">
-        <p>Cada tarea del planificador está ligada a un proyecto. Las horas contratadas se usan para mostrar avisos de sobrepaso de presupuesto.</p>
-        <WarningBox>Sin proyectos activos no podrás asignar tareas nuevas. Asegúrate de tener al menos un proyecto en estado &quot;activo&quot; para poder planificar.</WarningBox>
+      <ContentBlock title={t('guide.content.clientesProyectos.relationTitle')}>
+        <p>{t('guide.content.clientesProyectos.relationBody')}</p>
+        <WarningBox>{t('guide.content.clientesProyectos.relationWarning')}</WarningBox>
       </ContentBlock>
     </>
   );
 }
 
 function ConfiguracionContent() {
+  const { t, i18n } = useTranslation('landing');
+  const apiDocsPath = localizedPathFromEs('/api-docs', i18n.language);
   return (
     <>
-      <ContentBlock title="Qué incluye Configuración">
-        <p>Configuración agrupa los <strong className="text-white">ajustes de la agencia</strong>: roles, permisos, módulos activos e integraciones. En entornos multi-agencia también existe la gestión de agencias.</p>
+      <ContentBlock title={t('guide.content.configuracion.introTitle')}>
+        <p>{t('guide.content.configuracion.introBody')}</p>
       </ContentBlock>
 
-      <ContentBlock title="Roles y permisos">
+      <ContentBlock title={t('guide.content.configuracion.rolesTitle')}>
         <div className="grid sm:grid-cols-2 gap-3">
-          <FeatureCard icon={Shield} title="Roles" description="Cada rol tiene un conjunto de permisos: acceso al planificador, editar tareas, ver informes, gestionar equipo, etc." color="from-indigo-500 to-blue-500" />
-          <FeatureCard icon={Settings} title="Permisos granulares" description="Más de 18 flags para controlar qué puede hacer cada rol con precisión." color="from-purple-500 to-pink-500" />
+          <FeatureCard
+            icon={Shield}
+            title={t('guide.content.configuracion.rolesFeatureRolesTitle')}
+            description={t('guide.content.configuracion.rolesFeatureRolesDesc')}
+            color="from-indigo-500 to-blue-500"
+          />
+          <FeatureCard
+            icon={Settings}
+            title={t('guide.content.configuracion.rolesFeaturePermsTitle')}
+            description={t('guide.content.configuracion.rolesFeaturePermsDesc')}
+            color="from-purple-500 to-pink-500"
+          />
         </div>
         <div className="mt-3" />
-        <ExampleBox>Cambias el permiso &quot;can_edit_tasks&quot; en el rol &quot;Empleado&quot;. Automáticamente, todos los empleados con ese rol pierden (o ganan) esa capacidad.</ExampleBox>
+        <ExampleBox>{t('guide.content.configuracion.rolesExample')}</ExampleBox>
       </ContentBlock>
 
-      <ContentBlock title="Módulos">
-        <p>Se pueden <strong className="text-white">activar o desactivar</strong> módulos individualmente:</p>
+      <ContentBlock title={t('guide.content.configuracion.modulesTitle')}>
+        <p>{t('guide.content.configuracion.modulesIntro')}</p>
         <InfoGrid items={[
-          { icon: Target, label: 'Deadlines', value: 'On/Off', color: 'bg-amber-500/15 border-amber-400/25 text-amber-300' },
-          { icon: FileText, label: 'Weekly', value: 'On/Off', color: 'bg-violet-500/15 border-violet-400/25 text-violet-300' },
-          { icon: BarChart3, label: 'PPC / Ads', value: 'On/Off', color: 'bg-blue-500/15 border-blue-400/25 text-blue-300' },
+          {
+            icon: Target,
+            label: t('guide.content.configuracion.modulesDeadlinesLabel'),
+            value: t('guide.content.configuracion.modulesDeadlinesValue'),
+            color: 'bg-amber-500/15 border-amber-400/25 text-amber-300',
+          },
+          {
+            icon: FileText,
+            label: t('guide.content.configuracion.modulesWeeklyLabel'),
+            value: t('guide.content.configuracion.modulesWeeklyValue'),
+            color: 'bg-violet-500/15 border-violet-400/25 text-violet-300',
+          },
+          {
+            icon: BarChart3,
+            label: t('guide.content.configuracion.modulesPpcLabel'),
+            value: t('guide.content.configuracion.modulesPpcValue'),
+            color: 'bg-blue-500/15 border-blue-400/25 text-blue-300',
+          },
         ]} />
         <div className="mt-3" />
-        <TipBox>Si un módulo está desactivado, el menú y las rutas asociadas desaparecen para todos los usuarios de la agencia.</TipBox>
+        <TipBox>{t('guide.content.configuracion.modulesTip')}</TipBox>
       </ContentBlock>
 
-      <ContentBlock title="Configuración de agencia">
-        <p>En Agency Settings se configura el nombre de la agencia, zona horaria y otras opciones globales. En <strong className="text-white">multi-tenant</strong>, cada agencia tiene sus propios datos (empleados, proyectos, allocations) completamente aislados.</p>
+      <ContentBlock title={t('guide.content.configuracion.agencyTitle')}>
+        <p>{t('guide.content.configuracion.agencyBody')}</p>
       </ContentBlock>
 
-      <ContentBlock title="API e integraciones">
-        <p>Desde el menú lateral, en <strong className="text-white">Configuración → API & Integraciones</strong>, los administradores pueden crear y revocar <strong className="text-white">tokens de acceso</strong> para conectar sistemas externos (CRM, ERP, dashboards) con los datos de la agencia. Cada token es un JWT vinculado a la agencia y protegido por políticas RLS.</p>
+      <ContentBlock title={t('guide.content.configuracion.apiTitle')}>
+        <p>{t('guide.content.configuracion.apiBody')}</p>
         <div className="mt-4 p-4 rounded-xl bg-white/5 border border-white/10">
           <p className="text-sm text-indigo-200/90 mb-3">
-            La <Link to="/api-docs" className="text-indigo-300 hover:text-white font-medium underline underline-offset-2">documentación pública de la API</Link> incluye:
+            {t('guide.content.configuracion.apiDocsIntro')}{' '}
+            <Link to="/api-docs" className="text-indigo-300 hover:text-white font-medium underline underline-offset-2">
+              {t('guide.content.configuracion.apiDocsLinkText')}
+            </Link>{' '}
+            {t('guide.content.configuracion.apiDocsIntroSuffix')}
           </p>
           <ul className="text-sm text-indigo-200/80 space-y-1.5 list-disc list-inside">
-            <li>Overview (autenticación, base URL, respuestas, changelog)</li>
-            <li>Cinco tutoriales paso a paso (primeros pasos, sincronizar equipo, planificación, reportes, ausencias)</li>
-            <li>SDK JavaScript, API REST, filtrado y suscripciones Realtime</li>
-            <li>Referencia completa de 17 recursos (tablas) con ejemplos de respuesta</li>
-            <li>Búsqueda rápida (Ctrl+K) y menú lateral fijo para navegar en la doc</li>
+            <li>{t('guide.content.configuracion.apiDocsItem1')}</li>
+            <li>{t('guide.content.configuracion.apiDocsItem2')}</li>
+            <li>{t('guide.content.configuracion.apiDocsItem3')}</li>
+            <li>{t('guide.content.configuracion.apiDocsItem4')}</li>
+            <li>{t('guide.content.configuracion.apiDocsItem5')}</li>
           </ul>
-          <Link to="/api-docs">
+          <Link to={apiDocsPath}>
             <Button className="mt-4 bg-indigo-600 hover:bg-indigo-500 text-white border-0">
-              Ver documentación API
+              {t('guide.content.configuracion.apiDocsButton')}
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </Link>
@@ -579,6 +861,11 @@ const CONTENT_MAP: Record<string, React.FC> = {
 export default function GuiaPage() {
   const { section } = useParams<{ section: string }>();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation('landing');
+  const sections = useMemo(() => buildGuideSections(t), [t]);
+  const lang = i18n.language.startsWith('en') ? 'en' : 'es';
+  const guideIndexPath = localizedPathFromEs('/guia', i18n.language);
+  const homePath = localizedPathFromEs('/', i18n.language);
 
   useEffect(() => {
     if (section) window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -586,39 +873,54 @@ export default function GuiaPage() {
 
   if (!section) {
     return (
-      <GuiaLayout title="Guía completa de Taimbox" description="Todas las funcionalidades explicadas al detalle. Elige un apartado para leer la documentación.">
-        <Helmet><title>Guía de funcionalidades - Taimbox</title></Helmet>
+      <>
+        <SeoTags
+          pathEs="/guia"
+          pathEn="/en/guide"
+          title={t('guide.seoTitleIndex')}
+          description={t('guide.seoDescriptionIndex')}
+          lang={lang}
+        />
+      <GuiaLayout title={t('guide.layoutTitleIndex')} description={t('guide.layoutDescriptionIndex')}>
         <div className="space-y-6">
-          {SECTIONS.map((s) => (
+          {sections.map((s) => (
             <SectionCard key={s.slug} {...s} />
           ))}
         </div>
         <div className="mt-12 text-center">
-          <Link to="/">
+          <Link to={homePath}>
             <Button variant="outline" className="border-white/40 !bg-white/10 text-white hover:text-white hover:!bg-white/20 hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-200">
-              <Home className="h-4 w-4 mr-2" /> Volver al inicio
+              <Home className="h-4 w-4 mr-2" /> {t('guide.backHome')}
             </Button>
           </Link>
         </div>
       </GuiaLayout>
+      </>
     );
   }
 
-  const current = SECTIONS.find((s) => s.slug === section);
+  const current = sections.find((s) => s.slug === section);
   if (!current) {
-    navigate('/guia', { replace: true });
+    navigate(guideIndexPath, { replace: true });
     return null;
   }
 
   const Icon = current.icon;
   const SectionContent = CONTENT_MAP[section];
+  const pathEsSection = `/guia/${section}`;
 
   return (
     <>
-      <Helmet><title>{current.title} - Guía Taimbox</title></Helmet>
+      <SeoTags
+        pathEs={pathEsSection}
+        pathEn={pathEsToEn(pathEsSection)}
+        title={t('guide.sectionTitle', { section: current.title })}
+        description={current.short}
+        lang={lang}
+      />
       <GuiaLayout>
-        <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10 hover:scale-105 mb-6 -ml-2 transition-all duration-200" onClick={() => navigate('/guia')}>
-          <ArrowLeft className="h-4 w-4 mr-2" /> Volver al índice
+        <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10 hover:scale-105 mb-6 -ml-2 transition-all duration-200" onClick={() => navigate(guideIndexPath)}>
+          <ArrowLeft className="h-4 w-4 mr-2" /> {t('guide.backToIndex')}
         </Button>
 
         <Card className="border-2 border-white/20 bg-gradient-to-br from-indigo-900/90 to-purple-900/90 backdrop-blur-xl overflow-hidden mb-4">
@@ -639,15 +941,15 @@ export default function GuiaPage() {
         </Card>
 
         {/* Prev / Next navigation */}
-        <SectionNav currentSlug={section} />
+        <SectionNav currentSlug={section} sections={sections} />
 
         <div className="flex flex-wrap gap-3 justify-center mt-6">
-          <Button variant="outline" className="border-white/40 !bg-white/10 text-white hover:text-white hover:!bg-white/20 hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-200" onClick={() => navigate('/guia')}>
-            <BookOpen className="h-4 w-4 mr-2" /> Índice de la guía
+          <Button variant="outline" className="border-white/40 !bg-white/10 text-white hover:text-white hover:!bg-white/20 hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-200" onClick={() => navigate(guideIndexPath)}>
+            <BookOpen className="h-4 w-4 mr-2" /> {t('guide.guideIndex')}
           </Button>
-          <Link to="/">
+          <Link to={homePath}>
             <Button variant="outline" className="border-white/40 !bg-white/10 text-white hover:text-white hover:!bg-white/20 hover:scale-105 hover:shadow-lg transition-all duration-200">
-              <Home className="h-4 w-4 mr-2" /> Inicio
+              <Home className="h-4 w-4 mr-2" /> {t('guide.home')}
             </Button>
           </Link>
         </div>

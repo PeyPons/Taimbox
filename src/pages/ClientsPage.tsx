@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { Client } from '@/types';
@@ -87,6 +88,7 @@ function StatCard({
 
 // Componente principal
 export default function ClientsPage() {
+  const { t } = useTranslation('app');
   const { clients, projects, allocations, employees, addClient, updateClient, deleteClient, getClientTotalHoursForMonth, getProjectHoursForMonth, loadDataForMonth, isLoading: isGlobalLoading } = useApp();
   const { currentAgency } = useAgency();
 
@@ -288,7 +290,7 @@ export default function ClientsPage() {
   if (isLoadingMonth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-slate-400">Cargando datos del mes...</div>
+        <div className="text-slate-400">{t('common.loading', 'Cargando datos del mes...')}</div>
       </div>
     );
   }
@@ -296,7 +298,7 @@ export default function ClientsPage() {
   // Handlers
   const handleAddClient = () => {
     if (!newClient.name.trim()) {
-      toast.error("El nombre es obligatorio");
+      toast.error(t('clientsAndProjects.dialogs.newClient.nameRequired', 'El nombre es obligatorio'));
       return;
     }
     addClient({
@@ -305,24 +307,24 @@ export default function ClientsPage() {
     });
     setNewClient({ name: '', color: colorOptions[0] });
     setIsAdding(false);
-    toast.success(`${newClient.name} creado`);
+    toast.success(t('clientsAndProjects.dialogs.newClient.created', { name: newClient.name, defaultValue: `${newClient.name} creado` }));
   };
 
   const handleUpdateClient = () => {
     if (!editingClient || !editingClient.name.trim()) {
-      toast.error("El nombre es obligatorio");
+      toast.error(t('clientsAndProjects.dialogs.newClient.nameRequired', 'El nombre es obligatorio'));
       return;
     }
     updateClient(editingClient);
     setEditingClient(null);
-    toast.success(`${editingClient.name} actualizado`);
+    toast.success(t('clientsAndProjects.dialogs.newClient.updated', { name: editingClient.name, defaultValue: `${editingClient.name} actualizado` }));
   };
 
   const handleDeleteClient = () => {
     if (!deletingClient) return;
     deleteClient(deletingClient.id);
     setDeletingClient(null);
-    toast.success(`${deletingClient.name} eliminado`);
+    toast.success(t('clientsAndProjects.dialogs.newClient.deleted', { name: deletingClient.name, defaultValue: `${deletingClient.name} eliminado` }));
   };
 
   const toggleClient = (clientId: string) => {
@@ -343,9 +345,9 @@ export default function ClientsPage() {
             <Building2 className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Clientes</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">{t('clients.title', 'Clientes')}</h1>
             <p className="text-sm text-muted-foreground">
-              Gestiona tus clientes y su consumo de horas
+              {t('clients.subtitle', 'Gestiona tus clientes y su consumo de horas')}
             </p>
           </div>
         </div>
@@ -379,28 +381,28 @@ export default function ClientsPage() {
             <DialogTrigger asChild>
               <Button className="gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md">
                 <Plus className="h-4 w-4" />
-                Nuevo cliente
+                {t('clientsAndProjects.actions.newClient', 'Nuevo cliente')}
               </Button>
             </DialogTrigger>
             <DialogContent aria-describedby="new-client-description">
               <DialogHeader>
-                <DialogTitle>Nuevo cliente</DialogTitle>
+                <DialogTitle>{t('clientsAndProjects.dialogs.newClient.title', 'Nuevo cliente')}</DialogTitle>
                 <DialogDescription id="new-client-description">
-                  Crea un nuevo cliente para organizar tus proyectos.
+                  {t('clientsAndProjects.dialogs.newClient.description', 'Crea un nuevo cliente para organizar tus proyectos.')}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label>Nombre</Label>
+                  <Label>{t('clientsAndProjects.dialogs.newClient.name', 'Nombre')}</Label>
                   <Input
                     value={newClient.name}
                     onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
-                    placeholder="Nombre del cliente"
+                    placeholder={t('clientsAndProjects.dialogs.newClient.namePlaceholder', 'Nombre del cliente')}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddClient()}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Color</Label>
+                  <Label>{t('clientsAndProjects.dialogs.newClient.color', 'Color')}</Label>
                   <div className="flex flex-wrap gap-2">
                     {colorOptions.map((color) => (
                       <button
@@ -418,9 +420,9 @@ export default function ClientsPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAdding(false)}>Cancelar</Button>
+                <Button variant="outline" onClick={() => setIsAdding(false)}>{t('clientsAndProjects.actions.cancel', 'Cancelar')}</Button>
                 <Button onClick={handleAddClient} className="bg-gradient-to-r from-indigo-500 to-purple-600">
-                  Crear cliente
+                  {t('clientsAndProjects.actions.create', 'Crear cliente')}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -432,30 +434,30 @@ export default function ClientsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard
           icon={Building2}
-          label="Total clientes"
+          label={t('clientsAndProjects.stats.totalClients', 'Total clientes')}
           value={globalStats.totalClients}
           color="slate"
         />
         <StatCard
           icon={Clock}
-          label="Horas este mes"
+          label={t('clientsAndProjects.stats.hoursThisMonth', 'Horas este mes')}
           value={`${globalStats.totalHours.toFixed(0)}h`}
-          subValue={`de ${globalStats.totalBudget}h asignadas`}
+          subValue={t('clientsAndProjects.stats.ofAssigned', { count: globalStats.totalBudget, defaultValue: `de ${globalStats.totalBudget}h asignadas` })}
           trend={globalStats.trend as 'up' | 'down' | 'neutral'}
           color="emerald"
         />
         <StatCard
           icon={AlertTriangle}
-          label="En riesgo"
+          label={t('clientsAndProjects.stats.atRisk', 'En riesgo')}
           value={globalStats.atRisk}
-          subValue=">85% de horas contratadas"
+          subValue={t('clientsAndProjects.stats.riskSub', '85% de horas contratadas')}
           color={globalStats.atRisk > 0 ? 'amber' : 'slate'}
         />
         <StatCard
           icon={TrendingUp}
-          label="Excedidos"
+          label={t('clientsAndProjects.stats.overBudget', 'Excedidos')}
           value={globalStats.overBudget}
-          subValue=">100% de horas contratadas"
+          subValue={t('clientsAndProjects.stats.overBudgetSub', '100% de horas contratadas')}
           color={globalStats.overBudget > 0 ? 'red' : 'slate'}
         />
       </div>
@@ -465,7 +467,7 @@ export default function ClientsPage() {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar cliente..."
+            placeholder={t('clients.search', 'Buscar cliente...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -482,7 +484,7 @@ export default function ClientsPage() {
           )}
         </div>
         <p className="text-sm text-muted-foreground">
-          {filteredClients.length} de {clients.length} clientes
+          {t('clients.count', { filtered: filteredClients.length, total: clients.length, defaultValue: `${filteredClients.length} de ${clients.length} clientes` })}
         </p>
       </div>
 
@@ -559,35 +561,35 @@ export default function ClientsPage() {
                     {isOverBudget && (
                       <Badge variant="destructive" className="text-[10px] h-5 gap-1">
                         <AlertTriangle className="h-3 w-3" />
-                        Excedido
+                        {t('clientsAndProjects.stats.overBudget', 'Excedido')}
                       </Badge>
                     )}
                     {isNearLimit && !isOverBudget && (
                       <Badge className="text-[10px] h-5 gap-1 bg-amber-100 text-amber-700 border-amber-200">
                         <TrendingUp className="h-3 w-3" />
-                        Casi lleno
+                        {t('clientsAndProjects.stats.atRisk', 'Casi lleno')}
                       </Badge>
                     )}
                     {unplannedProjects.length > 0 && (
                       <Badge variant="outline" className="text-[10px] h-5 gap-1 bg-blue-50 text-blue-700 border-blue-200">
                         <Clock className="h-3 w-3" />
-                        {unplannedProjects.length} sin planificar
+                        {t('clientsAndProjects.clientList.unplanned', { count: unplannedProjects.length, defaultValue: `${unplannedProjects.length} sin planificar` })}
                       </Badge>
                     )}
                     <Badge variant="outline" className="text-[10px]">
-                      {stats.projects.length} proyecto{stats.projects.length !== 1 ? 's' : ''}
+                      {t('clientsAndProjects.clientList.projects', { count: stats.projects.length, defaultValue: `${stats.projects.length} proyecto${stats.projects.length !== 1 ? 's' : ''}` })}
                     </Badge>
                   </div>
 
                   {/* Botones de acción */}
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1 opacity-Group-hover:opacity-100 transition-opacity">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setDetailClient(client); }}>
                           <Eye className="h-3.5 w-3.5" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>Ver detalles</TooltipContent>
+                      <TooltipContent>{t('clientsAndProjects.actions.viewDetails', 'Ver detalles')}</TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -595,7 +597,7 @@ export default function ClientsPage() {
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>Editar</TooltipContent>
+                      <TooltipContent>{t('clientsAndProjects.actions.edit', 'Editar')}</TooltipContent>
                     </Tooltip>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -603,7 +605,7 @@ export default function ClientsPage() {
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>Eliminar</TooltipContent>
+                      <TooltipContent>{t('clientsAndProjects.actions.delete', 'Eliminar')}</TooltipContent>
                     </Tooltip>
                   </div>
                 </div>
@@ -635,7 +637,7 @@ export default function ClientsPage() {
                               <div className="min-w-0 flex-1">
                                 <p className="text-sm font-medium text-slate-800 truncate">{project.name}</p>
                                 <p className="text-xs text-slate-500 mt-0.5">
-                                  {project.used.toFixed(1)}h de {project.budget}h
+                                  {t('clientsAndProjects.projectCard.hoursOf', { used: project.used.toFixed(1), budget: project.budget, defaultValue: `${project.used.toFixed(1)}h de ${project.budget}h` })}
                                 </p>
                               </div>
                             </div>
@@ -661,7 +663,7 @@ export default function ClientsPage() {
                               </div>
                               {project.percentage === 0 && (
                                 <Badge variant="outline" className="text-[10px] h-5 bg-blue-50 text-blue-700 border-blue-200">
-                                  Sin planificar
+                                  {t('clientsAndProjects.projectCard.unplanned', 'Sin planificar')}
                                 </Badge>
                               )}
                             </div>
@@ -671,7 +673,7 @@ export default function ClientsPage() {
                     })
                   ) : (
                     <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-                      Sin proyectos activos
+                      {t('clientsAndProjects.clientList.noProjects', 'Sin proyectos activos')}
                     </div>
                   )}
 
@@ -680,7 +682,7 @@ export default function ClientsPage() {
                     <div className="px-4 py-3 bg-slate-50 border-t">
                       <div className="flex items-center gap-2">
                         <Users className="h-3.5 w-3.5 text-slate-400" />
-                        <span className="text-xs font-medium text-slate-600">Equipo asignado:</span>
+                        <span className="text-xs font-medium text-slate-600">{t('clientsAndProjects.clientList.assignedTeam', 'Equipo asignado:')}</span>
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {assignedEmployees.map((name, i) => (
                             <span
@@ -706,10 +708,10 @@ export default function ClientsPage() {
         <div className="text-center py-12">
           <Building2 className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
           <h3 className="text-lg font-medium text-muted-foreground">
-            {searchQuery ? 'No se encontraron clientes' : 'Sin clientes'}
+            {searchQuery ? t('clients.empty', 'No se encontraron clientes') : t('clients.noClients', 'Sin clientes')}
           </h3>
           <p className="text-sm text-muted-foreground/70 mt-1">
-            {searchQuery ? 'Prueba con otro término de búsqueda' : 'Crea tu primer cliente para empezar'}
+            {searchQuery ? t('clients.emptySub', 'Prueba con otro término de búsqueda') : t('clients.firstClientSub', 'Crea tu primer cliente para empezar')}
           </p>
         </div>
       )}
@@ -718,19 +720,19 @@ export default function ClientsPage() {
       <Dialog open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)}>
         <DialogContent aria-describedby="edit-client-description">
           <DialogHeader>
-            <DialogTitle>Editar cliente</DialogTitle>
+            <DialogTitle>{t('clientsAndProjects.dialogs.editClient.title', 'Editar cliente')}</DialogTitle>
             <DialogDescription id="edit-client-description">
-              Modifica la información del cliente.
+              {t('clientsAndProjects.dialogs.editClient.description', 'Modifica la información del cliente.')}
             </DialogDescription>
           </DialogHeader>
           {editingClient && (
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>Nombre</Label>
+                <Label>{t('clientsAndProjects.dialogs.newClient.name', 'Nombre')}</Label>
                 <Input
                   value={editingClient.name}
                   onChange={(e) => setEditingClient({ ...editingClient, name: e.target.value })}
-                  placeholder="Nombre del cliente"
+                  placeholder={t('clientsAndProjects.dialogs.newClient.namePlaceholder', 'Nombre del cliente')}
                 />
               </div>
               <div className="space-y-2">
@@ -753,8 +755,8 @@ export default function ClientsPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingClient(null)}>Cancelar</Button>
-            <Button onClick={handleUpdateClient}>Guardar</Button>
+            <Button variant="outline" onClick={() => setEditingClient(null)}>{t('clientsAndProjects.actions.cancel', 'Cancelar')}</Button>
+            <Button onClick={handleUpdateClient}>{t('clientsAndProjects.actions.save', 'Guardar')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -763,17 +765,17 @@ export default function ClientsPage() {
       <Dialog open={!!deletingClient} onOpenChange={(open) => !open && setDeletingClient(null)}>
         <DialogContent aria-describedby="delete-client-description">
           <DialogHeader>
-            <DialogTitle>¿Eliminar cliente?</DialogTitle>
+            <DialogTitle>{t('clientsAndProjects.dialogs.deleteClient.title', '¿Eliminar cliente?')}</DialogTitle>
             <DialogDescription id="delete-client-description">
-              Esta acción eliminará al cliente y todos sus proyectos asociados. Esta acción no se puede deshacer.
+              {t('clientsAndProjects.dialogs.deleteClient.description', 'Esta acción eliminará al cliente y todos sus proyectos asociados. Esta acción no se puede deshacer.')}
             </DialogDescription>
           </DialogHeader>
           <p className="text-muted-foreground">
             Esta acción eliminará a <strong>{deletingClient?.name}</strong> y todos sus proyectos asociados. Esta acción no se puede deshacer.
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeletingClient(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={handleDeleteClient}>Eliminar</Button>
+            <Button variant="outline" onClick={() => setDeletingClient(null)}>{t('clientsAndProjects.actions.cancel', 'Cancelar')}</Button>
+            <Button variant="destructive" onClick={handleDeleteClient}>{t('clientsAndProjects.actions.delete', 'Eliminar')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -796,7 +798,7 @@ export default function ClientsPage() {
               )}
             </DialogTitle>
             <DialogDescription>
-              Detalles del cliente y estado de sus proyectos.
+              {t('clientsAndProjects.dialogs.viewDetails.description', 'Detalles del cliente y estado de sus proyectos.')}
             </DialogDescription>
           </DialogHeader>
           {detailClient && (() => {
@@ -809,11 +811,11 @@ export default function ClientsPage() {
                 <div className="grid grid-cols-3 gap-4">
                   <div className="text-center p-4 bg-slate-50 rounded-xl">
                     <p className="text-2xl font-bold">{data.stats.projects.length}</p>
-                    <p className="text-xs text-muted-foreground">Proyectos activos</p>
+                    <p className="text-xs text-muted-foreground">{t('clientsAndProjects.clientList.activeProjects', 'Proyectos activos')}</p>
                   </div>
                   <div className="text-center p-4 bg-slate-50 rounded-xl">
                     <p className="text-2xl font-bold">{data.stats.used.toFixed(1)}h</p>
-                    <p className="text-xs text-muted-foreground">Horas este mes</p>
+                    <p className="text-xs text-muted-foreground">{t('clientsAndProjects.stats.hoursThisMonth', 'Horas este mes')}</p>
                   </div>
                   <div className="text-center p-4 bg-slate-50 rounded-xl">
                     <p className={cn(
@@ -823,20 +825,20 @@ export default function ClientsPage() {
                     )}>
                       {data.stats.percentage.toFixed(0)}%
                     </p>
-                    <p className="text-xs text-muted-foreground">Horas contratadas usadas</p>
+                    <p className="text-xs text-muted-foreground">{t('clientsAndProjects.stats.contractedHoursUsed', 'Horas contratadas usadas')}</p>
                   </div>
                 </div>
 
                 {/* Proyectos */}
                 <div>
-                  <h4 className="text-sm font-medium mb-3">Proyectos</h4>
+                  <h4 className="text-sm font-medium mb-3">{t('clientsAndProjects.clientList.projects_plural', 'Proyectos')}</h4>
                   <div className="space-y-2 max-h-[200px] overflow-y-auto">
                     {data.stats.projects.map(project => (
                       <div key={project.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                         <div>
                           <p className="font-medium text-sm">{project.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {project.used.toFixed(1)}h de {project.budget}h
+                            {t('clientsAndProjects.projectCard.hoursOf', { used: project.used.toFixed(1), budget: project.budget, defaultValue: `${project.used.toFixed(1)}h de ${project.budget}h` })}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -856,7 +858,7 @@ export default function ClientsPage() {
                     ))}
                     {data.stats.projects.length === 0 && (
                       <p className="text-sm text-muted-foreground text-center py-4">
-                        Sin proyectos activos
+                        {t('clientsAndProjects.clientList.noProjects', 'Sin proyectos activos')}
                       </p>
                     )}
                   </div>
@@ -865,7 +867,7 @@ export default function ClientsPage() {
                 {/* Equipo asignado */}
                 {data.employees.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-medium mb-3">Equipo asignado este mes</h4>
+                    <h4 className="text-sm font-medium mb-3">{t('clientsAndProjects.clientList.assignedTeamThisMonth', 'Equipo asignado este mes')}</h4>
                     <div className="flex flex-wrap gap-2">
                       {data.employees.map((name, i) => (
                         <Badge key={i} variant="secondary" className="text-xs">
@@ -879,7 +881,7 @@ export default function ClientsPage() {
             );
           })()}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDetailClient(null)}>Cerrar</Button>
+            <Button variant="outline" onClick={() => setDetailClient(null)}>{t('common.close', 'Cerrar')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

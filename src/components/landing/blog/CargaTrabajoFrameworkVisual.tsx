@@ -1,24 +1,25 @@
-/**
- * Infografía del framework de 6 pasos para gestionar carga de trabajo sin burnout.
- * Pensada para compartir en redes (captura clara en tema oscuro del blog).
- */
-const STEPS = [
-  { n: 1, title: 'Visibilidad', subtitle: 'Mapear carga real' },
-  { n: 2, title: 'Prioridad', subtitle: 'Eisenhower en equipo' },
-  { n: 3, title: 'Reparto', subtitle: 'Capacidad + habilidad' },
-  { n: 4, title: 'Límites', subtitle: 'Decir no al scope creep' },
-  { n: 5, title: 'Ritmo', subtitle: 'Bloques y deep work' },
-  { n: 6, title: 'Revisión', subtitle: 'Check-ins de carga' },
-] as const;
+import { useTranslation } from 'react-i18next';
 
 export function CargaTrabajoFrameworkVisual() {
+  const { t } = useTranslation('blog');
+  const compKey = 'components.cargaTrabajoFramework';
+
+  const steps = [
+    { n: 1, title: t(`${compKey}.steps.0.title`), subtitle: t(`${compKey}.steps.0.subtitle`) },
+    { n: 2, title: t(`${compKey}.steps.1.title`), subtitle: t(`${compKey}.steps.1.subtitle`) },
+    { n: 3, title: t(`${compKey}.steps.2.title`), subtitle: t(`${compKey}.steps.2.subtitle`) },
+    { n: 4, title: t(`${compKey}.steps.3.title`), subtitle: t(`${compKey}.steps.3.subtitle`) },
+    { n: 5, title: t(`${compKey}.steps.4.title`), subtitle: t(`${compKey}.steps.4.subtitle`) },
+    { n: 6, title: t(`${compKey}.steps.5.title`), subtitle: t(`${compKey}.steps.5.subtitle`) },
+  ];
+
   return (
     <figure className="rounded-2xl border border-violet-500/35 bg-gradient-to-br from-violet-950/50 via-indigo-950/40 to-slate-950/60 p-5 sm:p-8 overflow-hidden not-prose">
       <figcaption className="text-center text-sm font-semibold text-violet-200/95 mb-6">
-        Framework en 6 pasos: de la invisibilidad a la carga sostenible
+        {t(`${compKey}.caption`)}
       </figcaption>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-        {STEPS.map((s, i) => (
+        {steps.map((s, i) => (
           <div
             key={s.n}
             className="relative rounded-xl border border-white/10 bg-white/[0.06] p-3 sm:p-4 text-left min-h-[5.5rem] sm:min-h-[6rem] flex flex-col justify-between"
@@ -27,7 +28,7 @@ export function CargaTrabajoFrameworkVisual() {
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-500/25 text-violet-200 text-sm font-black">
                 {s.n}
               </span>
-              {i < STEPS.length - 1 && (
+              {i < steps.length - 1 && (
                 <span className="hidden sm:block text-violet-500/40 text-xs font-mono" aria-hidden>
                   →
                 </span>
@@ -41,7 +42,7 @@ export function CargaTrabajoFrameworkVisual() {
         ))}
       </div>
       <p className="text-center text-indigo-300/70 text-xs mt-5 m-0">
-        Objetivo: visibilidad + prioridades explícitas + recuperación entre picos
+        {t(`${compKey}.footer`)}
       </p>
     </figure>
   );

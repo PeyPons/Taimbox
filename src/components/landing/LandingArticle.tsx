@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DemoProvider } from '@/contexts/DemoContext';
+import { useTranslation, Trans } from 'react-i18next';
 import {
   ArrowRight,
   Brain,
@@ -10,7 +11,6 @@ import {
   Shield,
   Code,
   Zap,
-  BarChart3,
   Radio,
   Megaphone,
   Clock,
@@ -22,9 +22,10 @@ const DemoPlannerLazy = lazy(() =>
 );
 
 function BudgetOverflowChart() {
+  const { t } = useTranslation('landing');
   return (
     <div className="my-6 flex flex-col gap-3 max-w-md mx-auto">
-      <p className="text-center text-xs font-medium text-indigo-200/80 uppercase tracking-wider">Presupuesto (50h) vs real (90h)</p>
+      <p className="text-center text-xs font-medium text-indigo-200/80 uppercase tracking-wider">{t('articleWhy.chartTitle')}</p>
       <div className="relative w-full h-11 rounded-xl bg-indigo-900/50 border border-indigo-500/20 overflow-hidden shadow-inner">
         <div className="absolute inset-0 flex">
           <div
@@ -36,18 +37,19 @@ function BudgetOverflowChart() {
             style={{ width: '44.5%' }}
           />
         </div>
-        <div className="absolute left-[55.5%] top-0 bottom-0 w-0.5 bg-white/80 z-10 shadow-sm" title="Límite 50h" />
+        <div className="absolute left-[55.5%] top-0 bottom-0 w-0.5 bg-white/80 z-10 shadow-sm" title={t('articleWhy.chartMax')} />
       </div>
       <div className="flex justify-between w-full text-[11px] text-indigo-200/60 font-medium text-center">
         <span>0h</span>
-        <span>50h (límite)</span>
-        <span className="text-red-400">90h — desbordado</span>
+        <span>{t('articleWhy.chartMax')}</span>
+        <span className="text-red-400">{t('articleWhy.chartOverflow')}</span>
       </div>
     </div>
   );
 }
 
 export function LandingArticle() {
+  const { t } = useTranslation('landing');
   const [apiTab, setApiTab] = useState<'curl' | 'js'>('js');
 
   return (
@@ -56,22 +58,18 @@ export function LandingArticle() {
       <section className="mb-12 sm:mb-14">
         <div className="mb-6 text-center">
           <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-indigo-300 bg-indigo-500/20 border border-indigo-400/30">
-            Para agencias
+            {t('articleWhy.badge')}
           </span>
         </div>
         <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-[2.75rem] font-black text-white mb-5 sm:mb-6 leading-[1.15] tracking-tight text-center">
-          Taimbox: por qué tu lista de tareas está matando la rentabilidad de tu agencia
+          {t('articleWhy.heroTitle')}
         </h1>
         <div className="space-y-4 text-indigo-100/95 text-base sm:text-lg leading-[1.75]">
-          <p>
-            Si diriges una agencia de marketing, desarrollo o consultoría, conoces esta historia: vendes un proyecto por 5.000€ calculado a 50 horas. El equipo empieza a trabajar. Surgen reuniones, imprevistos, «pequeños cambios» y correcciones. Un mes después, miras los números: habéis invertido 90 horas. Has perdido dinero.
-          </p>
-          <p>
-            El problema no es tu equipo. El problema no es el cliente. El problema es que gestionas tareas, cuando deberías estar gestionando cajas de tiempo vinculadas a dinero.
-          </p>
+          <p>{t('articleWhy.heroP1')}</p>
+          <p>{t('articleWhy.heroP2')}</p>
           <div className="rounded-2xl border-l-4 border-indigo-400 bg-indigo-500/10 border border-indigo-500/20 p-4 sm:p-6 my-6">
             <p className="text-white/95 font-medium m-0">
-              Aquí es donde entra el timeboxing: una metodología que ha pasado de ser un truco de productividad personal a convertirse en el estándar operativo de las empresas de servicios más rentables del mundo.
+              {t('articleWhy.heroHighlight')}
             </p>
           </div>
         </div>
@@ -82,46 +80,50 @@ export function LandingArticle() {
       <section className="mb-12 sm:mb-14">
         <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-4 sm:p-8 mb-6">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
-            ¿Qué es exactamente el timeboxing?
+            {t('articleWhy.whatIsTitle')}
           </h2>
           <p className="text-indigo-100/90 mb-4 text-base sm:text-lg leading-relaxed">
-            El timeboxing no es una lista de tareas (to-do list). En una lista de tareas, trabajas en algo hasta que lo terminas. En el timeboxing, decides cuánto tiempo vas a dedicar a una tarea antes de empezarla.
+            {t('articleWhy.whatIsP1')}
           </p>
           <p className="text-indigo-100/90 font-medium">
-            La premisa es simple pero revolucionaria: <span className="text-white">el tiempo es una restricción fija, el alcance es variable.</span>
+            <Trans
+              i18nKey="articleWhy.whatIsP2"
+              ns="landing"
+              components={[<span className="text-white" key="0" />]}
+            />
           </p>
         </div>
 
-        <h3 className="text-xl font-bold text-white mb-4">Los 3 principios científicos del timeboxing</h3>
+        <h3 className="text-xl font-bold text-white mb-4">{t('articleWhy.principlesTitle')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
           <div className="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-900/70 to-purple-900/50 p-4 sm:p-6 flex flex-col shadow-lg shadow-indigo-950/50 hover:border-indigo-400/40 transition-colors">
             <div className="w-12 h-12 rounded-xl bg-indigo-500/30 flex items-center justify-center mb-4">
               <Clock className="h-6 w-6 text-indigo-300" />
             </div>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-300/90 mb-2">Principio 1</span>
-            <h4 className="text-white font-semibold mb-2 text-lg">Ley de Parkinson</h4>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-300/90 mb-2">{t('articleWhy.principle1.kicker')}</span>
+            <h4 className="text-white font-semibold mb-2 text-lg">{t('articleWhy.principle1.title')}</h4>
             <p className="text-sm text-indigo-200/85 flex-1 leading-relaxed">
-              «El trabajo se expande hasta llenar el tiempo disponible para que se termine». Si te das una semana para escribir un copy, tardarás una semana. Si te das 2 horas (una «time box»), lo harás en 2 horas.
+              {t('articleWhy.principle1.desc')}
             </p>
           </div>
           <div className="rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-900/70 to-pink-900/50 p-4 sm:p-6 flex flex-col shadow-lg shadow-purple-950/50 hover:border-purple-400/40 transition-colors">
             <div className="w-12 h-12 rounded-xl bg-purple-500/30 flex items-center justify-center mb-4">
               <Brain className="h-6 w-6 text-purple-300" />
             </div>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-purple-300/90 mb-2">Principio 2</span>
-            <h4 className="text-white font-semibold mb-2 text-lg">Carga cognitiva</h4>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-purple-300/90 mb-2">{t('articleWhy.principle2.kicker')}</span>
+            <h4 className="text-white font-semibold mb-2 text-lg">{t('articleWhy.principle2.title')}</h4>
             <p className="text-sm text-indigo-200/85 flex-1 leading-relaxed">
-              Decidir «qué hacer ahora» gasta energía mental. Con el timeboxing, esa decisión ya está tomada en la planificación. Solo ejecutas.
+              {t('articleWhy.principle2.desc')}
             </p>
           </div>
           <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-900/70 to-orange-900/50 p-4 sm:p-6 flex flex-col shadow-lg shadow-amber-950/50 hover:border-amber-400/40 transition-colors">
             <div className="w-12 h-12 rounded-xl bg-amber-500/30 flex items-center justify-center mb-4">
               <ListTodo className="h-6 w-6 text-amber-300" />
             </div>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-300/90 mb-2">Principio 3</span>
-            <h4 className="text-white font-semibold mb-2 text-lg">Realismo brutal</h4>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-300/90 mb-2">{t('articleWhy.principle3.kicker')}</span>
+            <h4 className="text-white font-semibold mb-2 text-lg">{t('articleWhy.principle3.title')}</h4>
             <p className="text-sm text-indigo-200/85 flex-1 leading-relaxed">
-              Una lista de tareas es una carta a los Reyes Magos. Un calendario con bloques de tiempo es la realidad física de tu día.
+              {t('articleWhy.principle3.desc')}
             </p>
           </div>
         </div>
@@ -131,13 +133,17 @@ export function LandingArticle() {
       <section className="mb-12 sm:mb-14">
         <div className="rounded-2xl border border-amber-500/20 bg-amber-950/30 backdrop-blur-sm p-4 sm:p-8 mb-6">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
-            Por qué el timeboxing tradicional no funciona en agencias
+            {t('articleWhy.agenciesTitle')}
           </h2>
           <p className="text-indigo-100/90 mb-4 text-base leading-relaxed">
-            Las herramientas como Google Calendar o Notion son fantásticas para individuos, pero son ciegas financieramente para una empresa.
+            {t('articleWhy.agenciesP1')}
           </p>
           <p className="text-indigo-100/90 mb-4">
-            Cuando aplicas timeboxing en una agencia, te enfrentas a la <strong className="text-white">«triple amenaza»</strong>:
+            <Trans
+              i18nKey="articleWhy.agenciesP2"
+              ns="landing"
+              components={[<strong className="text-white" key="0" />]}
+            />
           </p>
         </div>
 
@@ -146,33 +152,37 @@ export function LandingArticle() {
             <div className="w-10 h-10 rounded-lg bg-amber-500/30 flex items-center justify-center mb-3 sm:mb-4">
               <AlertTriangle className="h-5 w-5 text-amber-400" />
             </div>
-            <h4 className="text-white font-semibold mb-2 text-base sm:text-inherit">La paradoja del festivo</h4>
+            <h4 className="text-white font-semibold mb-2 text-base sm:text-inherit">{t('articleWhy.threat1Title')}</h4>
             <p className="text-sm text-indigo-200/85 leading-relaxed">
-              Si planificas 40 horas semanales y hay un festivo, tu Excel se rompe.
+              {t('articleWhy.threat1Desc')}
             </p>
           </div>
           <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-900/50 to-orange-900/30 p-4 sm:p-6 flex flex-col">
             <div className="w-10 h-10 rounded-lg bg-amber-500/30 flex items-center justify-center mb-3 sm:mb-4">
               <AlertTriangle className="h-5 w-5 text-amber-400" />
             </div>
-            <h4 className="text-white font-semibold mb-2 text-base sm:text-inherit">La doble contabilidad</h4>
+            <h4 className="text-white font-semibold mb-2 text-base sm:text-inherit">{t('articleWhy.threat2Title')}</h4>
             <p className="text-sm text-indigo-200/85 leading-relaxed">
-              ¿Qué pasa si un empleado está de baja y a la vez hay un evento de equipo? La mayoría de herramientas restan las horas dos veces, falseando la capacidad real.
+              {t('articleWhy.threat2Desc')}
             </p>
           </div>
           <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-900/50 to-orange-900/30 p-4 sm:p-6 flex flex-col">
             <div className="w-10 h-10 rounded-lg bg-amber-500/30 flex items-center justify-center mb-3 sm:mb-4">
               <AlertTriangle className="h-5 w-5 text-amber-400" />
             </div>
-            <h4 className="text-white font-semibold mb-2 text-base sm:text-inherit">El muro financiero</h4>
+            <h4 className="text-white font-semibold mb-2 text-base sm:text-inherit">{t('articleWhy.threat3Title')}</h4>
             <p className="text-sm text-indigo-200/85 leading-relaxed">
-              Tu calendario dice «Diseñar Home (4h)», pero no te dice que esas 4 horas cuestan 200€ de nómina y el cliente solo paga 150€.
+              {t('articleWhy.threat3Desc')}
             </p>
           </div>
         </div>
         <div className="mt-6 rounded-2xl border-l-4 border-indigo-400 bg-indigo-500/10 border border-indigo-500/20 p-4 sm:p-6">
           <p className="text-indigo-100/95 font-medium m-0">
-            Las agencias necesitan algo más que un calendario. Necesitan un <span className="text-white">sistema operativo financiero basado en tiempo</span>.
+            <Trans
+              i18nKey="articleWhy.agenciesHighlight"
+              ns="landing"
+              components={[<span className="text-white" key="0" />]}
+            />
           </p>
         </div>
       </section>
@@ -181,38 +191,38 @@ export function LandingArticle() {
       <section className="mb-12 sm:mb-14">
         <div className="rounded-2xl border border-indigo-500/20 bg-indigo-950/40 backdrop-blur-sm p-4 sm:p-8 mb-6">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
-            Taimbox + inteligencia financiera: la evolución
+            {t('articleWhy.solutionTitle')}
           </h2>
           <p className="text-indigo-100/90 text-base sm:text-lg leading-relaxed">
-            Hemos construido una plataforma que no solo gestiona el tiempo, sino que entiende la economía de tu agencia. No es solo un calendario; es un cerebro que calcula rentabilidad en tiempo real.
+            {t('articleWhy.solutionP1')}
           </p>
         </div>
-        <p className="text-indigo-100/90 mb-6 font-medium">Así es como nuestra tecnología soluciona lo que otros ignoran:</p>
+        <p className="text-indigo-100/90 mb-6 font-medium">{t('articleWhy.solutionP2')}</p>
 
         <div className="space-y-8">
           <div className="rounded-2xl border border-indigo-500/25 bg-white/5 p-4 sm:p-8">
             <div className="flex items-center gap-3 mb-3 sm:mb-4">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-500/30 text-indigo-300 font-bold text-sm">1</span>
               <h3 className="text-lg sm:text-xl font-bold text-white m-0 min-w-0">
-                Cálculo de «horas computadas» (el cerebro)
+                {t('articleWhy.feature1Title')}
               </h3>
             </div>
             <p className="text-indigo-100/90 mb-4">
-              Olvídate de las hojas de cálculo. Nuestro algoritmo de backend procesa automáticamente:
+              {t('articleWhy.feature1P')}
             </p>
             <ul className="space-y-4 mb-6 text-indigo-100/90">
               <li className="flex flex-col gap-1 sm:flex-row sm:gap-3">
-                <span className="text-indigo-400 font-medium shrink-0 sm:min-w-[11rem]">Semanas partidas:</span>
-                <span className="min-w-0">Si una semana laboral empieza en enero y acaba en febrero, el sistema divide los costes proporcionalmente para que tu cierre de mes sea exacto al céntimo.</span>
+                <span className="text-indigo-400 font-medium shrink-0 sm:min-w-[11rem]">{t('articleWhy.feature1L1Title')}</span>
+                <span className="min-w-0">{t('articleWhy.feature1L1Desc')}</span>
               </li>
               <li className="flex flex-col gap-1 sm:flex-row sm:gap-3">
-                <span className="text-indigo-400 font-medium shrink-0 sm:min-w-[11rem]">Gestión de capacidad real:</span>
-                <span className="min-w-0">Utilizamos una lógica de Max(Ausencia, Evento) para calcular la disponibilidad. Si es festivo y alguien está enfermo, el sistema sabe que no se pierden el doble de horas.</span>
+                <span className="text-indigo-400 font-medium shrink-0 sm:min-w-[11rem]">{t('articleWhy.feature1L2Title')}</span>
+                <span className="min-w-0">{t('articleWhy.feature1L2Desc')}</span>
               </li>
             </ul>
             <div className="rounded-xl border border-indigo-500/30 bg-indigo-950/60 p-3 sm:p-4 min-h-[280px] sm:min-h-[320px] min-w-0 max-w-full overflow-x-auto">
-              <p className="text-xs text-indigo-200/80 mb-3 font-medium">Vista previa del planificador con datos de ejemplo. Explora la distribución de horas por empleado y proyecto.</p>
-              <Suspense fallback={<div className="flex items-center justify-center h-64 text-indigo-200/70">Cargando planificador…</div>}>
+              <p className="text-xs text-indigo-200/80 mb-3 font-medium">{t('articleWhy.feature1Demo')}</p>
+              <Suspense fallback={<div className="flex items-center justify-center h-64 text-indigo-200/70">{t('articleWhy.feature1Loading')}</div>}>
                 <DemoProvider>
                   <div className="min-w-0 max-w-full">
                     <DemoPlannerLazy />
@@ -226,24 +236,24 @@ export function LandingArticle() {
             <div className="flex items-center gap-3 mb-3 sm:mb-4">
               <Radio className="h-6 w-6 shrink-0 text-indigo-400" />
               <h3 className="text-lg sm:text-xl font-bold text-white m-0 min-w-0">
-                2. «Team Pulse»: operaciones en tiempo real
+                {t('articleWhy.feature2Title')}
               </h3>
             </div>
             <p className="text-indigo-100/90 mb-4">
-              Mientras las herramientas tradicionales te muestran reportes estáticos del mes pasado, nuestro Team Pulse utiliza WebSockets para mostrarte el estado de tu agencia ahora mismo.
+              {t('articleWhy.feature2P')}
             </p>
             <ul className="flex flex-wrap gap-2 sm:gap-3 text-indigo-100/90 justify-center">
               <li className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/30">
                 <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                <strong className="text-emerald-300">Idle</strong> (libre)
+                <strong className="text-emerald-300">{t('articleWhy.feature2Idle')}</strong>
               </li>
               <li className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/30">
                 <span className="w-2 h-2 rounded-full bg-amber-400" />
-                <strong className="text-amber-300">Busy</strong> (saturado)
+                <strong className="text-amber-300">{t('articleWhy.feature2Busy')}</strong>
               </li>
               <li className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30">
                 <span className="w-2 h-2 rounded-full bg-red-400" />
-                <strong className="text-red-300">Bloqueado</strong>
+                <strong className="text-red-300">{t('articleWhy.feature2Blocked')}</strong>
               </li>
             </ul>
           </div>
@@ -252,11 +262,11 @@ export function LandingArticle() {
             <div className="flex items-center gap-3 mb-3 sm:mb-4">
               <Megaphone className="h-6 w-6 shrink-0 text-indigo-400" />
               <h3 className="text-lg sm:text-xl font-bold text-white m-0 min-w-0">
-                3. Monitor de presupuestos de clientes (PPC)
+                {t('articleWhy.feature3Title')}
               </h3>
             </div>
             <p className="text-indigo-100/90 m-0">
-              Integramos vía API los datos de Meta Ads y Google Ads de tus clientes. Resultado: un panel donde controlas el consumo de las campañas de todos tus clientes en un solo lugar. Detecta sobrecostes antes de que ocurran y evita que la agencia pague de su bolsillo los errores humanos en presupuestos.
+              {t('articleWhy.feature3P')}
             </p>
           </div>
         </div>
@@ -266,10 +276,10 @@ export function LandingArticle() {
       <section className="mb-12 sm:mb-14">
         <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-4 sm:p-8 mb-6">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
-            Construido para escalar (developer-first)
+            {t('articleWhy.scaleTitle')}
           </h2>
           <p className="text-indigo-100/90 leading-relaxed">
-            No somos una herramienta «low-code» hecha con parches. Somos una infraestructura de ingeniería de software diseñada para empresas que se toman en serio sus datos.
+            {t('articleWhy.scaleP')}
           </p>
         </div>
 
@@ -277,30 +287,33 @@ export function LandingArticle() {
           <div className="rounded-xl border border-indigo-500/25 bg-indigo-950/40 p-4 sm:p-5 flex flex-col gap-2 sm:flex-row sm:gap-4">
             <Code className="h-5 w-5 text-indigo-400 shrink-0 mt-0.5" />
             <div className="min-w-0">
-              <p className="text-white font-semibold mb-1">API abierta y documentada</p>
+              <p className="text-white font-semibold mb-1">{t('articleWhy.apiTitle')}</p>
               <p className="text-indigo-100/90 text-sm m-0">
-                ¿Tienes un ERP o un CRM propio? Conecta nuestra API RESTful en minutos. Te entregamos los datos ya procesados (hours_computed), ahorrándote cientos de horas de ingeniería matemática.{' '}
-                <Link to="/api-docs" className="text-indigo-300 hover:text-white underline underline-offset-2 font-medium">
-                  Documentación completa →
-                </Link>
+                <Trans
+                  i18nKey="articleWhy.apiDesc"
+                  ns="landing"
+                  components={[
+                    <Link to="/api-docs" className="text-indigo-300 hover:text-white underline underline-offset-2 font-medium" key="1" />
+                  ]}
+                />
               </p>
             </div>
           </div>
           <div className="rounded-xl border border-emerald-500/25 bg-emerald-950/30 p-4 sm:p-5 flex flex-col gap-2 sm:flex-row sm:gap-4">
             <Shield className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
             <div className="min-w-0">
-              <p className="text-white font-semibold mb-1">Seguridad bancaria (RLS)</p>
+              <p className="text-white font-semibold mb-1">{t('articleWhy.securityTitle')}</p>
               <p className="text-indigo-100/90 text-sm m-0">
-                Tus datos están aislados a nivel de base de datos mediante Row Level Security. Es matemáticamente imposible que otra agencia acceda a tu información.
+                {t('articleWhy.securityDesc')}
               </p>
             </div>
           </div>
           <div className="rounded-xl border border-amber-500/25 bg-amber-950/30 p-4 sm:p-5 flex flex-col gap-2 sm:flex-row sm:gap-4">
             <Zap className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
             <div className="min-w-0">
-              <p className="text-white font-semibold mb-1">Tokens criptográficos</p>
+              <p className="text-white font-semibold mb-1">{t('articleWhy.tokensTitle')}</p>
               <p className="text-indigo-100/90 text-sm m-0">
-                Sistema de autenticación propio con firma HMAC SHA-256.
+                {t('articleWhy.tokensDesc')}
               </p>
             </div>
           </div>
@@ -317,7 +330,7 @@ export function LandingArticle() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="js" className="m-0 p-3 sm:p-5">
-              <p className="text-xs text-slate-400 mb-2 font-medium">Obtener rentabilidad por proyecto (paso 2 del tutorial de reportes)</p>
+              <p className="text-xs text-slate-400 mb-2 font-medium">{t('articleWhy.apiPreview1')}</p>
               <pre className="p-3 sm:p-4 rounded-lg bg-slate-900 text-xs sm:text-sm text-slate-200 overflow-x-auto font-mono leading-relaxed border border-white/5 min-w-0">
                 <code>{`const { data: projects } = await timeboxing
   .from('projects')
@@ -344,7 +357,15 @@ const report = projects?.map(p => {
               </pre>
             </TabsContent>
             <TabsContent value="curl" className="m-0 p-3 sm:p-5">
-              <p className="text-xs text-slate-400 mb-2 font-medium">Ejemplo de consulta a la API (allocations + hours_computed). Base URL y tokens: <Link to="/api-docs" className="text-indigo-300 hover:text-white underline">ver documentación</Link>.</p>
+              <p className="text-xs text-slate-400 mb-2 font-medium">
+                <Trans
+                  i18nKey="articleWhy.apiPreview2"
+                  ns="landing"
+                  components={[
+                    <Link to="/api-docs" className="text-indigo-300 hover:text-white underline" key="1" />
+                  ]}
+                />
+              </p>
               <pre className="p-3 sm:p-4 rounded-lg bg-slate-900 text-xs sm:text-sm text-slate-200 overflow-x-auto font-mono leading-relaxed border border-white/5 min-w-0">
                 <code>{`curl -X GET "https://api.taimbox.com/rest/v1/allocations?week_start_date=gte.2026-02-01&week_start_date=lte.2026-02-28&select=project_id,hours_assigned,hours_actual,hours_computed" \\
   -H "apikey: <ANON_KEY>" \\
@@ -352,13 +373,21 @@ const report = projects?.map(p => {
   -H "Content-Type: application/json"`}</code>
               </pre>
               <p className="text-[11px] text-slate-500 mt-2">
-                <strong className="text-slate-400">ANON_KEY:</strong> clave anónima de tu instancia Supabase. <strong className="text-slate-400">TU_API_TOKEN:</strong> JWT generado en Configuración → API & Integraciones.
+                <Trans
+                  i18nKey="articleWhy.apiPreviewLegend"
+                  ns="landing"
+                  components={[
+                    <strong className="text-slate-400" key="0" />,
+                    <span key="1" />,
+                    <strong className="text-slate-400" key="2" />
+                  ]}
+                />
               </p>
             </TabsContent>
           </Tabs>
           <div className="px-3 sm:px-5 pb-4">
             <Link to="/api-docs" className="text-sm text-indigo-300 hover:text-white underline underline-offset-2 font-medium">
-              Ver tutorial completo de reportes y rentabilidad →
+              {t('articleWhy.apiFullTutorialLink')}
             </Link>
           </div>
         </div>
@@ -368,17 +397,17 @@ const report = projects?.map(p => {
       <section className="mb-0">
         <div className="rounded-3xl border-2 border-indigo-500/30 bg-gradient-to-br from-indigo-600/20 via-purple-600/20 to-indigo-600/20 p-4 sm:p-10">
           <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4 text-center">
-            Deja de adivinar, empieza a saber
+            {t('articleWhy.finalTitle')}
           </h2>
           <p className="text-indigo-100/95 mb-4 text-base sm:text-lg leading-relaxed text-center">
-            El timeboxing es la metodología. Nuestra plataforma es la herramienta. Tienes dos opciones:
+            {t('articleWhy.finalP')}
           </p>
           <ol className="list-decimal list-inside text-indigo-100/95 space-y-2 mb-6 pl-1 text-left max-w-lg mx-auto">
-            <li>Seguir gestionando tu agencia con intuición y hojas de Excel que se rompen.</li>
-            <li>Implementar un sistema que alinea tus operaciones con tus finanzas automáticamente.</li>
+            <li>{t('articleWhy.finalL1')}</li>
+            <li>{t('articleWhy.finalL2')}</li>
           </ol>
           <p className="text-indigo-100/90 mb-8 text-base text-center">
-            La tecnología ya está aquí. La API está lista. Tu equipo te lo agradecerá.
+            {t('articleWhy.finalOutro')}
           </p>
           <div className="text-center">
             <Link to="/login">
@@ -386,12 +415,12 @@ const report = projects?.map(p => {
                 size="lg"
                 className="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-12 py-7 text-lg font-bold shadow-2xl shadow-indigo-500/30 rounded-xl"
               >
-                Empezar prueba gratuita
+                {t('articleWhy.finalCta')}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
             <p className="mt-3 text-sm text-indigo-200/80">
-              No requiere tarjeta de crédito. Configuración en 2 minutos.
+              {t('articleWhy.finalNotice')}
             </p>
           </div>
         </div>

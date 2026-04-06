@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, CalendarDays, BarChartIcon, Gauge, Link2, ArrowRight } from 'lucide-react';
@@ -17,6 +18,7 @@ import { WorkSchedule, Allocation, Employee } from '@/types';
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 export default function TeamCapacityDashboard() {
+    const { t } = useTranslation('app');
     const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
     const { employees, allocations, absences, teamEvents, projects } = useApp();
 
@@ -177,22 +179,22 @@ export default function TeamCapacityDashboard() {
                 <div>
                     <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
                         <Users className="h-6 w-6 text-indigo-600" />
-                        Capacidad de Equipo
+                        {t('teamCapacityDashboard.title', 'Capacidad de Equipo')}
                     </h1>
                     <p className="text-slate-500 mt-1">
-                        Mapa de calor pasivo y análisis de cuellos de botella.
+                        {t('teamCapacityDashboard.subtitle', 'Mapa de calor pasivo y análisis de cuellos de botella.')}
                     </p>
                 </div>
                 <div className="flex items-center gap-2 bg-white rounded-lg border p-1 shadow-sm shrink-0">
                     <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-8 w-8 text-slate-500">
-                        <span className="sr-only">Mes anterior</span>
+                        <span className="sr-only">{t('teamCapacityDashboard.controls.prevMonth', 'Mes anterior')}</span>
                         &lt;
                     </Button>
                     <Button variant="ghost" onClick={handleToday} className="h-8 px-3 text-sm font-medium text-slate-700 capitalize">
                         {format(currentMonth, 'MMM yyyy', { locale: es })}
                     </Button>
                     <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-8 w-8 text-slate-500">
-                        <span className="sr-only">Mes siguiente</span>
+                        <span className="sr-only">{t('teamCapacityDashboard.controls.nextMonth', 'Mes siguiente')}</span>
                         &gt;
                     </Button>
                 </div>
@@ -202,26 +204,26 @@ export default function TeamCapacityDashboard() {
                 {/* KPIs Rápidos */}
                 <Card className={cn("shadow-sm border-l-4", averageLoad > 100 ? "border-amber-500 bg-amber-50/30" : "border-emerald-500 bg-emerald-50/30")}>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-slate-500">Ocupación Media (Mes)</CardTitle>
+                        <CardTitle className="text-sm font-medium text-slate-500">{t('teamCapacityDashboard.kpis.averageLoad.title', 'Ocupación Media (Mes)')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold flex items-center gap-2 relative z-10">
                             {averageLoad.toFixed(1)}%
                         </div>
-                        <p className="text-xs text-slate-500 mt-1 relative z-10">Capacidad planificada vs disponible</p>
+                        <p className="text-xs text-slate-500 mt-1 relative z-10">{t('teamCapacityDashboard.kpis.averageLoad.subtitle', 'Capacidad planificada vs disponible')}</p>
                     </CardContent>
                 </Card>
 
                 {/* KPI: Tareas bloqueadas */}
                 <Card className={cn("shadow-sm border-l-4", blockedDependencies.length > 0 ? "border-orange-500 bg-orange-50/30" : "border-emerald-500 bg-emerald-50/30")}>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-slate-500">Cuellos de Botella</CardTitle>
+                        <CardTitle className="text-sm font-medium text-slate-500">{t('teamCapacityDashboard.kpis.bottlenecks.title', 'Cuellos de Botella')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold flex items-center gap-2 relative z-10">
                             {blockedDependencies.length}
                         </div>
-                        <p className="text-xs text-slate-500 mt-1 relative z-10">Tareas bloqueadas por dependencias</p>
+                        <p className="text-xs text-slate-500 mt-1 relative z-10">{t('teamCapacityDashboard.kpis.bottlenecks.subtitle', 'Tareas bloqueadas por dependencias')}</p>
                     </CardContent>
                 </Card>
 
@@ -230,30 +232,30 @@ export default function TeamCapacityDashboard() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <CalendarDays className="h-5 w-5 text-indigo-500" />
-                            Mapa de Calor Semanal
+                            {t('teamCapacityDashboard.heatmap.title', 'Mapa de Calor Semanal')}
                         </CardTitle>
                         <CardDescription>
-                            Visualización rápida de quién está sobrecargado o disponible.
+                            {t('teamCapacityDashboard.heatmap.description', 'Visualización rápida de quién está sobrecargado o disponible.')}
                             <span className="ml-2 mt-2 sm:mt-0 inline-flex items-center gap-1 flex-wrap text-[10px] sm:text-xs">
-                                <span className="h-2 w-2 rounded bg-emerald-500" /> Óptimo (50-80%)
-                                <span className="h-2 w-2 rounded bg-emerald-600 ml-1 sm:ml-2" /> Alto (80-100%)
-                                <span className="h-2 w-2 rounded bg-amber-500 ml-1 sm:ml-2" /> Muy alto (100-120%)
-                                <span className="h-2 w-2 rounded bg-red-500 ml-1 sm:ml-2" /> Sobrecargado (+120%)
-                                <span className="h-2 w-2 rounded bg-blue-200 ml-1 sm:ml-2" /> Bajo (&lt;50%)
+                                <span className="h-2 w-2 rounded bg-emerald-500" /> {t('teamCapacityDashboard.heatmap.legend.optimal', 'Óptimo (50-80%)')}
+                                <span className="h-2 w-2 rounded bg-emerald-600 ml-1 sm:ml-2" /> {t('teamCapacityDashboard.heatmap.legend.high', 'Alto (80-100%)')}
+                                <span className="h-2 w-2 rounded bg-amber-500 ml-1 sm:ml-2" /> {t('teamCapacityDashboard.heatmap.legend.veryHigh', 'Muy alto (100-120%)')}
+                                <span className="h-2 w-2 rounded bg-red-500 ml-1 sm:ml-2" /> {t('teamCapacityDashboard.heatmap.legend.overloaded', 'Sobrecargado (+120%)')}
+                                <span className="h-2 w-2 rounded bg-blue-200 ml-1 sm:ml-2" /> {t('teamCapacityDashboard.heatmap.legend.low', 'Bajo (<50%)')}
                             </span>
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         {heatmapData.length === 0 ? (
                             <div className="text-center py-8 text-muted-foreground">
-                                <p>No hay datos para mostrar</p>
+                                <p>{t('teamCapacityDashboard.heatmap.emptyState', 'No hay datos para mostrar')}</p>
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr className="border-b">
-                                            <th className="text-left py-2 px-3 font-medium text-muted-foreground w-28 sm:w-40">Empleado</th>
+                                            <th className="text-left py-2 px-3 font-medium text-muted-foreground w-28 sm:w-40">{t('teamCapacityDashboard.heatmap.columns.employee', 'Empleado')}</th>
                                             {heatmapData[0]?.weeklyLoad.map(week => (
                                                 <th key={week.week} className="text-center py-2 px-2 font-medium text-muted-foreground min-w-[70px] sm:min-w-[90px]">
                                                     {week.weekLabel}
@@ -301,26 +303,26 @@ export default function TeamCapacityDashboard() {
                                                                         {' '}- {week.weekLabel}
                                                                     </p>
                                                                     <div className="space-y-0.5 text-xs">
-                                                                        <p><span className="font-medium">Horas asignadas:</span> {week.hours}h</p>
-                                                                        <p><span className="font-medium">Capacidad semanal:</span> {week.capacity}h</p>
-                                                                        <p><span className="font-medium">Ocupación:</span> {week.percentage.toFixed(1)}%</p>
+                                                                        <p><span className="font-medium">{t('teamCapacityDashboard.heatmap.tooltip.assignedHours', 'Horas asignadas:')}</span> {week.hours}h</p>
+                                                                        <p><span className="font-medium">{t('teamCapacityDashboard.heatmap.tooltip.weeklyCapacity', 'Capacidad semanal:')}</span> {week.capacity}h</p>
+                                                                        <p><span className="font-medium">{t('teamCapacityDashboard.heatmap.tooltip.occupancy', 'Ocupación:')}</span> {week.percentage.toFixed(1)}%</p>
                                                                         {week.percentage === 0 && (
-                                                                            <p className="text-slate-500 mt-1">Sin asignaciones esta semana</p>
+                                                                            <p className="text-slate-500 mt-1">{t('teamCapacityDashboard.heatmap.tooltip.noAssignments', 'Sin asignaciones esta semana')}</p>
                                                                         )}
                                                                         {week.percentage > 0 && week.percentage < 50 && (
-                                                                            <p className="text-blue-600 mt-1">Carga baja - Capacidad disponible</p>
+                                                                            <p className="text-blue-600 mt-1">{t('teamCapacityDashboard.heatmap.tooltip.lowLoad', 'Carga baja - Capacidad disponible')}</p>
                                                                         )}
                                                                         {week.percentage >= 50 && week.percentage < 80 && (
-                                                                            <p className="text-emerald-600 mt-1">Carga óptima</p>
+                                                                            <p className="text-emerald-600 mt-1">{t('teamCapacityDashboard.heatmap.tooltip.optimalLoad', 'Carga óptima')}</p>
                                                                         )}
                                                                         {week.percentage >= 80 && week.percentage <= 100 && (
-                                                                            <p className="text-emerald-700 mt-1">Carga alta - Cerca del límite</p>
+                                                                            <p className="text-emerald-700 mt-1">{t('teamCapacityDashboard.heatmap.tooltip.highLoad', 'Carga alta - Cerca del límite')}</p>
                                                                         )}
                                                                         {week.percentage > 100 && week.percentage <= 120 && (
-                                                                            <p className="text-amber-700 mt-1">⚠️ Sobrecarga moderada</p>
+                                                                            <p className="text-amber-700 mt-1">{t('teamCapacityDashboard.heatmap.tooltip.moderateOverload', '⚠️ Sobrecarga moderada')}</p>
                                                                         )}
                                                                         {week.percentage > 120 && (
-                                                                            <p className="text-red-700 mt-1">🚨 Sobrecarga crítica</p>
+                                                                            <p className="text-red-700 mt-1">{t('teamCapacityDashboard.heatmap.tooltip.criticalOverload', '🚨 Sobrecarga crítica')}</p>
                                                                         )}
                                                                     </div>
                                                                 </TooltipContent>
@@ -343,11 +345,11 @@ export default function TeamCapacityDashboard() {
                         <CardHeader className="pb-3">
                             <CardTitle className="flex items-center gap-2 text-lg">
                                 <Link2 className="h-5 w-5 text-orange-500" />
-                                Tareas bloqueadas por dependencias
+                                {t('teamCapacityDashboard.blockedTasks.title', 'Tareas bloqueadas por dependencias')}
                                 <Badge variant="secondary" className="ml-2">{blockedDependencies.length}</Badge>
                             </CardTitle>
                             <CardDescription>
-                                Tareas que no pueden avanzar hasta que se complete su dependencia
+                                {t('teamCapacityDashboard.blockedTasks.subtitle', 'Tareas que no pueden avanzar hasta que se complete su dependencia')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -398,7 +400,7 @@ export default function TeamCapacityDashboard() {
                                                     variant={dep.weeksSinceBlocked >= 2 ? 'destructive' : 'secondary'}
                                                     className="text-xs"
                                                 >
-                                                    {dep.weeksSinceBlocked} {dep.weeksSinceBlocked === 1 ? 'semana' : 'semanas'} esperando
+                                                    {dep.weeksSinceBlocked} {dep.weeksSinceBlocked === 1 ? t('teamCapacityDashboard.blockedTasks.waitingWeek', 'semana esperando') : t('teamCapacityDashboard.blockedTasks.waitingWeeks', 'semanas esperando')}
                                                 </Badge>
                                             )}
                                         </div>
@@ -406,7 +408,7 @@ export default function TeamCapacityDashboard() {
                                 ))}
                                 {blockedDependencies.length > 5 && (
                                     <p className="text-xs text-muted-foreground text-center pt-2">
-                                        +{blockedDependencies.length - 5} tareas bloqueadas más
+                                        {t('teamCapacityDashboard.blockedTasks.moreBlocked', { count: blockedDependencies.length - 5, defaultValue: `+${blockedDependencies.length - 5} tareas bloqueadas más` })}
                                     </p>
                                 )}
                             </div>

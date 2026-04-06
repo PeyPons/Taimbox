@@ -9,7 +9,9 @@ import {
     Table2, Mail, Gauge, FileText,
 } from 'lucide-react';
 
-import { Helmet } from 'react-helmet-async';
+import { useTranslation } from 'react-i18next';
+import { pathEsToEn } from '@/i18n/publicPaths';
+import { SeoTags } from '@/seo/SeoTags';
 import {
     MockPlanningGrid, MockAllocationSheet, MockDashboard,
     MockTeamCapacity, MockReportsDashboard, MockDeadlines,
@@ -628,6 +630,8 @@ const SLIDES = [
 
 /* ─── MAIN PAGE ─── */
 export default function PresentationPage() {
+    const { t, i18n } = useTranslation('landing');
+    const lang = i18n.language.startsWith('en') ? 'en' : 'es';
     const [current, setCurrent] = useState(0);
     const total = SLIDES.length;
 
@@ -663,10 +667,14 @@ export default function PresentationPage() {
 
     return (
         <>
-            <Helmet>
-                <title>Taimbox — Presentación</title>
-                <meta name="robots" content="noindex, nofollow" />
-            </Helmet>
+            <SeoTags
+                pathEs="/pitch"
+                pathEn={pathEsToEn('/pitch')}
+                title={t('static.pitch.seoTitle')}
+                description={t('static.pitch.seoDescription')}
+                lang={lang}
+                robots="noindex, nofollow"
+            />
             <div className="fixed inset-0 bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 overflow-hidden overflow-x-hidden select-none min-w-0">
                 {/* BG effects */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">

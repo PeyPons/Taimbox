@@ -26,6 +26,7 @@ import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 import { useOperationsRadarMonthState } from '@/hooks/useOperationsRadarMonthState';
 import { useOperationsRadarData, type ProjectRowItem, type ProjectStatusType } from '@/hooks/useOperationsRadarData';
 import { round2 } from '@/utils/numbers';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 
 export default function OperationsRadarPage() {
     const [searchParams] = useSearchParams();
@@ -34,6 +35,7 @@ export default function OperationsRadarPage() {
     const { currentAgency } = useAgency();
     const { selectedDepartmentId, setSelectedDepartmentId } = useDepartmentView();
     const { formatName: formatProjectName } = useProjectAliasing();
+    const { t } = useAppTranslation();
 
     const [globalSearchQuery, setGlobalSearchQuery] = useState('');
 
@@ -80,7 +82,7 @@ export default function OperationsRadarPage() {
         deadlines
     });
 
-    
+
     const { employeesForView, atRiskProjects, allProjectsForView } = useOperationsRadarData({
         projectMetrics,
         viewDate,
@@ -245,8 +247,8 @@ export default function OperationsRadarPage() {
 
             // Para cada tarea bloqueada: nombre de la tarea y de la persona bloqueada
             const blockedTaskDetails = waitingAllocs.map(wa => ({
-                taskName: wa.taskName || 'Tarea sin nombre',
-                employeeName: employees?.find(e => e.id === wa.employeeId)?.name ?? 'Alguien',
+                taskName: wa.taskName || t('operationsRadar.unnamedTask', 'Tarea sin nombre'),
+                employeeName: employees?.find(e => e.id === wa.employeeId)?.name ?? t('operationsRadar.somebody', 'Alguien'),
                 allocationId: wa.id,
                 employeeId: wa.employeeId,
             }));
@@ -276,31 +278,31 @@ export default function OperationsRadarPage() {
                     <div>
                         <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
                             <Activity className="h-6 w-6 text-indigo-600" />
-                            Seguimiento operativo
+                            {t('operationsRadar.title')}
                         </h1>
                         <p className="text-slate-500 mt-1">
-                            Revisión diaria de procesos en riesgo y desviaciones. La búsqueda aplica a ambos paneles.
+                            {t('operationsRadar.description')}
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                         <div className="relative min-w-[200px] max-w-[320px]">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
-                                placeholder="Buscar proyecto o cliente..."
+                                placeholder={t('operationsRadar.searchPlaceholder')}
                                 value={globalSearchQuery}
                                 onChange={(e) => setGlobalSearchQuery(e.target.value)}
                                 className="pl-9 h-10"
-                                aria-label="Buscar en Seguimiento operativo (aplica a ambos paneles)"
+                                aria-label={t('operationsRadar.searchAria')}
                             />
                         </div>
                         <div className="flex items-center gap-1 bg-white rounded-lg border p-1 shadow-sm">
-                            <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-9 w-9 text-slate-500" aria-label="Mes anterior">
+                            <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-9 w-9 text-slate-500" aria-label={t('operationsRadar.prevMonth')}>
                                 &lt;
                             </Button>
                             <Button variant="ghost" onClick={handleToday} className="h-9 px-3 text-sm font-medium text-slate-700 capitalize">
                                 {format(viewDate, 'MMM yyyy', { locale: es })}
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-9 w-9 text-slate-500" aria-label="Mes siguiente">
+                            <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-9 w-9 text-slate-500" aria-label={t('operationsRadar.nextMonth')}>
                                 &gt;
                             </Button>
                         </div>
@@ -321,8 +323,8 @@ export default function OperationsRadarPage() {
                         <span className="flex items-center gap-2 text-sm font-medium text-slate-700">
                             <GitBranch className="h-4 w-4 text-slate-500 shrink-0" />
                             {blockingTasksForView.length > 0
-                                ? `${blockingTasksForView.length} tarea${blockingTasksForView.length !== 1 ? 's' : ''} bloquean al equipo`
-                                : 'Nada bloquea al equipo este mes'}
+                                ? t('operationsRadar.blockingTasks', { count: blockingTasksForView.length, defaultValue: '{{count}} tareas bloquean al equipo' })
+                                : t('operationsRadar.noBlockingTasks', 'Nada bloquea al equipo este mes')}
                         </span>
                         <ChevronDown className={cn("h-4 w-4 text-slate-400 shrink-0 transition-transform", blockingSectionOpen && "rotate-180")} />
                     </button>
@@ -330,12 +332,12 @@ export default function OperationsRadarPage() {
                 <CollapsibleContent>
                     <div className="px-4 pb-3 pt-0 border-t border-slate-100">
                         {blockingTasksForView.length === 0 ? (
-                            <p className="text-xs text-slate-500 pt-3">Todas las tareas de las que dependen otras están completadas o no hay dependencias este mes.</p>
+                            <p className="text-xs text-slate-500 pt-3">{t('operationsRadar.noBlockingDetails', 'Todas las tareas de las que dependen otras están completadas o no hay dependencias este mes.')}</p>
                         ) : (
                             <ul className="space-y-2 pt-3">
                                 {blockingTasksForView.map(({ allocation, projectName, clientName, clientId, blockerEmployee, waitingEmployees, blockedTaskDetails }) => {
-                                    const blockerName = blockerEmployee?.name ?? 'Alguien';
-                                    const blockerTaskName = allocation.taskName || 'Tarea sin nombre';
+                                    const blockerName = blockerEmployee?.name ?? t('operationsRadar.somebody', 'Alguien');
+                                    const blockerTaskName = allocation.taskName || t('operationsRadar.unnamedTask', 'Tarea sin nombre');
 
                                     return (
                                         <li key={allocation.id} className="flex items-start gap-3 py-3 px-3 rounded-md bg-slate-50/80 text-xs border border-slate-100">
@@ -351,10 +353,10 @@ export default function OperationsRadarPage() {
                                                     <span className="text-amber-700">
                                                         <SensitiveText kind="employee" id={allocation.employeeId}>{blockerName}</SensitiveText>
                                                     </span>
-                                                    {' bloquea a '}
+                                                    {t('operationsRadar.blocks', ' bloquea a ')}
                                                     <span className="text-slate-700">
                                                         {waitingEmployees.length === 0
-                                                            ? 'otras tareas'
+                                                            ? t('operationsRadar.otherTasks', 'otras tareas')
                                                             : waitingEmployees.map((e, i) => (
                                                                 <span key={e.id}>
                                                                     {i > 0 && ', '}
@@ -365,7 +367,7 @@ export default function OperationsRadarPage() {
                                                 </p>
                                                 {/* Tarea del bloqueador */}
                                                 <p className="text-[11px] text-slate-600">
-                                                    <span className="font-medium text-slate-500">Tarea bloqueadora:</span>{' '}
+                                                    <span className="font-medium text-slate-500">{t('operationsRadar.blockerTask', 'Tarea bloqueadora:')}</span>{' '}
                                                     <span className="text-slate-800" title={blockerTaskName}>
                                                         <SensitiveText kind="task" id={allocation.id}>{blockerTaskName}</SensitiveText>
                                                     </span>
@@ -374,7 +376,7 @@ export default function OperationsRadarPage() {
                                                 {blockedTaskDetails.length > 0 && (
                                                     <div className="text-[11px]">
                                                         <span className="font-medium text-slate-500">
-                                                            {blockedTaskDetails.length === 1 ? 'Tarea bloqueada:' : 'Tareas bloqueadas:'}
+                                                            {blockedTaskDetails.length === 1 ? t('operationsRadar.blockedTask_one', 'Tarea bloqueada:') : t('operationsRadar.blockedTask_other', 'Tareas bloqueadas:')}
                                                         </span>
                                                         <ul className="mt-0.5 list-none space-y-0.5 pl-0">
                                                             {blockedTaskDetails.map((b, i) => (
@@ -425,13 +427,13 @@ export default function OperationsRadarPage() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Activity className="h-5 w-5 text-slate-600" />
-                                Estado de proyectos
+                                {t('operationsRadar.projectsStatus', 'Estado de proyectos')}
                             </CardTitle>
                             <CardDescription className="flex flex-col gap-1">
-                                <span>Cómo van los proyectos este mes. Filtra por nivel de aviso si lo necesitas.</span>
+                                <span>{t('operationsRadar.projectsDesc', 'Cómo van los proyectos este mes. Filtra por nivel de aviso si lo necesitas.')}</span>
                                 {departmentNameForView && (
                                     <span className="text-amber-700 font-medium">
-                                        Vista filtrada por departamento: {departmentNameForView}
+                                        {t('operationsRadar.filteredView', { department: departmentNameForView, defaultValue: 'Vista filtrada por departamento: {{department}}' })}
                                     </span>
                                 )}
                             </CardDescription>
@@ -442,12 +444,12 @@ export default function OperationsRadarPage() {
                                     <PlayCircle className="h-12 w-12 mx-auto mb-2 text-emerald-300" />
                                     <p className="text-sm font-medium text-slate-700">
                                         {allProjectsForView.length === 0
-                                            ? (departmentNameForView ? `No hay proyectos para ${departmentNameForView} este mes.` : 'No hay proyectos este mes.')
-                                            : 'Ningún proyecto con los filtros actuales.'}
+                                            ? (departmentNameForView ? t('operationsRadar.noProjectsForDepartment', { department: departmentNameForView, defaultValue: 'No hay proyectos para {{department}} este mes.' }) : t('operationsRadar.noProjects', 'No hay proyectos este mes.'))
+                                            : t('operationsRadar.noFilteredProjects', 'Ningún proyecto con los filtros actuales.')}
                                     </p>
                                     {statusFilter !== 'all' && (
                                         <Button variant="outline" size="sm" className="mt-2" onClick={() => setStatusFilter('all')}>
-                                            Ver todos
+                                            {t('operationsRadar.showAll', 'Ver todos')}
                                         </Button>
                                     )}
                                 </div>
@@ -462,7 +464,7 @@ export default function OperationsRadarPage() {
                                                 className={cn("h-8 text-xs gap-1.5", statusFilter === 'all' ? "bg-slate-900" : "bg-white")}
                                             >
                                                 <LayoutGrid className="h-3.5 w-3.5" />
-                                                Todos
+                                                {t('operationsRadar.filterAll', 'Todos')}
                                                 <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">
                                                     {filterCounts.all}
                                                 </Badge>
@@ -477,7 +479,7 @@ export default function OperationsRadarPage() {
                                                             className={cn("h-8 text-xs gap-1.5", statusFilter === 'no-activity' ? "bg-slate-700" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
                                                         >
                                                             <Ban className="h-3.5 w-3.5" />
-                                                            Sin actividad
+                                                            {t('operationsRadar.filterNoActivity', 'Sin actividad')}
                                                             {filterCounts['no-activity'] > 0 && (
                                                                 <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px] bg-slate-200">
                                                                     {filterCounts['no-activity']}
@@ -486,7 +488,7 @@ export default function OperationsRadarPage() {
                                                         </Button>
                                                     </TooltipTrigger>
                                                     <TooltipContent side="bottom" className="max-w-[200px] text-center">
-                                                        <p className="text-xs">Proyectos con objetivo pero sin tareas planificadas ni computadas este mes</p>
+                                                        <p className="text-xs">{t('operationsRadar.tooltipNoActivity', 'Proyectos con objetivo pero sin tareas planificadas ni computadas este mes')}</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
@@ -500,7 +502,7 @@ export default function OperationsRadarPage() {
                                                             className={cn("h-8 text-xs gap-1.5", statusFilter === 'needs-planning' ? "bg-amber-600 hover:bg-amber-700" : "bg-white border-amber-200 text-amber-700 hover:bg-amber-50")}
                                                         >
                                                             <CircleDashed className="h-3.5 w-3.5" />
-                                                            Falta planificar
+                                                            {t('operationsRadar.filterNeedsPlanning', 'Falta planificar')}
                                                             {filterCounts['needs-planning'] > 0 && (
                                                                 <Badge className={cn("ml-1 h-5 px-1.5 text-[10px]", statusFilter === 'needs-planning' ? "bg-amber-700" : "bg-amber-100 text-amber-700")}>
                                                                     {filterCounts['needs-planning']}
@@ -509,7 +511,7 @@ export default function OperationsRadarPage() {
                                                         </Button>
                                                     </TooltipTrigger>
                                                     <TooltipContent side="bottom" className="max-w-[200px] text-center">
-                                                        <p className="text-xs">Proyectos con tareas pendientes de completar este mes</p>
+                                                        <p className="text-xs">{t('operationsRadar.tooltipNeedsPlanning', 'Proyectos con tareas pendientes de completar este mes')}</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
@@ -523,7 +525,7 @@ export default function OperationsRadarPage() {
                                                             className={cn("h-8 text-xs gap-1.5", statusFilter === 'behind-schedule' ? "bg-orange-600 hover:bg-orange-700" : "bg-white border-orange-200 text-orange-700 hover:bg-orange-50")}
                                                         >
                                                             <Clock className="h-3.5 w-3.5" />
-                                                            Retrasados
+                                                            {t('operationsRadar.filterBehindSchedule', 'Retrasados')}
                                                             {filterCounts['behind-schedule'] > 0 && (
                                                                 <Badge className={cn("ml-1 h-5 px-1.5 text-[10px]", statusFilter === 'behind-schedule' ? "bg-orange-700" : "bg-orange-100 text-orange-700")}>
                                                                     {filterCounts['behind-schedule']}
@@ -532,7 +534,7 @@ export default function OperationsRadarPage() {
                                                         </Button>
                                                     </TooltipTrigger>
                                                     <TooltipContent side="bottom" className="max-w-[220px] text-center">
-                                                        <p className="text-xs">Por debajo del objetivo o poco avance (ritmo bajo / poco avance)</p>
+                                                        <p className="text-xs">{t('operationsRadar.tooltipBehindSchedule', 'Por debajo del objetivo o poco avance (ritmo bajo / poco avance)')}</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
@@ -546,7 +548,7 @@ export default function OperationsRadarPage() {
                                                             className={cn("h-8 text-xs gap-1.5", statusFilter === 'over-budget' ? "bg-red-600 hover:bg-red-700" : "bg-white border-red-200 text-red-700 hover:bg-red-50")}
                                                         >
                                                             <AlertOctagon className="h-3.5 w-3.5" />
-                                                            Exceso horas
+                                                            {t('operationsRadar.filterOverBudget', 'Exceso horas')}
                                                             {filterCounts['over-budget'] > 0 && (
                                                                 <Badge className={cn("ml-1 h-5 px-1.5 text-[10px]", statusFilter === 'over-budget' ? "bg-red-700" : "bg-red-100 text-red-700")}>
                                                                     {filterCounts['over-budget']}
@@ -555,7 +557,7 @@ export default function OperationsRadarPage() {
                                                         </Button>
                                                     </TooltipTrigger>
                                                     <TooltipContent side="bottom" className="max-w-[200px] text-center">
-                                                        <p className="text-xs">Proyectos que superan el presupuesto del mes</p>
+                                                        <p className="text-xs">{t('operationsRadar.tooltipOverBudget', 'Proyectos que superan el presupuesto del mes')}</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
@@ -569,7 +571,7 @@ export default function OperationsRadarPage() {
                                                             className={cn("h-8 text-xs gap-1.5", statusFilter === 'in-rule' ? "bg-emerald-600 hover:bg-emerald-700" : "bg-white border-emerald-200 text-emerald-700 hover:bg-emerald-50")}
                                                         >
                                                             <CheckCircle2 className="h-3.5 w-3.5" />
-                                                            En regla
+                                                            {t('operationsRadar.filterInRule', 'En regla')}
                                                             {filterCounts['in-rule'] > 0 && (
                                                                 <Badge className={cn("ml-1 h-5 px-1.5 text-[10px]", statusFilter === 'in-rule' ? "bg-emerald-700" : "bg-emerald-100 text-emerald-700")}>
                                                                     {filterCounts['in-rule']}
@@ -578,308 +580,308 @@ export default function OperationsRadarPage() {
                                                         </Button>
                                                     </TooltipTrigger>
                                                     <TooltipContent side="bottom" className="max-w-[220px] text-center">
-                                                        <p className="text-xs">Al día, sin exceso y sin tareas pendientes de planificar</p>
+                                                        <p className="text-xs">{t('operationsRadar.tooltipInRule', 'Al día, sin exceso y sin tareas pendientes de planificar')}</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
                                         </div>
                                     </div>
                                     {displayList.length === 0 ? (
-                                        <p className="text-sm text-slate-500 py-4 text-center">Ningún resultado con los filtros actuales.</p>
+                                        <p className="text-sm text-slate-500 py-4 text-center">{t('operationsRadar.noResults', 'Ningún resultado con los filtros actuales.')}</p>
                                     ) : (
                                         <>
                                             <p className="text-xs text-slate-500">
-                                                {displayList.length} proyecto{displayList.length !== 1 ? 's' : ''}.
+                                                {t('operationsRadar.projectsFound', { count: displayList.length, defaultValue: '{{count}} proyectos.' })}
                                             </p>
                                             <div className="space-y-1">
                                                 {displayList.map((row, idx) => {
-                                        const project = projects.find(p => p.id === row.projectId);
-                                        const deptName = project?.responsibleDepartmentId
-                                            ? departments.find(d => d.id === project.responsibleDepartmentId || d.name === project.responsibleDepartmentId)?.name
-                                            : null;
-                                        const progressPct = row.budget > 0 ? Math.min(120, (row.computed / row.budget) * 100) : 0;
-                                        const isOverBudget = row.riskType === 'overBudget';
-                                        const hoursRemaining = Math.max(0, row.budget - row.computed);
-                                        const hoursOver = Math.max(0, row.computed - row.budget);
-                                        const isExpanded = expandedAlerts.has(row.projectId);
-                                        const actionPhrase = isOverBudget
-                                            ? `${hoursOver.toFixed(1)}h por encima del acuerdo.`
-                                            : row.riskType === 'lowProgress'
-                                                ? `Faltan ${hoursRemaining.toFixed(1)}h para el objetivo del mes.`
-                                                : row.riskType === 'lowPace'
-                                                    ? `Ritmo bajo para llegar al objetivo.`
-                                                    : row.status === 'in-rule' && hoursRemaining > 0
-                                                        ? `Objetivo: ${row.budget.toFixed(1)}h. Faltan ${hoursRemaining.toFixed(1)}h por computar.`
+                                                    const project = projects.find(p => p.id === row.projectId);
+                                                    const deptName = project?.responsibleDepartmentId
+                                                        ? departments.find(d => d.id === project.responsibleDepartmentId || d.name === project.responsibleDepartmentId)?.name
                                                         : null;
-                                        const statusLabel = row.status === 'over-budget' ? 'Exceso horas' : row.status === 'behind-schedule' ? 'Retrasados' : row.status === 'needs-planning' ? 'Falta planificar' : row.status === 'no-activity' ? 'Sin actividad' : 'En regla';
-                                        return (
-                                            <Collapsible
-                                                key={`${row.projectId}-${idx}`}
-                                                open={isExpanded}
-                                                onOpenChange={() => toggleAlert(row.projectId)}
-                                            >
-                                                <div
-                                                    className={cn(
-                                                        "rounded-lg border transition-colors",
-                                                        row.status === 'over-budget' ? 'bg-red-50/50 border-red-200' :
-                                                        row.status === 'behind-schedule' ? 'bg-orange-50/50 border-orange-200' :
-                                                        row.status === 'needs-planning' ? 'bg-amber-50/50 border-amber-200' :
-                                                        row.status === 'no-activity' ? 'bg-slate-50/50 border-slate-200' :
-                                                        'bg-emerald-50/30 border-emerald-200/80'
-                                                    )}
-                                                >
-                                                    <CollapsibleTrigger asChild>
-                                                        <div className="flex flex-col gap-2 p-3 hover:bg-black/5 cursor-pointer rounded-lg">
-                                                            <div className="flex items-center gap-2">
-                                                                <ChevronDown className={cn("h-4 w-4 text-slate-400 shrink-0 transition-transform", isExpanded && "rotate-180")} />
-                                                                <div className="min-w-0 flex-1 text-left">
-                                                                <h4 className="text-sm font-semibold text-slate-900 truncate">
-                                                                        <SensitiveText kind="project" id={row.projectId}>
-                                                                            {formatProjectName(row.projectName)}
-                                                                        </SensitiveText>
-                                                                </h4>
-                                                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5 text-xs text-slate-600">
-                                                                        {row.clientName && project?.clientId && (
-                                                                            <span>
-                                                                                <SensitiveText kind="account" id={project.clientId}>{row.clientName}</SensitiveText>
-                                                                            </span>
-                                                                        )}
-                                                                        {row.clientName && !project?.clientId && <span>{row.clientName}</span>}
-                                                                        {deptName && (
-                                                                            <span className="text-slate-500">
-                                                                                ·{' '}
-                                                                                <SensitiveText
-                                                                                    kind="department"
-                                                                                    id={project?.responsibleDepartmentId ?? 'dept-unknown'}
-                                                                                >
-                                                                                    {deptName}
-                                                                                </SensitiveText>
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                                <Badge
-                                                                    variant="outline"
-                                                                    className={cn(
-                                                                        "shrink-0",
-                                                                        row.status === 'over-budget' && "bg-red-100 text-red-800 border-red-200",
-                                                                        row.status === 'behind-schedule' && "bg-orange-100 text-orange-800 border-orange-200",
-                                                                        row.status === 'needs-planning' && "bg-amber-100 text-amber-800 border-amber-200",
-                                                                        row.status === 'no-activity' && "bg-slate-100 text-slate-700 border-slate-200",
-                                                                        row.status === 'in-rule' && "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                                                    )}
-                                                                >
-                                                                    {statusLabel}
-                                                                </Badge>
-                                                            </div>
-                                                            {row.budget > 0 && (
-                                                                <div className="flex flex-wrap items-center gap-3 pl-6">
-                                                                    <div className="flex items-baseline gap-1.5">
-                                                                        <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">Contratadas</span>
-                                                                        <span className="font-mono text-sm font-semibold text-slate-800">{row.budget}h</span>
-                                                                    </div>
-                                                                    <div className="flex items-baseline gap-1.5">
-                                                                        <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">Computadas</span>
-                                                                        <span className={cn("font-mono text-sm font-semibold", isOverBudget ? "text-red-600" : "text-amber-600")}>{row.computed.toFixed(1)}h</span>
-                                                                    </div>
-                                                                    <div className="flex items-baseline gap-1.5">
-                                                                        <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">Por computar</span>
-                                                                        <span className="font-mono text-sm font-semibold text-blue-600">{hoursRemaining.toFixed(1)}h</span>
-                                                                    </div>
-                                                                    <div className="flex-1 min-w-[80px] flex items-center gap-2">
-                                                                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden max-w-[120px]">
-                                                                            <div
+                                                    const progressPct = row.budget > 0 ? Math.min(120, (row.computed / row.budget) * 100) : 0;
+                                                    const isOverBudget = row.riskType === 'overBudget';
+                                                    const hoursRemaining = Math.max(0, row.budget - row.computed);
+                                                    const hoursOver = Math.max(0, row.computed - row.budget);
+                                                    const isExpanded = expandedAlerts.has(row.projectId);
+                                                    const actionPhrase = isOverBudget
+                                                        ? t('operationsRadar.actionOverBudget', { hours: hoursOver.toFixed(1), defaultValue: '{{hours}}h por encima del acuerdo.' })
+                                                        : row.riskType === 'lowProgress'
+                                                            ? t('operationsRadar.actionLowProgress', { hours: hoursRemaining.toFixed(1), defaultValue: 'Faltan {{hours}}h para el objetivo del mes.' })
+                                                            : row.riskType === 'lowPace'
+                                                                ? t('operationsRadar.actionLowPace', 'Ritmo bajo para llegar al objetivo.')
+                                                                : row.status === 'in-rule' && hoursRemaining > 0
+                                                                    ? t('operationsRadar.actionInRule', { budget: row.budget.toFixed(1), hours: hoursRemaining.toFixed(1), defaultValue: 'Objetivo: {{budget}}h. Faltan {{hours}}h por computar.' })
+                                                                    : null;
+                                                    const statusLabel = row.status === 'over-budget' ? t('operationsRadar.filterOverBudget', 'Exceso horas') : row.status === 'behind-schedule' ? t('operationsRadar.filterBehindSchedule', 'Retrasados') : row.status === 'needs-planning' ? t('operationsRadar.filterNeedsPlanning', 'Falta planificar') : row.status === 'no-activity' ? t('operationsRadar.filterNoActivity', 'Sin actividad') : t('operationsRadar.filterInRule', 'En regla');
+                                                    return (
+                                                        <Collapsible
+                                                            key={`${row.projectId}-${idx}`}
+                                                            open={isExpanded}
+                                                            onOpenChange={() => toggleAlert(row.projectId)}
+                                                        >
+                                                            <div
+                                                                className={cn(
+                                                                    "rounded-lg border transition-colors",
+                                                                    row.status === 'over-budget' ? 'bg-red-50/50 border-red-200' :
+                                                                        row.status === 'behind-schedule' ? 'bg-orange-50/50 border-orange-200' :
+                                                                            row.status === 'needs-planning' ? 'bg-amber-50/50 border-amber-200' :
+                                                                                row.status === 'no-activity' ? 'bg-slate-50/50 border-slate-200' :
+                                                                                    'bg-emerald-50/30 border-emerald-200/80'
+                                                                )}
+                                                            >
+                                                                <CollapsibleTrigger asChild>
+                                                                    <div className="flex flex-col gap-2 p-3 hover:bg-black/5 cursor-pointer rounded-lg">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <ChevronDown className={cn("h-4 w-4 text-slate-400 shrink-0 transition-transform", isExpanded && "rotate-180")} />
+                                                                            <div className="min-w-0 flex-1 text-left">
+                                                                                <h4 className="text-sm font-semibold text-slate-900 truncate">
+                                                                                    <SensitiveText kind="project" id={row.projectId}>
+                                                                                        {formatProjectName(row.projectName)}
+                                                                                    </SensitiveText>
+                                                                                </h4>
+                                                                                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5 text-xs text-slate-600">
+                                                                                    {row.clientName && project?.clientId && (
+                                                                                        <span>
+                                                                                            <SensitiveText kind="account" id={project.clientId}>{row.clientName}</SensitiveText>
+                                                                                        </span>
+                                                                                    )}
+                                                                                    {row.clientName && !project?.clientId && <span>{row.clientName}</span>}
+                                                                                    {deptName && (
+                                                                                        <span className="text-slate-500">
+                                                                                            ·{' '}
+                                                                                            <SensitiveText
+                                                                                                kind="department"
+                                                                                                id={project?.responsibleDepartmentId ?? 'dept-unknown'}
+                                                                                            >
+                                                                                                {deptName}
+                                                                                            </SensitiveText>
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                            <Badge
+                                                                                variant="outline"
                                                                                 className={cn(
-                                                                                    "h-full rounded-full transition-all",
-                                                                                    isOverBudget ? "bg-red-500" : progressPct >= 90 ? "bg-amber-500" : "bg-emerald-500"
+                                                                                    "shrink-0",
+                                                                                    row.status === 'over-budget' && "bg-red-100 text-red-800 border-red-200",
+                                                                                    row.status === 'behind-schedule' && "bg-orange-100 text-orange-800 border-orange-200",
+                                                                                    row.status === 'needs-planning' && "bg-amber-100 text-amber-800 border-amber-200",
+                                                                                    row.status === 'no-activity' && "bg-slate-100 text-slate-700 border-slate-200",
+                                                                                    row.status === 'in-rule' && "bg-emerald-50 text-emerald-700 border-emerald-200"
                                                                                 )}
-                                                                                style={{ width: `${Math.min(100, progressPct)}%` }}
-                                                                            />
+                                                                            >
+                                                                                {statusLabel}
+                                                                            </Badge>
                                                                         </div>
-                                                                        <span className={cn(
-                                                                            "text-xs font-semibold tabular-nums",
-                                                                            isOverBudget ? "text-red-600" : progressPct >= 90 ? "text-amber-600" : "text-emerald-600"
-                                                                        )}>
-                                                                            {isOverBudget && progressPct > 100 ? `>100%` : `${Math.min(100, Math.round(progressPct))}%`}
-                                                                        </span>
-                                                                    </div>
-                                                                    {(() => {
-                                                                        const pendingCount = projectDetailsByProjectId.get(row.projectId)?.pendingTasks.length ?? 0;
-                                                                        if (pendingCount > 0) {
-                                                                            return (
-                                                                                <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
-                                                                                    {pendingCount} pendientes
-                                                                                </span>
-                                                                            );
-                                                                        }
-                                                                        return null;
-                                                                    })()}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </CollapsibleTrigger>
-                                                    <CollapsibleContent>
-                                                        <div className="px-3 pb-3 pt-0 flex flex-col gap-3 border-t border-slate-200/80 mt-0 pt-2">
-                                                            {row.budget > 0 && (() => {
-                                                                const detail = projectDetailsByProjectId.get(row.projectId);
-                                                                const effectiveUsage = detail?.effectiveUsage ?? row.planned + row.computed;
-                                                                const planningPct = detail?.planningPct ?? (row.budget > 0 ? (effectiveUsage / row.budget) * 100 : 0);
-                                                                const realPct = detail?.realPct ?? (row.budget > 0 ? (row.actual / row.budget) * 100 : 0);
-                                                                const computedPct = detail?.computedPct ?? row.progressOperational;
-                                                                return (
-                                                                    <div className="space-y-1.5">
-                                                                        <div className="flex justify-between text-[10px] text-slate-600">
-                                                                            <span>
-                                                                                {effectiveUsage > row.planned ? (
-                                                                                    <><span className="font-semibold text-slate-800">{round2(effectiveUsage)}h</span> proyección</>
-                                                                                ) : (
-                                                                                    <><span className="font-semibold text-slate-800">{round2(row.planned)}h</span> estimadas</>
-                                                                                )}
-                                                                                {effectiveUsage < row.budget && (
-                                                                                    <span className="text-amber-600 ml-1">
-                                                                                        (Faltan {round2(row.budget - effectiveUsage)}h de {row.budget}h asignadas)
+                                                                        {row.budget > 0 && (
+                                                                            <div className="flex flex-wrap items-center gap-3 pl-6">
+                                                                                <div className="flex items-baseline gap-1.5">
+                                                                                    <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">{t('operationsRadar.contracted', 'Contratadas')}</span>
+                                                                                    <span className="font-mono text-sm font-semibold text-slate-800">{row.budget}h</span>
+                                                                                </div>
+                                                                                <div className="flex items-baseline gap-1.5">
+                                                                                    <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">{t('operationsRadar.computed', 'Computadas')}</span>
+                                                                                    <span className={cn("font-mono text-sm font-semibold", isOverBudget ? "text-red-600" : "text-amber-600")}>{row.computed.toFixed(1)}h</span>
+                                                                                </div>
+                                                                                <div className="flex items-baseline gap-1.5">
+                                                                                    <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">{t('operationsRadar.toCompute', 'Por computar')}</span>
+                                                                                    <span className="font-mono text-sm font-semibold text-blue-600">{hoursRemaining.toFixed(1)}h</span>
+                                                                                </div>
+                                                                                <div className="flex-1 min-w-[80px] flex items-center gap-2">
+                                                                                    <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden max-w-[120px]">
+                                                                                        <div
+                                                                                            className={cn(
+                                                                                                "h-full rounded-full transition-all",
+                                                                                                isOverBudget ? "bg-red-500" : progressPct >= 90 ? "bg-amber-500" : "bg-emerald-500"
+                                                                                            )}
+                                                                                            style={{ width: `${Math.min(100, progressPct)}%` }}
+                                                                                        />
+                                                                                    </div>
+                                                                                    <span className={cn(
+                                                                                        "text-xs font-semibold tabular-nums",
+                                                                                        isOverBudget ? "text-red-600" : progressPct >= 90 ? "text-amber-600" : "text-emerald-600"
+                                                                                    )}>
+                                                                                        {isOverBudget && progressPct > 100 ? `>100%` : `${Math.min(100, Math.round(progressPct))}%`}
                                                                                     </span>
-                                                                                )}
-                                                                                {effectiveUsage > row.budget && (
-                                                                                    <span className="text-red-600 ml-1">(+{round2(effectiveUsage - row.budget)}h de exceso)</span>
-                                                                                )}
-                                                                            </span>
-                                                                            <span className="text-slate-500">Asignadas: <span className="font-semibold">{row.budget}h</span></span>
-                                                                        </div>
-                                                                        <div className="space-y-1">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <span className="text-[10px] text-slate-400 w-14">Estimado</span>
-                                                                                <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                                                    <div className={cn("h-full rounded-full", isOverBudget ? "bg-red-500" : "bg-blue-500")} style={{ width: `${Math.min(100, planningPct)}%` }} />
                                                                                 </div>
-                                                                                <span className="text-[10px] font-medium text-slate-600 w-10 text-right">{round2(planningPct)}%</span>
+                                                                                {(() => {
+                                                                                    const pendingCount = projectDetailsByProjectId.get(row.projectId)?.pendingTasks.length ?? 0;
+                                                                                    if (pendingCount > 0) {
+                                                                                        return (
+                                                                                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
+                                                                                                {t('operationsRadar.pendingTasksCount', { count: pendingCount, defaultValue: '{{count}} pendientes' })}
+                                                                                            </span>
+                                                                                        );
+                                                                                    }
+                                                                                    return null;
+                                                                                })()}
                                                                             </div>
-                                                                            <div className="flex items-center gap-2">
-                                                                                <span className="text-[10px] text-slate-400 w-14">Real</span>
-                                                                                <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                                                    <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, realPct)}%` }} />
-                                                                                </div>
-                                                                                <span className="text-[10px] font-medium text-blue-600 w-10 text-right">{round2(realPct)}%</span>
-                                                                            </div>
-                                                                            <div className="flex items-center gap-2">
-                                                                                <span className="text-[10px] text-slate-400 w-14">Computado</span>
-                                                                                <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                                                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, computedPct)}%` }} />
-                                                                                </div>
-                                                                                <span className="text-[10px] font-medium text-emerald-600 w-10 text-right">{round2(computedPct)}%</span>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                );
-                                                            })()}
-                                                            {actionPhrase && (
-                                                                <p className="text-xs text-slate-700 font-medium leading-snug">{actionPhrase}</p>
-                                                            )}
-                                                            {(() => {
-                                                                const detail = projectDetailsByProjectId.get(row.projectId);
-                                                                const pending = detail?.pendingTasks ?? [];
-                                                                return (
-                                                                    <div className="border-t border-slate-200/80 pt-2 mt-0">
-                                                                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                                                                            Tareas pendientes del equipo ({pending.length})
-                                                                        </h4>
-                                                                        {pending.length > 0 ? (
-                                                                            <div className="space-y-1.5">
-                                                                                {pending.map(task => {
-                                                                                    const emp = employees?.find(e => e.id === task.employeeId);
-                                                                                    return (
-                                                                                        <div key={task.id} className="flex items-center justify-between py-2 px-2 bg-white border rounded-md text-xs">
-                                                                                            <div className="flex items-center gap-2 min-w-0 flex-1">
-                                                                                                <Avatar className="h-6 w-6 border shrink-0">
-                                                                                                    <AvatarImage src={emp?.avatarUrl} />
-                                                                                                    <AvatarFallback className="bg-slate-100 text-slate-600 text-[9px] font-bold">
-                                                                                                        {emp?.name?.substring(0, 2).toUpperCase() ?? '??'}
-                                                                                                    </AvatarFallback>
-                                                                                                </Avatar>
-                                                                                                <div className="min-w-0 flex-1">
-                                                                                                    <p className="font-medium truncate text-slate-800">
-                                                                                                        <SensitiveText kind="task" id={task.id}>{task.taskName || 'Tarea'}</SensitiveText>
-                                                                                                    </p>
-                                                                                                    <p className="text-[10px] text-slate-400">
-                                                                                                        <SensitiveText kind="employee" id={task.employeeId}>{emp?.name ?? '—'}</SensitiveText>
-                                                                                                        {' · Sem '}
-                                                                                                        {format(parseISO(task.weekStartDate), 'w')}
-                                                                                                    </p>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                            <div className="text-right shrink-0">
-                                                                                                <p className="font-mono font-bold text-slate-800">{task.hoursAssigned ?? 0}h</p>
-                                                                                                <p className="text-[10px] text-slate-400">estimadas</p>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    );
-                                                                                })}
-                                                                            </div>
-                                                                        ) : (
-                                                                            <p className="text-[11px] text-slate-400 text-center py-3 bg-slate-50 rounded-md border border-dashed">
-                                                                                Sin tareas pendientes este mes
-                                                                            </p>
                                                                         )}
                                                                     </div>
-                                                                );
-                                                            })()}
-                                                            {(() => {
-                                                                const detail = projectDetailsByProjectId.get(row.projectId);
-                                                                const completed = detail?.completedTasks ?? [];
-                                                                if (completed.length === 0) return null;
-                                                                return (
-                                                                    <Collapsible>
-                                                                        <CollapsibleTrigger asChild>
-                                                                            <div className="flex items-center justify-between py-2 border-t border-slate-200/80 cursor-pointer hover:bg-slate-50/50 rounded px-2 -mx-2">
-                                                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                                                                    Tareas completadas ({completed.length})
-                                                                                </span>
-                                                                                <ChevronDown className="h-4 w-4 text-slate-400" />
-                                                                            </div>
-                                                                        </CollapsibleTrigger>
-                                                                        <CollapsibleContent>
-                                                                            <div className="space-y-1.5 pt-2">
-                                                                                {completed.map(task => {
-                                                                                    const emp = employees?.find(e => e.id === task.employeeId);
-                                                                                    return (
-                                                                                        <div key={task.id} className="flex items-center justify-between py-2 px-2 bg-slate-50/50 border rounded-md text-xs">
-                                                                                            <div className="flex items-center gap-2 min-w-0 flex-1">
-                                                                                                <Avatar className="h-6 w-6 border shrink-0">
-                                                                                                    <AvatarImage src={emp?.avatarUrl} />
-                                                                                                    <AvatarFallback className="bg-emerald-100 text-emerald-700 text-[9px] font-bold">
-                                                                                                        {emp?.name?.substring(0, 2).toUpperCase() ?? '??'}
-                                                                                                    </AvatarFallback>
-                                                                                                </Avatar>
-                                                                                                <div className="min-w-0 flex-1">
-                                                                                                    <p className="font-medium truncate text-slate-800">
-                                                                                                        <SensitiveText kind="task" id={task.id}>{task.taskName || 'Tarea'}</SensitiveText>
-                                                                                                    </p>
-                                                                                                    <p className="text-[10px] text-slate-400">
-                                                                                                        <SensitiveText kind="employee" id={task.employeeId}>{emp?.name ?? '—'}</SensitiveText>
-                                                                                                        {' · Sem '}
-                                                                                                        {format(parseISO(task.weekStartDate), 'w')}
-                                                                                                    </p>
-                                                                                                </div>
+                                                                </CollapsibleTrigger>
+                                                                <CollapsibleContent>
+                                                                    <div className="px-3 pb-3 pt-0 flex flex-col gap-3 border-t border-slate-200/80 mt-0 pt-2">
+                                                                        {row.budget > 0 && (() => {
+                                                                            const detail = projectDetailsByProjectId.get(row.projectId);
+                                                                            const effectiveUsage = detail?.effectiveUsage ?? row.planned + row.computed;
+                                                                            const planningPct = detail?.planningPct ?? (row.budget > 0 ? (effectiveUsage / row.budget) * 100 : 0);
+                                                                            const realPct = detail?.realPct ?? (row.budget > 0 ? (row.actual / row.budget) * 100 : 0);
+                                                                            const computedPct = detail?.computedPct ?? row.progressOperational;
+                                                                            return (
+                                                                                <div className="space-y-1.5">
+                                                                                    <div className="flex justify-between text-[10px] text-slate-600">
+                                                                                        <span>
+                                                                                            {effectiveUsage > row.planned ? (
+                                                                                                <><span className="font-semibold text-slate-800">{round2(effectiveUsage)}h</span> {t('operationsRadar.projection', 'proyección')}</>
+                                                                                            ) : (
+                                                                                                <><span className="font-semibold text-slate-800">{round2(row.planned)}h</span> {t('operationsRadar.estimated', 'estimadas')}</>
+                                                                                            )}
+                                                                                            {effectiveUsage < row.budget && (
+                                                                                                <span className="text-amber-600 ml-1">
+                                                                                                    {t('operationsRadar.missingHours', { missing: round2(row.budget - effectiveUsage), assigned: row.budget, defaultValue: '(Faltan {{missing}}h de {{assigned}}h asignadas)' })}
+                                                                                                </span>
+                                                                                            )}
+                                                                                            {effectiveUsage > row.budget && (
+                                                                                                <span className="text-red-600 ml-1">{t('operationsRadar.excessHours', { excess: round2(effectiveUsage - row.budget), defaultValue: '(+{{excess}}h de exceso)' })}</span>
+                                                                                            )}
+                                                                                        </span>
+                                                                                        <span className="text-slate-500">{t('operationsRadar.assigned', 'Asignadas:')} <span className="font-semibold">{row.budget}h</span></span>
+                                                                                    </div>
+                                                                                    <div className="space-y-1">
+                                                                                        <div className="flex items-center gap-2">
+                                                                                            <span className="text-[10px] text-slate-400 w-14">{t('operationsRadar.estimateLabel', 'Estimado')}</span>
+                                                                                            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                                                                <div className={cn("h-full rounded-full", isOverBudget ? "bg-red-500" : "bg-blue-500")} style={{ width: `${Math.min(100, planningPct)}%` }} />
                                                                                             </div>
-                                                                                            <div className="text-right shrink-0 space-y-0.5">
-                                                                                                <p className="font-mono text-[10px] text-slate-600">Est: {task.hoursAssigned ?? 0}h</p>
-                                                                                                <p className="font-mono text-[10px] text-blue-600">Real: {task.hoursActual ?? task.hoursAssigned ?? 0}h</p>
-                                                                                                <p className="font-mono text-[10px] text-emerald-600">Comp: {task.hoursComputed ?? task.hoursAssigned ?? 0}h</p>
-                                                                                            </div>
+                                                                                            <span className="text-[10px] font-medium text-slate-600 w-10 text-right">{round2(planningPct)}%</span>
                                                                                         </div>
-                                                                                    );
-                                                                                })}
-                                                                            </div>
-                                                                        </CollapsibleContent>
-                                                                    </Collapsible>
-                                                                );
-                                                            })()}
-                                                        </div>
-                                                    </CollapsibleContent>
-                                                </div>
-                                            </Collapsible>
-                                        );
-                                    })}
+                                                                                        <div className="flex items-center gap-2">
+                                                                                            <span className="text-[10px] text-slate-400 w-14">{t('operationsRadar.actualLabel', 'Real')}</span>
+                                                                                            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                                                                <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, realPct)}%` }} />
+                                                                                            </div>
+                                                                                            <span className="text-[10px] font-medium text-blue-600 w-10 text-right">{round2(realPct)}%</span>
+                                                                                        </div>
+                                                                                        <div className="flex items-center gap-2">
+                                                                                            <span className="text-[10px] text-slate-400 w-14">{t('operationsRadar.computedLabel', 'Computado')}</span>
+                                                                                            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                                                                <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, computedPct)}%` }} />
+                                                                                            </div>
+                                                                                            <span className="text-[10px] font-medium text-emerald-600 w-10 text-right">{round2(computedPct)}%</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            );
+                                                                        })()}
+                                                                        {actionPhrase && (
+                                                                            <p className="text-xs text-slate-700 font-medium leading-snug">{actionPhrase}</p>
+                                                                        )}
+                                                                        {(() => {
+                                                                            const detail = projectDetailsByProjectId.get(row.projectId);
+                                                                            const pending = detail?.pendingTasks ?? [];
+                                                                            return (
+                                                                                <div className="border-t border-slate-200/80 pt-2 mt-0">
+                                                                                    <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                                                                                        {t('operationsRadar.pendingTeamTasks', { count: pending.length, defaultValue: 'Tareas pendientes del equipo ({{count}})' })}
+                                                                                    </h4>
+                                                                                    {pending.length > 0 ? (
+                                                                                        <div className="space-y-1.5">
+                                                                                            {pending.map(task => {
+                                                                                                const emp = employees?.find(e => e.id === task.employeeId);
+                                                                                                return (
+                                                                                                    <div key={task.id} className="flex items-center justify-between py-2 px-2 bg-white border rounded-md text-xs">
+                                                                                                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                                                                            <Avatar className="h-6 w-6 border shrink-0">
+                                                                                                                <AvatarImage src={emp?.avatarUrl} />
+                                                                                                                <AvatarFallback className="bg-slate-100 text-slate-600 text-[9px] font-bold">
+                                                                                                                    {emp?.name?.substring(0, 2).toUpperCase() ?? t('operationsRadar.unknown', '??')}
+                                                                                                                </AvatarFallback>
+                                                                                                            </Avatar>
+                                                                                                            <div className="min-w-0 flex-1">
+                                                                                                                <p className="font-medium truncate text-slate-800">
+                                                                                                                    <SensitiveText kind="task" id={task.id}>{task.taskName || 'Tarea'}</SensitiveText>
+                                                                                                                </p>
+                                                                                                                <p className="text-[10px] text-slate-400">
+                                                                                                                    <SensitiveText kind="employee" id={task.employeeId}>{emp?.name ?? '—'}</SensitiveText>
+                                                                                                                    {' · Sem '}
+                                                                                                                    {format(parseISO(task.weekStartDate), 'w')}
+                                                                                                                </p>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                        <div className="text-right shrink-0">
+                                                                                                            <p className="font-mono font-bold text-slate-800">{task.hoursAssigned ?? 0}h</p>
+                                                                                                            <p className="text-[10px] text-slate-400">estimadas</p>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                );
+                                                                                            })}
+                                                                                        </div>
+                                                                                    ) : (
+                                                                                        <p className="text-[11px] text-slate-400 text-center py-3 bg-slate-50 rounded-md border border-dashed">
+                                                                                            Sin tareas pendientes este mes
+                                                                                        </p>
+                                                                                    )}
+                                                                                </div>
+                                                                            );
+                                                                        })()}
+                                                                        {(() => {
+                                                                            const detail = projectDetailsByProjectId.get(row.projectId);
+                                                                            const completed = detail?.completedTasks ?? [];
+                                                                            if (completed.length === 0) return null;
+                                                                            return (
+                                                                                <Collapsible>
+                                                                                    <CollapsibleTrigger asChild>
+                                                                                        <div className="flex items-center justify-between py-2 border-t border-slate-200/80 cursor-pointer hover:bg-slate-50/50 rounded px-2 -mx-2">
+                                                                                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                                                                                Tareas completadas ({completed.length})
+                                                                                            </span>
+                                                                                            <ChevronDown className="h-4 w-4 text-slate-400" />
+                                                                                        </div>
+                                                                                    </CollapsibleTrigger>
+                                                                                    <CollapsibleContent>
+                                                                                        <div className="space-y-1.5 pt-2">
+                                                                                            {completed.map(task => {
+                                                                                                const emp = employees?.find(e => e.id === task.employeeId);
+                                                                                                return (
+                                                                                                    <div key={task.id} className="flex items-center justify-between py-2 px-2 bg-slate-50/50 border rounded-md text-xs">
+                                                                                                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                                                                            <Avatar className="h-6 w-6 border shrink-0">
+                                                                                                                <AvatarImage src={emp?.avatarUrl} />
+                                                                                                                <AvatarFallback className="bg-emerald-100 text-emerald-700 text-[9px] font-bold">
+                                                                                                                    {emp?.name?.substring(0, 2).toUpperCase() ?? '??'}
+                                                                                                                </AvatarFallback>
+                                                                                                            </Avatar>
+                                                                                                            <div className="min-w-0 flex-1">
+                                                                                                                <p className="font-medium truncate text-slate-800">
+                                                                                                                    <SensitiveText kind="task" id={task.id}>{task.taskName || 'Tarea'}</SensitiveText>
+                                                                                                                </p>
+                                                                                                                <p className="text-[10px] text-slate-400">
+                                                                                                                    <SensitiveText kind="employee" id={task.employeeId}>{emp?.name ?? '—'}</SensitiveText>
+                                                                                                                    {' · Sem '}
+                                                                                                                    {format(parseISO(task.weekStartDate), 'w')}
+                                                                                                                </p>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                        <div className="text-right shrink-0 space-y-0.5">
+                                                                                                            <p className="font-mono text-[10px] text-slate-600">Est: {task.hoursAssigned ?? 0}h</p>
+                                                                                                            <p className="font-mono text-[10px] text-blue-600">Real: {task.hoursActual ?? task.hoursAssigned ?? 0}h</p>
+                                                                                                            <p className="font-mono text-[10px] text-emerald-600">Comp: {task.hoursComputed ?? task.hoursAssigned ?? 0}h</p>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                );
+                                                                                            })}
+                                                                                        </div>
+                                                                                    </CollapsibleContent>
+                                                                                </Collapsible>
+                                                                            );
+                                                                        })()}
+                                                                    </div>
+                                                                </CollapsibleContent>
+                                                            </div>
+                                                        </Collapsible>
+                                                    );
+                                                })}
                                             </div>
                                         </>
                                     )}

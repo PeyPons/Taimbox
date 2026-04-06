@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, Fragment } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
@@ -83,6 +84,7 @@ function getRowCost(
 }
 
 export default function FinancialHealthPage() {
+    const { t } = useTranslation('app');
     const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
     const [searchQuery, setSearchQuery] = useState('');
     const [hoursMode, setHoursMode] = useState<'actual' | 'computed'>('computed');
@@ -617,13 +619,13 @@ export default function FinancialHealthPage() {
             <header className="space-y-3">
                 <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
                     <DollarSign className="h-7 w-7 text-emerald-600 shrink-0" aria-hidden />
-                    Rentabilidad
+                    {t('financialHealth.title', 'Rentabilidad')}
                 </h1>
                 <p className="text-slate-600 text-sm max-w-xl">
-                    Precio hora efectivo, margen neto y rentabilidad por proyecto y empleado.
+                    {t('financialHealth.subtitle', 'Precio hora efectivo, margen neto y rentabilidad por proyecto y empleado.')}
                     {departmentNameForView && (
                         <span className="block mt-1 text-emerald-700 font-medium">
-                            Vista: {departmentNameForView}
+                            {t('financialHealth.view', 'Vista:')} {departmentNameForView}
                         </span>
                     )}
                 </p>
@@ -635,7 +637,7 @@ export default function FinancialHealthPage() {
                     <div className="relative flex-1 min-w-0 max-w-md">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" aria-hidden />
                         <Input
-                            placeholder="Buscar proyecto o cliente..."
+                            placeholder={t('financialHealth.search', 'Buscar proyecto o cliente...')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="pl-9 h-10 bg-white border-slate-200"
@@ -659,7 +661,7 @@ export default function FinancialHealthPage() {
                                     {format(currentMonth, 'MMM yyyy', { locale: es })}
                                 </Button>
                                 {minReportingMonth != null && (
-                                    <span className="text-xs text-slate-500 hidden sm:inline">Plan Starter: mes actual y anterior</span>
+                                    <span className="text-xs text-slate-500 hidden sm:inline">{t('financialHealth.controls.starterPlan', 'Plan Starter: mes actual y anterior')}</span>
                                 )}
                                 <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-9 w-9 text-slate-600 hover:bg-slate-100" aria-label="Mes siguiente">
                                     <ChevronRight className="h-4 w-4" />
@@ -667,16 +669,16 @@ export default function FinancialHealthPage() {
                             </div>
                             {isViewingCurrentMonth ? (
                                 <Badge className="bg-indigo-500 hover:bg-indigo-600 text-white border-0 animate-pulse">
-                                    Mes en curso
+                                    {t('financialHealth.controls.currentMonth', 'Mes en curso')}
                                 </Badge>
                             ) : (
                                 <Badge variant="secondary" className="bg-slate-200 text-slate-600 border-0">
-                                    Mes cerrado
+                                    {t('financialHealth.controls.closedMonth', 'Mes cerrado')}
                                 </Badge>
                             )}
                         </div>
                         <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5">
-                            <span className="text-xs font-medium text-slate-600 whitespace-nowrap">Horas:</span>
+                            <span className="text-xs font-medium text-slate-600 whitespace-nowrap">{t('financialHealth.filters.hours', 'Horas:')}</span>
                             <div className="flex rounded-md border border-slate-200 overflow-hidden">
                                 <button
                                     type="button"
@@ -686,7 +688,7 @@ export default function FinancialHealthPage() {
                                         hoursMode === 'actual' ? "bg-indigo-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
                                     )}
                                 >
-                                    Reales
+                                    {t('financialHealth.filters.actual', 'Reales')}
                                 </button>
                                 <button
                                     type="button"
@@ -696,12 +698,12 @@ export default function FinancialHealthPage() {
                                         hoursMode === 'computed' ? "bg-fuchsia-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
                                     )}
                                 >
-                                    Computadas
+                                    {t('financialHealth.filters.computed', 'Computadas')}
                                 </button>
                             </div>
                         </div>
                         <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5">
-                            <span className="text-xs font-medium text-slate-600 whitespace-nowrap">Coste:</span>
+                            <span className="text-xs font-medium text-slate-600 whitespace-nowrap">{t('financialHealth.filters.cost', 'Coste:')}</span>
                             <div className="flex rounded-md border border-slate-200 overflow-hidden">
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -713,11 +715,11 @@ export default function FinancialHealthPage() {
                                                 costMode === 'standard' ? "bg-emerald-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
                                             )}
                                         >
-                                            Operativo
+                                            {t('financialHealth.filters.operational', 'Operativo')}
                                         </button>
                                     </TooltipTrigger>
                                     <TooltipContent side="bottom" className="text-xs">
-                                        Aísla el coste del proyecto de vacaciones y tiempos muertos.
+                                        {t('financialHealth.filters.operationalHelp', 'Aísla el coste del proyecto de vacaciones y tiempos muertos.')}
                                     </TooltipContent>
                                 </Tooltip>
                                 <Tooltip>
@@ -730,11 +732,11 @@ export default function FinancialHealthPage() {
                                                 costMode === 'dynamic' ? "bg-amber-600 text-white" : "bg-white text-slate-600 hover:bg-slate-50"
                                             )}
                                         >
-                                            Dinámico
+                                            {t('financialHealth.filters.dynamic', 'Dinámico')}
                                         </button>
                                     </TooltipTrigger>
                                     <TooltipContent side="bottom" className="text-xs">
-                                        Reparte la nómina entre las horas reales del mes (el total coincide con la nómina).
+                                        {t('financialHealth.filters.dynamicHelp', 'Reparte la nómina entre las horas reales del mes (el total coincide con la nómina).')}
                                     </TooltipContent>
                                 </Tooltip>
                             </div>

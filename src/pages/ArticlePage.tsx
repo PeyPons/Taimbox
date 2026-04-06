@@ -1,36 +1,37 @@
-import { Helmet } from 'react-helmet-async';
+import { useTranslation } from 'react-i18next';
 import { LandingArticle } from '@/components/landing/LandingArticle';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
+import { SeoTags } from '@/seo/SeoTags';
 
 export default function ArticlePage() {
+  const { t, i18n } = useTranslation('landing');
+  const lang = i18n.language.startsWith('en') ? 'en' : 'es';
+
   return (
     <>
-      <Helmet>
-        <title>¿Por qué Taimbox? Metodología para Empresas | Taimbox</title>
-        <meta name="description" content="Descubre cómo Taimbox puede mejorar la eficiencia de tu empresa. Aprende a gestionar el tiempo por bloques para maximizar el enfoque y resultados de tu equipo." />
-        <link rel="canonical" href="/por-que-timeboxing" />
-        <script type="application/ld+json">
-          {JSON.stringify({
-            '@context': 'https://schema.org',
-            '@graph': [
-              {
-                '@type': 'Article',
-                headline: 'Taimbox: Por qué tu lista de tareas está matando la rentabilidad de tu agencia',
-                description: 'Descubre cómo Taimbox puede mejorar la eficiencia de tu empresa. Aprende a gestionar el tiempo por bloques para maximizar el enfoque y resultados de tu equipo.',
-                author: { '@type': 'Organization', name: 'Taimbox' },
-                publisher: { '@type': 'Organization', name: 'Taimbox' }
-              },
-              {
-                '@type': 'SoftwareApplication',
-                name: 'Taimbox',
-                applicationCategory: 'BusinessApplication',
-                description: 'Descubre cómo Taimbox puede mejorar la eficiencia de tu empresa. Aprende a gestionar el tiempo por bloques para maximizar el enfoque y resultados de tu equipo.'
-              }
-            ]
-          })}
-        </script>
-      </Helmet>
+      <SeoTags
+        pathEs="/por-que-timeboxing"
+        pathEn="/en/why-taimbox"
+        title={t('articleWhy.seoTitle')}
+        description={t('articleWhy.seoDescription')}
+        lang={lang}
+        jsonLd={[
+          {
+            '@type': 'Article',
+            headline: t('articleWhy.jsonHeadline'),
+            description: t('articleWhy.jsonArticleDesc'),
+            author: { '@type': 'Organization', name: 'Taimbox' },
+            publisher: { '@type': 'Organization', name: 'Taimbox' },
+          },
+          {
+            '@type': 'SoftwareApplication',
+            name: 'Taimbox',
+            applicationCategory: 'BusinessApplication',
+            description: t('articleWhy.jsonSoftwareDesc'),
+          },
+        ]}
+      />
 
       <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">

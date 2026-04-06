@@ -46,6 +46,7 @@ import { DepartmentViewConfigDialog } from '@/components/agencies/DepartmentView
 import { AgencyBillingTab } from '@/components/agencies/AgencyBillingTab';
 import { useDepartmentConfigs } from '@/hooks/useDashboardView';
 import { useApp } from '@/contexts/AppContext';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
@@ -66,11 +67,13 @@ function fetchGoogleAccountsDeduped(agencyId: string): Promise<GoogleAccountRow[
   if (existing) return existing;
   const p = (async () => {
     try {
-      const { data, error } = await invokeEdgeFunctionWithRetry(
+      const response = await invokeEdgeFunctionWithRetry(
         'list-google-accounts',
         { agency_id: agencyId },
         { retries: 2, baseDelayMs: 2000 }
       );
+      const data = response.data as { error?: string; accounts?: GoogleAccountRow[] };
+      const error = response.error;
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       return data?.accounts ?? [];
@@ -180,6 +183,7 @@ export default function AgencySettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab') ?? 'general';
   const activeTab = TAB_VALUES.includes(tabParam as typeof TAB_VALUES[number]) ? tabParam : 'general';
+  const { t } = useAppTranslation();
 
   const { currentAgency, refreshAgency, updateSettings, updateAgencyName, isLoading: isAgencyLoading } = useAgency();
   const { hasPermission } = usePermissions();
@@ -553,29 +557,9 @@ export default function AgencySettingsPage() {
     toast.info('Filtros restablecidos a valores por defecto');
   };
 
-  // Aliasing rules management functions
-  const toggleAliasingRule = (ruleId: string) => {
+  const updateAliasingRule = (ruleId: string, updates: Partial<ProjectAliasingRule>) => {
     setProjectAliasingRules(prev => prev.map(r =>
-      r.id === ruleId ? { ...r, enabled: !r.enabled } : r
-    ));
-  };
-
-  const updateAliasingRulePatterns = (ruleId: string, value: string) => {
-    const patterns = value.split(',').map(p => p.trim()).filter(Boolean);
-    setProjectAliasingRules(prev => prev.map(r =>
-      r.id === ruleId ? { ...r, matchPatterns: patterns } : r
-    ));
-  };
-
-  const updateAliasingRulePrefix = (ruleId: string, displayPrefix: string) => {
-    setProjectAliasingRules(prev => prev.map(r =>
-      r.id === ruleId ? { ...r, displayPrefix } : r
-    ));
-  };
-
-  const updateAliasingRuleName = (ruleId: string, virtualClientName: string) => {
-    setProjectAliasingRules(prev => prev.map(r =>
-      r.id === ruleId ? { ...r, virtualClientName } : r
+      r.id === ruleId ? { ...r, ...updates } : r
     ));
   };
 
@@ -591,7 +575,7 @@ export default function AgencySettingsPage() {
     setProjectAliasingRules(prev => [...prev, newRule]);
   };
 
-  const removeAliasingRule = (ruleId: string) => {
+  const deleteAliasingRule = (ruleId: string) => {
     setProjectAliasingRules(prev => prev.filter(r => r.id !== ruleId));
   };
 
@@ -633,28 +617,28 @@ export default function AgencySettingsPage() {
       <Tabs value={activeTab} onValueChange={(v) => setSearchParams({ tab: v })} className="mt-6 flex flex-col lg:flex-row gap-6">
         <TabsList className="flex flex-row lg:flex-col lg:w-52 h-auto p-2 rounded-xl bg-slate-100 border border-slate-200 shrink-0 lg:sticky lg:top-4 self-start w-full overflow-x-auto flex-nowrap">
           <TabsTrigger value="general" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <Settings className="h-4 w-4 shrink-0" /> <span className="truncate">General</span>
+            <Settings className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.general', 'General')}</span>
           </TabsTrigger>
           <TabsTrigger value="team" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <Users className="h-4 w-4 shrink-0" /> <span className="truncate">Equipo</span>
+            <Users className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.team', 'Equipo')}</span>
           </TabsTrigger>
           <TabsTrigger value="projects" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <Filter className="h-4 w-4 shrink-0" /> <span className="truncate">Proyectos</span>
+            <Filter className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.projects', 'Proyectos')}</span>
           </TabsTrigger>
           <TabsTrigger value="modules" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <BarChart2 className="h-4 w-4 shrink-0" /> <span className="truncate">Módulos</span>
+            <BarChart2 className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.modules', 'Módulos')}</span>
           </TabsTrigger>
           <TabsTrigger value="integrations" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <Rocket className="h-4 w-4 shrink-0" /> <span className="truncate">Integraciones</span>
+            <Rocket className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.integrations', 'Integraciones')}</span>
           </TabsTrigger>
           <TabsTrigger value="departments" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <Layers className="h-4 w-4 shrink-0" /> <span className="truncate">Departamentos</span>
+            <Layers className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.departments', 'Departamentos')}</span>
           </TabsTrigger>
           <TabsTrigger value="appearance" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <Palette className="h-4 w-4 shrink-0" /> <span className="truncate">Apariencia</span>
+            <Palette className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.appearance', 'Apariencia')}</span>
           </TabsTrigger>
           <TabsTrigger value="billing" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <CreditCard className="h-4 w-4 shrink-0" /> <span className="truncate">Plan y facturación</span>
+            <CreditCard className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.billing', 'Plan y facturación')}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -665,32 +649,32 @@ export default function AgencySettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="h-5 w-5 text-primary" />
-                  Información general
+                  {t('agency.general.title', 'Información general')}
                 </CardTitle>
                 <CardDescription>
-                  Datos básicos de tu agencia
+                  {t('agency.general.description', 'Datos básicos de tu agencia')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="agency-name">Nombre de la agencia</Label>
+                    <Label htmlFor="agency-name">{t('agency.general.name', 'Nombre de la agencia')}</Label>
                     <Input
                       id="agency-name"
                       value={agencyName}
                       onChange={(e) => setAgencyName(e.target.value)}
-                      placeholder="Nombre de tu agencia"
+                      placeholder={t('agency.general.placeholder', 'Nombre de tu agencia')}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="agency-slug">Identificador (slug)</Label>
+                    <Label htmlFor="agency-slug">{t('agency.general.slug', 'Identificador (slug)')}</Label>
                     <Input
                       id="agency-slug"
                       value={currentAgency.slug}
                       disabled
                       className="bg-slate-50"
                     />
-                    <p className="text-xs text-slate-500">El slug no se puede modificar</p>
+                    <p className="text-xs text-slate-500">{t('agency.general.slugNote', 'El slug no se puede modificar')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -701,15 +685,15 @@ export default function AgencySettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart2 className="h-5 w-5 text-primary" />
-                  Rentabilidad
+                  {t('agency.general.profitability', 'Rentabilidad')}
                 </CardTitle>
                 <CardDescription>
-                  Objetivo de precio hora efectivo usado en la página Rentabilidad para KPIs y alertas
+                  {t('agency.general.profitabilityDesc', 'Objetivo de precio hora efectivo usado en la página Rentabilidad para KPIs y alertas')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="max-w-xs space-y-2">
-                  <Label htmlFor="ehr-target">Objetivo Precio Hora Efectivo (€/h)</Label>
+                  <Label htmlFor="ehr-target">{t('agency.general.ehrTarget', 'Objetivo Precio Hora Efectivo (€/h)')}</Label>
                   <Input
                     id="ehr-target"
                     type="number"
@@ -726,7 +710,7 @@ export default function AgencySettingsPage() {
                       if (!Number.isNaN(v) && v >= 1) setEhrTarget(v);
                     }}
                   />
-                  <p className="text-xs text-slate-500">Valor mínimo considerado saludable. Por defecto 75 €/h.</p>
+                  <p className="text-xs text-slate-500">{t('agency.general.ehrNote', 'Valor mínimo considerado saludable. Por defecto 75 €/h.')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -736,15 +720,15 @@ export default function AgencySettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Activity className="h-5 w-5 text-primary" />
-                  Preferencia de Seguimiento
+                  {t('agency.general.tracking', 'Preferencia de Seguimiento')}
                 </CardTitle>
                 <CardDescription>
-                  Decide qué horas se utilizarán para calcular los progresos y la rentabilidad.
+                  {t('agency.general.trackingDesc', 'Decide qué horas se utilizarán para calcular los progresos y la rentabilidad.')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-3 max-w-lg">
-                  <Label>Tipo de horas a priorizar</Label>
+                <div className="space-y-3 max-lg">
+                  <Label>{t('agency.general.hoursToPrioritize', 'Tipo de horas a priorizar')}</Label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label
                       className={cn(
@@ -762,9 +746,9 @@ export default function AgencySettingsPage() {
                       />
                       <span className="flex flex-1">
                         <span className="flex flex-col">
-                          <span className="block text-sm font-medium text-slate-900">Horas Computadas</span>
+                          <span className="block text-sm font-medium text-slate-900">{t('agency.general.computed', 'Horas Computadas')}</span>
                           <span className="mt-1 flex items-center text-sm text-slate-500">
-                            (Recomendado) Validadas tras el Weekly.
+                            {t('agency.general.computedDesc', '(Recomendado) Validadas tras el Weekly.')}
                           </span>
                         </span>
                       </span>
@@ -789,9 +773,9 @@ export default function AgencySettingsPage() {
                       />
                       <span className="flex flex-1">
                         <span className="flex flex-col">
-                          <span className="block text-sm font-medium text-slate-900">Horas Reales</span>
+                          <span className="block text-sm font-medium text-slate-900">{t('agency.general.actual', 'Horas Reales')}</span>
                           <span className="mt-1 flex items-center text-sm text-slate-500">
-                            Solo horas imputadas en el tracker.
+                            {t('agency.general.actualDesc', 'Solo horas imputadas en el tracker.')}
                           </span>
                         </span>
                       </span>
@@ -810,12 +794,12 @@ export default function AgencySettingsPage() {
               <Card className="border-slate-200 bg-slate-50/50">
                 <CardContent className="py-3 px-4 flex items-center justify-between gap-3 flex-wrap">
                   <p className="text-sm text-slate-600">
-                    Invitar usuarios, asignar roles y gestionar administradores de la agencia.
+                    {t('agency.team.manageDesc', 'Invitar usuarios, asignar roles y gestionar administradores de la agencia.')}
                   </p>
                   <Button variant="outline" size="sm" asChild>
                     <Link to={`/agencies/${currentAgency.id}/manage`} className="gap-2">
                       <Users className="h-4 w-4" />
-                      Gestionar miembros y administradores
+                      {t('agency.team.manageButton', 'Gestionar miembros y administradores')}
                       <ExternalLink className="h-3.5 w-3.5" />
                     </Link>
                   </Button>
@@ -831,10 +815,10 @@ export default function AgencySettingsPage() {
                     <div>
                       <CardTitle className="flex items-center gap-2">
                         <ShieldCheck className="h-5 w-5 text-indigo-600" />
-                        Roles y permisos
+                        {t('agency.team.title', 'Gestión de Roles')}
                       </CardTitle>
                       <CardDescription>
-                        Define los roles y sus accesos
+                        {t('agency.team.description', 'Configura los permisos y accesos predeterminados para cada rol de tu agencia.')}
                       </CardDescription>
                     </div>
                     <Button size="sm" onClick={addNewRole}>
@@ -854,7 +838,7 @@ export default function AgencySettingsPage() {
                           onChange={(e) => updateRoleName(index, e.target.value)}
                           onClick={(e) => e.stopPropagation()}
                           className="h-8 w-40 font-medium"
-                          placeholder="Nombre del rol"
+                          placeholder={t('agency.team.roleName', 'Nombre del rol')}
                         />
                         <div className="flex items-center gap-2">
                           <Button
@@ -872,7 +856,7 @@ export default function AgencySettingsPage() {
                       {expandedRoleIndex === index && (
                         <div className="p-3 border-t bg-slate-50/50 space-y-4">
                           <div className="space-y-2">
-                            <Label className="text-xs font-semibold text-slate-500 uppercase">Gestión</Label>
+                            <Label className="text-xs font-semibold text-slate-500 uppercase">{t('common.management', 'Gestión')}</Label>
                             {(['can_access_planner', 'can_access_projects', 'can_access_clients', 'can_access_team', 'can_access_settings'] as const).map(p => (
                               <div key={p} className="flex items-center justify-between py-1 px-2 rounded hover:bg-white">
                                 <Label htmlFor={`role-${index}-${p}`} className="text-sm font-normal cursor-pointer flex-1">{PERMISSION_LABELS[p]}</Label>
@@ -888,7 +872,7 @@ export default function AgencySettingsPage() {
                           </div>
                           <Separator />
                           <div className="space-y-2">
-                            <Label className="text-xs font-semibold text-slate-500 uppercase">PPC & Ads</Label>
+                            <Label className="text-xs font-semibold text-slate-500 uppercase">{t('common.ppcAds', 'PPC & Ads')}</Label>
                             {(['can_access_google_ads', 'can_access_meta_ads', 'can_access_ads_reports'] as const).map(p => (
                               <div key={p} className="flex items-center justify-between py-1 px-2 rounded hover:bg-white">
                                 <Label htmlFor={`role-${index}-${p}`} className="text-sm font-normal cursor-pointer flex-1">{PERMISSION_LABELS[p]}</Label>
@@ -904,7 +888,7 @@ export default function AgencySettingsPage() {
                           </div>
                           <Separator />
                           <div className="space-y-2">
-                            <Label className="text-xs font-semibold text-slate-500 uppercase">Otros</Label>
+                            <Label className="text-xs font-semibold text-slate-500 uppercase">{t('common.others', 'Otros')}</Label>
                             {(['can_access_reports', 'can_access_operations_radar', 'can_access_financial_health', 'can_access_client_reports', 'can_access_deadlines', 'can_access_okrs', 'can_access_team_capacity', 'can_assign_tasks_to_others', 'can_access_weekly_forecast'] as const).map(p => (
                               <div key={p} className="flex items-center justify-between py-1 px-2 rounded hover:bg-white">
                                 <Label htmlFor={`role-${index}-${p}`} className="text-sm font-normal cursor-pointer flex-1">{PERMISSION_LABELS[p]}</Label>
@@ -920,7 +904,7 @@ export default function AgencySettingsPage() {
                           </div>
                           <Separator />
                           <div className="space-y-2">
-                            <Label className="text-xs font-semibold text-slate-500 uppercase">Configuración y soporte</Label>
+                            <Label className="text-xs font-semibold text-slate-500 uppercase">{t('common.configSupport', 'Configuración y soporte')}</Label>
                             {(['can_access_agency_settings', 'can_access_api_keys', 'can_access_support'] as const).map(p => (
                               <div key={p} className="flex items-center justify-between py-1 px-2 rounded hover:bg-white">
                                 <Label htmlFor={`role-${index}-${p}`} className="text-sm font-normal cursor-pointer flex-1">{PERMISSION_LABELS[p]}</Label>
@@ -945,7 +929,7 @@ export default function AgencySettingsPage() {
               <Card className="h-full border-dashed">
                 <CardContent className="py-6">
                   <p className="text-sm text-slate-500">
-                    Los departamentos (nombre y color) se gestionan en la pestaña <strong>Departamentos</strong>. Así podrás filtrar la plataforma por área (Marketing, Desarrollo, etc.).
+                    {t('agency.team.departmentsNote', 'Los departamentos (nombre y color) se gestionan en la pestaña Departamentos. Así podrás filtrar la plataforma por área (Marketing, Desarrollo, etc.).')}
                   </p>
                 </CardContent>
               </Card>
@@ -957,18 +941,18 @@ export default function AgencySettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Layers className="h-5 w-5 text-blue-600" />
-                  Departamentos
+                  {t('agency.tabs.departments', 'Departamentos')}
                 </CardTitle>
                 <CardDescription>
-                  Define las áreas de tu equipo (ej: Marketing, Desarrollo). El color se usa en la barra de aviso al filtrar por departamento.
+                  {t('agency.departments.description', 'Define las áreas de tu equipo (ej: Marketing, Desarrollo). El color se usa en la barra de aviso al filtrar por departamento.')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-wrap items-end gap-2">
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-slate-500">Nombre</Label>
+                    <Label className="text-xs text-slate-500">{t('common.name', 'Nombre')}</Label>
                     <Input
-                      placeholder="Ej: Equipo Creativo, Ventas..."
+                      placeholder={t('agency.departments.placeholder', 'Ej: Equipo Creativo, Ventas...')}
                       value={newDepartment}
                       onChange={(e) => setNewDepartment(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && addNewDepartment()}
@@ -976,7 +960,7 @@ export default function AgencySettingsPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-slate-500">Color</Label>
+                    <Label className="text-xs text-slate-500">{t('common.color', 'Color')}</Label>
                     <div className="flex items-center gap-1">
                       <input
                         type="color"
@@ -993,13 +977,13 @@ export default function AgencySettingsPage() {
                   </div>
                   <Button onClick={addNewDepartment} disabled={!newDepartment.trim()}>
                     <Plus className="h-4 w-4 mr-1" />
-                    Añadir departamento
+                    {t('agency.departments.add', 'Añadir departamento')}
                   </Button>
                 </div>
 
                 <div className="space-y-2">
                   {departments.length === 0 ? (
-                    <p className="text-sm text-slate-400 italic text-center py-4">No hay departamentos. Añade uno para filtrar la vista por área.</p>
+                    <p className="text-sm text-slate-400 italic text-center py-4">{t('agency.departments.empty', 'No hay departamentos. Añade uno para filtrar la vista por área.')}</p>
                   ) : (
                     departments.map((dept) => {
                       const config = getConfigForDepartment(dept.name);
@@ -1024,12 +1008,12 @@ export default function AgencySettingsPage() {
                             />
                             {config && (
                               <div className="flex items-center gap-1">
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">Semanal</Badge>
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">{t('common.weekly', 'Semanal')}</Badge>
                                 {config.isViewStrict && (
                                   <TooltipProvider delayDuration={300}>
                                     <Tooltip>
                                       <TooltipTrigger><Lock className="h-3 w-3 text-amber-600" /></TooltipTrigger>
-                                      <TooltipContent><p className="text-xs">Vista estricta</p></TooltipContent>
+                                      <TooltipContent><p className="text-xs">{t('agency.departments.strictView', 'Vista estricta')}</p></TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
                                 )}
@@ -1044,7 +1028,7 @@ export default function AgencySettingsPage() {
                                     <Eye className="h-4 w-4" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent><p className="text-xs">Configurar vista por defecto del dashboard</p></TooltipContent>
+                                <TooltipContent><p className="text-xs">{t('agency.departments.configTooltip', 'Configurar vista por defecto del dashboard')}</p></TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50" onClick={() => deleteDepartment(dept.id)}>
@@ -1073,18 +1057,18 @@ export default function AgencySettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5 text-emerald-600" />
-                  Módulos habilitados
+                  {t('agency.modules.title', 'Módulos habilitados')}
                 </CardTitle>
                 <CardDescription>
-                  Activa o desactiva funcionalidades según las necesidades de tu equipo
+                  {t('agency.modules.description', 'Activa o desactiva funcionalidades según las necesidades de tu equipo')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="flex items-center justify-between p-3 rounded-lg border">
                     <div>
-                      <Label className="font-medium">SEO</Label>
-                      <p className="text-xs text-slate-500">Gestión de proyectos SEO</p>
+                      <Label className="font-medium">{t('agency.modules.seo', 'SEO')}</Label>
+                      <p className="text-xs text-slate-500">{t('agency.modules.seoDesc', 'Auditorías, rankings y kpis de posicionamiento orgánico.')}</p>
                     </div>
                     <Switch
                       checked={modules.seo}
@@ -1094,8 +1078,8 @@ export default function AgencySettingsPage() {
 
                   <div className="flex items-center justify-between p-3 rounded-lg border">
                     <div>
-                      <Label className="font-medium">PPC</Label>
-                      <p className="text-xs text-slate-500">Campañas publicitarias</p>
+                      <Label className="font-medium">{t('agency.modules.ppc', 'PPC')}</Label>
+                      <p className="text-xs text-slate-500">{t('agency.modules.ppcDesc', 'Conexión con Google/Meta Ads y reporting de inversión.')}</p>
                     </div>
                     <Switch
                       checked={modules.ppc}
@@ -1103,12 +1087,10 @@ export default function AgencySettingsPage() {
                     />
                   </div>
 
-
-
                   <div className="flex items-center justify-between p-3 rounded-lg border">
                     <div>
-                      <Label className="font-medium">Objetivos Profesionales</Label>
-                      <p className="text-xs text-slate-500">Seguimiento de metas del equipo</p>
+                      <Label className="font-medium">{t('agency.modules.professionalGoals', 'Objetivos Profesionales')}</Label>
+                      <p className="text-xs text-slate-500">{t('agency.modules.professionalGoalsDesc', 'Gestión de OKRs y metas por empleado.')}</p>
                     </div>
                     <Switch
                       checked={modules.professionalGoals}
@@ -1118,8 +1100,8 @@ export default function AgencySettingsPage() {
 
                   <div className="flex items-center justify-between p-3 rounded-lg border">
                     <div>
-                      <Label className="font-medium">Deadlines</Label>
-                      <p className="text-xs text-slate-500">Sistema de gestión de fechas límite</p>
+                      <Label className="font-medium">{t('agency.modules.deadlines', 'Deadlines')}</Label>
+                      <p className="text-xs text-slate-500">{t('agency.modules.deadlinesDesc', 'Fechas de entrega críticas en el planificador.')}</p>
                     </div>
                     <Switch
                       checked={modules.deadlines}
@@ -1129,8 +1111,8 @@ export default function AgencySettingsPage() {
 
                   <div className="flex items-center justify-between p-3 rounded-lg border">
                     <div>
-                      <Label className="font-medium">Cronómetro de tareas</Label>
-                      <p className="text-xs text-slate-500">Temporizador en tiempo real para imputar horas a las tareas</p>
+                      <Label className="font-medium">{t('agency.modules.timeTracker', 'Cronómetro de tareas')}</Label>
+                      <p className="text-xs text-slate-500">{t('agency.modules.timeTrackerDesc', 'Cronómetro en tiempo real para imputación exacta.')}</p>
                     </div>
                     <Switch
                       checked={modules.timeTracker}
@@ -1140,8 +1122,8 @@ export default function AgencySettingsPage() {
                   {modules.timeTracker && (
                     <div className="flex items-center justify-between p-3 rounded-lg border">
                       <div>
-                        <Label className="font-medium text-sm">Máximo de horas por sesión</Label>
-                        <p className="text-xs text-slate-500">Auto-pausa del cronómetro tras este tiempo (evita olvidos)</p>
+                        <Label className="font-medium text-sm">{t('agency.modules.maxHours', 'Máximo de horas por tarea')}</Label>
+                        <p className="text-xs text-slate-500">{t('agency.modules.maxHoursDesc', 'Límite de seguridad para evitar errores al detener el tracker.')}</p>
                       </div>
                       <select
                         value={timeTrackerMaxHours}
@@ -1363,19 +1345,19 @@ export default function AgencySettingsPage() {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <Filter className="h-5 w-5 text-blue-600" />
-                      Filtros de proyectos
+                      {t('agency.projects.filtersTitle', 'Filtros de proyectos')}
                     </CardTitle>
                     <CardDescription>
-                      Configura cómo se filtran los proyectos en las diferentes vistas
+                      {t('agency.projects.filtersDesc', 'Configura cómo se filtran los proyectos en las diferentes vistas')}
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={resetToDefaults}>
-                      Restablecer
+                      {t('common.reset', 'Restablecer')}
                     </Button>
                     <Button size="sm" onClick={addNewFilter}>
                       <Plus className="h-4 w-4 mr-1" />
-                      Añadir filtro
+                      {t('agency.projects.addFilter', 'Añadir filtro')}
                     </Button>
                   </div>
                 </div>
@@ -1385,11 +1367,11 @@ export default function AgencySettingsPage() {
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
                   <Info className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
                   <div className="text-sm text-blue-800">
-                    <p className="font-medium mb-1">¿Cómo funcionan los filtros?</p>
+                    <p className="font-medium mb-1">{t('agency.projects.howItWorks', '¿Cómo funcionan los filtros?')}</p>
                     <ul className="space-y-1 text-blue-700">
-                      <li>• <strong>Patrones de inclusión:</strong> El nombre del proyecto debe contener AL MENOS UNO de estos términos</li>
-                      <li>• <strong>Patrones de exclusión:</strong> El nombre del proyecto NO puede contener NINGUNO de estos términos</li>
-                      <li>• Si dejas vacío "Patrones de inclusión", se incluyen todos los proyectos por defecto</li>
+                      <li>• <strong>{t('agency.projects.includePatterns', 'Patrones de inclusión')}:</strong> {t('agency.projects.includeNote', 'El nombre del proyecto debe contener AL MENOS UNO de estos términos')}</li>
+                      <li>• <strong>{t('agency.projects.excludePatterns', 'Patrones de exclusión')}:</strong> {t('agency.projects.excludeNote', 'El nombre del proyecto NO puede contener NINGUNO de estos términos')}</li>
+                      <li>• {t('agency.projects.emptyNote', 'Si dejas vacío "Patrones de inclusión", se incluyen todos los proyectos por defecto')}</li>
                     </ul>
                   </div>
                 </div>
@@ -1411,10 +1393,10 @@ export default function AgencySettingsPage() {
                             value={filter.displayName}
                             onChange={(e) => updateFilterName(filter.id, e.target.value)}
                             className="w-40 font-medium"
-                            placeholder="Nombre del filtro"
+                            placeholder={t('agency.projects.filterName', 'Nombre del filtro')}
                           />
                           <Badge variant={filter.enabled ? 'default' : 'secondary'}>
-                            {filter.enabled ? 'Activo' : 'Inactivo'}
+                            {filter.enabled ? t('common.active', 'Activo') : t('common.inactive', 'Inactivo')}
                           </Badge>
                         </div>
                         <Button
@@ -1430,14 +1412,14 @@ export default function AgencySettingsPage() {
                       <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <Label className="text-sm">Patrones de inclusión</Label>
+                            <Label className="text-sm">{t('agency.projects.includePatterns', 'Patrones de inclusión')}</Label>
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger>
                                   <HelpCircle className="h-3.5 w-3.5 text-slate-400" />
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p className="max-w-xs">Términos separados por coma. El proyecto debe contener AL MENOS UNO para aparecer.</p>
+                                  <p className="max-w-xs">{t('agency.projects.includeTooltip', 'Términos separados por coma. El proyecto debe contener AL MENOS UNO para aparecer.')}</p>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
@@ -1461,14 +1443,14 @@ export default function AgencySettingsPage() {
 
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <Label className="text-sm">Patrones de exclusión</Label>
+                            <Label className="text-sm">{t('agency.projects.excludePatterns', 'Patrones de exclusión')}</Label>
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger>
                                   <HelpCircle className="h-3.5 w-3.5 text-slate-400" />
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p className="max-w-xs">Términos separados por coma. El proyecto NO puede contener NINGUNO para aparecer.</p>
+                                  <p className="max-w-xs">{t('agency.projects.excludeTooltip', 'Términos separados por coma. El proyecto NO puede contener NINGUNO para aparecer.')}</p>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
@@ -1492,7 +1474,7 @@ export default function AgencySettingsPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-sm">Descripción (opcional)</Label>
+                        <Label className="text-sm">{t('common.description', 'Descripción')} ({t('common.optional', 'opcional')})</Label>
                         <Input
                           value={filter.description || ''}
                           onChange={(e) => updateFilterDescription(filter.id, e.target.value)}
@@ -1506,9 +1488,9 @@ export default function AgencySettingsPage() {
                   {projectFilters.length === 0 && (
                     <div className="text-center py-8 text-slate-500">
                       <Filter className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                      <p>No hay filtros configurados</p>
+                      <p>{t('agency.projects.noFilters', 'No hay filtros configurados')}</p>
                       <Button variant="link" onClick={addNewFilter}>
-                        Añadir el primer filtro
+                        {t('agency.projects.addFirstFilter', 'Añadir el primer filtro')}
                       </Button>
                     </div>
                   )}
@@ -1521,20 +1503,20 @@ export default function AgencySettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <GitBranch className="h-5 w-5 text-purple-600" />
-                  Aliasing de proyectos
+                  {t('agency.projects.aliasingTitle', 'Aliasing de proyectos')}
                 </CardTitle>
                 <CardDescription>
-                  Configura reglas para renombrar proyectos automáticamente (ej: Kit Digital → KD:)
+                  {t('agency.projects.aliasingDesc', 'Configura reglas para renombrar proyectos automáticamente (ej: Kit Digital → KD:)')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-slate-600">
-                    Define patrones para detectar y renombrar proyectos especiales
+                    {t('agency.projects.aliasingInstruction', 'Define patrones para detectar y renombrar proyectos especiales')}
                   </p>
                   <Button variant="outline" size="sm" onClick={addNewAliasingRule}>
                     <Plus className="h-4 w-4 mr-1" />
-                    Nueva regla
+                    {t('agency.projects.newRule', 'Nueva regla')}
                   </Button>
                 </div>
 
@@ -1549,75 +1531,75 @@ export default function AgencySettingsPage() {
                         <div className="flex items-center gap-3">
                           <Switch
                             checked={rule.enabled}
-                            onCheckedChange={() => toggleAliasingRule(rule.id)}
+                            onCheckedChange={(checked) => updateAliasingRule(rule.id, { enabled: checked })}
                           />
-                          <div>
-                            <span className="font-medium text-slate-900">{rule.virtualClientName || rule.name}</span>
-                            {rule.displayPrefix && (
-                              <Badge variant="outline" className="ml-2 text-xs bg-purple-50 text-purple-700">
-                                {rule.displayPrefix}
-                              </Badge>
-                            )}
-                          </div>
+                          <Input
+                            value={rule.name}
+                            onChange={(e) => updateAliasingRule(rule.id, { name: e.target.value })}
+                            className="w-48 font-medium h-8"
+                            placeholder={t('agency.projects.ruleName', 'Nombre de la regla')}
+                          />
                         </div>
                         <Button
                           variant="ghost"
-                          size="sm"
-                          onClick={() => removeAliasingRule(rule.id)}
-                          className="text-slate-400 hover:text-red-600"
+                          size="icon"
+                          onClick={() => deleteAliasingRule(rule.id)}
+                          className="h-8 w-8 text-red-500 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
 
-                      <div className="grid gap-4 md:grid-cols-2">
+                      <div className="grid gap-4 md:grid-cols-2 pt-2">
                         <div className="space-y-2">
-                          <Label className="text-sm">Prefijo a mostrar</Label>
+                          <Label className="text-xs font-semibold text-slate-500 uppercase">{t('agency.projects.detectBy', 'Detectar por texto')}</Label>
                           <Input
-                            value={rule.displayPrefix}
-                            onChange={(e) => updateAliasingRulePrefix(rule.id, e.target.value)}
-                            placeholder="Ej: KD:"
-                            className="text-sm"
+                            value={rule.matchPatterns.join(', ')}
+                            onChange={(e) => updateAliasingRule(rule.id, {
+                              matchPatterns: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+                            })}
+                            placeholder="Ej: Kit Digital, KD"
+                            className="h-8 text-sm"
                           />
+                          <p className="text-[10px] text-slate-400">{t('agency.projects.matchNote', 'Si el proyecto contiene alguno de estos términos (insensible a mayúsculas)')}</p>
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-sm">Nombre del cliente virtual</Label>
+                          <Label className="text-xs font-semibold text-slate-500 uppercase">{t('agency.projects.applyPrefix', 'Aplicar prefijo')}</Label>
                           <Input
-                            value={rule.virtualClientName || ''}
-                            onChange={(e) => updateAliasingRuleName(rule.id, e.target.value)}
-                            placeholder="Ej: Kit Digital"
-                            className="text-sm"
+                            value={rule.displayPrefix}
+                            onChange={(e) => updateAliasingRule(rule.id, { displayPrefix: e.target.value })}
+                            placeholder="Ej: KD:"
+                            className="h-8 text-sm"
                           />
+                          <p className="text-[10px] text-slate-400">{t('agency.projects.prefixNote', 'Texto que se añadirá al inicio del nombre del proyecto')}</p>
                         </div>
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="pt-2 border-t flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Label className="text-sm">Patrones de detección</Label>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <HelpCircle className="h-3.5 w-3.5 text-slate-400" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p className="max-w-xs">Términos separados por coma. Si el proyecto contiene alguno, se aplicará esta regla.</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          <Switch
+                            id={`virtual-${rule.id}`}
+                            checked={rule.groupAsVirtualClient}
+                            onCheckedChange={(checked) => updateAliasingRule(rule.id, { groupAsVirtualClient: checked })}
+                          />
+                          <Label htmlFor={`virtual-${rule.id}`} className="text-sm font-normal cursor-pointer">
+                            {t('agency.projects.groupAsClient', 'Agrupar bajo un cliente virtual')}
+                          </Label>
                         </div>
-                        <Input
-                          value={rule.matchPatterns.join(', ')}
-                          onChange={(e) => updateAliasingRulePatterns(rule.id, e.target.value)}
-                          placeholder="Ej: (KD), [KD], kit digital, KD:"
-                          className="text-sm"
-                        />
-                        {rule.matchPatterns.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {rule.matchPatterns.map((p, i) => (
-                              <Badge key={i} variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
-                                {p}
-                              </Badge>
-                            ))}
+                        {rule.groupAsVirtualClient && (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={rule.virtualClientName}
+                              onChange={(e) => updateAliasingRule(rule.id, { virtualClientName: e.target.value })}
+                              placeholder={t('agency.projects.clientName', 'Nombre del cliente')}
+                              className="h-7 w-32 text-xs"
+                            />
+                            <input
+                              type="color"
+                              value={rule.virtualClientColor}
+                              onChange={(e) => updateAliasingRule(rule.id, { virtualClientColor: e.target.value })}
+                              className="h-6 w-6 rounded border border-slate-200 cursor-pointer"
+                            />
                           </div>
                         )}
                       </div>
@@ -1625,11 +1607,11 @@ export default function AgencySettingsPage() {
                   ))}
 
                   {projectAliasingRules.length === 0 && (
-                    <div className="text-center py-8 text-slate-500">
-                      <GitBranch className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                      <p>No hay reglas de aliasing configuradas</p>
-                      <Button variant="link" onClick={addNewAliasingRule}>
-                        Añadir la primera regla
+                    <div className="text-center py-10 border border-dashed rounded-xl bg-slate-50/30">
+                      <GitBranch className="h-10 w-10 mx-auto mb-3 text-slate-300" />
+                      <p className="text-sm text-slate-500 mb-4">{t('agency.projects.noRules', 'No hay reglas de aliasing configuradas')}</p>
+                      <Button variant="outline" onClick={addNewAliasingRule}>
+                        {t('agency.projects.addFirst', 'Añadir la primera regla')}
                       </Button>
                     </div>
                   )}
@@ -1644,10 +1626,10 @@ export default function AgencySettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Rocket className="h-5 w-5 text-blue-600" />
-                  Integraciones
+                  {t('agency.integrations.title', 'Integraciones')}
                 </CardTitle>
                 <CardDescription>
-                  Conecta tu agencia con herramientas externas y configura funcionalidades avanzadas
+                  {t('agency.integrations.description', 'Conecta tu agencia con herramientas externas y configura funcionalidades avanzadas')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -1656,7 +1638,7 @@ export default function AgencySettingsPage() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 mb-3">
                     <GitBranch className="h-4 w-4 text-purple-600" />
-                    <h3 className="font-semibold text-sm text-slate-700 uppercase">Workflow</h3>
+                    <h3 className="font-semibold text-sm text-slate-700 uppercase">{t('agency.integrations.workflow', 'Workflow')}</h3>
                   </div>
                   {Object.values(AVAILABLE_INTEGRATIONS)
                     .filter(integration => integration.category === 'workflow')
@@ -1667,12 +1649,16 @@ export default function AgencySettingsPage() {
                           <div className="flex items-start justify-between">
                             <div className="flex-1 space-y-1">
                               <div className="flex items-center gap-2">
-                                <Label className="font-medium text-slate-900">{integration.name}</Label>
+                                <Label className="font-medium text-slate-900">
+                                  {t(`agency.integrations.items.${integration.id}.name`, integration.name)}
+                                </Label>
                                 <Badge variant="outline" className="text-xs">
                                   {integration.category}
                                 </Badge>
                               </div>
-                              <p className="text-sm text-slate-600">{integration.description}</p>
+                              <p className="text-sm text-slate-600">
+                                {t(`agency.integrations.items.${integration.id}.description`, integration.description)}
+                              </p>
                             </div>
                             <Switch
                               checked={isEnabled}
@@ -1692,12 +1678,17 @@ export default function AgencySettingsPage() {
                               <div className="grid gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                   <Label htmlFor="weekly-close-day" className="text-xs font-semibold text-slate-700">
-                                    Día de cierre semanal
+                                    {t('agency.integrations.weeklyCloseDay', 'Día de cierre semanal')}
                                   </Label>
                                   <Popover open={openWeeklyCloseDay} onOpenChange={setOpenWeeklyCloseDay}>
                                     <PopoverTrigger asChild>
                                       <Button id="weekly-close-day" variant="outline" className="h-8 text-sm bg-slate-50 justify-between font-normal w-full">
-                                        <span className="truncate">{[0, 1, 2, 3, 4, 5, 6].indexOf(weeklyCloseDay) >= 0 ? (['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes (Recomendado)', 'Sábado', 'Domingo'][weeklyCloseDay]) : 'Selecciona un día'}</span>
+                                        <span className="truncate">
+                                          {[0, 1, 2, 3, 4, 5, 6].indexOf(weeklyCloseDay) >= 0
+                                            ? t(`common.days.${['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][weeklyCloseDay]}`,
+                                              ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes (Recomendado)', 'Sábado'][weeklyCloseDay])
+                                            : t('agency.integrations.selectDay', 'Selecciona un día')}
+                                        </span>
                                         <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
                                       </Button>
                                     </PopoverTrigger>
@@ -1705,19 +1696,23 @@ export default function AgencySettingsPage() {
                                       <Command>
                                         <CommandList>
                                           <CommandGroup>
-                                            {(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes (Recomendado)', 'Sábado', 'Domingo'] as const).map((label, i) => (
-                                              <CommandItem key={i} value={label} onSelect={() => { setWeeklyCloseDay(i); setOpenWeeklyCloseDay(false); }}>
-                                                <Check className={cn('mr-2 h-4 w-4 shrink-0', weeklyCloseDay === i ? 'opacity-100' : 'opacity-0')} />
-                                                {label}
-                                              </CommandItem>
-                                            ))}
+                                            {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((dayKey, i) => {
+                                              const dayIndex = (i + 1) % 7; // Monday is 1, Sunday is 0 in the list above
+                                              const label = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes (Recomendado)', 'Sábado', 'Domingo'][i];
+                                              return (
+                                                <CommandItem key={dayIndex} value={label} onSelect={() => { setWeeklyCloseDay(dayIndex); setOpenWeeklyCloseDay(false); }}>
+                                                  <Check className={cn('mr-2 h-4 w-4 shrink-0', weeklyCloseDay === dayIndex ? 'opacity-100' : 'opacity-0')} />
+                                                  {t(`common.days.${dayKey}`, label)}
+                                                </CommandItem>
+                                              );
+                                            })}
                                           </CommandGroup>
                                         </CommandList>
                                       </Command>
                                     </PopoverContent>
                                   </Popover>
                                   <p className="text-[10px] text-slate-500">
-                                    Determina qué tareas se consideran "de esta semana".
+                                    {t('agency.integrations.weeklyCloseDayDesc', 'Determina qué tareas se consideran "de esta semana".')}
                                   </p>
                                 </div>
                               </div>
@@ -1733,7 +1728,7 @@ export default function AgencySettingsPage() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 mb-3">
                     <Database className="h-4 w-4 text-blue-600" />
-                    <h3 className="font-semibold text-sm text-slate-700 uppercase">CRM</h3>
+                    <h3 className="font-semibold text-sm text-slate-700 uppercase">{t('agency.integrations.crm', 'CRM')}</h3>
                   </div>
                   {Object.values(AVAILABLE_INTEGRATIONS)
                     .filter(integration => integration.category === 'crm')
@@ -1747,7 +1742,9 @@ export default function AgencySettingsPage() {
                         <div key={integration.id} className="flex items-start justify-between p-4 rounded-lg border bg-white">
                           <div className="flex-1 space-y-1">
                             <div className="flex items-center gap-2">
-                              <Label className="font-medium text-slate-900">{integration.name}</Label>
+                              <Label className="font-medium text-slate-900">
+                                {t(`agency.integrations.items.${integration.id}.name`, integration.name)}
+                              </Label>
                               <Badge variant="outline" className="text-xs">
                                 {integration.category}
                               </Badge>
@@ -1758,17 +1755,19 @@ export default function AgencySettingsPage() {
                                       <AlertTriangle className="h-4 w-4 text-amber-500" />
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p>Requiere que {integration.dependencies?.map(id => AVAILABLE_INTEGRATIONS[id]?.name).join(', ')} esté activo</p>
+                                      <p>{t('agency.integrations.dependencyError', { name: integration.name, deps: integration.dependencies?.map(id => AVAILABLE_INTEGRATIONS[id]?.name).join(', ') })}</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
                               )}
                             </div>
-                            <p className="text-sm text-slate-600">{integration.description}</p>
+                            <p className="text-sm text-slate-600">
+                              {t(`agency.integrations.items.${integration.id}.description`, integration.description)}
+                            </p>
                             {hasDependencyIssue && isEnabled && (
                               <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
                                 <AlertTriangle className="h-3 w-3" />
-                                Esta integración requiere dependencias activas
+                                {t('agency.integrations.dependencyWarning', 'Esta integración requiere dependencias activas')}
                               </p>
                             )}
                           </div>
@@ -1782,7 +1781,7 @@ export default function AgencySettingsPage() {
                                 );
                                 if (missingDeps.length > 0) {
                                   const depNames = missingDeps.map(id => AVAILABLE_INTEGRATIONS[id]?.name).join(', ');
-                                  toast.warning(`Para activar "${integration.name}", primero debes activar: ${depNames}`);
+                                  toast.warning(t('agency.integrations.dependencyError', { name: integration.name, deps: depNames }));
                                   return;
                                 }
                               }
@@ -1791,7 +1790,7 @@ export default function AgencySettingsPage() {
                               if (!checked && integration.id === 'crm_user_id') {
                                 const hasCrmExport = enabledIntegrations['crm_export'] ?? false;
                                 if (hasCrmExport) {
-                                  toast.warning('Si desactivas "ID Usuario CRM", también se desactivará "Exportación de Tareas al CRM"');
+                                  toast.warning(t('agency.integrations.crmUserIdWarning', 'Si desactivas "ID Usuario CRM", también se desactivará "Exportación de Tareas al CRM"'));
                                   setEnabledIntegrations(prev => ({
                                     ...prev,
                                     [integration.id]: false,
@@ -1820,7 +1819,7 @@ export default function AgencySettingsPage() {
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 mb-3">
                         <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                        <h3 className="font-semibold text-sm text-slate-700 uppercase">Privacidad y demostración</h3>
+                        <h3 className="font-semibold text-sm text-slate-700 uppercase">{t('agency.integrations.other', 'Privacidad y demostración')}</h3>
                       </div>
                       {Object.values(AVAILABLE_INTEGRATIONS)
                         .filter(integration => integration.category === 'other')
@@ -1831,12 +1830,16 @@ export default function AgencySettingsPage() {
                               <div className="flex items-start justify-between">
                                 <div className="flex-1 space-y-1">
                                   <div className="flex items-center gap-2">
-                                    <Label className="font-medium text-slate-900">{integration.name}</Label>
+                                    <Label className="font-medium text-slate-900">
+                                      {t(`agency.integrations.items.${integration.id}.name`, integration.name)}
+                                    </Label>
                                     <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">
                                       {integration.category}
                                     </Badge>
                                   </div>
-                                  <p className="text-sm text-slate-600">{integration.description}</p>
+                                  <p className="text-sm text-slate-600">
+                                    {t(`agency.integrations.items.${integration.id}.description`, integration.description)}
+                                  </p>
                                 </div>
                                 <Switch
                                   checked={isEnabled}
@@ -1872,7 +1875,7 @@ export default function AgencySettingsPage() {
                         <Label>Conexión con Meta (OAuth)</Label>
                         {currentAgency?.meta_ads_access_token ? (
                           <div className="flex flex-wrap items-center gap-2">
-                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">✅ Token configurado</Badge>
+                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">✅ {t('agency.integrations.metaAds.tokenConfigured', 'Token configurado')}</Badge>
                             <Button
                               variant="outline"
                               size="sm"
@@ -1890,7 +1893,7 @@ export default function AgencySettingsPage() {
                                 window.location.href = authUrl;
                               }}
                             >
-                              Re-vincular
+                              {t('agency.integrations.metaAds.reconnect', 'Re-vincular')}
                             </Button>
                             <Button
                               variant="ghost"
@@ -1915,14 +1918,14 @@ export default function AgencySettingsPage() {
                                   if (error) throw error;
                                   await supabase.from('meta_ads_campaigns').delete().eq('agency_id', currentAgency.id);
                                   await refreshAgency();
-                                  toast.success('Meta Ads desvinculado');
+                                  toast.success(t('agency.integrations.metaAds.disconnectSuccess', 'Meta Ads desvinculado'));
                                   fetchConnectedAccounts();
                                 } catch (e: unknown) {
-                                  toast.error(e instanceof Error ? e.message : 'Error al desvincular');
+                                  toast.error(e instanceof Error ? e.message : t('common.error', 'Error al desvincular'));
                                 }
                               }}
                             >
-                              Desvincular
+                              {t('agency.integrations.metaAds.disconnect', 'Desvincular')}
                             </Button>
                           </div>
                         ) : (
@@ -1947,17 +1950,17 @@ export default function AgencySettingsPage() {
                                 window.location.href = authUrl;
                               }}
                             >
-                              🔗 Conectar con Meta
+                              🔗 {t('agency.integrations.metaAds.connect', 'Conectar con Meta')}
                             </Button>
                             <p className="text-xs text-slate-500">
-                              Se abrirá el inicio de sesión de Meta. Tras autorizar, se importarán las cuentas publicitarias disponibles.
+                              {t('agency.integrations.metaAds.connectDesc', 'Se abrirá el inicio de sesión de Meta. Tras autorizar, se importarán las cuentas publicitarias disponibles.')}
                             </p>
                           </div>
                         )}
                       </div>
 
                       <div className="space-y-2 flex flex-col justify-start">
-                        <Label>Importar cuentas desde Meta</Label>
+                        <Label>{t('agency.integrations.metaAds.importTitle', 'Importar cuentas desde Meta')}</Label>
                         <Button
                           variant="secondary"
                           size="sm"
@@ -1967,32 +1970,34 @@ export default function AgencySettingsPage() {
                             if (!currentAgency?.id) return;
                             setSyncingMetaAccounts(true);
                             try {
-                              const { data, error } = await invokeEdgeFunctionWithRetry('list-meta-accounts', {
+                              const response = await invokeEdgeFunctionWithRetry('list-meta-accounts', {
                                 agency_id: currentAgency.id,
                                 sync_config: true,
                               });
+                              const data = response.data as { error?: string; count?: number };
+                              const error = response.error;
                               if (error) throw error;
                               if (data?.error) throw new Error(data.error);
-                              toast.success(`Cuentas actualizadas (${data?.count ?? 0} desde Meta).`);
+                              toast.success(t('agency.integrations.metaAds.syncSuccess', { count: data?.count ?? 0 }));
                               await fetchConnectedAccounts();
                             } catch (e: unknown) {
-                              toast.error(e instanceof Error ? e.message : 'Error al listar cuentas');
+                              toast.error(e instanceof Error ? e.message : t('common.error', 'Error al listar cuentas'));
                             } finally {
                               setSyncingMetaAccounts(false);
                             }
                           }}
                         >
-                          {syncingMetaAccounts ? 'Sincronizando…' : 'Actualizar lista de cuentas'}
+                          {syncingMetaAccounts ? t('agency.integrations.metaAds.syncing', 'Sincronizando…') : t('agency.integrations.metaAds.importAction', 'Actualizar lista de cuentas')}
                         </Button>
-                        <p className="text-xs text-slate-500">Llama a la API de Meta y registra las cuentas en &quot;Cuentas conectadas&quot;.</p>
+                        <p className="text-xs text-slate-500">{t('agency.integrations.metaAds.importDesc', 'Llama a la API de Meta y registra las cuentas en "Cuentas conectadas".')}</p>
                       </div>
                     </div>
 
                     <div className="mt-4 pt-4 border-t">
                       <div className="space-y-3">
-                        <h4 className="text-xs font-semibold text-slate-500 uppercase">Cuentas conectadas ({connectedAccounts.length})</h4>
+                        <h4 className="text-xs font-semibold text-slate-500 uppercase">{t('agency.integrations.metaAds.connectedAccounts', { count: connectedAccounts.length })}</h4>
                         {connectedAccounts.length === 0 ? (
-                          <p className="text-sm text-slate-400 italic">No hay cuentas conectadas.</p>
+                          <p className="text-sm text-slate-400 italic">{t('agency.integrations.metaAds.noAccounts', 'No hay cuentas conectadas.')}</p>
                         ) : (
                           <div className="grid gap-2">
                             {connectedAccounts.map(acc => (
@@ -2002,7 +2007,7 @@ export default function AgencySettingsPage() {
                                     <Facebook className="w-4 h-4" />
                                   </div>
                                   <div>
-                                    <p className="text-sm font-medium text-slate-900">{acc.account_name || 'Cuenta de Anuncios'}</p>
+                                    <p className="text-sm font-medium text-slate-900">{acc.account_name || t('agency.integrations.metaAds.title', 'Cuenta de Anuncios')}</p>
                                     <p className="text-xs font-mono text-slate-500">{acc.account_id}</p>
                                   </div>
                                 </div>
@@ -2026,11 +2031,11 @@ export default function AgencySettingsPage() {
                   <div className="space-y-4 border rounded-lg p-4 bg-slate-50/50 mt-4">
                     <div className="flex items-center gap-2 mb-2">
                       <Megaphone className="h-5 w-5 text-amber-500" />
-                      <h3 className="font-semibold text-slate-900">Google Ads</h3>
+                      <h3 className="font-semibold text-slate-900">{t('agency.integrations.googleAds.title', 'Google Ads')}</h3>
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="google-customer-id">Cuenta de Google Ads</Label>
+                        <Label htmlFor="google-customer-id">{t('agency.integrations.googleAds.selectAccount', 'Cuenta de Google Ads')}</Label>
                         {(currentAgency?.google_ads_refresh_token || integrations.googleRefreshToken) && currentAgency?.id ? (
                           <div className="space-y-2">
                             <Select
@@ -2041,16 +2046,16 @@ export default function AgencySettingsPage() {
                                   .update({ google_ads_customer_id: value })
                                   .eq('id', currentAgency.id!);
                                 if (error) {
-                                  toast.error('Error guardando la cuenta seleccionada');
+                                  toast.error(t('common.error', 'Error guardando la cuenta seleccionada'));
                                   return;
                                 }
                                 await supabase.from('google_ads_campaigns').delete().eq('agency_id', currentAgency.id!);
                                 await refreshAgency();
-                                toast.success('Cuenta de Google Ads actualizada. Sincroniza de nuevo para cargar los datos.');
+                                toast.success(t('agency.integrations.googleAds.updateSuccess', 'Cuenta de Google Ads actualizada. Sincroniza de nuevo para cargar los datos.'));
                               }}
                             >
                               <SelectTrigger className="w-full bg-white">
-                                <SelectValue placeholder="Selecciona una cuenta..." />
+                                <SelectValue placeholder={t('agency.integrations.googleAds.selectAccountPlaceholder', 'Selecciona una cuenta...')} />
                               </SelectTrigger>
                               <SelectContent>
                                 <GoogleAdsAccountSelect
@@ -2059,31 +2064,31 @@ export default function AgencySettingsPage() {
                                 />
                               </SelectContent>
                             </Select>
-                            <p className="text-xs text-slate-500">Selecciona la cuenta principal o MCC para sincronizar.</p>
+                            <p className="text-xs text-slate-500">{t('agency.integrations.googleAds.selectAccountDesc', 'Selecciona la cuenta principal o MCC para sincronizar.')}</p>
                           </div>
                         ) : (currentAgency?.google_ads_refresh_token || integrations.googleRefreshToken) ? (
                           <div className="p-3 border border-dashed rounded bg-slate-100 text-slate-500 text-sm text-center">
-                            Cargando...
+                            {t('agency.integrations.googleAds.loading', 'Cargando...')}
                           </div>
                         ) : (
                           <div className="p-3 border border-dashed rounded bg-slate-100 text-slate-500 text-sm text-center">
-                            Conecta primero con Google para ver tus cuentas disponibles.
+                            {t('agency.integrations.googleAds.connectFirst', 'Conecta primero con Google para ver tus cuentas disponibles.')}
                           </div>
                         )}
                       </div>
 
                       <div className="space-y-3 flex flex-col justify-center">
-                        <Label>Conexión con Google Ads</Label>
+                        <Label>{t('agency.integrations.googleAds.connect', 'Conexión con Google Ads')}</Label>
                         {(currentAgency?.google_ads_refresh_token || integrations.googleRefreshToken) ? (
                           <div className="flex flex-wrap items-center gap-2">
-                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">✅ Vinculado</Badge>
+                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">✅ {t('agency.integrations.googleAds.linked', 'Vinculado')}</Badge>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => {
                                 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
                                 if (!googleClientId) {
-                                  toast.error('Error de configuración: Falta VITE_GOOGLE_CLIENT_ID en el entorno.');
+                                  toast.error(t('agency.integrations.googleAds.configError', 'Error de configuración: Falta VITE_GOOGLE_CLIENT_ID en el entorno.'));
                                   return;
                                 }
                                 if (!currentAgency?.id) return;
@@ -2095,7 +2100,7 @@ export default function AgencySettingsPage() {
                                 window.location.href = authUrl;
                               }}
                             >
-                              Re-vincular
+                              {t('agency.integrations.googleAds.reconnect', 'Re-vincular')}
                             </Button>
                             <Button
                               variant="ghost"
@@ -2122,13 +2127,13 @@ export default function AgencySettingsPage() {
                                   await supabase.from('google_ads_campaigns').delete().eq('agency_id', currentAgency.id);
                                   setIntegrations(prev => ({ ...prev, googleRefreshToken: undefined, googleAdsCustomerId: '' }));
                                   await refreshAgency();
-                                  toast.success('Cuenta de Google Ads desvinculada');
+                                  toast.success(t('agency.integrations.googleAds.disconnectSuccess', 'Cuenta de Google Ads desvinculada'));
                                 } catch (e: any) {
-                                  toast.error(e?.message || 'Error al desvincular');
+                                  toast.error(e?.message || t('common.error', 'Error al desvincular'));
                                 }
                               }}
                             >
-                              Desvincular
+                              {t('agency.integrations.googleAds.disconnect', 'Desvincular')}
                             </Button>
                           </div>
                         ) : (
@@ -2139,7 +2144,7 @@ export default function AgencySettingsPage() {
                               onClick={() => {
                                 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
                                 if (!googleClientId) {
-                                  toast.error('Error de configuración: Falta VITE_GOOGLE_CLIENT_ID en el entorno.');
+                                  toast.error(t('agency.integrations.googleAds.configError', 'Error de configuración: Falta VITE_GOOGLE_CLIENT_ID en el entorno.'));
                                   return;
                                 }
                                 if (!currentAgency?.id) {
@@ -2154,10 +2159,10 @@ export default function AgencySettingsPage() {
                                 window.location.href = authUrl;
                               }}
                             >
-                              🔗 Conectar con Google
+                              🔗 {t('agency.integrations.googleAds.connect', 'Conectar con Google')}
                             </Button>
                             <p className="text-xs text-slate-500">
-                              Se abrirá la pantalla de consentimiento de Google. Al autorizar, podrás seleccionar tu cuenta.
+                              {t('agency.integrations.googleAds.connectDesc', 'Se abrirá la pantalla de consentimiento de Google. Al autorizar, podrás seleccionar tu cuenta.')}
                             </p>
                           </div>
                         )}
@@ -2175,16 +2180,16 @@ export default function AgencySettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Palette className="h-5 w-5 text-purple-600" />
-                  Personalización
+                  {t('agency.appearance.title', 'Personalización')}
                 </CardTitle>
                 <CardDescription>
-                  Personaliza la apariencia de tu agencia
+                  {t('agency.appearance.description', 'Personaliza la apariencia de tu agencia')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="primary-color">Color Principal</Label>
+                    <Label htmlFor="primary-color">{t('agency.appearance.primaryColor', 'Color Principal')}</Label>
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
@@ -2206,7 +2211,7 @@ export default function AgencySettingsPage() {
                       className="h-10 rounded-lg flex items-center justify-center text-white font-medium"
                       style={{ backgroundColor: primaryColor }}
                     >
-                      Vista previa
+                      {t('agency.appearance.preview', 'Vista previa')}
                     </div>
                   </div>
                 </div>
@@ -2215,6 +2220,10 @@ export default function AgencySettingsPage() {
           </TabsContent>
 
           <TabsContent value="billing" className="mt-0 space-y-6">
+            <div className="flex items-center gap-2 mb-4">
+              <CreditCard className="h-5 w-5 text-blue-600" />
+              <h3 className="font-semibold text-lg text-slate-900">{t('agency.billing.title', 'Suscripción y Facturación')}</h3>
+            </div>
             <AgencyBillingTab />
           </TabsContent>
         </div>
@@ -2232,12 +2241,12 @@ export default function AgencySettingsPage() {
             {saving ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Guardando...
+                {t('agency.saving', 'Guardando...')}
               </>
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Guardar Cambios
+                {t('agency.saveChanges', 'Guardar Cambios')}
               </>
             )}
           </Button>

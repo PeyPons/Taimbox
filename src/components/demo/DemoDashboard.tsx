@@ -1,14 +1,15 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { LoadIndicator } from '@/components/shared/LoadIndicator';
 import { MetricsCard } from '@/components/shared/MetricsCard';
 import { Progress } from '@/components/ui/progress';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { getWeeksForMonth } from '@/utils/dateUtils';
 import { format, addDays } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
 import { demoEmployees, demoClients, demoProjects, demoAllocations } from '@/data/demoData';
 import { DemoProvider, useDemo } from '@/contexts/DemoContext';
 import { DemoEmployeeDashboard } from './DemoEmployeeDashboard';
@@ -19,10 +20,11 @@ export function DemoPlanner() {
   const { employees, allocations, projects, clients, getEmployeeMonthlyLoad, getEmployeeLoadForWeek } = useDemo();
   const [currentMonth] = useState(new Date());
   const [selectedTab, setSelectedTab] = useState('overview');
+  const { t, i18n } = useTranslation('landing');
+  const dateLocale = i18n.language.startsWith('en') ? enUS : es;
 
   const weeks = useMemo(() => getWeeksForMonth(currentMonth), [currentMonth]);
 
-  // Dos empleados de ejemplo para el desglose por semana (María + Carlos)
   const calendarEmployees = employees.slice(0, 2);
 
   return (
@@ -32,52 +34,40 @@ export function DemoPlanner() {
         <Info className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-blue-900 mb-1">
-            Demo Interactivo - Datos de Ejemplo
+            {t('demo.plannerTitle')}
           </p>
           <p className="text-xs text-blue-700">
-            Esta es una demostración con datos simulados. Explora las diferentes secciones para ver cómo funciona la plataforma.
-            No se pueden realizar modificaciones en este modo demo.
+            {t('demo.plannerSubtitle')}
           </p>
         </div>
       </div>
 
-      {/* Vista general con pestañas: menú con scroll horizontal en móvil para evitar overflow de página */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full min-w-0">
         <div className="overflow-x-auto overflow-y-hidden -mx-1 px-1 custom-scrollbar">
           <TabsList className="w-full justify-start h-auto p-1 bg-slate-50 min-w-max">
             <TabsTrigger value="overview" className="data-[state=active]:bg-white shrink-0">
-              Vista general
+              {t('demo.tabOverview')}
             </TabsTrigger>
             <TabsTrigger value="projects" className="data-[state=active]:bg-white shrink-0">
-              Proyectos
+              {t('demo.tabProjectsPlanner')}
             </TabsTrigger>
             <TabsTrigger value="metrics" className="data-[state=active]:bg-white shrink-0">
-              Métricas
+              {t('demo.tabMetricsPlanner')}
             </TabsTrigger>
           </TabsList>
         </div>
 
-        {/* Vista general: equipo, proyectos, escenarios + desglose por semana */}
         <TabsContent value="overview" className="mt-4 space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="p-6">
-              <h3 className="text-sm font-semibold text-slate-700 mb-4">Equipo</h3>
+              <h3 className="text-sm font-semibold text-slate-700 mb-4">{t('demo.team')}</h3>
               <div className="space-y-3">
                 {employees.map(emp => {
-                  const load = getEmployeeMonthlyLoad(
-                    emp.id,
-                    currentMonth.getFullYear(),
-                    currentMonth.getMonth()
-                  );
+                  const load = getEmployeeMonthlyLoad(emp.id, currentMonth.getFullYear(), currentMonth.getMonth());
                   return (
                     <div key={emp.id} className="flex items-center justify-between p-2 bg-slate-50 rounded">
                       <span className="text-sm font-medium">{emp.name}</span>
-                      <LoadIndicator
-                        hours={load.hours}
-                        capacity={load.capacity}
-                        percentage={load.percentage}
-                        size="sm"
-                      />
+                      <LoadIndicator hours={load.hours} capacity={load.capacity} percentage={load.percentage} size="sm" />
                     </div>
                   );
                 })}
@@ -85,14 +75,13 @@ export function DemoPlanner() {
             </Card>
 
             <Card className="p-6">
-              <h3 className="text-sm font-semibold text-slate-700 mb-4">Proyectos activos</h3>
+              <h3 className="text-sm font-semibold text-slate-700 mb-4">{t('demo.activeProjects')}</h3>
               <div className="space-y-2">
                 {projects.map(proj => {
                   const client = clients.find(c => c.id === proj.clientId);
                   const projectAllocations = allocations.filter(a => a.projectId === proj.id);
                   const totalHours = projectAllocations.reduce((sum, a) => sum + a.hoursAssigned, 0);
                   const percentage = proj.budgetHours > 0 ? (totalHours / proj.budgetHours) * 100 : 0;
-
                   return (
                     <div key={proj.id} className="flex items-center justify-between p-2 bg-slate-50 rounded">
                       <div className="flex items-center gap-2">
@@ -113,33 +102,32 @@ export function DemoPlanner() {
             </Card>
 
             <Card className="p-6">
-              <h3 className="text-sm font-semibold text-slate-700 mb-4">Escenarios</h3>
+              <h3 className="text-sm font-semibold text-slate-700 mb-4">{t('demo.scenarios')}</h3>
               <div className="space-y-2 text-sm">
                 <div className="p-2 bg-emerald-50 rounded border border-emerald-200">
                   <div className="font-medium text-emerald-900">María González</div>
-                  <div className="text-xs text-emerald-700">Carga normal (80-90%)</div>
+                  <div className="text-xs text-emerald-700">{t('demo.loadNormal')}</div>
                 </div>
                 <div className="p-2 bg-red-50 rounded border border-red-200">
                   <div className="font-medium text-red-900">Carlos Ruiz</div>
-                  <div className="text-xs text-red-700">Sobrecarga (110-120%)</div>
+                  <div className="text-xs text-red-700">{t('demo.loadOver')}</div>
                 </div>
                 <div className="p-2 bg-amber-50 rounded border border-amber-200">
                   <div className="font-medium text-amber-900">Ana Martínez</div>
-                  <div className="text-xs text-amber-700">Subcarga (50-60%)</div>
+                  <div className="text-xs text-amber-700">{t('demo.loadUnder')}</div>
                 </div>
                 <div className="p-2 bg-blue-50 rounded border border-blue-200">
                   <div className="font-medium text-blue-900">Luis Fernández</div>
-                  <div className="text-xs text-blue-700">Carga óptima (85-95%)</div>
+                  <div className="text-xs text-blue-700">{t('demo.loadOptimal')}</div>
                 </div>
               </div>
             </Card>
           </div>
 
-          {/* Carga por semana (antes pestaña Calendario): mismo contenido, integrado en vista general */}
           <Card className="overflow-hidden border-slate-200 shadow-sm">
             <CardHeader className="py-3">
-              <CardTitle className="text-sm">Carga por semana</CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">Desglose de horas planificadas por semana (ejemplo: María y Carlos)</p>
+              <CardTitle className="text-sm">{t('demo.weeklyLoad')}</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">{t('demo.weeklyLoadDesc')}</p>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-4">
@@ -158,13 +146,7 @@ export function DemoPlanner() {
                           <p className="text-xs text-muted-foreground truncate">{emp.role}</p>
                         </div>
                       </div>
-                      <LoadIndicator
-                        hours={empMonthlyLoad.hours}
-                        capacity={empMonthlyLoad.capacity}
-                        percentage={empMonthlyLoad.percentage}
-                        size="md"
-                        className="shrink-0"
-                      />
+                      <LoadIndicator hours={empMonthlyLoad.hours} capacity={empMonthlyLoad.capacity} percentage={empMonthlyLoad.percentage} size="md" className="shrink-0" />
                       <div className="flex flex-wrap gap-2 flex-1">
                         {weeks.map((week, index) => {
                           const weekStartDate = format(week.weekStart, 'yyyy-MM-dd');
@@ -174,7 +156,7 @@ export function DemoPlanner() {
                           );
                           const effectiveStart = week.effectiveStart || week.weekStart;
                           const effectiveEnd = week.effectiveEnd || addDays(week.weekStart, 6);
-                          const weekLabel = `${format(effectiveStart, 'd', { locale: es })}-${format(effectiveEnd, 'd MMM', { locale: es })}`;
+                          const weekLabel = `${format(effectiveStart, 'd', { locale: dateLocale })}-${format(effectiveEnd, 'd MMM', { locale: dateLocale })}`;
                           return (
                             <div
                               key={week.weekStart.toISOString()}
@@ -185,7 +167,7 @@ export function DemoPlanner() {
                                     "border-slate-200 bg-slate-50"
                               )}
                             >
-                              <p className="text-[10px] font-bold uppercase text-slate-500">S{index + 1}</p>
+                              <p className="text-[10px] font-bold uppercase text-slate-500">{t('demo.weekShort')}{index + 1}</p>
                               <p className="text-xs text-slate-600 mt-0.5">{weekLabel}</p>
                               <p className={cn(
                                 "font-bold text-sm mt-1",
@@ -196,7 +178,7 @@ export function DemoPlanner() {
                               </p>
                               {weekAllocations.length > 0 && (
                                 <p className="text-[10px] text-slate-500 mt-0.5">
-                                  {weekAllocations.length} tarea{weekAllocations.length > 1 ? 's' : ''}
+                                  {weekAllocations.length} {weekAllocations.length > 1 ? t('demo.tasks') : t('demo.task')}
                                 </p>
                               )}
                             </div>
@@ -211,7 +193,6 @@ export function DemoPlanner() {
           </Card>
         </TabsContent>
 
-        {/* Proyectos */}
         <TabsContent value="projects" className="mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {projects.map(proj => {
@@ -222,7 +203,6 @@ export function DemoPlanner() {
               const totalComputed = completed.reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
               const totalReal = completed.reduce((sum, a) => sum + (a.hoursActual || 0), 0);
               const percentage = proj.budgetHours > 0 ? (totalComputed / proj.budgetHours) * 100 : 0;
-
               return (
                 <Card key={proj.id} className="flex flex-col h-full">
                   <CardHeader className="pb-2">
@@ -246,16 +226,11 @@ export function DemoPlanner() {
                   <CardContent className="pt-2">
                     <div className="space-y-3">
                       <div className="text-xs text-slate-500">
-                        <div>Asignadas: {totalAssigned}h</div>
-                        <div>Computadas: {totalComputed}h</div>
-                        <div>Presupuesto: {proj.budgetHours}h</div>
+                        <div>{t('demo.assigned')}: {totalAssigned}h</div>
+                        <div>{t('demo.computed')}: {totalComputed}h</div>
+                        <div>{t('demo.budget')}: {proj.budgetHours}h</div>
                       </div>
-                      <MetricsCard
-                        estimated={totalAssigned}
-                        real={totalReal}
-                        computed={totalComputed}
-                        size="sm"
-                      />
+                      <MetricsCard estimated={totalAssigned} real={totalReal} computed={totalComputed} size="sm" />
                     </div>
                   </CardContent>
                 </Card>
@@ -264,23 +239,21 @@ export function DemoPlanner() {
           </div>
           <div className="mt-4 text-center text-sm text-slate-500">
             <AlertCircle className="h-4 w-4 inline mr-2" />
-            Vista de solo lectura en modo demo
+            {t('demo.readonlyProjects')}
           </div>
         </TabsContent>
 
-        {/* Métricas */}
         <TabsContent value="metrics" className="mt-4 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Resumen del equipo</CardTitle>
+                <CardTitle className="text-sm">{t('demo.teamSummary')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {employees.map(emp => {
                   const load = getEmployeeMonthlyLoad(emp.id, currentMonth.getFullYear(), currentMonth.getMonth());
                   const empAllocations = allocations.filter(a => a.employeeId === emp.id);
                   const completed = empAllocations.filter(a => a.status === 'completed');
-
                   return (
                     <div key={emp.id} className="p-3 bg-slate-50 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
@@ -295,8 +268,8 @@ export function DemoPlanner() {
                         </Badge>
                       </div>
                       <div className="text-xs text-slate-600 space-y-1">
-                        <div>Horas: {load.hours}h / {load.capacity}h</div>
-                        <div>Tareas completadas: {completed.length} / {empAllocations.length}</div>
+                        <div>{t('demo.hours')}: {load.hours}h / {load.capacity}h</div>
+                        <div>{t('demo.completedTasks')}: {completed.length} / {empAllocations.length}</div>
                       </div>
                     </div>
                   );
@@ -306,7 +279,7 @@ export function DemoPlanner() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Estado de proyectos</CardTitle>
+                <CardTitle className="text-sm">{t('demo.projectStatus')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {projects.map(proj => {
@@ -316,7 +289,6 @@ export function DemoPlanner() {
                     .filter(a => a.status === 'completed')
                     .reduce((sum, a) => sum + (a.hoursComputed || 0), 0);
                   const percentage = proj.budgetHours > 0 ? (totalComputed / proj.budgetHours) * 100 : 0;
-
                   return (
                     <div key={proj.id} className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -324,26 +296,13 @@ export function DemoPlanner() {
                           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: client?.color }} />
                           <span className="text-sm font-medium">{proj.name}</span>
                         </div>
-                        <span className={cn(
-                          "text-xs font-bold",
-                          percentage > 100 ? "text-red-600" :
-                            percentage > 80 ? "text-amber-600" :
-                              "text-emerald-600"
-                        )}>
+                        <span className={cn("text-xs font-bold", percentage > 100 ? "text-red-600" : percentage > 80 ? "text-amber-600" : "text-emerald-600")}>
                           {percentage.toFixed(0)}%
                         </span>
                       </div>
-                      <Progress
-                        value={Math.min(percentage, 100)}
-                        className={cn(
-                          "h-2",
-                          percentage > 100 && "[&>div]:bg-red-500",
-                          percentage > 80 && percentage <= 100 && "[&>div]:bg-amber-500",
-                          percentage <= 80 && "[&>div]:bg-emerald-500"
-                        )}
-                      />
+                      <Progress value={Math.min(percentage, 100)} className={cn("h-2", percentage > 100 && "[&>div]:bg-red-500", percentage > 80 && percentage <= 100 && "[&>div]:bg-amber-500", percentage <= 80 && "[&>div]:bg-emerald-500")} />
                       <div className="text-xs text-slate-500">
-                        {totalComputed}h computadas de {proj.budgetHours}h contratadas
+                        {totalComputed}h {t('demo.computedOf')} {proj.budgetHours}h {t('demo.contracted')}
                       </div>
                     </div>
                   );
@@ -353,7 +312,7 @@ export function DemoPlanner() {
           </div>
           <div className="text-center text-sm text-slate-500">
             <AlertCircle className="h-4 w-4 inline mr-2" />
-            Métricas de solo lectura en modo demo
+            {t('demo.readonlyMetrics')}
           </div>
         </TabsContent>
       </Tabs>
@@ -361,7 +320,6 @@ export function DemoPlanner() {
   );
 }
 
-// Este componente ya no se usa, se reemplazó por DemoEmployeeDashboard
 export function DemoDashboard() {
   return (
     <DemoProvider>

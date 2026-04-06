@@ -4,6 +4,7 @@ import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { useIntegration } from '@/hooks/useIntegration';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -41,6 +42,7 @@ type FilterType = 'all' | 'needs-planning' | 'behind-schedule' | 'over-budget' |
 
 export default function ProjectsPage() {
   const { projects, clients, allocations, employees, deleteProject, updateProject, addProject } = useApp();
+  const { t } = useAppTranslation();
   const { currentAgency } = useAgency();
   const { selectedDepartmentId } = useDepartmentView();
   const isCrmExportEnabled = useIntegration('crm_export');
@@ -246,30 +248,30 @@ export default function ProjectsPage() {
   const handleSave = async () => {
     // Validación mejorada
     if (!formData.name || formData.name.trim() === '') {
-      toast.error("El nombre del proyecto es obligatorio");
+      toast.error(t('projectsPage.toasts.nameRequired'));
       return;
     }
 
     if (!formData.clientId || formData.clientId === '') {
-      toast.error("Debes seleccionar un cliente");
+      toast.error(t('projectsPage.toasts.clientRequired'));
       return;
     }
 
     const budgetHours = parseFloat(formData.budgetHours);
     if (isNaN(budgetHours) || budgetHours < 0) {
-      toast.error("Las horas asignadas deben ser un número válido mayor o igual a 0");
+      toast.error(t('projectsPage.toasts.budgetHoursInvalid'));
       return;
     }
 
     const minimumHours = parseFloat(formData.minimumHours);
     if (isNaN(minimumHours) || minimumHours < 0) {
-      toast.error("Las horas mínimas deben ser un número válido mayor o igual a 0");
+      toast.error(t('projectsPage.toasts.minimumHoursInvalid'));
       return;
     }
 
     const monthlyFee = parseFloat(formData.monthlyFee);
     if (isNaN(monthlyFee) || monthlyFee < 0) {
-      toast.error("El fee mensual debe ser un número válido mayor o igual a 0");
+      toast.error(t('projectsPage.toasts.monthlyFeeInvalid'));
       return;
     }
 
@@ -286,7 +288,7 @@ export default function ProjectsPage() {
           externalId: formData.externalId !== '' ? Number(formData.externalId) : undefined,
           okrs: formData.okrs
         });
-        toast.success("Proyecto creado correctamente");
+        toast.success(t('projectsPage.toasts.created'));
       } else if (editingId) {
         const existingProject = projects.find(p => p.id === editingId);
         if (existingProject) {
@@ -301,16 +303,17 @@ export default function ProjectsPage() {
             externalId: formData.externalId !== '' ? Number(formData.externalId) : undefined,
             okrs: formData.okrs
           });
-          toast.success("Proyecto actualizado correctamente");
+          toast.success(t('projectsPage.toasts.updated'));
         } else {
-          toast.error("No se encontró el proyecto a editar");
+          toast.error(t('projectsPage.toasts.notFound'));
           return;
         }
       }
       setIsDialogOpen(false);
     } catch (error) {
       console.error("Error guardando proyecto:", error);
-      const errorMessage = (error as { message?: string })?.message || (error as { error?: { message?: string } })?.error?.message || "Error al guardar el proyecto";
+      const defaultMessage = t('projectsPage.toasts.saveErrorDefault');
+      const errorMessage = (error as { message?: string })?.message || (error as { error?: { message?: string } })?.error?.message || defaultMessage;
       toast.error(errorMessage);
     }
   };
@@ -324,12 +327,13 @@ export default function ProjectsPage() {
     if (!editingId) return;
     try {
       await deleteProject(editingId);
-      toast.success("Proyecto eliminado correctamente");
+      toast.success(t('projectsPage.toasts.deleted'));
       setIsDialogOpen(false);
       setShowDeleteConfirm(false);
     } catch (e) {
       console.error("Error eliminando proyecto:", e);
-      const errorMessage = (e as { message?: string })?.message || (e as { error?: { message?: string } })?.error?.message || "No se pudo eliminar el proyecto";
+      const defaultMessage = t('projectsPage.toasts.deleteErrorDefault');
+      const errorMessage = (e as { message?: string })?.message || (e as { error?: { message?: string } })?.error?.message || defaultMessage;
       toast.error(errorMessage);
     }
   };
@@ -345,13 +349,13 @@ export default function ProjectsPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
-            <FolderKanban className="h-8 w-8 text-primary" /> Proyectos
+            <FolderKanban className="h-8 w-8 text-primary" /> {t('projectsPage.title')}
           </h1>
-          <p className="text-muted-foreground">Panel de control y seguimiento operativo</p>
+          <p className="text-muted-foreground">{t('projectsPage.subtitle')}</p>
         </div>
         <div className="flex items-center gap-3">
           <Button onClick={openNewProject} className="bg-primary hover:bg-primary/90 text-white gap-2">
-            <Plus className="h-4 w-4" /> Nuevo proyecto
+            <Plus className="h-4 w-4" /> {t('projectsPage.actions.newProject')}
           </Button>
           <div className="flex items-center gap-1 bg-white p-1 rounded-lg border shadow-sm">
             <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-8 w-8">
@@ -363,8 +367,14 @@ export default function ProjectsPage() {
             <Button variant="ghost" size="icon" onClick={handleNextMonth} className="h-8 w-8">
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleToday} className="text-xs h-8" aria-label="Mes actual">
-              Mes actual
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleToday}
+              className="text-xs h-8"
+              aria-label={t('projectsPage.actions.currentMonthAria')}
+            >
+              {t('projectsPage.actions.currentMonth')}
             </Button>
           </div>
         </div>

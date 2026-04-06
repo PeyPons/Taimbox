@@ -1,81 +1,87 @@
+import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle2, AlertTriangle, TrendingUp, TrendingDown, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface WeekData {
-  week: string;
-  dates: string;
-  estimated: number;
-  real?: number;
-  computed?: number;
-  gain?: number;
-  loss?: number;
-  status: 'completed' | 'pending' | 'free';
-  capacity: number;
-  used: number;
-  pending?: number;
-}
-
-const weeks: WeekData[] = [
-  {
-    week: 'S1',
-    dates: '1-5 dic',
-    estimated: 42,
-    real: 31.5,
-    computed: 32,
-    gain: 0.5,
-    status: 'completed',
-    capacity: 40,
-    used: 42,
-    pending: 1
-  },
-  {
-    week: 'S2',
-    dates: '8-12 dic',
-    estimated: 30,
-    status: 'pending',
-    capacity: 40,
-    used: 30
-  },
-  {
-    week: 'S3',
-    dates: '15-19 dic',
-    estimated: 42,
-    real: 41.5,
-    computed: 40,
-    loss: 1.5,
-    status: 'completed',
-    capacity: 40,
-    used: 42
-  },
-  {
-    week: 'S4',
-    dates: '22-26 dic',
-    status: 'free',
-    capacity: 40,
-    used: 0
-  },
-  {
-    week: 'S5',
-    dates: '29-31 dic',
-    status: 'free',
-    capacity: 40,
-    used: 0
-  }
-];
-
-const totalMonth = weeks.reduce((sum, w) => sum + (w.used || 0), 0);
-const totalCapacity = weeks.reduce((sum, w) => sum + w.capacity, 0);
-const monthPercentage = Math.round((totalMonth / totalCapacity) * 100);
-
 export function CalendarPreview() {
+  const { t, i18n } = useTranslation('landing');
+  const isEn = i18n.language.startsWith('en');
+  const m = isEn ? 'Dec' : 'dic';
+  const prefix = t('demo.weekShort'); // S or W
+
+  interface WeekData {
+    week: string;
+    dates: string;
+    estimated?: number;
+    real?: number;
+    computed?: number;
+    gain?: number;
+    loss?: number;
+    status: 'completed' | 'pending' | 'free';
+    capacity: number;
+    used: number;
+    pending?: number;
+  }
+
+  const weeks: WeekData[] = [
+    {
+      week: `${prefix}1`,
+      dates: `1-5 ${m}`,
+      estimated: 42,
+      real: 31.5,
+      computed: 32,
+      gain: 0.5,
+      status: 'completed',
+      capacity: 40,
+      used: 42,
+      pending: 1
+    },
+    {
+      week: `${prefix}2`,
+      dates: `8-12 ${m}`,
+      estimated: 30,
+      status: 'pending',
+      capacity: 40,
+      used: 30
+    },
+    {
+      week: `${prefix}3`,
+      dates: `15-19 ${m}`,
+      estimated: 42,
+      real: 41.5,
+      computed: 40,
+      loss: 1.5,
+      status: 'completed',
+      capacity: 40,
+      used: 42
+    },
+    {
+      week: `${prefix}4`,
+      dates: `22-26 ${m}`,
+      status: 'free',
+      capacity: 40,
+      used: 0
+    },
+    {
+      week: `${prefix}5`,
+      dates: `29-31 ${m}`,
+      status: 'free',
+      capacity: 40,
+      used: 0
+    }
+  ];
+
+  const totalMonth = weeks.reduce((sum, w) => sum + (w.used || 0), 0);
+  const totalCapacity = weeks.reduce((sum, w) => sum + w.capacity, 0);
+  const monthPercentage = Math.round((totalMonth / totalCapacity) * 100);
+
   return (
     <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100 px-3 sm:px-6 py-3 sm:py-4">
-        <h3 className="text-base sm:text-xl font-bold text-slate-900">Mi calendario</h3>
+        <h3 className="text-base sm:text-xl font-bold text-slate-900">{t('demo.myCalendar')}</h3>
       </div>
 
       {/* User Profile */}
@@ -105,7 +111,7 @@ export function CalendarPreview() {
             </div>
           ))}
           <div className="text-center">
-            <div className="text-[10px] sm:text-xs font-bold text-slate-600 mb-0.5 sm:mb-1">TOTAL MES</div>
+            <div className="text-[10px] sm:text-xs font-bold text-slate-600 mb-0.5 sm:mb-1 uppercase">{t('demo.totalMonth')}</div>
           </div>
 
           {/* Week Cards */}
@@ -142,8 +148,8 @@ export function CalendarPreview() {
                   <div className="flex items-center justify-between text-[10px] sm:text-xs">
                     <div className="flex items-center gap-0.5 sm:gap-1 text-slate-600">
                       <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                      <span className="hidden sm:inline">Est.</span>
-                      <span className="sm:hidden">E</span>
+                      <span className="hidden sm:inline">{t('demo.est')}</span>
+                      <span className="sm:hidden">{t('demo.est')[0]}</span>
                     </div>
                     <span className="font-mono font-semibold text-slate-900 text-[10px] sm:text-xs">{week.estimated}h</span>
                   </div>
@@ -153,11 +159,11 @@ export function CalendarPreview() {
                 {week.real !== undefined && week.computed !== undefined && (
                   <div className="text-[9px] sm:text-xs space-y-0.5 hidden sm:block">
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Real</span>
+                      <span className="text-slate-600">{t('demo.real')}</span>
                       <span className="font-mono font-semibold text-blue-700">{week.real}h</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Comp.</span>
+                      <span className="text-slate-600">{t('demo.comp')}</span>
                       <span className="font-mono font-semibold text-emerald-700">{week.computed}h</span>
                     </div>
                   </div>
@@ -167,29 +173,29 @@ export function CalendarPreview() {
                 {week.gain !== undefined && (
                   <Badge className="w-full justify-center bg-emerald-500 text-white border-0 text-[9px] sm:text-[10px] py-0.5 sm:py-1 px-1">
                     <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
-                    <span className="hidden sm:inline">Ganancia +{week.gain}h</span>
+                    <span className="hidden sm:inline">{t('demo.gain')} +{week.gain}h</span>
                     <span className="sm:hidden">+{week.gain}h</span>
                   </Badge>
                 )}
                 {week.loss !== undefined && (
                   <Badge className="w-full justify-center bg-red-500 text-white border-0 text-[9px] sm:text-[10px] py-0.5 sm:py-1 px-1">
                     <TrendingDown className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
-                    <span className="hidden sm:inline">Pérdida {week.loss}h</span>
+                    <span className="hidden sm:inline">{t('demo.loss')} {week.loss}h</span>
                     <span className="sm:hidden">{week.loss}h</span>
                   </Badge>
                 )}
 
                 {/* Free Status */}
                 {week.status === 'free' && (
-                  <div className="text-center text-[10px] sm:text-xs font-medium text-slate-500 py-1 sm:py-2">
-                    LIBRE
+                  <div className="text-center text-[10px] sm:text-xs font-medium text-slate-500 py-1 sm:py-2 uppercase">
+                    {t('demo.free')}
                   </div>
                 )}
 
                 {/* Pending Tasks */}
                 {week.pending && (
                   <div className="text-[9px] sm:text-[10px] text-amber-600 font-medium">
-                    +{week.pending} pendiente
+                    +{week.pending} {t('demo.pending')}
                   </div>
                 )}
 

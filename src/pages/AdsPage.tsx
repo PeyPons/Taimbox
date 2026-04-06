@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -108,12 +108,12 @@ const getRoasColor = (roas: number) => {
   return "text-red-600 bg-red-50 border-red-200";
 };
 
-const getStatusConfig = (status: string) => {
+const getStatusConfig = (status: string, t: any) => {
   switch (status) {
-    case 'over': return { color: 'bg-red-500', text: 'Excedido', icon: AlertTriangle, badgeClass: 'bg-red-100 text-red-700 border-red-200' };
-    case 'risk': return { color: 'bg-amber-500', text: 'En riesgo', icon: TrendingUp, badgeClass: 'bg-amber-100 text-amber-700 border-amber-200' };
-    case 'under': return { color: 'bg-blue-500', text: 'Bajo', icon: TrendingDown, badgeClass: 'bg-blue-100 text-blue-700 border-blue-200' };
-    default: return { color: 'bg-emerald-500', text: 'OK', icon: CheckCircle2, badgeClass: 'bg-emerald-100 text-emerald-700 border-emerald-200' };
+    case 'over': return { color: 'bg-red-500', text: t('ads.status.exceeded', 'Excedido'), icon: AlertTriangle, badgeClass: 'bg-red-100 text-red-700 border-red-200' };
+    case 'risk': return { color: 'bg-amber-500', text: t('ads.status.risk', 'En riesgo'), icon: TrendingUp, badgeClass: 'bg-amber-100 text-amber-700 border-amber-200' };
+    case 'under': return { color: 'bg-blue-500', text: t('ads.status.low', 'Bajo'), icon: TrendingDown, badgeClass: 'bg-blue-100 text-blue-700 border-blue-200' };
+    default: return { color: 'bg-emerald-500', text: t('ads.status.ok', 'OK'), icon: CheckCircle2, badgeClass: 'bg-emerald-100 text-emerald-700 border-emerald-200' };
   }
 };
 
@@ -148,6 +148,7 @@ const StatCard = memo(function StatCard({ icon: Icon, label, value, subValue, co
 });
 
 export default function AdsPage() {
+  const { t } = useTranslation('app');
   const { currentAgency } = useAgency();
   const { isActive: isAnonymized, anonymizer } = useAnonymizeAds();
   const [rawData, setRawData] = useState<CampaignData[]>([]);
@@ -172,9 +173,9 @@ export default function AdsPage() {
 
   // Formulario nueva regla
   const ruleFormSchema = z.object({
-    account: z.string().min(1, 'Debes seleccionar una cuenta'),
-    keyword: z.string().min(1, 'La palabra clave es obligatoria'),
-    name: z.string().min(1, 'El nombre es obligatorio'),
+    account: z.string().min(1, t('ads.dialogs.splitAccounts.selectAccount', 'Debes seleccionar una cuenta')),
+    keyword: z.string().min(1, t('ads.dialogs.splitAccounts.ifContains', 'La palabra clave es obligatoria')),
+    name: z.string().min(1, t('ads.dialogs.splitAccounts.createAccount', 'El nombre es obligatorio')),
   });
 
   type RuleFormValues = z.infer<typeof ruleFormSchema>;
@@ -242,12 +243,12 @@ export default function AdsPage() {
 
   const handleStartSync = async () => {
     if (!currentAgency) {
-      toast.error("Error: No se ha identificado la agencia actual.");
+      toast.error(t('common.errorIdentifyingAgency', 'Error: No se ha identificado la agencia actual.'));
       return;
     }
     setIsSyncing(true);
     setSyncStatus('running');
-    setSyncLogs(['🚀 Iniciando conexión con Google Ads...']);
+    setSyncLogs([t('ads.dialogs.sync.initGoogle', '🚀 Iniciando conexión con Google Ads...')]);
     setSyncProgress(0);
 
     try {
@@ -292,13 +293,13 @@ export default function AdsPage() {
       if (row.status === 'completed') {
         setSyncStatus('completed');
         setSyncProgress(100);
-        toast.success('Sincronización completada');
+        toast.success(t('ads.dialogs.sync.completed', 'Sincronización completada'));
         fetchData();
         cleanup();
         setTimeout(() => { setIsSyncing(false); setCurrentJobId(null); }, 2000);
       } else if (row.status === 'error') {
         setSyncStatus('error');
-        toast.error('Error en el proceso');
+        toast.error(t('ads.dialogs.sync.error', 'Error en el proceso'));
         cleanup();
       }
     };
@@ -609,15 +610,15 @@ export default function AdsPage() {
               <GoogleIcon />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Google Ads</h1>
+              <h1 className="text-2xl font-bold text-slate-900">{t('ads.google', 'Google Ads')}</h1>
               <div className="flex items-center gap-3 mt-1">
                 <span className="text-sm text-slate-500 flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" />
-                  {lastSyncTime ? lastSyncTime.toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Sin sincronizar'}
+                  {lastSyncTime ? t('ads.lastSync', { time: lastSyncTime.toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }), defaultValue: `Última sincronización: ${lastSyncTime.toLocaleString()}` }) : t('ads.noSync', 'Sin sincronizar')}
                 </span>
                 <Badge variant="outline" className="text-xs">
                   <Calendar className="w-3 h-3 mr-1" />
-                  Del 1 al {daysInMonth}
+                  {t('ads.daysRange', { days: daysInMonth, defaultValue: `Del 1 al ${daysInMonth}` })}
                 </Badge>
               </div>
             </div>
@@ -625,11 +626,11 @@ export default function AdsPage() {
 
           <div className="flex gap-2 w-full md:w-auto">
             <Button variant="outline" onClick={() => setIsSplitModalOpen(true)} className="flex-1 md:flex-none">
-              <Scissors className="w-4 h-4 mr-2" /> Dividir
+              <Scissors className="w-4 h-4 mr-2" /> {t('ads.actions.split', 'Dividir')}
             </Button>
             <Button onClick={handleStartSync} disabled={isSyncing} className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700">
               <RefreshCw className={cn("w-4 h-4 mr-2", isSyncing && "animate-spin")} />
-              Sincronizar
+              {isSyncing ? t('ads.actions.syncing', 'Sincronizando...') : t('ads.actions.sync', 'Sincronizar')}
             </Button>
           </div>
         </div>
@@ -638,44 +639,44 @@ export default function AdsPage() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <StatCard
             icon={Target}
-            label="Inversión"
+            label={t('ads.stats.investment', 'Inversión')}
             value={formatCurrency(globalStats.totalSpent)}
-            subValue={`de ${formatCurrency(globalStats.totalBudget)}`}
+            subValue={`${t('ads.stats.of', 'de')} ${formatCurrency(globalStats.totalBudget)}`}
             color="blue"
           />
           <StatCard
             icon={ArrowUpRight}
-            label="Clicks"
+            label={t('ads.stats.clicks', 'Clicks')}
             value={globalStats.totalClicks.toLocaleString('es-ES')}
             subValue={`CTR ${globalStats.globalCtr.toFixed(2)}%`}
             color="slate"
           />
           <StatCard
             icon={TrendingUp}
-            label="Conversiones"
+            label={t('ads.stats.conversions', 'Conversiones')}
             value={globalStats.totalConversions.toFixed(0)}
             subValue={`CPA ${formatCurrency(globalStats.globalCpa)}`}
             color="emerald"
           />
           <StatCard
             icon={Target}
-            label="ROAS"
+            label={t('ads.stats.roas', 'ROAS')}
             value={`${globalStats.globalRoas.toFixed(2)}x`}
             subValue={`CPC ${formatCurrency(globalStats.globalCpc)}`}
             color={globalStats.globalRoas >= 2 ? 'emerald' : globalStats.globalRoas >= 1 ? 'amber' : 'red'}
           />
           <StatCard
             icon={ArrowDownRight}
-            label="Diario recomendado"
+            label={t('ads.stats.dailyRecommended', 'Diario recomendado')}
             value={formatCurrency(globalStats.totalRecommendedDaily)}
-            subValue={`Actual: ${formatCurrency(globalStats.totalCurrentDaily)}`}
+            subValue={`${t('common.actual', 'Actual')}: ${formatCurrency(globalStats.totalCurrentDaily)}`}
             color={globalStats.totalRecommendedDaily < globalStats.totalCurrentDaily ? 'amber' : 'emerald'}
           />
           <StatCard
             icon={AlertTriangle}
-            label="En riesgo"
+            label={t('ads.stats.atRisk', 'En riesgo')}
             value={globalStats.atRisk.toString()}
-            subValue={`${daysRemaining} días restantes`}
+            subValue={t('ads.stats.daysRemaining', { count: daysRemaining, defaultValue: `${daysRemaining} días restantes` })}
             color={globalStats.atRisk > 0 ? 'red' : 'slate'}
           />
         </div>
@@ -685,7 +686,7 @@ export default function AdsPage() {
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
-              placeholder="Buscar cuenta o campaña..."
+              placeholder={t('ads.filters.searchPlaceholder', 'Buscar cuenta o campaña...')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 bg-slate-50 border-slate-200"
@@ -701,16 +702,16 @@ export default function AdsPage() {
               <Switch id="show-hidden" checked={showHidden} onCheckedChange={setShowHidden} />
               <Label htmlFor="show-hidden" className="text-sm text-slate-600 cursor-pointer flex items-center gap-1">
                 {showHidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                Ocultos
+                {t('ads.filters.showHidden', 'Ocultos')}
               </Label>
             </div>
             <div className="flex items-center gap-2">
               <Switch id="show-zero-spend" checked={showZeroSpend} onCheckedChange={setShowZeroSpend} />
               <Label htmlFor="show-zero-spend" className="text-sm text-slate-600 cursor-pointer flex items-center gap-1">
-                Sin inversión (0 €)
+                {t('ads.filters.showZeroSpend', 'Sin inversión (0 €)')}
               </Label>
             </div>
-            <span className="text-sm text-slate-500">{reportData.length} cuentas</span>
+            <span className="text-sm text-slate-500">{t('ads.filters.accountsCount', { count: reportData.length, defaultValue: `${reportData.length} cuentas` })}</span>
           </div>
         </div>
       </div>
@@ -719,7 +720,7 @@ export default function AdsPage() {
       <div className="space-y-3">
         <Accordion type="single" collapsible className="space-y-2">
           {reportData.map((client) => {
-            const statusConfig = getStatusConfig(client.status);
+            const statusConfig = getStatusConfig(client.status, t);
             const dailyDiff = client.currentDailyBudget - client.recommendedDaily;
             const isOverspending = dailyDiff > 0 && client.status !== 'ok';
 
@@ -751,7 +752,7 @@ export default function AdsPage() {
                           </div>
                           {client.is_group && (
                             <Badge variant="secondary" className="text-[10px] gap-1">
-                              <Layers className="w-3 h-3" /> GRUPO
+                              <Layers className="w-3 h-3" /> {t('ads.status.group', 'GRUPO')}
                             </Badge>
                           )}
                           <Badge variant="outline" className={cn("text-[10px]", statusConfig.badgeClass)}>
@@ -766,7 +767,7 @@ export default function AdsPage() {
                           )}
                           {client.isHidden && (
                             <Badge variant="outline" className="text-[10px] h-5 gap-1">
-                              <EyeOff className="w-3 h-3" /> Oculto
+                              <EyeOff className="w-3 h-3" /> {t('ads.status.hidden', 'Oculto')}
                             </Badge>
                           )}
                         </div>
@@ -777,8 +778,8 @@ export default function AdsPage() {
                     {client.budget > 0 && (
                       <div className="hidden lg:flex flex-col flex-1 max-w-xs mx-4">
                         <div className="flex justify-between text-[10px] text-slate-500 mb-1">
-                          <span>{client.progress.toFixed(0)}% gastado</span>
-                          <span>Proy: {formatCurrency(client.forecast)}</span>
+                          <span>{t('ads.pacing.spentPct', { percent: client.progress.toFixed(0), defaultValue: `${client.progress.toFixed(0)}% gastado` })}</span>
+                          <span>{t('ads.pacing.forecast', { amount: formatCurrency(client.forecast), defaultValue: `Proy: ${formatCurrency(client.forecast)}` })}</span>
                         </div>
                         <Progress
                           value={Math.min(client.progress, 100)}
@@ -795,7 +796,7 @@ export default function AdsPage() {
                     <div className="flex items-center gap-4 lg:gap-6 justify-end">
                       {client.isSalesAccount && client.total_conversions_val > 0 && (
                         <div className="text-right hidden sm:block">
-                          <div className="text-[10px] uppercase text-slate-400 font-medium">Valor</div>
+                          <div className="text-[10px] uppercase text-slate-400 font-medium">{t('ads.stats.revenue', 'Valor')}</div>
                           <div className="text-lg font-bold text-emerald-600">{formatCurrency(client.total_conversions_val)}</div>
                         </div>
                       )}
@@ -842,7 +843,7 @@ export default function AdsPage() {
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-2">
                             <Label className="text-sm font-medium text-slate-700">
-                              Presupuesto {client.is_group ? 'Total' : 'Mensual'}
+                              {t('ads.pacing.monthlyBudget', { type: client.is_group ? t('ads.status.total', 'Total') : t('ads.status.monthly', 'Mensual'), defaultValue: `Presupuesto ${client.is_group ? 'Total' : 'Mensual'}` })}
                             </Label>
                             {!client.isManualGroupBudget && !clientSettings[client.client_id]?.budget && (
                               <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-600 border-blue-200">
@@ -865,9 +866,9 @@ export default function AdsPage() {
 
                         <div className="space-y-2">
                           <div className="flex justify-between text-xs text-slate-500">
-                            <span>Consumo ({client.progress.toFixed(1)}%)</span>
+                            <span>{t('common.consumption', 'Consumo')} ({client.progress.toFixed(1)}%)</span>
                             <span className={client.remainingBudget <= 0 ? 'text-red-500 font-bold' : ''}>
-                              Disponible: {formatCurrency(client.remainingBudget)}
+                              {t('ads.pacing.available', { amount: formatCurrency(client.remainingBudget), defaultValue: `Disponible: ${formatCurrency(client.remainingBudget)}` })}
                             </span>
                           </div>
                           <Progress
@@ -887,7 +888,7 @@ export default function AdsPage() {
                             isOverspending ? "bg-amber-50 border-amber-200" : "bg-slate-50 border-slate-200"
                           )}>
                             <div className="text-[10px] uppercase text-slate-500 font-medium mb-1">
-                              Diario actual
+                              {t('common.actualDaily', 'Diario actual')}
                             </div>
                             <div className={cn(
                               "text-xl font-bold",
@@ -896,7 +897,7 @@ export default function AdsPage() {
                               {formatCurrency(client.currentDailyBudget)}
                             </div>
                             <div className="text-[10px] text-slate-400 mt-1">
-                              configurado en Google
+                              {t('ads.pacing.googleNoteConfig', 'configurado en Google')}
                             </div>
                           </div>
                           <div className={cn(
@@ -904,13 +905,13 @@ export default function AdsPage() {
                             "bg-emerald-50 border-emerald-200"
                           )}>
                             <div className="text-[10px] uppercase text-slate-500 font-medium mb-1">
-                              Diario recomendado
+                              {t('ads.pacing.recommendedDaily', 'Diario recomendado')}
                             </div>
                             <div className="text-xl font-bold text-emerald-600">
                               {formatCurrency(client.recommendedDaily)}
                             </div>
                             <div className="text-[10px] text-slate-400 mt-1">
-                              para no pasarte
+                              {t('ads.pacing.recommendedDailySub', 'para cerrar el mes en el presupuesto')}
                             </div>
                           </div>
                         </div>
@@ -920,7 +921,7 @@ export default function AdsPage() {
                           <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
                             <AlertTriangle className="w-4 h-4 shrink-0" />
                             <span>
-                              Reduce el presupuesto diario en <strong>{formatCurrency(dailyDiff)}</strong> para ajustarte al límite mensual.
+                              {t('ads.pacing.paceWarningGoogle', 'El ritmo de gasto va por encima del objetivo para no superar el presupuesto mensual. Revisa las campañas en Google Ads, esto suele ocurrir si los presupuestos diarios suman más que el objetivo mensual dividido por 30.')}
                             </span>
                           </div>
                         )}
@@ -930,19 +931,11 @@ export default function AdsPage() {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <span className="text-sm text-slate-600 cursor-help border-b border-dotted border-slate-300">
-                                Proyección fin de mes
+                                {t('ads.pacing.forecastTitle', 'Proyección fin de mes')}
                               </span>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs text-xs">
-                              {client.currentDailyBudget > 0 ? (
-                                <>
-                                  Estimación: gasto acumulado + (suma de presupuestos diarios de campañas activas × días restantes del mes). Va alineada con el diario que muestra Google en esta vista.
-                                </>
-                              ) : (
-                                <>
-                                  Sin presupuesto diario por campaña en los datos sincronizados: se usa el gasto medio del mes proyectado al calendario completo.
-                                </>
-                              )}
+                              {t('ads.pacing.forecastTooltip', 'Usa el gasto medio diario del mes (invertido ÷ días transcurridos) proyectado al calendario completo. Si cambiaste el ritmo recientemente, puede no coincidir con el objetivo medio diario; ese valor es el ritmo para cerrar en el presupuesto objetivo de Taimbox.')}
                             </TooltipContent>
                           </Tooltip>
                           <span className={cn(
@@ -960,14 +953,14 @@ export default function AdsPage() {
                           <table className="w-full text-xs">
                             <thead className="bg-slate-50 text-slate-500 font-medium sticky top-0 border-b">
                               <tr>
-                                <th className="px-3 py-2.5 text-left">Campaña</th>
-                                <th className="px-2 py-2.5 text-right w-24">P. Diario</th>
-                                <th className="px-2 py-2.5 text-right">Gasto</th>
-                                <th className="px-2 py-2.5 text-right hidden md:table-cell">Clicks</th>
+                                <th className="px-3 py-2.5 text-left">{t('ads.table.campaign', 'Campaña')}</th>
+                                <th className="px-2 py-2.5 text-right w-24">{t('common.dailyBudget', 'P. Diario')}</th>
+                                <th className="px-2 py-2.5 text-right">{t('ads.table.spent', 'Gasto')}</th>
+                                <th className="px-2 py-2.5 text-right hidden md:table-cell">{t('ads.stats.clicks', 'Clicks')}</th>
                                 <th className="px-2 py-2.5 text-right hidden lg:table-cell">CTR</th>
                                 <th className="px-2 py-2.5 text-right hidden lg:table-cell">CPC</th>
-                                <th className="px-2 py-2.5 text-right">Conv</th>
-                                {client.isSalesAccount && <th className="px-2 py-2.5 text-center">ROAS</th>}
+                                <th className="px-2 py-2.5 text-right">{t('ads.table.conv', 'Conv')}</th>
+                                {client.isSalesAccount && <th className="px-2 py-2.5 text-center">{t('ads.table.roas', 'ROAS')}</th>}
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -989,7 +982,7 @@ export default function AdsPage() {
                                               "w-1.5 h-1.5 rounded-full",
                                               camp.status === 'ENABLED' ? 'bg-emerald-400' : 'bg-slate-300'
                                             )} />
-                                            {camp.status === 'ENABLED' ? 'Activa' : 'Pausada'}
+                                            {camp.status === 'ENABLED' ? t('ads.table.active', 'Activa') : t('ads.table.paused', 'Pausada')}
                                           </span>
                                           {client.is_group && (camp.original_client_name || camp.original_client_id) && (
                                             <AnonymizedContent isActive={isAnonymized} className="truncate max-w-[100px]" placeholder={anonymizer.account(camp.original_client_id || camp.client_id)}>
@@ -1030,7 +1023,7 @@ export default function AdsPage() {
                               {client.campaigns.length === 0 && (
                                 <tr>
                                   <td colSpan={7} className="px-3 py-8 text-center text-slate-400">
-                                    Sin campañas con gasto este mes
+                                    {t('ads.table.noCampaigns', 'Sin campañas')}
                                   </td>
                                 </tr>
                               )}
@@ -1044,19 +1037,19 @@ export default function AdsPage() {
                     {client.is_group && (
                       <div className="bg-white p-4 rounded-lg border mt-6">
                         <h4 className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center gap-2">
-                          <Layers className="w-3.5 h-3.5" /> Desglose por Cuenta ({client.realIdsList.length})
+                          <Layers className="w-3.5 h-3.5" /> {t('ads.table.breakdown', { count: client.realIdsList.length, defaultValue: `Desglose por Cuenta (${client.realIdsList.length})` })}
                         </h4>
                         <div className="overflow-x-auto">
                           <table className="w-full text-xs">
                             <thead className="bg-slate-50 text-slate-500 font-medium border-b">
                               <tr>
                                 <th className="px-3 py-2 text-left w-6"></th>
-                                <th className="px-3 py-2 text-left">Cuenta</th>
-                                <th className="px-2 py-2 text-right">Gasto</th>
-                                <th className="px-2 py-2 text-right">% Grupo</th>
-                                <th className="px-2 py-2 text-right hidden md:table-cell">Clicks</th>
-                                <th className="px-2 py-2 text-right">Conv</th>
-                                <th className="px-2 py-2 text-center">ROAS</th>
+                                <th className="px-3 py-2 text-left">{t('ads.table.account', 'Cuenta')}</th>
+                                <th className="px-2 py-2 text-right">{t('ads.table.spent', 'Gasto')}</th>
+                                <th className="px-2 py-2 text-right">{t('ads.table.groupPct', '% Grupo')}</th>
+                                <th className="px-2 py-2 text-right hidden md:table-cell">{t('ads.stats.clicks', 'Clicks')}</th>
+                                <th className="px-2 py-2 text-right">{t('ads.table.conv', 'Conv')}</th>
+                                <th className="px-2 py-2 text-center">{t('ads.table.roas', 'ROAS')}</th>
                                 <th className="px-2 py-2 text-center" />
                               </tr>
                             </thead>
@@ -1124,11 +1117,11 @@ export default function AdsPage() {
                                             <table className="w-full text-xs">
                                               <thead className="bg-slate-50/50 text-slate-400 border-b">
                                                 <tr>
-                                                  <th className="px-3 py-2 text-left">Campaña</th>
-                                                  <th className="px-2 py-2 text-right">P. Diario</th>
-                                                  <th className="px-2 py-2 text-right">Gasto</th>
-                                                  <th className="px-2 py-2 text-right">Conv</th>
-                                                  <th className="px-2 py-2 text-center">ROAS</th>
+                                                  <th className="px-3 py-2 text-left">{t('ads.table.campaign', 'Campaña')}</th>
+                                                  <th className="px-2 py-2 text-right">{t('common.dailyBudget', 'P. Diario')}</th>
+                                                  <th className="px-2 py-2 text-right">{t('ads.table.spent', 'Gasto')}</th>
+                                                  <th className="px-2 py-2 text-right">{t('ads.table.conv', 'Conv')}</th>
+                                                  <th className="px-2 py-2 text-center">{t('ads.table.roas', 'ROAS')}</th>
                                                 </tr>
                                               </thead>
                                               <tbody>
@@ -1160,7 +1153,7 @@ export default function AdsPage() {
                                                     </tr>
                                                   );
                                                 })}
-                                                {subCampaigns.length === 0 && <tr><td colSpan={5} className="p-3 text-center text-slate-400">Sin campañas activas</td></tr>}
+                                                {subCampaigns.length === 0 && <tr><td colSpan={5} className="p-3 text-center text-slate-400">{t('ads.table.noCampaigns', 'Sin campañas')}</td></tr>}
                                               </tbody>
                                             </table>
                                           </div>
@@ -1185,8 +1178,8 @@ export default function AdsPage() {
         {reportData.length === 0 && !loading && (
           <div className="text-center py-12 bg-white rounded-xl border">
             <GoogleIcon />
-            <h3 className="text-lg font-medium text-slate-700 mt-4">Sin datos</h3>
-            <p className="text-sm text-slate-500 mt-1">Sincroniza para cargar las cuentas de Google Ads</p>
+            <h3 className="text-lg font-medium text-slate-700 mt-4">{t('ads.status.noData', 'Sin datos')}</h3>
+            <p className="text-sm text-slate-500 mt-1">{t('ads.status.syncPrompt', 'Sincroniza para cargar las cuentas de Google Ads')}</p>
           </div>
         )}
       </div>
@@ -1195,27 +1188,27 @@ export default function AdsPage() {
       <Dialog open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Configurar cuenta</DialogTitle>
+            <DialogTitle>{t('ads.dialogs.configAccount.title', 'Configurar cuenta')}</DialogTitle>
             <DialogDescription>
               {editingClient?.name}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Nombre del grupo (Holding)</Label>
+              <Label>{t('ads.dialogs.configAccount.groupName', 'Nombre del grupo (Holding)')}</Label>
               <Input
                 value={editingClient?.group || ''}
                 onChange={(e) => setEditingClient(prev => prev ? { ...prev, group: e.target.value } : null)}
-                placeholder="Ej: Grupo Empresarial ABC"
+                placeholder={t('ads.dialogs.configAccount.groupPlaceholder', 'Ej: Grupo Empresarial ABC')}
               />
               <p className="text-xs text-slate-500">
-                Las cuentas con el mismo nombre de grupo se consolidarán juntas.
+                {t('ads.dialogs.configAccount.groupNote', 'Las cuentas con el mismo nombre de grupo se consolidarán juntas.')}
               </p>
             </div>
             <div className="flex justify-between items-center py-3 border-t">
               <div>
-                <Label>Cuenta de ventas (ROAS)</Label>
-                <p className="text-xs text-slate-500">Mostrar métricas de conversión</p>
+                <Label>{t('ads.dialogs.configAccount.salesAccount', 'Cuenta de ventas (ROAS)')}</Label>
+                <p className="text-xs text-slate-500">{t('ads.dialogs.configAccount.salesAccountNote', 'Mostrar métricas de conversión')}</p>
               </div>
               <Switch
                 checked={editingClient?.isSales !== false}
@@ -1224,8 +1217,8 @@ export default function AdsPage() {
             </div>
             <div className="flex justify-between items-center py-3 border-t">
               <div>
-                <Label>Ocultar cuenta</Label>
-                <p className="text-xs text-slate-500">No aparecerá en la lista principal</p>
+                <Label>{t('ads.dialogs.configAccount.hideAccount', 'Ocultar cuenta')}</Label>
+                <p className="text-xs text-slate-500">{t('ads.dialogs.configAccount.hideAccountNote', 'No aparecerá en la lista principal')}</p>
               </div>
               <Switch
                 checked={editingClient?.hidden || false}
@@ -1234,8 +1227,8 @@ export default function AdsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingClient(null)}>Cancelar</Button>
-            <Button onClick={handleSaveClientSettings}>Guardar</Button>
+            <Button variant="outline" onClick={() => setEditingClient(null)}>{t('ads.actions.cancel', 'Cancelar')}</Button>
+            <Button onClick={handleSaveClientSettings}>{t('ads.actions.save', 'Guardar')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1245,10 +1238,10 @@ export default function AdsPage() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Scissors className="w-5 h-5" /> Dividir cuentas
+              <Scissors className="w-5 h-5" /> {t('ads.dialogs.splitAccounts.title', 'Dividir cuentas')}
             </DialogTitle>
             <DialogDescription>
-              Crea cuentas virtuales separando campañas que contengan una palabra clave específica.
+              {t('ads.dialogs.splitAccounts.description', 'Crea cuentas virtuales separando campañas que contengan una palabra clave específica.')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
@@ -1260,22 +1253,22 @@ export default function AdsPage() {
                   name="account"
                   render={({ field }) => (
                     <FormItem className="col-span-12 sm:col-span-4">
-                      <FormLabel className="text-xs font-medium">Cuenta origen</FormLabel>
+                      <FormLabel className="text-xs font-medium">{t('ads.dialogs.splitAccounts.sourceAccount', 'Cuenta origen')}</FormLabel>
                       <Popover open={openRuleAccount} onOpenChange={setOpenRuleAccount}>
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button variant="outline" className="w-full justify-between font-normal bg-white">
-                              <span className="truncate">{field.value ? (uniqueAccountsForSelector.find(a => a.id === field.value)?.name || uniqueAccountsForSelector.find(a => a.id === field.value)?.id || 'selecciona...') : 'selecciona...'}</span>
+                              <span className="truncate">{field.value ? (uniqueAccountsForSelector.find(a => a.id === field.value)?.name || uniqueAccountsForSelector.find(a => a.id === field.value)?.id || t('ads.dialogs.splitAccounts.selectAccount', 'selecciona...')) : t('ads.dialogs.splitAccounts.selectAccount', 'selecciona...')}</span>
                               <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
                         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                           <Command>
-                            <CommandInput placeholder="Buscar cuenta o ID..." className="h-9" />
+                            <CommandInput placeholder={t('ads.filters.searchPlaceholder', 'Buscar cuenta o ID...')} className="h-9" />
                             <CommandList className="max-h-[280px]">
                               <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
-                                Ninguna cuenta coincide.
+                                {t('common.noResults', 'Ninguna cuenta coincide.')}
                               </CommandEmpty>
                               <CommandGroup>
                                 {uniqueAccountsForSelector.map((acc) => (
@@ -1305,7 +1298,7 @@ export default function AdsPage() {
                   name="keyword"
                   render={({ field }) => (
                     <FormItem className="col-span-6 sm:col-span-3">
-                      <FormLabel className="text-xs font-medium">Si contiene...</FormLabel>
+                      <FormLabel className="text-xs font-medium">{t('ads.dialogs.splitAccounts.ifContains', 'Si contiene...')}</FormLabel>
                       <FormControl>
                         <Input placeholder="Ej: palabra clave" className="bg-white" {...field} />
                       </FormControl>
@@ -1318,7 +1311,7 @@ export default function AdsPage() {
                   name="name"
                   render={({ field }) => (
                     <FormItem className="col-span-6 sm:col-span-3">
-                      <FormLabel className="text-xs font-medium">Crear cuenta...</FormLabel>
+                      <FormLabel className="text-xs font-medium">{t('ads.dialogs.splitAccounts.createAccount', 'Crear cuenta...')}</FormLabel>
                       <FormControl>
                         <Input placeholder="Ej: Nombre de la cuenta" className="bg-white" {...field} />
                       </FormControl>
@@ -1336,9 +1329,9 @@ export default function AdsPage() {
 
             {/* Lista de reglas activas */}
             <div className="space-y-2">
-              <h4 className="text-xs font-bold text-slate-500 uppercase">Reglas activas ({segmentationRules.length})</h4>
+              <h4 className="text-xs font-bold text-slate-500 uppercase">{t('ads.dialogs.splitAccounts.activeRules', { count: segmentationRules.length, defaultValue: `Reglas activas (${segmentationRules.length})` })}</h4>
               {segmentationRules.length === 0 ? (
-                <p className="text-sm text-slate-400 italic py-4 text-center">No hay reglas definidas</p>
+                <p className="text-sm text-slate-400 italic py-4 text-center">{t('ads.dialogs.splitAccounts.noRules', 'No hay reglas definidas')}</p>
               ) : (
                 <div className="space-y-2 max-h-[200px] overflow-y-auto">
                   {segmentationRules.map(rule => (
@@ -1348,7 +1341,7 @@ export default function AdsPage() {
                           {normalizeId(rule.account_id).slice(0, 10)}...
                         </Badge>
                         <span className="text-sm text-slate-500">
-                          Si contiene <strong className="text-slate-700">"{rule.keyword}"</strong>
+                          {t('ads.dialogs.splitAccounts.ifContainsLabel', { keyword: rule.keyword, defaultValue: `Si contiene "${rule.keyword}"` })}
                         </span>
                         <span className="text-slate-300">→</span>
                         <span className="font-bold text-blue-600">{rule.virtual_name}</span>
@@ -1377,10 +1370,10 @@ export default function AdsPage() {
             <DialogTitle className="flex items-center gap-2 text-white">
               {syncStatus === 'running' && <RefreshCw className="w-5 h-5 animate-spin text-blue-500" />}
               {syncStatus === 'completed' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
-              Sincronizando Google Ads
+              {t('ads.dialogs.sync.title', { platform: 'Google Ads' })}
             </DialogTitle>
             <DialogDescription className="text-slate-400">
-              {syncStatus === 'running' ? 'Conectando con la API...' : 'Proceso finalizado'}
+              {syncStatus === 'running' ? t('ads.dialogs.sync.connecting', 'Conectando con la API...') : t('ads.dialogs.sync.finished', 'Proceso finalizado')}
             </DialogDescription>
           </DialogHeader>
           <div className="w-full">

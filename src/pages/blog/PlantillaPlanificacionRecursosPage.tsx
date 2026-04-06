@@ -1,88 +1,67 @@
-import { Helmet } from 'react-helmet-async';
+import { absoluteUrl } from '@/lib/publicSiteUrl';
+import { BlogArticleSeo } from '@/seo/BlogArticleSeo';
 import { PlantillaPlanificacionRecursosArticle } from '@/components/landing/blog/PlantillaPlanificacionRecursosArticle';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { BlogBreadcrumb } from '@/components/landing/blog/BlogBreadcrumb';
-import { blogPosts } from '@/data/blogPosts';
+import { blogPosts, getBlogPostLocaleFields } from '@/data/blogPosts';
+import { useTranslation } from 'react-i18next';
 
 const SLUG = 'plantilla-planificacion-recursos-agencia';
-const post = blogPosts.find((p) => p.slug === SLUG)!;
-const relatedPost = post?.relatedSlug ? blogPosts.find((p) => p.slug === post.relatedSlug) : null;
-
-const TOC_ITEMS = [
-  { id: 'intro-excel-primer-amor', label: '1. Excel como primer paso' },
-  { id: 'capacidad-bruta-vs-neta', label: '2. Capacidad bruta vs neta' },
-  { id: 'anatomia-plantilla-profesional', label: '3. Anatomía de la plantilla (4 hojas)' },
-  { id: 'formula-utilizacion-formato', label: '4. Fórmula de utilización y alerta' },
-  { id: 'pacing-proyecto-margen', label: '5. Pacing por proyecto y margen' },
-  { id: 'impuesto-excel-techo', label: '6. El impuesto Excel' },
-  { id: 'techo-cristal-errores', label: '7. Techo de cristal (3 errores)' },
-  { id: 'validacion-proteccion-errores', label: '8. Validación y protección' },
-  { id: 'escalar-semana-semana', label: '9. Escalar semana a semana' },
-  { id: 'google-sheets-diferencias', label: '10. Google Sheets vs Excel' },
-  { id: 'evolucion-taimbox-passiva', label: '11. Evolución a Taimbox' },
-  { id: 'faq-plantilla-recursos', label: 'Preguntas frecuentes' },
-  { id: 'resumen-recursos', label: 'Resumen' },
-  { id: 'cta-plantilla-recursos', label: 'Siguiente paso' },
-];
-
-const CANONICAL = 'https://taimbox.com/blog/plantilla-planificacion-recursos-agencia';
 
 export default function PlantillaPlanificacionRecursosPage() {
-  const titleShort = 'Plantilla gratuita de planificación de recursos para agencias';
-  const seoTitle =
-    'Plantillas gratuitas de planificación de recursos: descarga plantilla para agencias (Excel y Google Sheets)';
-  const description =
-    'Descarga gratis una plantilla de planificación de recursos para agencias en Excel o Google Sheets: 5 hojas con fórmulas, formato condicional, desplegables y protección de celdas. Calcula capacidad neta, utilización y margen.';
+  const { t, i18n } = useTranslation("blog");
+  const postKey = "plantillaPlanificacionRecursos";
 
-  const howToSteps = [
-    {
-      name: 'Definir equipo y capacidad neta',
-      text: 'Inventario de horas: capacidad bruta menos reuniones, admin/formación y ausencias para obtener la capacidad neta por persona.',
-    },
-    {
-      name: 'Registrar proyectos con fee y presupuesto',
-      text: 'Cada proyecto con fee mensual y horas presupuestadas. Las columnas de pacing, coste y margen se calculan solas.',
-    },
-    {
-      name: 'Repartir horas en el cuadrante semanal',
-      text: 'Asignación cruzada personas × proyectos × semana usando desplegables para evitar errores de nombre.',
-    },
-    {
-      name: 'Analizar utilización y KPIs en el dashboard',
-      text: 'Calcular utilización como horas asignadas sobre capacidad neta, con formato condicional y 4 estados (Óptimo, Riesgo, Sobrecarga, Baja carga).',
-    },
+  const post = blogPosts.find((p) => p.slug === SLUG)!;
+  const { title: postTitle } = getBlogPostLocaleFields(post, i18n.language);
+
+  const rawRelatedPost = post?.relatedSlug ? blogPosts.find((p) => p.slug === post.relatedSlug) : null;
+  const relatedPost = rawRelatedPost ? getBlogPostLocaleFields(rawRelatedPost, i18n.language) : null;
+
+  const tocData = (t(`posts.${postKey}.toc`, { returnObjects: true }) as any) || {};
+
+  const TOC_ITEMS = [
+    { id: 'intro-excel-primer-amor', label: tocData.introExcel || '' },
+    { id: 'capacidad-bruta-vs-neta', label: tocData.capacidadBrutaNeta || '' },
+    { id: 'anatomia-plantilla-profesional', label: tocData.anatomiaPlantilla || '' },
+    { id: 'formula-utilizacion-formato', label: tocData.formulaUtilizacion || '' },
+    { id: 'pacing-proyecto-margen', label: tocData.pacingProyecto || '' },
+    { id: 'impuesto-excel-techo', label: tocData.impuestoExcel || '' },
+    { id: 'techo-cristal-errores', label: tocData.techoCristal || '' },
+    { id: 'validacion-proteccion-errores', label: tocData.validacionProteccion || '' },
+    { id: 'escalar-semana-semana', label: tocData.escalarSemana || '' },
+    { id: 'google-sheets-diferencias', label: tocData.googleSheets || '' },
+    { id: 'evolucion-taimbox-passiva', label: tocData.evolucionTaimbox || '' },
+    { id: 'faq-plantilla-recursos', label: tocData.preguntasFrecuentes || '' },
+    { id: 'resumen-recursos', label: tocData.resumen || 'Resumen' },
+    { id: 'cta-plantilla-recursos', label: tocData.siguientePaso || 'Siguiente paso' }
   ];
 
-  const faqItems = [
-    { q: '¿Necesito macros o VBA para que funcione la plantilla?', a: 'No. Solo usa fórmulas estándar (SUMA, SI, SUMIF, VLOOKUP, SUMPRODUCT, COUNTIF) y formato condicional nativo. Funciona en Excel, LibreOffice y Google Sheets sin macros.' },
-    { q: '¿Cada cuánto hay que actualizar la plantilla?', a: 'Lo ideal es revisarla al inicio de cada semana: ajustar ausencias en Equipo y añadir asignaciones de la nueva semana.' },
-    { q: '¿A partir de cuántas personas deja de ser práctico el Excel?', a: 'Muchas agencias notan la fricción entre 8 y 15 personas con múltiples proyectos simultáneos.' },
-    { q: '¿Puedo usar esta plantilla junto a un tablero Kanban?', a: 'Sí: el Kanban gestiona el flujo de tareas; la plantilla gestiona horas y capacidad. Se complementan.' },
-    { q: '¿Qué rango de utilización es «sano» en una agencia?', a: 'Orientativo: 70–85% sobre capacidad neta. Por encima del 90% empieza el riesgo de quemazo.' },
-    { q: '¿Qué diferencia hay entre esta plantilla y un diagrama de Gantt?', a: 'El Gantt ordena tareas en un eje temporal; la plantilla se centra en capacidad y carga por persona.' },
-    { q: '¿El pacing tiene en cuenta que no todos los meses duran lo mismo?', a: 'La fórmula divide las horas presupuestadas entre 4 semanas como aproximación. En meses de 5 semanas laborales, el pacing real será ligeramente inferior.' },
-    { q: '¿Cómo actualizo los desplegables si añado una persona o proyecto nuevo?', a: 'En Excel: Datos → Validación de datos y amplía la lista. En Google Sheets: clic en la celda, icono de desplegable, editar lista.' },
-  ];
+  const headline = t(`posts.${postKey}.meta.headline`) || t(`posts.${postKey}.hero.title`);
+  const description = t(`posts.${postKey}.meta.description`);
+
+  const howToData = (t(`posts.${postKey}.howTo`, { returnObjects: true }) as any) || {};
+  const faqData = (t(`posts.${postKey}.faqItems`, { returnObjects: true }) as any[]) || [];
 
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
       {
         '@type': 'Article',
-        headline: titleShort,
+        headline: headline,
         description,
         author: { '@type': 'Organization', name: 'Taimbox' },
         publisher: { '@type': 'Organization', name: 'Taimbox' },
         datePublished: post?.date ?? '2026-03-24',
-        mainEntityOfPage: { '@type': 'WebPage', '@id': CANONICAL },
+        mainEntityOfPage: { '@type': 'WebPage', '@id': absoluteUrl(post.href) },
       },
       {
         '@type': 'HowTo',
-        name: 'Cómo usar la plantilla de planificación de recursos para agencias',
+        name: howToData.title || 'Cómo usar la plantilla de planificación de recursos para agencias',
         description:
-          'Pasos para configurar inventario de horas, catálogo de proyectos, cuadrante semanal y dashboard de utilización en Excel o Google Sheets.',
-        step: howToSteps.map((s, i) => ({
+          howToData.desc || 'Pasos para configurar inventario de horas, catálogo de proyectos, cuadrante semanal y dashboard de utilización en Excel o Google Sheets.',
+        step: (howToData.steps || []).map((s: any, i: number) => ({
           '@type': 'HowToStep',
           position: i + 1,
           name: s.name,
@@ -91,7 +70,7 @@ export default function PlantillaPlanificacionRecursosPage() {
       },
       {
         '@type': 'FAQPage',
-        mainEntity: faqItems.map((f) => ({
+        mainEntity: faqData.map((f) => ({
           '@type': 'Question',
           name: f.q,
           acceptedAnswer: { '@type': 'Answer', text: f.a },
@@ -109,16 +88,7 @@ export default function PlantillaPlanificacionRecursosPage() {
 
   return (
     <>
-      <Helmet>
-        <title>{seoTitle} | Taimbox</title>
-        <meta name="description" content={description} />
-        <link rel="canonical" href={CANONICAL} />
-        <meta property="og:type" content="article" />
-        <meta property="og:title" content={`${seoTitle} | Taimbox`} />
-        <meta property="og:description" content={description} />
-        <meta property="og:url" content={CANONICAL} />
-        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
-      </Helmet>
+      <BlogArticleSeo jsonLd={jsonLd} />
 
       <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
@@ -137,18 +107,14 @@ export default function PlantillaPlanificacionRecursosPage() {
         <LandingHeader />
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
-          <BlogBreadcrumb title={post?.title ?? titleShort} />
+          <BlogBreadcrumb title={postTitle} />
         </div>
 
         <div className="relative z-10">
           <PlantillaPlanificacionRecursosArticle
             readingMinutes={post?.readingMinutes ?? 22}
             tocItems={TOC_ITEMS}
-            relatedPost={
-              relatedPost
-                ? { title: relatedPost.title, description: relatedPost.description, href: relatedPost.href }
-                : undefined
-            }
+            relatedPost={relatedPost ?? undefined}
           />
         </div>
 

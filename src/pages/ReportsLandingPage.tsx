@@ -1,24 +1,12 @@
-import { Helmet } from 'react-helmet-async';
 import { ReportsArticle } from '@/components/landing/ReportsArticle';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
+import { CommercialSeoTags } from '@/seo/CommercialSeoTags';
 
 export default function ReportsLandingPage() {
     return (
         <>
-            <Helmet>
-                <title>Informes de Rentabilidad y Margen Neto para Empresas | Taimbox</title>
-                <meta name="description" content="Rentabilidad por proyecto y empleado: ingreso devengado en mes en curso, ritmo (pacing), coste operativo o dinámico y presupuesto por deadline. Márgenes netos y EHR con datos reales." />
-                <link rel="canonical" href="/reportes-rentabilidad" />
-                <script type="application/ld+json">
-                    {JSON.stringify({
-                        '@context': 'https://schema.org',
-                        '@type': 'WebPage',
-                        name: 'Reportes y Rentabilidad — Taimbox',
-                        description: 'Rentabilidad por proyecto y empleado: ingreso devengado, ritmo (pacing), coste operativo/dinámico y presupuesto por deadline. Márgenes netos y EHR con datos reales.',
-                    })}
-                </script>
-            </Helmet>
+            <CommercialSeoTags pathEs="/reportes-rentabilidad" pageKey="reports" />
 
             <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 relative overflow-hidden">
                 <div className="absolute inset-0 overflow-hidden">

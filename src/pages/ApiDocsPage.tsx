@@ -3,7 +3,9 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { ArrowLeft, ArrowRight, Code, Menu, BookOpen, Key, Home } from 'lucide-react';
-import { Helmet } from 'react-helmet-async';
+import { useTranslation } from 'react-i18next';
+import { pathEsToEn } from '@/i18n/publicPaths';
+import { SeoTags } from '@/seo/SeoTags';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SidebarTOC } from './api-docs/components/SidebarTOC';
 import { getAllSectionIds } from './api-docs/data/toc';
@@ -110,18 +112,20 @@ function SectionDivider({ title }: { title: string }) {
 }
 
 export default function ApiDocsPage() {
+  const { t, i18n } = useTranslation('landing');
+  const lang = i18n.language.startsWith('en') ? 'en' : 'es';
   const { activeSection, navigateToSection } = useScrollSpy();
   const isMobile = useIsMobile();
 
   return (
     <>
-      <Helmet>
-        <title>Documentacion API - Taimbox</title>
-        <meta
-          name="description"
-          content="Documentacion de la API de integracion de Taimbox. Conecta tus herramientas con datos de planificacion, equipo y proyectos."
-        />
-      </Helmet>
+      <SeoTags
+        pathEs="/api-docs"
+        pathEn={pathEsToEn('/api-docs')}
+        title={t('static.apiDocs.seoTitle')}
+        description={t('static.apiDocs.seoDescription')}
+        lang={lang}
+      />
 
       <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 relative">
         {/* Background effects */}

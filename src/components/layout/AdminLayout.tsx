@@ -2,11 +2,14 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import { Building2, ArrowLeft, MessageSquare, BarChart3, FileText, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+import { useAppTranslation } from "@/hooks/useAppTranslation";
+
 /**
  * Layout del área administrativa de plataforma.
  * No usa AgencyContext ni AppContext; solo Auth. Universo paralelo a la app principal.
  */
 export function AdminLayout() {
+  const { t } = useAppTranslation();
   const location = useLocation();
 
   return (
@@ -16,13 +19,13 @@ export function AdminLayout() {
           <Button variant="ghost" size="sm" asChild className="text-slate-300 hover:text-white">
             <Link to="/dashboard">
               <ArrowLeft className="h-4 w-4 mr-1" />
-              Volver a la app
+              {t('admin.layout.backApp', 'Volver a la app')}
             </Link>
           </Button>
           <span className="text-slate-500">|</span>
           <div className="flex items-center gap-2">
             <Building2 className="h-5 w-5 text-amber-400" />
-            <span className="font-semibold">Panel de administración</span>
+            <span className="font-semibold">{t('admin.layout.title', 'Panel de administración')}</span>
           </div>
         </div>
         <nav className="flex gap-2">
@@ -31,7 +34,7 @@ export function AdminLayout() {
             size="sm"
             asChild
           >
-            <Link to="/admin/agencies">Agencias</Link>
+            <Link to="/admin/agencies">{t('common.agencies', 'Agencias')}</Link>
           </Button>
           <Button
             variant={location.pathname.startsWith("/admin/admins") ? "secondary" : "ghost"}
@@ -40,7 +43,7 @@ export function AdminLayout() {
           >
             <Link to="/admin/admins" className="gap-1">
               <Shield className="h-4 w-4" />
-              Administradores
+              {t('common.administrators', 'Administradores')}
             </Link>
           </Button>
           <Button
@@ -50,7 +53,7 @@ export function AdminLayout() {
           >
             <Link to="/admin/support" className="gap-1">
               <MessageSquare className="h-4 w-4" />
-              Soporte
+              {t('common.support', 'Soporte')}
             </Link>
           </Button>
           <Button
@@ -60,7 +63,7 @@ export function AdminLayout() {
           >
             <Link to="/admin/metrics" className="gap-1">
               <BarChart3 className="h-4 w-4" />
-              Métricas
+              {t('common.metrics', 'Métricas')}
             </Link>
           </Button>
           <Button

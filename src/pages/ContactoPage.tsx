@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Helmet } from 'react-helmet-async';
+import { useTranslation } from 'react-i18next';
+import { pathEsToEn } from '@/i18n/publicPaths';
+import { SeoTags } from '@/seo/SeoTags';
 import { Mail, Send, CheckCircle2, Phone, MapPin, Loader2, AlertCircle } from 'lucide-react';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { LandingFooter } from '@/components/landing/LandingFooter';
@@ -77,12 +79,15 @@ export default function ContactoPage() {
     };
 
     return (
+        <>
+            <SeoTags
+                pathEs="/contacto"
+                pathEn={pathEsToEn('/contacto')}
+                title={t('static.contact.seoTitle')}
+                description={t('static.contact.seoDescription')}
+                lang={lang}
+            />
         <div className="min-h-screen bg-slate-950 flex flex-col font-sans selection:bg-indigo-500/30 overflow-x-hidden">
-            <Helmet>
-                <title>Contacto | Taimbox</title>
-                <meta name="description" content="Contacta con el equipo de Taimbox." />
-            </Helmet>
-
             <LandingHeader />
 
             <main className="flex-1 relative pt-24 pb-16 sm:pt-32 sm:pb-24">
@@ -249,5 +254,6 @@ export default function ContactoPage() {
 
             <LandingFooter />
         </div>
+        </>
     );
 }

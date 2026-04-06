@@ -1,31 +1,40 @@
 import { ClipboardList, Calculator, MessageCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
-const steps = [
-  {
-    icon: ClipboardList,
-    title: 'REGISTRAR',
-    body: 'Cada solicitud fuera de alcance se anota en el momento. Sin registro, no hay conversación posible.',
-    accent: 'violet',
-  },
-  {
-    icon: Calculator,
-    title: 'CUANTIFICAR',
-    body: 'Estima el tiempo antes de aceptar. Sin número, no hay precio posible.',
-    accent: 'amber',
-  },
-  {
-    icon: MessageCircle,
-    title: 'COMUNICAR',
-    body: 'Informa al cliente antes de ejecutar, no después. Siempre.',
-    accent: 'emerald',
-  },
-] as const;
+export interface ScopeProtocoloInfographicProps {
+  step1?: string; // Optional override if we want to pass from parent
+  step2?: string;
+  step3?: string;
+}
 
-export function ScopeProtocoloInfographic() {
+export function ScopeProtocoloInfographic({ step1, step2, step3 }: ScopeProtocoloInfographicProps) {
+  const { t } = useTranslation('blog');
+
+  const items = [
+    {
+      icon: ClipboardList,
+      title: t('components.scopeProtocolo.step1.title'),
+      body: step1 || t('components.scopeProtocolo.step1.body'),
+      accent: 'violet',
+    },
+    {
+      icon: Calculator,
+      title: t('components.scopeProtocolo.step2.title'),
+      body: step2 || t('components.scopeProtocolo.step2.body'),
+      accent: 'amber',
+    },
+    {
+      icon: MessageCircle,
+      title: t('components.scopeProtocolo.step3.title'),
+      body: step3 || t('components.scopeProtocolo.step3.body'),
+      accent: 'emerald',
+    },
+  ];
+
   return (
     <figure className="my-8 rounded-2xl border border-white/10 bg-gradient-to-br from-indigo-950/80 to-purple-950/50 p-4 sm:p-8">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {steps.map((s) => {
+        {items.map((s) => {
           const Icon = s.icon;
           const border =
             s.accent === 'violet'
@@ -51,11 +60,11 @@ export function ScopeProtocoloInfographic() {
       </div>
       <blockquote className="mt-6 text-center border-t border-white/10 pt-6 px-2">
         <p className="text-lg sm:text-xl md:text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-violet-200 via-white to-emerald-200 leading-snug">
-          «¿Lo añadimos ajustando el presupuesto, o lo dejamos para el próximo sprint?»
+          {t('components.scopeProtocolo.quote')}
         </p>
       </blockquote>
       <figcaption className="mt-4 text-xs text-indigo-200/70 text-center">
-        Protocolo de alcance en tres pasos: la frase del pie convierte el conflicto en bifurcación, no en muro.
+        {t('components.scopeProtocolo.caption')}
       </figcaption>
     </figure>
   );

@@ -1,0 +1,1142 @@
+{
+  "planner": {
+    "metaTitle": "Taimbox",
+    "metaDescription": "Manage your team's resources with Taimbox's visual planner"
+  },
+  "dashboard": {
+    "metaTitle": "Dashboard - Taimbox",
+    "metaDescription": "See in one place how workload, projects and profitability are progressing across your agency.",
+    "tabMetrics": "My metrics"
+  },
+  "notFound": {
+    "title": "404",
+    "subtitle": "Page not found",
+    "cta": "Back to home"
+  },
+  "suspended": {
+    "title": "This account has been suspended",
+    "body": "Contact support for more information. If you think this is a mistake, get in touch with us.",
+    "logout": "Log out"
+  },
+  "auth": {
+    "brand": "Taimbox",
+    "tagline": "Manage your team and projects",
+    "tabs": {
+      "login": "Sign in",
+      "register": "Sign up"
+    },
+    "login": {
+      "fields": {
+        "email": {
+          "label": "Email",
+          "placeholder": "user@company.com"
+        },
+        "password": {
+          "label": "Password",
+          "placeholder": "••••••••"
+        }
+      },
+      "actions": {
+        "submit": "Sign in",
+        "submitting": "Signing in..."
+      },
+      "errors": {
+        "invalidEmail": "Invalid email",
+        "passwordRequired": "Password is required"
+      },
+      "toast": {
+        "success": "Welcome!",
+        "error": "Sign-in error: {{message}}"
+      }
+    },
+    "forgotPassword": {
+      "link": "Forgot your password?",
+      "description": "Enter your email and we'll send you a link to reset your password.",
+      "emailPlaceholder": "you@company.com",
+      "actions": {
+        "cancel": "Cancel",
+        "sending": "Sending...",
+        "sendLink": "Send link"
+      },
+      "success": {
+        "title": "Check your inbox",
+        "body": "If the email is registered, you'll receive a link to reset your password.",
+        "backToLogin": "Back to sign in"
+      },
+      "toast": {
+        "missingEmail": "Enter your email",
+        "success": "If the email exists in our system, you'll receive a recovery link."
+      }
+    },
+    "register": {
+      "fields": {
+        "name": {
+          "label": "Your name",
+          "placeholder": "John Smith"
+        },
+        "email": {
+          "label": "Email",
+          "placeholder": "you@company.com"
+        },
+        "password": {
+          "label": "Password (min 6)"
+        },
+        "confirmPassword": {
+          "label": "Confirm password"
+        },
+        "agencyName": {
+          "label": "Your company's name",
+          "placeholder": "My Agency"
+        }
+      },
+      "actions": {
+        "submit": "Create free account",
+        "submitting": "Creating account..."
+      },
+      "footer": "When you sign up, you'll create a new company and become its admin.",
+      "errors": {
+        "nameTooShort": "Name must be at least 2 characters long",
+        "invalidEmail": "Invalid email",
+        "passwordTooShort": "Password must be at least 6 characters long",
+        "confirmPasswordRequired": "Confirm your password",
+        "agencyNameRequired": "Company name is required",
+        "passwordsDontMatch": "Passwords do not match",
+        "agencyAlreadyExists": "This company already exists. Please choose another name."
+      },
+      "toast": {
+        "genericError": "Error while signing up",
+        "success": "Account created! Signing you in...",
+        "loginAfterRegisterError": "Account created but there was an error signing you in. Please sign in manually.",
+        "unexpectedError": "Unexpected error. Please try again."
+      }
+    },
+    "oauth": {
+      "common": {
+        "tryAgain": "Please try again."
+      },
+      "google": {
+        "loadingTitle": "Linking Google Ads...",
+        "loadingSubtitle": "Please do not close this window.",
+        "denied": "Could not connect to Google Ads. The user denied access.",
+        "invalidResponse": "Invalid response from Google.",
+        "missingAgency": "Could not identify the agency. Please try again from Integrations.",
+        "success": "Google Ads linked successfully!",
+        "linkError": "Error linking the account: {{message}}"
+      },
+      "meta": {
+        "loadingTitle": "Linking Meta Ads...",
+        "loadingSubtitle": "Please do not close this window.",
+        "denied": "Could not connect to Meta. Access denied.",
+        "genericError": "Meta error: {{error}}",
+        "invalidResponse": "Invalid response from Meta.",
+        "missingAgency": "Could not identify the agency. Please try again from Integrations.",
+        "success": "Meta Ads linked successfully!",
+        "dnsError": "The integrations server could not resolve network/DNS (503). Check DNS for the edge-functions container or try again in a few seconds.",
+        "linkError": "Error linking Meta: {{message}}"
+      }
+    }
+  },
+  "support": {
+    "contact": {
+      "title": "Support",
+      "subtitle": "Send requests and track the status of your tickets for agency {{agency}}.",
+      "noAgencySelected": "Select an agency to contact support.",
+      "form": {
+        "title": "New request",
+        "description": "Describe your question or issue. The support team will reply here.",
+        "subjectLabel": "Subject",
+        "subjectPlaceholder": "E.g. Issue with ads synchronization",
+        "messageLabel": "Message",
+        "messagePlaceholder": "Describe your question or issue with as much detail as possible…",
+        "submit": "Send request",
+        "submitting": "Sending...",
+        "successTitle": "Request sent",
+        "successBody": "You can see the status and replies in \"My tickets\".",
+        "successCta": "Send another request"
+      },
+      "tickets": {
+        "title": "My tickets",
+        "description": "List of your requests. Click \"View\" to see details and reply.",
+        "empty": "You don't have any tickets.",
+        "columns": {
+          "subject": "Subject",
+          "status": "Status",
+          "createdAt": "Created"
+        },
+        "view": "View"
+      },
+      "detail": {
+        "title": "Ticket detail",
+        "subjectLabel": "Subject",
+        "initialMessageLabel": "Initial message",
+        "status": {
+          "createdAtPrefix": "Created"
+        },
+        "conversationTitle": "Conversation",
+        "conversationEmpty": "There are no replies yet. The support team will reply here.",
+        "replyPlaceholder": "Write your reply…",
+        "replyButton": "Send reply",
+        "loadError": "The ticket could not be loaded."
+      },
+      "status": {
+        "open": "Open",
+        "inProgress": "In progress",
+        "closed": "Closed"
+      },
+      "author": {
+        "you": "You",
+        "support": "Support"
+      },
+      "toasts": {
+        "loadTicketsError": "Error loading your tickets",
+        "agencyRequired": "Select an agency to send the request.",
+        "subjectRequired": "Subject is required.",
+        "messageRequired": "Message is required.",
+        "createSuccess": "Request sent. We'll reply as soon as possible.",
+        "createError": "Error sending the request. Please try again.",
+        "replyRequired": "Write a message",
+        "replyError": "Error sending the reply",
+        "replySuccess": "Reply sent"
+      }
+    }
+  },
+  "deadlines": {
+    "loading": "Loading deadlines...",
+    "filters": {
+      "button": "Filters"
+    },
+    "globalAssignments": {
+      "button": "Global"
+    },
+    "toasts": {
+      "globalAssignment": {
+        "updated": "Global assignment updated",
+        "created": "Global assignment created",
+        "saveError": "Error saving global assignment"
+      },
+      "deadline": {
+        "deleted": "Deadline deleted",
+        "deleteError": "Error deleting deadline"
+      },
+      "global": {
+        "deleted": "Assignment deleted",
+        "deleteError": "Error deleting global assignment",
+        "noUser": "No authenticated user",
+        "notFound": "Assignment not found",
+        "notOwner": "You can only delete your own assignments"
+      },
+      "month": {
+        "noDeadlinesToDelete": "There are no deadlines to delete for this month",
+        "resetSuccess": "Month reset successfully",
+        "resetError": "Error resetting month"
+      },
+      "previousMonth": {
+        "noDeadlines": "There are no deadlines in the previous month",
+        "copyError": "Error copying deadlines",
+        "checkError": "Error checking previous deadlines",
+        "copySuccess": "{{count}} deadlines were copied"
+      },
+      "noConfigToDelete": "There is no saved configuration to delete"
+    }
+  },
+  "times": {
+    "title": "Time Tracking",
+    "subtitleDisabled": "Team timers.",
+    "disabledMessage": "The time tracking module is not active in your agency. Enable it in Agency Settings to see who is tracking time.",
+    "subtitleActive": "Who is tracking time right now and total for the day.",
+    "emptyState": {
+      "title": "No active timers",
+      "description": "When someone clicks Play on a planner task, it will appear here.",
+      "yourTotalToday": "Your total today"
+    },
+    "cards": {
+      "defaultEmployee": "Employee",
+      "you": "You",
+      "defaultTask": "Task",
+      "todayTotal": "Today's total",
+      "stop": "Stop",
+      "yourTotalWithoutTimer": "Your total today (no active timer)"
+    },
+    "toast": {
+      "stoppedTitle": "Timer stopped",
+      "stoppedDescription": "Time has been saved successfully."
+    }
+  },
+  "weeklyForecast": {
+    "title": "Monthly Forecast",
+    "subtitle": "Contracted hours tracking and workload redistribution",
+    "monthCurrent": "Current month",
+    "tabs": {
+      "traffic": "Traffic Light",
+      "transfers": "Transfers",
+      "blockers": "Blockers",
+      "redistribute": "Redistribute",
+      "activity": "History"
+    }
+  },
+  "teamCapacity": {
+    "metaTitle": "Team Availability | Taimbox",
+    "title": "Team Availability",
+    "subtitle": "Workload balance for",
+    "viewModes": {
+      "week": "This Week",
+      "month": "This Month"
+    },
+    "stats": {
+      "highAvailability": "High Availability",
+      "availableCapacity": "Available Capacity",
+      "globalOccupancy": "Global Occupancy",
+      "overloaded": "Overloaded"
+    },
+    "sections": {
+      "highAvailability": {
+        "title": "High Availability",
+        "subtitleWeek": "Members with +4h free this week",
+        "subtitleMonth": "Members with +10h free this month",
+        "emptyState": "The whole team is busy"
+      },
+      "moderate": "Moderate Availability",
+      "persons": "people",
+      "criticalLoad": {
+        "title": "Critical Load",
+        "subtitle": "Members with little to no availability",
+        "overload": "Overload (≥100%)",
+        "busy": "Very busy (85-99%)",
+        "emptyState": "No one is overloaded"
+      },
+      "away": "Currently Away"
+    },
+    "status": {
+      "away": "Away",
+      "overloaded": "Overloaded",
+      "busy": "Busy",
+      "productive": "Productive",
+      "available": "Available"
+    },
+    "card": {
+      "occupancy": "Occupancy",
+      "absences": "-{{hours}}h (absences/events)",
+      "pendingTasks": "{{count}} planned tasks",
+      "free": "Free"
+    }
+  },
+  "teamCapacityDashboard": {
+    "title": "Team Capacity",
+    "subtitle": "Passive heatmap and bottleneck analysis.",
+    "controls": {
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month"
+    },
+    "kpis": {
+      "averageLoad": {
+        "title": "Average Occupancy (Month)",
+        "subtitle": "Planned vs available capacity"
+      },
+      "bottlenecks": {
+        "title": "Bottlenecks",
+        "subtitle": "Tasks blocked by dependencies"
+      }
+    },
+    "heatmap": {
+      "title": "Weekly Heatmap",
+      "description": "Quick view of who is overloaded or available.",
+      "legend": {
+        "optimal": "Optimal (50-80%)",
+        "high": "High (80-100%)",
+        "veryHigh": "Very High (100-120%)",
+        "overloaded": "Overloaded (+120%)",
+        "low": "Low (<50%)"
+      },
+      "emptyState": "No data to display",
+      "columns": {
+        "employee": "Employee"
+      },
+      "tooltip": {
+        "assignedHours": "Assigned hours:",
+        "weeklyCapacity": "Weekly capacity:",
+        "occupancy": "Occupancy:",
+        "noAssignments": "No assignments this week",
+        "lowLoad": "Low load - Available capacity",
+        "optimalLoad": "Optimal load",
+        "highLoad": "High load - Near limit",
+        "moderateOverload": "⚠️ Moderate overload",
+        "criticalOverload": "🚨 Critical overload"
+      }
+    },
+    "blockedTasks": {
+      "title": "Tasks blocked by dependencies",
+      "subtitle": "Tasks that cannot progress until their dependency is completed",
+      "waitingWeek": "week waiting",
+      "waitingWeeks": "weeks waiting",
+      "moreBlocked": "+{{count}} more blocked tasks"
+    }
+  },
+  "financialHealth": {
+    "title": "Financial Health",
+    "subtitle": "Effective hourly rate, net margin and profitability per project and employee.",
+    "view": "View:",
+    "search": "Search project or client...",
+    "controls": {
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "starterPlan": "Starter Plan: current and previous month",
+      "currentMonth": "Current month",
+      "closedMonth": "Closed month"
+    },
+    "filters": {
+      "hours": "Hours:",
+      "actual": "Actual",
+      "computed": "Computed",
+      "cost": "Cost:",
+      "operational": "Operational",
+      "dynamic": "Dynamic",
+      "operationalHelp": "Isolates project cost from vacations and downtimes.",
+      "dynamicHelp": "Distributes payroll among actual month hours (total matches payroll)."
+    }
+  },
+  "clientsAndProjects": {
+    "title": "Clients and Projects",
+    "subtitle": "Management of clients, budgets, and project tracking.",
+    "stats": {
+      "totalClients": "Total Clients",
+      "hoursThisMonth": "Hours This Month",
+      "assignedHours": "of {{budget}}h assigned",
+      "atRisk": "At Risk",
+      "atRiskDescription": ">85% contracted hours",
+      "overBudget": "Over Budget",
+      "overBudgetDescription": ">100% contracted hours",
+      "contracted": "Contracted",
+      "computed": "Computed",
+      "toCompute": "To Compute",
+      "estimated": "Estimated",
+      "real": "Real"
+    },
+    "filters": {
+      "searchPlaceholder": "Search client or project...",
+      "status": {
+        "all": "All statuses",
+        "active": "Active only",
+        "completed": "Completed only",
+        "archived": "Archived only",
+        "hidden": "Hidden only"
+      },
+      "types": {
+        "all": "All types",
+        "placeholder": "Type"
+      },
+      "employees": {
+        "all": "All employees",
+        "placeholder": "Select...",
+        "search": "Search..."
+      },
+      "quick": {
+        "label": "Filters:",
+        "all": "All",
+        "noActivity": "No activity",
+        "noActivityTooltip": "Projects without planned tasks this month",
+        "needsPlanning": "Needs planning",
+        "needsPlanningTooltip": "Projects that haven't planned all assigned or minimum hours",
+        "needsPlanningDetail": "If it has assigned hours, all must be planned. If it only has minimum, at least those must be planned.",
+        "behindSchedule": "Behind schedule",
+        "behindScheduleTooltip": "Execution below the month's progress",
+        "overBudget": "Over budget",
+        "overBudgetTooltip": "Projects with more planned hours than assigned"
+      }
+    },
+    "actions": {
+      "newProject": "New project",
+      "newClient": "New client",
+      "expandAll": "Expand all",
+      "collapseAll": "Collapse all",
+      "edit": "Edit",
+      "showProject": "Show project",
+      "hideProject": "Hide project"
+    },
+    "clientList": {
+      "count_one": "{{count}} client",
+      "count_other": "{{count}} clients",
+      "projects_one": "{{count}} project",
+      "projects_other": "{{count}} projects",
+      "noResults": "No clients found with these filters",
+      "noResultsSub": "Try other search criteria",
+      "activeProjects": "Active projects",
+      "assignedTeamThisMonth": "Assigned team this month",
+      "noProjects": "No active projects",
+      "projects_plural": "Projects"
+    },
+    "projectCard": {
+      "unplanned": "Unplanned",
+      "hoursOf": "{{used}}h of {{budget}}h"
+    },
+    "dialogs": {
+      "agencies": {
+        "title": "Agencies",
+        "description": "Manage your agencies or create a new one.",
+        "newAgency": "New Agency"
+      },
+      "ads": {
+        "google": "Google Ads",
+        "meta": "Meta Ads",
+        "lastSync": "Last sync: {{time}}",
+        "noSync": "Never synced",
+        "daysRange": "From 1 to {{days}}",
+        "dayProgress": "Day {{current}} of {{total}}",
+        "actions": {
+          "sync": "Sync",
+          "syncing": "Syncing...",
+          "split": "Split",
+          "edit": "Configure",
+          "save": "Save",
+          "cancel": "Cancel",
+          "delete": "Delete",
+          "close": "Close"
+        },
+        "stats": {
+          "investment": "Investment",
+          "clicks": "Clicks",
+          "conversions": "Conversions",
+          "roas": "ROAS",
+          "dailyRecommended": "Recommended daily",
+          "atRisk": "At risk",
+          "revenue": "Value",
+          "daysRemaining": "Days remaining",
+          "of": "of",
+          "target": "Target",
+          "acceptable": "Acceptable",
+          "below": "Below",
+          "monthProgress": "{{percent}}% of month",
+          "spent": "Spent",
+          "ctr": "CTR",
+          "cpc": "CPC",
+          "cpa": "CPA"
+        },
+        "filters": {
+          "searchPlaceholder": "Search account or campaign...",
+          "showHidden": "Hidden",
+          "showZeroSpend": "Zero spend (0 €)",
+          "accountsCount": "{{count}} accounts"
+        },
+        "table": {
+          "campaign": "Campaign",
+          "spent": "Spend",
+          "value": "Value",
+          "roas": "ROAS",
+          "noCampaigns": "No campaigns",
+          "account": "Account",
+          "groupPct": "% Group",
+          "conv": "Conv",
+          "breakdown": "Account Breakdown ({{count}})",
+          "active": "Active",
+          "paused": "Paused"
+        },
+        "pacing": {
+          "spentPct": "{{percent}}% spent",
+          "forecast": "Proj: {{amount}}",
+          "forecastTitle": "End of month projection",
+          "totalBudget": "Total target budget",
+          "monthlyBudget": "Monthly target budget",
+          "available": "Available: {{amount}}",
+          "avgDaily": "Avg daily spend",
+          "recommendedDaily": "Avg daily target",
+          "avgDailySub": "so far this month",
+          "recommendedDailySub": "to close the month on budget",
+          "googleNote": "Taimbox calculates the monthly budget by summing the daily limits (x30.4) of your active campaigns in Google Ads. You can <strong class=\"text-slate-600\">override this budget</strong> manually here to compare against a different target.",
+          "metaNote": "The spending limit in Meta Ads is configured in Facebook (campaign, set or shared budget). Here you define the <strong class=\"text-slate-600\">monthly target budget</strong> in Taimbox to compare real pace vs. target.",
+          "paceWarningGoogle": "Spending pace is above the target to not exceed the monthly budget. Review campaigns in Google Ads, this usually happens if daily budgets sum more than the monthly target divided by 30.",
+          "paceWarningMeta": "Spending pace is above the target to not exceed the monthly budget. Review and adjust limits in Meta Ads according to your structure (campaign, set or ad account).",
+          "forecastTooltip": "Uses the average daily spend of the month (spent ÷ days elapsed) projected to the full calendar. If you recently changed the pace, it may not match the average daily target; that value is the pace to close within Taimbox's target budget."
+        },
+        "dialogs": {
+          "configAccount": {
+            "title": "Configure account",
+            "groupName": "Group Name (Holding)",
+            "groupPlaceholder": "E.g.: Group ABC",
+            "groupNote": "Accounts from the same group are consolidated.",
+            "salesAccount": "Sales Account (ROAS)",
+            "salesAccountNote": "Show conversions",
+            "hideAccount": "Hide account",
+            "hideAccountNote": "Will not appear in the list"
+          },
+          "splitAccounts": {
+            "title": "Split Accounts",
+            "description": "Separate campaigns by keyword into virtual accounts.",
+            "sourceAccount": "Source Account",
+            "selectAccount": "Select...",
+            "ifContains": "If contains...",
+            "createAccount": "Create account...",
+            "activeRules": "Active Rules ({{count}})",
+            "noRules": "No rules",
+            "ifContainsLabel": "If contains \"{{keyword}}\""
+          },
+          "sync": {
+            "title": "Syncing {{platform}}",
+            "connecting": "Connecting...",
+            "finished": "Finished",
+            "completed": "Sync completed",
+            "error": "Error in process",
+            "initGoogle": "🚀 Starting connection with Google Ads...",
+            "initMeta": "🚀 Connecting with Meta API..."
+          }
+        },
+        "status": {
+          "exceeded": "Exceeded",
+          "risk": "At risk",
+          "low": "Low",
+          "ok": "OK",
+          "hidden": "Hidden",
+          "group": "GROUP",
+          "noData": "No data",
+          "syncPrompt": "Sync to load accounts"
+        }
+      },
+      "newClient": {
+        "title": "New client",
+        "description": "Create a new client to organize your projects.",
+        "name": "Name",
+        "namePlaceholder": "Client name",
+        "color": "Color"
+      },
+      "editClient": {
+        "title": "Edit client",
+        "description": "Modify client information."
+      },
+      "deleteClient": {
+        "title": "Delete client?",
+        "description": "This action will delete the client and all associated projects. This action cannot be undone."
+      }
+    }
+  },
+  "team": {
+    "title": "Team",
+    "subtitle": "Manage employees, access, and schedules.",
+    "newEmployee": "New employee",
+    "editEmployee": "Edit employee",
+    "departments": "Departments",
+    "roles": {
+      "admin": "Admin",
+      "manager": "Manager",
+      "employee": "Employee"
+    },
+    "searchPlaceholder": "Search by name or role...",
+    "noEmployees": "No employees found.",
+    "holidays": "Holidays",
+    "manageEvents": "Team Event Management",
+    "eventsDescription": "Manage holidays, events, and other activities affecting the whole team.",
+    "limits": {
+      "starterLimit": "Your agency exceeds the Starter Plan limit. Upgrade to Pro or Business to add more employees.",
+      "planReached": "You have reached your plan's employee limit. Update your plan in Plan & Billing."
+    },
+    "pulse": {
+      "title": "Team Pulse",
+      "subtitle": "Daily team progress summary",
+      "dailySummary": "Daily Summary",
+      "teamProgress": "Team progress today",
+      "update": "Update",
+      "completedTasks": "{{count}} tasks completed",
+      "dailyLog": "Daily Log ({{count}})",
+      "queue": "Queue ({{count}})",
+      "nothingInQueue": "Nothing in queue"
+    },
+    "dashboard": {
+      "welcome": "Welcome, {{name}}!",
+      "myTime": "My Time",
+      "myWeek": "My week",
+      "myDay": "My day",
+      "myProjects": "My Projects",
+      "upcomingHolidays": "Upcoming Holidays",
+      "hoursLogged": "Hours logged",
+      "tabCoherence": "Planning control",
+      "tabDependencies": "Dependencies",
+      "tabProjects": "My projects",
+      "tabTeammates": "Teammates",
+      "tabMetrics": "Metrics",
+      "weekly": "Weekly",
+      "addTasks": "Add tasks",
+      "internalTask": "Internal task",
+      "exportCrm": "Export to CRM",
+      "goals": "Goals",
+      "absences": "Absences",
+      "repeatTour": "Repeat tour",
+      "currentMonth": "Current month",
+      "calendar": "Calendar",
+      "addOtherRow": "Add another row",
+      "saveTasks": "Save tasks",
+      "addTasksDescription": "Plan multiple tasks for {{month}}.",
+      "taskList": "Task list",
+      "readyToSave": "Ready to save complete rows.",
+      "registerInternal": "Register internal management",
+      "internalDescription": "Meetings, training, deadlines or other tasks.",
+      "internalPlaceholder": "E.g. Team meeting"
+    }
+  },
+  "common": {
+    "name": "Name",
+    "hours": "Hours",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "register": "Register",
+    "save": "Save",
+    "saveChanges": "Save changes",
+    "more": "More",
+    "discardChanges": "Discard changes?",
+    "discardDescription": "You have unsaved tasks. If you close now, you will lose the data entered.",
+    "keepEditing": "Keep editing",
+    "yesDiscard": "Yes, discard"
+  },
+  "settings": {
+    "title": "Settings",
+    "agency": {
+      "title": "Agency Settings",
+      "description": "Manage the name, roles, departments, modules, and branding of your agency."
+    },
+    "support": {
+      "title": "Contact Support",
+      "description": "Send a help request or report a problem. Our support team will respond to you."
+    },
+    "adAccounts": {
+      "title": "Advertising Account Management",
+      "description": "Add your clients' account IDs here for the system to sync them.",
+      "label": "Meta Ads Account ID",
+      "placeholder": "E.g.: act_123456789",
+      "note": "Important Note:",
+      "metaNote": "For Meta Ads: The ID must include the prefix (e.g.: act_147...).",
+      "googleNote": "Google Ads accounts are added automatically when syncing from the API.",
+      "addAccount": "Add account",
+      "alreadyRegistered": "This account is already registered.",
+      "saveSuccess": "Meta Ads account added. Sync now to see data."
+    },
+    "systemStatus": {
+      "title": "System Status",
+      "ok": "System operational and connected to database."
+    }
+  },
+  "agency": {
+    "title": "Agency Settings",
+    "subtitle": "Choose a section to view and edit settings",
+    "tabs": {
+      "general": "General",
+      "team": "Team",
+      "projects": "Projects",
+      "modules": "Modules",
+      "integrations": "Integrations",
+      "departments": "Departments",
+      "appearance": "Appearance",
+      "billing": "Plan & Billing"
+    },
+    "general": {
+      "title": "General Information",
+      "description": "Basic information about your agency",
+      "name": "Agency Name",
+      "slug": "Identifier (slug)",
+      "slugNote": "The slug cannot be modified",
+      "profitability": "Profitability",
+      "profitabilityDesc": "Effective hourly price target used on the Profitability page for KPIs and alerts",
+      "ehrTarget": "Effective Hourly Price Target (€/h)",
+      "ehrNote": "Minimum value considered healthy. Default 75 €/h.",
+      "tracking": "Tracking Preference",
+      "trackingDesc": "Decide which hours will be used to calculate progress and profitability.",
+      "computed": "Computed Hours",
+      "computedDesc": "(Recommended) Validated after the Weekly.",
+      "actual": "Actual Hours",
+      "actualDesc": "Only hours logged in the tracker."
+    },
+    "modules": {
+      "title": "Active Modules",
+      "description": "Enable or disable the main Taimbox features for your agency.",
+      "seo": "SEO Module",
+      "seoDesc": "Audits, rankings and organic positioning KPIs.",
+      "ppc": "PPC Module (Ads)",
+      "ppcDesc": "Connection with Google/Meta Ads and spend reporting.",
+      "weeklyFeedback": "Weekly Feedback",
+      "weeklyFeedbackDesc": "Week closing, reflections and task rollover.",
+      "professionalGoals": "Professional Goals",
+      "professionalGoalsDesc": "OKR management and goals per employee.",
+      "deadlines": "Deadlines & Milestones",
+      "deadlinesDesc": "Critical delivery dates in the planner.",
+      "timeTracker": "Time Tracker (BETA)",
+      "timeTrackerDesc": "Real-time stopwatch for exact logging.",
+      "maxHours": "Maximum hours per task",
+      "maxHoursDesc": "Safety limit to avoid errors when stopping the tracker."
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize your agency's appearance",
+      "primaryColor": "Primary Color",
+      "preview": "Preview"
+    },
+    "team": {
+      "title": "Role Management",
+      "description": "Configure permissions and default access for each role in your agency.",
+      "addRole": "Add new role",
+      "roleName": "Role name",
+      "permissions": "Permissions",
+      "deleteConfirm": "Delete role?",
+      "deleteDesc": "This action cannot be undone and may affect assigned users."
+    },
+    "projects": {
+      "filtersTitle": "Project Filters",
+      "filtersDesc": "Configure how projects are filtered in different views",
+      "addFilter": "Add filter",
+      "addFirstFilter": "Add first filter",
+      "howItWorks": "How do filters work?",
+      "includePatterns": "Inclusion patterns",
+      "includeNote": "Project name must contain AT LEAST ONE of these terms",
+      "excludePatterns": "Exclusion patterns",
+      "excludeNote": "Project name must NOT contain ANY of these terms",
+      "includeTooltip": "Comma-separated terms. Project must contain AT LEAST ONE to appear.",
+      "excludeTooltip": "Comma-separated terms. Project must NOT contain ANY to appear.",
+      "emptyNote": "If you leave \"Inclusion patterns\" empty, all projects are included by default",
+      "filterName": "Filter name",
+      "noFilters": "No filters configured",
+      "aliasingTitle": "Project Aliasing",
+      "aliasingDesc": "Configure rules to automatically rename projects (e.g., Kit Digital → KD:)",
+      "aliasingInstruction": "Define patterns to detect and rename special projects",
+      "newRule": "New rule",
+      "ruleName": "Rule name",
+      "detectBy": "Detect by text",
+      "matchNote": "If project contains any of these terms (case-insensitive)",
+      "applyPrefix": "Apply prefix",
+      "prefixNote": "Text to be added at the beginning of the project name",
+      "groupAsClient": "Group under a virtual client",
+      "clientName": "Client name",
+      "noRules": "No aliasing rules configured",
+      "addFirst": "Add first rule"
+    },
+    "integrations": {
+      "title": "Integrations",
+      "description": "Connect your agency with external tools and configure advanced features",
+      "workflow": "Workflow",
+      "crm": "CRM",
+      "other": "Privacy & Demo",
+      "weeklyCloseDay": "Weekly close day",
+      "weeklyCloseDayDesc": "Determines which tasks are considered \"of this week\".",
+      "selectDay": "Select a day",
+      "dependencyWarning": "This integration requires active dependencies",
+      "dependencyError": "To activate \"{{name}}\", you must first activate: {{deps}}",
+      "crmUserIdWarning": "If you disable \"CRM User ID\", \"CRM Task Export\" will also be disabled",
+      "items": {
+        "weekly_feedback": {
+          "name": "Weekly",
+          "description": "Manage open tasks and weekly transfers"
+        },
+        "crm_export": {
+          "name": "CRM Task Export",
+          "description": "Allows exporting planned tasks in CSV format for CRM import"
+        },
+        "crm_user_id": {
+          "name": "CRM User ID",
+          "description": "Shows the CRM User ID field in employee profiles. Required for CRM task export"
+        },
+        "anonymize_ads_for_video": {
+          "name": "Demo mode (hide sensitive data)",
+          "description": "Throughout the application, visually replaces names of people, clients, projects, and tasks with generic labels."
+        }
+      },
+      "weekly": {
+        "title": "Weekly Feedback",
+        "description": "Configure automatic sending of the weekly feedback form.",
+        "sendDay": "Send day",
+        "sendTime": "Send time"
+      },
+      "adsConfig": "Ad Platform Configuration",
+      "googleAds": {
+        "title": "Google Ads",
+        "description": "Import investment and metrics from Google Ads campaigns.",
+        "connected": "Connected",
+        "notConnected": "Not connected",
+        "connect": "Connect with Google",
+        "connectDesc": "Google's consent screen will open. After authorizing, you can select your account.",
+        "reconnect": "Re-link",
+        "disconnect": "Disconnect",
+        "selectAccount": "Google Ads Account",
+        "selectAccountPlaceholder": "Select an account...",
+        "selectAccountDesc": "Select the main or MCC account to sync.",
+        "loading": "Loading...",
+        "connectFirst": "Connect with Google first to see your available accounts.",
+        "configError": "Configuration error: Agency customer ID missing.",
+        "linked": "Linked",
+        "updateSuccess": "Google Ads account updated. Sync again to load data.",
+        "disconnectSuccess": "Google Ads account disconnected"
+      },
+      "metaAds": {
+        "title": "Meta Ads",
+        "description": "Import investment and metrics from Facebook and Instagram Ads.",
+        "connected": "Connected",
+        "notConnected": "Not connected",
+        "connect": "Connect with Meta",
+        "connectDesc": "Meta login will open. After authorizing, available ad accounts will be imported.",
+        "reconnect": "Re-link",
+        "disconnect": "Disconnect",
+        "selectAccount": "Select ad account",
+        "syncing": "Syncing...",
+        "noAccounts": "No connected accounts.",
+        "linkAccount": "Link ad account",
+        "tokenConfigured": "Token configured",
+        "importTitle": "Import accounts from Meta",
+        "importAction": "Update account list",
+        "importDesc": "Calls the Meta API and registers accounts in \"Connected accounts\".",
+        "connectedAccounts": "Connected accounts ({{count}})",
+        "disconnectSuccess": "Meta Ads disconnected",
+        "syncSuccess": "Accounts updated ({{count}} from Meta)."
+      }
+    },
+    "billing": {
+      "title": "Subscription & Billing"
+    },
+    "saveChanges": "Save Changes",
+    "saving": "Saving..."
+  },
+  "clients": {
+    "title": "Clients",
+    "subtitle": "Manage your clients and their hour consumption",
+    "search": "Search client...",
+    "empty": "No clients found",
+    "emptySub": "Try another search term or create your first client to start",
+    "count": "{{filtered}} of {{total}} clients"
+  },
+  "agencies": {
+    "title": "My Agencies",
+    "accessCount_one": "You have access to 1 agency",
+    "accessCount_other": "You have access to {{count}} agencies",
+    "manageCurrent": "Manage your current agency",
+    "createNew": "Create new agency",
+    "myAgency": "My Agency",
+    "currentAgencyText": "Current agency",
+    "currentBadge": "Current",
+    "buttons": {
+      "team": "Team",
+      "admins": "Administrators",
+      "settings": "Settings",
+      "switchToThis": "Switch to this agency",
+      "switching": "Switching...",
+      "adminsShort": "Admins",
+      "settingsShort": "Config"
+    },
+    "toast": {
+      "switchSuccess": "Agency switched successfully",
+      "switchError": "Error switching agency"
+    }
+  },
+  "layout": {
+    "departmentBanner": {
+      "viewing": "You are viewing the filtered view for:",
+      "hidden": "The rest of the data is hidden.",
+      "clear": "Clear filter"
+    },
+    "subscriptionBanner": {
+      "exceeds": "Your agency exceeds the limits of the Starter Plan. Upgrade to Pro or Business to plan again.",
+      "viewPlans": "View plans"
+    },
+    "departmentSelector": {
+      "globalView": "Global View",
+      "byDepartment": "View by department"
+    }
+  },
+  "okrs": {
+    "title": "Objectives and Key Results (OKRs)",
+    "description": "Manage and monitor strategic objectives and team performance.",
+    "newGoal": "New objective",
+    "tabs": {
+      "projects": "Projects",
+      "personal": "My objectives"
+    },
+    "selectEmployee": "Select employee...",
+    "searchEmployee": "Search employee...",
+    "search": "Search...",
+    "internal": "Internal",
+    "global": "Global",
+    "strategicObjectives": "Strategic objectives",
+    "status": {
+      "completed": "Completed",
+      "onTrack": "On track",
+      "inProgress": "In progress",
+      "started": "Started"
+    },
+    "noDate": "No date",
+    "keyResults": "Key results",
+    "generalProgress": "General Progress",
+    "dialog": {
+      "editTitle": "Edit objective",
+      "createTitle": "Create new objective",
+      "projectDesc": "Objective associated with an active project.",
+      "personalDesc": "Professional development objective.",
+      "projectLabel": "Project",
+      "selectProject": "select project...",
+      "mainObjective": "Main objective",
+      "objectivePlaceholder": "Ex: improve React skills...",
+      "deadline": "Deadline",
+      "trainingLink": "Training link (optional)",
+      "completedPrefix": "completed",
+      "check": "Check",
+      "numeric": "Numeric",
+      "descPlaceholder": "result description...",
+      "checkPlaceholder": "Ex: Complete course...",
+      "numericPlaceholder": "Ex: Complete course modules..."
+    },
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "alert": {
+      "title": "Are you absolutely sure?",
+      "description": "This action cannot be undone. The objective will be permanently deleted."
+    }
+  },
+  "operationsRadar": {
+    "title": "Operational Tracking",
+    "description": "Daily review of at-risk processes and deviations. Search applies to both panels.",
+    "searchPlaceholder": "Search project or client...",
+    "searchAria": "Search in Operational Tracking (applies to both panels)",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "blockingTasks_one": "{{count}} task blocks the team",
+    "blockingTasks_other": "{{count}} tasks block the team",
+    "noBlockingTasks": "Nothing is blocking the team this month",
+    "noBlockingDetails": "All tasks that block others are completed or there are no dependencies this month.",
+    "somebody": "Somebody",
+    "unnamedTask": "Unnamed task",
+    "blocks": " blocks ",
+    "otherTasks": "other tasks",
+    "blockerTask": "Blocking task:",
+    "blockedTask_one": "Blocked task:",
+    "blockedTask_other": "Blocked tasks:",
+    "projectsStatus": "Projects status",
+    "projectsDesc": "How projects are doing this month. Filter by alert level if you need it.",
+    "filteredView": "Filtered view by department: {{department}}",
+    "noProjectsForDepartment": "No projects for {{department}} this month.",
+    "noProjects": "No projects this month.",
+    "noFilteredProjects": "No projects match the current filters.",
+    "showAll": "Show all",
+    "filterAll": "All",
+    "filterNoActivity": "No activity",
+    "filterNeedsPlanning": "Needs planning",
+    "filterBehindSchedule": "Behind schedule",
+    "filterOverBudget": "Over budget",
+    "filterInRule": "On track",
+    "tooltipNoActivity": "Projects with an objective but no planned or computed tasks this month",
+    "tooltipNeedsPlanning": "Projects with tasks pending completion this month",
+    "tooltipBehindSchedule": "Below objective or slow progress (low pace / low progress)",
+    "tooltipOverBudget": "Projects exceeding this month's budget",
+    "tooltipInRule": "Up to date, no excess and no tasks pending planning",
+    "noResults": "No results with the current filters.",
+    "projectsFound_one": "{{count}} project.",
+    "projectsFound_other": "{{count}} projects.",
+    "actionOverBudget": "{{hours}}h over the agreement.",
+    "actionLowProgress": "Missing {{hours}}h for the month's objective.",
+    "actionLowPace": "Low pace to reach the objective.",
+    "actionInRule": "Objective: {{budget}}h. Missing {{hours}}h to compute.",
+    "contracted": "Contracted",
+    "computed": "Computed",
+    "toCompute": "To compute",
+    "pendingTasksCount": "{{count}} pending",
+    "projection": "projection",
+    "estimated": "estimated",
+    "missingHours": "(Missing {{missing}}h of {{assigned}}h assigned)",
+    "excessHours": "(+{{excess}}h in excess)",
+    "assigned": "Assigned:",
+    "estimateLabel": "Estimated",
+    "actualLabel": "Actual",
+    "computedLabel": "Computed",
+    "pendingTeamTasks": "Team's pending tasks ({{count}})"
+  },
+  "sidebar": {
+    "groups": {
+      "tracking": "Tracking",
+      "planning": "Planning",
+      "team": "Team",
+      "portfolio": "Portfolio",
+      "ppc": "PPC & Media",
+      "settings": "Settings"
+    },
+    "menu": {
+      "mySpace": "My space",
+      "deadlines": "Deadlines",
+      "operations": "Operational tracking",
+      "profitability": "Profitability",
+      "teamCapacity": "Team Capacity",
+      "weeklyForecast": "Weekly Forecast",
+      "planner": "Planner",
+      "members": "Members",
+      "times": "Times",
+      "okrs": "OKRs",
+      "clientsAndProjects": "Clients and projects",
+      "googleAds": "Google Ads",
+      "metaAds": "Meta Ads",
+      "agencySettings": "Agency Settings",
+      "myAgencies": "My Agencies",
+      "apiIntegrations": "API & Integrations",
+      "support": "Support",
+      "admin": "Administration"
+    },
+    "timer": {
+      "taskInProgress": "Task in progress",
+      "totalRegistered": "Total registered",
+      "client": "Client:",
+      "stop": "Stop",
+      "todayTotal": "Today's total:"
+    },
+    "pitch": {
+      "welcome": "Welcome. Remember why your team needs this discipline.",
+      "viewVision": "View system vision →"
+    },
+    "footer": {
+      "logout": "Log out"
+    }
+  },
+  "agencyManagement": {
+    "title": "Agency Management",
+    "back": "Back",
+    "buttons": {
+      "invite": "Invite User",
+      "transfer": "Transfer Ownership",
+      "delete": "Remove from Agency",
+      "deleting": "Removing...",
+      "transferring": "Transferring..."
+    },
+    "stats": {
+      "agencyFallback": "Agency",
+      "total": "Total Members",
+      "active": "Active",
+      "inactive": "Inactive",
+      "admins": "Administrators"
+    },
+    "members": {
+      "title": "Agency Members",
+      "description": "Manage agency members and their roles",
+      "empty": "There are no members in this agency"
+    },
+    "table": {
+      "name": "Name",
+      "email": "Email",
+      "role": "Role",
+      "department": "Department",
+      "status": "Status",
+      "actions": "Actions",
+      "owner": "Owner",
+      "admin": "Admin",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "dialogs": {
+      "deleteTitle": "Remove member from agency?",
+      "deleteDesc": "This action will unlink {{name}} from this agency.",
+      "lastAdminWarning": "⚠️ This is the last administrator. You cannot remove them.",
+      "transferTitle": "Transfer agency ownership",
+      "transferDesc": "Select the new owner of the agency. The current owner will lose their owner privileges.",
+      "newOwnerLabel": "New Owner",
+      "selectMember": "Select a member",
+      "warningTitle": "Warning",
+      "warningDesc": "This action will transfer the agency ownership to the selected member."
+    },
+    "toast": {
+      "noPermission": "You do not have permission to access this page",
+      "noAccess": "You do not have access to this agency",
+      "loadError": "Error loading members",
+      "lastAdminError": "You cannot remove the last administrator of the agency",
+      "userDeleted": "User completely removed from the system",
+      "userUnlinked": "User unlinked from this agency",
+      "deleteError": "Error removing the member",
+      "transferSuccess": "Agency ownership transferred successfully",
+      "transferError": "Error transferring ownership"
+    }
+  }
+}

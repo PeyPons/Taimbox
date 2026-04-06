@@ -49,8 +49,9 @@ El archivo más importante para contratos de datos.
 **Ubicación**: `src/App.tsx`
 
 Configura la jerarquía de **Providers** y el Router con las rutas de la aplicación.
-- **Jerarquía**: `Helmet` > `QueryClient` > `Auth` > `Agency` > `App` > `Goals` > `Tooltip` > `BrowserRouter` > **Toaster (Sonner)** > `Notification` > rutas.
+- **Jerarquía**: `HelmetProvider` > `QueryClient` > `Auth` > `Agency` > `App` > `Goals` > `Tooltip` > `BrowserRouter` > `PublicLocaleSync` (i18n según ruta) > **Toaster (Sonner)** > `Notification` > rutas.
 - **Protección**: Usa `ProtectedRoute` (Auth) y `PermissionProtectedRoute` (RBAC).
+- **i18n público**: Rutas espejo en inglés bajo `/en/...`; mapa de paths en `src/i18n/publicPaths.ts`; textos en `src/locales/{es,en}/`; SEO unificado con `src/seo/SeoTags.tsx` y variable `VITE_PUBLIC_SITE_URL` para URLs canónicas absolutas. Detalle en `DOCUMENTACION.md` § 1.1c. **Subtareas pendientes de traducción** (checklist por fases): `docs/i18n-tareas-restantes.md`.
 
 ### 1.3 `src/lib/supabase.ts`
 Cliente singleton de Supabase. Requiere `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`.

@@ -1,34 +1,12 @@
-import { Helmet } from 'react-helmet-async';
 import { EmployeeDashboardArticle } from '@/components/landing/EmployeeDashboardArticle';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
+import { CommercialSeoTags } from '@/seo/CommercialSeoTags';
 
 export default function EmployeeDashboardLandingPage() {
     return (
         <>
-            <Helmet>
-                <title>Panel del Empleado y Cronómetro de Tareas | Taimbox</title>
-                <meta name="description" content="Empodera a tu equipo con un panel diseñado para la ejecución. Cronómetro integrado y visualización de tareas para empresas eficientes y productivas." />
-                <link rel="canonical" href="/dashboard-empleado" />
-                <script type="application/ld+json">
-                    {JSON.stringify({
-                        '@context': 'https://schema.org',
-                        '@graph': [
-                            {
-                                '@type': 'WebPage',
-                                name: 'Dashboard del Empleado — Taimbox',
-                                description: 'Empodera a tu equipo con un panel diseñado para la ejecución. Cronómetro integrado y visualización de tareas para empresas eficientes y productivas.',
-                            },
-                            {
-                                '@type': 'SoftwareApplication',
-                                name: 'Taimbox',
-                                applicationCategory: 'BusinessApplication',
-                                description: 'Empodera a tu equipo con un panel diseñado para la ejecución. Cronómetro integrado y visualización de tareas para empresas eficientes y productivas.',
-                            },
-                        ],
-                    })}
-                </script>
-            </Helmet>
+            <CommercialSeoTags pathEs="/dashboard-empleado" pageKey="employeeDashboard" />
 
             <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 relative overflow-hidden">
                 <div className="absolute inset-0 overflow-hidden">

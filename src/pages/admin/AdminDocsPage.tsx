@@ -1,11 +1,13 @@
+import { useAppTranslation } from "@/hooks/useAppTranslation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 
 export default function AdminDocsPage() {
+  const { t } = useAppTranslation();
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Documentación interna</h1>
+        <h1 className="text-2xl font-bold text-slate-900">{t("admin.docs.title", "Documentación interna")}</h1>
         <p className="text-slate-600 mt-1">
           Procedimientos y referencia para el equipo de administración de plataforma.
         </p>

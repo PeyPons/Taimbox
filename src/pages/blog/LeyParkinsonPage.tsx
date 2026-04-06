@@ -1,70 +1,67 @@
-import { Helmet } from 'react-helmet-async';
+import { BlogArticleSeo } from '@/seo/BlogArticleSeo';
 import { LeyParkinsonArticle } from '@/components/landing/blog/LeyParkinsonArticle';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { BlogBreadcrumb } from '@/components/landing/blog/BlogBreadcrumb';
-import { blogPosts } from '@/data/blogPosts';
+import { blogPosts, getBlogPostLocaleFields } from '@/data/blogPosts';
+import { useTranslation } from 'react-i18next';
 
 const SLUG = 'ley-parkinson';
-const post = blogPosts.find((p) => p.slug === SLUG)!;
-const relatedPost = post?.relatedSlug ? blogPosts.find((p) => p.slug === post.relatedSlug) : null;
-
-const TOC_ITEMS = [
-  { id: 'que-es-ley-parkinson', label: '1. Qué es la Ley de Parkinson' },
-  { id: 'formulacion-origen', label: '2. Formulación exacta y origen' },
-  { id: 'parkinson-estructura-burocracia', label: 'Origen burocrático y estructura' },
-  { id: 'segunda-ley-gastos', label: 'Segunda ley: gastos e ingresos' },
-  { id: 'ejemplos-ley-parkinson', label: '3. Ejemplos en el día a día y en negocio' },
-  { id: 'ley-trivialidad', label: 'Ley de la trivialidad (efecto cobertizo)' },
-  { id: 'evidencia-estudios', label: '4. Evidencia empírica y estudios' },
-  { id: 'consecuencias-negocio', label: '5. Consecuencias en empresas y equipos' },
-  { id: 'antidotos-timeboxing', label: '6. Antídotos: timeboxing y plazos' },
-  { id: 'aplicacion-equipos', label: '7. Cómo aplicar en equipos y agencias' },
-  { id: 'preguntas-frecuentes', label: 'Preguntas frecuentes' },
-  { id: 'cta-ley-parkinson', label: 'Que el tiempo trabaje a tu favor' },
-];
 
 export default function LeyParkinsonPage() {
+  const { t, i18n } = useTranslation("blog");
+  const postKey = "leyParkinson";
+
+  const post = blogPosts.find((p) => p.slug === SLUG)!;
+  const { title: postTitle } = getBlogPostLocaleFields(post, i18n.language);
+
+  const rawRelatedPost = post?.relatedSlug ? blogPosts.find((p) => p.slug === post.relatedSlug) : null;
+  const relatedPost = rawRelatedPost ? getBlogPostLocaleFields(rawRelatedPost, i18n.language) : null;
+
+  const tocData = (t(`posts.${postKey}.toc`, { returnObjects: true }) as any) || {};
+
+  const TOC_ITEMS = [
+    { id: 'que-es-ley-parkinson', label: tocData.queEs || '1. Qué es la Ley de Parkinson' },
+    { id: 'formulacion-origen', label: tocData.formulacion || '2. Formulación exacta y origen' },
+    { id: 'parkinson-estructura-burocracia', label: tocData.burocracia || 'Origen burocrático y estructura' },
+    { id: 'segunda-ley-gastos', label: tocData.segundaLey || 'Segunda ley: gastos e ingresos' },
+    { id: 'ejemplos-ley-parkinson', label: tocData.ejemplos || '3. Ejemplos en el día a día y en negocio' },
+    { id: 'ley-trivialidad', label: tocData.trivialidad || 'Ley de la trivialidad (efecto cobertizo)' },
+    { id: 'evidencia-estudios', label: tocData.evidencia || '4. Evidencia empírica y estudios' },
+    { id: 'consecuencias-negocio', label: tocData.consecuencias || '5. Consecuencias en empresas y equipos' },
+    { id: 'antidotos-timeboxing', label: tocData.antidotos || '6. Antídotos: timeboxing y plazos' },
+    { id: 'aplicacion-equipos', label: tocData.aplicacion || '7. Cómo aplicar en equipos y agencias' },
+    { id: 'preguntas-frecuentes', label: tocData.faq || 'Preguntas frecuentes' },
+    { id: 'cta-ley-parkinson', label: tocData.cta || 'Que el tiempo trabaje a tu favor' }
+  ];
+
+  const headline = t(`posts.${postKey}.meta.headline`);
+  const description = t(`posts.${postKey}.meta.description`);
+
+  const jsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Article',
+        headline: headline,
+        description: description,
+        author: { '@type': 'Organization', name: 'Taimbox' },
+        publisher: { '@type': 'Organization', name: 'Taimbox' },
+        datePublished: post?.date ?? '2026-03-14',
+      },
+      {
+        '@type': 'SoftwareApplication',
+        name: 'Taimbox',
+        applicationCategory: 'BusinessApplication',
+        description:
+          'Planificador de recursos y tiempo para agencias. Timeboxing, cronograma por horas y reportes de rentabilidad.',
+      },
+    ],
+  };
+
   return (
     <>
-      <Helmet>
-        <title>Ley de Parkinson: qué es, ejemplos y cómo combatirla | Taimbox</title>
-        <meta
-          name="description"
-          content="Ley de Parkinson explicada al completo: tiempo, origen burocrático, segunda ley de gastos e ingresos, ley de la trivialidad (efecto cobertizo), evidencia y antídotos (timeboxing, plazos)."
-        />
-        <link rel="canonical" href="https://taimbox.com/blog/ley-parkinson" />
-        <meta property="og:type" content="article" />
-        <meta property="og:title" content="Ley de Parkinson: qué es, ejemplos y cómo combatirla | Taimbox" />
-        <meta
-          property="og:description"
-          content="Tiempo, burocracia, segunda ley financiera, ley de la trivialidad en reuniones y antídotos prácticos."
-        />
-        <meta property="og:url" content="https://taimbox.com/blog/ley-parkinson" />
-        <script type="application/ld+json">
-          {JSON.stringify({
-            '@context': 'https://schema.org',
-            '@graph': [
-              {
-                '@type': 'Article',
-                headline: 'Ley de Parkinson: qué es, ejemplos y cómo combatirla',
-                description:
-                  'Guía completa sobre la Ley de Parkinson: tiempo, origen burocrático, segunda ley de gastos, ley de la trivialidad, evidencia y antídotos (timeboxing, plazos).',
-                author: { '@type': 'Organization', name: 'Taimbox' },
-                publisher: { '@type': 'Organization', name: 'Taimbox' },
-                datePublished: post?.date ?? '2026-03-14',
-              },
-              {
-                '@type': 'SoftwareApplication',
-                name: 'Taimbox',
-                applicationCategory: 'BusinessApplication',
-                description:
-                  'Planificador de recursos y tiempo para agencias. Timeboxing, cronograma por horas y reportes de rentabilidad.',
-              },
-            ],
-          })}
-        </script>
-      </Helmet>
+      <BlogArticleSeo jsonLd={jsonLd} />
 
       <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
@@ -83,14 +80,14 @@ export default function LeyParkinsonPage() {
         <LandingHeader />
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
-          <BlogBreadcrumb title={post?.title ?? 'Ley de Parkinson'} />
+          <BlogBreadcrumb title={postTitle} />
         </div>
 
         <div className="relative z-10">
           <LeyParkinsonArticle
             readingMinutes={post?.readingMinutes ?? 24}
             tocItems={TOC_ITEMS}
-            relatedPost={relatedPost ? { title: relatedPost.title, description: relatedPost.description, href: relatedPost.href } : undefined}
+            relatedPost={relatedPost ?? undefined}
           />
         </div>
 

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -110,6 +111,7 @@ function StatCard({
 }
 
 export default function ClientsAndProjectsPage() {
+  const { t } = useTranslation('app');
   const {
     clients, projects, allocations, employees,
     addClient, updateClient, deleteClient,
@@ -176,11 +178,11 @@ export default function ClientsAndProjectsPage() {
   const { activeFilters, filterProject, getFilterDisplayName } = useProjectFilters();
 
   const projectFormSchema = z.object({
-    name: z.string().min(1, 'El nombre es obligatorio'),
-    clientId: z.string().min(1, 'Debes seleccionar un cliente'),
-    budgetHours: z.coerce.number().min(0, 'Las horas asignadas no pueden ser negativas'),
-    minimumHours: z.coerce.number().min(0, 'Las horas mínimas no pueden ser negativas'),
-    monthlyFee: z.coerce.number().min(0, 'El fee mensual no puede ser negativo'),
+    name: z.string().min(1, t('clientsAndProjects.dialogs.newProject.nameRequired', 'El nombre es obligatorio')),
+    clientId: z.string().min(1, t('clientsAndProjects.dialogs.newProject.clientRequired', 'Debes seleccionar un cliente')),
+    budgetHours: z.coerce.number().min(0, t('clientsAndProjects.dialogs.newProject.budgetNonNegative', 'Las horas asignadas no pueden ser negativas')),
+    minimumHours: z.coerce.number().min(0, t('clientsAndProjects.dialogs.newProject.minHoursNonNegative', 'Las horas mínimas no pueden ser negativas')),
+    monthlyFee: z.coerce.number().min(0, t('clientsAndProjects.dialogs.newProject.feeNonNegative', 'El fee mensual no puede ser negativo')),
     status: z.enum(['active', 'archived', 'completed']),
     responsibleDepartmentId: z.string().optional().or(z.literal('')),
     externalId: z.coerce.number().optional().or(z.literal('')),
@@ -683,7 +685,7 @@ export default function ClientsAndProjectsPage() {
 
   // Handlers
   const clientFormSchema = z.object({
-    name: z.string().min(1, 'El nombre es obligatorio'),
+    name: z.string().min(1, t('clientsAndProjects.dialogs.newClient.nameRequired', 'El nombre es obligatorio')),
     color: z.string(),
   });
 
@@ -705,17 +707,17 @@ export default function ClientsAndProjectsPage() {
     });
     setIsAddingClient(false);
     clientForm.reset();
-    toast.success(`${data.name} creado`);
+    toast.success(t('clientsAndProjects.dialogs.newClient.created', { name: data.name, defaultValue: `${data.name} creado` }));
   };
 
   const handleUpdateClient = () => {
     if (!editingClient || !editingClient.name.trim()) {
-      toast.error("El nombre es obligatorio");
+      toast.error(t('clientsAndProjects.dialogs.newClient.nameRequired', 'El nombre es obligatorio'));
       return;
     }
     updateClient(editingClient);
     setEditingClient(null);
-    toast.success(`${editingClient.name} actualizado`);
+    toast.success(t('clientsAndProjects.dialogs.newClient.updated', { name: editingClient.name, defaultValue: `${editingClient.name} actualizado` }));
   };
 
   const handleDeleteClient = () => {
@@ -986,16 +988,14 @@ export default function ClientsAndProjectsPage() {
                 onClick={openNewProject}
               >
                 <Plus className="h-4 w-4" />
-                Nuevo proyecto
+                {t('clientsAndProjects.actions.newProject', 'Nuevo proyecto')}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{isAddingProject ? 'Nuevo proyecto' : 'Editar proyecto'}</DialogTitle>
+                <DialogTitle>{isAddingProject ? t('clientsAndProjects.dialogs.newProject.title', 'Nuevo proyecto') : t('clientsAndProjects.dialogs.newProject.editTitle', 'Editar proyecto')}</DialogTitle>
                 <DialogDescription>
-                  {isAddingProject
-                    ? 'Crea un nuevo proyecto y asócialo a un cliente'
-                    : 'Modifica los datos del proyecto'}
+                  {t('clientsAndProjects.dialogs.newProject.description', 'Configura los detalles del proyecto y presupuesto.')}
                 </DialogDescription>
               </DialogHeader>
               <Form {...projectForm}>
@@ -1005,9 +1005,9 @@ export default function ClientsAndProjectsPage() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nombre del proyecto</FormLabel>
+                        <FormLabel>{t('clientsAndProjects.dialogs.newProject.name', 'Nombre del proyecto')}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ej: Rediseño web" {...field} />
+                          <Input placeholder={t('clientsAndProjects.dialogs.newProject.namePlaceholder', 'Ej: Mantenimiento WEB')} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -1018,7 +1018,7 @@ export default function ClientsAndProjectsPage() {
                     name="clientId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Cliente</FormLabel>
+                        <FormLabel>{t('clientsAndProjects.dialogs.newProject.client', 'Cliente')}</FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
                             <FormControl>
@@ -1029,10 +1029,10 @@ export default function ClientsAndProjectsPage() {
                               >
                                 {field.value
                                   ? (
-                                      <SensitiveText kind="account" id={field.value}>
-                                        {clients.find(c => c.id === field.value)?.name || 'Seleccionar cliente'}
-                                      </SensitiveText>
-                                    )
+                                    <SensitiveText kind="account" id={field.value}>
+                                      {clients.find(c => c.id === field.value)?.name || 'Seleccionar cliente'}
+                                    </SensitiveText>
+                                  )
                                   : "Seleccionar cliente"}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
@@ -1068,7 +1068,7 @@ export default function ClientsAndProjectsPage() {
                       name="budgetHours"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Horas asignadas</FormLabel>
+                          <FormLabel>{t('clientsAndProjects.dialogs.newProject.budget', 'Horas asignadas (presupuesto)')}</FormLabel>
                           <FormControl>
                             <Input type="number" placeholder="0" {...field} />
                           </FormControl>
@@ -1081,7 +1081,7 @@ export default function ClientsAndProjectsPage() {
                       name="minimumHours"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Horas mínimas</FormLabel>
+                          <FormLabel>{t('clientsAndProjects.dialogs.newProject.minHours', 'Horas mínimas (fee)')}</FormLabel>
                           <FormControl>
                             <Input type="number" placeholder="0" {...field} />
                           </FormControl>
@@ -1094,7 +1094,7 @@ export default function ClientsAndProjectsPage() {
                       name="monthlyFee"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Tarifa mensual (€)</FormLabel>
+                          <FormLabel>{t('clientsAndProjects.dialogs.newProject.monthlyFee', 'Fee mensual (€)')}</FormLabel>
                           <FormControl>
                             <Input type="number" placeholder="0" {...field} />
                           </FormControl>
@@ -1356,30 +1356,30 @@ export default function ClientsAndProjectsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard
           icon={Building2}
-          label="Total clientes"
+          label={t('clientsAndProjects.stats.totalClients', 'Total clientes')}
           value={globalStats.totalClients}
           color="slate"
         />
         <StatCard
           icon={Clock}
-          label="Horas este mes"
+          label={t('clientsAndProjects.stats.hoursThisMonth', 'Horas este mes')}
           value={`${globalStats.totalHours.toFixed(0)}h`}
-          subValue={`de ${globalStats.totalBudget.toFixed(0)}h asignadas`}
+          subValue={t('clientsAndProjects.stats.assignedHours', { budget: globalStats.totalBudget.toFixed(0), defaultValue: `de ${globalStats.totalBudget.toFixed(0)}h asignadas` })}
           trend={globalStats.trend as 'up' | 'down' | 'neutral'}
           color="emerald"
         />
         <StatCard
           icon={AlertTriangle}
-          label="En riesgo"
+          label={t('clientsAndProjects.stats.atRisk', 'En riesgo')}
           value={globalStats.atRisk}
-          subValue=">85% de horas contratadas"
+          subValue={t('clientsAndProjects.stats.atRiskDescription', '>85% de horas contratadas')}
           color={globalStats.atRisk > 0 ? 'amber' : 'slate'}
         />
         <StatCard
           icon={TrendingUp}
-          label="Excedidos"
+          label={t('clientsAndProjects.stats.overBudget', 'Excedidos')}
           value={globalStats.overBudget}
-          subValue=">100% de horas contratadas"
+          subValue={t('clientsAndProjects.stats.overBudgetDescription', '>100% de horas contratadas')}
           color={globalStats.overBudget > 0 ? 'red' : 'slate'}
         />
       </div>
@@ -1394,16 +1394,16 @@ export default function ClientsAndProjectsPage() {
       {/* Acciones de lista */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-500">
-          {filteredClients.length} cliente{filteredClients.length !== 1 ? 's' : ''}
+          {t('clientsAndProjects.clientList.count', { count: filteredClients.length, defaultValue: `${filteredClients.length} cliente${filteredClients.length !== 1 ? 's' : ''}` })}
           {' • '}
-          {filteredClients.reduce((sum, c) => sum + c.stats.projects.length, 0)} proyecto{filteredClients.reduce((sum, c) => sum + c.stats.projects.length, 0) !== 1 ? 's' : ''}
+          {t('clientsAndProjects.clientList.projects', { count: filteredClients.reduce((sum, c) => sum + c.stats.projects.length, 0), defaultValue: `${filteredClients.reduce((sum, c) => sum + c.stats.projects.length, 0)} proyecto${filteredClients.reduce((sum, c) => sum + c.stats.projects.length, 0) !== 1 ? 's' : ''}` })}
         </p>
         <div className="flex gap-2">
           <Button variant="ghost" size="sm" onClick={expandAll} className="text-xs h-7">
-            Expandir todos
+            {t('clientsAndProjects.actions.expandAll', 'Expandir todos')}
           </Button>
           <Button variant="ghost" size="sm" onClick={collapseAll} className="text-xs h-7">
-            Colapsar todos
+            {t('clientsAndProjects.actions.collapseAll', 'Colapsar todos')}
           </Button>
         </div>
       </div>
@@ -1414,8 +1414,8 @@ export default function ClientsAndProjectsPage() {
           <Card className="p-12">
             <div className="text-center">
               <Building2 className="h-12 w-12 text-slate-200 mx-auto mb-3" />
-              <p className="text-slate-500 font-medium">No hay clientes con estos filtros</p>
-              <p className="text-sm text-slate-400 mt-1">Prueba con otros criterios de búsqueda</p>
+              <p className="text-slate-500 font-medium">{t('clientsAndProjects.clientList.noResults', 'No hay clientes con estos filtros')}</p>
+              <p className="text-sm text-slate-400 mt-1">{t('clientsAndProjects.clientList.noResultsSub', 'Prueba con otros criterios de búsqueda')}</p>
             </div>
           </Card>
         ) : (
@@ -1457,13 +1457,13 @@ export default function ClientsAndProjectsPage() {
                     <div className="flex items-center gap-5">
                       {/* Horas asignadas */}
                       <div className="text-right min-w-[70px]">
-                        <span className="text-[10px] text-slate-400 uppercase block">Contratadas</span>
+                        <span className="text-[10px] text-slate-400 uppercase block">{t('clientsAndProjects.stats.contracted', 'Contratadas')}</span>
                         <span className="font-bold text-slate-800">{stats.budget.toFixed(0)}h</span>
                       </div>
 
                       {/* Horas computadas */}
                       <div className="text-right min-w-[70px]">
-                        <span className="text-[10px] text-slate-400 uppercase block">Computadas</span>
+                        <span className="text-[10px] text-slate-400 uppercase block">{t('clientsAndProjects.stats.computed', 'Computadas')}</span>
                         <span className={cn(
                           "font-bold",
                           isOverBudget && "text-red-600",
@@ -1476,7 +1476,7 @@ export default function ClientsAndProjectsPage() {
 
                       {/* Horas por computar */}
                       <div className="text-right min-w-[80px]">
-                        <span className="text-[10px] text-slate-400 uppercase block">Por computar</span>
+                        <span className="text-[10px] text-slate-400 uppercase block">{t('clientsAndProjects.stats.toCompute', 'Por computar')}</span>
                         <span className={cn(
                           "font-bold",
                           (stats.pendingToCompute || 0) > 0 ? "text-blue-600" : "text-slate-400"
@@ -1512,24 +1512,24 @@ export default function ClientsAndProjectsPage() {
                       {isOverBudget && (
                         <Badge variant="destructive" className="text-[10px] h-5 gap-1">
                           <AlertTriangle className="h-3 w-3" />
-                          Excedido
+                          {t('clientsAndProjects.stats.overBudget', 'Excedido')}
                         </Badge>
                       )}
                       {isNearLimit && !isOverBudget && (
                         <Badge className="text-[10px] h-5 gap-1 bg-amber-100 text-amber-700 border-amber-200">
                           <TrendingUp className="h-3 w-3" />
-                          Casi lleno
+                          {t('clientsAndProjects.filters.quick.behindSchedule', 'Casi lleno')}
                         </Badge>
                       )}
                       {/* Badge de proyectos sin planificar - NUEVO */}
                       {(stats.projectsNeedingPlanning || 0) > 0 && (
                         <Badge className="text-[10px] h-5 gap-1 bg-orange-100 text-orange-700 border-orange-200">
                           <CircleDashed className="h-3 w-3" />
-                          {stats.projectsNeedingPlanning} sin planificar
+                          {t('clientsAndProjects.clientList.unplanned', { count: stats.projectsNeedingPlanning, defaultValue: `${stats.projectsNeedingPlanning} sin planificar` })}
                         </Badge>
                       )}
                       <Badge variant="outline" className="text-[10px]">
-                        {stats.projects.length} proyecto{stats.projects.length !== 1 ? 's' : ''}
+                        {t('clientsAndProjects.clientList.projects', { count: stats.projects.length, defaultValue: `${stats.projects.length} proyecto${stats.projects.length !== 1 ? 's' : ''}` })}
                       </Badge>
                     </div>
 
@@ -1541,7 +1541,7 @@ export default function ClientsAndProjectsPage() {
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Editar</TooltipContent>
+                        <TooltipContent>{t('clientsAndProjects.actions.edit', 'Editar')}</TooltipContent>
                       </Tooltip>
                     </div>
                   </div>
@@ -1596,24 +1596,24 @@ export default function ClientsAndProjectsPage() {
                                           {project.status === 'completed' && (
                                             <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200">
                                               <CheckCircle2 className="h-3 w-3 mr-1" />
-                                              Completado
+                                              {t('clientsAndProjects.projectCard.completed', 'Completado')}
                                             </Badge>
                                           )}
                                           {project.status === 'archived' && (
                                             <Badge variant="outline" className="text-[10px] bg-slate-100 text-slate-600 border-slate-300">
                                               <XCircle className="h-3 w-3 mr-1" />
-                                              Archivado
+                                              {t('clientsAndProjects.projectCard.archived', 'Archivado')}
                                             </Badge>
                                           )}
                                           {analysis.noActivity && (
                                             <Tooltip>
                                               <TooltipTrigger>
                                                 <Badge variant="outline" className="text-[10px] bg-slate-100 text-slate-500 border-slate-200 cursor-help">
-                                                  Sin actividad
+                                                  {t('clientsAndProjects.projectCard.noActivity', 'Sin actividad')}
                                                 </Badge>
                                               </TooltipTrigger>
                                               <TooltipContent>
-                                                <p className="text-xs">No hay tareas planificadas este mes</p>
+                                                <p className="text-xs">{t('clientsAndProjects.projectCard.noActivityTooltip', 'No hay tareas planificadas este mes')}</p>
                                               </TooltipContent>
                                             </Tooltip>
                                           )}
@@ -1621,14 +1621,14 @@ export default function ClientsAndProjectsPage() {
                                             <Tooltip>
                                               <TooltipTrigger>
                                                 <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200 cursor-help">
-                                                  {round2(analysis.planningPct)}% planificado
+                                                  {t('clientsAndProjects.projectCard.percentagePlanned', { percentage: round2(analysis.planningPct), defaultValue: `${round2(analysis.planningPct)}% planificado` })}
                                                 </Badge>
                                               </TooltipTrigger>
                                               <TooltipContent>
                                                 <p className="text-xs">
                                                   {analysis.budget > 0
-                                                    ? `Faltan ${round2(analysis.budget - analysis.effectiveUsage)}h por consumir (${analysis.budget}h asignadas)`
-                                                    : `Faltan ${round2((analysis.project.minimumHours || 0) - analysis.effectiveUsage)}h al mínimo (${analysis.project.minimumHours || 0}h)`
+                                                    ? t('clientsAndProjects.projectCard.missingHours_budget', { hours: round2(analysis.budget - analysis.effectiveUsage), budget: analysis.budget, defaultValue: `Faltan ${round2(analysis.budget - analysis.effectiveUsage)}h de ${analysis.budget}h asignadas` })
+                                                    : t('clientsAndProjects.projectCard.missingHours_min', { hours: round2((analysis.project.minimumHours || 0) - analysis.effectiveUsage), min: analysis.project.minimumHours || 0, defaultValue: `Faltan ${round2((analysis.project.minimumHours || 0) - analysis.effectiveUsage)}h de ${analysis.project.minimumHours || 0}h mínimas` })
                                                   }
                                                 </p>
                                               </TooltipContent>
@@ -1638,11 +1638,11 @@ export default function ClientsAndProjectsPage() {
                                             <Tooltip>
                                               <TooltipTrigger>
                                                 <Badge variant="outline" className="text-[10px] bg-orange-50 text-orange-700 border-orange-200 cursor-help">
-                                                  {round2(analysis.executionPct)}% computado
+                                                  {t('clientsAndProjects.projectCard.percentageComputed', { percentage: round2(analysis.executionPct), defaultValue: `${round2(analysis.executionPct)}% computado` })}
                                                 </Badge>
                                               </TooltipTrigger>
                                               <TooltipContent>
-                                                <p className="text-xs">Va el {monthProgress}% del mes pero solo {round2(analysis.executionPct)}% computado</p>
+                                                <p className="text-xs">{t('clientsAndProjects.filters.quick.behindScheduleTooltip', 'Ejecución por debajo del progreso del mes')}</p>
                                               </TooltipContent>
                                             </Tooltip>
                                           )}
@@ -1650,12 +1650,12 @@ export default function ClientsAndProjectsPage() {
                                             <Tooltip>
                                               <TooltipTrigger>
                                                 <Badge variant="outline" className="text-[10px] bg-red-50 text-red-700 border-red-200 cursor-help">
-                                                  +{round2(analysis.effectiveUsage - analysis.budget)}h exceso
+                                                  {t('clientsAndProjects.projectCard.hoursExcess', { hours: round2(analysis.effectiveUsage - analysis.budget), defaultValue: `+${round2(analysis.effectiveUsage - analysis.budget)}h exceso` })}
                                                 </Badge>
                                               </TooltipTrigger>
                                               <TooltipContent>
                                                 <p className="text-xs">
-                                                  Proyección total: {round2(analysis.effectiveUsage)}h (de {analysis.budget}h asignadas)
+                                                  {t('clientsAndProjects.projectCard.excessProjection', { total: round2(analysis.effectiveUsage), budget: analysis.budget, defaultValue: `Proyección total: ${round2(analysis.effectiveUsage)}h (de ${analysis.budget}h asignadas)` })}
                                                 </p>
                                               </TooltipContent>
                                             </Tooltip>
@@ -1690,14 +1690,14 @@ export default function ClientsAndProjectsPage() {
                                               {round2(analysis.totalAssigned)}h
                                             </p>
                                             <p className="text-[10px] text-slate-400">
-                                              {analysis.budget > 0 ? `de ${analysis.budget}h` : 'estimado'}
+                                              {analysis.budget > 0 ? t('clientsAndProjects.stats.assignedHours', { budget: analysis.budget, defaultValue: `de ${analysis.budget}h` }) : t('clientsAndProjects.stats.estimated', 'estimado')}
                                             </p>
                                           </div>
                                           <div className="text-center min-w-[70px]">
                                             <p className="font-mono font-bold text-xs text-emerald-600">
                                               {round2(analysis.hoursComputed)}h
                                             </p>
-                                            <p className="text-[10px] text-slate-400">computado</p>
+                                            <p className="text-[10px] text-slate-400">{t('clientsAndProjects.stats.computed', 'computado')}</p>
                                           </div>
                                           {Math.abs(analysis.gain) > 0.01 && (
                                             <div className={cn(
@@ -1714,7 +1714,7 @@ export default function ClientsAndProjectsPage() {
                                               <span className="text-slate-300">/</span>
                                               <span>{analysis.monthTasks.length}</span>
                                             </p>
-                                            <p className="text-[10px] text-slate-400">tareas</p>
+                                            <p className="text-[10px] text-slate-400">{t('clientsAndProjects.projectCard.tasks_plural', 'tareas')}</p>
                                           </div>
                                         </div>
                                       </div>
@@ -1733,7 +1733,7 @@ export default function ClientsAndProjectsPage() {
                                             <Pencil className="h-4 w-4" />
                                           </Button>
                                         </TooltipTrigger>
-                                        <TooltipContent>Editar</TooltipContent>
+                                        <TooltipContent>{t('clientsAndProjects.actions.edit', 'Editar')}</TooltipContent>
                                       </Tooltip>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
@@ -1746,7 +1746,7 @@ export default function ClientsAndProjectsPage() {
                                             {project.isHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                                           </Button>
                                         </TooltipTrigger>
-                                        <TooltipContent>{project.isHidden ? 'Mostrar proyecto' : 'Ocultar proyecto'}</TooltipContent>
+                                        <TooltipContent>{project.isHidden ? t('clientsAndProjects.actions.showProject', 'Mostrar proyecto') : t('clientsAndProjects.actions.hideProject', 'Ocultar proyecto')}</TooltipContent>
                                       </Tooltip>
                                     </div>
                                   </div>
@@ -1762,9 +1762,9 @@ export default function ClientsAndProjectsPage() {
                                       <div className="flex justify-between text-xs mb-2">
                                         <span className="text-slate-600">
                                           {analysis.effectiveUsage > analysis.totalAssigned ? (
-                                            <><span className="font-semibold text-slate-800">{round2(analysis.effectiveUsage)}h</span> proyección</>
+                                            <><span className="font-semibold text-slate-800">{round2(analysis.effectiveUsage)}h</span> {t('clientsAndProjects.stats.estimated', 'proyección')}</>
                                           ) : (
-                                            <><span className="font-semibold text-slate-800">{round2(analysis.totalAssigned)}h</span> estimadas</>
+                                            <><span className="font-semibold text-slate-800">{round2(analysis.totalAssigned)}h</span> {t('clientsAndProjects.stats.estimated', 'estimadas')}</>
                                           )}
                                           {(() => {
 
@@ -1777,18 +1777,17 @@ export default function ClientsAndProjectsPage() {
                                             if (analysis.effectiveUsage < targetHours) {
                                               return (
                                                 <span className="text-amber-600 ml-2">
-                                                  (Faltan {round2(targetHours - analysis.effectiveUsage)}h
                                                   {analysis.project.budgetHours > 0
-                                                    ? ` de ${analysis.project.budgetHours}h asignadas`
-                                                    : ` de ${analysis.project.minimumHours || 0}h mínimas`
-                                                  })
+                                                    ? t('clientsAndProjects.projectCard.missingHours_budget', { hours: round2(targetHours - analysis.effectiveUsage), budget: analysis.project.budgetHours, defaultValue: `(Faltan ${round2(targetHours - analysis.effectiveUsage)}h de ${analysis.project.budgetHours}h asignadas)` })
+                                                    : t('clientsAndProjects.projectCard.missingHours_min', { hours: round2(targetHours - analysis.effectiveUsage), min: analysis.project.minimumHours || 0, defaultValue: `(Faltan ${round2(targetHours - analysis.effectiveUsage)}h de ${analysis.project.minimumHours || 0}h mínimas)` })
+                                                  }
                                                 </span>
                                               );
                                             }
                                             if (analysis.overBudget || analysis.effectiveUsage > targetHours) {
                                               return (
                                                 <span className="text-red-600 ml-2">
-                                                  (+{round2(analysis.effectiveUsage - targetHours)}h de exceso)
+                                                  {t('clientsAndProjects.projectCard.excessHours', { hours: round2(analysis.effectiveUsage - targetHours), defaultValue: `(+${round2(analysis.effectiveUsage - targetHours)}h de exceso)` })}
                                                 </span>
                                               );
                                             }
@@ -1797,9 +1796,9 @@ export default function ClientsAndProjectsPage() {
                                         </span>
                                         <span className="text-slate-500">
                                           {analysis.project.budgetHours > 0 ? (
-                                            <>Asignadas: <span className="font-semibold text-slate-700">{analysis.project.budgetHours}h</span></>
+                                            <>{t('clientsAndProjects.stats.assignedHours', { budget: analysis.project.budgetHours, defaultValue: `Asignadas: ${analysis.project.budgetHours}h` })}</>
                                           ) : (
-                                            <>Mínimas: <span className="font-semibold text-slate-700">{analysis.project.minimumHours || 0}h</span></>
+                                            <>{t('clientsAndProjects.projectCard.missingHours_min', { hours: 0, min: analysis.project.minimumHours || 0, defaultValue: `Mínimas: ${analysis.project.minimumHours || 0}h` })}</>
                                           )}
                                         </span>
                                       </div>
@@ -1807,7 +1806,7 @@ export default function ClientsAndProjectsPage() {
                                       {/* Barras: estimado (planificado), real y computado */}
                                       <div className="space-y-1">
                                         <div className="flex items-center gap-2">
-                                          <span className="text-[10px] text-slate-400 w-16">Estimado</span>
+                                          <span className="text-[10px] text-slate-400 w-16">{t('clientsAndProjects.projectCard.hoursPlanned', 'Estimado')}</span>
                                           <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                                             <div
                                               className={cn(
@@ -1823,7 +1822,7 @@ export default function ClientsAndProjectsPage() {
                                           </span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                          <span className="text-[10px] text-slate-400 w-16">Real</span>
+                                          <span className="text-[10px] text-slate-400 w-16">{t('clientsAndProjects.projectCard.hoursReal', 'Real')}</span>
                                           <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                                             <div
                                               className="h-full bg-blue-500 rounded-full transition-all"
@@ -1835,7 +1834,7 @@ export default function ClientsAndProjectsPage() {
                                           </span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                          <span className="text-[10px] text-slate-400 w-16">Computado</span>
+                                          <span className="text-[10px] text-slate-400 w-16">{t('clientsAndProjects.projectCard.hoursComputed', 'Computado')}</span>
                                           <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                                             <div
                                               className="h-full bg-emerald-500 rounded-full transition-all"
@@ -1853,7 +1852,7 @@ export default function ClientsAndProjectsPage() {
                                   {/* Tareas pendientes */}
                                   <div className="p-4">
                                     <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
-                                      Tareas pendientes ({analysis.pendingTasks.length})
+                                      {t('clientsAndProjects.projectCard.pendingTasks', { count: analysis.pendingTasks.length, defaultValue: `Tareas pendientes (${analysis.pendingTasks.length})` })}
                                     </h4>
 
                                     {analysis.pendingTasks.length > 0 ? (
@@ -1879,7 +1878,7 @@ export default function ClientsAndProjectsPage() {
                                               <div className="flex items-center gap-2 shrink-0">
                                                 <div className="text-right">
                                                   <p className="font-mono font-bold text-sm">{task.hoursAssigned}h</p>
-                                                  <p className="text-[10px] text-slate-400">estimadas</p>
+                                                  <p className="text-[10px] text-slate-400">{t('clientsAndProjects.stats.estimated', 'estimadas')}</p>
                                                 </div>
                                                 <Tooltip>
                                                   <TooltipTrigger asChild>
@@ -1904,7 +1903,7 @@ export default function ClientsAndProjectsPage() {
                                       </div>
                                     ) : (
                                       <p className="text-xs text-slate-400 text-center py-4 bg-white rounded-lg border border-dashed">
-                                        Sin tareas pendientes este mes
+                                        {t('clientsAndProjects.projectCard.noPendingTasks', 'Sin tareas pendientes este mes')}
                                       </p>
                                     )}
                                   </div>
@@ -1916,7 +1915,7 @@ export default function ClientsAndProjectsPage() {
                                         <div className="px-4 py-2 border-t bg-white cursor-pointer hover:bg-slate-50">
                                           <div className="flex items-center justify-between">
                                             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                              Tareas completadas ({analysis.completedTasks.length})
+                                              {t('clientsAndProjects.projectCard.completedTasks', { count: analysis.completedTasks.length, defaultValue: `Tareas completadas (${analysis.completedTasks.length})` })}
                                             </h4>
                                             <ChevronDown className="h-4 w-4 text-slate-400" />
                                           </div>
@@ -1946,13 +1945,13 @@ export default function ClientsAndProjectsPage() {
                                                   <div className="text-right">
                                                     <div className="space-y-0.5">
                                                       <p className="font-mono font-bold text-xs text-slate-700">
-                                                        Est: {task.hoursAssigned}h
+                                                        {t('clientsAndProjects.stats.estimated_short', 'Est')}: {task.hoursAssigned}h
                                                       </p>
                                                       <p className="font-mono font-bold text-xs text-blue-600">
-                                                        Real: {task.hoursActual || task.hoursAssigned}h
+                                                        {t('clientsAndProjects.stats.real_short', 'Real')}: {task.hoursActual || task.hoursAssigned}h
                                                       </p>
                                                       <p className="font-mono font-bold text-xs text-emerald-600">
-                                                        Comp: {task.hoursComputed || task.hoursAssigned}h
+                                                        {t('clientsAndProjects.stats.computed_short', 'Comp')}: {task.hoursComputed || task.hoursAssigned}h
                                                       </p>
                                                     </div>
                                                   </div>
@@ -1970,7 +1969,7 @@ export default function ClientsAndProjectsPage() {
                                                         <Pencil className="h-3.5 w-3.5" />
                                                       </Button>
                                                     </TooltipTrigger>
-                                                    <TooltipContent>Editar tarea</TooltipContent>
+                                                    <TooltipContent>{t('clientsAndProjects.actions.editTask', 'Editar tarea')}</TooltipContent>
                                                   </Tooltip>
                                                 </div>
                                               </div>
@@ -1989,8 +1988,8 @@ export default function ClientsAndProjectsPage() {
                     ) : (
                       <div className="px-4 py-6 text-center text-sm text-muted-foreground">
                         {filterSnapshot.statusFilter === 'all'
-                          ? 'Sin proyectos (incluye todos los estados)'
-                          : `Sin proyectos ${filterSnapshot.statusFilter === 'active' ? 'activos' : filterSnapshot.statusFilter === 'completed' ? 'completados' : 'archivados'}`}
+                          ? t('clientsAndProjects.clientList.noProjectsAll', 'Sin proyectos (incluye todos los estados)')
+                          : t('clientsAndProjects.clientList.noProjectsStatus', { status: t(`clientsAndProjects.filters.status.${filterSnapshot.statusFilter}`), defaultValue: `Sin proyectos ${filterSnapshot.statusFilter}` })}
                       </div>
                     )}
 
@@ -1999,7 +1998,7 @@ export default function ClientsAndProjectsPage() {
                       <div className="px-4 py-3 bg-slate-50 border-t">
                         <div className="flex items-center gap-2">
                           <Users className="h-3.5 w-3.5 text-slate-400" />
-                          <span className="text-xs font-medium text-slate-600">Equipo asignado:</span>
+                          <span className="text-xs font-medium text-slate-600">{t('clientsAndProjects.projectCard.assignedTeam', 'Equipo asignado')}:</span>
                           <div className="flex items-center gap-1.5 flex-wrap">
                             {assignedEmployees.map((emp) => (
                               <div
@@ -2032,21 +2031,21 @@ export default function ClientsAndProjectsPage() {
         <Dialog open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Editar cliente</DialogTitle>
+              <DialogTitle>{t('clientsAndProjects.dialogs.editClient.title', 'Editar cliente')}</DialogTitle>
               <DialogDescription>
-                Modifica la información del cliente.
+                {t('clientsAndProjects.dialogs.editClient.description', 'Modifica la información del cliente.')}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>Nombre</Label>
+                <Label>{t('clientsAndProjects.dialogs.newProject.name', 'Nombre')}</Label>
                 <Input
                   value={editingClient.name}
                   onChange={(e) => setEditingClient({ ...editingClient, name: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Color</Label>
+                <Label>{t('clientsAndProjects.dialogs.editClient.color', 'Color')}</Label>
                 <div className="flex flex-wrap gap-2">
                   {colorOptions.map((color) => (
                     <button
@@ -2071,11 +2070,11 @@ export default function ClientsAndProjectsPage() {
                 }}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Eliminar
+                {t('common.delete', 'Eliminar')}
               </Button>
-              <Button variant="outline" onClick={() => setEditingClient(null)}>Cancelar</Button>
+              <Button variant="outline" onClick={() => setEditingClient(null)}>{t('common.cancel', 'Cancelar')}</Button>
               <Button onClick={handleUpdateClient} className="bg-gradient-to-r from-indigo-500 to-purple-600">
-                Guardar
+                {t('common.save', 'Guardar')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -2087,25 +2086,25 @@ export default function ClientsAndProjectsPage() {
         <Dialog open={!!hidingProject} onOpenChange={(open) => !open && setHidingProject(null)}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{hidingProject.isHidden ? 'Mostrar proyecto' : 'Ocultar proyecto'}</DialogTitle>
+              <DialogTitle>{hidingProject.isHidden ? t('clientsAndProjects.actions.showProject', 'Mostrar proyecto') : t('clientsAndProjects.actions.hideProject', 'Ocultar proyecto')}</DialogTitle>
               <DialogDescription>
                 {hidingProject.isHidden
-                  ? `¿Quieres hacer visible "${hidingProject.name}"? El proyecto volverá a aparecer en la lista.`
-                  : `¿Estás seguro de ocultar "${hidingProject.name}"? El proyecto seguirá existiendo pero no se mostrará en la lista.`}
+                  ? t('clientsAndProjects.dialogs.showProject.description', { name: hidingProject.name, defaultValue: `¿Quieres hacer visible "${hidingProject.name}"? El proyecto volverá a aparecer en la lista.` })
+                  : t('clientsAndProjects.dialogs.hideProject.description', { name: hidingProject.name, defaultValue: `¿Estás seguro de ocultar "${hidingProject.name}"? El proyecto seguirá existiendo pero no se mostrará en la lista.` })}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setHidingProject(null)}>Cancelar</Button>
+              <Button variant="outline" onClick={() => setHidingProject(null)}>{t('common.cancel', 'Cancelar')}</Button>
               <Button onClick={handleHideProject} className="bg-gradient-to-r from-indigo-500 to-purple-600">
                 {hidingProject.isHidden ? (
                   <>
                     <Eye className="h-4 w-4 mr-2" />
-                    Mostrar
+                    {t('clientsAndProjects.actions.show', 'Mostrar')}
                   </>
                 ) : (
                   <>
                     <EyeOff className="h-4 w-4 mr-2" />
-                    Ocultar
+                    {t('clientsAndProjects.actions.hide', 'Ocultar')}
                   </>
                 )}
               </Button>
@@ -2127,24 +2126,24 @@ export default function ClientsAndProjectsPage() {
           <Dialog open={!!editingTask} onOpenChange={(open) => !open && setEditingTask(null)}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Editar tarea</DialogTitle>
+                <DialogTitle>{t('clientsAndProjects.actions.editTask', 'Editar tarea')}</DialogTitle>
                 <DialogDescription>
-                  Modifica todos los detalles de la tarea.
+                  {t('clientsAndProjects.dialogs.editTask.description', 'Modifica todos los detalles de la tarea.')}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-6 py-4">
                 <div className="space-y-2">
-                  <Label>Proyecto</Label>
+                  <Label>{t('clientsAndProjects.dialogs.newProject.client', 'Proyecto')}</Label>
                   <Popover open={openEditTaskProject} onOpenChange={setOpenEditTaskProject}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className="w-full justify-between font-normal">
                         <span className="truncate">
                           {editTaskProjectId ? (
                             <SensitiveText kind="project" id={editTaskProjectId}>
-                              {formatProjectName(projects.find(p => p.id === editTaskProjectId)?.name ?? 'Seleccionar proyecto')}
+                              {formatProjectName(projects.find(p => p.id === editTaskProjectId)?.name ?? t('clientsAndProjects.dialogs.newProject.selectProject', 'Seleccionar proyecto'))}
                             </SensitiveText>
                           ) : (
-                            'Seleccionar proyecto'
+                            t('clientsAndProjects.dialogs.newProject.selectProject', 'Seleccionar proyecto')
                           )}
                         </span>
                         <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
@@ -2166,20 +2165,20 @@ export default function ClientsAndProjectsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Nombre de la tarea</Label>
+                  <Label>{t('clientsAndProjects.dialogs.newProject.taskName', 'Nombre de la tarea')}</Label>
                   <Input
                     value={editTaskName}
                     onChange={(e) => setEditTaskName(e.target.value)}
-                    placeholder="Nombre de la tarea"
+                    placeholder={t('clientsAndProjects.dialogs.newProject.taskName', 'Nombre de la tarea')}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Empleado</Label>
+                  <Label>{t('clientsAndProjects.dialogs.newProject.employee', 'Empleado')}</Label>
                   <Popover open={openEditTaskEmployee} onOpenChange={setOpenEditTaskEmployee}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className="w-full justify-between font-normal">
-                        <span className="truncate">{editTaskEmployeeId ? (employees.find(e => e.id === editTaskEmployeeId)?.name || employees.find(e => e.id === editTaskEmployeeId)?.first_name || 'Sin nombre') : 'Seleccionar empleado'}</span>
+                        <span className="truncate">{editTaskEmployeeId ? (employees.find(e => e.id === editTaskEmployeeId)?.name || employees.find(e => e.id === editTaskEmployeeId)?.first_name || t('common.no_name', 'Sin nombre')) : t('clientsAndProjects.dialogs.newProject.selectEmployee', 'Seleccionar empleado')}</span>
                         <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                       </Button>
                     </PopoverTrigger>
@@ -2187,10 +2186,10 @@ export default function ClientsAndProjectsPage() {
                       <Command>
                         <CommandList className="max-h-[280px]">
                           {employeesForView.filter(e => e.isActive).map(emp => (
-                              <CommandItem key={emp.id} value={emp.name || emp.first_name || 'Sin nombre'} onSelect={() => { setEditTaskEmployeeId(emp.id); setOpenEditTaskEmployee(false); }}>
-                                <Check className={cn('mr-2 h-4 w-4 shrink-0', editTaskEmployeeId === emp.id ? 'opacity-100' : 'opacity-0')} />
-                                {emp.name || emp.first_name || 'Sin nombre'}
-                              </CommandItem>
+                            <CommandItem key={emp.id} value={emp.name || emp.first_name || 'Sin nombre'} onSelect={() => { setEditTaskEmployeeId(emp.id); setOpenEditTaskEmployee(false); }}>
+                              <Check className={cn('mr-2 h-4 w-4 shrink-0', editTaskEmployeeId === emp.id ? 'opacity-100' : 'opacity-0')} />
+                              {emp.name || emp.first_name || t('common.no_name', 'Sin nombre')}
+                            </CommandItem>
                           ))}
                         </CommandList>
                       </Command>
@@ -2200,12 +2199,12 @@ export default function ClientsAndProjectsPage() {
 
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2 text-xs text-slate-500">
-                    <LinkIcon className="w-3 h-3" /> Depende de otra tarea
+                    <LinkIcon className="w-3 h-3" /> {t('clientsAndProjects.dialogs.newProject.dependency', 'Depende de otra tarea')}
                   </Label>
                   <Popover open={openEditTaskDependency} onOpenChange={setOpenEditTaskDependency}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" className="h-9 w-full justify-between font-normal" disabled={!editTaskProjectId}>
-                        <span className="truncate">{editTaskDependencyId === 'none' ? '-- Ninguna --' : (() => { const dep = availableDependencies.find(d => d.id === editTaskDependencyId); const owner = dep ? employees.find(e => e.id === dep.employeeId) : null; return dep ? `${dep.taskName} (${owner?.name || 'Desconocido'})` : 'Sin dependencia'; })()}</span>
+                        <span className="truncate">{editTaskDependencyId === 'none' ? t('common.none', '-- Ninguna --') : (() => { const dep = availableDependencies.find(d => d.id === editTaskDependencyId); const owner = dep ? employees.find(e => e.id === dep.employeeId) : null; return dep ? `${dep.taskName} (${owner?.name || t('common.unknown', 'Desconocido')})` : t('common.no_dependency', 'Sin dependencia'); })()}</span>
                         <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                       </Button>
                     </PopoverTrigger>
@@ -2215,11 +2214,11 @@ export default function ClientsAndProjectsPage() {
                           <CommandGroup>
                             <CommandItem value="none" className="text-xs py-2 px-3" onSelect={() => { setEditTaskDependencyId('none'); setOpenEditTaskDependency(false); }}>
                               <Check className={cn('mr-2.5 h-3.5 w-3.5 shrink-0', editTaskDependencyId === 'none' ? 'opacity-100' : 'opacity-0')} />
-                              -- Ninguna --
+                              {t('common.none', '-- Ninguna --')}
                             </CommandItem>
                             {availableDependencies.map(dep => {
                               const owner = employees.find(e => e.id === dep.employeeId);
-                              const name = owner?.name || 'Desconocido';
+                              const name = owner?.name || t('common.unknown', 'Desconocido');
                               const shortName = name.length > 8 ? name.substring(0, 6) + '..' : name;
                               const label = `${dep.taskName} (${shortName})`;
                               return (
@@ -2238,7 +2237,7 @@ export default function ClientsAndProjectsPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Horas estimadas</Label>
+                    <Label>{t('clientsAndProjects.dialogs.newProject.budget', 'Horas estimadas')}</Label>
                     <Input
                       type="number"
                       step="0.5"
@@ -2248,11 +2247,11 @@ export default function ClientsAndProjectsPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Semana</Label>
+                    <Label>{t('clientsAndProjects.dialogs.newProject.week', 'Semana')}</Label>
                     <Popover open={openEditTaskWeek} onOpenChange={setOpenEditTaskWeek}>
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full justify-between font-normal">
-                          <span className="truncate">{editTaskWeek ? (() => { const idx = weeks.findIndex(w => format(w.weekStart, 'yyyy-MM-dd') === editTaskWeek); return idx >= 0 ? `Sem ${idx + 1} (${format(weeks[idx].weekStart, 'dd/MM')})` : 'Seleccionar semana'; })() : 'Seleccionar semana'}</span>
+                          <span className="truncate">{editTaskWeek ? (() => { const idx = weeks.findIndex(w => format(w.weekStart, 'yyyy-MM-dd') === editTaskWeek); return idx >= 0 ? t('clientsAndProjects.dialogs.newProject.week_short', { count: idx + 1, date: format(weeks[idx].weekStart, 'dd/MM'), defaultValue: `Sem ${idx + 1} (${format(weeks[idx].weekStart, 'dd/MM')})` }) : t('clientsAndProjects.dialogs.newProject.selectWeek', 'Seleccionar semana'); })() : t('clientsAndProjects.dialogs.newProject.selectWeek', 'Seleccionar semana')}</span>
                           <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                         </Button>
                       </PopoverTrigger>
@@ -2264,7 +2263,7 @@ export default function ClientsAndProjectsPage() {
                               return (
                                 <CommandItem key={val} value={val} onSelect={() => { setEditTaskWeek(val); setOpenEditTaskWeek(false); }}>
                                   <Check className={cn('mr-2 h-4 w-4 shrink-0', editTaskWeek === val ? 'opacity-100' : 'opacity-0')} />
-                                  Sem {i + 1} ({format(w.weekStart, 'dd/MM')})
+                                  {t('clientsAndProjects.dialogs.newProject.week_short', { count: i + 1, date: format(w.weekStart, 'dd/MM'), defaultValue: `Sem ${i + 1} (${format(w.weekStart, 'dd/MM')})` })}
                                 </CommandItem>
                               );
                             })}
@@ -2278,7 +2277,7 @@ export default function ClientsAndProjectsPage() {
                 {editingTask.status === 'completed' && (
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Horas reales</Label>
+                      <Label>{t('clientsAndProjects.stats.realHours', 'Horas reales')}</Label>
                       <Input
                         type="number"
                         step="0.5"
@@ -2288,7 +2287,7 @@ export default function ClientsAndProjectsPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Horas computadas</Label>
+                      <Label>{t('clientsAndProjects.stats.computedHours', 'Horas computadas')}</Label>
                       <Input
                         type="number"
                         step="0.5"
@@ -2302,10 +2301,10 @@ export default function ClientsAndProjectsPage() {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setEditingTask(null)}>
-                  Cancelar
+                  {t('common.cancel', 'Cancelar')}
                 </Button>
                 <Button onClick={handleSaveTask} className="bg-gradient-to-r from-indigo-500 to-purple-600">
-                  Guardar cambios
+                  {t('common.saveChanges', 'Guardar cambios')}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -2316,22 +2315,22 @@ export default function ClientsAndProjectsPage() {
       <AlertDialog open={!!deleteConfirmation} onOpenChange={(open) => !open && setDeleteConfirmation(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
+            <AlertDialogTitle>{t('common.confirmTitle', '¿Estás completamente seguro?')}</AlertDialogTitle>
             <AlertDialogDescription>
               {deleteConfirmation?.type === 'client'
-                ? `Estás a punto de eliminar el cliente "${deleteConfirmation.name}". Esta acción no se puede deshacer.`
-                : `Estás a punto de eliminar el proyecto "${deleteConfirmation?.name}". Se borrarán todas sus asignaciones y deadline.`
+                ? t('clientsAndProjects.dialogs.deleteClient.description', { name: deleteConfirmation.name, defaultValue: `Estás a punto de eliminar el cliente "${deleteConfirmation.name}". Esta acción no se puede deshacer.` })
+                : t('clientsAndProjects.dialogs.deleteProject.description', { name: deleteConfirmation?.name, defaultValue: `Estás a punto de eliminar el proyecto "${deleteConfirmation?.name}". Se borrarán todas sus asignaciones y deadline.` })
               }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel', 'Cancelar')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
-              Eliminar
+              {t('common.delete', 'Eliminar')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </div >
   );
 }

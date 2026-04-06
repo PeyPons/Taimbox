@@ -1,0 +1,2793 @@
+{
+  "header": {
+    "pricing": "Precios",
+    "guide": "Guía",
+    "api": "API",
+    "contact": "Contacto",
+    "login": "Login",
+    "menuAria": "Menú",
+    "featuresTrigger": "Funcionalidades"
+  },
+  "features": {
+    "exploreByRole": "Explora por rol",
+    "exploreSubtitle": "Cada funcionalidad diseñada para un perfil específico",
+    "guideFull": "Guía técnica completa",
+    "whyTaimbox": "¿Por qué Taimbox?",
+    "items": {
+      "employeeDashboard": {
+        "title": "Dashboard del Empleado",
+        "description": "Tu centro de control personal",
+        "badge": "Para empleados"
+      },
+      "resourcePlanner": {
+        "title": "Planificador de Recursos",
+        "description": "Visualiza cada hora de tu equipo",
+        "badge": "Para directores"
+      },
+      "teamManagement": {
+        "title": "Gestión de Equipos",
+        "description": "Horarios, ausencias, capacidad y tiempos en vivo",
+        "badge": "Para RRHH"
+      },
+      "reports": {
+        "title": "Reportes y Rentabilidad",
+        "description": "Ingreso devengado, ritmo por proyecto y margen al céntimo",
+        "badge": "Para financieros"
+      },
+      "projects": {
+        "title": "Proyectos y Deadlines",
+        "description": "Objetivos mensuales y sugerencias de redistribución",
+        "badge": "Para project managers"
+      },
+      "integrations": {
+        "title": "Integraciones",
+        "description": "Conecta todo tu ecosistema",
+        "badge": "Para equipos técnicos"
+      },
+      "ppc": {
+        "title": "Monitor de presupuestos",
+        "description": "Controla el gasto publicitario de tus clientes",
+        "badge": "Plan Business"
+      },
+      "security": {
+        "title": "Seguridad y Privacidad",
+        "description": "Infraestructura, cifrado AES-256 y aislamiento RLS",
+        "badge": "Grado Enterprise"
+      }
+    }
+  },
+  "mobileFeatures": {
+    "employeeDashboard": {
+      "title": "Dashboard del Empleado",
+      "badge": "Para empleados"
+    },
+    "resourcePlanner": {
+      "title": "Planificador de Recursos",
+      "badge": "Para directores"
+    },
+    "teamManagement": {
+      "title": "Gestión de Equipos",
+      "badge": "Para RRHH"
+    },
+    "reports": {
+      "title": "Reportes y Rentabilidad",
+      "badge": "Para financieros"
+    },
+    "projects": {
+      "title": "Proyectos y Deadlines",
+      "badge": "Para PMs"
+    },
+    "integrations": {
+      "title": "Integraciones",
+      "badge": "Para técnicos"
+    },
+    "ppc": {
+      "title": "Monitor de presupuestos",
+      "badge": "Plan Business"
+    },
+    "security": {
+      "title": "Seguridad",
+      "badge": "Grado Enterprise"
+    }
+  },
+  "footer": {
+    "tagline": "Sistema operativo financiero basado en tiempo para agencias. Gestiona el tiempo, no solo las tareas.",
+    "productTitle": "Producto",
+    "companyTitle": "Empresa",
+    "ctaTitle": "Empieza gratis",
+    "links": {
+      "pricing": "Precios",
+      "roi": "ROI (3 min)",
+      "why": "Por qué",
+      "blog": "Blog",
+      "dashboard": "Dashboard",
+      "planner": "Planificador",
+      "teams": "Equipos",
+      "reports": "Reportes",
+      "projects": "Proyectos",
+      "integrations": "Integraciones",
+      "guide": "Guía",
+      "api": "API",
+      "demo": "Demo interactiva",
+      "security": "Seguridad",
+      "support": "Contactar soporte",
+      "contact": "Contacto"
+    },
+    "ctaButton": "Crear mi cuenta",
+    "ctaTrial": "Prueba gratuita. Sin tarjeta de crédito.",
+    "ctaPitchLead": "¿Te parece caro?",
+    "ctaPitch": "Recupera la inversión en el primer mes",
+    "copyright": "© {{year}} Taimbox. Todos los derechos reservados.",
+    "privacy": "Privacidad",
+    "terms": "Condiciones",
+    "cookies": "Cookies"
+  },
+  "cookie": {
+    "bannerTitle": "Utilizamos cookies para mejorar tu experiencia y el servicio.",
+    "bannerBody": "Las necesarias son esenciales; las demás nos ayudan a analizar el uso y mejorar la plataforma.",
+    "moreInfo": "Más información",
+    "onlyNecessary": "Solo necesarias",
+    "acceptAll": "Aceptar todas",
+    "customize": "Personalizar",
+    "dialogTitle": "Preferencias de cookies",
+    "dialogDescription": "Puedes activar o desactivar las categorías según tu preferencia. Las cookies necesarias siempre están activas para el funcionamiento del sitio.",
+    "necessary": "Necesarias",
+    "necessaryDesc": "Sesión, seguridad y preferencias básicas. Siempre activas.",
+    "analytics": "Analíticas",
+    "analyticsDesc": "Nos ayudan a entender cómo se usa la plataforma.",
+    "marketing": "Marketing",
+    "marketingDesc": "Personalización de mensajes y ofertas (si las usamos).",
+    "cancel": "Cancelar",
+    "save": "Guardar preferencias",
+    "ariaDialog": "Preferencias de cookies"
+  },
+  "home": {
+    "seoTitle": "Taimbox | Gestión de Recursos y Planificación de Equipos",
+    "seoDescription": "Optimiza la rentabilidad de tu empresa con Taimbox. Gestión de recursos, planificación inteligente y control de márgenes.",
+    "jsonLdDescription": "Optimiza la rentabilidad de tu empresa con Taimbox. Gestión de recursos, planificación inteligente y control de márgenes.",
+    "heroBadge": "Tu equipo, tu tiempo, tu control",
+    "heroTitleLine1": "El tiempo de tu",
+    "heroTitleHighlight": "equipo visualizado",
+    "heroSubtitleLine1": "No más hojas de cálculo. No más adivinanzas.",
+    "heroSubtitleLine2Prefix": "Ve quién hace qué,",
+    "heroSubtitleLine2When": "cuándo",
+    "heroSubtitleLine2Why": "por qué",
+    "heroPrimaryCta": "Empezar gratis",
+    "heroSecondaryCta": "El coste de no medir (3 min)",
+    "heroPricingLink": "Ver planes y precios",
+    "heroCalendarButton": "Ver demo completa",
+    "featuresTitle": "Funcionalidades que transforman",
+    "featuresSubtitle": "Explora cada herramienta. Haz clic para ver detalles y ejemplos.",
+    "featuresGuideLink": "Ver guía completa de todas las funcionalidades →",
+    "featuresMobilePrev": "Anterior",
+    "featuresMobileNext": "Siguiente",
+    "featuresDesktopCta": "Ver página completa",
+    "featuresDesktopCtaFull": "Ver página completa de esta funcionalidad",
+    "integrationsKicker": "Conecta todo",
+    "integrationsTitleLine1": "Tu flujo de trabajo,",
+    "integrationsTitleHighlight": "amplificado",
+    "integrationsCards": [
+      {
+        "title": "Exporta",
+        "description": "Informes en PDF. Datos históricos e integración vía API REST."
+      },
+      {
+        "title": "Conecta",
+        "description": "API REST completa para integraciones personalizadas."
+      },
+      {
+        "title": "Sincroniza",
+        "description": "Conecta con calendarios externos en tiempo real."
+      }
+    ],
+    "featuresCarousel": [
+      {
+        "label": "Calendario",
+        "title": "Calendario Visual",
+        "subtitle": "La vista principal de tu equipo",
+        "description": "Ve quién hace qué, cuándo y por qué. Identifica sobrecargas al instante con un vistazo al calendario completo de tu equipo.",
+        "featureList": [
+          "Vista semanal y mensual",
+          "Código de colores por proyecto",
+          "Reasignación ágil en 1 clic",
+          "Asistente: sugiere a quién pasar carga (nombre y proyectos en común)"
+        ],
+        "example": "María está al 120% esta semana. El asistente detecta quién está saturado y te sugiere con nombre y apellido a quién pasarle la carga, cruzando los proyectos que tienen en común. Redistribución en segundos.",
+        "stat": "+40%",
+        "statLabel": "visibilidad del equipo",
+        "landingUrl": "/planificador-recursos"
+      },
+      {
+        "label": "Dependencias",
+        "title": "Dependencias",
+        "subtitle": "Gestión inteligente de bloqueos",
+        "description": "Identifica al instante qué tareas impiden avanzar a tu equipo. Control estricto de bloqueos con gestión de dependencias integrada.",
+        "featureList": [
+          "Control estricto de bloqueos",
+          "Identifica qué tareas impiden avanzar",
+          "Gestión de dependencias integrada",
+          "Avisos de tareas bloqueadas"
+        ],
+        "example": "El diseño bloquea al desarrollo. Taimbox te avisa si una tarea está bloqueando a otra, para que actúes a tiempo.",
+        "stat": "100%",
+        "statLabel": "visibilidad de bloqueos",
+        "landingUrl": "/planificador-recursos"
+      },
+      {
+        "label": "Deadlines",
+        "title": "Deadlines",
+        "subtitle": "Objetivos mensuales por proyecto",
+        "description": "Define metas de horas por proyecto y empleado. Compara lo planificado vs ejecutado. Sugerencias de redistribución solo entre quien comparte proyectos, con límites de carga configurables.",
+        "featureList": [
+          "Objetivos por proyecto",
+          "Seguimiento en tiempo real",
+          "Sugerencias de redistribución (solo proyectos en común)",
+          "Límites de carga: receptor y quien cede",
+          "Alertas de desviación"
+        ],
+        "example": "El equipo tiene cargas desiguales. El sistema detecta quién puede ceder horas y a quién pasarlas — solo entre empleados que comparten proyectos — y te muestra el impacto antes de decidir.",
+        "stat": "85%",
+        "statLabel": "cumplimiento de deadlines",
+        "landingUrl": "/control-proyectos"
+      },
+      {
+        "label": "Equipo",
+        "title": "Gestión de Equipo",
+        "subtitle": "Todo sobre tu equipo en un lugar",
+        "description": "Horarios, ausencias, vacaciones y capacidad. Cada empleado tiene su perfil completo.",
+        "featureList": [
+          "Horarios personalizados",
+          "Gestión de ausencias",
+          "Capacidad mensual",
+          "Objetivos profesionales"
+        ],
+        "example": "Juan tiene vacaciones la próxima semana. El sistema ya lo considera y no permite asignarle tareas en ese período.",
+        "stat": "0",
+        "statLabel": "conflictos de agenda",
+        "landingUrl": "/gestion-equipos"
+      },
+      {
+        "label": "Tiempos",
+        "title": "Tiempos y cronómetro",
+        "subtitle": "Registro real por tarea",
+        "description": "Cronómetro por tarea en planificador y Mi Día. Vista \"Tiempos\" para ver en qué está cada uno ahora mismo y parar desde un solo lugar.",
+        "featureList": [
+          "Cronómetro por tarea",
+          "Horas con precisión de segundos",
+          "Vista equipo: quién está en qué",
+          "Parar desde sidebar o página Tiempos"
+        ],
+        "example": "Ves que María lleva 1h 23m en \"Diseño landing\" y Carlos 45m en \"Dev API\". Puedes parar tu propio crono desde la página Tiempos sin cambiar de vista.",
+        "stat": "En vivo",
+        "statLabel": "estado del equipo",
+        "landingUrl": "/gestion-equipos"
+      },
+      {
+        "label": "Weekly",
+        "title": "Weekly Reports",
+        "subtitle": "Cierre semanal y asistente de redistribución",
+        "description": "Cada semana, el sistema genera un resumen con métricas. Asistente de redistribución rápida: te muestra quién tiene horas libres para que redistribuyas el trabajo en segundos.",
+        "featureList": [
+          "Resumen semanal automático",
+          "Asistente de redistribución rápida",
+          "Quién tiene horas libres al instante",
+          "Comparativa semanal"
+        ],
+        "example": "Carlos no completó 15h esta semana. El sistema te muestra quién tiene horas libres (Laura 10h, Pedro 5h) para que redistribuyas el trabajo en segundos.",
+        "stat": "Segundos",
+        "statLabel": "para redistribuir carga",
+        "landingUrl": "/reportes-rentabilidad"
+      },
+      {
+        "label": "Alertas",
+        "title": "Indicadores y recordatorios",
+        "subtitle": "Nunca más sorpresas",
+        "description": "Indicadores visuales de sobrecarga, alertas de desviación de presupuesto y recordatorios de cierre de mes. Todo en pantalla para que actúes a tiempo.",
+        "featureList": [
+          "Indicadores visuales de sobrecarga",
+          "Alertas de desviación de presupuesto",
+          "Recordatorios de cierre de mes",
+          "Avisos de bloqueos"
+        ],
+        "example": "Ves en la vista que el proyecto lleva 60% completado y el mes avanza. Los indicadores te avisan para actuar antes del cierre.",
+        "stat": "60%",
+        "statLabel": "problemas detectados antes",
+        "landingUrl": "/dashboard-empleado"
+      },
+      {
+        "label": "Métricas",
+        "title": "Métricas y Rentabilidad",
+        "subtitle": "Decisiones basadas en datos",
+        "description": "Seguimiento operativo, Rentabilidad (ingreso devengado, ritmo por proyecto, coste operativo/dinámico, presupuesto por deadline) y Capacidad de Equipo. Integración API.",
+        "featureList": [
+          "Seguimiento operativo",
+          "Rentabilidad con ingreso devengado",
+          "Ritmo (pacing) y mes en curso/cerrado",
+          "Capacidad de Equipo",
+          "Integración API"
+        ],
+        "example": "A mitad de mes ves el ingreso devengado y el ritmo: si un proyecto va por encima del tiempo transcurrido, aviso en rojo. Si ya cumplió el 100 % de horas, el fee total.",
+        "stat": "+78%",
+        "statLabel": "precisión en estimaciones",
+        "landingUrl": "/reportes-rentabilidad"
+      }
+    ],
+    "faqItems": [
+      {
+        "question": "¿Cómo funciona la plataforma?",
+        "answer": "Nuestra plataforma te permite visualizar y gestionar la carga de trabajo de tu equipo en tiempo real. Puedes planificar tareas, establecer deadlines, gestionar dependencias y recibir alertas automáticas cuando detectamos sobrecargas o problemas. Todo desde una interfaz visual e intuitiva que no requiere instalación de software adicional."
+      },
+      {
+        "question": "¿Necesito instalar algo?",
+        "answer": "No, nuestra plataforma es completamente web. Solo necesitas un navegador moderno y acceso a internet. Funciona en cualquier dispositivo: ordenador, tablet o móvil. No requiere instalación de software ni configuraciones complicadas."
+      },
+      {
+        "question": "¿Son seguros mis datos?",
+        "answer": "Absolutamente. Utilizamos encriptación de extremo a extremo para proteger tus datos tanto en tránsito como en reposo. Cumplimos con el GDPR y todos los estándares de seguridad internacionales. Tienes control total sobre tus datos y puedes exportarlos o eliminarlos en cualquier momento."
+      },
+      {
+        "question": "¿Puedo integrarlo con otras herramientas?",
+        "answerBefore": "Sí, ofrecemos una API REST completa que te permite integrar la plataforma con tus herramientas existentes. La ",
+        "answerLinkText": "documentación de la API",
+        "answerAfter": " incluye tutoriales paso a paso, autenticación por tokens, referencia de tablas con ejemplos de respuesta, SDK JavaScript y búsqueda rápida (Ctrl+K). También puedes exportar datos en múltiples formatos para trabajar con hojas de cálculo u otros sistemas.",
+        "answerLinkPath": "/api-docs"
+      },
+      {
+        "question": "¿Cuánto tiempo toma implementarlo?",
+        "answer": "La plataforma está lista para usar desde el primer día. Puedes empezar a añadir tu equipo y proyectos inmediatamente. La curva de aprendizaje es mínima gracias a nuestra interfaz intuitiva. La mayoría de los equipos están completamente operativos en menos de una semana."
+      },
+      {
+        "question": "¿Hay soporte técnico?",
+        "answer": "Sí, ofrecemos soporte técnico completo. Puedes contactarnos por correo electrónico y nuestro equipo te ayudará con cualquier duda o problema. Además, tenemos documentación completa, tutoriales y una comunidad activa donde puedes encontrar respuestas y compartir experiencias."
+      },
+      {
+        "question": "¿Dónde se almacenan mis datos?",
+        "answer": "Tus datos se almacenan en servidores seguros ubicados en centros de datos con certificaciones internacionales de seguridad. Utilizamos infraestructura en la nube de nivel empresarial que garantiza alta disponibilidad, respaldo automático y protección física de los servidores. Todos los datos están encriptados y protegidos por múltiples capas de seguridad."
+      },
+      {
+        "question": "¿Quién puede acceder a mis datos?",
+        "answer": "Solo tú y las personas de tu equipo a las que otorgues permisos específicos pueden acceder a los datos. Utilizamos un sistema de permisos granulares que te permite controlar exactamente qué puede ver y hacer cada usuario. Nuestro equipo técnico solo accede a los datos cuando es estrictamente necesario para proporcionar soporte, y siempre con tu autorización previa. Todos los accesos quedan registrados en un log de auditoría."
+      },
+      {
+        "question": "¿Qué medidas de seguridad tienen las contraseñas?",
+        "answer": "Las contraseñas se almacenan utilizando algoritmos de hash seguros (bcrypt) que hacen imposible recuperar la contraseña original. Nunca almacenamos contraseñas en texto plano. Además, todas las conexiones utilizan encriptación TLS/SSL para proteger las credenciales durante el inicio de sesión. Te recomendamos usar contraseñas fuertes y únicas, y cambiarlas periódicamente."
+      },
+      {
+        "question": "¿Qué pasa si quiero eliminar todos mis datos?",
+        "answer": "Puedes eliminar todos tus datos en cualquier momento desde la configuración de tu cuenta. El proceso de eliminación es completo e irreversible: se eliminan todos los datos asociados a tu cuenta, incluyendo proyectos, asignaciones, historial y cualquier otra información. También puedes exportar todos tus datos antes de eliminarlos si lo deseas. Este proceso cumple con el derecho al olvido establecido en el GDPR."
+      }
+    ],
+    "faqCta": "Empezar gratis",
+    "problemsTitle": "¿Cansado de gestionar el tiempo a ciegas?",
+    "problemsSubtitle": "Transforma el caos en claridad",
+    "problemsWithoutTitle": "Sin Taimbox",
+    "problemsWithTitle": "Con Taimbox",
+    "problemsWithoutItems": [
+      "Sobrecargas detectadas tarde",
+      "Estimaciones irrealistas",
+      "Reuniones interminables",
+      "Tiempo trabajado no registrado"
+    ],
+    "problemsWithItems": [
+      "Visibilidad en tiempo real",
+      "Cronómetro por tarea y vista Tiempos del equipo",
+      "Métricas precisas",
+      "Decisiones informadas"
+    ],
+    "problemsButton": "Ver cómo funciona",
+    "deadlinesKicker": "Deadlines",
+    "deadlinesTitle": "Cumple tus compromisos, siempre",
+    "deadlinesSubtitle": "Define, rastrea y logra tus objetivos mensuales",
+    "deadlinesStepDefineTitle": "Define",
+    "deadlinesStepDefineDesc": "Objetivos mensuales por proyecto y empleado",
+    "deadlinesStepTrackTitle": "Rastrea",
+    "deadlinesStepTrackDesc": "Compara planificado vs ejecutado en tiempo real",
+    "deadlinesStepAchieveTitle": "Logra",
+    "deadlinesStepAchieveDesc": "Sugerencias inteligentes de redistribución",
+    "deadlinesButton": "Ver demo de Deadlines",
+    "securityKicker": "Seguridad",
+    "securityTitle": "Tus datos, protegidos",
+    "securitySubtitle": "Cumplimos los más altos estándares de seguridad",
+    "securityBadgeTls": "TLS/SSL",
+    "securityBadgeGdpr": "GDPR",
+    "securityBadge247": "24/7",
+    "securityCardEncryptionTitle": "Encriptación",
+    "securityCardEncryptionDesc": "Datos encriptados en tránsito y en reposo con algoritmos empresariales",
+    "securityCardPrivacyTitle": "Privacidad",
+    "securityCardPrivacyDesc": "Control total sobre tus datos. Exportación y eliminación cuando quieras.",
+    "securityCardInfraTitle": "Infraestructura",
+    "securityCardInfraDesc": "Servidores certificados, backups diarios y monitoreo continuo",
+    "securityButton": "Ver demo",
+    "demoKicker": "Demo interactivo",
+    "demoTitle": "Explora la plataforma en acción",
+    "demoSubtitle": "Datos de ejemplo. Cambia de módulo aquí abajo para ver Planificador, Dashboard, Weekly y Deadlines.",
+    "demoChooseLabel": "Elige qué explorar:",
+    "demoTabPlanner": "Planificador",
+    "demoTabDashboard": "Dashboard",
+    "demoTabWeeklys": "Weekly",
+    "demoTabDeadlines": "Deadlines",
+    "audienceTitle": "Para equipos que valoran su tiempo",
+    "audienceBadges": [
+      "Equipos de marketing digital",
+      "Desarrolladores y diseñadores",
+      "Cualquier equipo que coordine trabajo"
+    ],
+    "useCasesLeaderTitle": "Para líderes de equipo",
+    "useCasesLeaderItems": [
+      "Decisiones informadas sobre distribución",
+      "Identifica quién necesita ayuda",
+      "Reduce reuniones en un 70%",
+      "Alertas automáticas de sobrecarga"
+    ],
+    "useCasesPmTitle": "Para project managers",
+    "useCasesPmItems": [
+      "Gestión de múltiples proyectos",
+      "Visualiza dependencias y cuellos de botella",
+      "Control de presupuestos y horas",
+      "Seguimiento de deadlines"
+    ],
+    "useCasesEmployeeTitle": "Para empleados",
+    "useCasesEmployeeItems": [
+      "Vista clara de tu carga de trabajo",
+      "Priorización automática de tareas",
+      "Seguimiento de tu progreso",
+      "Sabes qué hacer y cuándo"
+    ],
+    "resultsTitle": "Resultados que hablan por sí solos",
+    "resultsMetrics": [
+      "Reducción en reuniones de coordinación",
+      "Mejora en precisión de estimaciones",
+      "Más sobrecargas detectadas a tiempo"
+    ],
+    "faqKicker": "Preguntas frecuentes",
+    "faqTitle": "Resolvemos tus dudas",
+    "faqSubtitle": "Todo lo que necesitas saber sobre nuestra plataforma.",
+    "ctaBadgeLabel": "Sin compromiso",
+    "ctaTitle": "¿Listo para transformar a tu equipo?",
+    "ctaSubtitle": "Crea tu cuenta y descubre cómo gestionar el tiempo de tu equipo de forma inteligente.",
+    "ctaPrimary": "Crear mi cuenta",
+    "ctaPitch": "Ver presentación de ROI",
+    "ctaDemo": "Ver demo completa",
+    "heroSubtitleLine2And": "y"
+  },
+  "pricing": {
+    "seoTitle": "Precios y planes | Taimbox",
+    "seoDescription": "Planes Starter, Pro y Business con Taimbox. Gestión operativa, financiera y de tiempos para agencias de todos los tamaños.",
+    "heroKicker": "Para agencias y equipos creativos",
+    "heroLine1": "Precios diseñados para escalar con tu",
+    "heroHighlight": "rentabilidad",
+    "earlyAdopter": "Precios Early Adopter — 50% de descuento de por vida",
+    "heroSub": "Empieza gratis. Sube de plan cuando requieras más inteligencia financiera, reportes avanzados o integraciones complejas para tu agencia.",
+    "pill1": "Plan gratuito disponible",
+    "pill2": "Prueba de 14 días (Business)",
+    "pill3": "Sin permanencia",
+    "recommended": "Recomendado",
+    "earlyTariff": "Tarifa Early Adopter · de por vida",
+    "enterpriseTitle": "¿Más de 50 personas o necesitas algo a medida?",
+    "enterpriseSub": "Enterprise sin límites · SLA · Soporte dedicado · Facturación personalizada",
+    "enterpriseCta": "Hablar con ventas",
+    "enterpriseMailSubject": "Plan Enterprise",
+    "includedTitle": "Todo lo que necesitas",
+    "includedH2": "Incluido en todos los planes",
+    "includedSub": "No importa si estás en el plan Starter o en Business, Taimbox siempre ofrece recursos robustos y premium de base.",
+    "faqKicker": "Preguntas frecuentes",
+    "faqH2": "Todo sobre planes y facturación",
+    "finalH2": "¿Listo para tomar el control de tu agencia?",
+    "finalSub": "Crea tu cuenta en menos de un minuto. Sin necesidad de métodos de pago para crear la cuenta y usar nuestro plan Starter libremente.",
+    "finalStat1Label": "para empezar a operar",
+    "finalStat2Label": "días de prueba en Business",
+    "finalStat3Label": "para invitar al equipo",
+    "finalCta": "Empezar gratis",
+    "finalLogin": "¿Ya tienes cuenta?",
+    "finalLoginLink": "Iniciar sesión",
+    "rewardBanner": "🎯 Premiaremos a las primeras agencias que confíen en nosotros manteniendo esta cuota de por vida, antes de aplicar las tarifas oficiales de 99€ y 249€.",
+    "plans": {
+      "starter": {
+        "period": "siempre",
+        "description": "El estándar operativo para organizar el equipo.",
+        "cta": "Empezar gratis",
+        "features": [
+          "Planificador visual ilimitado",
+          "Sistema de Deadlines",
+          "Cronómetro de tiempos integrado",
+          "Hasta 5 personas",
+          "Histórico: mes actual y anterior"
+        ]
+      },
+      "pro": {
+        "period": "mes",
+        "description": "La agencia eficiente.",
+        "cta": "Elegir Pro",
+        "features": [
+          "Todo lo de Starter, más:",
+          "Hasta 20 personas",
+          "Histórico ilimitado",
+          "Módulo Weekly y pronósticos",
+          "Matriz de Fiabilidad (Performance)",
+          "Rentabilidad por proyecto (EHR)"
+        ]
+      },
+      "business": {
+        "period": "mes",
+        "description": "Automatización y control para agencias Performance.",
+        "cta": "Probar Business 14 días",
+        "features": [
+          "Todo lo de Pro, más:",
+          "Hasta 50 personas",
+          "Monitor de presupuestos clientes (PPC)",
+          "Prevención de sobrecostes (Google/Meta Ads)",
+          "Radar de Hemorragias (P&L en vivo)",
+          "API REST y webhooks",
+          "OKRs y alineación estratégica"
+        ]
+      }
+    },
+    "universal": [
+      {
+        "title": "Multi-proyecto",
+        "desc": "Gestiona infinitos clientes y proyectos en paralelo sin restricciones."
+      },
+      {
+        "title": "Colaboración en vivo",
+        "desc": "Sincronización instantánea de estados y asignaciones para tu equipo."
+      },
+      {
+        "title": "Reportes de tiempos",
+        "desc": "Cronómetro integrado y partes de horas manuales o automatizados."
+      },
+      {
+        "title": "Alertas de sobrecarga",
+        "desc": "Detección automática de empleados superando su capacidad semanal."
+      },
+      {
+        "title": "Seguridad y privacidad",
+        "desc": "Infraestructura cloud robusta y aislamiento de datos por agencia."
+      },
+      {
+        "title": "Permisos granulares",
+        "desc": "Cada usuario (Empleado o Manager) ve estrictamente lo que necesita ver."
+      }
+    ],
+    "trust": [
+      {
+        "text": "14 días de prueba en Business",
+        "sub": "Gratis hasta que decidas"
+      },
+      {
+        "text": "Sin permanencia limitante",
+        "sub": "Cancela o cambia de plan cuando quieras"
+      },
+      {
+        "text": "Facturación mensual clara",
+        "sub": "Pago 100% seguro a través de Stripe"
+      }
+    ],
+    "faq": [
+      {
+        "q": "¿Puedo cambiar de plan en cualquier momento?",
+        "a": "Sí. Puedes subir o bajar de plan en cualquier momento desde Configuración. Los cambios se aplican de forma prorrateada."
+      },
+      {
+        "q": "¿Qué pasa si supero el límite de empleados de mi plan?",
+        "a": "Recibirás un aviso y tu agencia entrará en modo solo lectura hasta que actualices tu plan o ajustes el número de empleados activos. Nunca borraremos tus datos."
+      },
+      {
+        "q": "¿Qué pasa si somos más de 50 empleados?",
+        "a": "Tenemos planes Enterprise sin límite de usuarios y con soporte dedicado. Contáctanos por el chat de la app o a hello@taimbox.com."
+      },
+      {
+        "q": "¿Los precios de early adopter se mantendrán?",
+        "a": "Sí. Si contratas ahora, tu tarifa queda congelada de por vida aunque los precios suban a 99€/249€ en el futuro."
+      },
+      {
+        "q": "¿La prueba de Business requiere tarjeta de crédito?",
+        "a": "Sí, Stripe te pedirá un método de pago al iniciar la suscripción, pero no se cobrará absolutamente nada durante los 14 días de prueba. Al finalizar se cobrarán 149€/mes. Si cancelas antes, no habrá cargo."
+      },
+      {
+        "q": "¿Hay descuentos por pago anual?",
+        "a": "Por el momento ofrecemos facturación mensual flexible. Si sois un equipo muy grande (>50 personas) o requerís facturación especial, podéis contactar con Soporte en la app o en hello@taimbox.com."
+      }
+    ]
+  },
+  "articleWhy": {
+    "seoTitle": "¿Por qué Taimbox? Metodología para Empresas | Taimbox",
+    "seoDescription": "Descubre cómo Taimbox puede mejorar la eficiencia de tu empresa. Aprende a gestionar el tiempo por bloques para maximizar el enfoque y resultados de tu equipo.",
+    "jsonHeadline": "Taimbox: Por qué tu lista de tareas está matando la rentabilidad de tu agencia",
+    "jsonArticleDesc": "Descubre cómo Taimbox puede mejorar la eficiencia de tu empresa. Aprende a gestionar el tiempo por bloques para maximizar el enfoque y resultados de tu equipo.",
+    "jsonSoftwareDesc": "Descubre cómo Taimbox puede mejorar la eficiencia de tu empresa. Aprende a gestionar el tiempo por bloques para maximizar el enfoque y resultados de tu equipo.",
+    "badge": "Para agencias",
+    "heroTitle": "Taimbox: por qué tu lista de tareas está matando la rentabilidad de tu agencia",
+    "heroP1": "Si diriges una agencia de marketing, desarrollo o consultoría, conoces esta historia: vendes un proyecto por 5.000€ calculado a 50 horas. El equipo empieza a trabajar. Surgen reuniones, imprevistos, «pequeños cambios» y correcciones. Un mes después, miras los números: habéis invertido 90 horas. Has perdido dinero.",
+    "heroP2": "El problema no es tu equipo. El problema no es el cliente. El problema es que gestionas tareas, cuando deberías estar gestionando cajas de tiempo vinculadas a dinero.",
+    "heroHighlight": "Aquí es donde entra el timeboxing: una metodología que ha pasado de ser un truco de productividad personal a convertirse en el estándar operativo de las empresas de servicios más rentables del mundo.",
+    "chartTitle": "Presupuesto (50h) vs real (90h)",
+    "chartMax": "50h (límite)",
+    "chartOverflow": "90h — desbordado",
+    "whatIsTitle": "¿Qué es exactamente el timeboxing?",
+    "whatIsP1": "El timeboxing no es una lista de tareas (to-do list). En una lista de tareas, trabajas en algo hasta que lo terminas. En el timeboxing, decides cuánto tiempo vas a dedicar a una tarea antes de empezarla.",
+    "whatIsP2": "La premisa es simple pero revolucionaria: <0>el tiempo es una restricción fija, el alcance es variable.</0>",
+    "principlesTitle": "Los 3 principios científicos del timeboxing",
+    "principle1": {
+      "kicker": "Principio 1",
+      "title": "Ley de Parkinson",
+      "desc": "«El trabajo se expande hasta llenar el tiempo disponible para que se termine». Si te das una semana para escribir un copy, tardarás una semana. Si te das 2 horas (una «time box»), lo harás en 2 horas."
+    },
+    "principle2": {
+      "kicker": "Principio 2",
+      "title": "Carga cognitiva",
+      "desc": "Decidir «qué hacer ahora» gasta energía mental. Con el timeboxing, esa decisión ya está tomada en la planificación. Solo ejecutas."
+    },
+    "principle3": {
+      "kicker": "Principio 3",
+      "title": "Realismo brutal",
+      "desc": "Una lista de tareas es una carta a los Reyes Magos. Un calendario con bloques de tiempo es la realidad física de tu día."
+    },
+    "agenciesTitle": "Por qué el timeboxing tradicional no funciona en agencias",
+    "agenciesP1": "Las herramientas como Google Calendar o Notion son fantásticas para individuos, pero son ciegas financieramente para una empresa.",
+    "agenciesP2": "Cuando aplicas timeboxing en una agencia, te enfrentas a la <0>«triple amenaza»</0>:",
+    "threat1Title": "La paradoja del festivo",
+    "threat1Desc": "Si planificas 40 horas semanales y hay un festivo, tu Excel se rompe.",
+    "threat2Title": "La doble contabilidad",
+    "threat2Desc": "¿Qué pasa si un empleado está de baja y a la vez hay un evento de equipo? La mayoría de herramientas restan las horas dos veces, falseando la capacidad real.",
+    "threat3Title": "El muro financiero",
+    "threat3Desc": "Tu calendario dice «Diseñar Home (4h)», pero no te dice que esas 4 horas cuestan 200€ de nómina y el cliente solo paga 150€.",
+    "agenciesHighlight": "Las agencias necesitan algo más que un calendario. Necesitan un <0>sistema operativo financiero basado en tiempo</0>.",
+    "solutionTitle": "Taimbox + inteligencia financiera: la evolución",
+    "solutionP1": "Hemos construido una plataforma que no solo gestiona el tiempo, sino que entiende la economía de tu agencia. No es solo un calendario; es un cerebro que calcula rentabilidad en tiempo real.",
+    "solutionP2": "Así es como nuestra tecnología soluciona lo que otros ignoran:",
+    "feature1Title": "1. Cálculo de «horas computadas» (el cerebro)",
+    "feature1P": "Olvídate de las hojas de cálculo. Nuestro algoritmo de backend procesa automáticamente:",
+    "feature1L1Title": "Semanas partidas:",
+    "feature1L1Desc": "Si una semana laboral empieza en enero y acaba en febrero, el sistema divide los costes proporcionalmente para que tu cierre de mes sea exacto al céntimo.",
+    "feature1L2Title": "Gestión de capacidad real:",
+    "feature1L2Desc": "Utilizamos una lógica de Max(Ausencia, Evento) para calcular la disponibilidad. Si es festivo y alguien está enfermo, el sistema sabe que no se pierden el doble de horas.",
+    "feature1Demo": "Vista previa del planificador con datos de ejemplo. Explora la distribución de horas por empleado y proyecto.",
+    "feature1Loading": "Cargando planificador…",
+    "feature2Title": "2. «Team Pulse»: operaciones en tiempo real",
+    "feature2P": "Mientras las herramientas tradicionales te muestran reportes estáticos del mes pasado, nuestro Team Pulse utiliza WebSockets para mostrarte el estado de tu agencia ahora mismo.",
+    "feature2Idle": "Idle (libre)",
+    "feature2Busy": "Busy (saturado)",
+    "feature2Blocked": "Bloqueado",
+    "feature3Title": "3. Monitor de presupuestos de clientes (PPC)",
+    "feature3P": "Integramos vía API los datos de Meta Ads y Google Ads de tus clientes. Resultado: un panel donde controlas el consumo de las campañas de todos tus clientes en un solo lugar. Detecta sobrecostes antes de que ocurran y evita que la agencia pague de su bolsillo los errores humanos en presupuestos.",
+    "scaleTitle": "Construido para escalar (developer-first)",
+    "scaleP": "No somos una herramienta «low-code» hecha con parches. Somos una infraestructura de ingeniería de software diseñada para empresas que se toman en serio sus datos.",
+    "apiTitle": "API abierta y documentada",
+    "apiDesc": "¿Tienes un ERP o un CRM propio? Conecta nuestra API RESTful en minutos. Te entregamos los datos ya procesados (hours_computed), ahorrándote cientos de horas de ingeniería matemática. <1>Documentación completa →</1>",
+    "securityTitle": "Seguridad bancaria (RLS)",
+    "securityDesc": "Tus datos están aislados a nivel de base de datos mediante Row Level Security. Es matemáticamente imposible que otra agencia acceda a tu información.",
+    "tokensTitle": "Tokens criptográficos",
+    "tokensDesc": "Sistema de autenticación propio con firma HMAC SHA-256.",
+    "apiPreview1": "Obtener rentabilidad por proyecto (paso 2 del tutorial de reportes)",
+    "apiPreview2": "Ejemplo de consulta a la API (allocations + hours_computed). Base URL y tokens: <1>ver documentación</1>.",
+    "apiPreviewLegend": "<0>ANON_KEY:</0> clave anónima de tu instancia Supabase. <2>TU_API_TOKEN:</2> JWT generado en Configuración → API & Integraciones.",
+    "apiFullTutorialLink": "Ver tutorial completo de reportes y rentabilidad →",
+    "finalTitle": "Deja de adivinar, empieza a saber",
+    "finalP": "El timeboxing es la metodología. Nuestra plataforma es la herramienta. Tienes dos opciones:",
+    "finalL1": "Seguir gestionando tu agencia con intuición y hojas de Excel que se rompen.",
+    "finalL2": "Implementar un sistema que alinea tus operaciones con tus finanzas automáticamente.",
+    "finalOutro": "La tecnología ya está aquí. La API está lista. Tu equipo te lo agradecerá.",
+    "finalCta": "Empezar prueba gratuita",
+    "finalNotice": "No requiere tarjeta de crédito. Configuración en 2 minutos."
+  },
+  "blog": {
+    "breadcrumbAria": "Ruta de navegación del artículo"
+  },
+  "guide": {
+    "seoTitleIndex": "Guía de funcionalidades | Taimbox",
+    "seoDescriptionIndex": "Todas las funcionalidades de Taimbox explicadas al detalle: planificador, informes, equipo, tiempos y más.",
+    "sectionTitle": "{{section}} | Guía Taimbox",
+    "layoutTitleIndex": "Guía completa de Taimbox",
+    "layoutDescriptionIndex": "Todas las funcionalidades explicadas al detalle. Elige un apartado para leer la documentación.",
+    "backHome": "Volver al inicio",
+    "backToIndex": "Volver al índice",
+    "guideIndex": "Índice de la guía",
+    "home": "Inicio",
+    "prev": "Anterior",
+    "next": "Siguiente",
+    "sections": {
+      "planificador": {
+        "title": "Planificador",
+        "short": "Calendario visual del equipo y asignación de tareas"
+      },
+      "mi-espacio": {
+        "title": "Mi espacio",
+        "short": "Tu dashboard personal: carga, dependencias y control de planificación"
+      },
+      "deadlines": {
+        "title": "Deadlines",
+        "short": "Objetivos mensuales por proyecto y empleado"
+      },
+      "informes": {
+        "title": "Informes",
+        "short": "Reportes, métricas y exportación de datos"
+      },
+      "weekly-forecast": {
+        "title": "Weekly Forecast",
+        "short": "Cierre semanal y redistribución inteligente de horas"
+      },
+      "equipo": {
+        "title": "Equipo",
+        "short": "Miembros, ausencias, horarios y capacidad"
+      },
+      "tiempos": {
+        "title": "Tiempos",
+        "short": "Cronómetro por tarea y vista en vivo del equipo"
+      },
+      "clientes-proyectos": {
+        "title": "Clientes y proyectos",
+        "short": "Catálogo de clientes, proyectos y horas contratadas"
+      },
+      "configuracion": {
+        "title": "Configuración",
+        "short": "Agencia, roles, permisos e integraciones"
+      }
+    },
+    "content": {
+      "planificador": {
+        "intro": {
+          "title": "Qué es el Planificador",
+          "bodyBefore": "El Planificador es la ",
+          "bodyStrong": "vista central",
+          "bodyAfter": " de Taimbox. Muestra qué tareas tiene asignada cada persona en cada semana del mes, con código de colores por proyecto y alertas de sobrecarga en tiempo real.",
+          "example": "María está al 120% esta semana. Con un vistazo al calendario ves que tiene 3 proyectos superpuestos y puedes redistribuir antes de que sea tarde."
+        },
+        "views": {
+          "title": "Vistas disponibles",
+          "weekly": {
+            "title": "Vista semanal",
+            "description": "Una columna por empleado con las horas planificadas. Ideal para ver la carga de un vistazo rápido."
+          },
+          "monthly": {
+            "title": "Vista mensual",
+            "description": "Tarjetas por semana con listado de tareas completadas y pendientes. Perfecto para visión global del mes."
+          },
+          "mobile": {
+            "title": "Vista móvil",
+            "description": "Tarjetas por empleado y selector de semana. Diseñada para tacto con áreas mínimas de 44px."
+          },
+          "projectPanel": {
+            "title": "Panel de proyecto",
+            "description": "Al hacer clic en un proyecto ves presupuesto total, equipo asignado, barra de progreso y alertas."
+          }
+        },
+        "addTask": {
+          "title": "Cómo añadir una tarea",
+          "step1Title": "Pulsa el botón +",
+          "step1Description": "En la cabecera de la semana o en el botón \"Añadir\" de la vista semanal.",
+          "step2Title": "Selecciona el proyecto",
+          "step2Description": "Busca entre tus proyectos activos. Verás las horas disponibles y el porcentaje usado en cada uno.",
+          "step3Title": "Nombre, horas y semana",
+          "step3Description": "Escribe el nombre de la tarea, las horas estimadas y en qué semana va.",
+          "step4Title": "Dependencias (opcional)",
+          "step4Description": "Si la tarea depende de otra, selecciónala. El sistema avisará si la dependencia no está lista.",
+          "step5Title": "Guardar",
+          "step5Description": "La tarea aparece en el calendario inmediatamente y las barras de carga se actualizan en tiempo real."
+        },
+        "indicators": {
+          "title": "Indicadores de carga",
+          "healthyLabel": "Saludable",
+          "healthyValue": "< 85%",
+          "warningLabel": "Aviso",
+          "warningValue": "85-100%",
+          "overloadLabel": "Sobrecarga",
+          "overloadValue": "> 100%",
+          "gaugeLabel": "Barra visual",
+          "gaugeValue": "Tiempo real",
+          "tip": "La barra de progreso se actualiza en tiempo real al añadir, completar o mover tareas. Si un empleado está en rojo, puedes hacer clic en su celda para abrir el panel de tareas y redistribuir."
+        },
+        "dependencies": {
+          "title": "Dependencias entre tareas",
+          "bodyBefore": "Puedes marcar que una tarea ",
+          "bodyStrong": "depende de otra",
+          "bodyAfter": " (por ejemplo, Diseño bloquea a Desarrollo). El sistema muestra:",
+          "whoBlocksYouTitle": "Quién te bloquea",
+          "whoBlocksYouDescription": "Badge visible en la tarea con el nombre del compañero y si su tarea ya está completada.",
+          "whomYouBlockTitle": "A quién bloqueas",
+          "whomYouBlockDescription": "Si tu tarea bloquea a otros, lo verás con un icono de usuarios esperando.",
+          "warning": "Si una dependencia no está completada, la tarea dependiente se resalta en ámbar para que no la olvides."
+        }
+      },
+      "informes": {
+        "introTitle": "Qué son los Informes",
+        "introBody": "Los informes se organizan en Seguimiento: Seguimiento operativo, Rentabilidad y Capacidad de Equipo. Permiten consultar datos históricos y exportar vía API.",
+        "sectionsTitle": "Secciones disponibles",
+        "operationalTitle": "Seguimiento operativo",
+        "operationalDesc": "Coherencia planificación vs deadlines por proyecto, filtros por proyecto y empleado, navegación por mes y proyectos en alerta que explican por qué estás en riesgo.",
+        "profitTitle": "Rentabilidad",
+        "profitDesc": "Ingreso devengado en mes en curso, ritmo (pacing), coste operativo o dinámico, presupuesto efectivo por deadline y margen por proyecto/empleado. Navegación por mes con badge Mes en curso/Mes cerrado.",
+        "capacityTitle": "Capacidad de Equipo",
+        "capacityDesc": "Mapa de calor semanal, ocupación media y tareas bloqueadas por dependencias.",
+        "exportTitle": "Exportación",
+        "exportDesc": "Datos históricos e integración vía API REST para otros formatos.",
+        "filtersTitle": "Filtros",
+        "filtersDesc": "En Coherencia: por proyecto y empleado (respetando la vista por departamento del Sidebar). En el resto de vistas: por período y contexto."
+      },
+      "miEspacio": {
+        "introTitle": "Qué es Mi espacio",
+        "introBody": {
+          "beforeHighlight": "Mi espacio es tu",
+          "highlight": "dashboard personal",
+          "afterHighlight": ". Aquí ves tu carga de trabajo, tus proyectos, el control de planificación y las dependencias del día o de la semana."
+        },
+        "introExample": "Es lunes por la mañana. Abres Mi espacio y ves que tienes 3 tareas que bloquean a compañeros. Sabes exactamente por dónde empezar.",
+        "tabsTitle": "Pestañas principales",
+        "tabs": {
+          "dependencies": {
+            "title": "Dependencias",
+            "description": "Tareas que te bloquean o que bloqueas a otros. Insights para saber qué hacer primero."
+          },
+          "projects": {
+            "title": "Mis proyectos",
+            "description": "Vista de tu semana con tareas agrupadas por proyecto. Ve rápidamente qué tienes pendiente en cada uno."
+          },
+          "planning": {
+            "title": "Control de planificación",
+            "description": "Alertas cuando lo planificado no coincide con el deadline. Te dice si te faltan o sobran horas."
+          },
+          "teammates": {
+            "title": "Compañeros",
+            "description": "Vista de colaboración y carga del equipo. Ve quién está sobrecargado y quién tiene disponibilidad."
+          },
+          "metrics": {
+            "title": "Mis métricas",
+            "description": "Balance mensual (horas estimadas vs reales) e índice de fiabilidad de estimaciones."
+          }
+        },
+        "planningDetailTitle": "Control de planificación en detalle",
+        "planningDetailBody": {
+          "beforeHighlight": "Detecta",
+          "highlight": "variaciones",
+          "afterHighlight": "entre lo que tienes en el deadline y lo realmente planificado/computado. Cada alerta muestra:"
+        },
+        "planningDetailSteps": {
+          "projectTitle": "Proyecto con variación",
+          "projectDescription": "El nombre del proyecto y la diferencia en horas (déficit o exceso).",
+          "yourDataTitle": "Tus datos (TU)",
+          "yourDataDescription": "Deadline asignado, horas planificadas, horas computadas y balance. Si te faltan horas por planificar, se muestra un aviso rojo.",
+          "teamTitle": "Estado del equipo",
+          "teamDescription": "Al expandir ves a los compañeros que también trabajan en ese proyecto con su propio balance."
+        },
+        "planningDetailWarning": "Si ves déficit (rojo), significa que aún no has planificado todas las horas que el deadline te asigna en ese proyecto. Añade tareas desde el planificador para cubrir la diferencia.",
+        "quickActionsTitle": "Acciones rápidas",
+        "quickActions": {
+          "internalTitle": "Registrar gestión interna",
+          "internalDescription": "Reuniones, formaciones u otras tareas no facturables. Se crean como tareas de gestión interna.",
+          "addTasksTitle": "Añadir tareas",
+          "addTasksDescription": "Acceso rápido al mismo flujo de añadir tarea del planificador, sin salir de tu dashboard."
+        },
+        "quickActionsTip": "Puedes abrir cualquier celda de semana para ver el panel completo de tareas con opciones de editar, completar y transferir."
+      },
+      "weeklyForecast": {
+        "introTitle": "Qué es Weekly Forecast",
+        "introBody": "Weekly Forecast (menú Seguimiento) es la previsión y el cierre de equipo: resumen por persona, ajustes y redistribución de horas. Por otro lado, el botón Weekly en Mi espacio es la revisión personal de tareas de semanas ya cerradas: completar, mover a otra semana (incluso varios meses adelante), repartir o registrar horas hechas y planificar el resto en la semana que elijas.",
+        "introExample": "Carlos no completó 15h esta semana. El sistema detecta que Laura tiene 10h libres y Pedro 5h, y sugiere redistribuir el trabajo automáticamente.",
+        "accessTitle": "Dónde acceder",
+        "accessBody": "Weekly Forecast está en el menú lateral bajo Seguimiento (junto a Seguimiento operativo, Rentabilidad y Capacidad de Equipo). Solo es visible si tienes permiso de capacidad de equipo.",
+        "howTitle": "Cómo funciona",
+        "howSteps": [
+          {
+            "title": "Revisar la semana",
+            "description": "Ves un resumen por empleado y por proyecto con horas estimadas, reales y computadas."
+          },
+          {
+            "title": "Ajustar horas",
+            "description": "Si hace falta, corriges horas reales antes del cierre. Puedes ajustar por tarea individual."
+          },
+          {
+            "title": "Redistribuir pendientes",
+            "description": "Las horas no completadas se pueden redistribuir a compañeros con disponibilidad, de forma sugerida o automática."
+          },
+          {
+            "title": "Cerrar semana",
+            "description": "Al confirmar, las tareas completadas se marcan y los ajustes se reflejan en el planificador para la semana siguiente."
+          }
+        ],
+        "integrationTitle": "Integración con el Planificador",
+        "integrationBody": "Todo lo que ocurre en Weekly se refleja en el calendario: tareas completadas, horas ajustadas y redistribuciones aparecen con un badge \"Weekly\" en el planificador.",
+        "integrationWarning": "Si el módulo Weekly no está activado en tu agencia, esta opción no aparecerá en el menú. Un administrador puede activarlo desde Configuración."
+      },
+      "equipo": {
+        "introTitle": "Qué es la sección Equipo",
+        "introBody": "En Equipo se gestionan los miembros de la agencia: alta, edición, horarios, ausencias y capacidad. También puedes ver Team Capacity (capacidad del equipo) y Team Pulse si tu agencia tiene esas opciones.",
+        "featuresTitle": "Funcionalidades",
+        "listTitle": "Listado de empleados",
+        "listDesc": "Nombre, rol, avatar y datos de contacto. Busca y filtra rápidamente.",
+        "schedulesTitle": "Horarios personalizados",
+        "schedulesDesc": "Configura horas laborables por día (lunes a domingo) para calcular capacidad real.",
+        "absencesTitle": "Ausencias y vacaciones",
+        "absencesDesc": "Fechas de inicio y fin. El planificador descuenta capacidad automáticamente.",
+        "capacityTitle": "Capacidad",
+        "capacityDesc": "Capacidad mensual y semanal derivada del horario y las ausencias registradas.",
+        "createTitle": "Alta de empleados",
+        "createStep1Title": "Crear empleado",
+        "createStep1Desc": "Rellena nombre, email, rol y horario laboral.",
+        "createStep2Title": "Crear usuario de acceso",
+        "createStep2Desc": "Se genera automáticamente el usuario para que pueda entrar a la plataforma.",
+        "createStep3Title": "Asignar permisos",
+        "createStep3Desc": "Los permisos se heredan del rol asignado (administrador, manager, empleado, etc.).",
+        "tip": "Si un empleado tiene vacaciones la próxima semana, el sistema ya lo considera y no permite asignarle tareas en ese periodo."
+      },
+      "deadlines": {
+        "introTitle": "Qué son los Deadlines",
+        "introBody": "Los Deadlines definen los objetivos de horas por mes, por proyecto y por empleado. Son la referencia para comparar lo que debía hacerse frente a lo planificado y lo computado.",
+        "introExample": "Tu proyecto \"SEO Mensual\" tiene 35h contratadas. En Deadlines repartes: 16h para Ana, 12h para Pedro y 7h para ti. El sistema sabe cuánto le toca a cada uno.",
+        "featuresTitle": "Funcionalidades",
+        "featuresAssignHoursTitle": "Asignar horas",
+        "featuresAssignHoursDesc": "Distribuye las horas del proyecto entre los miembros del equipo para cada mes.",
+        "featuresAdjustBudgetTitle": "Ajuste de presupuesto",
+        "featuresAdjustBudgetDesc": "Override del budget por proyecto y mes si el cliente cambia las horas contratadas.",
+        "featuresFiltersTitle": "Filtros avanzados",
+        "featuresFiltersDesc": "Filtra por tipo de proyecto, empleado, orden. Oculta proyectos sin asignar.",
+        "featuresQuickEditTitle": "Edición rápida",
+        "featuresQuickEditDesc": "Toca un proyecto para editar horas por persona, notas y visibilidad. En móvil se abre un Sheet.",
+        "relationTitle": "Relación con el Planificador",
+        "relationBody": "Lo que configuras en Deadlines es lo que el Planificador y el Control de planificación de Mi espacio usan para mostrar si vas bien o si te faltan/sobran horas.",
+        "relationWarning": "Si no defines deadlines para un proyecto, no aparecerán alertas de coherencia para ese proyecto en Mi espacio. Los proyectos sin deadline se muestran como \"sin límite\".",
+        "relationTip": "Configura los deadlines al inicio de cada mes para tener alertas precisas durante todo el periodo."
+      },
+      "configuracion": {
+        "introTitle": "Qué incluye Configuración",
+        "introBody": "Configuración agrupa los ajustes de la agencia: roles, permisos, módulos activos e integraciones. En entornos multi‑agencia también existe la gestión de agencias y sus parámetros clave.",
+        "rolesTitle": "Roles y permisos",
+        "rolesFeatureRolesTitle": "Roles",
+        "rolesFeatureRolesDesc": "Cada rol tiene un conjunto de permisos: acceso al planificador, edición de tareas, visibilidad de informes, gestión de equipo y más.",
+        "rolesFeaturePermsTitle": "Permisos granulares",
+        "rolesFeaturePermsDesc": "Más de 18 flags para controlar con precisión qué puede hacer cada perfil dentro de la plataforma.",
+        "rolesExample": "Si cambias el permiso \"can_edit_tasks\" en el rol \"Empleado\", automáticamente todos los empleados con ese rol pierden (o ganan) esa capacidad.",
+        "modulesTitle": "Módulos",
+        "modulesIntro": "Puedes activar o desactivar módulos individualmente según las necesidades de la agencia.",
+        "modulesDeadlinesLabel": "Deadlines",
+        "modulesDeadlinesValue": "On/Off",
+        "modulesWeeklyLabel": "Weekly",
+        "modulesWeeklyValue": "On/Off",
+        "modulesPpcLabel": "PPC / Ads",
+        "modulesPpcValue": "On/Off",
+        "modulesTip": "Si un módulo está desactivado, el menú y las rutas asociadas desaparecen para todos los usuarios de la agencia.",
+        "agencyTitle": "Configuración de agencia",
+        "agencyBody": "En Agency Settings se configura el nombre de la agencia, zona horaria y otras opciones globales. En entornos multi‑tenant, cada agencia tiene sus propios datos (empleados, proyectos, allocations) completamente aislados por RLS.",
+        "apiTitle": "API e integraciones",
+        "apiBody": "Desde el menú lateral, en \"Configuración → API & Integraciones\", los administradores pueden crear y revocar tokens de acceso para conectar sistemas externos (CRM, ERP, dashboards) con los datos de la agencia. Cada token es un JWT vinculado a la agencia y protegido por políticas RLS.",
+        "apiDocsIntro": "La",
+        "apiDocsLinkText": "documentación pública de la API",
+        "apiDocsIntroSuffix": "incluye:",
+        "apiDocsItem1": "Overview (autenticación, base URL, formatos de respuesta, changelog).",
+        "apiDocsItem2": "Cinco tutoriales paso a paso (primeros pasos, sincronizar equipo, planificación, reportes, ausencias).",
+        "apiDocsItem3": "SDK JavaScript, API REST, filtrado y suscripciones Realtime.",
+        "apiDocsItem4": "Referencia completa de 17 recursos (tablas) con ejemplos de respuesta.",
+        "apiDocsItem5": "Búsqueda rápida (Ctrl+K) y menú lateral fijo para navegar en la documentación.",
+        "apiDocsButton": "Ver documentación API"
+      }
+    }
+  },
+  "static": {
+    "pitch": {
+      "seoTitle": "Presentación Taimbox | ROI y Operaciones para Agencias",
+      "seoDescription": "Descubre cómo Taimbox transforma la rentabilidad de las agencias de servicios mediante el timeboxing y el control presupuestario en tiempo real.",
+      "heroTitle": "Presentación Taimbox"
+    },
+    "privacy": {
+      "seoTitle": "Política de Privacidad | Taimbox",
+      "seoDescription": "Cómo protegemos tus datos en Taimbox. Información sobre RGPD, cookies y seguridad de datos.",
+      "badge": "Protección de datos",
+      "title": "Política de Privacidad",
+      "description": "En Taimbox nos tomamos muy en serio la privacidad de tus datos. Este documento describe qué información recopilamos, cómo la utilizamos y tus derechos como usuario conforme al Reglamento General de Protección de Datos (RGPD) de la Unión Europea.",
+      "lastUpdate": "Última actualización: 2 de marzo de 2026",
+      "sections": {
+        "responsible": {
+          "title": "1. Responsable del Tratamiento",
+          "p1": "El responsable del tratamiento de tus datos personales es <0>Taimbox</0> (en adelante, «Taimbox», «nosotros» o «la Plataforma»).",
+          "p2": "Para cualquier consulta relacionada con la privacidad, puedes contactarnos en: <1>hello@taimbox.com</1>."
+        },
+        "data": {
+          "title": "2. Datos que Recopilamos",
+          "account": "<0>Datos de la Cuenta:</0> Nombre, dirección de correo electrónico y contraseña (almacenada con hash seguro) necesarios para crear tu cuenta y acceder al servicio.",
+          "agency": "<0>Datos de la Agencia:</0> Nombre de la agencia, empleados, proyectos, clientes, asignaciones, horas y configuración operativa que introduces en la plataforma para gestionar tu flujo de trabajo.",
+          "payment": "<0>Datos de Pago:</0> No almacenamos datos de tarjeta de crédito. Toda la información de pago es procesada directamente por <2>Stripe</2> (PCI-DSS Level 1). Solo almacenamos el identificador del cliente de Stripe y el estado de la suscripción.",
+          "integrations": "<0>Datos de Integraciones:</0> Si conectas Google Ads o Meta Ads, almacenamos tokens OAuth2 de solo lectura (cifrados en reposo) para sincronizar métricas de campañas como impresiones, clics, coste y conversiones. Nunca almacenamos tus contraseñas de estas plataformas. Para más información sobre los datos de Google específicamente, consulta la sección 3.",
+          "usage": "<0>Datos de Uso:</0> Registros de acceso, navegación dentro de la aplicación y cookies de análisis (sujetas a tu consentimiento). Ver sección de Cookies."
+        },
+        "google": {
+          "title": "3. Datos de Google API Services (Uso Limitado)",
+          "intro": "Taimbox utiliza las API de Google Ads para proporcionar sus funcionalidades de integración PPC. Esta sección detalla de forma específica cómo tratamos la información recibida a través de estas API, en cumplimiento de la <1>Política de datos del usuario de los servicios API de Google</1>, incluidos los requisitos de uso limitado (<em>Limited Use</em>).",
+          "s31Title": "3.1 Datos de Google que accedemos y almacenamos:",
+          "s31Item1": "Estructura de la cuenta publicitaria: campañas, grupos de anuncios y anuncios (nombres, estados e identificadores).",
+          "s31Item2": "Métricas de rendimiento: impresiones, clics, coste, conversiones y métricas derivadas (CTR, CPC, CPA) agregadas por campaña y periodo.",
+          "s31Item3": "Tokens OAuth2 de actualización (<em>refresh tokens</em>) necesarios para mantener la conexión, almacenados con cifrado en reposo.",
+          "s32Title": "3.2 Cómo utilizamos los datos de Google:",
+          "s32P": "Estos datos se utilizan <0>exclusivamente</0> para mostrar informes de rendimiento de campañas publicitarias dentro del panel de Taimbox, permitiéndote monitorizar el gasto y retorno de inversión (ROI) de tus clientes. No utilizamos estos datos para ningún otro fin más allá de proporcionar y mejorar las funcionalidades de la aplicación directamente visibles para el usuario.",
+          "s33Title": "3.3 No vendemos datos de Google:",
+          "s33P": "En ningún caso vendemos, cedemos ni facilitamos a terceros datos obtenidos a través de las API de Google, ya sea de forma gratuita o por contraprestación económica.",
+          "s34Title": "3.4 Compartición con terceros:",
+          "s34P": "No compartimos, transferimos ni divulgamos datos de Google a terceros, salvo cuando sea estrictamente necesario para la prestación del servicio (por ejemplo, el almacenamiento cifrado en nuestra infraestructura de Supabase/AWS dentro de la UE) o cuando así lo requiera la legislación aplicable mediante orden judicial o gubernamental.",
+          "s35Title": "3.5 Usos prohibidos:",
+          "s35P": "Los datos recibidos de las API de Google <0>nunca</0> se utilizarán para:",
+          "s35Item1": "Publicidad dirigida, segmentada, personalizada o retargeting.",
+          "s35Item2": "Venta a intermediarios de datos (<em>data brokers</em>) o revendedores de información.",
+          "s35Item3": "Determinación de solvencia crediticia o fines de préstamo.",
+          "s35Item4": "Entrenamiento de modelos de inteligencia artificial o aprendizaje automático.",
+          "s35Item5": "Creación de bases de datos independientes o perfiles de usuario.",
+          "s35Item6": "Cualquier otro fin no relacionado directamente con las funcionalidades visibles para el usuario dentro de Taimbox.",
+          "s36Title": "3.6 Protección de los datos de Google:",
+          "s36P": "Los tokens OAuth2 se almacenan con cifrado en reposo en nuestra base de datos. Todas las comunicaciones con las API de Google se realizan a través de HTTPS/TLS 1.2+. El acceso a estos datos está restringido mediante políticas de seguridad a nivel de fila (<em>Row Level Security</em>), garantizando que solo la agencia propietaria puede acceder a su información.",
+          "s37Title": "3.7 Retención y eliminación:",
+          "s37P": "Los datos de Google Ads se conservan mientras la integración esté activa. La Agencia puede desconectar su cuenta de Google Ads en cualquier momento desde los ajustes de la plataforma, lo que provocará la eliminación inmediata de los tokens de acceso y los datos sincronizados. Al cancelar la cuenta de Taimbox, todos los datos de Google se eliminan en cascada como parte del proceso de supresión descrito en la sección 8.",
+          "s38Title": "3.8 Revocación del acceso:",
+          "s38P": "Además de desconectar la integración desde Taimbox, puedes revocar el acceso de Taimbox a tus datos de Google en cualquier momento visitando la página de <1>permisos de tu cuenta de Google</1>."
+        },
+        "purpose": {
+          "title": "4. Finalidad y Base Legal del Tratamiento",
+          "intro": "Tratamos tus datos con las siguientes finalidades y bases legales:",
+          "p1": "<0>Prestación del servicio</0> (ejecución del contrato): Gestionar tu cuenta, procesar pagos, proporcionar las funcionalidades de la plataforma y atender tus solicitudes de soporte.",
+          "p2": "<0>Seguridad y mantenimiento</0> (interés legítimo): Proteger la plataforma frente a accesos no autorizados, detectar fraudes y mantener la estabilidad del servicio.",
+          "p3": "<0>Mejora del producto</0> (interés legítimo): Análisis agregado y anonimizado del uso de la plataforma para mejorar la experiencia de usuario.",
+          "p4": "<0>Cookies analíticas y de marketing</0> (consentimiento): Solo se activan si aceptas cookies no esenciales en el banner de consentimiento."
+        },
+        "cookies": {
+          "title": "5. Cookies",
+          "intro": "Utilizamos cookies para el funcionamiento del servicio y, con tu consentimiento, para análisis y marketing. Puedes gestionar tus preferencias en cualquier momento:",
+          "necessary": "<0>Cookies necesarias:</0> Autenticación, preferencias de sesión y seguridad. No se pueden desactivar.",
+          "analytical": "<0>Cookies analíticas:</0> Google Analytics / GTM para conocer el uso del sitio web. Requieren consentimiento.",
+          "marketing": "<0>Cookies de marketing:</0> Seguimiento para medir la efectividad de campañas. Requieren consentimiento.",
+          "cta": "Abrir preferencias de cookies"
+        },
+        "subprocessors": {
+          "title": "6. Subencargados del Tratamiento",
+          "intro": "Para ofrecer un servicio seguro y escalable, nos apoyamos en los siguientes proveedores (subencargados):",
+          "table": {
+            "vendor": "Proveedor",
+            "function": "Función",
+            "location": "Ubicación",
+            "awsFunction": "Hosting e infraestructura",
+            "supabaseFunction": "Base de datos y autenticación",
+            "stripeFunction": "Procesamiento de pagos",
+            "googleFunction": "Sincronización de campañas (solo lectura)",
+            "metaFunction": "Sincronización de campañas (solo lectura)",
+            "locationFrankfurt": "Frankfurt, UE",
+            "locationUE": "UE (AWS Frankfurt)",
+            "locationStripe": "UE / EE.UU. (PCI-DSS L1)",
+            "locationGlobal": "Global (Cláusulas Contractuales Tipo)"
+          }
+        },
+        "transfers": {
+          "title": "7. Transferencias Internacionales de Datos",
+          "p1": "Alojamos la infraestructura principal de Taimbox en centros de datos de <0>Amazon Web Services en Frankfurt (UE)</0>, garantizando que tus datos permanecen dentro de la Unión Europea.",
+          "p2": "En los casos donde intervienen proveedores con presencia fuera del Espacio Económico Europeo (Stripe, Google, Meta), las transferencias se amparan en <0>Cláusulas Contractuales Tipo (SCC)</0> aprobadas por la Comisión Europea, decisiones de adecuación o mecanismos equivalentes que garantizan un nivel adecuado de protección."
+        },
+        "retention": {
+          "title": "8. Plazos de Conservación",
+          "p1": "Conservamos tus datos personales mientras mantengas una cuenta activa en Taimbox y sean necesarios para prestarte el servicio.",
+          "p2": "Al solicitar la cancelación definitiva de tu cuenta, ejecutamos procesos de eliminación en cascada que purgan de forma permanente todo el histórico de tu agencia (clientes, proyectos, asignaciones, integraciones, cronómetros, tokens). Las copias de seguridad automatizadas se eliminan en un plazo máximo de <0>30 días naturales</0> desde la cancelación.",
+          "p3": "Podemos conservar datos anonimizados o agregados con fines estadísticos de forma indefinida, siempre que no permitan identificar a ningún usuario."
+        },
+        "rights": {
+          "title": "9. Tus Derechos",
+          "intro": "Conforme al RGPD, tienes los siguientes derechos sobre tus datos personales:",
+          "access": "Acceso",
+          "accessDesc": "Solicitar una copia de los datos personales que tratamos sobre ti.",
+          "rectification": "Rectificación",
+          "rectificationDesc": "Corregir datos inexactos o incompletos.",
+          "erasure": "Supresión",
+          "erasureDesc": "Solicitar la eliminación de tus datos (derecho al olvido).",
+          "portability": "Portabilidad",
+          "portabilityDesc": "Recibir tus datos en un formato estructurado y legible por máquina (JSON/CSV vía nuestra API).",
+          "objection": "Oposición",
+          "objectionDesc": "Oponerte al tratamiento basado en interés legítimo.",
+          "limitation": "Limitación",
+          "limitationDesc": "Solicitar la restricción del tratamiento en determinadas circunstancias.",
+          "cta": "Para ejercer cualquiera de estos derechos, envía un correo a <1>hello@taimbox.com</1> indicando tu nombre, correo de la cuenta y el derecho que deseas ejercer."
+        },
+        "contact": {
+          "title": "10. Contacto y Reclamaciones",
+          "p1": "Si tienes dudas sobre el tratamiento de tus datos o deseas presentar una reclamación, puedes contactarnos en <1>hello@taimbox.com</1>.",
+          "p2": "Asimismo, tienes derecho a presentar una reclamación ante la autoridad de protección de datos competente. En España, la autoridad es la <1>Agencia Española de Protección de Datos (AEPD)</1>."
+        },
+        "modifications": {
+          "title": "11. Modificaciones de esta Política",
+          "p1": "Nos reservamos el derecho de actualizar esta Política de Privacidad para reflejar cambios en nuestras prácticas o en la legislación aplicable. En caso de cambios sustanciales, te notificaremos a través de la plataforma o por correo electrónico.",
+          "p2": "Te recomendamos revisar periódicamente esta página. La fecha de última actualización figura al inicio de este documento."
+        },
+        "links": {
+          "terms": "Condiciones del Servicio",
+          "security": "Seguridad",
+          "cookies": "Preferencias de Cookies"
+        }
+      }
+    },
+    "terms": {
+      "seoTitle": "Condiciones del Servicio | Taimbox",
+      "seoDescription": "Términos y condiciones legales para el uso de Taimbox. Derechos, responsabilidades y marco legal para agencias.",
+      "badge": "Marco Legal",
+      "title": "Condiciones del Servicio",
+      "description": "Este documento establece las condiciones vinculantes que rigen el uso de Taimbox por parte de agencias y profesionales. Al crear una cuenta y acceder a nuestra plataforma, aceptas estos términos en su totalidad.",
+      "lastUpdate": "Última actualización: 2 de marzo de 2026",
+      "sections": {
+        "definitions": {
+          "title": "1. Definiciones",
+          "intro": "A los efectos de estas Condiciones del Servicio:",
+          "service": "<0>\"Taimbox\" o el \"Servicio\":</0> La plataforma SaaS de gestión operativa y financiera para agencias accesible a través de app.taimbox.com.",
+          "agency": "<0>\"Agencia\" o \"Cliente\":</0> La entidad legal o profesional autónomo que contrata el Servicio.",
+          "user": "<0>\"Usuario\":</0> Cualquier empleado, manager o administrador con acceso a la cuenta de la Agencia.",
+          "data": "<0>\"Datos de la Agencia\":</0> La información operativa introducida o generada mediante el Servicio por parte de los Usuarios."
+        },
+        "acceptance": {
+          "title": "2. Aceptación y Creación de Cuenta",
+          "p1": "Para utilizar el Servicio, el representante de la Agencia debe crear una cuenta proporcionando información veraz, precisa y actualizada. La persona que registra la cuenta declara poseer <0>capacidad de representación legal</0> para vincular a la Agencia a estos términos.",
+          "p2": "Al completar el registro, la Agencia acepta estas Condiciones del Servicio y nuestra Política de Privacidad. La Agencia es responsable de mantener la confidencialidad de las credenciales de acceso y de todas las acciones que ocurran bajo las cuentas de sus Usuarios."
+        },
+        "billing": {
+          "title": "3. Suscripciones y Pagos",
+          "plans": "<0>Planes y Tarifas:</0> El Servicio se ofrece mediante planes de suscripción (ej. Starter, Pro, Business). Las funcionalidades y límites (ej. número máximo de empleados) de cada plan se detallan en la página de precios.",
+          "process": "<0>Proceso de Pago:</0> Los pagos se procesan a través de Stripe y se renuevan automáticamente al final de cada ciclo de facturación (mensual o anual) salvo cancelación previa. Si un pago falla, Taimbox suspenderá temporalmente el acceso hasta que se actualice el método de pago.",
+          "trial": "<0>Período de Prueba (Trial):</0> Los nuevos registros pueden incluir un período de prueba gratuito de 14 días. Solo se permite un período de prueba por Agencia. Al finalizar la prueba, si no se suscribe un plan de pago, la cuenta puede degradarse automáticamente a la versión gratuita (Plan Starter) con menores prestaciones.",
+          "mod": "<0>Modificación del Plan:</0> La Agencia puede ampliar (upgrade) o reducir (downgrade) su plan en cualquier momento desde los ajustes de la plataforma. La mejora se prorrateará y facturará inmediatamente, mientras que la reducción se aplicará en el siguiente ciclo."
+        },
+        "acceptableUse": {
+          "title": "4. Uso Aceptable del Servicio",
+          "intro": "La Agencia y sus Usuarios se comprometen a utilizar Taimbox de forma lícita y de acuerdo con estos términos, comprometiéndose específicamente a:",
+          "forbidden1": "No utilizar el Servicio para procesar ni almacenar datos ilícitos o de naturaleza abusiva.",
+          "forbidden2": "No comprometer la seguridad del Servicio mediante técnicas como hacking, introducción de malware, inyección SQL o similares.",
+          "forbidden3": "No someter la plataforma a cargas de tráfico abusivas ni utilizar herramientas automatizados de scraping (salvo autorización explícita a través de nuestra API documentada).",
+          "forbidden4": "No aplicar ingeniería inversa al código de la plataforma.",
+          "outro": "Taimbox se reserva el derecho de suspender o cancelar la cuenta de cualquier Agencia que incumpla estas normas de uso aceptable."
+        },
+        "externalPlatforms": {
+          "title": "5. Acceso a Plataformas Externas (Ads)",
+          "p1": "Para el módulo de control de rentabilidad e integraciones PPC (ej. Monitor PPC), Taimbox solicitará permisos de lectura a tus cuentas de Google Ads o Meta Ads.",
+          "p2": "<0>Rol de solo lectura:</0> Taimbox utiliza tokens OAuth2 restrictivos y limitados ('readonly scopes') y no puede ni intentará modificar, pausar ni alterar las campañas de la Agencia. En ningún caso Taimbox asumirá responsabilidad por el rendimiento publicitario, gasto o funcionamiento interno de estas plataformas de terceros.",
+          "p3": "<0>Uso de APIs de Google (Limited Use):</0> El uso y la transferencia por parte de Taimbox a cualquier otra aplicación de la información recibida de las API de Google se ajustarán a la <1>Política de datos del usuario de los servicios API de Google</1>, incluidos los requisitos de Uso Limitado (Limited Use)."
+        },
+        "property": {
+          "title": "6. Propiedad Intelectual",
+          "software": "<0>Software y Marca:</0> Todo el código fuente, diseño, logotipos, interfaces e infraestructura relativas a Taimbox son propiedad exclusiva nuestra y están protegidos por leyes de propiedad intelectual.",
+          "data": "<0>Datos de la Agencia:</0> La Agencia es la única propietaria y responsable de todos los \"Datos de la Agencia\". Taimbox no adquiere ningún derecho sobre ellos, más allá del permiso necesario para almacenarlos y procesarlos con el fin de prestar el Servicio de acuerdo con nuestra Política de Privacidad."
+        },
+        "privacySection": {
+          "title": "7. Privacidad y Protección de Datos",
+          "p1": "Nuestra base de datos aplica separación nativa (Row Level Security) para asegurar que los datos de una Agencia sean técnica y criptográficamente invisibles para cualquier otra.",
+          "p2": "El tratamiento de datos personales vinculado a la prestación del Servicio se realiza conforme a nuestra <1>Política de Privacidad</1>. Taimbox actúa como <0>Encargado del Tratamiento</0> respecto a los datos alojados por la Agencia, y la propia Agencia actúa como Responsable del Tratamiento frente a sus clientes y empleados."
+        },
+        "availability": {
+          "title": "8. Disponibilidad y Mantenimiento (SLA)",
+          "p1": "Hacemos el mayor esfuerzo para que el Servicio esté disponible ininterrumpidamente, estableciendo el objetivo de un 99.9% de uptime (tiempo de actividad).",
+          "p2": "No obstante, nos reservamos el derecho de interrumpir el servicio temporalmente por tareas de mantenimiento programado (idealmente fuera de horario laboral de Europa) o de emergencia. No garantizamos que el uso del Servicio esté libre de interrupciones, retrasos o imperfecciones bajo cualquier circunstancia y red."
+        },
+        "liability": {
+          "title": "9. Limitación de Responsabilidad",
+          "p1": "Taimbox se proporciona \"tal cual\" (as is) y \"según disponibilidad\". Excluimos expresamente, en la medida en que la ley aplicable lo permita, toda garantía, ya sea expresa o implícita.",
+          "p2": "Bajo ninguna circunstancia Taimbox será responsable ante la Agencia o la empresa de la Agencia por: lucros cesantes, pérdida de negocios, alteración o corrupción de datos financieros reportados, ni por daños indirectos, incidentales o derivados en el marco del uso del Servicio.",
+          "p3": "En cualquier caso, de probarse responsabilidad por parte de Taimbox, nuestra responsabilidad total acumulada no superará nunca <0>la suma de las cuotas abonadas por la Agencia durante los doce (12) meses anteriores</0> al evento que motive la reclamación."
+        },
+        "termination": {
+          "title": "10. Cancelación y Supresión de Datos",
+          "agency": "<0>Por parte de la Agencia:</0> La Agencia puede cancelar su suscripción en cualquier momento desde la plataforma mediante el Customer Portal de Stripe. Al cancelar, el acceso a funciones premium continuará hasta el final del periodo de facturación actual.",
+          "taimbox": "<0>Por parte de Taimbox:</0> Nos reservamos el derecho de suspender temporal o permanentemente el acceso por impago reiterado de cuotas (superior a 14 días), violación sustancial de estos Términos o por requerimiento de orden gubernamental.",
+          "deletion": "<0>Supresión:</0> Al confirmar la cancelación definitiva y cierre de la cuenta (no solo de la suscripción de pago), Taimbox aplicará borrados en cascada para purgar todo el histórico operativo de la Agencia. Se podrá disponer de un margen de hasta 30 días mientras los backups de seguridad terminan su rotación estándar para desaparecer del todo."
+        },
+        "modificationsSection": {
+          "title": "11. Modificaciones y Ley Aplicable",
+          "changes": "<0>Cambios:</0> Podemos modificar estos Términos del Servicio. Cualquier cambio material será notificado mediante anuncio en la plataforma o correo electrónico, concediendo un derecho de cancelación sin penalización si la Agencia no estuviera de acuerdo.",
+          "law": "<0>Ley Aplicable y Jurisdicción:</0> Estas Condiciones del Servicio están regidas bajo la legislación de España. Cualquier disputa quedará sometida a la jurisdicción exclusiva de los tribunales de la ciudad de residencia comercial de nuestra empresa matriz u oficinas principales autorizadas."
+        },
+        "links": {
+          "privacy": "Política de Privacidad",
+          "security": "Seguridad de Datos",
+          "support": "Contactar Soporte Legal"
+        }
+      }
+    },
+    "apiDocs": {
+      "seoTitle": "Documentación API | Taimbox",
+      "seoDescription": "Documentación de la API de integración de Taimbox. Conecta tus herramientas con datos de planificación, equipo y proyectos."
+    }
+  },
+  "commercial": {
+    "employeeDashboard": {
+      "seoTitle": "Panel del Empleado y Cronómetro de Tareas | Taimbox",
+      "seoDescription": "Empodera a tu equipo con un panel diseñado para la ejecución. Cronómetro integrado y visualización de tareas para empresas eficientes y productivas.",
+      "jsonName": "Dashboard del Empleado — Taimbox",
+      "jsonDescription": "Empodera a tu equipo con un panel diseñado para la ejecución. Cronómetro integrado y visualización de tareas para empresas eficientes y productivas.",
+      "page": {
+        "hero": {
+          "badge": "Para empleados y equipos",
+          "title1": "Tu día, tus dependencias,",
+          "titleHighlight": "sin ruido",
+          "subtitle": "Cada empleado tiene su propio centro de control: sabe qué hacer hoy, cuánto tiempo le queda, cómo va su planificación y qué hacen sus compañeros. Todo sin preguntar a nadie.",
+          "pills": [
+            "Calendario personal",
+            "Vista de dependencias",
+            "Métricas de fiabilidad",
+            "Weekly feedback"
+          ]
+        },
+        "mockCalendar": {
+          "month": "Febrero 2026",
+          "today": "Hoy",
+          "gridHeader": "Calendario",
+          "calloutBefore": "Las ",
+          "calloutStrong": "semanas partidas",
+          "calloutAfter": " entre meses se gestionan automáticamente. Los costes se dividen al céntimo."
+        },
+        "mockPriority": {
+          "title": "Dependencias del día",
+          "peersLabel": "Compañeros en mis proyectos",
+          "items": [
+            {
+              "name": "Diseñar Home — Acme Corp",
+              "hours": "4h",
+              "deadline": "Hoy"
+            },
+            {
+              "name": "Landing SEO — StartupX",
+              "hours": "3h",
+              "deadline": "Mañana"
+            },
+            {
+              "name": "Revisión copy — TechCo",
+              "hours": "2h",
+              "deadline": "Viernes"
+            }
+          ]
+        },
+        "mockProject": {
+          "title": "Mis proyectos",
+          "activeSuffix": " activos",
+          "tasksSuffix": " tareas",
+          "addTasks": "Añadir tareas",
+          "internal": "Interna",
+          "projects": [
+            {
+              "client": "Acme Corp",
+              "name": "Rediseño Web",
+              "tasks": 5
+            },
+            {
+              "client": "StartupX",
+              "name": "SEO + Content",
+              "tasks": 3
+            },
+            {
+              "client": "TechCo",
+              "name": "Campaña Q1",
+              "tasks": 4
+            }
+          ]
+        },
+        "mockCollab": {
+          "title": "Compañeros",
+          "sharedProjects": " proyectos en común",
+          "teammates": [
+            {
+              "name": "Julia López",
+              "role": "Diseñadora",
+              "projects": 2,
+              "avatar": "JL"
+            },
+            {
+              "name": "Carlos Ruiz",
+              "role": "Developer",
+              "projects": 1,
+              "avatar": "CR"
+            },
+            {
+              "name": "Paula Sanz",
+              "role": "Copywriter",
+              "projects": 3,
+              "avatar": "PS"
+            }
+          ]
+        },
+        "mockMetrics": {
+          "title": "Mis métricas",
+          "plannedHours": "Horas planificadas",
+          "ofAvailable": "de 40h disponibles",
+          "tasksDone": "Tareas completadas",
+          "ofAssigned": "de 16 asignadas",
+          "reliability": "Índice de fiabilidad",
+          "reliabilitySub": "Basado en tus últimas 8 semanas de planificación vs ejecución",
+          "planningControl": "Control de planificación",
+          "ok": "OK",
+          "noInconsistency": "Sin inconsistencias detectadas este mes"
+        },
+        "mockWeekly": {
+          "title": "Confirmación Weekly",
+          "confirmBtn": "Confirmar Weekly",
+          "exportCrm": "Exportar a CRM",
+          "goals": "Objetivos",
+          "absences": "Ausencias",
+          "rows": [
+            {
+              "name": "Maquetación — Acme",
+              "action": "Mantenida"
+            },
+            {
+              "name": "Revisión SEO — StartupX",
+              "action": "Movida a S3"
+            },
+            {
+              "name": "Corrección bugs — TechCo",
+              "action": "Completada"
+            }
+          ]
+        },
+        "s1": {
+          "kicker": "Planificación visual",
+          "h2": "Tu semana en un vistazo",
+          "p": "Un calendario semanal que muestra tus bloques de tiempo asignados proyecto a proyecto. Ves tu carga mensual, las horas planificadas vs capacidad, y alertas instantáneas cuando estás sobrecargado.",
+          "bullets": [
+            "Navegación por meses con un clic",
+            "Semanas partidas gestionadas automáticamente",
+            "Carga en tiempo real con indicadores de color"
+          ]
+        },
+        "s2": {
+          "kicker": "Inteligencia contextual",
+          "h2": "Dependencias claras, sin adivinar",
+          "p": "El sistema analiza tus tareas automáticamente: deadlines, dependencias, carga acumulada. Te presenta una vista ordenada por lo que bloquea y por urgencia real, no por «quién gritó más fuerte».",
+          "bullets": [
+            "Detección automática de urgencia por deadline",
+            "Vista de compañeros en tus mismos proyectos",
+            "Contexto de presupuesto consumido del proyecto"
+          ]
+        },
+        "s3": {
+          "kicker": "Gestión de tareas",
+          "h2": "Tus proyectos, tus tareas, tu control",
+          "p": "Visualiza todos los proyectos donde participas con el progreso de presupuesto en tiempo real. Añade tareas en batch, registra gestiones internas y ve el impacto de cada hora antes de asignarla.",
+          "tiles": [
+            {
+              "label": "Añadir tareas",
+              "desc": "En batch, con dependencias"
+            },
+            {
+              "label": "Tareas internas",
+              "desc": "Reuniones y gestiones"
+            },
+            {
+              "label": "Presupuesto visual",
+              "desc": "Barras de consumo en vivo"
+            },
+            {
+              "label": "Impacto previo",
+              "desc": "Simulación antes de guardar"
+            },
+            {
+              "label": "Cronómetro por tarea",
+              "desc": "Registra horas reales desde Mi Día"
+            }
+          ],
+          "timesNoteBefore": "El total del día se muestra en el sidebar y en la página ",
+          "timesStrong": "Tiempos",
+          "timesNoteAfter": " (menú Equipo)."
+        },
+        "s4": {
+          "kicker": "Feedback continuo",
+          "h2": "Weekly: cierra la semana en 2 minutos",
+          "p": "Cada semana, el sistema te presenta las tareas pendientes para que confirmes: ¿la mantuviste? ¿la moviste? ¿la completaste? Sin formularios largos, sin interrupciones. Solo decisiones rápidas.",
+          "quoteBefore": "El empleado ",
+          "quoteStrong": "nunca pierde el contexto",
+          "quoteAfter": ": las tareas no revisadas se destacan con un indicador pulsante, y puede exportar su trabajo directamente al CRM de la agencia."
+        },
+        "s5": {
+          "kicker": "Visibilidad de equipo",
+          "h2": "Conoce a tus compañeros de proyecto",
+          "p": "Sin salir de tu dashboard, ves quién más está trabajando en tus proyectos, cuál es su carga actual y cuántos proyectos compartís. Así puedes coordinarte sin necesidad de una reunión más.",
+          "bullets": [
+            "Carga actual de cada compañero",
+            "Proyectos compartidos de un vistazo",
+            "Indicadores de saturación en tiempo real"
+          ]
+        },
+        "s6": {
+          "kicker": "Métricas personales",
+          "h2": "Tu rendimiento, medido con datos reales",
+          "p": "El índice de fiabilidad mide cuánto se ajusta tu ejecución real a la planificación. El balance mensual muestra tu carga acumulada. Y el control de coherencia detecta automáticamente inconsistencias antes de que lleguen al reporte.",
+          "bullets": [
+            "Índice de fiabilidad basado en 8 semanas",
+            "Balance mensual: planificado vs capacidad",
+            "Control de planificación automático"
+          ]
+        },
+        "cta": {
+          "h2": "Dale a tu equipo la herramienta que merece",
+          "p": "Un dashboard diseñado para que cada persona sea autónoma, productiva y consciente del impacto financiero de su trabajo. Sin micromanagement, sin ruido.",
+          "stats": [
+            {
+              "num": "5",
+              "label": "vistas integradas"
+            },
+            {
+              "num": "< 2min",
+              "label": "para cerrar la semana"
+            },
+            {
+              "num": "94%",
+              "label": "fiabilidad media"
+            }
+          ],
+          "btn": "Probar gratis",
+          "sub": "Sin tarjeta de crédito. Tu equipo tendrá su panel en 2 minutos.",
+          "guideLink": "📖 Ver guía técnica del espacio del empleado"
+        }
+      }
+    },
+    "planner": {
+      "seoTitle": "Planificador de Recursos y Capacidad para Empresas | Taimbox",
+      "seoDescription": "Gestiona la carga de trabajo de tu equipo de forma visual. Evita cuellos de botella y optimiza la capacidad de tu empresa con planificación inteligente.",
+      "jsonName": "Planificador de Recursos — Taimbox",
+      "jsonDescription": "Gestiona la carga de trabajo de tu equipo de forma visual. Evita cuellos de botella y optimiza la capacidad de tu empresa con planificación inteligente.",
+      "page": {
+        "hero": {
+          "badge": "Para directores y managers",
+          "title1": "Cada hora cuenta.",
+          "titleHighlight": "Visualiza todas.",
+          "subtitle": "El planificador central de Taimbox te muestra quién hace qué, cuándo y con qué impacto financiero. Asigna tareas, detecta sobrecargas y gestiona dependencias desde una sola vista.",
+          "pills": [
+            "Grid visual",
+            "Reasignación ágil en 1 clic",
+            "Impacto antes de guardar",
+            "Dependencias",
+            "Semanas partidas",
+            "Indicadores de sobrecarga"
+          ]
+        },
+        "mockGrid": {
+          "title": "Planificador — Febrero 2026",
+          "employeesBadge": "4 empleados",
+          "headerEmployee": "Empleado",
+          "weekDates": [
+            "3-9 feb",
+            "10-16 feb",
+            "17-23 feb",
+            "24-28 feb",
+            "1-7 mar"
+          ],
+          "alertBefore": "Julia está al ",
+          "alertStrong": "100%",
+          "alertAfter": " en S1 y S2. Reasignación ágil en 1 clic o usa el asistente para que te sugiera a quién pasarle la carga."
+        },
+        "mockAllocation": {
+          "title": "Asignar tarea",
+          "clientProject": "Acme Corp — Rediseño Web",
+          "taskName": "Maquetación página de producto",
+          "hoursBadge": "6h",
+          "deadlineLabel": "Deadline: 14 feb",
+          "assignee": "María A.",
+          "impactTitle": "Impacto antes de guardar",
+          "budgetLabel": "Presupuesto proyecto",
+          "budgetFrom": "32h ",
+          "budgetArrow": "→ 38h",
+          "loadLabel": "Carga María S2",
+          "loadFrom": "6h ",
+          "loadArrow": "→ 12h",
+          "confirmBtn": "Confirmar asignación",
+          "cancelBtn": "Cancelar"
+        },
+        "mockDeps": {
+          "title": "Dependencias",
+          "t1Title": "Diseño Home",
+          "t1Sub": "María A. — Completada ✓",
+          "t2Title": "Maquetación front",
+          "t2Sub": "Carlos R. — En progreso",
+          "t2Badge": "En curso",
+          "t3Title": "Testing QA",
+          "t3Sub": "Bloqueada — esperando maquetación",
+          "insightBefore": "Identifica al instante qué tareas impiden avanzar. Si la maquetación se retrasa, ves que ",
+          "insightStrong": "Testing QA",
+          "insightAfter": " está bloqueada."
+        },
+        "mockSplit": {
+          "title": "Costes entre meses",
+          "monthJan": "Enero",
+          "monthFeb": "Febrero",
+          "janRange": "Lun 27 – Mié 29",
+          "febRange": "Jue 30 – Vie 31",
+          "days3": "3 días",
+          "days2": "2 días",
+          "pct60": "60%",
+          "pct40": "40%",
+          "taskLine": "Tarea: Maquetación Home — 10h asignadas",
+          "toJan": "6h → Enero",
+          "toFeb": "4h → Febrero",
+          "foot": "✓ Coste dividido automáticamente al céntimo"
+        },
+        "s1": {
+          "kicker": "Vista principal",
+          "h2": "Tu equipo en una cuadrícula",
+          "p": "Cada fila es un empleado. Cada columna es una semana. Las barras de color muestran la carga en tiempo real: verde, ámbar o rojo. Un vistazo basta para saber quién está disponible y quién no.",
+          "bullets": [
+            "Vista global de todo el equipo",
+            "Navegación por meses con un clic",
+            "Indicadores visuales de sobrecarga al instante"
+          ]
+        },
+        "s2": {
+          "kicker": "Asignación con contexto",
+          "h2": "Sabes lo que va a pasar antes de que pase",
+          "p": "Antes de guardar una asignación, ves exactamente el impacto. Además, el asistente inteligente de reasignación detecta quién está saturado y te sugiere con nombre y apellido a quién pasarle la carga, cruzando automáticamente los proyectos que tienen en común. En Deadlines tienes las mismas sugerencias con condicionantes: quién puede ceder, límites de carga para quien recibe y resumen de impacto antes de aplicar. Decisiones informadas en segundos.",
+          "tiles": [
+            {
+              "label": "Presupuesto",
+              "desc": "Consumo del proyecto en vivo"
+            },
+            {
+              "label": "Carga",
+              "desc": "Horas del empleado esa semana"
+            },
+            {
+              "label": "Conflictos",
+              "desc": "Indicadores de sobrecarga y bloqueos"
+            },
+            {
+              "label": "Deadlines",
+              "desc": "Fechas límite afectadas"
+            }
+          ]
+        },
+        "s3": {
+          "kicker": "Gestión de bloqueos",
+          "h2": "Control estricto de bloqueos",
+          "p": "Identifica al instante qué tareas impiden avanzar a tu equipo. Gestión de dependencias integrada: Taimbox te avisa si una tarea está bloqueando a otra, para que actúes a tiempo.",
+          "bullets": [
+            "Gestión de dependencias integrada",
+            "Identifica qué tareas impiden avanzar",
+            "Control estricto de bloqueos"
+          ]
+        },
+        "s4": {
+          "kicker": "Gestión financiera",
+          "h2": "Semanas partidas, costes perfectos",
+          "p": "Cuando una semana cae entre dos meses, el sistema divide automáticamente las horas y los costes proporcionalmente. Cada mes refleja exactamente lo que corresponde, sin ajustes manuales.",
+          "quote": "El coste por hora de cada empleado se aplica de forma precisa. Si un empleado trabaja 3 días en enero y 2 en febrero, el coste se divide ",
+          "quoteStrong": "al céntimo",
+          "quoteAfter": "."
+        },
+        "s5": {
+          "kicker": "Visión 360°",
+          "h2": "Un planificador, múltiples dimensiones",
+          "p": "No es solo un calendario. Es la única fuente de verdad de tu agencia: tiempo, dinero, personas y proyectos, todo conectado.",
+          "p2Before": "En vista semanal, mensual y en Mi Día puedes usar el ",
+          "p2Strong": "cronómetro por tarea",
+          "p2After": " para registrar las horas reales; la página Tiempos (Equipo) muestra en vivo quién está trabajando en qué.",
+          "cards": [
+            {
+              "label": "Multi-proyecto",
+              "desc": "Visualiza todos los proyectos simultáneamente."
+            },
+            {
+              "label": "Multi-empleado",
+              "desc": "Compara cargas cruzando empleados."
+            },
+            {
+              "label": "Multi-mes",
+              "desc": "Navega entre meses sin perder contexto."
+            },
+            {
+              "label": "Multi-permiso",
+              "desc": "Cada rol ve solo lo que le corresponde."
+            }
+          ]
+        },
+        "cta": {
+          "h2": "Planifica con datos, no con intuición",
+          "p": "El planificador de Taimbox convierte las suposiciones en certezas. Ve el impacto de cada decisión antes de tomarla.",
+          "stats": [
+            {
+              "num": "100%",
+              "label": "visibilidad de carga"
+            },
+            {
+              "num": "< 30s",
+              "label": "para detectar sobrecargas (indicadores visuales)"
+            },
+            {
+              "num": "0",
+              "label": "sorpresas de presupuesto"
+            }
+          ],
+          "btn": "Probar gratis",
+          "sub": "Sin tarjeta de crédito. Tu planificador estará listo en 2 minutos.",
+          "guideLink": "📖 Ver guía técnica detallada del planificador"
+        }
+      }
+    },
+    "team": {
+      "seoTitle": "Gestión de Equipos y Colaboración Empresarial | Taimbox",
+      "seoDescription": "La herramienta definitiva para coordinar equipos en empresas de servicios. Control de ausencias, roles y asignación de tareas en una plataforma en la nube.",
+      "jsonName": "Gestión de Equipos — Taimbox",
+      "jsonDescription": "La herramienta definitiva para coordinar equipos en empresas de servicios. Control de ausencias, roles y asignación de tareas en una plataforma en la nube.",
+      "page": {
+        "mockProfiles": {
+          "title": "Perfiles del equipo",
+          "employees": [
+            {
+              "name": "María A.",
+              "role": "Diseñadora",
+              "initials": "MA",
+              "hours": "40h/sem",
+              "schedule": "L-V 9:00-18:00"
+            },
+            {
+              "name": "Carlos R.",
+              "role": "Developer",
+              "initials": "CR",
+              "hours": "35h/sem",
+              "schedule": "L-V 8:00-15:00"
+            },
+            {
+              "name": "Julia L.",
+              "role": "Copywriter",
+              "initials": "JL",
+              "hours": "40h/sem",
+              "schedule": "L-J 9:00-18:30"
+            }
+          ],
+          "scheduleTypes": [
+            {
+              "label": "Mañana",
+              "value": "2"
+            },
+            {
+              "label": "Partido",
+              "value": "1"
+            },
+            {
+              "label": "Intensiva",
+              "value": "0"
+            }
+          ]
+        },
+        "mockAbsences": {
+          "title": "Ausencias — Febrero 2026",
+          "rows": [
+            {
+              "initials": "MA",
+              "name": "María A.",
+              "detail": "Vacaciones • 17-21 feb",
+              "badge": "5 días",
+              "tone": "amber"
+            },
+            {
+              "initials": "CR",
+              "name": "Carlos R.",
+              "detail": "Baja médica • 3-7 feb",
+              "badge": "5 días",
+              "tone": "red"
+            },
+            {
+              "initials": "PS",
+              "name": "Pedro S.",
+              "detail": "Asuntos propios • 14 feb",
+              "badge": "1 día",
+              "tone": "indigo"
+            }
+          ],
+          "impactTitle": "Impacto en capacidad",
+          "impactPct": "-28%",
+          "impactFoot": "Capacidad reducida de 800h a 576h este mes"
+        },
+        "mockCapacity": {
+          "title": "Capacidad mensual",
+          "badgeMonth": "Feb 2026",
+          "team": [
+            {
+              "name": "María A.",
+              "available": 32,
+              "total": 40,
+              "tone": "emerald"
+            },
+            {
+              "name": "Carlos R.",
+              "available": 35,
+              "total": 35,
+              "tone": "emerald"
+            },
+            {
+              "name": "Julia L.",
+              "available": 38,
+              "total": 40,
+              "tone": "amber"
+            },
+            {
+              "name": "Pedro S.",
+              "available": 10,
+              "total": 40,
+              "tone": "red"
+            }
+          ],
+          "statAvailable": {
+            "num": "115h",
+            "label": "Disponibles"
+          },
+          "statTotal": {
+            "num": "155h",
+            "label": "Capacidad total"
+          }
+        },
+        "mockTiempos": {
+          "title": "Tiempos en vivo",
+          "empty": "—",
+          "rows": [
+            {
+              "name": "María A.",
+              "task": "Diseño landing",
+              "client": "Acme",
+              "time": "1h 23m",
+              "active": true
+            },
+            {
+              "name": "Carlos R.",
+              "task": "Revisión SEO",
+              "client": "StartupX",
+              "time": "0h 45m",
+              "active": true
+            },
+            {
+              "name": "Julia L.",
+              "task": "",
+              "client": "",
+              "time": "",
+              "active": false
+            },
+            {
+              "name": "Pedro S.",
+              "task": "Bugs TechCo",
+              "client": "TechCo",
+              "time": "2h 10m",
+              "active": true
+            }
+          ],
+          "footerLabel": "Total hoy (equipo)",
+          "footerTotal": "4h 18m"
+        },
+        "mockPulse": {
+          "title": "Team Pulse",
+          "loadPct": "72%",
+          "loadLabel": "Carga media",
+          "reliabilityPct": "91%",
+          "reliabilityLabel": "Fiabilidad equipo",
+          "insights": [
+            "3 de 4 empleados dentro de rango óptimo",
+            "Pedro S. al 25% — riesgo de infrautilización",
+            "Tendencia positiva vs mes anterior (+5%)"
+          ]
+        },
+        "hero": {
+          "badge": "Para RRHH y managers",
+          "title1": "Tu equipo, visible",
+          "titleHighlight": "y protegido",
+          "subtitle": "Horarios personalizados, ausencias, capacidad mensual, vista de tiempos en vivo y métricas de salud del equipo. Todo lo que necesitas para entender y cuidar a tu equipo en un solo lugar.",
+          "pills": [
+            "Perfiles individuales",
+            "Gestión de ausencias",
+            "Capacidad mensual",
+            "Tiempos en vivo",
+            "Team Pulse",
+            "Horarios flexibles"
+          ]
+        },
+        "s1": {
+          "kicker": "Configuración individual",
+          "h2": "Cada persona es única. Su horario también.",
+          "p": "Configura horarios personalizados para cada empleado: jornada completa, intensiva, parcial o lo que necesites. El sistema calcula automáticamente las horas disponibles por semana y mes.",
+          "bullets": [
+            "Horarios personalizados por empleado",
+            "Festivos y días no laborables",
+            "Coste por hora y departamento"
+          ]
+        },
+        "s2": {
+          "kicker": "Gestión de ausencias",
+          "h2": "Vacaciones, bajas y festivos bajo control",
+          "p": "Registra ausencias por tipo: vacaciones, baja médica, asuntos propios, permisos especiales. El sistema bloquea automáticamente las asignaciones en esos días y recalcula la capacidad del equipo.",
+          "quoteBefore": "Si alguien tiene vacaciones la próxima semana, el planificador ",
+          "quoteStrong": "no permite asignarle tareas",
+          "quoteAfter": " en ese período. Cero errores."
+        },
+        "s3": {
+          "kicker": "Visión de capacidad",
+          "h2": "¿Quién tiene hueco? Descúbrelo al instante.",
+          "p": "La vista de capacidad mensual muestra las horas disponibles de cada empleado después de descontar ausencias, festivos y asignaciones existentes. Nunca más sobrecargar sin saberlo.",
+          "bullets": [
+            "Horas disponibles vs capacidad total",
+            "Descuento automático de ausencias",
+            "Indicadores de color por nivel de carga"
+          ]
+        },
+        "s4": {
+          "kicker": "Salud del equipo",
+          "h2": "Team Pulse: el termómetro de tu equipo",
+          "p": "Métricas en tiempo real sobre la salud de tu equipo: carga media, fiabilidad promedio, tendencias e indicadores visuales de sobrecarga. Detecta problemas antes de que se conviertan en crisis.",
+          "tiles": [
+            {
+              "label": "Carga media",
+              "desc": "Nivel de ocupación global"
+            },
+            {
+              "label": "Fiabilidad",
+              "desc": "Cumplimiento de planificación"
+            },
+            {
+              "label": "Tendencias",
+              "desc": "Evolución vs mes anterior"
+            },
+            {
+              "label": "Indicadores",
+              "desc": "Visuales de sobrecarga y desviación"
+            }
+          ]
+        },
+        "s5": {
+          "kicker": "Tiempos en vivo",
+          "h2": "Vista Tiempos y cronómetro por tarea",
+          "pBeforeStrong": "Cada persona puede registrar las horas reales trabajadas con el cronómetro por tarea (planificador o Mi Día). En la página ",
+          "pStrong": "Tiempos",
+          "pAfterStrong": " (menú Equipo) ves en qué está cada miembro del equipo ahora mismo: tarea, cliente y tiempo transcurrido. Parar el crono desde ahí o desde el sidebar. Las horas alimentan reportes y facturación.",
+          "tiles": [
+            {
+              "label": "Cronómetro",
+              "desc": "Play/Stop por tarea"
+            },
+            {
+              "label": "Total del día",
+              "desc": "Sidebar y página Tiempos"
+            },
+            {
+              "label": "Vista en vivo",
+              "desc": "Quién trabaja en qué"
+            }
+          ]
+        },
+        "cta": {
+          "h2": "Un equipo bien gestionado es un equipo productivo",
+          "p": "Horarios, ausencias, capacidad y métricas de salud — todo centralizado para que cuides a tu equipo mientras optimizas su rendimiento.",
+          "stats": [
+            {
+              "num": "0",
+              "label": "conflictos de agenda"
+            },
+            {
+              "num": "100%",
+              "label": "visibilidad de capacidad"
+            },
+            {
+              "num": "91%",
+              "label": "fiabilidad media"
+            }
+          ],
+          "btn": "Probar gratis",
+          "sub": "Sin tarjeta de crédito. Configura tu equipo en 5 minutos.",
+          "guideLink": "📖 Ver guía técnica de gestión de equipos"
+        }
+      }
+    },
+    "reports": {
+      "seoTitle": "Informes de Rentabilidad y Margen Neto para Empresas | Taimbox",
+      "seoDescription": "Rentabilidad por proyecto y empleado: ingreso devengado en mes en curso, ritmo (pacing), coste operativo o dinámico y presupuesto por deadline. Márgenes netos y EHR con datos reales.",
+      "jsonName": "Reportes y Rentabilidad — Taimbox",
+      "jsonDescription": "Rentabilidad por proyecto y empleado: ingreso devengado en mes en curso, ritmo (pacing), coste operativo o dinámico y presupuesto por deadline. Márgenes netos y EHR con datos reales.",
+      "page": {
+        "mockProfit": {
+          "title": "Rentabilidad por proyecto",
+          "monthBadge": "Feb 2026",
+          "income": "Ingreso",
+          "cost": "Coste",
+          "profit": "Beneficio",
+          "rows": [
+            {
+              "client": "Acme Corp",
+              "name": "Rediseño Web"
+            },
+            {
+              "client": "StartupX",
+              "name": "SEO + Content"
+            },
+            {
+              "client": "TechCo",
+              "name": "Campaña Q1"
+            }
+          ]
+        },
+        "mockClient": {
+          "title": "Informe para cliente",
+          "header": "Acme Corp — Febrero 2026",
+          "ready": "Listo",
+          "lines": [
+            {
+              "label": "Diseño UI/UX",
+              "hours": "32h",
+              "pct": 80
+            },
+            {
+              "label": "Desarrollo front",
+              "hours": "24h",
+              "pct": 60
+            },
+            {
+              "label": "Reuniones",
+              "hours": "8h",
+              "pct": 20
+            }
+          ],
+          "exportPdf": "Exportar PDF",
+          "exportExcel": "Excel"
+        },
+        "mockForecast": {
+          "title": "Previsión semanal",
+          "currentBadge": "ACTUAL",
+          "footBefore": "S3 tuvo un ",
+          "footStrong": "86%",
+          "footAfter": " de cumplimiento. El sistema te muestra quién tiene horas libres para que redistribuyas el trabajo en segundos."
+        },
+        "hero": {
+          "badge": "Para dirección financiera",
+          "title1": "Rentabilidad por proyecto,",
+          "titleHighlight": "al céntimo",
+          "subtitle": "Cada hora tiene un coste. Cada proyecto tiene un margen. Los reportes de Taimbox conectan tiempo, personas y dinero para que tomes decisiones con datos reales, no con estimaciones.",
+          "pills": [
+            "Rentabilidad en vivo",
+            "Ingreso devengado y ritmo",
+            "Coste operativo/dinámico",
+            "Presupuesto por deadline",
+            "Weekly Forecast",
+            "Exportaciones"
+          ]
+        },
+        "s1": {
+          "kicker": "Dashboard analítico",
+          "h2": "¿Ganas o pierdes dinero en cada proyecto?",
+          "p": "El dashboard de Rentabilidad muestra ingresos, costes y margen por proyecto y empleado. En mes en curso, el ingreso devengado (prorrateo por días) evita la ilusión de mitad de mes; si un proyecto ya ha cumplido el 100 % de las horas, se muestra el fee total. Las horas objetivo respetan los ajustes del Deadline (presupuesto efectivo del mes).",
+          "bullets": [
+            "Ingreso devengado en mes en curso; fee total al 100 % horas",
+            "Ritmo (pacing): % presupuesto consumido vs % mes transcurrido",
+            "Coste operativo o dinámico; margen en rojo si pérdida"
+          ]
+        },
+        "s2": {
+          "kicker": "Predicción semanal",
+          "h2": "Forecast: predice antes de que sea tarde",
+          "p": "El Weekly Forecast compara lo planificado con lo ejecutado cada semana. Asistente de redistribución rápida: el sistema te muestra quién tiene horas libres para que redistribuyas el trabajo en segundos. La misma lógica inteligente — solo entre quien comparte proyectos y con límites de carga — está en Deadlines para la asignación mensual por proyecto.",
+          "bullets": [
+            "Comparativa semanal planificado vs ejecutado",
+            "Asistente de redistribución: ves quién tiene horas libres",
+            "Misma lógica en Deadlines: sugerencias con condicionantes y impacto",
+            "Tendencias históricas de cumplimiento"
+          ]
+        },
+        "formulas": {
+          "kicker": "Contabilidad analítica",
+          "h2": "Cómo calculamos la rentabilidad",
+          "introBefore": "Taimbox no hace contabilidad fiscal; hace ",
+          "introStrong": "contabilidad analítica (Unit Economics)",
+          "introAfter": " para que el CEO tome decisiones en tiempo real. Todas las cifras del dashboard de Salud Financiera se basan en estas cuatro reglas.",
+          "f1": {
+            "title": "F1 — Coste laboral",
+            "formula": "Operativo: horas × coste/h estándar. Dinámico: prorrateo nómina",
+            "desc": "Dos modelos: Operativo (coste/h fijo por capacidad teórica) o Dinámico (nómina repartida entre horas reales del mes). El presupuesto de horas (objetivo Xh / Yh) usa el del Deadline si hay ajuste para ese mes."
+          },
+          "f2": {
+            "title": "F2 — Ingreso (devengado o total)",
+            "formula": "Mes en curso: prorrateo por días; si ≥100 % horas → fee total",
+            "desc": "En mes cerrado se usa el fee mensual. En mes en curso, el ingreso devengado es el prorrateo (fee × día/días del mes). Si el proyecto ya ha cumplido o superado el 100 % de las horas del presupuesto, se muestra el fee total."
+          },
+          "f3": {
+            "title": "F3 — Margen neto",
+            "formula": "Ingreso − Coste laboral (− Ads si aplica)",
+            "desc": "Margen en € y en %. Indica cuánto dinero líquido deja el proyecto. Proyectos internos (sin fee) tendrán margen negativo; se muestran en rojo."
+          },
+          "f4": {
+            "title": "F4 — Precio hora efectivo (EHR)",
+            "formula": "Ingreso ÷ Total horas reales del proyecto",
+            "desc": "La métrica estrella: eficiencia real. Ej: 1.500 € / 10 h = 150 €/h (excelente). Si hay 0 horas, se muestra \"Sin datos\" para evitar divisiones por cero."
+          },
+          "noteStrong": "Origen de los datos:",
+          "noteAfter": " Fee y horas por proyecto (presupuesto efectivo del mes desde Deadlines si hay ajuste); coste por hora por empleado (modelo Operativo o Dinámico); horas reales/computadas. Badge «Mes en curso» o «Mes cerrado» para contexto. Pérdidas (margen negativo) en rojo."
+        },
+        "export": {
+          "kicker": "Exporta e integra",
+          "h2": "Salud Financiera de la Agencia; API para tus sistemas",
+          "cards": [
+            {
+              "label": "Salud Financiera",
+              "desc": "Panel de rentabilidad por proyecto: ingreso devengado, ritmo (pacing), coste operativo/dinámico y margen al céntimo."
+            },
+            {
+              "label": "API REST",
+              "desc": "Integración directa: exporta datos en CSV, JSON o el formato que necesites."
+            }
+          ]
+        },
+        "cta": {
+          "h2": "Mide lo que importa. Actúa con datos.",
+          "p": "Los reportes de Taimbox conectan tiempo, personas y dinero. Sabes exactamente cuánto cuesta y cuánto genera cada proyecto.",
+          "stats": [
+            {
+              "num": "100%",
+              "label": "trazabilidad de horas"
+            },
+            {
+              "num": "1 vista",
+              "label": "Salud Financiera de la agencia"
+            },
+            {
+              "num": "∞",
+              "label": "datos históricos vía API"
+            }
+          ],
+          "btn": "Probar gratis",
+          "sub": "Sin tarjeta de crédito. Tus primeros reportes en 5 minutos.",
+          "guideLink": "📖 Ver guía técnica de reportes",
+          "formulasLink": "🧮 Cómo calculamos la rentabilidad (F1–F4 y EHR)"
+        }
+      }
+    },
+    "projects": {
+      "seoTitle": "Control de Proyectos y Seguimiento de Tiempos | Taimbox",
+      "seoDescription": "Supervisa el progreso de tus proyectos empresariales al detalle. Registro de tiempos, presupuestos de horas y cumplimiento de plazos en tiempo real.",
+      "jsonName": "Control de Proyectos — Taimbox",
+      "jsonDescription": "Supervisa el progreso de tus proyectos empresariales al detalle. Registro de tiempos, presupuestos de horas y cumplimiento de plazos en tiempo real.",
+      "page": {
+        "hero": {
+          "badge": "Para project managers",
+          "title1": "Del briefing al deadline,",
+          "titleHighlight": "sin sorpresas",
+          "subtitle": "Gestiona clientes, proyectos, presupuestos, deadlines y OKRs desde un único punto. Con control de coherencia automática que detecta inconsistencias antes de que lleguen al reporte.",
+          "pills": [
+            "Clientes y proyectos",
+            "Presupuestos en vivo",
+            "Deadlines mensuales",
+            "Sugerencias de redistribución",
+            "OKRs",
+            "Control de coherencia"
+          ]
+        },
+        "mockProjects": {
+          "title": "Proyectos activos",
+          "countBadge": "{{count}} proyectos",
+          "rows": [
+            {
+              "client": "Acme Corp",
+              "name": "Rediseño Web"
+            },
+            {
+              "client": "StartupX",
+              "name": "SEO + Content"
+            },
+            {
+              "client": "TechCo",
+              "name": "Campaña Q1"
+            },
+            {
+              "client": "MediaCo",
+              "name": "Social Media"
+            }
+          ]
+        },
+        "mockDeadlines": {
+          "title": "Deadlines — Febrero 2026",
+          "statusTight": "Ajustado",
+          "statusOnTrack": "En línea",
+          "colObjective": "Objetivo",
+          "colExecuted": "Ejecutado",
+          "colRemaining": "Faltan",
+          "remainingValue": "{{remaining}}h en {{weeks}}s",
+          "zapBefore": "",
+          "zapStrong": "Campaña Q1",
+          "zapAfter": " necesita 1h en 1 semana. Sugiere asignar a Pedro S. que tiene 10h disponibles.",
+          "rows": [
+            {
+              "project": "Rediseño Web",
+              "target": 40,
+              "current": 32,
+              "remaining": 8,
+              "weeks": 2,
+              "status": "on-track"
+            },
+            {
+              "project": "SEO + Content",
+              "target": 25,
+              "current": 18,
+              "remaining": 7,
+              "weeks": 3,
+              "status": "on-track"
+            },
+            {
+              "project": "Campaña Q1",
+              "target": 15,
+              "current": 14,
+              "remaining": 1,
+              "weeks": 1,
+              "status": "tight"
+            }
+          ]
+        },
+        "mockOKRs": {
+          "title": "OKRs — Q1 2026",
+          "objective": "O: Aumentar rentabilidad de proyectos",
+          "krs": [
+            {
+              "kr": "Margen > 25% en todos los proyectos",
+              "pct": 67,
+              "color": "amber"
+            },
+            {
+              "kr": "Reducir horas internas un 15%",
+              "pct": 80,
+              "color": "emerald"
+            },
+            {
+              "kr": "Cumplir 90% de deadlines",
+              "pct": 95,
+              "color": "emerald"
+            }
+          ],
+          "globalProgressLabel": "Progreso global Q1",
+          "globalProgressPct": "81%"
+        },
+        "mockCoherence": {
+          "title": "Control de coherencia",
+          "items": [
+            {
+              "text": "Todas las tareas tienen empleado asignado",
+              "variant": "ok"
+            },
+            {
+              "text": "Presupuestos dentro de límites definidos",
+              "variant": "ok"
+            },
+            {
+              "text": "1 proyecto supera el budget override en 2h",
+              "variant": "warn"
+            },
+            {
+              "text": "Sin conflictos de horario detectados",
+              "variant": "ok"
+            }
+          ]
+        },
+        "s1": {
+          "kicker": "Gestión de proyectos",
+          "h2": "Todos tus proyectos, un presupuesto vivo",
+          "p": "Cada proyecto tiene su cliente, su presupuesto en horas y su barra de progreso en tiempo real. Cuando se acerca al límite, lo sabes antes de que sea un problema.",
+          "bullets": [
+            "CRUD completo de clientes y proyectos",
+            "Presupuesto consumido en tiempo real",
+            "Alertas automáticas al acercarse al límite"
+          ]
+        },
+        "s2": {
+          "kicker": "Objetivos mensuales",
+          "h2": "Deadlines: cumple cada compromiso",
+          "pBefore": "Define cuántas horas deberían completarse cada mes por proyecto. El sistema compara en tiempo real lo ejecutado vs lo planificado. Cuando detecta desequilibrios de carga en el equipo, genera ",
+          "pStrong": "sugerencias de redistribución",
+          "pAfter": " solo entre empleados que comparten proyectos — con límites configurables para no sobrecargar a quien recibe ni dejar a quien cede por debajo de un mínimo.",
+          "boxStrong": "Sugerencias inteligentes:",
+          "boxAfter": " quién puede ceder horas, a quién pasarlas y cuántas — por proyecto. Ves el impacto (cargas resultantes) antes de aplicar. Tú decides en segundos.",
+          "bullets": [
+            "Solo entre quien comparte proyectos",
+            "Límite de carga máximo para quien recibe",
+            "Carga mínima para quien cede (no dejarlos vacíos)",
+            "Resumen propuesto con cargas resultantes"
+          ]
+        },
+        "s3": {
+          "kicker": "Objetivos estratégicos",
+          "h2": "OKRs: alinea ejecución con estrategia",
+          "p": "Define objetivos ambiciosos y key results medibles. El sistema conecta automáticamente los datos del planner con tus OKRs para medir progreso real, no opiniones.",
+          "tiles": [
+            {
+              "label": "Objetivos",
+              "desc": "Metas de alto nivel por Q"
+            },
+            {
+              "label": "Key Results",
+              "desc": "Métricas medibles"
+            },
+            {
+              "label": "Progreso real",
+              "desc": "Datos del planner en vivo"
+            },
+            {
+              "label": "Tracking Q",
+              "desc": "Evolución trimestral"
+            }
+          ]
+        },
+        "s4": {
+          "kicker": "Validación automática",
+          "h2": "Control de coherencia: cero errores silenciosos",
+          "p": "El sistema revisa automáticamente que no haya tareas sin asignar, presupuestos excedidos, conflictos de horario o inconsistencias entre planificación y ejecución. Si detecta algo, lo marca antes de que salga en un reporte.",
+          "bullets": [
+            "Tareas huérfanas sin empleado",
+            "Presupuestos que superan el override",
+            "Conflictos de horario por ausencias",
+            "Inconsistencias planificación vs ejecución"
+          ]
+        },
+        "cta": {
+          "h2": "Proyectos bajo control. Siempre.",
+          "p": "Gestiona todo el ciclo de vida de tus proyectos: desde la creación hasta el cierre, con presupuestos en vivo, deadlines y validación automática.",
+          "stats": [
+            {
+              "num": "0",
+              "label": "errores silenciosos"
+            },
+            {
+              "num": "85%",
+              "label": "cumplimiento de deadlines"
+            },
+            {
+              "num": "∞",
+              "label": "proyectos simultáneos"
+            }
+          ],
+          "btn": "Probar gratis",
+          "sub": "Sin tarjeta de crédito. Crea tu primer proyecto en 1 minuto.",
+          "guideLink": "📖 Ver guía técnica de proyectos"
+        }
+      }
+    },
+    "integrations": {
+      "seoTitle": "Integraciones: Google Ads, Meta Ads y CRM | Taimbox",
+      "seoDescription": "Conecta Taimbox con las herramientas clave de tu empresa. Sincronización nativa con plataformas publicitarias para un control financiero y de gastos total.",
+      "jsonName": "Integraciones — Taimbox",
+      "jsonDescription": "Conecta Taimbox con las herramientas clave de tu empresa. Sincronización nativa con plataformas publicitarias para un control financiero y de gastos total.",
+      "page": {
+        "mockGoogle": {
+          "title": "Google Ads",
+          "syncBadge": "Sincronizado",
+          "colSpend": "Gasto",
+          "colConv": "Conv.",
+          "colCpa": "CPA",
+          "lastSync": "Última sincronización: hace 15 min",
+          "campaigns": [
+            {
+              "campaign": "Brand Search Q1",
+              "spend": "2.450€",
+              "conv": 127,
+              "cpa": "19,29€",
+              "roas": "4.2x",
+              "trend": "up"
+            },
+            {
+              "campaign": "Performance Max",
+              "spend": "5.100€",
+              "conv": 89,
+              "cpa": "57,30€",
+              "roas": "2.8x",
+              "trend": "up"
+            },
+            {
+              "campaign": "Display Remarketing",
+              "spend": "890€",
+              "conv": 34,
+              "cpa": "26,18€",
+              "roas": "3.1x",
+              "trend": "down"
+            }
+          ]
+        },
+        "mockMeta": {
+          "title": "Meta Ads",
+          "activeBadge": "Activo",
+          "colSpend": "Gasto",
+          "colReach": "Alcance",
+          "colCtr": "CTR",
+          "footBefore": "Facebook e Instagram unificados. Gasto total: ",
+          "footStrong": "4.000€",
+          "footAfter": "",
+          "campaigns": [
+            {
+              "campaign": "IG Stories — Promo Feb",
+              "spend": "1.200€",
+              "reach": "45K",
+              "ctr": "3.2%",
+              "platform": "Instagram"
+            },
+            {
+              "campaign": "FB Lead Gen Q1",
+              "spend": "2.800€",
+              "reach": "120K",
+              "ctr": "1.8%",
+              "platform": "Facebook"
+            }
+          ]
+        },
+        "mockApi": {
+          "title": "API REST",
+          "codeTaskName": "Diseño Home",
+          "pillJwt": "Auth JWT",
+          "pillCrm": "CRM/ERP",
+          "pillSdk": "SDK"
+        },
+        "mockWeekly": {
+          "title": "Weekly Feedback",
+          "weekLine": "Semana del 10-14 feb",
+          "pendingBadge": "Pendiente",
+          "intro": "Cada empleado confirma sus horas del weekly",
+          "confirmed": "Confirmado",
+          "pending": "Pendiente",
+          "employees": [
+            {
+              "name": "María A.",
+              "status": "confirmed"
+            },
+            {
+              "name": "Carlos R.",
+              "status": "confirmed"
+            },
+            {
+              "name": "Julia L.",
+              "status": "pending"
+            },
+            {
+              "name": "Pedro S.",
+              "status": "pending"
+            }
+          ],
+          "foot": "Los días configurables por integración. Notificación automática a las 18:00 del viernes."
+        },
+        "hero": {
+          "badge": "Para agencias performance",
+          "titleBefore": "Conecta",
+          "titleHighlight": "todo tu ecosistema",
+          "subtitle": "Google Ads, Meta Ads, API REST y sistema weekly — todo sincronizado con tu planificación de recursos. Controla los presupuestos de las campañas de todos tus clientes desde un solo lugar.",
+          "pills": [
+            "Google Ads",
+            "Meta Ads",
+            "API REST",
+            "Sincronización CRM/ERP",
+            "Weekly Feedback"
+          ]
+        },
+        "s1": {
+          "kicker": "Google Ads",
+          "h2": "Campañas de Google, datos en tiempo real",
+          "p": "Conecta las cuentas de Google Ads de tus clientes y monitoriza el consumo de sus campañas en tiempo real. Detecta sobrecostes antes de que ocurran y ahorra a tus gestores PPC la revisión manual diaria de presupuestos.",
+          "bullets": [
+            "Monitor de presupuesto por cliente en tiempo real",
+            "Alertas anti-despistes: evita sobrepasar el presupuesto pactado",
+            "Ahorra 1h diaria a tus gestores PPC"
+          ]
+        },
+        "s2": {
+          "kicker": "Meta Ads",
+          "h2": "Facebook e Instagram, unificados",
+          "pBefore": "Sincroniza las campañas de Meta Ads (Facebook e Instagram) de tus clientes para vigilar consumos, alcance y CTR en un único dashboard. Frente a Google Ads, el límite de gasto en Meta se reparte entre campaña, conjunto o presupuesto compartido: aquí defines un ",
+          "pStrong": "presupuesto mensual objetivo",
+          "pAfter": " en Taimbox y comparas el ritmo real frente a ese techo.",
+          "quoteBefore": "Ambas plataformas se gestionan como un solo origen de datos. ",
+          "quoteStrong": "No necesitas cambiar entre dashboards.",
+          "quoteAfter": ""
+        },
+        "ppcCta": {
+          "title": "¿Quieres saber cómo proteger los márgenes de tus campañas?",
+          "subtitle": "Descubre el Monitor de presupuestos PPC — exclusivo del plan Business.",
+          "btn": "Saber más sobre el control de presupuestos"
+        },
+        "s3": {
+          "kicker": "Para desarrolladores",
+          "h2": "API REST: haz lo que quieras",
+          "p": "API completa con autenticación JWT, sincronización de tiempos con tu CRM/ERP y exportación directa a sistemas externos (sujeto a integración). Conecta Taimbox con cualquier herramienta de tu stack.",
+          "tiles": [
+            {
+              "label": "REST",
+              "desc": "Endpoints documentados"
+            },
+            {
+              "label": "CRM/ERP",
+              "desc": "Sincronización de tiempos; exportación a sistemas externos"
+            },
+            {
+              "label": "Auth JWT",
+              "desc": "Tokens seguros"
+            },
+            {
+              "label": "SDK",
+              "desc": "Node.js y Python"
+            }
+          ]
+        },
+        "s4": {
+          "kicker": "Sistema Weekly",
+          "h2": "Cierre semanal automatizado",
+          "p": "Cada semana, los empleados confirman sus horas con un clic. El sistema notifica automáticamente, recoge el feedback y actualiza el forecast. Sin perseguir a nadie por email.",
+          "bullets": [
+            "Notificación automática configurada por día",
+            "Confirmación individual de horas con un clic",
+            "Actualización automática del forecast con datos reales"
+          ]
+        },
+        "s5": {
+          "kicker": "Todo conectado",
+          "h2": "Un ecosistema, infinitas posibilidades",
+          "cards": [
+            {
+              "label": "Google Ads",
+              "desc": "Monitor presupuestos clientes"
+            },
+            {
+              "label": "Meta Ads",
+              "desc": "Prevención de sobrecostes"
+            },
+            {
+              "label": "API REST",
+              "desc": "Integraciones custom"
+            },
+            {
+              "label": "Weekly System",
+              "desc": "Cierre semanal automático"
+            },
+            {
+              "label": "Importar/Exportar",
+              "desc": "Excel, CSV, JSON"
+            },
+            {
+              "label": "Dashboard unificado",
+              "desc": "Todo en una sola vista"
+            }
+          ]
+        },
+        "cta": {
+          "h2": "Tu stack, potenciado por Taimbox",
+          "p": "Conecta Google Ads, Meta Ads y cualquier herramienta de tu stack. Controla los presupuestos de las campañas de tus clientes y toda la información de tu agencia centralizada.",
+          "stats": [
+            {
+              "num": "5+",
+              "label": "integraciones nativas"
+            },
+            {
+              "num": "15min",
+              "label": "sincronización automática"
+            },
+            {
+              "num": "∞",
+              "label": "integraciones vía API"
+            }
+          ],
+          "btn": "Probar gratis",
+          "sub": "Sin tarjeta de crédito. Conecta tu primera integración en minutos.",
+          "guideLink": "📖 Ver guía técnica de integraciones"
+        }
+      }
+    },
+    "ppc": {
+      "seoTitle": "Monitor de presupuestos PPC | Taimbox",
+      "seoDescription": "Controla el presupuesto publicitario de todos tus clientes desde un solo dashboard. Google Ads y Meta Ads unificados. Prevención de sobrecostes en tiempo real.",
+      "jsonName": "Monitor de presupuestos PPC — Taimbox",
+      "jsonDescription": "Controla el presupuesto publicitario de todos tus clientes desde un solo dashboard. Google Ads y Meta Ads unificados. Prevención de sobrecostes en tiempo real.",
+      "page": {
+        "chart": {
+          "title": "Pacing de gasto vs ritmo ideal del mes",
+          "axisX": "Mes transcurrido →",
+          "axisY": "Gasto acumulado (% del presupuesto) →",
+          "monthStart": "0%",
+          "monthEnd": "100% mes",
+          "legendIdeal": "Ritmo ideal",
+          "legendActual": "Gasto real acumulado",
+          "footer": "<strong>Lectura rápida:</strong> al ser acumulado, la curva siempre sube. Si la línea sólida se va por encima de la discontinua, vas gastando por encima del ritmo que te permite cerrar el mes en presupuesto.",
+          "deltaPrefix": "Δ "
+        },
+        "mockDashboard": {
+          "title": "Monitor de presupuestos",
+          "live": "En vivo",
+          "spent": "Gastado:",
+          "budget": "Presupuesto:",
+          "syncHint": "Sync a demanda con un botón",
+          "roasGlobal": "ROAS Global: 3.42x",
+          "rows": [
+            {
+              "client": "Grupo Holdings S.L.",
+              "badge": "GRUPO",
+              "budget": "2.000€",
+              "spent": "1.870€",
+              "pct": 93.5,
+              "status": "warning"
+            },
+            {
+              "client": "E-com Latam (Performance)",
+              "badge": "REGLA (Cuentas virtuales)",
+              "budget": "5.000€",
+              "spent": "5.260€",
+              "pct": 105.2,
+              "status": "danger"
+            },
+            {
+              "client": "SaaS Innovator B2B",
+              "badge": null,
+              "budget": "3.000€",
+              "spent": "1.350€",
+              "pct": 45,
+              "status": "ok"
+            }
+          ]
+        },
+        "mockForecast": {
+          "h4": "Proyección a fin de mes",
+          "sub": "Pacing acumulado: lo gastado hasta hoy vs ritmo objetivo",
+          "calcTitle": "Calculadora de Previsiones",
+          "calcBody": "Proyecta el gasto a fin de mes a partir del ritmo actual y compáralo con el presupuesto objetivo. Así ves qué cuentas necesitan actuar en Google Ads o ajustar límites en Meta (campaña, conjunto o cuenta).",
+          "estFinal": "Gasto final estimado",
+          "estFinalVal": "12.500€",
+          "targetBudget": "Presupuesto objetivo",
+          "targetBudgetVal": "10.000€",
+          "paceTitle": "Ritmo recomendado",
+          "paceBody": "Para aterrizar en el techo, baja el gasto medio diario respecto al ritmo actual.",
+          "paceFrom": "416€/día",
+          "paceTo": "250€/día objetivo"
+        },
+        "mockSegmentation": {
+          "h4": "Reglas de segmentación",
+          "sub": "Una cuenta → varios presupuestos virtuales",
+          "accountLabel": "Google Ads · cuenta holding",
+          "rulesApplied": "Reglas aplicadas",
+          "virtualSuffix": "virtual",
+          "rule1Name": "B2B Software",
+          "rule1Code": "name contains \"B2B\"",
+          "rule2Name": "Retail Shop",
+          "rule2Code": "name contains \"ecommerce\""
+        },
+        "mockHoldings": {
+          "h4": "Control de holdings",
+          "sub": "Un paraguas para varias cuentas",
+          "groupTitle": "Grupo Inditex (consolidado)",
+          "subaccounts": "4 subcuentas",
+          "totals": "620.000€ / 1.000.000€",
+          "row1": "Zara Global · Google Ads",
+          "row1nums": "300k / 500k",
+          "row2": "Massimo Dutti · Meta Ads",
+          "row2nums": "200k / 300k",
+          "hidden": "Stradivarius (oculta)"
+        },
+        "hero": {
+          "badge": "Exclusivo del Plan Business",
+          "titleBefore": "Duerme tranquilo.",
+          "titleGradient": "Controla el presupuesto",
+          "titleAfter": "de todos tus clientes desde un solo lugar.",
+          "subtitle": "Olvídate de abrir 20 pestañas de Google y Meta Ads cada mañana. Taimbox unifica el gasto de tus campañas en tiempo real y te avisa antes de que te pases del budget pactado.",
+          "cta": "Probar gratis (14 días)",
+          "ctaSub": "Prueba Business gratis · Sincroniza en 2 clics"
+        },
+        "problem": {
+          "kicker": "El dolor",
+          "h2": "Un despiste en Ads cuesta muy caro",
+          "p": "En Google Ads, un error al configurar el <strong>presupuesto diario</strong> de una campaña puede disparar el gasto. En Meta Ads los límites se reparten entre campaña, conjunto y presupuesto compartido: el riesgo es el mismo (sobrecoste), pero el origen del fallo es distinto. Deja de depender de Excel y de revisar cuenta por cuenta cada mañana.",
+          "quoteBefore": "",
+          "quoteStrong": "Dato real:",
+          "quoteAfter": " Un despiste en el límite de gasto (especialmente en Google, donde el «presupuesto diario» es muy explícito) puede hacer que quemes varias veces el budget pactado con tu cliente en pocos días."
+        },
+        "features": [
+          {
+            "title": "Dashboard centralizado",
+            "desc": "Mira el consumo de todos tus clientes en menos de 5 segundos. Detecta al instante si una cuenta está en riesgo de sobregasto, va al alza, a la baja o está bajo control.",
+            "gradient": "from-blue-500 to-cyan-500",
+            "color": "text-blue-300",
+            "border": "border-blue-500/30",
+            "bg": "from-blue-900/40 to-cyan-900/30"
+          },
+          {
+            "title": "Calculadora de previsiones",
+            "desc": "El sistema extrapola el ritmo de gasto (pacing) para prever cuánto gastarás a final de mes y sugiere un objetivo medio diario para aterrizar en el presupuesto acordado (en Meta comparas contra el objetivo que fijas en Taimbox).",
+            "gradient": "from-amber-500 to-orange-500",
+            "color": "text-amber-300",
+            "border": "border-amber-500/30",
+            "bg": "from-amber-900/40 to-orange-900/30"
+          },
+          {
+            "title": "Métricas de Rentabilidad",
+            "desc": "Controla no solo el gasto, sino el rendimiento. Visualiza automáticamente el ROAS global, CPA, CPC y CTR de cada cuenta sin necesidad de cruzar datos manualmente.",
+            "gradient": "from-emerald-500 to-teal-500",
+            "color": "text-emerald-300",
+            "border": "border-emerald-500/30",
+            "bg": "from-emerald-900/40 to-teal-900/30"
+          },
+          {
+            "title": "Sincronización manual bajo demanda",
+            "desc": "Tú controlas cuándo quieres actualizar los datos. Presiona un botón en el dashboard y conéctate en tiempo real con la API de Google Ads sin latencias ni esperas programadas.",
+            "gradient": "from-fuchsia-500 to-pink-500",
+            "color": "text-fuchsia-300",
+            "border": "border-fuchsia-500/30",
+            "bg": "from-fuchsia-900/40 to-pink-900/30"
+          }
+        ],
+        "advanced": {
+          "kicker": "Herramientas Avanzadas",
+          "h2": "Diseñado para agencias complejas",
+          "p": "Ve un paso más allá de visualizar datos. Configura proyecciones de gasto en tiempo real, agrupa corporaciones bajo un solo paraguas, y divide cuentas masivas."
+        },
+        "segCopy": {
+          "h3": "Reglas de segmentación automáticas",
+          "p": "¿Un mismo ID de Ads para distintos modelos de negocio? Crea reglas por palabras clave y divide las campañas en sub-cuentas virtuales para fraccionar sus presupuestos."
+        },
+        "holdCopy": {
+          "h3": "Control de holdings y ocultación",
+          "p": "Asigna a los clientes a su Grupo Corporativo para unificar el seguimiento general. Oculta las cuentas pausadas o irrelevantes para mantener el dashboard ultra limpio."
+        },
+        "platforms": {
+          "kicker": "Plataformas soportadas",
+          "h2": "Conectamos con las plataformas que ya usas",
+          "items": [
+            {
+              "label": "Google Ads",
+              "desc": "Campañas, gasto, presupuesto",
+              "color": "from-blue-500 to-cyan-500"
+            },
+            {
+              "label": "Meta Ads",
+              "desc": "Gasto, campañas, ritmo vs objetivo",
+              "color": "from-indigo-500 to-purple-500"
+            },
+            {
+              "label": "Costes de equipo",
+              "desc": "Horas × coste/hora",
+              "color": "from-emerald-500 to-teal-500"
+            },
+            {
+              "label": "P&L en vivo",
+              "desc": "Margen neto por cliente",
+              "color": "from-amber-500 to-orange-500"
+            }
+          ]
+        },
+        "securityStrip": [
+          {
+            "text": "Tus datos publicitarios están cifrados y aislados por agencia (RLS).",
+            "color": "text-emerald-400",
+            "border": "border-emerald-500/25",
+            "bg": "bg-emerald-950/30"
+          },
+          {
+            "text": "Tokens OAuth2 protegidos. Taimbox no almacena credenciales ni puede editar campañas.",
+            "color": "text-blue-400",
+            "border": "border-blue-500/25",
+            "bg": "bg-blue-950/30"
+          }
+        ],
+        "cta": {
+          "h2": "Protege los márgenes de tu agencia hoy mismo",
+          "p": "Empieza tu prueba de 14 días sin tarjeta y sincroniza tus cuentas publicitarias en 2 clics.",
+          "stats": [
+            {
+              "num": "0€",
+              "label": "durante 14 días"
+            },
+            {
+              "num": "2 clics",
+              "label": "para conectar Ads"
+            },
+            {
+              "num": "−1h/día",
+              "label": "por gestor de cuentas"
+            }
+          ],
+          "btn": "Empezar prueba gratuita del Plan Business",
+          "sub": "Sin tarjeta de crédito. Configuración en 2 minutos.",
+          "footers": [
+            "Google Ads",
+            "Meta Ads",
+            "Dashboard unificado",
+            "Alertas automáticas"
+          ]
+        },
+        "featuresSection": {
+          "kicker": "Funcionalidades clave",
+          "h2": "Todo lo que necesitas para proteger tus márgenes"
+        }
+      }
+    },
+    "security": {
+      "seoTitle": "Seguridad y Privacidad nivel Enterprise | Taimbox",
+      "seoDescription": "Descubre cómo Taimbox protege los datos de tu agencia y los de tus clientes con cifrado AES-256, aislamiento RLS estricto y conexiones OAuth2 seguras sin contraseñas.",
+      "jsonName": "Seguridad y Privacidad — Taimbox",
+      "jsonDescription": "Descubre cómo Taimbox protege los datos de tu agencia y los de tus clientes con cifrado AES-256, aislamiento RLS estricto y conexiones OAuth2 seguras sin contraseñas.",
+      "page": {
+        "heroBadge": "Arquitectura de confianza Zero-Trust",
+        "heroTitle1": "La seguridad de tu agencia no es negociable.",
+        "heroTitleGradient": "La nuestra tampoco.",
+        "heroSubtitle": "Sabemos que manejas la rentabilidad, los salarios y el gasto publicitario de decenas de clientes. Por eso hemos construido Taimbox sobre una arquitectura de seguridad estricta, diseñada para repeler accesos no autorizados por diseño, no como una capa añadida al final.",
+        "threePillarsKicker": "Fundamentos Técnicos",
+        "threePillarsH2": "Los 3 pilares de nuestra infraestructura",
+        "pillar1Title": "Aislamiento Físico (RLS)",
+        "pillar1Body": "Utilizamos <strong>PostgreSQL Row Level Security (RLS)</strong> de forma nativa. Esto significa que la separación de agencias ocurre en el motor de la base de datos, no en el código de la aplicación. Es criptográficamente imposible que un error en nuestro frontend exponga datos de una agencia a otra.",
+        "pillar2Title": "Cifrado en Tránsito y Reposo",
+        "pillar2Body": "Toda comunicación viaja sobre <strong>TLS 1.3</strong> (cifrado en tránsito) y todos los discos de la base de datos utilizan el estándar <strong>AES-256</strong> (cifrado en reposo). El acceso interno a bases de datos de producción está estrictamente restringido por políticas de 'Mínimo Privilegio' y requiere justificación expresa para labores de soporte.",
+        "pillar3Title": "Cero credenciales compartidas",
+        "pillar3Body": "Al conectar Google o Meta Ads, <strong>nunca almacenamos tus contraseñas</strong>. Se procesan delegaciones mediante OAuth2 (Tokens JWT de corta vida) avalados directamente por los proveedores externos. Puedes revocar el acceso desde Google en 1 clic.",
+        "infraH2": "Infraestructura Certificada (AWS)",
+        "infraP": "Alojamos Taimbox en infraestructuras y centros de datos certificados con ISO 27001 y SOC 2, ubicados estrictamente dentro de la Unión Europea (Frankfurt / Irlanda), manteniendo total cumplimiento con las directivas del <strong>Reglamento General de Protección de Datos (RGPD)</strong> europeo.",
+        "infraBullets": [
+          "Infraestructura de datos certificada (ISO 27001, SOC 2 Type II).",
+          "Backups automáticos Point-in-Time Recovery (PITR) retenidos 7 días.",
+          "Réplicas de lectura (Read-Replicas) para alta disponibilidad (99.99% Uptime).",
+          "Protección avanzada contra ataques DDoS (AWS Shield)."
+        ],
+        "mockNodeLabel": "Node 01 (EU-Central-1)",
+        "mockHealthy": "Healthy",
+        "mockRlsWall": "Row Level Security Wall",
+        "mockPartitionFooter": "Strict Data Partitioning",
+        "mockAgency1": "Agencia: a3f9-ba21",
+        "mockAgency2": "Agencia: 88cf-991x",
+        "ppcSectionKicker": "Conectores Externos (PPC)",
+        "ppcSectionH2": "Solo leemos, jamás escribimos",
+        "googleApiTitle": "Google Ads API",
+        "googleApiScope": "auth/adwords.readonly",
+        "oauthScopeBadge": "OAuth2 Scope",
+        "permHeader": "Permisos otorgados a Taimbox:",
+        "perm1": "Leer presupuestos e informes diarios",
+        "perm2": "Sincronizar métricas de gasto en campaña",
+        "denied1": "Pausar/Activar campañas",
+        "denied2": "Modificar pujas o kws",
+        "deniedSuffix": "(Denegado)",
+        "ppcRightH4": "La seguridad de tu ROAS garantizada por infraestructura",
+        "ppcRightP1": "El mayor temor de un Director de Performance es que un software externo de monitorización modifique accidentalmente las campañas en producción tirando por tierra el historial. En Taimbox, esto es técnicamente imposible.",
+        "ppcRightP2": "Cuando conectas Google Ads o Meta Ads en la sección de Integraciones, nosotros reclamamos <strong>exclusivamente los 'Scopes' de API de solo lectura</strong> de informes. El servidor de autorización rechaza automáticamente pedir accesos de escritura al usuario.",
+        "ppcRightP3": "Si, hipotéticamente, alguien intentara ejecutar una pausa de campaña desde nuestro código o servidor, la propia API de Google Ads Server devolvería un <code>HTTP 403 Forbidden</code> y rechazaría la inyección de la petición.",
+        "monitorCtaBtn": "Conocer el Monitor de Presupuestos",
+        "appSectionH2": "Control de accesos interno en tu agencia",
+        "appSectionSubtitle": "La seguridad interna ante fugas de información importa tanto como la externa. Taimbox te otorga un control de vista absoluto sobre el organigrama operativo de tus empleados.",
+        "appCard1Title": "Roles Customizables Multi-nivel",
+        "appCard1P": "Crea perfiles exactos. ¿Un 'Traffic Manager' que solo pueda ver campañas PPC pero no las rentabilidades generales de la agencia? Hecho. Taimbox no te obliga a dar acceso masivo. Las restricciones se aplican a nivel de base de datos antes de pintar cualquier UI o gráfica del panel.",
+        "appCard2Title": "Módulos ciegos para empleados base",
+        "appCard2P": "Por defecto, un trabajador 'estándar' solo visualiza de forma estrecha su propio dashboard de trabajo enfocado (\"Mi Semana\"). No tienen posibilidad lógica de consultar el módulo completo de Rentabilidad, los costes financieros en nómina / hora de los compañeros, ni el estado financiero global total de la agencia.",
+        "complianceH2": "Cumplimiento B2B y Soberanía de Datos",
+        "complianceSubtitle": "Requisitos indispensables para operar con tranquilidad en entornos corporativos modernos.",
+        "complianceCard1Title": "Cumplimiento PCI-DSS (Pagos Seguros)",
+        "complianceCard1P": "Taimbox <strong>no procesa, almacena ni transmite</strong> los datos de tu tarjeta de crédito. Delegamos el 100% del procesamiento transaccional a Stripe, proveedor auditado como Nivel 1 de PCI (el estándar más estricto de la industria financiera mundial).",
+        "complianceCard2Title": "Portabilidad absoluta de tus datos",
+        "complianceCard2P": "Tus datos son tuyos. No practicamos el 'Vendor Lock-in'. Ofrecemos endpoints a través de nuestra API REST para que puedas exportar el histórico de tu agencia, tus métricas de rentabilidad y tus tablas de tiempos a CSV/JSON en el momento que lo necesites.",
+        "faqH3": "Preguntas Frecuentes sobre Seguridad IT e ISO",
+        "faq1q": "¿Qué terceros (Subencargados) intervienen en Taimbox?",
+        "faq1a": "Para ofrecerte un servicio de grado Enterprise, nos apoyamos exclusivamente en líderes de la industria tecnológica: <strong>Amazon Web Services (AWS)</strong> (Hosting físico en Frankfurt), <strong>Supabase</strong> (Gestión de Base de Datos y Autenticación), <strong>Stripe</strong> (Procesamiento de pagos) y <strong>Google/Meta</strong> (Solo lectura mediante API oficial OAuth2). Tienes total visibilidad sobre nuestra cadena de suministro digital.",
+        "faq2q": "¿Dónde están hospedados físicamente los servidores?",
+        "faq2a": "La infraestructura base operativa recae sobre Amazon Web Services (AWS) en conjunto con Supabase Managed Provider, concretamente en la región principal de <strong>Frankfurt (eu-central-1)</strong>, dentro del marco de la Unión Europea. Cumplimos sin excepciones con los mandatos de soberanía de datos y tratamiento del Reglamento General de Protección de Datos (RGPD / GDPR) europeo.",
+        "faq3q": "¿Qué ocurre con mis datos en caso de cancelación total?",
+        "faq3a": "Entendemos y defendemos en los marcos contractuales del Software tu Derecho al borrado permanente (Derecho al Olvido RGPD). Al solicitar la cancelación definitiva, se activan procesos atómicos en cascada (ON DELETE CASCADE) que purgan para siempre y de un plumazo todo el histórico de tu agencia: cuentas de clientes, integraciones, cronómetros, costes salariales y tokens Ads. Todas las copias de retención o Back-ups automatizados se descartan de forma técnica en un plazo máximo no superior a 30 días.",
+        "faq4q": "¿Cómo protegen el acceso al sistema los ingenieros de Taimbox?",
+        "faq4a": "Mantenemos una estricta separación física entre los entornos de Desarrollo (Staging) y Producción. Nuestro equipo de ingeniería trabaja exclusivamente con datos simulados. El acceso a la base de datos de Producción está fuertemente restringido, carece de interfaces públicas y cada intervención técnica o query de mantenimiento queda registrada en logs de auditoría interna. Si necesitas ayuda técnica, nuestro equipo solo accederá a tu instancia bajo tu petición expresa.",
+        "ctaH2": "¿Tu equipo legal necesita más detalles técnicos?",
+        "ctaP": "Entendemos la necesidad de someter nuestro producto a test de proveedores exigentes en las agencias. Estamos preparados para pasar los cuestionarios de cumplimiento (IT Compliance / ISO Checklists). Escríbenos directamente para firmar acuerdos o consulta nuestra API para auditar endpoints tú mismo.",
+        "ctaApiBtn": "Auditar Arquitectura API",
+        "ctaMailBtn": "Contactar al equipo DPO"
+      }
+    }
+  },
+  "demo": {
+    "banner": "Demo con datos de ejemplo. Solo lectura.",
+    "currentMonth": "Mes actual",
+    "myCalendar": "Mi calendario",
+    "weekShort": "S",
+    "total": "TOTAL",
+    "tabDependencies": "Dependencias",
+    "tabProjects": "Mis proyectos",
+    "tabPlanning": "Control de planificación",
+    "tabTeammates": "Compañeros",
+    "tabMetrics": "Mis métricas",
+    "plannerTitle": "Demo Interactivo - Datos de Ejemplo",
+    "plannerSubtitle": "Esta es una demostración con datos simulados. Explora las diferentes secciones para ver cómo funciona la plataforma. No se pueden realizar modificaciones en este modo demo.",
+    "tabOverview": "Vista general",
+    "tabProjectsPlanner": "Proyectos",
+    "tabMetricsPlanner": "Métricas",
+    "team": "Equipo",
+    "activeProjects": "Proyectos activos",
+    "scenarios": "Escenarios",
+    "loadNormal": "Carga normal (80-90%)",
+    "loadOver": "Sobrecarga (110-120%)",
+    "loadUnder": "Subcarga (50-60%)",
+    "loadOptimal": "Carga óptima (85-95%)",
+    "weeklyLoad": "Carga por semana",
+    "weeklyLoadDesc": "Desglose de horas planificadas por semana (ejemplo: María y Carlos)",
+    "task": "tarea",
+    "tasks": "tareas",
+    "assigned": "Asignadas",
+    "readonlyMetrics": "Métricas de solo lectura en modo demo",
+    "totalMonth": "TOTAL MES",
+    "est": "Est.",
+    "real": "Real",
+    "comp": "Comp.",
+    "gain": "Ganancia",
+    "loss": "Pérdida",
+    "free": "LIBRE",
+    "pending": "pendiente"
+  }
+}
+

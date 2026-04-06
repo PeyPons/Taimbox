@@ -2,14 +2,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 /**
  * Página mostrada cuando la agencia del usuario está suspendida.
- * Fuera del AppLayout. Incluye botón "Cerrar sesión" para no dejar al usuario atrapado.
+ * Fuera del AppLayout. Incluye botón de cierre de sesión para no dejar al usuario atrapado.
  */
 export default function SuspendedPage() {
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation("app");
 
   const handleLogout = async () => {
     await signOut();
@@ -25,14 +27,14 @@ export default function SuspendedPage() {
           </div>
         </div>
         <h1 className="text-xl font-semibold text-slate-900">
-          Esta cuenta ha sido suspendida
+          {t("suspended.title")}
         </h1>
         <p className="text-slate-600">
-          Contacte con soporte para más información. Si cree que es un error, póngase en contacto con nosotros.
+          {t("suspended.body")}
         </p>
         <Button onClick={handleLogout} variant="outline" className="gap-2">
           <LogOut className="h-4 w-4" />
-          Cerrar sesión
+          {t("suspended.logout")}
         </Button>
       </div>
     </div>

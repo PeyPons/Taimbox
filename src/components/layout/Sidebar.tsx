@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 import { AgencySelectorCompact } from '@/components/agencies/AgencySelectorCompact';
 import { DepartmentViewSelector } from '@/components/layout/DepartmentViewSelector';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import {
   LayoutDashboard,
   Users,
@@ -91,6 +92,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { currentUser, employees, projects } = useApp();
   const { canAccess, hasPermission } = usePermissions();
   const { currentAgency, availableAgencies } = useAgency();
+  const { t } = useAppTranslation();
 
   const showPitchBanner = useMemo(() => {
     if (!currentAgency?.id || !hasPermission('can_access_agency_settings')) return false;
@@ -221,7 +223,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           <div className="mb-6">
             <NavLink to="/dashboard" icon={Home} active={location.pathname === '/dashboard'}>
-              Mi espacio
+              {t('sidebar.menu.mySpace', 'Mi espacio')}
             </NavLink>
           </div>
 
@@ -233,13 +235,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <div className="min-w-0 flex-1">
                   <div
                     className="text-slate-200 text-xs font-medium truncate"
-                    title={activeTimer.isActive ? (activeTimer.taskName || '') + (activeTimer.clientName ? ` · Cliente: ${activeTimer.clientName}` : '') : undefined}
+                    title={activeTimer.isActive ? (activeTimer.taskName || '') + (activeTimer.clientName ? ` · ${t('sidebar.timer.client', 'Cliente:')} ${activeTimer.clientName}` : '') : undefined}
                   >
-                    {activeTimer.isActive ? (activeTimer.taskName || 'Tarea en curso') : 'Total registrado'}
+                    {activeTimer.isActive ? (activeTimer.taskName || t('sidebar.timer.taskInProgress', 'Tarea en curso')) : t('sidebar.timer.totalRegistered', 'Total registrado')}
                   </div>
                   {activeTimer.isActive && activeTimer.clientName && (
                     <div className="text-[11px] text-slate-500 truncate mt-0.5">
-                      Cliente: {activeTimer.clientName}
+                      {t('sidebar.timer.client', 'Cliente:')} {activeTimer.clientName}
                     </div>
                   )}
                 </div>
@@ -258,11 +260,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       }}
                     >
                       <Square className="h-3 w-3 fill-current mr-1" />
-                      Parar
+                      {t('sidebar.timer.stop', 'Parar')}
                     </Button>
                   </div>
                   <div className="text-[11px] text-slate-500">
-                    Hoy en total: {activeTimer.formattedTimeLabel}
+                    {t('sidebar.timer.todayTotal', 'Hoy en total:')} {activeTimer.formattedTimeLabel}
                   </div>
                 </div>
               ) : (
@@ -278,7 +280,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <>
               {modules.deadlines && canAccess('/deadlines') && (
                 <NavLink to="/deadlines" icon={Calendar} active={location.pathname === '/deadlines'}>
-                  Deadlines
+                  {t('sidebar.menu.deadlines', 'Deadlines')}
                 </NavLink>
               )}
             </>
@@ -290,27 +292,27 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               {/* SEGUIMIENTO */}
               {(canAccess('/operaciones') || canAccess('/finanzas') || canAccess('/team-capacity')) && (
                 <NavGroup
-                  label="Seguimiento"
+                  label={t('sidebar.groups.tracking', 'Seguimiento')}
                   isActive={['/operaciones', '/finanzas', '/capacidad', '/weekly-forecast'].includes(location.pathname)}
                 >
                   {canAccess('/operaciones') && (
                     <NavLink to="/operaciones" icon={Activity} active={location.pathname === '/operaciones'}>
-                      Seguimiento operativo
+                      {t('sidebar.menu.operations', 'Seguimiento operativo')}
                     </NavLink>
                   )}
                   {canAccess('/finanzas') && (
                     <NavLink to="/finanzas" icon={DollarSign} active={location.pathname === '/finanzas'}>
-                      Rentabilidad
+                      {t('sidebar.menu.profitability', 'Rentabilidad')}
                     </NavLink>
                   )}
                   {canAccess('/team-capacity') && (
                     <NavLink to="/capacidad" icon={Users} active={location.pathname === '/capacidad'}>
-                      Capacidad de Equipo
+                      {t('sidebar.menu.teamCapacity', 'Capacidad de Equipo')}
                     </NavLink>
                   )}
                   {canAccess('/team-capacity') && (
                     <NavLink to="/weekly-forecast" icon={FileText} active={location.pathname === '/weekly-forecast'}>
-                      Weekly Forecast
+                      {t('sidebar.menu.weeklyForecast', 'Weekly Forecast')}
                     </NavLink>
                   )}
                 </NavGroup>
@@ -319,17 +321,17 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               {/* PLANIFICACIÓN */}
               {(canAccess('/planner') || (modules.deadlines && canAccess('/deadlines'))) && (
                 <NavGroup
-                  label="Planificación"
+                  label={t('sidebar.groups.planning', 'Planificación')}
                   isActive={location.pathname === '/planner' || location.pathname === '/deadlines'}
                 >
                   {canAccess('/planner') && (
                     <NavLink to="/planner" icon={LayoutDashboard} active={location.pathname === '/planner'}>
-                      Planificador
+                      {t('sidebar.menu.planner', 'Planificador')}
                     </NavLink>
                   )}
                   {modules.deadlines && canAccess('/deadlines') && (
                     <NavLink to="/deadlines" icon={Calendar} active={location.pathname === '/deadlines'}>
-                      Deadlines
+                      {t('sidebar.menu.deadlines', 'Deadlines')}
                     </NavLink>
                   )}
                 </NavGroup>
@@ -338,22 +340,22 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               {/* EQUIPO */}
               {(canAccess('/team') || canAccess('/okrs') || (modules.timeTracker && canAccess('/team'))) && (
                 <NavGroup
-                  label="Equipo"
+                  label={t('sidebar.groups.team', 'Equipo')}
                   isActive={['/team', '/okrs', '/tiempos'].includes(location.pathname)}
                 >
                   {canAccess('/team') && (
                     <NavLink to="/team" icon={Users} active={location.pathname === '/team'}>
-                      Miembros
+                      {t('sidebar.menu.members', 'Miembros')}
                     </NavLink>
                   )}
                   {modules.timeTracker && canAccess('/team') && (
                     <NavLink to="/tiempos" icon={Clock} active={location.pathname === '/tiempos'}>
-                      Tiempos
+                      {t('sidebar.menu.times', 'Tiempos')}
                     </NavLink>
                   )}
                   {canAccess('/okrs') && (
                     <NavLink to="/okrs" icon={Rocket} active={location.pathname === '/okrs'}>
-                      Objetivos
+                      {t('sidebar.menu.okrs', 'Objetivos')}
                     </NavLink>
                   )}
                 </NavGroup>
@@ -362,7 +364,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               {/* PROYECTOS */}
               {(canAccess('/projects') || canAccess('/clients')) && (
                 <NavGroup
-                  label="Cartera"
+                  label={t('sidebar.groups.portfolio', 'Cartera')}
                   isActive={['/clients', '/projects'].includes(location.pathname)}
                 >
                   <NavLink
@@ -370,7 +372,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     icon={Briefcase}
                     active={location.pathname === '/clients' || location.pathname === '/projects'}
                   >
-                    Clientes y proyectos
+                    {t('sidebar.menu.clientsAndProjects', 'Clientes y proyectos')}
                   </NavLink>
                 </NavGroup>
               )}
@@ -378,17 +380,17 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               {/* PPC */}
               {modules.ppc && (canAccess('/ads') || canAccess('/meta-ads')) && (
                 <NavGroup
-                  label="PPC & medios"
+                  label={t('sidebar.groups.ppc', 'PPC & medios')}
                   isActive={['/ads', '/meta-ads'].includes(location.pathname)}
                 >
                   {canAccess('/ads') && (
                     <NavLink to="/ads" icon={Megaphone} active={location.pathname === '/ads'}>
-                      Google Ads
+                      {t('sidebar.menu.googleAds', 'Google Ads')}
                     </NavLink>
                   )}
                   {canAccess('/meta-ads') && (
                     <NavLink to="/meta-ads" icon={Facebook} active={location.pathname === '/meta-ads'}>
-                      Meta Ads
+                      {t('sidebar.menu.metaAds', 'Meta Ads')}
                     </NavLink>
                   )}
                 </NavGroup>
@@ -397,28 +399,28 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               {/* CONFIGURACIÓN: reducido (agencia, ajustes, API, soporte); miembros y crear agencia desde sus páginas) */}
               {canAccess('/settings') && (
                 <NavGroup
-                  label="Configuración"
+                  label={t('sidebar.groups.settings', 'Configuración')}
                   icon={Settings}
                   isActive={['/agency', '/settings', '/api-keys', '/soporte', '/agencies'].includes(location.pathname) || hasAgencyPaths}
                 >
                   {canAccess('/agency') && (
                     <NavLink to="/agency" icon={Settings} active={location.pathname === '/agency'}>
-                      Configuración de agencia
+                      {t('sidebar.menu.agencySettings', 'Configuración de agencia')}
                     </NavLink>
                   )}
                   {hasPermission('can_access_agency_settings') && (
                     <NavLink to="/agencies" icon={Building2} active={location.pathname === '/agencies' && !isAgenciesCreate}>
-                      Mis Agencias
+                      {t('sidebar.menu.myAgencies', 'Mis Agencias')}
                     </NavLink>
                   )}
                   {canAccess('/api-keys') && (
                     <NavLink to="/api-keys" icon={Key} active={location.pathname === '/api-keys'}>
-                      API & Integraciones
+                      {t('sidebar.menu.apiIntegrations', 'API & Integraciones')}
                     </NavLink>
                   )}
                   {canAccess('/soporte') && (
                     <NavLink to="/soporte" icon={MessageCircle} active={location.pathname === '/soporte'}>
-                      Soporte
+                      {t('sidebar.menu.support', 'Soporte')}
                     </NavLink>
                   )}
                 </NavGroup>
@@ -431,7 +433,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           {isPlatformAdmin && (
             <div className="pt-2 mt-2 border-t border-slate-800">
               <NavLink to="/admin" icon={Shield} active={location.pathname.startsWith('/admin')}>
-                Administración
+                {t('sidebar.menu.admin', 'Administración')}
               </NavLink>
             </div>
           )}
@@ -445,7 +447,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <Presentation className="h-4 w-4 text-indigo-400 shrink-0 mt-0.5" />
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-slate-200 leading-snug">
-                  Bienvenido. Recuerda por qué tu equipo necesita esta disciplina.
+                  {t('sidebar.pitch.welcome', 'Bienvenido. Recuerda por qué tu equipo necesita esta disciplina.')}
                 </p>
                 <a
                   href={`${typeof window !== 'undefined' ? window.location.origin : ''}/pitch`}
@@ -453,7 +455,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   rel="noopener noreferrer"
                   className="text-xs font-semibold text-indigo-300 hover:text-indigo-200 mt-1 inline-block"
                 >
-                  Ver visión del sistema →
+                  {t('sidebar.pitch.viewVision', 'Ver visión del sistema →')}
                 </a>
               </div>
               <button
@@ -490,7 +492,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <button
                 onClick={handleLogout}
                 className="p-1 text-slate-500 hover:text-red-400 hover:bg-red-950/30 rounded shrink-0"
-                title="Cerrar sesión"
+                title={t('sidebar.footer.logout', 'Cerrar sesión')}
               >
                 <LogOut className="h-3 w-3" />
               </button>

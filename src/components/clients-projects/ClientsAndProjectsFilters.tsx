@@ -3,7 +3,8 @@
  * Notifica al padre vía onFiltersChange para que la lista se filtre sin prop-drilling.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -54,19 +55,21 @@ export interface ClientsAndProjectsFiltersProps {
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-const statusLabels: Record<StatusFilter, string> = {
-  all: 'Todos los estados',
-  active: 'Solo activos',
-  completed: 'Solo completados',
-  archived: 'Solo archivados',
-  hidden: 'Solo ocultos',
-};
-
 export function ClientsAndProjectsFilters({
   activeFilters,
   employees,
   onFiltersChange,
 }: ClientsAndProjectsFiltersProps) {
+  const { t } = useTranslation('app');
+
+  const statusLabels: Record<StatusFilter, string> = useMemo(() => ({
+    all: t('clientsAndProjects.filters.status.all', 'Todos los estados'),
+    active: t('clientsAndProjects.filters.status.active', 'Solo activos'),
+    completed: t('clientsAndProjects.filters.status.completed', 'Solo completados'),
+    archived: t('clientsAndProjects.filters.status.archived', 'Solo archivados'),
+    hidden: t('clientsAndProjects.filters.status.hidden', 'Solo ocultos'),
+  }), [t]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
@@ -107,8 +110,8 @@ export function ClientsAndProjectsFilters({
 
   const selectedEmployeeName =
     selectedEmployeeId === 'all'
-      ? 'Todos los empleados'
-      : employees.find((e) => e.id === selectedEmployeeId)?.name ?? 'Seleccionar...';
+      ? t('clientsAndProjects.filters.employees.all', 'Todos los empleados')
+      : employees.find((e) => e.id === selectedEmployeeId)?.name ?? t('clientsAndProjects.filters.employees.placeholder', 'Seleccionar...');
 
   return (
     <div className="space-y-3">
@@ -116,7 +119,7 @@ export function ClientsAndProjectsFilters({
         <div className="relative flex-1 min-w-[200px] max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar cliente o proyecto..."
+            placeholder={t('clientsAndProjects.filters.searchPlaceholder', 'Buscar cliente o proyecto...')}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className="pl-10 h-9"
@@ -167,7 +170,7 @@ export function ClientsAndProjectsFilters({
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-[140px] h-9 justify-between font-normal">
               <span className="truncate">
-                {projectTypeFilter === 'all' ? 'Todos los tipos' : activeFilters.find((f) => f.id === projectTypeFilter)?.displayName ?? 'Tipo'}
+                {projectTypeFilter === 'all' ? t('clientsAndProjects.filters.types.all', 'Todos los tipos') : activeFilters.find((f) => f.id === projectTypeFilter)?.displayName ?? t('clientsAndProjects.filters.types.placeholder', 'Tipo')}
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
             </Button>
@@ -175,17 +178,17 @@ export function ClientsAndProjectsFilters({
           <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
             <Command>
               <CommandList className="max-h-[280px]">
-                <CommandEmpty>No hay tipos.</CommandEmpty>
+                <CommandEmpty>{t('common.no_results', 'No hay resultados.')}</CommandEmpty>
                 <CommandGroup>
                   <CommandItem
-                    value="Todos los tipos"
+                    value={t('clientsAndProjects.filters.types.all', 'Todos los tipos')}
                     onSelect={() => {
                       setProjectTypeFilter('all');
                       setOpenProjectTypeFilter(false);
                     }}
                   >
                     <Check className={cn('mr-2 h-4 w-4 shrink-0', projectTypeFilter === 'all' ? 'opacity-100' : 'opacity-0')} />
-                    Todos los tipos
+                    {t('clientsAndProjects.filters.types.all', 'Todos los tipos')}
                   </CommandItem>
                   {activeFilters.map((filter) => (
                     <CommandItem
@@ -218,9 +221,9 @@ export function ClientsAndProjectsFilters({
           </PopoverTrigger>
           <PopoverContent className="w-[180px] p-0">
             <Command>
-              <CommandInput placeholder="Buscar..." />
+              <CommandInput placeholder={t('clientsAndProjects.filters.employees.search', 'Buscar...')} />
               <CommandList>
-                <CommandEmpty>No se encontró el empleado.</CommandEmpty>
+                <CommandEmpty>{t('clientsAndProjects.filters.employees.notFound', 'No se encontró el empleado.')}</CommandEmpty>
                 <CommandGroup>
                   <CommandItem
                     onSelect={() => {
@@ -228,7 +231,7 @@ export function ClientsAndProjectsFilters({
                       setOpenEmployeeCombo(false);
                     }}
                   >
-                    Todos los empleados
+                    {t('clientsAndProjects.filters.employees.all', 'Todos los empleados')}
                   </CommandItem>
                   {employees.filter((e) => e.isActive !== false).map((e) => (
                     <CommandItem
@@ -249,7 +252,7 @@ export function ClientsAndProjectsFilters({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-slate-500 mr-1">Filtros:</span>
+        <span className="text-xs font-medium text-slate-500 mr-1">{t('clientsAndProjects.filters.quick.label', 'Filtros:')}</span>
         <Button
           variant={activeFilter === 'all' ? 'default' : 'outline'}
           size="sm"
@@ -257,7 +260,7 @@ export function ClientsAndProjectsFilters({
           className={cn('h-8 text-xs gap-1.5', activeFilter === 'all' ? 'bg-slate-900' : 'bg-white')}
         >
           <LayoutGrid className="h-3.5 w-3.5" />
-          Todos
+          {t('clientsAndProjects.filters.quick.all', 'Todos')}
         </Button>
         <TooltipProvider>
           <Tooltip>
@@ -272,11 +275,11 @@ export function ClientsAndProjectsFilters({
                 )}
               >
                 <Ban className="h-3.5 w-3.5" />
-                Sin actividad
+                {t('clientsAndProjects.filters.quick.noActivity', 'Sin actividad')}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p className="text-xs">Proyectos sin tareas planificadas este mes</p>
+              <p className="text-xs">{t('clientsAndProjects.filters.quick.noActivityTooltip', 'Proyectos sin tareas planificadas este mes')}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -293,13 +296,13 @@ export function ClientsAndProjectsFilters({
                 )}
               >
                 <CircleDashed className="h-3.5 w-3.5" />
-                Falta planificar
+                {t('clientsAndProjects.filters.quick.needsPlanning', 'Falta planificar')}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p className="text-xs">Proyectos que no han planificado todas sus horas asignadas o mínimas</p>
+              <p className="text-xs">{t('clientsAndProjects.filters.quick.needsPlanningTooltip', 'Proyectos que no han planificado todas sus horas asignadas o mínimas')}</p>
               <p className="text-[10px] text-slate-400 mt-1">
-                Si tiene horas asignadas, debe planificar todas. Si solo tiene mínimas, debe planificar al menos esas.
+                {t('clientsAndProjects.filters.quick.needsPlanningDetail', 'Si tiene horas asignadas, debe planificar todas. Si solo tiene mínimas, debe planificar al menos esas.')}
               </p>
             </TooltipContent>
           </Tooltip>
@@ -317,11 +320,11 @@ export function ClientsAndProjectsFilters({
                 )}
               >
                 <Clock className="h-3.5 w-3.5" />
-                Retrasados
+                {t('clientsAndProjects.filters.quick.behindSchedule', 'Retrasados')}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p className="text-xs">Ejecución por debajo del progreso del mes</p>
+              <p className="text-xs">{t('clientsAndProjects.filters.quick.behindScheduleTooltip', 'Ejecución por debajo del progreso del mes')}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -338,11 +341,11 @@ export function ClientsAndProjectsFilters({
                 )}
               >
                 <AlertOctagon className="h-3.5 w-3.5" />
-                Exceso horas
+                {t('clientsAndProjects.filters.quick.overBudget', 'Exceso horas')}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p className="text-xs">Proyectos con más horas planificadas que asignadas</p>
+              <p className="text-xs">{t('clientsAndProjects.filters.quick.overBudgetTooltip', 'Proyectos con más horas planificadas que asignadas')}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -350,3 +353,4 @@ export function ClientsAndProjectsFilters({
     </div>
   );
 }
+

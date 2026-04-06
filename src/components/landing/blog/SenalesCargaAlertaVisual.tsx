@@ -1,21 +1,24 @@
 import { Activity, Clock, MessageSquareOff, TrendingDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
-const ITEMS = [
-  { Icon: MessageSquareOff, label: 'Menos participación', tone: 'text-amber-300' },
-  { Icon: TrendingDown, label: 'Calidad irregular', tone: 'text-orange-300' },
-  { Icon: Clock, label: 'Plazos que se escapan', tone: 'text-rose-300' },
-  { Icon: Activity, label: 'Métricas de carga desiguales', tone: 'text-violet-300' },
-] as const;
-
-/** Resumen visual de señales tempranas (conducta + datos). */
 export function SenalesCargaAlertaVisual() {
+  const { t } = useTranslation('blog');
+  const compKey = 'components.senalesCargaAlerta';
+
+  const items = [
+    { Icon: MessageSquareOff, label: t(`${compKey}.items.0`), tone: 'text-amber-300' },
+    { Icon: TrendingDown, label: t(`${compKey}.items.1`), tone: 'text-orange-300' },
+    { Icon: Clock, label: t(`${compKey}.items.2`), tone: 'text-rose-300' },
+    { Icon: Activity, label: t(`${compKey}.items.3`), tone: 'text-violet-300' },
+  ];
+
   return (
     <figure className="rounded-2xl border border-amber-500/25 bg-amber-950/20 p-5 sm:p-6 not-prose">
       <figcaption className="text-center text-sm font-semibold text-amber-200/90 mb-4">
-        Señales tempranas: conducta + números
+        {t(`${compKey}.caption`)}
       </figcaption>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {ITEMS.map(({ Icon, label, tone }) => (
+        {items.map(({ Icon, label, tone }) => (
           <div
             key={label}
             className="flex flex-col items-center text-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-4"

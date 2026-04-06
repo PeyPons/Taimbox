@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { useAppTranslation } from "@/hooks/useAppTranslation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Building2, Users, MessageSquare } from "lucide-react";
 import { toast } from "@/lib/notify";
@@ -16,6 +17,7 @@ interface PlatformMetrics {
 }
 
 export default function AdminMetricsPage() {
+  const { t } = useAppTranslation();
   const [metrics, setMetrics] = useState<PlatformMetrics | null>(null);
   const [loading, setLoading] = useState(true);
 

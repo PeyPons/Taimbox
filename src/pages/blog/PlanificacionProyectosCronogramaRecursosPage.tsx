@@ -1,66 +1,63 @@
-import { Helmet } from 'react-helmet-async';
+import { BlogArticleSeo } from '@/seo/BlogArticleSeo';
 import { PlanificacionProyectosArticle } from '@/components/landing/blog/PlanificacionProyectosArticle';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { BlogBreadcrumb } from '@/components/landing/blog/BlogBreadcrumb';
-import { blogPosts } from '@/data/blogPosts';
+import { blogPosts, getBlogPostLocaleFields } from '@/data/blogPosts';
+import { useTranslation } from 'react-i18next';
 
 const SLUG = 'planificacion-proyectos-cronograma-recursos';
-const post = blogPosts.find((p) => p.slug === SLUG)!;
-const relatedPost = post?.relatedSlug ? blogPosts.find((p) => p.slug === post.relatedSlug) : null;
-
-const TOC_ITEMS = [
-  { id: 'que-es-planificacion', label: '1. Qué es la planificación de proyectos' },
-  { id: 'cronograma-gantt', label: '2. El cronograma y el diagrama de Gantt' },
-  { id: 'presupuesto-proyecto', label: '3. Presupuesto del proyecto' },
-  { id: 'recursos-capacidad', label: '4. Recursos y capacidad' },
-  { id: 'seguimiento-kpis-dashboard', label: '5. Seguimiento, KPIs y dashboard' },
-  { id: 'herramientas-gestion-proyectos', label: '6. Herramientas de gestión de proyectos' },
-  { id: 'preguntas-frecuentes', label: 'Preguntas frecuentes' },
-  { id: 'cta-planifica', label: 'Planifica por horas' },
-];
 
 export default function PlanificacionProyectosCronogramaRecursosPage() {
+  const { t, i18n } = useTranslation("blog");
+  const postKey = "planificacionProyectos";
+
+  const post = blogPosts.find((p) => p.slug === SLUG)!;
+  const { title: postTitle } = getBlogPostLocaleFields(post, i18n.language);
+
+  const rawRelatedPost = post?.relatedSlug ? blogPosts.find((p) => p.slug === post.relatedSlug) : null;
+  const relatedPost = rawRelatedPost ? getBlogPostLocaleFields(rawRelatedPost, i18n.language) : null;
+
+  const tocData = (t(`posts.${postKey}.toc`, { returnObjects: true }) as any) || {};
+
+  const TOC_ITEMS = [
+    { id: 'que-es-planificacion', label: tocData.queEs || '1. Qué es la planificación de proyectos' },
+    { id: 'cronograma-gantt', label: tocData.cronograma || '2. El cronograma y el diagrama de Gantt' },
+    { id: 'presupuesto-proyecto', label: tocData.presupuesto || '3. Presupuesto del proyecto' },
+    { id: 'recursos-capacidad', label: tocData.recursos || '4. Recursos y capacidad' },
+    { id: 'seguimiento-kpis-dashboard', label: tocData.seguimiento || '5. Seguimiento, KPIs y dashboard' },
+    { id: 'herramientas-gestion-proyectos', label: tocData.herramientas || '6. Herramientas de gestión de proyectos' },
+    { id: 'preguntas-frecuentes', label: tocData.faq || 'Preguntas frecuentes' },
+    { id: 'cta-planifica', label: tocData.cta || 'Planifica por horas' }
+  ];
+
+  const headline = t(`posts.${postKey}.meta.headline`);
+  const description = t(`posts.${postKey}.meta.description`);
+
+  const jsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Article',
+        headline: headline,
+        description: description,
+        author: { '@type': 'Organization', name: 'Taimbox' },
+        publisher: { '@type': 'Organization', name: 'Taimbox' },
+        datePublished: post?.date ?? '2026-03-18',
+      },
+      {
+        '@type': 'SoftwareApplication',
+        name: 'Taimbox',
+        applicationCategory: 'BusinessApplication',
+        description:
+          'Planificador de recursos y tiempo para agencias. Cronograma por horas, presupuesto por proyectos y reportes de rentabilidad.',
+      },
+    ],
+  };
+
   return (
     <>
-      <Helmet>
-        <title>Planificación de proyectos: cronograma, presupuesto y recursos | Guía práctica | Taimbox</title>
-        <meta
-          name="description"
-          content="Guía práctica para planificar proyectos: cronograma, diagrama de Gantt, presupuesto por proyectos, recursos y capacidad del equipo. Incluye KPIs, dashboard y herramientas para agencias."
-        />
-        <link rel="canonical" href="https://taimbox.com/blog/planificacion-proyectos-cronograma-recursos" />
-        <meta property="og:type" content="article" />
-        <meta property="og:title" content="Planificación de proyectos: cronograma, presupuesto y recursos | Taimbox" />
-        <meta
-          property="og:description"
-          content="Guía práctica para planificar proyectos: cronograma, diagrama de Gantt, presupuesto por proyectos, recursos y capacidad del equipo."
-        />
-        <meta property="og:url" content="https://taimbox.com/blog/planificacion-proyectos-cronograma-recursos" />
-        <script type="application/ld+json">
-          {JSON.stringify({
-            '@context': 'https://schema.org',
-            '@graph': [
-              {
-                '@type': 'Article',
-                headline: 'Planificación de proyectos: cronograma, presupuesto y recursos (guía práctica)',
-                description:
-                  'Guía práctica para unir cronograma, presupuesto y capacidad del equipo. Incluye diagrama de Gantt, fases del proyecto, KPIs y herramientas de gestión de proyectos.',
-                author: { '@type': 'Organization', name: 'Taimbox' },
-                publisher: { '@type': 'Organization', name: 'Taimbox' },
-                datePublished: post?.date ?? '2026-03-18',
-              },
-              {
-                '@type': 'SoftwareApplication',
-                name: 'Taimbox',
-                applicationCategory: 'BusinessApplication',
-                description:
-                  'Planificador de recursos y tiempo para agencias. Cronograma por horas, presupuesto por proyectos y reportes de rentabilidad.',
-              },
-            ],
-          })}
-        </script>
-      </Helmet>
+      <BlogArticleSeo jsonLd={jsonLd} />
 
       <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-indigo-900 relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
@@ -79,14 +76,14 @@ export default function PlanificacionProyectosCronogramaRecursosPage() {
         <LandingHeader />
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4">
-          <BlogBreadcrumb title={post?.title ?? 'Planificación de proyectos'} />
+          <BlogBreadcrumb title={postTitle} />
         </div>
 
         <div className="relative z-10">
           <PlanificacionProyectosArticle
             readingMinutes={post?.readingMinutes ?? 10}
             tocItems={TOC_ITEMS}
-            relatedPost={relatedPost ? { title: relatedPost.title, description: relatedPost.description, href: relatedPost.href } : undefined}
+            relatedPost={relatedPost ?? undefined}
           />
         </div>
 

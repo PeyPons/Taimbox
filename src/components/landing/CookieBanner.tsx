@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,6 +22,7 @@ import {
 import { Cookie, Settings2, Shield, BarChart3, Megaphone } from "lucide-react";
 
 export function CookieBanner() {
+  const { t } = useTranslation("landing");
   const [visible, setVisible] = useState(false);
   const [openCustomize, setOpenCustomize] = useState(false);
   const [customState, setCustomState] = useState<Pick<CookieConsentState, "analytics" | "marketing">>({
@@ -86,7 +88,7 @@ export function CookieBanner() {
           <div
             className="fixed bottom-0 left-0 right-0 z-[9998] border-t-2 border-indigo-500/50 bg-indigo-950 shadow-2xl animate-in slide-in-from-bottom duration-300 pb-[env(safe-area-inset-bottom)]"
             role="dialog"
-            aria-label="Preferencias de cookies"
+            aria-label={t("cookie.ariaDialog")}
           >
             <div className="max-w-5xl mx-auto px-4 py-4 sm:px-8 sm:py-6 lg:px-10 lg:py-7">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
@@ -96,16 +98,16 @@ export function CookieBanner() {
                   </div>
                   <div className="min-w-0 space-y-1.5 sm:space-y-2 flex-1">
                     <p className="text-sm sm:text-base font-semibold text-white leading-snug">
-                      Utilizamos cookies para mejorar tu experiencia y el servicio.
+                      {t("cookie.bannerTitle")}
                     </p>
                     <p className="text-xs sm:text-sm text-indigo-200/90 leading-relaxed">
-                      Las necesarias son esenciales; las demás nos ayudan a analizar el uso y mejorar la plataforma.{" "}
+                      {t("cookie.bannerBody")}{" "}
                       <button
                         type="button"
                         className="text-indigo-300 hover:text-white underline underline-offset-2 font-medium touch-manipulation min-h-[44px] min-w-[44px] -ml-2 -mb-1 inline-flex items-center"
                         onClick={() => setOpenCustomize(true)}
                       >
-                        Más información
+                        {t("cookie.moreInfo")}
                       </button>
                     </p>
                   </div>
@@ -137,7 +139,7 @@ export function CookieBanner() {
                     onClick={handleOpenCustomize}
                   >
                     <Settings2 className="h-4 w-4 mr-2 shrink-0" />
-                    Personalizar
+                    {t("cookie.customize")}
                   </Button>
                 </div>
               </div>
@@ -155,11 +157,10 @@ export function CookieBanner() {
           <DialogHeader className="space-y-3">
             <DialogTitle className="flex items-center gap-2 text-white text-lg sm:text-xl">
               <Cookie className="h-5 w-5 text-indigo-400 shrink-0" />
-              Preferencias de cookies
+              {t("cookie.dialogTitle")}
             </DialogTitle>
             <DialogDescription className="text-slate-300 text-sm leading-relaxed">
-              Puedes activar o desactivar las categorías según tu preferencia. Las cookies necesarias
-              siempre están activas para el funcionamiento del sitio.
+              {t("cookie.dialogDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 sm:gap-4 py-3 sm:py-4">
@@ -168,9 +169,9 @@ export function CookieBanner() {
                 <Shield className="h-5 w-5 text-indigo-400 shrink-0" />
                 <div className="min-w-0">
                   <Label htmlFor="necessary" className="text-white font-medium cursor-pointer">
-                    Necesarias
+                    {t("cookie.necessary")}
                   </Label>
-                  <p className="text-sm text-slate-400 leading-relaxed mt-0.5">Sesión, seguridad y preferencias básicas. Siempre activas.</p>
+                  <p className="text-sm text-slate-400 leading-relaxed mt-0.5">{t("cookie.necessaryDesc")}</p>
                 </div>
               </div>
               <Switch id="necessary" checked disabled className="data-[state=checked]:bg-indigo-600 shrink-0" />
@@ -180,9 +181,9 @@ export function CookieBanner() {
                 <BarChart3 className="h-5 w-5 text-indigo-400 shrink-0" />
                 <div className="min-w-0">
                   <Label htmlFor="analytics" className="text-white font-medium cursor-pointer">
-                    Analíticas
+                    {t("cookie.analytics")}
                   </Label>
-                  <p className="text-sm text-slate-400 leading-relaxed mt-0.5">Nos ayudan a entender cómo se usa la plataforma.</p>
+                  <p className="text-sm text-slate-400 leading-relaxed mt-0.5">{t("cookie.analyticsDesc")}</p>
                 </div>
               </div>
               <Switch
@@ -197,9 +198,9 @@ export function CookieBanner() {
                 <Megaphone className="h-5 w-5 text-indigo-400 shrink-0" />
                 <div className="min-w-0">
                   <Label htmlFor="marketing" className="text-white font-medium cursor-pointer">
-                    Marketing
+                    {t("cookie.marketing")}
                   </Label>
-                  <p className="text-sm text-slate-400 leading-relaxed mt-0.5">Personalización de mensajes y ofertas (si las usamos).</p>
+                  <p className="text-sm text-slate-400 leading-relaxed mt-0.5">{t("cookie.marketingDesc")}</p>
                 </div>
               </div>
               <Switch
@@ -217,13 +218,13 @@ export function CookieBanner() {
               className="min-h-[44px] touch-manipulation w-full sm:w-auto border-white/40 bg-white/5 text-white hover:bg-white/10 hover:text-white hover:border-white/60"
               onClick={() => setOpenCustomize(false)}
             >
-              Cancelar
+              {t("cookie.cancel")}
             </Button>
             <Button
               className="min-h-[44px] touch-manipulation w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700"
               onClick={handleSaveCustom}
             >
-              Guardar preferencias
+              {t("cookie.save")}
             </Button>
           </DialogFooter>
         </DialogContent>

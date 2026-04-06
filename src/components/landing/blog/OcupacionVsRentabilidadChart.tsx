@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Flame, Pause, Play } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Modelo conceptual: utilización vs margen neto.
@@ -61,9 +62,10 @@ function buildPathD(upToIdx: number): string {
   return parts.join(' ');
 }
 
-const FULL_D = buildPathD(FULL_POINTS.length - 1);
-
 export function OcupacionVsRentabilidadChart() {
+  const { t } = useTranslation('blog');
+  const compKey = 'components.ocupacionChart';
+
   const pathRef = useRef<SVGPathElement>(null);
   const dotRef = useRef<SVGCircleElement>(null);
   const labelRef = useRef<SVGTextElement>(null);
@@ -154,11 +156,8 @@ export function OcupacionVsRentabilidadChart() {
         role="img"
         aria-labelledby="ocupacion-chart-title ocupacion-chart-desc"
       >
-        <title id="ocupacion-chart-title">Utilización del equipo frente a rentabilidad (modelo conceptual)</title>
-        <desc id="ocupacion-chart-desc">
-          Curva animada que parte en negativo por costes fijos, cruza el equilibrio al 34%, alcanza el pico al 72%
-          y se desploma a partir del 85%.
-        </desc>
+        <title id="ocupacion-chart-title">{t(`${compKey}.title`)}</title>
+        <desc id="ocupacion-chart-desc">{t(`${compKey}.desc`)}</desc>
 
         {/* Zonas de fondo */}
         <rect x={xPos(0)} y={PAD.t} width={xPos(50) - xPos(0)} height={INNER_H} fill="rgb(15 23 42 / 0.55)" />
@@ -168,19 +167,19 @@ export function OcupacionVsRentabilidadChart() {
 
         {/* Etiquetas de zona (sutiles, en la parte baja) */}
         <text x={(xPos(50) + xPos(75)) / 2} y={PAD.t + INNER_H - 8} textAnchor="middle" fill="rgb(52 211 153 / 0.5)" fontSize={10} fontFamily="system-ui, sans-serif">
-          Saludable
+          {t(`${compKey}.zones.healthy`)}
         </text>
         <text x={(xPos(75) + xPos(85)) / 2} y={PAD.t + INNER_H - 8} textAnchor="middle" fill="rgb(245 158 11 / 0.5)" fontSize={10} fontFamily="system-ui, sans-serif">
-          Fricción
+          {t(`${compKey}.zones.friction`)}
         </text>
         <text x={(xPos(85) + xPos(100)) / 2} y={PAD.t + INNER_H - 8} textAnchor="middle" fill="rgb(239 68 68 / 0.5)" fontSize={10} fontFamily="system-ui, sans-serif">
-          Colapso
+          {t(`${compKey}.zones.collapse`)}
         </text>
 
         {/* Línea break-even (0) */}
         <line x1={PAD.l} y1={yZero} x2={W - PAD.r} y2={yZero} stroke="rgb(148 163 184 / 0.35)" strokeWidth={1} strokeDasharray="4 4" />
         <text x={W - PAD.r - 2} y={yZero - 5} textAnchor="end" fill="rgb(148 163 184 / 0.8)" fontSize={10} fontFamily="system-ui, sans-serif">
-          break-even
+          {t(`${compKey}.breakEven`)}
         </text>
 
         {/* Ejes */}
@@ -188,7 +187,7 @@ export function OcupacionVsRentabilidadChart() {
         <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={PAD.t + INNER_H} stroke="rgb(255 255 255 / 0.22)" strokeWidth={1} />
 
         <text x={W / 2} y={H - 10} textAnchor="middle" fill="rgb(199 210 254 / 0.85)" fontSize={12} fontFamily="system-ui, sans-serif">
-          Tasa de utilización del equipo →
+          {t(`${compKey}.xAxis`)}
         </text>
         <text
           x={14}
@@ -199,7 +198,7 @@ export function OcupacionVsRentabilidadChart() {
           fontFamily="system-ui, sans-serif"
           transform={`rotate(-90 14 ${H / 2})`}
         >
-          Rentabilidad / margen neto →
+          {t(`${compKey}.yAxis`)}
         </text>
 
         {/* Marcador break-even ~34% */}
@@ -211,13 +210,13 @@ export function OcupacionVsRentabilidadChart() {
         {/* Marcador pico estático (referencia sutil) */}
         <circle cx={peakPx} cy={peakPy} r={5} fill="rgb(52 211 153)" stroke="white" strokeWidth={1.2} opacity={0.35} />
         <text x={peakPx + 10} y={peakPy - 8} fill="rgb(167 243 208 / 0.5)" fontSize={10} fontFamily="system-ui, sans-serif">
-          Pico ~72%
+          {t(`${compKey}.peak`)}
         </text>
 
         {/* Origen negativo */}
         <circle cx={xPos(0)} cy={originY} r={3.5} fill="rgb(248 113 113 / 0.8)" stroke="white" strokeWidth={1} />
         <text x={xPos(1.5)} y={originY + 16} fill="rgb(252 165 165 / 0.75)" fontSize={9} fontFamily="system-ui, sans-serif">
-          Coste fijo
+          {t(`${compKey}.fixedCost`)}
         </text>
 
         {/* Curva animada */}
@@ -268,7 +267,7 @@ export function OcupacionVsRentabilidadChart() {
         type="button"
         onClick={() => setPaused((p) => !p)}
         className="absolute top-3 right-3 sm:top-4 sm:right-4 rounded-full bg-slate-800/80 border border-white/15 p-1.5 text-slate-300 hover:text-white hover:bg-slate-700/80 transition-colors"
-        aria-label={paused ? 'Reanudar animación' : 'Pausar animación'}
+        aria-label={paused ? t(`${compKey}.ariaPlay`) : t(`${compKey}.ariaPause`)}
       >
         {paused
           ? <Play className="h-4 w-4" aria-hidden />
@@ -278,11 +277,12 @@ export function OcupacionVsRentabilidadChart() {
       {/* Avisos siempre visibles */}
       <div className="mt-4 grid gap-3 sm:grid-cols-2 max-w-3xl mx-auto">
         <div className="rounded-xl border border-amber-500/30 bg-amber-950/30 px-3 py-3 text-sm text-amber-50/90 leading-snug">
-          <strong className="text-amber-200">Capacidad perdida por fragmentación:</strong>{' '}
-          orden de magnitud de ~240.000 €/año en un equipo de 10 personas (modelo conceptual; varía por mix y tarifas).
+          <strong className="text-amber-200">{t(`${compKey}.warnings.fragmentation.label`)}</strong>{' '}
+          {t(`${compKey}.warnings.fragmentation.text`)}
         </div>
         <div className="rounded-xl border border-red-500/30 bg-red-950/25 px-3 py-3 text-sm text-red-50/90 leading-snug">
-          <strong className="text-red-200">Sustituir un perfil quemado</strong> suele costar entre el 50% y el 200% de su salario anual —antes de contar el hueco operativo.
+          <strong className="text-red-200">{t(`${compKey}.warnings.burnout.label`)}</strong>{' '}
+          {t(`${compKey}.warnings.burnout.text`)}
         </div>
       </div>
 
@@ -291,29 +291,28 @@ export function OcupacionVsRentabilidadChart() {
         <div className="flex gap-3 items-start">
           <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400 mt-0.5" aria-hidden />
           <p>
-            <span className="text-emerald-300/90 font-medium">Rango saludable (50–75%):</span>{' '}
-            Margen para imprevistos y Deep Work.
+            <span className="text-emerald-300/90 font-medium">{t(`${compKey}.legend.healthy.label`)}</span>{' '}
+            {t(`${compKey}.legend.healthy.text`)}
           </p>
         </div>
         <div className="flex gap-3 items-start">
           <AlertTriangle className="h-5 w-5 shrink-0 text-amber-400 mt-0.5" aria-hidden />
           <p>
-            <span className="text-amber-200/90 font-medium">Zona de fricción (75–85%):</span>{' '}
-            Pérdida de foco y fatiga cognitiva.
+            <span className="text-amber-200/90 font-medium">{t(`${compKey}.legend.friction.label`)}</span>{' '}
+            {t(`${compKey}.legend.friction.text`)}
           </p>
         </div>
         <div className="flex gap-3 items-start">
           <Flame className="h-5 w-5 shrink-0 text-red-400 mt-0.5" aria-hidden />
           <p>
-            <span className="text-red-300/90 font-medium">Colapso de margen (&gt;85%):</span>{' '}
-            Burnout, retrabajo y rotación costosa.
+            <span className="text-red-300/90 font-medium">{t(`${compKey}.legend.collapse.label`)}</span>{' '}
+            {t(`${compKey}.legend.collapse.text`)}
           </p>
         </div>
       </div>
 
       <figcaption className="mt-4 text-xs sm:text-sm text-slate-400 text-center max-w-3xl mx-auto leading-relaxed border-t border-white/10 pt-3">
-        Modelo conceptual basado en benchmarks del sector 2025-2026. La rentabilidad cae por encima del 85% porque el
-        coste de fricción supera el ingreso marginal.
+        {t(`${compKey}.caption`)}
       </figcaption>
     </figure>
   );
