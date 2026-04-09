@@ -316,13 +316,22 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
 
       const agency = await mapSupabaseAgency(agencyData);
 
-      // Solo actualizar si la agencia cambió para evitar loops infinitos (incl. token Google Ads)
+      // Solo actualizar si la agencia cambió para evitar loops infinitos (incl. token Google Ads).
+      // Incluir plan/suscripción: si no, cambios vía webhook (Stripe) no refrescan la UI aunque la BD esté bien.
       setCurrentAgency(prev => {
         if (prev?.id === agency.id &&
           JSON.stringify(prev.settings) === JSON.stringify(agency.settings) &&
           prev.google_ads_refresh_token === agency.google_ads_refresh_token &&
           prev.google_ads_customer_id === agency.google_ads_customer_id &&
-          prev.meta_ads_access_token === agency.meta_ads_access_token) {
+          prev.meta_ads_access_token === agency.meta_ads_access_token &&
+          prev.planId === agency.planId &&
+          prev.subscriptionStatus === agency.subscriptionStatus &&
+          prev.stripeCustomerId === agency.stripeCustomerId &&
+          prev.stripeSubscriptionId === agency.stripeSubscriptionId &&
+          prev.trialEndsAt === agency.trialEndsAt &&
+          prev.subscriptionPeriodEndsAt === agency.subscriptionPeriodEndsAt &&
+          prev.subscriptionCancelAtPeriodEnd === agency.subscriptionCancelAtPeriodEnd &&
+          prev.trialUsedAt === agency.trialUsedAt) {
           return prev;
         }
         return agency;
