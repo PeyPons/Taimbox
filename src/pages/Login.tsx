@@ -308,6 +308,7 @@ export default function Login() {
                         <FormControl>
                           <Input
                             type="email"
+                            autoComplete="username"
                             placeholder={t("auth.login.fields.email.placeholder")}
                             className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                             {...field}
@@ -326,6 +327,7 @@ export default function Login() {
                         <FormControl>
                           <Input
                             type="password"
+                            autoComplete="current-password"
                             placeholder={t("auth.login.fields.password.placeholder")}
                             className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                             {...field}
@@ -380,6 +382,7 @@ export default function Login() {
                     </p>
                     <Input
                       type="email"
+                      autoComplete="email"
                       placeholder={t("auth.forgotPassword.emailPlaceholder")}
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
@@ -425,6 +428,7 @@ export default function Login() {
                         <FormLabel>{t("auth.register.fields.name.label")}</FormLabel>
                         <FormControl>
                           <Input
+                            autoComplete="name"
                             placeholder={t("auth.register.fields.name.placeholder")}
                             className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                             {...field}
@@ -443,6 +447,7 @@ export default function Login() {
                         <FormControl>
                           <Input
                             type="email"
+                            autoComplete="email"
                             placeholder={t("auth.register.fields.email.placeholder")}
                             className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                             {...field}
@@ -463,6 +468,7 @@ export default function Login() {
                           <FormControl>
                             <Input
                               type="password"
+                              autoComplete="new-password"
                               placeholder="••••••••"
                               className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                               {...field}
@@ -481,6 +487,7 @@ export default function Login() {
                           <FormControl>
                             <Input
                               type="password"
+                              autoComplete="new-password"
                               placeholder="••••••••"
                               className="bg-slate-50 border-slate-200 focus:border-indigo-500"
                               {...field}

@@ -1,3 +1,5 @@
+import { useState, useEffect, useMemo, useRef, memo } from 'react';
+import type { ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useForm } from 'react-hook-form';
@@ -119,7 +121,7 @@ const getStatusConfig = (status: string, t: any) => {
 
 // Componente de stat card para el header
 interface StatCardProps {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string }>;
   label: string;
   value: string;
   subValue?: string;
