@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { localizedPathFromEs, pathEsToEn } from '@/i18n/publicPaths';
 import { SeoTags } from '@/seo/SeoTags';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { LanguageSelector } from '@/components/landing/LanguageSelector';
 import { SidebarTOC } from './api-docs/components/SidebarTOC';
 import { getAllSectionIds } from './api-docs/data/toc';
 
@@ -233,6 +234,7 @@ export default function ApiDocsPage() {
                   </Button>
                 </Link>
               )}
+              <LanguageSelector />
               <Link to={pathLogin}>
                 <Button
                   size="sm"
