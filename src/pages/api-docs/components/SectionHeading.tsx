@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link2, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { toast } from '@/lib/notify';
 
@@ -24,6 +25,7 @@ const iconSizes = {
 };
 
 export function SectionHeading({ id, level = 'h2', icon: Icon, className, children }: SectionHeadingProps) {
+  const { t } = useTranslation('apiDocs');
   const [copied, setCopied] = useState(false);
 
   const copyLink = (e: React.MouseEvent) => {
@@ -31,10 +33,10 @@ export function SectionHeading({ id, level = 'h2', icon: Icon, className, childr
     const url = `${window.location.origin}${window.location.pathname}#${id}`;
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
-      toast.success('Enlace copiado', { description: 'Puedes pegarlo para compartir esta sección' });
+      toast.success(t('toastLinkCopied'), { description: t('toastLinkCopiedDesc') });
       setTimeout(() => setCopied(false), 2000);
     }).catch(() => {
-      toast.error('No se pudo copiar');
+      toast.error(t('toastCopyFailed'));
     });
   };
 
@@ -55,7 +57,7 @@ export function SectionHeading({ id, level = 'h2', icon: Icon, className, childr
         <button
           type="button"
           onClick={copyLink}
-          aria-label="Copiar enlace a esta sección"
+          aria-label={t('copySectionAria')}
           className={cn(
             'shrink-0 p-1.5 rounded-md transition-all',
             'opacity-40 hover:opacity-100 group-hover/heading:opacity-100',

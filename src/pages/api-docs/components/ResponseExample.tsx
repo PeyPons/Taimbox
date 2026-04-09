@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { CodeBlock } from './CodeBlock';
 
@@ -8,23 +9,29 @@ interface ResponseExampleProps {
   post: string;
 }
 
-const TABS = [
-  { key: 'getList' as const, label: 'GET (lista)', status: 200 },
-  { key: 'getOne' as const, label: 'GET (uno)', status: 200 },
-  { key: 'post' as const, label: 'POST', status: 201 },
-];
-
 export function ResponseExample({ getList, getOne, post }: ResponseExampleProps) {
+  const { t } = useTranslation('apiDocs');
   const [active, setActive] = useState<'getList' | 'getOne' | 'post'>('getList');
   const responses = { getList, getOne, post };
+
+  const tabs = useMemo(
+    () =>
+      [
+        { key: 'getList' as const, label: t('responseExample.getList'), status: 200 },
+        { key: 'getOne' as const, label: t('responseExample.getOne'), status: 200 },
+        { key: 'post' as const, label: t('responseExample.post'), status: 201 },
+      ],
+    [t],
+  );
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.03] overflow-hidden">
       <div className="flex items-center border-b border-white/10">
-        <span className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-indigo-400/60">Response</span>
+        <span className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-indigo-400/60">{t('responseExample.label')}</span>
         <div className="flex ml-auto">
-          {TABS.map(({ key, label, status }) => (
+          {tabs.map(({ key, label, status }) => (
             <button
+              type="button"
               key={key}
               onClick={() => setActive(key)}
               className={cn(

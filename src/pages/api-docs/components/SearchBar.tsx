@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { TOC_GROUPS } from '../data/toc';
-import { TABLE_GROUPS } from '../data/tables';
+import { useApiDocsTableGroups } from '../useApiDocsTableGroups';
 
 interface SearchResult {
   id: string;
@@ -10,29 +11,44 @@ interface SearchResult {
   group: string;
 }
 
-function buildIndex(): SearchResult[] {
-  const results: SearchResult[] = [];
-  for (const g of TOC_GROUPS) {
-    for (const item of g.items) {
-      results.push({ id: item.id, label: item.label, group: g.title });
-    }
-  }
-  for (const tg of TABLE_GROUPS) {
-    for (const t of tg.tables) {
-      results.push({ id: `resource-${t.name}`, label: t.name, group: `Recurso: ${tg.group}` });
-      for (const col of t.columns) {
-        results.push({ id: `resource-${t.name}`, label: `${t.name}.${col.name}`, group: `Campo` });
-      }
-    }
-  }
-  return results;
-}
-
 export function SearchBar() {
+  const { t, i18n } = useTranslation('apiDocs');
+  const tableGroups = useApiDocsTableGroups();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
-  const index = useMemo(buildIndex, []);
+
+  const index = useMemo((): SearchResult[] => {
+    const results: SearchResult[] = [];
+    for (const g of TOC_GROUPS) {
+      for (const item of g.items) {
+        results.push({
+          id: item.id,
+          label: t(item.labelKey),
+          group: t(g.titleKey),
+        });
+      }
+    }
+    const resourceLabel = t('search.resourcePrefix');
+    const fieldLabel = t('search.fieldPrefix');
+    for (const tg of tableGroups) {
+      for (const tbl of tg.tables) {
+        results.push({
+          id: `resource-${tbl.name}`,
+          label: tbl.name,
+          group: `${resourceLabel} ${tg.group}`,
+        });
+        for (const col of tbl.columns) {
+          results.push({
+            id: `resource-${tbl.name}`,
+            label: `${tbl.name}.${col.name}`,
+            group: fieldLabel,
+          });
+        }
+      }
+    }
+    return results;
+  }, [t, i18n.language, tableGroups]);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return [];
@@ -70,6 +86,7 @@ export function SearchBar() {
   if (!open) {
     return (
       <button
+        type="button"
         onClick={() => {
           setOpen(true);
           setTimeout(() => inputRef.current?.focus(), 50);
@@ -77,9 +94,9 @@ export function SearchBar() {
         className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-900/40 border border-white/10 text-indigo-200 text-sm hover:bg-indigo-800/50 hover:text-white transition-colors"
       >
         <Search className="h-3.5 w-3.5 shrink-0" />
-        <span className="flex-1 text-left">Buscar...</span>
+        <span className="flex-1 text-left">{t('search.placeholder')}</span>
         <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-white/10 text-[10px] font-mono text-slate-500">
-          Ctrl K
+          {t('search.shortcut')}
         </kbd>
       </button>
     );
@@ -93,10 +110,10 @@ export function SearchBar() {
           ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar..."
+          placeholder={t('search.placeholder')}
           className="flex-1 min-w-0 bg-transparent text-sm text-white placeholder:text-slate-500 outline-none"
         />
-        <button onClick={() => { setOpen(false); setQuery(''); }}>
+        <button type="button" onClick={() => { setOpen(false); setQuery(''); }}>
           <X className="h-3.5 w-3.5 text-slate-400 hover:text-white" />
         </button>
       </div>
@@ -110,6 +127,7 @@ export function SearchBar() {
         >
           {filtered.map((r, i) => (
             <button
+              type="button"
               key={`${r.id}-${i}`}
               onClick={() => navigate(r.id)}
               className={cn(

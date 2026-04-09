@@ -8,6 +8,8 @@ import esBlog from "../locales/es/blog.json";
 import enBlog from "../locales/en/blog.json";
 import esApp from "../locales/es/app.json";
 import enApp from "../locales/en/app.json";
+import esApiDocs from "../locales/es/apiDocs.json";
+import enApiDocs from "../locales/en/apiDocs.json";
 
 function getInitialLanguage(): "es" | "en" {
   if (typeof window === "undefined") return "es";
@@ -29,17 +31,19 @@ void i18n
     fallbackLng: "es",
     supportedLngs: ["es", "en"],
     defaultNS: "landing",
-    ns: ["landing", "blog", "app"],
+    ns: ["landing", "blog", "app", "apiDocs"],
     resources: {
       es: {
         landing: esLanding,
         blog: esBlog,
         app: esApp,
+        apiDocs: esApiDocs,
       },
       en: {
         landing: enLanding,
         blog: enBlog,
         app: enApp,
+        apiDocs: enApiDocs,
       },
     },
     interpolation: {

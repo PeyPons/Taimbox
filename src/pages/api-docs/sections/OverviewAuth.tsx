@@ -1,17 +1,29 @@
 import { Link } from 'react-router-dom';
+import { useTranslation, Trans } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Key, Shield, AlertTriangle, Clock, RefreshCw, Eye } from 'lucide-react';
+import { localizedPathFromEs } from '@/i18n/publicPaths';
+import { i18nAsArray } from '@/lib/i18nReturnObjects';
 import { SectionHeading } from '../components/SectionHeading';
 import { CodeBlock } from '../components/CodeBlock';
 
+const SECURITY_ICONS = [Eye, RefreshCw, Shield, Clock] as const;
+
+type SecurityItem = { title: string; text: string };
+
 export function OverviewAuth() {
+  const { t, i18n } = useTranslation('apiDocs');
+  const steps = i18nAsArray<string>(t('overview.auth.steps', { returnObjects: true }));
+  const security = i18nAsArray<SecurityItem>(t('overview.auth.security', { returnObjects: true }));
+  const apiKeysPath = localizedPathFromEs('/api-keys', i18n.language);
+
   return (
     <section>
       <SectionHeading id="auth" icon={Key} className="mb-6">
-        Autenticación y seguridad
+        {t('overview.auth.title')}
       </SectionHeading>
       <p className="text-indigo-100/85 mb-6">
-        Para usar la API necesitas dos valores en los headers de cada peticion:
+        {t('overview.auth.intro')}
       </p>
 
       <div className="grid sm:grid-cols-2 gap-4 mb-6">
@@ -19,16 +31,18 @@ export function OverviewAuth() {
           <CardContent className="p-5">
             <div className="flex items-center gap-2 mb-3">
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                HEADER
+                {t('headerBadge')}
               </span>
               <code className="text-white font-medium text-sm font-mono">apikey</code>
             </div>
             <p className="text-xs text-indigo-200/70 leading-relaxed">
-              La clave anonima (
-              <code className="text-indigo-200 bg-white/10 px-1 rounded font-mono">ANON_KEY</code>
-              ) de tu instancia Supabase. Es la misma que usa la aplicacion web. Se envia en el
-              header{' '}
-              <code className="text-indigo-200 bg-white/10 px-1 rounded font-mono">apikey</code>.
+              <Trans
+                i18nKey="overview.auth.apikeyBody"
+                ns="apiDocs"
+                components={{
+                  code: <code className="text-indigo-200 bg-white/10 px-1 rounded font-mono" />,
+                }}
+              />
             </p>
           </CardContent>
         </Card>
@@ -36,37 +50,27 @@ export function OverviewAuth() {
           <CardContent className="p-5">
             <div className="flex items-center gap-2 mb-3">
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                HEADER
+                {t('headerBadge')}
               </span>
               <code className="text-white font-medium text-sm font-mono">Authorization</code>
             </div>
             <p className="text-xs text-indigo-200/70 leading-relaxed">
-              Token JWT generado desde{' '}
-              <Link to="/api-keys" className="text-indigo-300 underline hover:text-white">
-                API & Integraciones
-              </Link>
-              . Contiene el{' '}
-              <code className="text-indigo-200 bg-white/10 px-1 rounded font-mono">
-                agency_id
-              </code>{' '}
-              de tu agencia. Se envia como{' '}
-              <code className="text-indigo-200 bg-white/10 px-1 rounded font-mono">
-                Bearer &lt;token&gt;
-              </code>
-              .
+              <Trans
+                i18nKey="overview.auth.authBody"
+                ns="apiDocs"
+                components={{
+                  0: <Link to={apiKeysPath} className="text-indigo-300 underline hover:text-white" />,
+                  code: <code className="text-indigo-200 bg-white/10 px-1 rounded font-mono text-xs" />,
+                }}
+              />
             </p>
           </CardContent>
         </Card>
       </div>
 
-      <h3 className="text-white font-semibold mb-3">Cómo obtener un token</h3>
+      <h3 className="text-white font-semibold mb-3">{t('overview.auth.howToTitle')}</h3>
       <div className="mb-6 space-y-3">
-        {[
-          'Inicia sesion en Taimbox como administrador de tu agencia.',
-          'Ve a Configuración \u2192 API & Integraciones en el menú lateral.',
-          'Haz clic en Crear token, asigna un nombre descriptivo y elige los permisos (solo lectura o lectura/escritura). Los tokens de solo lectura devuelven 403 en POST, PATCH y DELETE.',
-          'Copia el token JWT que se muestra. Solo se muestra una vez; guárdalo en un lugar seguro.',
-        ].map((text, i) => (
+        {steps.map((text, i) => (
           <div
             key={i}
             className="flex items-start gap-3 p-3 rounded-lg bg-white/[0.03] border border-white/5"
@@ -79,48 +83,26 @@ export function OverviewAuth() {
         ))}
       </div>
 
-      <h3 className="text-white font-semibold mb-3">Ejemplo de peticion autenticada</h3>
-      <CodeBlock lang="bash">{`curl -X GET \\
-  'https://api.taimbox.com/rest/v1/employees?is_active=eq.true' \\
-  -H 'apikey: <ANON_KEY>' \\
-  -H 'Authorization: Bearer <TU_API_TOKEN>' \\
-  -H 'Content-Type: application/json'`}</CodeBlock>
+      <h3 className="text-white font-semibold mb-3">{t('overview.auth.exampleTitle')}</h3>
+      <CodeBlock lang="bash">{t('overview.auth.curlExample')}</CodeBlock>
 
-      <h3 className="text-white font-semibold mt-8 mb-4">Buenas prácticas de seguridad</h3>
+      <h3 className="text-white font-semibold mt-8 mb-4">{t('overview.auth.securityTitle')}</h3>
       <div className="grid sm:grid-cols-2 gap-3 mb-6">
-        {[
-          {
-            icon: Eye,
-            title: 'No expongas tokens',
-            text: 'Nunca incluyas tokens en repositorios públicos, logs o código frontend accesible.',
-          },
-          {
-            icon: RefreshCw,
-            title: 'Rota periodicamente',
-            text: 'Revoca y regenera tokens cada cierto tiempo. Revoca inmediatamente si sospechas compromiso.',
-          },
-          {
-            icon: Shield,
-            title: 'Permisos mínimos',
-            text: 'Crea tokens con solo los permisos necesarios. Usa solo lectura si no necesitas escribir.',
-          },
-          {
-            icon: Clock,
-            title: 'Usa expiracion',
-            text: 'Al crear un token puedes definir días de expiración. Los tokens sin expirar son más riesgosos.',
-          },
-        ].map(({ icon: Icon, title, text }) => (
-          <div
-            key={title}
-            className="p-4 rounded-lg bg-white/[0.03] border border-white/5"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Icon className="h-4 w-4 text-indigo-400" />
-              <span className="text-sm font-semibold text-white">{title}</span>
+        {security.map((item, idx) => {
+          const Icon = SECURITY_ICONS[idx] ?? Shield;
+          return (
+            <div
+              key={item.title}
+              className="p-4 rounded-lg bg-white/[0.03] border border-white/5"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Icon className="h-4 w-4 text-indigo-400" />
+                <span className="text-sm font-semibold text-white">{item.title}</span>
+              </div>
+              <p className="text-xs text-indigo-200/70 leading-relaxed">{item.text}</p>
             </div>
-            <p className="text-xs text-indigo-200/70 leading-relaxed">{text}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="grid sm:grid-cols-2 gap-3">
@@ -128,11 +110,14 @@ export function OverviewAuth() {
           <div className="flex items-start gap-2">
             <Shield className="h-4 w-4 text-indigo-400 mt-0.5 shrink-0" />
             <div className="text-sm text-indigo-100/90">
-              <strong className="text-indigo-300">Row Level Security (RLS):</strong> Las
-              políticas RLS de la base de datos garantizan que solo puedes acceder a datos de tu
-              agencia. El token JWT contiene el{' '}
-              <code className="px-1 rounded bg-white/10 font-mono text-xs">agency_id</code> y
-              PostgREST lo verifica automáticamente.
+              <strong className="text-indigo-300">{t('overview.auth.rlsTitle')}</strong>{' '}
+              <Trans
+                i18nKey="overview.auth.rlsBody"
+                ns="apiDocs"
+                components={{
+                  code: <code className="px-1 rounded bg-white/10 font-mono text-xs" />,
+                }}
+              />
             </div>
           </div>
         </div>
@@ -140,9 +125,8 @@ export function OverviewAuth() {
           <div className="flex items-start gap-2">
             <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
             <div className="text-sm text-amber-100/90">
-              <strong className="text-amber-300">Rate limiting:</strong> Actualmente no hay
-              límites estrictos de tasa, pero se recomienda no superar 100 peticiones/minuto. En
-              futuras versiones se podrían implementar límites formales.
+              <strong className="text-amber-300">{t('overview.auth.rateTitle')}</strong>{' '}
+              {t('overview.auth.rateBody')}
             </div>
           </div>
         </div>

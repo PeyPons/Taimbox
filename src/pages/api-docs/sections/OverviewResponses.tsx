@@ -1,52 +1,51 @@
+import { useMemo } from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { useTranslation, Trans } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { SectionHeading } from '../components/SectionHeading';
 import { CodeBlock } from '../components/CodeBlock';
-import { ERROR_CODES } from '../data/tables';
+import { i18nAsArray } from '@/lib/i18nReturnObjects';
+import { getErrorCodes } from '../data/tableGroups';
+
+type FormatCard = { title: string; status: string; desc: string };
 
 export function OverviewResponses() {
+  const { t, i18n } = useTranslation('apiDocs');
+  const errorCodes = useMemo(() => getErrorCodes(i18n.language), [i18n.language]);
+  const formatCards = i18nAsArray<FormatCard>(t('overview.responses.formatCards', { returnObjects: true }));
+
   return (
     <section>
       <SectionHeading id="responses" icon={AlertTriangle} className="mb-6">
-        Respuestas y errores
+        {t('overview.responses.title')}
       </SectionHeading>
       <p className="text-indigo-100/85 mb-4">
-        Todas las respuestas son JSON. La API devuelve códigos HTTP estándar y errores
-        estructurados. Siempre verifica el campo{' '}
-        <code className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-xs text-indigo-200">
-          error
-        </code>{' '}
-        en la respuesta del SDK o el status HTTP en peticiones directas.
+        <Trans
+          i18nKey="overview.responses.intro"
+          ns="apiDocs"
+          components={{
+            code: (
+              <code className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-xs text-indigo-200" />
+            ),
+          }}
+        />
       </p>
       <div className="mb-6 p-4 rounded-lg bg-slate-500/10 border border-slate-500/20">
         <p className="text-sm text-slate-100/90">
-          <strong className="text-slate-300">200 con cuerpo vacío:</strong> Una petición GET
-          correcta (token válido) puede devolver <code className="font-mono text-xs">[]</code> con
-          status 200 cuando no hay filas que cumplan el filtro o cuando RLS no permite ver
-          ninguna. Solo recibirás 401/403 si el token es inválido o no tienes permiso para el
-          recurso. Trata 200 + array vacío como &quot;sin resultados&quot;, no como error.
+          <strong className="text-slate-300">{t('overview.responses.empty200Title')}</strong>{' '}
+          <Trans
+            i18nKey="overview.responses.empty200Body"
+            ns="apiDocs"
+            components={{
+              code: <code className="font-mono text-xs" />,
+            }}
+          />
         </p>
       </div>
 
-      <h3 className="text-white font-semibold mb-3">Formato de datos</h3>
+      <h3 className="text-white font-semibold mb-3">{t('overview.responses.formatTitle')}</h3>
       <div className="grid sm:grid-cols-3 gap-3 mb-8">
-        {[
-          {
-            title: 'GET lista',
-            status: '200',
-            desc: 'Devuelve un array JSON de objetos. Puede estar vacío si no hay resultados o si RLS no permite ver ninguna fila (mismo 200, no se distingue por seguridad).',
-          },
-          {
-            title: 'GET/POST/PATCH uno',
-            status: '200/201',
-            desc: 'Devuelve un objeto JSON con Prefer: return=representation.',
-          },
-          {
-            title: 'DELETE',
-            status: '204',
-            desc: 'Sin cuerpo de respuesta. Verifica que status sea 204.',
-          },
-        ].map(({ title, status, desc }) => (
+        {formatCards.map(({ title, status, desc }) => (
           <div
             key={title}
             className="p-4 rounded-lg bg-white/[0.03] border border-white/5"
@@ -62,24 +61,24 @@ export function OverviewResponses() {
         ))}
       </div>
 
-      <h3 className="text-white font-semibold mb-3">Códigos de estado</h3>
+      <h3 className="text-white font-semibold mb-3">{t('overview.responses.codesTitle')}</h3>
       <div className="overflow-x-auto mb-6">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-white/15">
               <th className="text-left py-2.5 px-3 text-indigo-300 font-semibold text-xs w-20">
-                Código
+                {t('overview.responses.thCode')}
               </th>
               <th className="text-left py-2.5 px-3 text-indigo-300 font-semibold text-xs w-32">
-                Estado
+                {t('overview.responses.thStatus')}
               </th>
               <th className="text-left py-2.5 px-3 text-indigo-300 font-semibold text-xs">
-                Descripción
+                {t('overview.responses.thDesc')}
               </th>
             </tr>
           </thead>
           <tbody>
-            {ERROR_CODES.map((ec, i) => (
+            {errorCodes.map((ec, i) => (
               <tr
                 key={ec.code}
                 className={cn(
@@ -109,31 +108,12 @@ export function OverviewResponses() {
         </table>
       </div>
 
-      <h3 className="text-white font-semibold mb-3">Formato de error</h3>
-      <CodeBlock lang="json">{`{
-  "message": "new row violates row-level security policy",
-  "details": null,
-  "hint": null,
-  "code": "42501"
-}`}</CodeBlock>
+      <h3 className="text-white font-semibold mb-3">{t('overview.responses.errorFormatTitle')}</h3>
+      <CodeBlock lang="json">{t('overview.responses.errorFormatJson')}</CodeBlock>
 
       <div className="mt-6" />
-      <h3 className="text-white font-semibold mb-3">Patrón recomendado (SDK)</h3>
-      <CodeBlock lang="typescript">{`const { data, error } = await timeboxing
-  .from('allocations')
-  .insert({ /* ... */ })
-  .select()
-  .single()
-
-if (error) {
-  // error.message  -> descripcion legible
-  // error.code     -> codigo PostgreSQL
-  // error.details  -> detalles adicionales (puede ser null)
-  console.error(\`Error [\${error.code}]: \${error.message}\`)
-  throw error
-}
-
-// data contiene el recurso creado`}</CodeBlock>
+      <h3 className="text-white font-semibold mb-3">{t('overview.responses.sdkPatternTitle')}</h3>
+      <CodeBlock lang="typescript">{t('overview.responses.sdkPatternCode')}</CodeBlock>
     </section>
   );
 }

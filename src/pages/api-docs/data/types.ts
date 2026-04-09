@@ -26,6 +26,8 @@ export interface TableDef {
 }
 
 export interface TableGroup {
+  /** ID estable para anclas (#res-*) e i18n; no depende del idioma. */
+  anchorId: string;
   group: string;
   icon: React.ElementType;
   tables: TableDef[];
@@ -37,20 +39,13 @@ export interface ErrorCode {
   description: string;
 }
 
-export interface ChangelogEntry {
-  date: string;
-  type: 'new' | 'improved' | 'deprecated' | 'fixed';
-  title: string;
-  description: string;
-}
-
 export interface TocItem {
   id: string;
-  label: string;
+  labelKey: string;
 }
 
 export interface TocGroup {
-  title: string;
+  titleKey: string;
   icon: React.ElementType;
   items: TocItem[];
   defaultOpen?: boolean;

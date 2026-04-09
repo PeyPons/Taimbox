@@ -1179,10 +1179,6 @@
           "support": "Contactar Soporte Legal"
         }
       }
-    },
-    "apiDocs": {
-      "seoTitle": "Documentación API | Taimbox",
-      "seoDescription": "Documentación de la API de integración de Taimbox. Conecta tus herramientas con datos de planificación, equipo y proyectos."
     }
   },
   "commercial": {

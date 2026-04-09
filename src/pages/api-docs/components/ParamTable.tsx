@@ -1,18 +1,21 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import type { ColumnDef } from '../data/types';
 
 export function ParamTable({ columns }: { columns: ColumnDef[] }) {
+  const { t } = useTranslation('apiDocs');
+
   return (
     <div className="overflow-x-auto -mx-1">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-white/15">
-            <th className="text-left py-2.5 px-3 text-indigo-300 font-semibold text-xs uppercase tracking-wider">Campo</th>
-            <th className="text-left py-2.5 px-3 text-indigo-300 font-semibold text-xs uppercase tracking-wider">Tipo</th>
-            <th className="text-center py-2.5 px-3 text-indigo-300 font-semibold text-xs uppercase tracking-wider">Requerido</th>
-            <th className="text-left py-2.5 px-3 text-indigo-300 font-semibold text-xs uppercase tracking-wider hidden lg:table-cell">Default</th>
-            <th className="text-left py-2.5 px-3 text-indigo-300 font-semibold text-xs uppercase tracking-wider hidden md:table-cell">Relacion</th>
-            <th className="text-left py-2.5 px-3 text-indigo-300 font-semibold text-xs uppercase tracking-wider">Descripcion</th>
+            <th className="text-left py-2.5 px-3 text-indigo-300 font-semibold text-xs uppercase tracking-wider">{t('paramTable.field')}</th>
+            <th className="text-left py-2.5 px-3 text-indigo-300 font-semibold text-xs uppercase tracking-wider">{t('paramTable.type')}</th>
+            <th className="text-center py-2.5 px-3 text-indigo-300 font-semibold text-xs uppercase tracking-wider">{t('paramTable.required')}</th>
+            <th className="text-left py-2.5 px-3 text-indigo-300 font-semibold text-xs uppercase tracking-wider hidden lg:table-cell">{t('paramTable.default')}</th>
+            <th className="text-left py-2.5 px-3 text-indigo-300 font-semibold text-xs uppercase tracking-wider hidden md:table-cell">{t('paramTable.relation')}</th>
+            <th className="text-left py-2.5 px-3 text-indigo-300 font-semibold text-xs uppercase tracking-wider">{t('paramTable.description')}</th>
           </tr>
         </thead>
         <tbody>
@@ -24,7 +27,7 @@ export function ParamTable({ columns }: { columns: ColumnDef[] }) {
               </td>
               <td className="py-2 px-3 font-mono text-purple-300 text-xs whitespace-nowrap">{col.type}</td>
               <td className="py-2 px-3 text-center text-xs">
-                {col.required ? <span className="text-rose-400">Si</span> : <span className="text-slate-500">No</span>}
+                {col.required ? <span className="text-rose-400">{t('paramTable.yes')}</span> : <span className="text-slate-500">{t('paramTable.no')}</span>}
               </td>
               <td className="py-2 px-3 font-mono text-slate-400 text-[11px] hidden lg:table-cell whitespace-nowrap">
                 {col.default || '\u2014'}

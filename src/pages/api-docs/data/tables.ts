@@ -11,6 +11,7 @@ import type { TableGroup, ErrorCode } from './types';
 
 export const TABLE_GROUPS: TableGroup[] = [
   {
+    anchorId: 'res-organizacion',
     group: 'Organizacion',
     icon: Globe,
     tables: [
@@ -288,6 +289,7 @@ export const TABLE_GROUPS: TableGroup[] = [
     ],
   },
   {
+    anchorId: 'res-planificacion',
     group: 'Planificacion',
     icon: FileJson,
     tables: [
@@ -590,6 +592,7 @@ export const TABLE_GROUPS: TableGroup[] = [
     ],
   },
   {
+    anchorId: 'res-transferencias',
     group: 'Transferencias',
     icon: ArrowRight,
     tables: [
@@ -669,6 +672,7 @@ export const TABLE_GROUPS: TableGroup[] = [
     ],
   },
   {
+    anchorId: 'res-ausencias',
     group: 'Ausencias y eventos',
     icon: AlertTriangle,
     tables: [
@@ -857,6 +861,7 @@ export const TABLE_GROUPS: TableGroup[] = [
     ],
   },
   {
+    anchorId: 'res-configuracion',
     group: 'Configuracion',
     icon: Shield,
     tables: [
@@ -965,6 +970,7 @@ export const TABLE_GROUPS: TableGroup[] = [
     ],
   },
   {
+    anchorId: 'res-feedback',
     group: 'Feedback',
     icon: FileJson,
     tables: [
@@ -1027,6 +1033,7 @@ export const TABLE_GROUPS: TableGroup[] = [
     ],
   },
   {
+    anchorId: 'res-objetivos',
     group: 'Objetivos',
     icon: Zap,
     tables: [
@@ -1144,6 +1151,7 @@ export const TABLE_GROUPS: TableGroup[] = [
     ],
   },
   {
+    anchorId: 'res-bloqueos',
     group: 'Bloqueos de edicion',
     icon: Lock,
     tables: [
@@ -1215,13 +1223,3 @@ export const ERROR_CODES: ErrorCode[] = [
   { code: 500, meaning: 'Server Error', description: 'Error interno del servidor. Contacta soporte si persiste.' },
 ];
 
-export const GROUP_ANCHOR_MAP: Record<string, string> = {
-  'Organizacion': 'res-organizacion',
-  'Planificacion': 'res-planificacion',
-  'Transferencias': 'res-transferencias',
-  'Ausencias y eventos': 'res-ausencias',
-  'Configuracion': 'res-configuracion',
-  'Feedback': 'res-feedback',
-  'Objetivos': 'res-objetivos',
-  'Bloqueos de edicion': 'res-bloqueos',
-};

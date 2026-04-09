@@ -1,145 +1,56 @@
 import { CalendarOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { i18nAsArray } from '@/lib/i18nReturnObjects';
 import { SectionHeading } from '../components/SectionHeading';
 import { TutorialStep } from '../components/TutorialStep';
 
+type TutorialStepJson = {
+  title: string;
+  description: string;
+  note: string | null;
+  code: string | null;
+  lang: string | null;
+};
+
 export function TutorialAbsences() {
+  const { t } = useTranslation('apiDocs');
+  const steps = i18nAsArray<TutorialStepJson>(t('tutorials.absences.steps', { returnObjects: true }));
+
   return (
     <section>
       <SectionHeading id="tutorial-absences" icon={CalendarOff} className="mb-2">
-        Gestionar ausencias
+        {t('tutorials.absences.title')}
       </SectionHeading>
       <p className="text-indigo-100/85 mb-6">
-        Registra vacaciones, bajas y eventos del equipo para que la capacidad disponible se ajuste
-        automáticamente en la planificación.
+        {t('tutorials.absences.subtitle')}
       </p>
 
       <div className="space-y-0">
-        <TutorialStep
-          step={1}
-          title="Leer ausencias de un empleado"
-          description="Consulta las ausencias registradas para un periodo."
-          code={`const { data: absences } = await timeboxing
-  .from('absences')
-  .select('id, employee_id, start_date, end_date, type, hours, description')
-  .eq('employee_id', employeeId)
-  .gte('end_date', '2026-03-01')
-  .order('start_date')
-
-// Resultado: vacaciones, bajas, permisos del empleado en marzo`}
-        />
-        <TutorialStep
-          step={2}
-          title="Crear una ausencia (vacaciones)"
-          description="Registra un periodo de vacaciones. La capacidad del empleado se reducirá automáticamente en el planificador."
-          code={`const { data: absence, error } = await timeboxing
-  .from('absences')
-  .insert({
-    employee_id: employeeId,
-    start_date: '2026-04-06',
-    end_date: '2026-04-10',
-    type: 'vacaciones',
-    description: 'Semana Santa'
-  })
-  .select()
-  .single()
-
-if (!error) {
-  console.log('Ausencia registrada:', absence.id)
-  // La capacidad de esa semana se reducirá automáticamente
-}`}
-          note="Tipos comunes: 'vacaciones', 'baja', 'permiso', 'formacion'. Puedes usar cualquier texto."
-        />
-        <TutorialStep
-          step={3}
-          title="Ausencia parcial (medio dia)"
-          description="Para ausencias que no cubren el día completo, usa el campo hours."
-          code={`const { data } = await timeboxing
-  .from('absences')
-  .insert({
-    employee_id: employeeId,
-    start_date: '2026-03-15',
-    end_date: '2026-03-15',
-    type: 'permiso',
-    hours: 4,
-    description: 'Cita médica por la mañana'
-  })
-  .select()
-  .single()
-
-// Solo se reducen 4h de capacidad ese dia (en vez de la jornada completa)`}
-        />
-        <TutorialStep
-          step={4}
-          title="Crear un evento de equipo (festivo)"
-          description="Los eventos afectan a múltiples empleados. Ideal para festivos o formaciones grupales."
-          code={`// Primero obtener IDs de empleados afectados
-const { data: employees } = await timeboxing
-  .from('employees')
-  .select('id')
-  .eq('is_active', true)
-
-const employeeIds = employees?.map(e => e.id) || []
-
-// Crear el evento
-const { data: event } = await timeboxing
-  .from('team_events')
-  .insert({
-    name: 'Dia de Andalucia',
-    date: '2026-02-28',
-    hours_reduction: 8,
-    affected_employee_ids: employeeIds,
-    description: 'Festivo regional'
-  })
-  .select()
-  .single()
-
-console.log('Evento creado. Afecta a', employeeIds.length, 'empleados')`}
-        />
-        <TutorialStep
-          step={5}
-          title="Calcular capacidad real"
-          description="Cruza ausencias y eventos con el horario laboral para saber la capacidad real de una semana."
-          code={`// Obtener datos de la semana
-const weekStart = '2026-03-09'
-const weekEnd = '2026-03-13' // Vie
-
-const [{ data: absences }, { data: events }, { data: employee }] = await Promise.all([
-  timeboxing.from('absences')
-    .select('start_date, end_date, hours')
-    .eq('employee_id', empId)
-    .lte('start_date', weekEnd)
-    .gte('end_date', weekStart),
-  timeboxing.from('team_events')
-    .select('date, hours_reduction')
-    .gte('date', weekStart)
-    .lte('date', weekEnd),
-  timeboxing.from('employees')
-    .select('default_weekly_capacity')
-    .eq('id', empId)
-    .single()
-])
-
-const baseCapacity = employee?.default_weekly_capacity || 40
-const absenceHours = absences?.reduce((s, a) => s + (a.hours || 8), 0) || 0
-const eventHours = events?.reduce((s, e) => s + e.hours_reduction, 0) || 0
-const effectiveCapacity = Math.max(0, baseCapacity - Math.max(absenceHours, eventHours))
-
-console.log(\`Capacidad real: \${effectiveCapacity}h / \${baseCapacity}h\`)`}
-          note="Taimbox usa Max(ausencia, evento) por día para evitar doble contabilidad. Este ejemplo simplifica el cálculo; la app usa un algoritmo diario más preciso."
-        />
+        {steps.map((s, i) => (
+          <TutorialStep
+            key={i}
+            step={i + 1}
+            title={s.title}
+            description={s.description}
+            code={s.code ?? undefined}
+            lang={(s.lang as 'bash' | 'typescript') ?? 'typescript'}
+            note={s.note ?? undefined}
+          />
+        ))}
       </div>
 
       <div className="mt-6 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
         <p className="text-sm text-emerald-100/90">
-          <strong className="text-emerald-300">Completado!</strong> Ahora dominas los casos de
-          uso principales de la API. Consulta la{' '}
+          <strong className="text-emerald-300">{t('tutorials.absences.doneLabel')}</strong>{' '}
+          {t('tutorials.absences.doneText')}{' '}
           <button
+            type="button"
             onClick={() => document.getElementById('res-organizacion')?.scrollIntoView({ behavior: 'smooth' })}
             className="text-emerald-300 underline hover:text-white"
           >
-            Referencia de Recursos
-          </button>{' '}
-          para ver todos los campos y opciones de cada tabla.
+            {t('tutorials.absences.doneLink')}
+          </button>
+          {t('tutorials.absences.doneSuffix')}
         </p>
       </div>
     </section>

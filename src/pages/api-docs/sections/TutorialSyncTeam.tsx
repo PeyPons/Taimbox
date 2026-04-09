@@ -1,120 +1,72 @@
 import { Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { i18nAsArray } from '@/lib/i18nReturnObjects';
 import { SectionHeading } from '../components/SectionHeading';
 import { TutorialStep } from '../components/TutorialStep';
 
+type TutorialStepJson = {
+  title: string;
+  description: string;
+  note: string | null;
+  code: string | null;
+  lang: string | null;
+};
+
 export function TutorialSyncTeam() {
+  const { t } = useTranslation('apiDocs');
+  const steps = i18nAsArray<TutorialStepJson>(t('tutorials.syncTeam.steps', { returnObjects: true }));
+
   return (
     <section>
       <SectionHeading id="tutorial-sync-team" icon={Users} className="mb-2">
-        Sincronizar equipo
+        {t('tutorials.syncTeam.title')}
       </SectionHeading>
       <p className="text-indigo-100/85 mb-6">
-        Aprende a leer la lista de empleados, crear nuevos miembros y actualizar horarios desde tu
-        sistema externo.
+        {t('tutorials.syncTeam.subtitle')}
       </p>
 
       <div className="mb-4 p-4 rounded-lg bg-white/[0.03] border border-white/5">
-        <h4 className="text-white font-semibold text-sm mb-2">Prerequisitos</h4>
+        <h4 className="text-white font-semibold text-sm mb-2">{t('tutorials.syncTeam.prereqTitle')}</h4>
         <ul className="text-sm text-indigo-200/70 space-y-1 list-disc list-inside">
           <li>
-            Cliente configurado (ver{' '}
+            {t('tutorials.syncTeam.prereq1Before')}{' '}
             <button
+              type="button"
               onClick={() => document.getElementById('tutorial-quickstart')?.scrollIntoView({ behavior: 'smooth' })}
               className="text-indigo-300 underline hover:text-white"
             >
-              Primeros pasos
+              {t('tutorials.syncTeam.prereq1Link')}
             </button>
-            )
+            {t('tutorials.syncTeam.prereq1After')}
           </li>
-          <li>Token con permisos de lectura/escritura</li>
+          <li>{t('tutorials.syncTeam.prereq2')}</li>
         </ul>
       </div>
 
       <div className="space-y-0">
-        <TutorialStep
-          step={1}
-          title="Leer todos los empleados"
-          description="Obtener la lista completa de empleados activos con sus datos básicos."
-          code={`const { data: employees, error } = await timeboxing
-  .from('employees')
-  .select('id, name, email, role, default_weekly_capacity, work_schedule, is_active')
-  .eq('is_active', true)
-  .order('name')
-
-// Resultado: array de empleados
-// [{ id: "e1-...", name: "Ana Garcia", email: "ana@...", role: "Disenador", ... }]`}
-          note="RLS filtra automaticamente por tu agencia. No necesitas pasar agency_id en los filtros."
-        />
-        <TutorialStep
-          step={2}
-          title="Crear un nuevo empleado"
-          description="Añade un miembro al equipo. Los campos obligatorios son: name, role, default_weekly_capacity, work_schedule y agency_id. El agency_id lo puedes copiar desde API & Integraciones (Datos de conexión)."
-          code={`const { data: newEmployee, error } = await timeboxing
-  .from('employees')
-  .insert({
-    name: 'Laura Martinez',
-    first_name: 'Laura',
-    last_name: 'Martinez',
-    email: 'laura@agencia.com',
-    role: 'Desarrollador',
-    default_weekly_capacity: 40,
-    work_schedule: {
-      monday: 8, tuesday: 8, wednesday: 8,
-      thursday: 8, friday: 8, saturday: 0, sunday: 0
-    },
-    agency_id: process.env.TIMEBOXING_AGENCY_ID  // Copiado desde API & Integraciones
-  })
-  .select()
-  .single()
-
-if (error) {
-  console.error('Error al crear empleado:', error.message)
-} else {
-  console.log('Empleado creado:', newEmployee.id)
-}`}
-        />
-        <TutorialStep
-          step={3}
-          title="Actualizar horario laboral"
-          description="Modifica las horas semanales de un empleado existente. Útil para reflejar cambios de jornada."
-          code={`const { data, error } = await timeboxing
-  .from('employees')
-  .update({
-    default_weekly_capacity: 32,
-    work_schedule: {
-      monday: 8, tuesday: 8, wednesday: 8,
-      thursday: 8, friday: 0, saturday: 0, sunday: 0
-    }
-  })
-  .eq('id', employeeId)
-  .select()
-  .single()
-
-// El empleado ahora trabaja 32h/semana (L-J)`}
-        />
-        <TutorialStep
-          step={4}
-          title="Desactivar un empleado"
-          description="En vez de eliminar, es recomendable desactivar. Asi se mantiene el historico de asignaciones."
-          code={`const { error } = await timeboxing
-  .from('employees')
-  .update({ is_active: false })
-  .eq('id', employeeId)
-
-// El empleado ya no aparecerá en planificación ni vistas activas`}
-          note="Los empleados inactivos mantienen sus asignaciones históricas. No uses DELETE a menos que quieras eliminar todo rastro."
-        />
+        {steps.map((s, i) => (
+          <TutorialStep
+            key={i}
+            step={i + 1}
+            title={s.title}
+            description={s.description}
+            code={s.code ?? undefined}
+            lang={(s.lang as 'bash' | 'typescript') ?? 'typescript'}
+            note={s.note ?? undefined}
+          />
+        ))}
       </div>
 
       <div className="mt-6 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
         <p className="text-sm text-emerald-100/90">
-          <strong className="text-emerald-300">Siguiente paso:</strong> Con el equipo
-          sincronizado, aprende a{' '}
+          <strong className="text-emerald-300">{t('tutorials.syncTeam.nextLabel')}</strong>{' '}
+          {t('tutorials.syncTeam.nextText')}{' '}
           <button
+            type="button"
             onClick={() => document.getElementById('tutorial-planning')?.scrollIntoView({ behavior: 'smooth' })}
             className="text-emerald-300 underline hover:text-white"
           >
-            automatizar la planificacion
+            {t('tutorials.syncTeam.nextLink')}
           </button>
           .
         </p>
