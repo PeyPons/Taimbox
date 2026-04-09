@@ -53,10 +53,32 @@ Deno.serve(async (req) => {
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+  /** Alineado con create-checkout-session: Business si metadata o precio Stripe coinciden. */
+  function resolvePlanId(sub: Stripe.Subscription): "business" | "pro" {
+    const meta = sub.metadata?.plan_id;
+    const firstItem = sub.items?.data?.[0];
+    const rawPrice = firstItem?.price;
+    const priceId =
+      typeof rawPrice === "string" ? rawPrice : (rawPrice as Stripe.Price | undefined)?.id;
+
+    const priceBusiness = Deno.env.get("STRIPE_PRICE_ID_BUSINESS");
+    const pricePro = Deno.env.get("STRIPE_PRICE_ID_PRO");
+
+    if (priceId && priceBusiness && priceId === priceBusiness) {
+      return "business";
+    }
+    if (priceId && pricePro && priceId === pricePro) {
+      return "pro";
+    }
+
+    if (meta === "business") return "business";
+    return "pro";
+  }
+
   if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated") {
     const sub = event.data.object as Stripe.Subscription;
     const agencyId = sub.metadata?.agency_id;
-    const planId = sub.metadata?.plan_id === "business" ? "business" : "pro";
+    const planId = resolvePlanId(sub);
     if (!agencyId) {
       console.warn("Subscription event without agency_id in metadata:", sub.id);
       return new Response(JSON.stringify({ received: true }), {
