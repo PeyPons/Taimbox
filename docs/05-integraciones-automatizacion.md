@@ -1,15 +1,9 @@
 ﻿
-## 5. Integraciones y Automatización (Workers)
+## 5. Integraciones y Automatización
 
-El sistema sincroniza datos de Google Ads y Meta Ads mediante procesos externos.
+Google Ads y Meta Ads se sincronizan **solo** mediante **Edge Functions** de Supabase (Deno en el contenedor `supabase-edge-functions`), invocadas desde la app, por cron o por automatización que llame a la API de funciones.
 
-### 5.1. Arquitectura de los Workers (`ads-worker.js` / `meta-worker.js`)
-- Corren de forma independiente en un entorno Node.js.
-- Utilizan `generic-pool` para manejar conexiones a la base de datos de manera eficiente.
-- **Unidad de Medida**: Google Ads entrega el coste en `micros` (millonésimas de moneda), el worker lo convierte dividiendo por `1,000,000` antes de guardarlo.
-- **Sincronización**: Utilizan `Supabase Realtime` para reaccionar a cambios en la tabla de configuración y ejecutar sincronizaciones bajo demanda.
-
-### 5.2. Edge Functions (Supabase)
+### 5.1. Edge Functions (Supabase)
 
 Funciones serverless que corren en Deno dentro del contenedor `supabase-edge-functions`.
 
@@ -17,7 +11,7 @@ Funciones serverless que corren en Deno dentro del contenedor `supabase-edge-fun
 
 | Función | Archivo | Descripción |
 |---------|---------|-------------|
-| `sync-google-ads` | `supabase/functions/sync-google-ads/index.ts` | Sincroniza campañas. Usa credenciales plataforma + refresh token (DB). Si no hay filas en `ad_accounts_config`, obtiene toda la jerarquía del MCC (MCC + sub-MCCs + subcuentas) vía `customer_client` recursivo y sincroniza cada cuenta; si hay filas, solo esas. Escribe en `google_ads_campaigns` con `agency_id`. |
+| `sync-google-ads` | `supabase/functions/sync-google-ads/index.ts` | Sincroniza campañas. Usa credenciales plataforma + refresh token (DB). Si no hay filas en `ad_accounts_config`, obtiene toda la jerarquía del MCC (MCC + sub-MCCs + subcuentas) vía `customer_client` recursivo y sincroniza cada cuenta; si hay filas, solo esas. Escribe en `google_ads_campaigns` con `agency_id`. La API devuelve el coste en **micros** (1 unidad de moneda = 1.000.000 micros); la función convierte dividiendo por 1.000.000 antes de persistir. |
 | `oauth-google-ads` | `supabase/functions/oauth-google-ads/index.ts` | **(Nuevo)** Intercambia código OAuth y guarda `refresh_token` en columna de agencia. |
 | `exchange-google-token` | `supabase/functions/exchange-google-token/index.ts` | *(Legacy)* Versión anterior que guardaba en JSON. |
 | `sync-meta-ads` | `supabase/functions/sync-meta-ads/index.ts` | Sincroniza insights a nivel campaña (gasto, clics, conversiones, etc.) vía Graph API; **no** persiste presupuesto diario de Meta en `meta_ads_campaigns` (la integración actual no solicita esos campos). |
@@ -170,7 +164,7 @@ Si en BD antigua quedó `settings.integrations.metaAccessToken`, el backend aún
 5. **Tras la aprobación**  
    Publica los cambios en la app si el panel lo pide y comprueba el flujo con una cuenta que **no** sea admin de la app.
 
-### 5.3. Suscripciones (Stripe)
+### 5.2. Suscripciones (Stripe)
 
 Sistema de planes **Starter** (gratis), **Pro** (49 €/mes early adopter, 99 €/mes estándar) y **Business** (149 €/mes early adopter, 249 €/mes estándar). Plan **Enterprise** (personalizado, sin límite). Nuevos registros reciben trial Business 14 días. **Un solo trial por agencia.** Los precios early adopter se congelan de por vida para el cliente (grandfathering vía `price_id` en Stripe).
 

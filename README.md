@@ -30,7 +30,7 @@ Repositorio **interno**; arranque local, scripts y variables de entorno no se do
 | [`docs/02-entidades-modelos.md`](./docs/02-entidades-modelos.md) | Entidades, aliasing, multi-tenant |
 | [`docs/03-logica-negocio.md`](./docs/03-logica-negocio.md) | Capacidad, split weeks, presupuesto, rentabilidad |
 | [`docs/04-contextos-realtime.md`](./docs/04-contextos-realtime.md) | AppContext, Realtime, Deadlines |
-| [`docs/05-integraciones-automatizacion.md`](./docs/05-integraciones-automatizacion.md) | Workers, Edge Functions, OAuth, Stripe, deploy, variables |
+| [`docs/05-integraciones-automatizacion.md`](./docs/05-integraciones-automatizacion.md) | Edge Functions, OAuth, Stripe, deploy, variables |
 | [`docs/06-glosario-variables.md`](./docs/06-glosario-variables.md) | Términos técnicos |
 | [`docs/07-mantenimiento-extension.md`](./docs/07-mantenimiento-extension.md) | RLS, API tokens, admin, cronómetro, permisos |
 | [`docs/08-mapa-dependencias.md`](./docs/08-mapa-dependencias.md) | Impacto por types, hooks, componentes |
