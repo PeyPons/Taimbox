@@ -60,7 +60,7 @@ Los bloques que **organizan** y **rompen** la densidad mejoran la lectura:
 
 ## Implementación en este repo (recordatorio)
 
-Para artículos nuevos o cambios grandes, alinear con `DOCUMENTACION.md` (§ blog): `blogPosts.ts`, `App.tsx`, `public/sitemap.xml`, página en `src/pages/blog/`, componente en `src/components/landing/blog/`, Helmet + JSON-LD (`Article`, y si aplica `HowTo`, `FAQPage`, `SoftwareApplication`), FAQs alineadas con el copy visible.
+Para artículos nuevos o cambios grandes, alinear con [`docs/01-arquitectura.md`](../../../docs/01-arquitectura.md) (base del blog y SEO público): `blogPosts.ts`, `App.tsx`, `public/sitemap.xml`, página en `src/pages/blog/`, componente en `src/components/landing/blog/`, Helmet + JSON-LD (`Article`, y si aplica `HowTo`, `FAQPage`, `SoftwareApplication`), FAQs alineadas con el copy visible.
 
 Tras editar contenido o schema, mantener **coherencia** entre H3 del artículo, FAQ en página y preguntas del JSON-LD.
 
@@ -88,4 +88,4 @@ Ejemplo del cambio que esto genera:
 
 ## Referencia
 
-Convenciones técnicas y lista de componentes del blog: [DOCUMENTACION.md](../../../DOCUMENTACION.md) (sección base de artículos del blog).
+Convenciones técnicas y lista de componentes del blog: [docs/01-arquitectura.md](../../../docs/01-arquitectura.md) (§ 1.2 y «Base de artículos del blog»).

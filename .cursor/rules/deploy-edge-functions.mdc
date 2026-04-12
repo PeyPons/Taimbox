@@ -8,7 +8,7 @@ alwaysApply: false
 
 Cuando el usuario pida instrucciones para actualizar las Edge Functions en el servidor, o comandos para desplegar funciones, responde con los comandos listos para copiar y pegar. Usa la documentación del proyecto como referencia.
 
-**Documento de referencia:** DOCUMENTACION.md (sección 5.2 Edge Functions, subsección Despliegue de Edge Functions self-hosted).
+**Documento de referencia:** [docs/05-integraciones-automatizacion.md](../../docs/05-integraciones-automatizacion.md) (§ 5.2 Edge Functions, subsección Despliegue de Edge Functions self-hosted).
 
 **Comandos estándar para dar al usuario (servidor SSH):**
 
