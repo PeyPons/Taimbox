@@ -1,0 +1,13 @@
+---
+description: Cambios con alto impacto (types, contextos, fechas/capacidad, permisos, migraciones). Aplicar skill modificacion-segura-taimbox y docs/08–09.
+globs: src/types/**/*.ts,src/contexts/**/*.tsx,src/utils/capacityUtils.ts,src/utils/dateUtils.ts,src/utils/permissionsUtils.ts,src/utils/taskPermissions.ts,supabase/migrations/**/*.sql
+alwaysApply: false
+---
+
+# Impacto en Taimbox
+
+Antes de proponer o aplicar cambios sustantivos en estos archivos:
+
+1. Lee y sigue el skill del proyecto **modificacion-segura-taimbox** (`.cursor/skills/modificacion-segura-taimbox/SKILL.md`).
+2. Consulta [docs/08-mapa-dependencias.md](../../docs/08-mapa-dependencias.md) y [docs/09-checklist-modificacion.md](../../docs/09-checklist-modificacion.md) para el área concreta.
+3. Para barridos amplios del repositorio, usa exploración paralela (Task `explore`) en lugar de asumir un único archivo.
