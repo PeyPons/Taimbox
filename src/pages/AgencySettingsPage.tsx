@@ -17,7 +17,7 @@ import {
   Building2, Settings, Users, Palette, Save, Loader2,
   Filter, Plus, Trash2, HelpCircle, Info, X,
   Rocket, Facebook, Megaphone, PlusCircle, ShieldCheck, GitBranch, Database, AlertTriangle,
-  Eye, Lock, Unlock, Calendar, Check, ChevronDown, BarChart2, Layers, ExternalLink, Activity, CreditCard
+  Eye, Lock, Unlock, Calendar, Check, ChevronDown, BarChart2, Layers, ExternalLink, Activity, CreditCard, LayoutGrid, LineChart
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -177,7 +177,7 @@ function GoogleAdsAccountSelect({
 
 const META_OAUTH_SCOPES = 'ads_read';
 
-const TAB_VALUES = ['general', 'team', 'projects', 'modules', 'integrations', 'departments', 'appearance', 'billing'] as const;
+const TAB_VALUES = ['general', 'departments', 'team', 'projects', 'modules', 'analytics', 'integrations', 'appearance', 'billing'] as const;
 
 export default function AgencySettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -605,9 +605,9 @@ export default function AgencySettingsPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <Building2 className="h-6 w-6" />
-            Configuración de agencia
+            {t('agency.title', 'Configuración de agencia')}
           </h1>
-          <p className="text-slate-500 mt-1">Elige una sección para ver y editar la configuración</p>
+          <p className="text-slate-500 mt-1">{t('agency.subtitle', 'Elige una sección para ver y editar la configuración')}</p>
         </div>
         <Badge variant="outline" className="text-sm w-fit">
           {currentAgency.slug}
@@ -619,6 +619,9 @@ export default function AgencySettingsPage() {
           <TabsTrigger value="general" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
             <Settings className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.general', 'General')}</span>
           </TabsTrigger>
+          <TabsTrigger value="departments" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
+            <Layers className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.organization', 'Organización')}</span>
+          </TabsTrigger>
           <TabsTrigger value="team" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
             <Users className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.team', 'Equipo')}</span>
           </TabsTrigger>
@@ -626,13 +629,13 @@ export default function AgencySettingsPage() {
             <Filter className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.projects', 'Proyectos')}</span>
           </TabsTrigger>
           <TabsTrigger value="modules" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <BarChart2 className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.modules', 'Módulos')}</span>
+            <LayoutGrid className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.features', 'Funcionalidades')}</span>
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
+            <LineChart className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.analytics', 'Analítica')}</span>
           </TabsTrigger>
           <TabsTrigger value="integrations" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <Rocket className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.integrations', 'Integraciones')}</span>
-          </TabsTrigger>
-          <TabsTrigger value="departments" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <Layers className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.departments', 'Departamentos')}</span>
+            <Rocket className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.connections', 'Conexiones')}</span>
           </TabsTrigger>
           <TabsTrigger value="appearance" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
             <Palette className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.appearance', 'Apariencia')}</span>
@@ -827,25 +830,43 @@ export default function AgencySettingsPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  <p className="text-xs text-slate-500 -mt-2 mb-2">
+                    {t('agency.team.permissionsSaveHint', 'Los cambios en permisos se aplican al guardar la configuración de la agencia.')}
+                  </p>
                   {roles.map((role, index) => (
                     <div key={index} className="border rounded-lg overflow-hidden">
                       <div
-                        className={`p-3 flex items-center justify-between cursor-pointer hover:bg-slate-50 ${expandedRoleIndex === index ? 'bg-slate-50' : ''}`}
-                        onClick={() => setExpandedRoleIndex(expandedRoleIndex === index ? null : index)}
+                        className={cn(
+                          'p-3 flex items-center justify-between gap-2',
+                          expandedRoleIndex === index ? 'bg-slate-50' : ''
+                        )}
                       >
                         <Input
                           value={role.name}
                           onChange={(e) => updateRoleName(index, e.target.value)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="h-8 w-40 font-medium"
+                          className="h-8 min-w-0 flex-1 max-w-[220px] font-medium"
                           placeholder={t('agency.team.roleName', 'Nombre del rol')}
                         />
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1 px-2"
+                            aria-expanded={expandedRoleIndex === index}
+                            onClick={() => setExpandedRoleIndex(expandedRoleIndex === index ? null : index)}
+                          >
+                            <ChevronDown
+                              className={cn('h-4 w-4 transition-transform', expandedRoleIndex === index ? 'rotate-180' : '')}
+                              aria-hidden
+                            />
+                            <span className="hidden sm:inline">{t('agency.team.permissions', 'Permisos')}</span>
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-red-400 hover:text-red-600"
-                            onClick={(e) => { e.stopPropagation(); deleteRole(index); }}
+                            onClick={() => deleteRole(index)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -925,12 +946,16 @@ export default function AgencySettingsPage() {
                 </CardContent>
               </Card>
 
-              {/* Enlace a pestaña Departamentos */}
               <Card className="h-full border-dashed">
-                <CardContent className="py-6">
+                <CardContent className="py-6 flex flex-col gap-3">
                   <p className="text-sm text-slate-500">
-                    {t('agency.team.departmentsNote', 'Los departamentos (nombre y color) se gestionan en la pestaña Departamentos. Así podrás filtrar la plataforma por área (Marketing, Desarrollo, etc.).')}
+                    {t('agency.team.organizationHint', 'Las áreas (nombre y color) se configuran en Organización, la pestaña anterior en este menú.')}
                   </p>
+                  <Button variant="outline" size="sm" className="w-fit" asChild>
+                    <Link to="/agency?tab=departments" replace>
+                      {t('agency.team.goToOrganization', 'Ir a Organización')}
+                    </Link>
+                  </Button>
                 </CardContent>
               </Card>
             </div>
@@ -941,10 +966,10 @@ export default function AgencySettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Layers className="h-5 w-5 text-blue-600" />
-                  {t('agency.tabs.departments', 'Departamentos')}
+                  {t('agency.organization.cardTitle', 'Departamentos y áreas')}
                 </CardTitle>
                 <CardDescription>
-                  {t('agency.departments.description', 'Define las áreas de tu equipo (ej: Marketing, Desarrollo). El color se usa en la barra de aviso al filtrar por departamento.')}
+                  {t('agency.organization.cardDescription', 'Define las áreas de tu equipo (ej: Marketing, Desarrollo). El color se usa en la barra de aviso al filtrar por departamento.')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1052,83 +1077,82 @@ export default function AgencySettingsPage() {
           />
 
           <TabsContent value="modules" className="mt-0 space-y-6">
-            {/* Módulos Habilitados */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-emerald-600" />
-                  {t('agency.modules.title', 'Módulos habilitados')}
+                  <LayoutGrid className="h-5 w-5 text-emerald-600" />
+                  {t('agency.modules.title', 'Funcionalidades activas')}
                 </CardTitle>
                 <CardDescription>
-                  {t('agency.modules.description', 'Activa o desactiva funcionalidades según las necesidades de tu equipo')}
+                  {t('agency.modules.description', 'Activa o desactiva áreas del producto visibles en el menú. Las conexiones con terceros están en Conexiones.')}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="flex items-center justify-between p-3 rounded-lg border">
-                    <div>
-                      <Label className="font-medium">{t('agency.modules.seo', 'SEO')}</Label>
-                      <p className="text-xs text-slate-500">{t('agency.modules.seoDesc', 'Auditorías, rankings y kpis de posicionamiento orgánico.')}</p>
-                    </div>
-                    <Switch
-                      checked={modules.seo}
-                      onCheckedChange={() => toggleModule('seo')}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 rounded-lg border">
-                    <div>
-                      <Label className="font-medium">{t('agency.modules.ppc', 'PPC')}</Label>
-                      <p className="text-xs text-slate-500">{t('agency.modules.ppcDesc', 'Conexión con Google/Meta Ads y reporting de inversión.')}</p>
+              <CardContent className="space-y-4">
+                <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 p-3 text-sm text-slate-600">
+                  {t('agency.modules.seoReservedNote', 'El antiguo interruptor «SEO» de agencia no está enlazado a ninguna pantalla en esta versión; el valor se conserva en datos por compatibilidad.')}
+                </div>
+                <div className="grid gap-4 grid-cols-1">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 p-3 rounded-lg border">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <Label className="font-medium">{t('agency.modules.ppc', 'PPC (Ads)')}</Label>
+                      <p className="text-xs text-slate-500">{t('agency.modules.ppcDesc', 'Google/Meta Ads e informes de inversión.')}</p>
+                      <p className="text-xs text-slate-500 pt-0.5">{t('agency.modules.ppcEffect', 'Afecta a: entradas Google Ads / Meta Ads y rutas /ads, /meta-ads (además de permisos de rol).')}</p>
                     </div>
                     <Switch
                       checked={modules.ppc}
                       onCheckedChange={() => toggleModule('ppc')}
+                      className="shrink-0"
                     />
                   </div>
 
-                  <div className="flex items-center justify-between p-3 rounded-lg border">
-                    <div>
-                      <Label className="font-medium">{t('agency.modules.professionalGoals', 'Objetivos Profesionales')}</Label>
-                      <p className="text-xs text-slate-500">{t('agency.modules.professionalGoalsDesc', 'Gestión de OKRs y metas por empleado.')}</p>
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 p-3 rounded-lg border">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <Label className="font-medium">{t('agency.modules.professionalGoals', 'Objetivos profesionales (OKRs)')}</Label>
+                      <p className="text-xs text-slate-500">{t('agency.modules.professionalGoalsDesc', 'Metas por empleado en la vista Objetivos.')}</p>
+                      <p className="text-xs text-slate-500 pt-0.5">{t('agency.modules.professionalGoalsEffect', 'Afecta a: entrada Objetivos y ruta /okrs (además del permiso de rol).')}</p>
                     </div>
                     <Switch
                       checked={modules.professionalGoals}
                       onCheckedChange={() => toggleModule('professionalGoals')}
+                      className="shrink-0"
                     />
                   </div>
 
-                  <div className="flex items-center justify-between p-3 rounded-lg border">
-                    <div>
-                      <Label className="font-medium">{t('agency.modules.deadlines', 'Deadlines')}</Label>
-                      <p className="text-xs text-slate-500">{t('agency.modules.deadlinesDesc', 'Fechas de entrega críticas en el planificador.')}</p>
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 p-3 rounded-lg border">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <Label className="font-medium">{t('agency.modules.deadlines', 'Deadlines mensuales')}</Label>
+                      <p className="text-xs text-slate-500">{t('agency.modules.deadlinesDesc', 'Objetivos de horas por proyecto y persona cada mes, página Deadlines y coherencia con la planificación.')}</p>
+                      <p className="text-xs text-slate-500 pt-0.5">{t('agency.modules.deadlinesEffect', 'Afecta a: entrada Deadlines y ruta /deadlines (además del permiso de rol).')}</p>
                     </div>
                     <Switch
                       checked={modules.deadlines}
                       onCheckedChange={() => toggleModule('deadlines')}
+                      className="shrink-0"
                     />
                   </div>
 
-                  <div className="flex items-center justify-between p-3 rounded-lg border">
-                    <div>
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 p-3 rounded-lg border">
+                    <div className="min-w-0 flex-1 space-y-1">
                       <Label className="font-medium">{t('agency.modules.timeTracker', 'Cronómetro de tareas')}</Label>
                       <p className="text-xs text-slate-500">{t('agency.modules.timeTrackerDesc', 'Cronómetro en tiempo real para imputación exacta.')}</p>
+                      <p className="text-xs text-slate-500 pt-0.5">{t('agency.modules.timeTrackerEffect', 'Afecta a: entrada Tiempos y ruta /tiempos (además del permiso de rol y plan).')}</p>
                     </div>
                     <Switch
                       checked={modules.timeTracker}
                       onCheckedChange={() => toggleModule('timeTracker')}
+                      className="shrink-0"
                     />
                   </div>
                   {modules.timeTracker && (
-                    <div className="flex items-center justify-between p-3 rounded-lg border">
-                      <div>
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 p-3 rounded-lg border">
+                      <div className="min-w-0 flex-1 space-y-1">
                         <Label className="font-medium text-sm">{t('agency.modules.maxHours', 'Máximo de horas por tarea')}</Label>
                         <p className="text-xs text-slate-500">{t('agency.modules.maxHoursDesc', 'Límite de seguridad para evitar errores al detener el tracker.')}</p>
                       </div>
                       <select
                         value={timeTrackerMaxHours}
                         onChange={(e) => setTimeTrackerMaxHours(Number(e.target.value))}
-                        className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
+                        className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shrink-0"
                       >
                         {[4, 6, 8, 10, 12, 16, 24].map((h) => (
                           <option key={h} value={h}>{h}h</option>
@@ -1139,38 +1163,39 @@ export default function AgencySettingsPage() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
 
-            {/* Precisión de planificación (exclusiones para el índice de fiabilidad) */}
+          <TabsContent value="analytics" className="mt-0 space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart2 className="h-5 w-5 text-amber-600" />
-                  Precisión de planificación
+                  {t('agency.analytics.planningPrecisionTitle', 'Precisión de planificación')}
                 </CardTitle>
                 <CardDescription>
-                  Excluye tareas de proyectos o clientes concretos del cálculo del índice de fiabilidad (precisión de planificación). Útil para no incluir, por ejemplo, gestiones internas.
+                  {t('agency.analytics.planningPrecisionDesc', 'Excluye proyectos o clientes del índice de fiabilidad (precisión de planificación). Útil para gestiones internas que no quieras ponderar.')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Excluir proyectos</Label>
+                    <Label className="text-sm font-medium">{t('agency.analytics.excludeProjects', 'Excluir proyectos')}</Label>
                     <Popover open={openExcludeProjects} onOpenChange={setOpenExcludeProjects}>
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full justify-between bg-slate-50 font-normal" size="sm">
                           <span className="truncate">
                             {planningPrecisionExclusions.projectIds.length === 0
-                              ? 'Ninguno seleccionado'
-                              : `${planningPrecisionExclusions.projectIds.length} proyecto(s)`}
+                              ? t('agency.analytics.noneSelected', 'Ninguno seleccionado')
+                              : t('agency.analytics.nProjects', { count: planningPrecisionExclusions.projectIds.length })}
                           </span>
                           <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0 ml-2" />
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[280px] max-w-[360px] p-0" align="start">
                         <Command>
-                          <CommandInput placeholder="Buscar proyecto..." />
+                          <CommandInput placeholder={t('agency.analytics.searchProject', 'Buscar proyecto...')} />
                           <CommandList className="max-h-[260px]">
-                            <CommandEmpty>No hay proyectos o no coincide la búsqueda</CommandEmpty>
+                            <CommandEmpty>{t('agency.analytics.noProjectsMatch', 'No hay proyectos o no coincide la búsqueda')}</CommandEmpty>
                             <CommandGroup>
                               {(projects || []).map((p) => {
                                 const selected = planningPrecisionExclusions.projectIds.includes(p.id);
@@ -1211,23 +1236,23 @@ export default function AgencySettingsPage() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Excluir clientes</Label>
+                    <Label className="text-sm font-medium">{t('agency.analytics.excludeClients', 'Excluir clientes')}</Label>
                     <Popover open={openExcludeClients} onOpenChange={setOpenExcludeClients}>
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full justify-between bg-slate-50 font-normal" size="sm">
                           <span className="truncate">
                             {planningPrecisionExclusions.clientIds.length === 0
-                              ? 'Ninguno seleccionado'
-                              : `${planningPrecisionExclusions.clientIds.length} cliente(s)`}
+                              ? t('agency.analytics.noneSelected', 'Ninguno seleccionado')
+                              : t('agency.analytics.nClients', { count: planningPrecisionExclusions.clientIds.length })}
                           </span>
                           <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0 ml-2" />
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[280px] max-w-[360px] p-0" align="start">
                         <Command>
-                          <CommandInput placeholder="Buscar cliente..." />
+                          <CommandInput placeholder={t('agency.analytics.searchClient', 'Buscar cliente...')} />
                           <CommandList className="max-h-[260px]">
-                            <CommandEmpty>No hay clientes o no coincide la búsqueda</CommandEmpty>
+                            <CommandEmpty>{t('agency.analytics.noClientsMatch', 'No hay clientes o no coincide la búsqueda')}</CommandEmpty>
                             <CommandGroup>
                               {(clients || []).map((c) => {
                                 const selected = planningPrecisionExclusions.clientIds.includes(c.id);
@@ -1271,21 +1296,20 @@ export default function AgencySettingsPage() {
               </CardContent>
             </Card>
 
-            {/* Radar operativo: excluir riesgo "Poco avance" por palabras en nombre del proyecto */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Activity className="h-5 w-5 text-emerald-600" />
-                  Radar operativo
+                  {t('agency.analytics.radarTitle', 'Radar operativo')}
                 </CardTitle>
                 <CardDescription>
-                  Si el nombre del proyecto contiene alguna de estas palabras, no se marcará como riesgo «Poco avance» al final de mes. Ej.: off-page, linkbuilding.
+                  {t('agency.analytics.radarDesc', 'Si el nombre del proyecto contiene alguna de estas palabras, no se marcará como riesgo «Poco avance» al final de mes. Ej.: off-page, linkbuilding.')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex flex-wrap gap-2 items-center">
                   <Input
-                    placeholder="Añadir palabra clave (ej. off-page)"
+                    placeholder={t('agency.analytics.keywordPlaceholder', 'Añadir palabra clave (ej. off-page)')}
                     value={radarKeywordInput}
                     onChange={(e) => setRadarKeywordInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -1313,7 +1337,7 @@ export default function AgencySettingsPage() {
                     }}
                   >
                     <Plus className="h-4 w-4 mr-1" />
-                    Añadir
+                    {t('agency.analytics.addKeyword', 'Añadir')}
                   </Button>
                 </div>
                 {radarLowProgressExcludeKeywords.length > 0 && (
@@ -1325,7 +1349,7 @@ export default function AgencySettingsPage() {
                           type="button"
                           onClick={() => setRadarLowProgressExcludeKeywords(radarLowProgressExcludeKeywords.filter((k) => k !== kw))}
                           className="rounded-full hover:bg-muted p-0.5"
-                          aria-label={`Quitar ${kw}`}
+                          aria-label={t('agency.analytics.removeKeywordAria', { kw })}
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -1633,6 +1657,10 @@ export default function AgencySettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                <div className="space-y-1 pb-2 border-b border-slate-100">
+                  <p className="text-sm font-medium text-slate-800">{t('agency.integrations.optionalFeaturesTitle', 'Funciones opcionales')}</p>
+                  <p className="text-xs text-slate-500">{t('agency.integrations.optionalFeaturesDesc', 'Activar o desactivar flujos (Weekly, CRM, privacidad en demo). No sustituyen al módulo PPC: las cuentas publicitarias van más abajo.')}</p>
+                </div>
 
                 {/* Workflow Integrations */}
                 <div className="space-y-3">
@@ -1859,9 +1887,12 @@ export default function AgencySettingsPage() {
                 <Separator />
 
                 <div className="space-y-6 mt-6 pt-6 ">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Settings className="h-5 w-5 text-slate-700" />
-                    <h3 className="font-semibold text-lg text-slate-900">Configuración de Plataformas de Anuncios</h3>
+                  <div className="space-y-1 mb-2">
+                    <div className="flex items-center gap-2">
+                      <Settings className="h-5 w-5 text-slate-700" />
+                      <h3 className="font-semibold text-lg text-slate-900">{t('agency.integrations.adsPlatformsTitle', 'Cuentas publicitarias')}</h3>
+                    </div>
+                    <p className="text-xs text-slate-500 pl-7">{t('agency.integrations.adsPlatformsDesc', 'OAuth y cuentas Meta / Google Ads. Requiere tener activado el módulo PPC y permisos de rol para ver las pantallas de anuncios.')}</p>
                   </div>
 
                   <div className="space-y-4 border rounded-lg p-4 bg-slate-50/50 mt-6">

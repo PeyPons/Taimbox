@@ -353,7 +353,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       {t('sidebar.menu.times', 'Tiempos')}
                     </NavLink>
                   )}
-                  {canAccess('/okrs') && (
+                  {modules.professionalGoals !== false && canAccess('/okrs') && (
                     <NavLink to="/okrs" icon={Rocket} active={location.pathname === '/okrs'}>
                       {t('sidebar.menu.okrs', 'Objetivos')}
                     </NavLink>

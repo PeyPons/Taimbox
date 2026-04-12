@@ -279,7 +279,7 @@ const App = () => (
 
                             <Route path="/clients" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/clients"><ClientsAndProjectsPage /></PermissionProtectedRoute></Suspense>} />
                             <Route path="/projects" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/projects"><ClientsAndProjectsPage /></PermissionProtectedRoute></Suspense>} />
-                            <Route path="/okrs" element={<Suspense fallback={<PageLoader />}><PlanGuard><PermissionProtectedRoute requiredPermission="/okrs"><OkrsPage /></PermissionProtectedRoute></PlanGuard></Suspense>} />
+                            <Route path="/okrs" element={<Suspense fallback={<PageLoader />}><PlanGuard><PermissionProtectedRoute requiredPermission="/okrs"><ModuleGuard module="professionalGoals"><OkrsPage /></ModuleGuard></PermissionProtectedRoute></PlanGuard></Suspense>} />
 
                             {/* Ruta legacy /reports redirige a Seguimiento operativo */}
                             <Route path="/reports" element={<Navigate to="/operaciones" replace />} />
