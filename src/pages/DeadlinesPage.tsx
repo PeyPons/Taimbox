@@ -41,7 +41,7 @@ import { Deadline, GlobalAssignment } from '@/types';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
-import { format, addMonths, subMonths, parseISO } from 'date-fns';
+import { format, addMonths, subMonths } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useDeadlinesRedistribution } from '@/hooks/useDeadlinesRedistribution';
 import { useDeadlinesPageData } from '@/hooks/useDeadlinesPageData';
@@ -206,7 +206,7 @@ export default function DeadlinesPage() {
             ? { ...a, ...assignmentData, month: selectedMonth, name: data.name, hours: data.hours, affectsAll: data.affectsAll, affectedEmployeeIds: data.affectedEmployeeIds || [], employeeId: editingGlobal.employeeId }
             : a
         ));
-        toast.success(t('app.deadlines.toasts.globalAssignment.updated'));
+        toast.success(t('deadlines.toasts.globalAssignment.updated'));
       } else {
         const { data: inserted, error } = await supabase
           .from('global_assignments')
@@ -227,11 +227,11 @@ export default function DeadlinesPage() {
             employeeId: (inserted as { employee_id?: string; created_by?: string }).employee_id || (inserted as { created_by?: string }).created_by
           }]);
         }
-        toast.success(t('app.deadlines.toasts.globalAssignment.created'));
+        toast.success(t('deadlines.toasts.globalAssignment.created'));
       }
     } catch (error) {
       console.error('Error guardando asignación global:', error);
-      const fallbackMessage = t('app.deadlines.toasts.globalAssignment.saveError');
+      const fallbackMessage = t('deadlines.toasts.globalAssignment.saveError');
       const errorMessage = (error as Error)?.message || fallbackMessage;
       toast.error(errorMessage);
     }
@@ -357,10 +357,17 @@ export default function DeadlinesPage() {
     }
   };
 
+  /** Mes anterior calendario (misma lógica que handlePrevMonth; evita ambigüedades de parseISO/UTC). */
+  const getPreviousMonthKey = useCallback((monthKey: string) => {
+    const [year, month] = monthKey.split('-').map(Number);
+    const firstOfMonth = new Date(year, month - 1, 1);
+    return format(subMonths(firstOfMonth, 1), 'yyyy-MM');
+  }, []);
+
   const executeCopyFromPreviousMonth = async () => {
     setIsLoading(true);
     try {
-      const previousMonth = format(subMonths(parseISO(`${selectedMonth}-01`), 1), 'yyyy-MM');
+      const previousMonth = getPreviousMonthKey(selectedMonth);
       // 1. Obtener solo deadlines de esta agencia (mes anterior)
       const { data: previousDeadlines, error: fetchError } = await fetchDeadlinesForMonth(previousMonth, currentAgency?.id);
       if (fetchError) throw fetchError;
@@ -370,8 +377,24 @@ export default function DeadlinesPage() {
         return;
       }
 
+      const existingProjectIds = new Set(deadlines.map((d) => d.projectId));
+      const validProjectIds = new Set(projects.map((p) => p.id));
+      const sourceDeadlines = previousDeadlines.filter(
+        (d) => validProjectIds.has(d.projectId) && !existingProjectIds.has(d.projectId)
+      );
+      const skippedExisting = previousDeadlines.length - sourceDeadlines.length;
+
+      if (sourceDeadlines.length === 0) {
+        toast.info(
+          skippedExisting > 0
+            ? 'Todos los deadlines del mes anterior ya existen en este mes (o el proyecto ya no está en la agencia).'
+            : 'No hay deadlines aplicables para copiar.'
+        );
+        return;
+      }
+
       // 2. Insertarlos en el mes actual
-      const newDeadlines = previousDeadlines.map(d => ({
+      const newDeadlines = sourceDeadlines.map(d => ({
         project_id: d.projectId,
         month: selectedMonth,
         notes: d.notes ?? null,
@@ -387,26 +410,24 @@ export default function DeadlinesPage() {
 
       if (insertError) throw insertError;
 
-      // 3. Actualizar estado local
-      if (insertedData) {
-        const mapped = insertedData.map((d: { id: string; project_id: string; month: string; notes?: string; employee_hours?: Record<string, number>; is_hidden?: boolean; budget_override?: number }) => ({
-          id: d.id,
-          projectId: d.project_id,
-          month: d.month,
-          notes: d.notes,
-          employeeHours: d.employee_hours || {},
-          isHidden: d.is_hidden || false,
-          budgetOverride: d.budget_override ?? undefined
-        }));
-        setDeadlines(prev => [...prev, ...mapped]);
-        setHiddenProjects(prev => {
-          const next = new Set(prev);
-          mapped.forEach(d => { if (d.isHidden) next.add(d.projectId); });
-          return next;
+      // 3. Sincronizar con BD (evita duplicados por proyecto+mes y orden coherente con fetchDeadlinesForMonth)
+      const { data: refreshed, error: refreshError } = await fetchDeadlinesForMonth(selectedMonth, currentAgency?.id);
+      if (refreshError) throw refreshError;
+      if (refreshed && refreshed.length > 0) {
+        setDeadlines(refreshed);
+        const hidden = new Set<string>();
+        refreshed.forEach((d) => {
+          if (d.isHidden) hidden.add(d.projectId);
         });
+        setHiddenProjects(hidden);
       }
 
-      toast.success(`Se copiaron ${insertedData ? insertedData.length : 0} deadlines`);
+      const insertedCount = insertedData?.length ?? 0;
+      toast.success(
+        skippedExisting > 0
+          ? `Se copiaron ${insertedCount} deadlines (${skippedExisting} omitidos: ya existían u otro motivo).`
+          : `Se copiaron ${insertedCount} deadlines`
+      );
     } catch (error) {
       console.error('Error copiando deadlines:', error);
       toast.error('Error al copiar deadlines');
@@ -418,7 +439,7 @@ export default function DeadlinesPage() {
   const copyFromPreviousMonth = async () => {
     setIsLoading(true);
     try {
-      const previousMonth = format(subMonths(parseISO(`${selectedMonth}-01`), 1), 'yyyy-MM');
+      const previousMonth = getPreviousMonthKey(selectedMonth);
       const { data: previousDeadlines, error: fetchError } = await fetchDeadlinesForMonth(previousMonth, currentAgency?.id);
       if (fetchError) throw fetchError;
 
@@ -427,9 +448,20 @@ export default function DeadlinesPage() {
         return;
       }
 
+      const existingProjectIds = new Set(deadlines.map((d) => d.projectId));
+      const validProjectIds = new Set(projects.map((p) => p.id));
+      const copyableCount = previousDeadlines.filter(
+        (d) => validProjectIds.has(d.projectId) && !existingProjectIds.has(d.projectId)
+      ).length;
+
+      if (copyableCount === 0) {
+        toast.info('No hay deadlines nuevos para copiar (todos los del mes anterior ya están en este mes).');
+        return;
+      }
+
       setConfirmAction({
         type: 'copy_month',
-        data: { count: previousDeadlines.length }
+        data: { count: copyableCount }
       });
     } catch (error) {
       console.error('Error checking previous deadlines:', error);
@@ -500,7 +532,7 @@ export default function DeadlinesPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-slate-400">{t('app.deadlines.loading')}</div>
+        <div className="text-slate-400">{t('deadlines.loading')}</div>
       </div>
     );
   }
@@ -539,14 +571,14 @@ export default function DeadlinesPage() {
                   onClick={onClick}
                 >
                   <Filter className="h-4 w-4" />
-                  {t('app.deadlines.filters.button')}
+                  {t('deadlines.filters.button')}
                 </Button>
               )}
             />
             {canEditDeadlines && (
               <Button variant="outline" size="sm" className="h-11 px-4 gap-1" onClick={() => openGlobalDialog()}>
                 <Plus className="h-4 w-4" />
-                {t('app.deadlines.globalAssignments.button')}
+                {t('deadlines.globalAssignments.button')}
               </Button>
             )}
           </div>
@@ -586,7 +618,7 @@ export default function DeadlinesPage() {
               setEditingDeadline(deadline);
               setConfirmAction({ type: 'delete_deadline', id: deadline.id });
             } else {
-              toast.info(t('app.deadlines.toasts.noConfigToDelete'));
+              toast.info(t('deadlines.toasts.noConfigToDelete'));
             }
           }}
         />
