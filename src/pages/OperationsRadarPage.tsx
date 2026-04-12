@@ -3,24 +3,19 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Activity, PlayCircle, Search, ChevronDown, LayoutGrid, Ban, CircleDashed, Clock, AlertOctagon, CheckCircle2, GitBranch } from 'lucide-react';
+import { Activity, ChevronDown, GitBranch } from 'lucide-react';
 import { GlobalPlanningInconsistencies } from '@/components/employee/GlobalPlanningInconsistencies';
-import { format, startOfMonth, isSameMonth, endOfMonth, getDate, subMonths, addMonths, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useProjectMetrics } from '@/hooks/useProjectMetrics';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
 import { normalizeDepartments } from '@/utils/departmentUtils';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
-import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
-import type { Allocation, Deadline } from '@/types';
+import type { Allocation } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 import { useOperationsRadarMonthState } from '@/hooks/useOperationsRadarMonthState';
@@ -83,7 +78,7 @@ export default function OperationsRadarPage() {
     });
 
 
-    const { employeesForView, atRiskProjects, allProjectsForView } = useOperationsRadarData({
+    const { employeesForView, allProjectsForView } = useOperationsRadarData({
         projectMetrics,
         viewDate,
         isEndOfMonth,
@@ -96,16 +91,6 @@ export default function OperationsRadarPage() {
     });
 
     const [statusFilter, setStatusFilter] = useState<'all' | ProjectStatusType>('all');
-    const [expandedAlerts, setExpandedAlerts] = useState<Set<string>>(new Set());
-
-    const toggleAlert = (projectId: string) => {
-        setExpandedAlerts(prev => {
-            const next = new Set(prev);
-            if (next.has(projectId)) next.delete(projectId);
-            else next.add(projectId);
-            return next;
-        });
-    };
 
     type ProjectDetail = {
         effectiveUsage: number;
@@ -166,36 +151,6 @@ export default function OperationsRadarPage() {
         });
     }, [allProjectsForView, projectDetailsByProjectId]);
 
-    const filteredAllProjects = useMemo(() => {
-        let list = rowsWithStatus;
-        const q = globalSearchQuery.trim().toLowerCase();
-        if (q) {
-            list = list.filter(r => {
-                const formattedName = formatProjectName(r.projectName);
-                return formattedName.toLowerCase().includes(q) ||
-                    r.projectName.toLowerCase().includes(q) ||
-                    (r.clientName && r.clientName.toLowerCase().includes(q));
-            });
-        }
-        if (statusFilter !== 'all') {
-            list = list.filter(r => r.status === statusFilter);
-        }
-        return list;
-    }, [rowsWithStatus, globalSearchQuery, statusFilter, formatProjectName]);
-
-    const displayList: ProjectRowItem[] = filteredAllProjects;
-
-    const totalCountAfterSearch = useMemo(() => {
-        const q = globalSearchQuery.trim().toLowerCase();
-        if (!q) return rowsWithStatus.length;
-        return rowsWithStatus.filter(r => {
-            const formattedName = formatProjectName(r.projectName);
-            return formattedName.toLowerCase().includes(q) ||
-                r.projectName.toLowerCase().includes(q) ||
-                (r.clientName && r.clientName.toLowerCase().includes(q));
-        }).length;
-    }, [rowsWithStatus, globalSearchQuery, formatProjectName]);
-
     const filterCounts = useMemo(() => {
         const list = rowsWithStatus;
         return {
@@ -207,12 +162,6 @@ export default function OperationsRadarPage() {
             'in-rule': list.filter(p => p.status === 'in-rule').length
         };
     }, [rowsWithStatus]);
-
-    const departmentNameForView = useMemo(() => {
-        if (!selectedDepartmentId) return null;
-        const d = departments.find(x => x.id === selectedDepartmentId || x.name === selectedDepartmentId);
-        return d?.name ?? null;
-    }, [selectedDepartmentId, departments]);
 
     /** Tareas del mes que bloquean a otras (no completadas y de las que depende al menos otra tarea). Respetan filtro por departamento. */
     const blockingTasksForView = useMemo(() => {
@@ -285,16 +234,6 @@ export default function OperationsRadarPage() {
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                        <div className="relative min-w-[200px] max-w-[320px]">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder={t('operationsRadar.searchPlaceholder')}
-                                value={globalSearchQuery}
-                                onChange={(e) => setGlobalSearchQuery(e.target.value)}
-                                className="pl-9 h-10"
-                                aria-label={t('operationsRadar.searchAria')}
-                            />
-                        </div>
                         <div className="flex items-center gap-1 bg-white rounded-lg border p-1 shadow-sm">
                             <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-9 w-9 text-slate-500" aria-label={t('operationsRadar.prevMonth')}>
                                 &lt;
@@ -348,6 +287,34 @@ export default function OperationsRadarPage() {
                                                 </AvatarFallback>
                                             </Avatar>
                                             <div className="min-w-0 flex-1 space-y-1.5">
+                                                {/* Proyecto arriba: contexto visible sin bajar al final de la tarjeta */}
+                                                <div className="rounded-md border border-indigo-100 bg-indigo-50/70 px-2 py-1.5">
+                                                    <p className="text-[10px] font-medium uppercase tracking-wide text-indigo-600/90">
+                                                        {t('operationsRadar.blockingCardProjectLabel', 'Proyecto')}
+                                                    </p>
+                                                    <p
+                                                        className="mt-0.5 text-sm font-semibold leading-snug text-slate-900"
+                                                        title={`${formatProjectName(projectName)}${clientName ? ` · ${clientName}` : ''}`}
+                                                    >
+                                                        <SensitiveText kind="project" id={allocation.projectId}>
+                                                            {formatProjectName(projectName)}
+                                                        </SensitiveText>
+                                                        {clientName && clientId && (
+                                                            <>
+                                                                <span className="font-normal text-slate-500"> · </span>
+                                                                <SensitiveText kind="account" id={clientId} className="font-medium text-slate-700">
+                                                                    {clientName}
+                                                                </SensitiveText>
+                                                            </>
+                                                        )}
+                                                        {clientName && !clientId && (
+                                                            <>
+                                                                <span className="font-normal text-slate-500"> · </span>
+                                                                <span className="font-medium text-slate-700">{clientName}</span>
+                                                            </>
+                                                        )}
+                                                    </p>
+                                                </div>
                                                 {/* Quién bloquea a quién */}
                                                 <p className="text-sm font-semibold text-slate-800">
                                                     <span className="text-amber-700">
@@ -396,17 +363,6 @@ export default function OperationsRadarPage() {
                                                         </ul>
                                                     </div>
                                                 )}
-                                                {/* Proyecto y cliente */}
-                                                <p className="text-[11px] text-slate-500 truncate" title={`${formatProjectName(projectName)}${clientName ? ` · ${clientName}` : ''}`}>
-                                                    <SensitiveText kind="project" id={allocation.projectId}>{formatProjectName(projectName)}</SensitiveText>
-                                                    {clientName && clientId && (
-                                                        <>
-                                                            {' · '}
-                                                            <SensitiveText kind="account" id={clientId}>{clientName}</SensitiveText>
-                                                        </>
-                                                    )}
-                                                    {clientName && !clientId && ` · ${clientName}`}
-                                                </p>
                                             </div>
                                         </li>
                                     );
@@ -417,480 +373,19 @@ export default function OperationsRadarPage() {
                 </CollapsibleContent>
             </Collapsible>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-                <div className="flex flex-col gap-6">
-                    <GlobalPlanningInconsistencies viewDate={viewDate} searchQuery={globalSearchQuery} hideProjectSearch />
-                </div>
-
-                <div className="flex flex-col gap-6">
-                    <Card className="border-l-4 border-l-slate-400 flex-1">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Activity className="h-5 w-5 text-slate-600" />
-                                {t('operationsRadar.projectsStatus', 'Estado de proyectos')}
-                            </CardTitle>
-                            <CardDescription className="flex flex-col gap-1">
-                                <span>{t('operationsRadar.projectsDesc', 'Cómo van los proyectos este mes. Filtra por nivel de aviso si lo necesitas.')}</span>
-                                {departmentNameForView && (
-                                    <span className="text-amber-700 font-medium">
-                                        {t('operationsRadar.filteredView', { department: departmentNameForView, defaultValue: 'Vista filtrada por departamento: {{department}}' })}
-                                    </span>
-                                )}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {displayList.length === 0 ? (
-                                <div className="text-center py-8 text-muted-foreground border rounded-lg bg-slate-50 border-dashed">
-                                    <PlayCircle className="h-12 w-12 mx-auto mb-2 text-emerald-300" />
-                                    <p className="text-sm font-medium text-slate-700">
-                                        {allProjectsForView.length === 0
-                                            ? (departmentNameForView ? t('operationsRadar.noProjectsForDepartment', { department: departmentNameForView, defaultValue: 'No hay proyectos para {{department}} este mes.' }) : t('operationsRadar.noProjects', 'No hay proyectos este mes.'))
-                                            : t('operationsRadar.noFilteredProjects', 'Ningún proyecto con los filtros actuales.')}
-                                    </p>
-                                    {statusFilter !== 'all' && (
-                                        <Button variant="outline" size="sm" className="mt-2" onClick={() => setStatusFilter('all')}>
-                                            {t('operationsRadar.showAll', 'Ver todos')}
-                                        </Button>
-                                    )}
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="flex flex-col gap-3">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <Button
-                                                variant={statusFilter === 'all' ? 'default' : 'outline'}
-                                                size="sm"
-                                                onClick={() => setStatusFilter('all')}
-                                                className={cn("h-8 text-xs gap-1.5", statusFilter === 'all' ? "bg-slate-900" : "bg-white")}
-                                            >
-                                                <LayoutGrid className="h-3.5 w-3.5" />
-                                                {t('operationsRadar.filterAll', 'Todos')}
-                                                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">
-                                                    {filterCounts.all}
-                                                </Badge>
-                                            </Button>
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button
-                                                            variant={statusFilter === 'no-activity' ? 'default' : 'outline'}
-                                                            size="sm"
-                                                            onClick={() => setStatusFilter('no-activity')}
-                                                            className={cn("h-8 text-xs gap-1.5", statusFilter === 'no-activity' ? "bg-slate-700" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
-                                                        >
-                                                            <Ban className="h-3.5 w-3.5" />
-                                                            {t('operationsRadar.filterNoActivity', 'Sin actividad')}
-                                                            {filterCounts['no-activity'] > 0 && (
-                                                                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px] bg-slate-200">
-                                                                    {filterCounts['no-activity']}
-                                                                </Badge>
-                                                            )}
-                                                        </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent side="bottom" className="max-w-[200px] text-center">
-                                                        <p className="text-xs">{t('operationsRadar.tooltipNoActivity', 'Proyectos con objetivo pero sin tareas planificadas ni computadas este mes')}</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button
-                                                            variant={statusFilter === 'needs-planning' ? 'default' : 'outline'}
-                                                            size="sm"
-                                                            onClick={() => setStatusFilter('needs-planning')}
-                                                            className={cn("h-8 text-xs gap-1.5", statusFilter === 'needs-planning' ? "bg-amber-600 hover:bg-amber-700" : "bg-white border-amber-200 text-amber-700 hover:bg-amber-50")}
-                                                        >
-                                                            <CircleDashed className="h-3.5 w-3.5" />
-                                                            {t('operationsRadar.filterNeedsPlanning', 'Falta planificar')}
-                                                            {filterCounts['needs-planning'] > 0 && (
-                                                                <Badge className={cn("ml-1 h-5 px-1.5 text-[10px]", statusFilter === 'needs-planning' ? "bg-amber-700" : "bg-amber-100 text-amber-700")}>
-                                                                    {filterCounts['needs-planning']}
-                                                                </Badge>
-                                                            )}
-                                                        </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent side="bottom" className="max-w-[200px] text-center">
-                                                        <p className="text-xs">{t('operationsRadar.tooltipNeedsPlanning', 'Proyectos con tareas pendientes de completar este mes')}</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button
-                                                            variant={statusFilter === 'behind-schedule' ? 'default' : 'outline'}
-                                                            size="sm"
-                                                            onClick={() => setStatusFilter('behind-schedule')}
-                                                            className={cn("h-8 text-xs gap-1.5", statusFilter === 'behind-schedule' ? "bg-orange-600 hover:bg-orange-700" : "bg-white border-orange-200 text-orange-700 hover:bg-orange-50")}
-                                                        >
-                                                            <Clock className="h-3.5 w-3.5" />
-                                                            {t('operationsRadar.filterBehindSchedule', 'Retrasados')}
-                                                            {filterCounts['behind-schedule'] > 0 && (
-                                                                <Badge className={cn("ml-1 h-5 px-1.5 text-[10px]", statusFilter === 'behind-schedule' ? "bg-orange-700" : "bg-orange-100 text-orange-700")}>
-                                                                    {filterCounts['behind-schedule']}
-                                                                </Badge>
-                                                            )}
-                                                        </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent side="bottom" className="max-w-[220px] text-center">
-                                                        <p className="text-xs">{t('operationsRadar.tooltipBehindSchedule', 'Por debajo del objetivo o poco avance (ritmo bajo / poco avance)')}</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button
-                                                            variant={statusFilter === 'over-budget' ? 'default' : 'outline'}
-                                                            size="sm"
-                                                            onClick={() => setStatusFilter('over-budget')}
-                                                            className={cn("h-8 text-xs gap-1.5", statusFilter === 'over-budget' ? "bg-red-600 hover:bg-red-700" : "bg-white border-red-200 text-red-700 hover:bg-red-50")}
-                                                        >
-                                                            <AlertOctagon className="h-3.5 w-3.5" />
-                                                            {t('operationsRadar.filterOverBudget', 'Exceso horas')}
-                                                            {filterCounts['over-budget'] > 0 && (
-                                                                <Badge className={cn("ml-1 h-5 px-1.5 text-[10px]", statusFilter === 'over-budget' ? "bg-red-700" : "bg-red-100 text-red-700")}>
-                                                                    {filterCounts['over-budget']}
-                                                                </Badge>
-                                                            )}
-                                                        </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent side="bottom" className="max-w-[200px] text-center">
-                                                        <p className="text-xs">{t('operationsRadar.tooltipOverBudget', 'Proyectos que superan el presupuesto del mes')}</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Button
-                                                            variant={statusFilter === 'in-rule' ? 'default' : 'outline'}
-                                                            size="sm"
-                                                            onClick={() => setStatusFilter('in-rule')}
-                                                            className={cn("h-8 text-xs gap-1.5", statusFilter === 'in-rule' ? "bg-emerald-600 hover:bg-emerald-700" : "bg-white border-emerald-200 text-emerald-700 hover:bg-emerald-50")}
-                                                        >
-                                                            <CheckCircle2 className="h-3.5 w-3.5" />
-                                                            {t('operationsRadar.filterInRule', 'En regla')}
-                                                            {filterCounts['in-rule'] > 0 && (
-                                                                <Badge className={cn("ml-1 h-5 px-1.5 text-[10px]", statusFilter === 'in-rule' ? "bg-emerald-700" : "bg-emerald-100 text-emerald-700")}>
-                                                                    {filterCounts['in-rule']}
-                                                                </Badge>
-                                                            )}
-                                                        </Button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent side="bottom" className="max-w-[220px] text-center">
-                                                        <p className="text-xs">{t('operationsRadar.tooltipInRule', 'Al día, sin exceso y sin tareas pendientes de planificar')}</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                        </div>
-                                    </div>
-                                    {displayList.length === 0 ? (
-                                        <p className="text-sm text-slate-500 py-4 text-center">{t('operationsRadar.noResults', 'Ningún resultado con los filtros actuales.')}</p>
-                                    ) : (
-                                        <>
-                                            <p className="text-xs text-slate-500">
-                                                {t('operationsRadar.projectsFound', { count: displayList.length, defaultValue: '{{count}} proyectos.' })}
-                                            </p>
-                                            <div className="space-y-1">
-                                                {displayList.map((row, idx) => {
-                                                    const project = projects.find(p => p.id === row.projectId);
-                                                    const deptName = project?.responsibleDepartmentId
-                                                        ? departments.find(d => d.id === project.responsibleDepartmentId || d.name === project.responsibleDepartmentId)?.name
-                                                        : null;
-                                                    const progressPct = row.budget > 0 ? Math.min(120, (row.computed / row.budget) * 100) : 0;
-                                                    const isOverBudget = row.riskType === 'overBudget';
-                                                    const hoursRemaining = Math.max(0, row.budget - row.computed);
-                                                    const hoursOver = Math.max(0, row.computed - row.budget);
-                                                    const isExpanded = expandedAlerts.has(row.projectId);
-                                                    const actionPhrase = isOverBudget
-                                                        ? t('operationsRadar.actionOverBudget', { hours: hoursOver.toFixed(1), defaultValue: '{{hours}}h por encima del acuerdo.' })
-                                                        : row.riskType === 'lowProgress'
-                                                            ? t('operationsRadar.actionLowProgress', { hours: hoursRemaining.toFixed(1), defaultValue: 'Faltan {{hours}}h para el objetivo del mes.' })
-                                                            : row.riskType === 'lowPace'
-                                                                ? t('operationsRadar.actionLowPace', 'Ritmo bajo para llegar al objetivo.')
-                                                                : row.status === 'in-rule' && hoursRemaining > 0
-                                                                    ? t('operationsRadar.actionInRule', { budget: row.budget.toFixed(1), hours: hoursRemaining.toFixed(1), defaultValue: 'Objetivo: {{budget}}h. Faltan {{hours}}h por computar.' })
-                                                                    : null;
-                                                    const statusLabel = row.status === 'over-budget' ? t('operationsRadar.filterOverBudget', 'Exceso horas') : row.status === 'behind-schedule' ? t('operationsRadar.filterBehindSchedule', 'Retrasados') : row.status === 'needs-planning' ? t('operationsRadar.filterNeedsPlanning', 'Falta planificar') : row.status === 'no-activity' ? t('operationsRadar.filterNoActivity', 'Sin actividad') : t('operationsRadar.filterInRule', 'En regla');
-                                                    return (
-                                                        <Collapsible
-                                                            key={`${row.projectId}-${idx}`}
-                                                            open={isExpanded}
-                                                            onOpenChange={() => toggleAlert(row.projectId)}
-                                                        >
-                                                            <div
-                                                                className={cn(
-                                                                    "rounded-lg border transition-colors",
-                                                                    row.status === 'over-budget' ? 'bg-red-50/50 border-red-200' :
-                                                                        row.status === 'behind-schedule' ? 'bg-orange-50/50 border-orange-200' :
-                                                                            row.status === 'needs-planning' ? 'bg-amber-50/50 border-amber-200' :
-                                                                                row.status === 'no-activity' ? 'bg-slate-50/50 border-slate-200' :
-                                                                                    'bg-emerald-50/30 border-emerald-200/80'
-                                                                )}
-                                                            >
-                                                                <CollapsibleTrigger asChild>
-                                                                    <div className="flex flex-col gap-2 p-3 hover:bg-black/5 cursor-pointer rounded-lg">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <ChevronDown className={cn("h-4 w-4 text-slate-400 shrink-0 transition-transform", isExpanded && "rotate-180")} />
-                                                                            <div className="min-w-0 flex-1 text-left">
-                                                                                <h4 className="text-sm font-semibold text-slate-900 truncate">
-                                                                                    <SensitiveText kind="project" id={row.projectId}>
-                                                                                        {formatProjectName(row.projectName)}
-                                                                                    </SensitiveText>
-                                                                                </h4>
-                                                                                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5 text-xs text-slate-600">
-                                                                                    {row.clientName && project?.clientId && (
-                                                                                        <span>
-                                                                                            <SensitiveText kind="account" id={project.clientId}>{row.clientName}</SensitiveText>
-                                                                                        </span>
-                                                                                    )}
-                                                                                    {row.clientName && !project?.clientId && <span>{row.clientName}</span>}
-                                                                                    {deptName && (
-                                                                                        <span className="text-slate-500">
-                                                                                            ·{' '}
-                                                                                            <SensitiveText
-                                                                                                kind="department"
-                                                                                                id={project?.responsibleDepartmentId ?? 'dept-unknown'}
-                                                                                            >
-                                                                                                {deptName}
-                                                                                            </SensitiveText>
-                                                                                        </span>
-                                                                                    )}
-                                                                                </div>
-                                                                            </div>
-                                                                            <Badge
-                                                                                variant="outline"
-                                                                                className={cn(
-                                                                                    "shrink-0",
-                                                                                    row.status === 'over-budget' && "bg-red-100 text-red-800 border-red-200",
-                                                                                    row.status === 'behind-schedule' && "bg-orange-100 text-orange-800 border-orange-200",
-                                                                                    row.status === 'needs-planning' && "bg-amber-100 text-amber-800 border-amber-200",
-                                                                                    row.status === 'no-activity' && "bg-slate-100 text-slate-700 border-slate-200",
-                                                                                    row.status === 'in-rule' && "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                                                                )}
-                                                                            >
-                                                                                {statusLabel}
-                                                                            </Badge>
-                                                                        </div>
-                                                                        {row.budget > 0 && (
-                                                                            <div className="flex flex-wrap items-center gap-3 pl-6">
-                                                                                <div className="flex items-baseline gap-1.5">
-                                                                                    <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">{t('operationsRadar.contracted', 'Contratadas')}</span>
-                                                                                    <span className="font-mono text-sm font-semibold text-slate-800">{row.budget}h</span>
-                                                                                </div>
-                                                                                <div className="flex items-baseline gap-1.5">
-                                                                                    <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">{t('operationsRadar.computed', 'Computadas')}</span>
-                                                                                    <span className={cn("font-mono text-sm font-semibold", isOverBudget ? "text-red-600" : "text-amber-600")}>{row.computed.toFixed(1)}h</span>
-                                                                                </div>
-                                                                                <div className="flex items-baseline gap-1.5">
-                                                                                    <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">{t('operationsRadar.toCompute', 'Por computar')}</span>
-                                                                                    <span className="font-mono text-sm font-semibold text-blue-600">{hoursRemaining.toFixed(1)}h</span>
-                                                                                </div>
-                                                                                <div className="flex-1 min-w-[80px] flex items-center gap-2">
-                                                                                    <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden max-w-[120px]">
-                                                                                        <div
-                                                                                            className={cn(
-                                                                                                "h-full rounded-full transition-all",
-                                                                                                isOverBudget ? "bg-red-500" : progressPct >= 90 ? "bg-amber-500" : "bg-emerald-500"
-                                                                                            )}
-                                                                                            style={{ width: `${Math.min(100, progressPct)}%` }}
-                                                                                        />
-                                                                                    </div>
-                                                                                    <span className={cn(
-                                                                                        "text-xs font-semibold tabular-nums",
-                                                                                        isOverBudget ? "text-red-600" : progressPct >= 90 ? "text-amber-600" : "text-emerald-600"
-                                                                                    )}>
-                                                                                        {isOverBudget && progressPct > 100 ? `>100%` : `${Math.min(100, Math.round(progressPct))}%`}
-                                                                                    </span>
-                                                                                </div>
-                                                                                {(() => {
-                                                                                    const pendingCount = projectDetailsByProjectId.get(row.projectId)?.pendingTasks.length ?? 0;
-                                                                                    if (pendingCount > 0) {
-                                                                                        return (
-                                                                                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
-                                                                                                {t('operationsRadar.pendingTasksCount', { count: pendingCount, defaultValue: '{{count}} pendientes' })}
-                                                                                            </span>
-                                                                                        );
-                                                                                    }
-                                                                                    return null;
-                                                                                })()}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </CollapsibleTrigger>
-                                                                <CollapsibleContent>
-                                                                    <div className="px-3 pb-3 pt-0 flex flex-col gap-3 border-t border-slate-200/80 mt-0 pt-2">
-                                                                        {row.budget > 0 && (() => {
-                                                                            const detail = projectDetailsByProjectId.get(row.projectId);
-                                                                            const effectiveUsage = detail?.effectiveUsage ?? row.planned + row.computed;
-                                                                            const planningPct = detail?.planningPct ?? (row.budget > 0 ? (effectiveUsage / row.budget) * 100 : 0);
-                                                                            const realPct = detail?.realPct ?? (row.budget > 0 ? (row.actual / row.budget) * 100 : 0);
-                                                                            const computedPct = detail?.computedPct ?? row.progressOperational;
-                                                                            return (
-                                                                                <div className="space-y-1.5">
-                                                                                    <div className="flex justify-between text-[10px] text-slate-600">
-                                                                                        <span>
-                                                                                            {effectiveUsage > row.planned ? (
-                                                                                                <><span className="font-semibold text-slate-800">{round2(effectiveUsage)}h</span> {t('operationsRadar.projection', 'proyección')}</>
-                                                                                            ) : (
-                                                                                                <><span className="font-semibold text-slate-800">{round2(row.planned)}h</span> {t('operationsRadar.estimated', 'estimadas')}</>
-                                                                                            )}
-                                                                                            {effectiveUsage < row.budget && (
-                                                                                                <span className="text-amber-600 ml-1">
-                                                                                                    {t('operationsRadar.missingHours', { missing: round2(row.budget - effectiveUsage), assigned: row.budget, defaultValue: '(Faltan {{missing}}h de {{assigned}}h asignadas)' })}
-                                                                                                </span>
-                                                                                            )}
-                                                                                            {effectiveUsage > row.budget && (
-                                                                                                <span className="text-red-600 ml-1">{t('operationsRadar.excessHours', { excess: round2(effectiveUsage - row.budget), defaultValue: '(+{{excess}}h de exceso)' })}</span>
-                                                                                            )}
-                                                                                        </span>
-                                                                                        <span className="text-slate-500">{t('operationsRadar.assigned', 'Asignadas:')} <span className="font-semibold">{row.budget}h</span></span>
-                                                                                    </div>
-                                                                                    <div className="space-y-1">
-                                                                                        <div className="flex items-center gap-2">
-                                                                                            <span className="text-[10px] text-slate-400 w-14">{t('operationsRadar.estimateLabel', 'Estimado')}</span>
-                                                                                            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                                                                <div className={cn("h-full rounded-full", isOverBudget ? "bg-red-500" : "bg-blue-500")} style={{ width: `${Math.min(100, planningPct)}%` }} />
-                                                                                            </div>
-                                                                                            <span className="text-[10px] font-medium text-slate-600 w-10 text-right">{round2(planningPct)}%</span>
-                                                                                        </div>
-                                                                                        <div className="flex items-center gap-2">
-                                                                                            <span className="text-[10px] text-slate-400 w-14">{t('operationsRadar.actualLabel', 'Real')}</span>
-                                                                                            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                                                                <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, realPct)}%` }} />
-                                                                                            </div>
-                                                                                            <span className="text-[10px] font-medium text-blue-600 w-10 text-right">{round2(realPct)}%</span>
-                                                                                        </div>
-                                                                                        <div className="flex items-center gap-2">
-                                                                                            <span className="text-[10px] text-slate-400 w-14">{t('operationsRadar.computedLabel', 'Computado')}</span>
-                                                                                            <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                                                                <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, computedPct)}%` }} />
-                                                                                            </div>
-                                                                                            <span className="text-[10px] font-medium text-emerald-600 w-10 text-right">{round2(computedPct)}%</span>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                            );
-                                                                        })()}
-                                                                        {actionPhrase && (
-                                                                            <p className="text-xs text-slate-700 font-medium leading-snug">{actionPhrase}</p>
-                                                                        )}
-                                                                        {(() => {
-                                                                            const detail = projectDetailsByProjectId.get(row.projectId);
-                                                                            const pending = detail?.pendingTasks ?? [];
-                                                                            return (
-                                                                                <div className="border-t border-slate-200/80 pt-2 mt-0">
-                                                                                    <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                                                                                        {t('operationsRadar.pendingTeamTasks', { count: pending.length, defaultValue: 'Tareas pendientes del equipo ({{count}})' })}
-                                                                                    </h4>
-                                                                                    {pending.length > 0 ? (
-                                                                                        <div className="space-y-1.5">
-                                                                                            {pending.map(task => {
-                                                                                                const emp = employees?.find(e => e.id === task.employeeId);
-                                                                                                return (
-                                                                                                    <div key={task.id} className="flex items-center justify-between py-2 px-2 bg-white border rounded-md text-xs">
-                                                                                                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                                                                                                            <Avatar className="h-6 w-6 border shrink-0">
-                                                                                                                <AvatarImage src={emp?.avatarUrl} />
-                                                                                                                <AvatarFallback className="bg-slate-100 text-slate-600 text-[9px] font-bold">
-                                                                                                                    {emp?.name?.substring(0, 2).toUpperCase() ?? t('operationsRadar.unknown', '??')}
-                                                                                                                </AvatarFallback>
-                                                                                                            </Avatar>
-                                                                                                            <div className="min-w-0 flex-1">
-                                                                                                                <p className="font-medium truncate text-slate-800">
-                                                                                                                    <SensitiveText kind="task" id={task.id}>{task.taskName || 'Tarea'}</SensitiveText>
-                                                                                                                </p>
-                                                                                                                <p className="text-[10px] text-slate-400">
-                                                                                                                    <SensitiveText kind="employee" id={task.employeeId}>{emp?.name ?? '—'}</SensitiveText>
-                                                                                                                    {' · Sem '}
-                                                                                                                    {format(parseISO(task.weekStartDate), 'w')}
-                                                                                                                </p>
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                        <div className="text-right shrink-0">
-                                                                                                            <p className="font-mono font-bold text-slate-800">{task.hoursAssigned ?? 0}h</p>
-                                                                                                            <p className="text-[10px] text-slate-400">estimadas</p>
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                );
-                                                                                            })}
-                                                                                        </div>
-                                                                                    ) : (
-                                                                                        <p className="text-[11px] text-slate-400 text-center py-3 bg-slate-50 rounded-md border border-dashed">
-                                                                                            Sin tareas pendientes este mes
-                                                                                        </p>
-                                                                                    )}
-                                                                                </div>
-                                                                            );
-                                                                        })()}
-                                                                        {(() => {
-                                                                            const detail = projectDetailsByProjectId.get(row.projectId);
-                                                                            const completed = detail?.completedTasks ?? [];
-                                                                            if (completed.length === 0) return null;
-                                                                            return (
-                                                                                <Collapsible>
-                                                                                    <CollapsibleTrigger asChild>
-                                                                                        <div className="flex items-center justify-between py-2 border-t border-slate-200/80 cursor-pointer hover:bg-slate-50/50 rounded px-2 -mx-2">
-                                                                                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                                                                                                Tareas completadas ({completed.length})
-                                                                                            </span>
-                                                                                            <ChevronDown className="h-4 w-4 text-slate-400" />
-                                                                                        </div>
-                                                                                    </CollapsibleTrigger>
-                                                                                    <CollapsibleContent>
-                                                                                        <div className="space-y-1.5 pt-2">
-                                                                                            {completed.map(task => {
-                                                                                                const emp = employees?.find(e => e.id === task.employeeId);
-                                                                                                return (
-                                                                                                    <div key={task.id} className="flex items-center justify-between py-2 px-2 bg-slate-50/50 border rounded-md text-xs">
-                                                                                                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                                                                                                            <Avatar className="h-6 w-6 border shrink-0">
-                                                                                                                <AvatarImage src={emp?.avatarUrl} />
-                                                                                                                <AvatarFallback className="bg-emerald-100 text-emerald-700 text-[9px] font-bold">
-                                                                                                                    {emp?.name?.substring(0, 2).toUpperCase() ?? '??'}
-                                                                                                                </AvatarFallback>
-                                                                                                            </Avatar>
-                                                                                                            <div className="min-w-0 flex-1">
-                                                                                                                <p className="font-medium truncate text-slate-800">
-                                                                                                                    <SensitiveText kind="task" id={task.id}>{task.taskName || 'Tarea'}</SensitiveText>
-                                                                                                                </p>
-                                                                                                                <p className="text-[10px] text-slate-400">
-                                                                                                                    <SensitiveText kind="employee" id={task.employeeId}>{emp?.name ?? '—'}</SensitiveText>
-                                                                                                                    {' · Sem '}
-                                                                                                                    {format(parseISO(task.weekStartDate), 'w')}
-                                                                                                                </p>
-                                                                                                            </div>
-                                                                                                        </div>
-                                                                                                        <div className="text-right shrink-0 space-y-0.5">
-                                                                                                            <p className="font-mono text-[10px] text-slate-600">Est: {task.hoursAssigned ?? 0}h</p>
-                                                                                                            <p className="font-mono text-[10px] text-blue-600">Real: {task.hoursActual ?? task.hoursAssigned ?? 0}h</p>
-                                                                                                            <p className="font-mono text-[10px] text-emerald-600">Comp: {task.hoursComputed ?? task.hoursAssigned ?? 0}h</p>
-                                                                                                        </div>
-                                                                                                    </div>
-                                                                                                );
-                                                                                            })}
-                                                                                        </div>
-                                                                                    </CollapsibleContent>
-                                                                                </Collapsible>
-                                                                            );
-                                                                        })()}
-                                                                    </div>
-                                                                </CollapsibleContent>
-                                                            </div>
-                                                        </Collapsible>
-                                                    );
-                                                })}
-                                            </div>
-                                        </>
-                                    )}
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
+            <GlobalPlanningInconsistencies
+                viewDate={viewDate}
+                searchQuery={globalSearchQuery}
+                onSearchQueryChange={setGlobalSearchQuery}
+                hideProjectSearch
+                operationsRadar={{
+                    rowsWithStatus,
+                    statusFilter,
+                    onStatusFilterChange: setStatusFilter,
+                    filterCounts,
+                    projectDetailsByProjectId,
+                }}
+            />
         </div>
     );
 }

@@ -208,6 +208,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const employeesRef = useRef<Employee[]>([]);
   // Ref para trackear meses cargados globalmente (centralizado)
   const loadedMonthsRef = useRef<Set<string>>(new Set());
+  /** Cargas de mes en curso: misma clave `yyyy-MM` comparte una sola petición. */
+  const monthLoadInflightRef = useRef<Map<string, Promise<boolean>>>(new Map());
   // Ref para trackear la agencia anterior y detectar cambios
   const prevAgencyIdRef = useRef<string | null>(null);
 
@@ -263,11 +265,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return; // Ya lo tenemos, no hacemos nada (Caché hit!)
     }
 
-    try {
-      await loadDataForMonth(date);
+    let inflight = monthLoadInflightRef.current.get(monthKey);
+    if (!inflight) {
+      inflight = loadDataForMonth(date);
+      monthLoadInflightRef.current.set(monthKey, inflight);
+      void inflight.finally(() => {
+        monthLoadInflightRef.current.delete(monthKey);
+      });
+    }
+
+    const ok = await inflight;
+    if (ok) {
       loadedMonthsRef.current.add(monthKey);
-    } catch {
-      /* no marcar: reintentar en próxima apertura */
     }
   }, [loadDataForMonth]);
 
@@ -333,6 +342,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setCurrentUser(undefined);
         hasLinkedUserRef.current = null;
         loadedMonthsRef.current.clear(); // Limpiar caché de meses cargados
+        monthLoadInflightRef.current.clear();
         employeesRef.current = [];
       }
 

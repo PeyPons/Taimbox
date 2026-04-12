@@ -141,9 +141,8 @@ export default function ClientsPage() {
       // Si no hay datos, cargarlos
       setIsLoadingMonth(true);
       loadDataForMonth(currentMonth)
-        .then(() => {
-          // Solo marcamos como cargado si terminó con éxito
-          loadedMonthsRef.current.add(monthKey);
+        .then(ok => {
+          if (ok) loadedMonthsRef.current.add(monthKey);
         })
         .finally(() => {
           setIsLoadingMonth(false);

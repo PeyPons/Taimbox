@@ -117,7 +117,8 @@ export default function ClientsAndProjectsPage() {
     addClient, updateClient, deleteClient,
     addProject, updateProject, deleteProject,
     getClientTotalHoursForMonth, getProjectHoursForMonth,
-    updateAllocation
+    updateAllocation,
+    ensureMonthLoaded,
   } = useApp();
   const { currentAgency } = useAgency();
   const { selectedDepartmentId } = useDepartmentView();
@@ -205,6 +206,10 @@ export default function ClientsAndProjectsPage() {
     };
     load();
   }, [currentMonth, currentAgency?.id]);
+
+  useEffect(() => {
+    void ensureMonthLoaded(currentMonth);
+  }, [currentMonth, ensureMonthLoaded]);
 
   const projectForm = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),

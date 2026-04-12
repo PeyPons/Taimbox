@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,11 +20,15 @@ const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 export default function TeamCapacityDashboard() {
     const { t } = useTranslation('app');
     const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
-    const { employees, allocations, absences, teamEvents, projects } = useApp();
+    const { employees, allocations, absences, teamEvents, projects, ensureMonthLoaded } = useApp();
 
     const handlePrevMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
     const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
     const handleToday = () => setCurrentMonth(startOfMonth(new Date()));
+
+    useEffect(() => {
+        void ensureMonthLoaded(currentMonth);
+    }, [currentMonth, ensureMonthLoaded]);
 
     const monthAllocations = useMemo(() => {
         return (allocations || []).filter(a => {

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
@@ -41,7 +41,7 @@ const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 type FilterType = 'all' | 'needs-planning' | 'behind-schedule' | 'over-budget' | 'no-activity';
 
 export default function ProjectsPage() {
-  const { projects, clients, allocations, employees, deleteProject, updateProject, addProject } = useApp();
+  const { projects, clients, allocations, employees, deleteProject, updateProject, addProject, ensureMonthLoaded } = useApp();
   const { t } = useAppTranslation();
   const { currentAgency } = useAgency();
   const { selectedDepartmentId } = useDepartmentView();
@@ -81,6 +81,10 @@ export default function ProjectsPage() {
   const handlePrevMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
   const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
   const handleToday = () => setCurrentMonth(new Date());
+
+  useEffect(() => {
+    void ensureMonthLoaded(currentMonth);
+  }, [currentMonth, ensureMonthLoaded]);
 
   // Calcular el progreso del mes (qué % del mes ha pasado)
   const monthProgress = useMemo(() => {

@@ -20,13 +20,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { SensitiveText } from '@/components/privacy/SensitiveText';
+import { usePrivacyDemo } from '@/contexts/PrivacyDemoContext';
+import { useProjectAliasing } from '@/hooks/useProjectAliasing';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
+import type { Allocation } from '@/types';
 import {
     Plus, Pencil, Trash2, Clock, RefreshCw, ChevronDown, ChevronRight,
-    Activity, FolderOpen, User, ArrowRight, GitBranch, CheckCircle2, CornerDownRight, Check
+    Activity, FolderOpen, User, ArrowRight, GitBranch, CheckCircle2, CornerDownRight, Check, Search, CalendarSync
 } from 'lucide-react';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -81,6 +87,43 @@ interface ActivityLogSectionProps {
     maxItems?: number;
 }
 
+function isStructuredLineageChild(
+    childId: string,
+    parentId: string,
+    allocations: Allocation[],
+    logs: AuditLog[]
+): boolean {
+    const alloc = allocations.find(a => a.id === childId);
+    if (alloc?.parentAllocationId === parentId) return true;
+    if (alloc?.distributionSourceAllocationId === parentId) return true;
+    if (alloc?.transferredFromAllocationId === parentId) return true;
+    const createLog = logs.find(l => l.resource_id === childId && l.action === 'CREATE');
+    const nv = createLog?.details?.newValue as Record<string, unknown> | undefined;
+    if (!nv) return false;
+    return (
+        String(nv.parentAllocationId || '') === parentId ||
+        String(nv.distributionSourceAllocationId || '') === parentId ||
+        String(nv.transferredFromAllocationId || '') === parentId
+    );
+}
+
+function treeTouchesWeeklyContinuation(node: TaskNode, allocations: Allocation[]): boolean {
+    if (node.modifications.some(m => m.action === 'continued')) return true;
+    const selfAlloc = allocations.find(a => a.id === node.id);
+    if (selfAlloc?.parentAllocationId) return true;
+    return node.children.some(c => treeTouchesWeeklyContinuation(c, allocations));
+}
+
+function nodeMatchesSearchQuery(node: TaskNode, q: string, formatProjectName: (n: string) => string): boolean {
+    if (!q) return true;
+    const lower = q.toLowerCase();
+    const hay = [formatProjectName(node.projectName || ''), node.clientName || '', node.taskName || '']
+        .join(' ')
+        .toLowerCase();
+    if (hay.includes(lower)) return true;
+    return node.children.some(c => nodeMatchesSearchQuery(c, q, formatProjectName));
+}
+
 export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLogSectionProps) {
     const { employees, projects, clients, allocations } = useApp();
     const { currentAgency } = useAgency();
@@ -104,6 +147,11 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
     const [openFilterEmployee, setOpenFilterEmployee] = useState(false);
     const [openFilterProject, setOpenFilterProject] = useState(false);
     const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+    const [filterWeeklyOnly, setFilterWeeklyOnly] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const { t } = useAppTranslation();
+    const { formatName: formatProjectName } = useProjectAliasing();
+    const { isActive: isPrivacyDemo, anonymizer: privacyAnonymizer } = usePrivacyDemo();
 
     // --- Helpers ---
     const getEmployeeName = (id: unknown) => {
@@ -489,9 +537,10 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
 
                 // DEDUPLICATION LOGIC:
                 // If child has same name as parent AND is effectively just a cleanup node (deleted/completed),
-                // merge its logs into parent instead of nesting
+                // merge its logs into parent instead of nesting — except continuations / transfer / distribution lineage
                 const isSameName = node.taskName.trim().toLowerCase() === parent.taskName.trim().toLowerCase();
-                if (isSameName) {
+                const structured = isStructuredLineageChild(node.id, parentId, allocations ?? [], logs);
+                if (isSameName && !structured) {
                     parent.modifications.push(...node.modifications);
                     // Add participants
                     node.participants.forEach(p => {
@@ -517,13 +566,15 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
             // Updated Sort Order: ASCENDING (Oldest First) as per request "Como un libro"
             node.modifications.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
-            // Refine actions based on children presence (Post-processing)
-            // If a node has children of type 'distributed' or 'transferred', ensure its completion/deletion logic reflects that.
-            if (node.children.length > 0) {
-                const lastMod = node.modifications[node.modifications.length - 1]; // Now the last one is the NEWEST
+            // Si hay hijos por redistribución real, el cierre del padre suele ser "distribuida" — no confundir con continuación semanal (parentAllocationId).
+            const hasDistributedChild = node.children.some(child => {
+                const a = allocations.find(x => x.id === child.id);
+                if (a?.distributionSourceAllocationId === node.id) return true;
+                return child.modifications.some(m => m.action === 'distributed');
+            });
+            if (node.children.length > 0 && hasDistributedChild) {
+                const lastMod = node.modifications[node.modifications.length - 1];
                 if (lastMod && (lastMod.action === 'completed' || lastMod.action === 'deleted')) {
-                    // Check if children naturally follow this action
-                    // If we have children, it's highly likely this "end" was a distribution
                     lastMod.action = 'distributed';
                     lastMod.details = `Distribuida en ${node.children.length} sub-tarea(s)`;
                 }
@@ -554,18 +605,36 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
             .sort((a, b) => getDeepLatest(b) - getDeepLatest(a));
     }, [logs, allocations, filterEmployee, filterProject, employees, projects, clients, selectedDepartmentId, employeesForView, filteredProjectsForView]);
 
-    // --- Group roots by project ---
+    // --- Group roots by project (filtro cierre semanal + búsqueda texto) ---
     const projectGroups = useMemo(() => {
+        const rootsSrc = filterWeeklyOnly
+            ? rootNodes.filter(r => treeTouchesWeeklyContinuation(r, allocations ?? []))
+            : rootNodes;
         const groups = new Map<string, { projectName: string; clientName: string; nodes: TaskNode[] }>();
-        rootNodes.forEach(node => {
+        rootsSrc.forEach(node => {
             const key = node.projectId || 'no-project';
             if (!groups.has(key)) {
                 groups.set(key, { projectName: node.projectName, clientName: node.clientName, nodes: [] });
             }
             groups.get(key)!.nodes.push(node);
         });
-        return Array.from(groups.entries()).map(([id, data]) => ({ projectId: id, ...data }));
-    }, [rootNodes]);
+        let list = Array.from(groups.entries()).map(([id, data]) => ({ projectId: id, ...data }));
+        const q = searchQuery.trim();
+        if (q) {
+            list = list
+                .map(g => ({
+                    ...g,
+                    nodes: g.nodes.filter(n => nodeMatchesSearchQuery(n, q, formatProjectName)),
+                }))
+                .filter(g => g.nodes.length > 0);
+        }
+        return list;
+    }, [rootNodes, filterWeeklyOnly, allocations, searchQuery, formatProjectName]);
+
+    const visibleRootCount = useMemo(
+        () => projectGroups.reduce((sum, g) => sum + g.nodes.length, 0),
+        [projectGroups],
+    );
 
     // --- Recursive Node Renderer ---
     const toggleNode = (id: string) => {
@@ -689,7 +758,8 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
                             {node.children.length > 0 && (
                                 <div className="mt-2 pt-2 border-t border-slate-100">
                                     <div className="text-[10px] font-semibold text-slate-400 mb-1 flex items-center gap-1">
-                                        <CornerDownRight className="h-3 w-3" /> Sub-tareas distribuidas
+                                        <CornerDownRight className="h-3 w-3" />{' '}
+                                        {t('weeklyForecast.activityRelatedBranches')}
                                     </div>
                                     {node.children.map(child => (
                                         <TaskNodeRenderer key={child.id} node={child} level={level + 1} />
@@ -720,68 +790,167 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
     return (
         <Card>
             <CardHeader className="pb-2">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                        <Activity className="h-4 w-4 text-primary" />
-                        Historial de cambios
-                        {!isLoading && <Badge variant="outline" className="text-xs">{rootNodes.length} raíces</Badge>}
-                    </CardTitle>
-                    <div className="flex items-center gap-2">
-                        <Popover open={openFilterEmployee} onOpenChange={setOpenFilterEmployee}>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" className="w-[120px] h-7 text-xs justify-between font-normal">
-                                    <span className="flex items-center gap-1 truncate"><User className="h-3 w-3 shrink-0" />{filterEmployee === 'all' ? 'Todos' : activeEmployees.find(e => e.id === filterEmployee)?.name ?? 'Empleado'}</span>
-                                    <ChevronDown className="h-3 w-3 opacity-50 shrink-0" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                                <Command>
-                                    <CommandList className="max-h-[280px]">
-                                        <CommandGroup>
-                                            <CommandItem value="Todos" onSelect={() => { setFilterEmployee('all'); setOpenFilterEmployee(false); }}>
-                                                <Check className={cn('mr-2 h-4 w-4 shrink-0', filterEmployee === 'all' ? 'opacity-100' : 'opacity-0')} />
-                                                Todos
-                                            </CommandItem>
-                                            {activeEmployees.map(e => (
-                                                <CommandItem key={e.id} value={e.name || ''} onSelect={() => { setFilterEmployee(e.id); setOpenFilterEmployee(false); }}>
-                                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', filterEmployee === e.id ? 'opacity-100' : 'opacity-0')} />
-                                                    {e.name}
-                                                </CommandItem>
-                                            ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
-                        <Popover open={openFilterProject} onOpenChange={setOpenFilterProject}>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" className="w-[120px] h-7 text-xs justify-between font-normal">
-                                    <span className="flex items-center gap-1 truncate"><FolderOpen className="h-3 w-3 shrink-0" />{filterProject === 'all' ? 'Todos' : activeProjects.find(p => p.id === filterProject)?.name ?? 'Proyecto'}</span>
-                                    <ChevronDown className="h-3 w-3 opacity-50 shrink-0" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                                <Command>
-                                    <CommandList className="max-h-[280px]">
-                                        <CommandGroup>
-                                            <CommandItem value="Todos" onSelect={() => { setFilterProject('all'); setOpenFilterProject(false); }}>
-                                                <Check className={cn('mr-2 h-4 w-4 shrink-0', filterProject === 'all' ? 'opacity-100' : 'opacity-0')} />
-                                                Todos
-                                            </CommandItem>
-                                            {activeProjects.map(p => (
-                                                <CommandItem key={p.id} value={p.name || ''} onSelect={() => { setFilterProject(p.id); setOpenFilterProject(false); }}>
-                                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', filterProject === p.id ? 'opacity-100' : 'opacity-0')} />
-                                                    {p.name}
-                                                </CommandItem>
-                                            ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.location.reload()}>
+                <div className="flex flex-col gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <CardTitle className="text-base flex items-center gap-2">
+                            <Activity className="h-4 w-4 text-primary" />
+                            {t('weeklyForecast.activityLogTitle', 'Historial de cambios')}
+                            {!isLoading && (
+                                <Badge variant="outline" className="text-xs">
+                                    {t('weeklyForecast.activityRootCount', {
+                                        count: visibleRootCount,
+                                        defaultValue: '{{count}} raíces',
+                                    })}
+                                </Badge>
+                            )}
+                        </CardTitle>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 self-end sm:self-auto" onClick={() => window.location.reload()}>
                             <RefreshCw className="h-3.5 w-3.5" />
                         </Button>
+                    </div>
+                    <div className="flex flex-col gap-2 w-full min-w-0">
+                        <div className="flex flex-wrap items-center gap-3">
+                            <div className="relative min-w-[200px] flex-1 sm:flex-initial sm:min-w-[220px] max-w-full">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                                <Input
+                                    placeholder={t('operationsRadar.searchPlaceholder')}
+                                    value={searchQuery}
+                                    onChange={e => setSearchQuery(e.target.value)}
+                                    className="pl-9 h-10"
+                                    aria-label={t('operationsRadar.searchAria')}
+                                />
+                            </div>
+                            <Popover open={openFilterProject} onOpenChange={setOpenFilterProject}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className="min-w-[220px] h-10 text-sm justify-between font-normal w-full sm:w-auto">
+                                        <span className="truncate flex items-center gap-1.5">
+                                            <FolderOpen className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                                            {filterProject === 'all' ? (
+                                                t('weeklyForecast.allProjects', 'Todos los proyectos')
+                                            ) : (
+                                                <SensitiveText kind="project" id={filterProject}>
+                                                    {formatProjectName(activeProjects.find(p => p.id === filterProject)?.name ?? '')}
+                                                </SensitiveText>
+                                            )}
+                                        </span>
+                                        <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="min-w-[300px] p-0" align="start">
+                                    <Command>
+                                        <CommandInput placeholder={t('weeklyForecast.searchProjectPlaceholder', 'Buscar proyecto...')} />
+                                        <CommandList className="max-h-[320px]">
+                                            <CommandEmpty>{t('weeklyForecast.noProjectsFound', 'No se encontraron proyectos.')}</CommandEmpty>
+                                            <CommandGroup>
+                                                <CommandItem
+                                                    value={t('weeklyForecast.allProjects', 'Todos los proyectos')}
+                                                    className="py-2.5"
+                                                    onSelect={() => {
+                                                        setFilterProject('all');
+                                                        setOpenFilterProject(false);
+                                                    }}
+                                                >
+                                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', filterProject === 'all' ? 'opacity-100' : 'opacity-0')} />
+                                                    {t('weeklyForecast.allProjects', 'Todos los proyectos')}
+                                                </CommandItem>
+                                                {activeProjects.map(p => (
+                                                    <CommandItem
+                                                        key={p.id}
+                                                        value={formatProjectName(p.name || '')}
+                                                        className="py-2.5"
+                                                        onSelect={() => {
+                                                            setFilterProject(p.id);
+                                                            setOpenFilterProject(false);
+                                                        }}
+                                                    >
+                                                        <Check className={cn('mr-2 h-4 w-4 shrink-0', filterProject === p.id ? 'opacity-100' : 'opacity-0')} />
+                                                        <span className="truncate">
+                                                            <SensitiveText kind="project" id={p.id}>{formatProjectName(p.name)}</SensitiveText>
+                                                        </span>
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                            <Popover open={openFilterEmployee} onOpenChange={setOpenFilterEmployee}>
+                                <PopoverTrigger asChild>
+                                    <div
+                                        className="relative min-w-[220px] flex-1 sm:flex-initial max-w-full cursor-pointer"
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={() => setOpenFilterEmployee(true)}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                setOpenFilterEmployee(true);
+                                            }
+                                        }}
+                                    >
+                                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                                        <Input
+                                            readOnly
+                                            value={
+                                                filterEmployee === 'all'
+                                                    ? ''
+                                                    : isPrivacyDemo
+                                                      ? privacyAnonymizer.employee(filterEmployee)
+                                                      : employees?.find(e => e.id === filterEmployee)?.name ?? ''
+                                            }
+                                            placeholder={t('operationsRadar.coherenceEmployeeFilterPlaceholder')}
+                                            className="pl-9 pr-9 h-10 cursor-pointer bg-background"
+                                            aria-label={t('operationsRadar.coherenceEmployeeFilterAria')}
+                                        />
+                                        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                                    </div>
+                                </PopoverTrigger>
+                                <PopoverContent className="min-w-[300px] p-0" align="start">
+                                    <Command>
+                                        <CommandInput placeholder={t('weeklyForecast.searchEmployeePlaceholder', 'Buscar empleado...')} />
+                                        <CommandList className="max-h-[320px]">
+                                            <CommandEmpty>{t('weeklyForecast.noEmployeesFound', 'No se encontraron empleados.')}</CommandEmpty>
+                                            <CommandGroup>
+                                                <CommandItem
+                                                    value="Todos"
+                                                    onSelect={() => {
+                                                        setFilterEmployee('all');
+                                                        setOpenFilterEmployee(false);
+                                                    }}
+                                                >
+                                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', filterEmployee === 'all' ? 'opacity-100' : 'opacity-0')} />
+                                                    {t('weeklyForecast.allEmployees', 'Todos')}
+                                                </CommandItem>
+                                                {activeEmployees.map(e => (
+                                                    <CommandItem
+                                                        key={e.id}
+                                                        value={e.name || ''}
+                                                        onSelect={() => {
+                                                            setFilterEmployee(e.id);
+                                                            setOpenFilterEmployee(false);
+                                                        }}
+                                                    >
+                                                        <Check className={cn('mr-2 h-4 w-4 shrink-0', filterEmployee === e.id ? 'opacity-100' : 'opacity-0')} />
+                                                        <SensitiveText kind="employee" id={e.id}>{e.name}</SensitiveText>
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                            <Button
+                                type="button"
+                                variant={filterWeeklyOnly ? 'default' : 'outline'}
+                                size="sm"
+                                className="h-10 gap-1.5 shrink-0"
+                                onClick={() => setFilterWeeklyOnly(v => !v)}
+                                aria-pressed={filterWeeklyOnly}
+                            >
+                                <CalendarSync className="h-4 w-4" />
+                                {t('weeklyForecast.weeklyOnlyToggle', 'Solo cierre semanal')}
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </CardHeader>

@@ -16,7 +16,7 @@ Para que los reportes de fin de mes sean exactos, las semanas que cruzan meses s
 ### 3.3. Cálculo de Budget Efectivo (`budgetUtils.ts`)
 Para permitir regularizaciones mensuales (ej. restar o sumar horas en un mes concreto vía Deadlines), el sistema usa `getEffectiveBudget`.
 - **Lógica**: Si el `Deadline` del mes tiene `budgetOverride >= 0`, usa ese valor. Si no, usa el `Project.budgetHours` general.
-- **Uso**: Cualquier pantalla que muestre **total de horas**, **presupuesto** o **objetivo del proyecto** para un mes debe usar el presupuesto efectivo (p. ej. pasando los deadlines del mes a `useProjectMetrics({ month, deadlines })` o llamando a `getEffectiveBudget(project, deadlineForMonth)`). Así se respetan los ajustes del Deadline (ej.: proyecto con 30 h contratadas pero 28 h este mes). Afecta a: `DeadlinesPage`, `WeeklyForecastPage`, `ClientsAndProjectsPage`, **Rentabilidad** (`FinancialHealthPage`), Seguimiento operativo y cualquier vista con columnas tipo "Xh / Yh" o "budget".
+- **Uso**: Cualquier pantalla que muestre **total de horas**, **presupuesto** o **objetivo del proyecto** para un mes debe usar el presupuesto efectivo (p. ej. pasando los deadlines del mes a `useProjectMetrics({ month, deadlines })` o llamando a `getEffectiveBudget(project, deadlineForMonth)`). Así se respetan los ajustes del Deadline (ej.: proyecto con 30 h contratadas pero 28 h este mes). Afecta a: `DeadlinesPage`, `ClientsAndProjectsPage`, **Rentabilidad** (`FinancialHealthPage`), Seguimiento operativo y cualquier vista con columnas tipo "Xh / Yh" o "budget".
 
 ### 3.3. Métricas de Rentabilidad (`useProjectMetrics.ts`)
 Calcula el rendimiento financiero en tiempo real.

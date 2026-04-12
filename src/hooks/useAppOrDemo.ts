@@ -56,7 +56,7 @@ export function useAppOrDemo() {
           updateProfessionalGoal: () => Promise.resolve(null),
           deleteProfessionalGoal: () => Promise.resolve(null),
           getEmployeeGoals: () => [],
-          loadDataForMonth: () => Promise.resolve(),
+          loadDataForMonth: () => Promise.resolve(true),
           addWeeklyFeedback: () => Promise.resolve(null),
         };
       }

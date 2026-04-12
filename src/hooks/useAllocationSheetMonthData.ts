@@ -11,7 +11,7 @@ interface UseAllocationSheetMonthDataParams {
   currentAgencyId?: string;
   allocations: Allocation[];
   isGlobalLoading: boolean;
-  loadDataForMonth: (month: Date) => Promise<unknown>;
+  loadDataForMonth: (month: Date) => Promise<boolean>;
 }
 
 export function useAllocationSheetMonthData(params: UseAllocationSheetMonthDataParams) {
@@ -49,8 +49,8 @@ export function useAllocationSheetMonthData(params: UseAllocationSheetMonthDataP
 
       setIsLoadingTasks(true);
       loadDataForMonth(viewDate)
-        .then(() => {
-          loadedMonthsRef.current.add(monthKey);
+        .then(ok => {
+          if (ok) loadedMonthsRef.current.add(monthKey);
         })
         .finally(() => {
           setIsLoadingTasks(false);

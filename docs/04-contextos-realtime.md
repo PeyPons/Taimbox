@@ -5,7 +5,8 @@
 Gestiona la carga de la base de datos principal (`employees`, `projects`, `allocations`).
 - **Patrón Upsert**: En lugar de recargar todo, utiliza funciones que mezclan los datos nuevos con los existentes, manteniendo la integridad de la UI.
 - **`loadedMonthsRef`**: Un Set que registra qué meses ya están en memoria para evitar llamadas redundantes a la base de datos.
-- **`ensureMonthLoaded`**: Tras ejecutar `loadDataForMonth` sin error, el mes **siempre** se marca en `loadedMonthsRef` (antes dependía del retorno “hubo weekly_feedback”, y meses solo con allocations no se cacheaban).
+- **`loadMonthData` / `loadDataForMonth`**: devuelven `true` solo si la carga de **allocations** del mes terminó sin error (incluye mes sin tareas: merge con lista vacía). Otros recursos del mes (ausencias, eventos, feedback) pueden fallar en silencio aparte de log en consola.
+- **`ensureMonthLoaded`**: solo añade el mes a `loadedMonthsRef` cuando `loadDataForMonth` devuelve `true`; si falla allocations, no se marca y el siguiente cambio de vista al mes reintenta. Las peticiones en vuelo se deduplican por clave `yyyy-MM` (`monthLoadInflightRef`).
 
 ### 4.2. Estrategia de Realtime y Colaboración
 Para soportar múltiples usuarios concurrentes sin saturar conexiones WebSocket, utilizamos una estrategia de **Canales Unificados**.

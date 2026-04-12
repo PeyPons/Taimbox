@@ -423,7 +423,6 @@ export async function loadMonthData({
 }: LoadMonthDataDeps): Promise<boolean> {
   const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
   const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
-  let dataFound = false;
 
   const weeks = getWeeksForMonth(month);
   const weekStartDates = weeks.map(w => format(w.weekStart, 'yyyy-MM-dd'));
@@ -465,43 +464,47 @@ export async function loadMonthData({
         .lte('week_start_date', maxWeekStart),
     ]);
 
-    if (allocRes.data) {
-      const mappedAllocations: Allocation[] = allocRes.data.map(
-        (a: SupabaseAllocation): Allocation => ({
-          id: a.id,
-          employeeId: a.employee_id,
-          projectId: a.project_id,
-          weekStartDate: a.week_start_date,
-          hoursAssigned: round2(a.hours_assigned),
-          hoursActual: a.hours_actual ? round2(a.hours_actual) : undefined,
-          hoursComputed: a.hours_computed ? round2(a.hours_computed) : undefined,
-          status: (a.status || 'planned') as 'planned' | 'completed' | 'active',
-          description: a.description,
-          taskName: a.task_name,
-          dependencyId: a.dependency_id,
-          transferredFromAllocationId: a.transferred_from_allocation_id,
-          distributionSourceAllocationId: a.distribution_source_allocation_id,
-          parentAllocationId: a.parent_allocation_id,
-          originalTransferredTaskName: a.original_transferred_task_name,
-          transferSourceEmployeeId: a.transfer_source_employee_id,
-          userPriority: a.user_priority ?? null,
-          focusDate: a.focus_date ?? null,
-          isLocked: a.is_locked ?? false,
-        })
-      );
-
-      setAllocations(prev => {
-        const incomingMap = new Map(mappedAllocations.map(a => [a.id, a]));
-        const updatedPrev = prev.map(existing =>
-          incomingMap.has(existing.id) ? incomingMap.get(existing.id)! : existing
-        );
-        const prevIds = new Set(prev.map(a => a.id));
-        const newItems = mappedAllocations.filter(
-          a => !prevIds.has(a.id) && isAllocationInEffectiveMonth(a.weekStartDate, month)
-        );
-        return [...updatedPrev, ...newItems];
-      });
+    if (allocRes.error) {
+      console.error('Error cargando allocations del mes:', allocRes.error);
+      return false;
     }
+
+    const allocationRows = allocRes.data ?? [];
+    const mappedAllocations: Allocation[] = allocationRows.map(
+      (a: SupabaseAllocation): Allocation => ({
+        id: a.id,
+        employeeId: a.employee_id,
+        projectId: a.project_id,
+        weekStartDate: a.week_start_date,
+        hoursAssigned: round2(a.hours_assigned),
+        hoursActual: a.hours_actual ? round2(a.hours_actual) : undefined,
+        hoursComputed: a.hours_computed ? round2(a.hours_computed) : undefined,
+        status: (a.status || 'planned') as 'planned' | 'completed' | 'active',
+        description: a.description,
+        taskName: a.task_name,
+        dependencyId: a.dependency_id,
+        transferredFromAllocationId: a.transferred_from_allocation_id,
+        distributionSourceAllocationId: a.distribution_source_allocation_id,
+        parentAllocationId: a.parent_allocation_id,
+        originalTransferredTaskName: a.original_transferred_task_name,
+        transferSourceEmployeeId: a.transfer_source_employee_id,
+        userPriority: a.user_priority ?? null,
+        focusDate: a.focus_date ?? null,
+        isLocked: a.is_locked ?? false,
+      })
+    );
+
+    setAllocations(prev => {
+      const incomingMap = new Map(mappedAllocations.map(a => [a.id, a]));
+      const updatedPrev = prev.map(existing =>
+        incomingMap.has(existing.id) ? incomingMap.get(existing.id)! : existing
+      );
+      const prevIds = new Set(prev.map(a => a.id));
+      const newItems = mappedAllocations.filter(
+        a => !prevIds.has(a.id) && isAllocationInEffectiveMonth(a.weekStartDate, month)
+      );
+      return [...updatedPrev, ...newItems];
+    });
 
     if (absRes.data) {
       const mappedAbsences: Absence[] = absRes.data.map(
@@ -550,7 +553,6 @@ export async function loadMonthData({
     }
 
     if (feedRes.data && feedRes.data.length > 0) {
-      dataFound = true;
       const mappedFeedback: WeeklyFeedback[] = feedRes.data.map(
         (fb: SupabaseWeeklyFeedback): WeeklyFeedback => ({
           id: fb.id,
@@ -574,10 +576,14 @@ export async function loadMonthData({
         return [...updatedPrev, ...newItems];
       });
     }
+    if (absRes.error) console.error('Error cargando ausencias del mes:', absRes.error);
+    if (evRes.error) console.error('Error cargando eventos del mes:', evRes.error);
+    if (feedRes.error) console.error('Error cargando feedback semanal del mes:', feedRes.error);
+
+    return true;
   } catch (error) {
     console.error('Error cargando datos del mes:', error);
+    return false;
   }
-
-  return dataFound;
 }
 

@@ -12,7 +12,7 @@
 | [docs/01-arquitectura.md](docs/01-arquitectura.md) | Stack SPA, GTM y Consent Mode, i18n y rutas `/en`, reglas SEO y páginas públicas, convenciones del blog y API docs. |
 | [docs/02-entidades-modelos.md](docs/02-entidades-modelos.md) | Glosario de entidades (Agency, Employee, Project, Deadline, Allocation), aliasing, tablas de componentes y reglas multi-tenant. |
 | [docs/03-logica-negocio.md](docs/03-logica-negocio.md) | Capacidad efectiva, split weeks, presupuesto efectivo y métricas de rentabilidad. |
-| [docs/04-contextos-realtime.md](docs/04-contextos-realtime.md) | AppContext (carga, upsert, `loadedMonthsRef`), Realtime, canales unificados en Deadlines y bloqueos. |
+| [docs/04-contextos-realtime.md](docs/04-contextos-realtime.md) | AppContext (carga, upsert, `loadedMonthsRef` tras allocations OK, deduplicación de carga por mes), Realtime, canales unificados en Deadlines y bloqueos. |
 | [docs/05-integraciones-automatizacion.md](docs/05-integraciones-automatizacion.md) | Workers Ads, Edge Functions (inventario, OAuth Google/Meta, emails, modo demo), Stripe, variables de entorno, despliegue y troubleshooting. |
 | [docs/06-glosario-variables.md](docs/06-glosario-variables.md) | Tabla corta de términos técnicos (RLS, RBAC, micros, etc.). |
 | [docs/07-mantenimiento-extension.md](docs/07-mantenimiento-extension.md) | Cómo extender tablas, cronómetro (drift, eventos, **Real vs `time_entries`**, página Tiempos y `ModuleGuard`), RLS y API tokens, admin de plataforma, operaciones, rentabilidad y permisos. |
