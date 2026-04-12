@@ -3,21 +3,34 @@ import { supabase } from '@/lib/supabase';
 
 export interface ActiveTimerSidebarState {
   isActive: boolean;
-  elapsedSeconds: number;
   allocationId: string | null;
+  /**
+   * Segundos ya imputados hoy en time_entries para la allocation activa (sin la sesión en curso).
+   * Misma base que useTaskTimer para que el reloj del menú coincida con el de la tarea.
+   */
+  baseSecondsAllocationToday: number;
+  /** Inicio de la sesión actual (active_timers.started_at), ms desde epoch; null si no hay timer activo */
+  sessionStartedAtMs: number | null;
   /** Nombre de la tarea cuando hay timer activo */
   taskName: string | null;
   /** Nombre del cliente (proyecto → cliente) cuando hay timer activo */
   clientName: string | null;
-  /** Formato HH:MM o HH:MM:SS (cuando está activo) */
-  formattedTime: string;
-  /** Para el total del día: texto claro tipo "7 min" o "1 h 23 min" (solo cuando !isActive) */
+  /** Total del día (todas las tareas + sesión en curso): texto tipo "7 min" o "1 h 23 min" */
   formattedTimeLabel: string;
   /** Parar el cronómetro actual desde el sidebar (solo tiene efecto si isActive) */
   stopCurrentTimer: () => Promise<void>;
 }
 
+/** Mismo ritmo que antes del ajuste del reloj; start/stop y BroadcastChannel refrescan al instante */
 const POLL_INTERVAL_MS = 60000;
+
+function parseHours(v: unknown): number {
+  if (v == null) return 0;
+  if (typeof v === 'number' && !Number.isNaN(v)) return v;
+  const s = String(v).trim().replace(',', '.');
+  const n = parseFloat(s);
+  return Number.isNaN(n) ? 0 : n;
+}
 
 function formatTotalAsLabel(totalSeconds: number): string {
   if (totalSeconds === 0) return '0 min';
@@ -32,23 +45,35 @@ function formatTotalAsLabel(totalSeconds: number): string {
 export function useActiveTimerForSidebar(employeeId: string | undefined): ActiveTimerSidebarState {
   const [state, setState] = useState<Omit<ActiveTimerSidebarState, 'stopCurrentTimer'>>({
     isActive: false,
-    elapsedSeconds: 0,
     allocationId: null,
+    baseSecondsAllocationToday: 0,
+    sessionStartedAtMs: null,
     taskName: null,
     clientName: null,
-    formattedTime: '0:00',
     formattedTimeLabel: '0 min',
   });
 
   const fetchAndCompute = useCallback(async () => {
     if (!employeeId) {
-      setState(s => (s.isActive ? s : { isActive: false, elapsedSeconds: 0, allocationId: null, taskName: null, clientName: null, formattedTime: '0:00', formattedTimeLabel: '0 min' }));
+      setState(s =>
+        s.isActive
+          ? s
+          : {
+              isActive: false,
+              allocationId: null,
+              baseSecondsAllocationToday: 0,
+              sessionStartedAtMs: null,
+              taskName: null,
+              clientName: null,
+              formattedTimeLabel: '0 min',
+            }
+      );
       return;
     }
     const today = new Date().toISOString().split('T')[0];
     const [timerRes, entriesRes] = await Promise.all([
       supabase.from('active_timers').select('started_at, allocation_id').eq('employee_id', employeeId).maybeSingle(),
-      supabase.from('time_entries').select('hours').eq('employee_id', employeeId).eq('date', today),
+      supabase.from('time_entries').select('hours, allocation_id').eq('employee_id', employeeId).eq('date', today),
     ]);
     const timerRow = timerRes.data;
     const entryRows = entriesRes.data ?? [];
@@ -56,17 +81,22 @@ export function useActiveTimerForSidebar(employeeId: string | undefined): Active
     let totalSeconds = Math.round(totalHoursFromEntries * 3600);
 
     if (timerRow?.started_at) {
-      const startedAt = new Date(timerRow.started_at).getTime();
-      const elapsed = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+      const startedAtMs = new Date(timerRow.started_at).getTime();
+      const elapsed = Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000));
       totalSeconds += elapsed;
-      const h = Math.floor(elapsed / 3600);
-      const m = Math.floor((elapsed % 3600) / 60);
-      const s = elapsed % 60;
-      const fmt = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
       const allocationId = timerRow.allocation_id ?? null;
+
       let taskName: string | null = null;
       let clientName: string | null = null;
+      let baseSecondsAllocationToday = 0;
+
       if (allocationId) {
+        baseSecondsAllocationToday = Math.round(
+          entryRows
+            .filter((row) => row.allocation_id === allocationId)
+            .reduce((sum, row) => sum + parseHours(row?.hours), 0) * 3600
+        );
+
         const { data: alloc } = await supabase.from('allocations').select('task_name, project_id').eq('id', allocationId).maybeSingle();
         taskName = alloc?.task_name ?? null;
         if (alloc?.project_id) {
@@ -77,28 +107,26 @@ export function useActiveTimerForSidebar(employeeId: string | undefined): Active
           }
         }
       }
+
       setState({
         isActive: true,
-        elapsedSeconds: elapsed,
         allocationId,
+        baseSecondsAllocationToday,
+        sessionStartedAtMs: startedAtMs,
         taskName,
         clientName,
-        formattedTime: fmt,
         formattedTimeLabel: formatTotalAsLabel(totalSeconds),
       });
       return;
     }
 
-    const h = Math.floor(totalSeconds / 3600);
-    const m = Math.floor((totalSeconds % 3600) / 60);
-    const fmt = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     setState({
       isActive: false,
-      elapsedSeconds: 0,
       allocationId: null,
+      baseSecondsAllocationToday: 0,
+      sessionStartedAtMs: null,
       taskName: null,
       clientName: null,
-      formattedTime: fmt,
       formattedTimeLabel: formatTotalAsLabel(totalSeconds),
     });
   }, [employeeId]);
@@ -136,13 +164,13 @@ export function useActiveTimerForSidebar(employeeId: string | undefined): Active
   }, [fetchAndCompute]);
 
   useEffect(() => {
-    const handleUpdate = () => fetchAndCompute();
+    const handleUpdate = () => {
+      void fetchAndCompute();
+    };
 
-    // Eventos de la misma pestaña
     window.addEventListener('timeboxing_timer_started', handleUpdate);
     window.addEventListener('timeboxing_timer_stopped', handleUpdate);
 
-    // Eventos de otras pestañas del mismo navegador
     const bc = new BroadcastChannel('timer_sync');
     bc.onmessage = handleUpdate;
 

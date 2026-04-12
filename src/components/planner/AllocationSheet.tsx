@@ -43,7 +43,8 @@ import { TransferRequestDialog } from '@/components/transfers/TaskTransferCompon
 import { useTaskTransfers } from '@/hooks/useTaskTransfers';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { useIntegration } from '@/hooks/useIntegration';
-import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
+import { getEffectiveCompletedHours, getPlanningDeltaHours } from '@/utils/hoursTracking';
+import { formatDecimalHoursAsHm } from '@/utils/timerDisplay';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
 import { useAllocationSheetMonthData } from '@/hooks/useAllocationSheetMonthData';
 import { round2 } from '@/utils/numbers';
@@ -108,9 +109,38 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
   const [isTourActive, setIsTourActive] = useState(false);
   const autoAddTriggeredRef = useRef(false);
 
-  const handleTimeLogged = useCallback((allocationId: string, hoursLogged: number) => {
-    loadDataForMonth(viewDate);
-  }, [loadDataForMonth, viewDate]);
+  const [timeEntrySumsByAllocationId, setTimeEntrySumsByAllocationId] = useState<Record<string, number>>({});
+
+  const refreshTimeEntrySums = useCallback(async () => {
+    if (!isTimeTrackerEnabled || !employeeId) {
+      setTimeEntrySumsByAllocationId({});
+      return;
+    }
+    const { data, error } = await supabase
+      .from('time_entries')
+      .select('allocation_id, hours')
+      .eq('employee_id', employeeId);
+    if (error) return;
+    const next: Record<string, number> = {};
+    for (const row of data ?? []) {
+      const aid = row.allocation_id as string | null;
+      if (!aid) continue;
+      next[aid] = round2((next[aid] ?? 0) + Number(row?.hours ?? 0));
+    }
+    setTimeEntrySumsByAllocationId(next);
+  }, [isTimeTrackerEnabled, employeeId]);
+
+  const handleTimeLogged = useCallback(
+    (_allocationId: string, _hoursLogged: number) => {
+      void loadDataForMonth(viewDate);
+      void refreshTimeEntrySums();
+    },
+    [loadDataForMonth, viewDate, refreshTimeEntrySums]
+  );
+
+  useEffect(() => {
+    if (open) void refreshTimeEntrySums();
+  }, [open, refreshTimeEntrySums]);
 
   useEffect(() => {
     if (open) {
@@ -239,6 +269,14 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
     closeForm, recentlyToggled, cancelInlineEdit, clearNewTasks,
     canSubmitBatchAdd, batchAddHint
   } = useAllocationActions(employeeId, weeks, canAssignToOthers, isWeeklyEnabled);
+
+  const toggleTaskCompletionWithSums = useCallback(
+    async (allocation: Parameters<typeof toggleTaskCompletion>[0]) => {
+      await toggleTaskCompletion(allocation);
+      void refreshTimeEntrySums();
+    },
+    [toggleTaskCompletion, refreshTimeEntrySums]
+  );
 
   const { getWeekExceedStatus } = useTasksImpact({
     newTasks,
@@ -713,7 +751,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                       const completedTasks = weekAllocations.filter(a => a.status === 'completed');
                       const weekReal = round2(weekAllocations.reduce((sum, a) => sum + (a.hoursActual || 0), 0));
                       const weekComp = round2(weekAllocations.reduce((sum, a) => sum + (a.status === 'completed' ? getEffectiveCompletedHours(a, preference) : 0), 0));
-                      const weekBalance = round2(weekComp - weekReal);
+                      /** Suma de deltas por tarea completada (comp−real o est−real según agencia); no mezcla pendientes con cronómetro. */
+                      const weekPlanDelta = round2(
+                        completedTasks.reduce((sum, a) => sum + (getPlanningDeltaHours(a, preference) ?? 0), 0)
+                      );
 
                       // Fechas de la semana (solo días laborables efectivos del mes: lun-vie, excluyendo fines de semana)
                       const effectiveStart = week.effectiveStart || week.weekStart;
@@ -780,23 +821,25 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                   <span className="text-slate-500 font-medium">{load.capacity}h</span>
                                 </div>
 
-                                {(weekReal > 0 || weekComp > 0) && (
+                                {(weekReal > 0 || weekComp > 0 || completedTasks.length > 0) && (
                                   <div className="flex flex-wrap items-center gap-2">
                                     <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 rounded shrink-0">
                                       <span className="text-blue-600">Real:</span>
                                       <span className="font-bold text-blue-700">{weekReal}h</span>
                                     </div>
-                                    <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 rounded shrink-0">
-                                      <span className="text-emerald-600">Comp:</span>
-                                      <span className="font-bold text-emerald-700">{weekComp}h</span>
-                                    </div>
-                                    {weekBalance !== 0 && (
+                                    {preference !== 'actual' && (
+                                      <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 rounded shrink-0">
+                                        <span className="text-emerald-600">Comp:</span>
+                                        <span className="font-bold text-emerald-700">{weekComp}h</span>
+                                      </div>
+                                    )}
+                                    {weekPlanDelta !== 0 && (
                                       <div className={cn(
                                         "flex items-center gap-1 px-2 py-1 rounded font-bold shrink-0",
-                                        weekBalance >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                                        weekPlanDelta >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
                                       )}>
-                                        {weekBalance >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                                        {weekBalance >= 0 ? '+' : ''}{weekBalance}h
+                                        {weekPlanDelta >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                                        {weekPlanDelta >= 0 ? '+' : ''}{weekPlanDelta}h
                                       </div>
                                     )}
                                   </div>
@@ -850,7 +893,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs sm:text-sm shrink-0 min-w-0">
                                         <span className="opacity-80">{projEst}h est</span>
                                         {projReal > 0 && <span>{projReal}h real</span>}
-                                        {projComp > 0 && <span className="font-bold">{projComp}h comp</span>}
+                                        {preference !== 'actual' && projComp > 0 && <span className="font-bold">{projComp}h comp</span>}
                                       </div>
                                     </div>
 
@@ -859,7 +902,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                       <div className="flex flex-col divide-y divide-slate-100 min-w-0">
                                         {sortedTasks.map((alloc) => {
                                           const isCompleted = alloc.status === 'completed';
-                                          const taskBalance = isCompleted ? round2((alloc.hoursComputed || 0) - (alloc.hoursActual || 0)) : 0;
+                                          const taskDelta = getPlanningDeltaHours(alloc, preference);
                                           const pendingTransferMobile = (outgoingTransfers || []).find(t => t.allocationId === alloc.id && t.status === 'pending');
 
                                           // Limpieza de nombre simplificada para móvil
@@ -872,7 +915,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                 <div className="flex items-start gap-3 flex-1 min-w-0">
                                                   <Checkbox
                                                     checked={isCompleted}
-                                                    onCheckedChange={() => toggleTaskCompletion(alloc)}
+                                                    onCheckedChange={() => toggleTaskCompletionWithSums(alloc)}
                                                     disabled={!!pendingTransferMobile}
                                                     className={cn("mt-1 shrink-0", isCompleted && "data-[state=checked]:bg-emerald-600", pendingTransferMobile && "opacity-50")}
                                                   />
@@ -905,10 +948,15 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                       {isCompleted && (
                                                         <>
                                                           <span className="shrink-0">·</span>
-                                                          <span className="shrink-0 font-mono text-base">{alloc.hoursActual}h real</span>
-                                                          <span className={cn("font-mono text-base font-bold shrink-0", taskBalance < 0 ? "text-red-600" : "text-emerald-600")}>
-                                                            {taskBalance > 0 ? '+' : ''}{taskBalance}h
-                                                          </span>
+                                                          <span className="shrink-0 font-mono text-base">{alloc.hoursActual ?? 0}h real</span>
+                                                          {taskDelta !== null && taskDelta !== 0 && (
+                                                            <span className={cn("font-mono text-base font-bold shrink-0", taskDelta < 0 ? "text-red-600" : "text-emerald-600")}>
+                                                              {taskDelta > 0 ? '+' : ''}{taskDelta}h
+                                                            </span>
+                                                          )}
+                                                          {taskDelta === 0 && (
+                                                            <span className="shrink-0 text-slate-400 text-xs font-medium">Exacto</span>
+                                                          )}
                                                         </>
                                                       )}
                                                     </div>
@@ -971,7 +1019,10 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                           <tbody className="divide-y divide-slate-100">
                                             {sortedTasks.map((alloc, taskIndex) => {
                                               const isCompleted = alloc.status === 'completed';
-                                              const taskBalance = isCompleted ? round2((alloc.hoursComputed || 0) - (alloc.hoursActual || 0)) : 0;
+                                              const sumTe = timeEntrySumsByAllocationId[alloc.id];
+                                              const trackedFromTimer =
+                                                isTimeTrackerEnabled && sumTe !== undefined ? round2(sumTe) : null;
+                                              const taskDelta = getPlanningDeltaHours(alloc, preference);
                                               const depTask = alloc.dependencyId ? (allocations || []).find(a => a.id === alloc.dependencyId) : null;
                                               const depOwner = depTask ? (employees || []).find(e => e.id === depTask.employeeId) : null;
                                               const isDepReady = depTask?.status === 'completed';
@@ -994,7 +1045,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                   <td className="py-2 px-3" {...(isFirstTask && { 'data-tour': 'planner-checkbox' })}>
                                                     <Checkbox
                                                       checked={isCompleted}
-                                                      onCheckedChange={() => toggleTaskCompletion(alloc)}
+                                                      onCheckedChange={() => toggleTaskCompletionWithSums(alloc)}
                                                       disabled={!!pendingTransfer}
                                                       className={cn(
                                                         isCompleted && "data-[state=checked]:bg-emerald-600",
@@ -1183,12 +1234,28 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                           onTimeLogged={handleTimeLogged}
                                                         />
                                                       )}
-                                                      {isCompleted && <span className="text-slate-300 text-xs">-</span>}
+                                                      {isCompleted &&
+                                                        (trackedFromTimer !== null && trackedFromTimer > 0 ? (
+                                                          <div
+                                                            key={`${alloc.id}-timer-readonly-${trackedFromTimer}`}
+                                                            className={cn(
+                                                              'inline-flex items-center justify-center mx-auto px-2.5 py-0.5 rounded-full border font-mono text-xs font-medium tabular-nums max-w-full',
+                                                              'bg-slate-50 border-slate-200 text-slate-600'
+                                                            )}
+                                                            title="Tiempo imputado con el cronómetro (registros). Puede diferir del Real si ajustas horas a mano. La tarea completada no reanuda el cronómetro."
+                                                            role="status"
+                                                          >
+                                                            {formatDecimalHoursAsHm(trackedFromTimer)}
+                                                          </div>
+                                                        ) : (
+                                                          <span className="text-slate-300 text-xs">—</span>
+                                                        ))}
                                                     </td>
                                                   )}
                                                   <td className="py-2 px-3 text-center">
                                                     {isCompleted ? (
                                                       <input
+                                                        key={`${alloc.id}-hoursActual-${alloc.hoursActual ?? 0}`}
                                                         type="number"
                                                         step="0.25"
                                                         min="0"
@@ -1225,16 +1292,16 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                     </td>
                                                   )}
                                                   <td className="py-2 px-3 text-center">
-                                                    {isCompleted && taskBalance !== 0 ? (
-                                                      taskBalance > 0 ? (
+                                                    {isCompleted && taskDelta !== null && taskDelta !== 0 ? (
+                                                      taskDelta > 0 ? (
                                                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-100 shadow-sm">
                                                           <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
-                                                          <span className="text-xs font-semibold text-emerald-700">+{taskBalance}h</span>
+                                                          <span className="text-xs font-semibold text-emerald-700">+{taskDelta}h</span>
                                                         </div>
                                                       ) : (
                                                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-100 shadow-sm">
                                                           <TrendingDown className="h-3.5 w-3.5 text-amber-600" />
-                                                          <span className="text-xs font-semibold text-amber-700">{taskBalance}h</span>
+                                                          <span className="text-xs font-semibold text-amber-700">{taskDelta}h</span>
                                                         </div>
                                                       )
                                                     ) : isCompleted ? (
@@ -1495,25 +1562,35 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                               )}
                             </div>
 
-                            {/* Ejecución: Real → Comp (incluye horas del cronómetro en tareas pendientes) */}
-                            {(weekReal > 0 || weekComp > 0) && (
+                            {/* Ejecución: Real (+ Comp si aplica). Delta = suma por tareas completadas (no mezcla cronómetro pendiente). */}
+                            {(weekReal > 0 || weekComp > 0 || completedTasks.length > 0) && (
                               <div className="flex items-center justify-between text-[11px] pt-1 border-t border-dashed">
                                 <div className="flex items-center gap-2">
                                   <span className="text-blue-600 tabular-nums">
                                     <span className="text-slate-400 text-[10px]">Real</span> {weekReal}h
                                   </span>
-                                  <span className="text-slate-300">→</span>
-                                  <span className="text-emerald-600 tabular-nums">
-                                    <span className="text-slate-400 text-[10px]">Comp</span> {weekComp}h
-                                  </span>
+                                  {preference !== 'actual' && (
+                                    <>
+                                      <span className="text-slate-300">→</span>
+                                      <span className="text-emerald-600 tabular-nums">
+                                        <span className="text-slate-400 text-[10px]">Comp</span> {weekComp}h
+                                      </span>
+                                    </>
+                                  )}
                                 </div>
-                                <div className={cn(
-                                  "flex items-center gap-1 font-bold tabular-nums px-1.5 py-0.5 rounded text-[10px]",
-                                  weekBalance >= 0 ? "text-emerald-700 bg-emerald-50" : "text-amber-700 bg-amber-50"
-                                )}>
-                                  {weekBalance >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                                  {weekBalance >= 0 ? '+' : ''}{weekBalance}h
-                                </div>
+                                {weekPlanDelta !== 0 ? (
+                                  <div className={cn(
+                                    "flex items-center gap-1 font-bold tabular-nums px-1.5 py-0.5 rounded text-[10px]",
+                                    weekPlanDelta >= 0 ? "text-emerald-700 bg-emerald-50" : "text-amber-700 bg-amber-50"
+                                  )}>
+                                    {weekPlanDelta >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                                    {weekPlanDelta >= 0 ? '+' : ''}{weekPlanDelta}h
+                                  </div>
+                                ) : (
+                                  completedTasks.length > 0 && (
+                                    <span className="text-slate-400 text-[10px] font-medium tabular-nums">Exacto</span>
+                                  )
+                                )}
                               </div>
                             )}
 
@@ -1653,7 +1730,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                             onInlineNameChange={setInlineNameValue}
                                             onSaveInline={() => saveInlineEdit(alloc)}
                                             onStartInlineEdit={() => startInlineEdit(alloc)}
-                                            onToggleCompletion={() => toggleTaskCompletion(alloc)}
+                                            onToggleCompletion={() => toggleTaskCompletionWithSums(alloc)}
                                             onUpdateInlineHours={(field, value) => updateInlineHours(alloc, field, value)}
                                             onStartEditFull={() => startEditFull(alloc)}
                                             onMoveTask={(targetWeekStart) => moveTaskToWeek(alloc, targetWeekStart)}
@@ -1669,6 +1746,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                             isMobile={isMobile}
                                             showTaskTimer={isTimeTrackerEnabled}
                                             onTimeLogged={handleTimeLogged}
+                                            timeEntriesSum={timeEntrySumsByAllocationId[alloc.id]}
                                             onOpenWeeklyForTask={
                                               isWeeklyEnabled
                                                 ? (a) => {

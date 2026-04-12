@@ -10,6 +10,9 @@ import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { PlannerTaskContextMenu } from '@/components/planner/allocation/PlannerTaskContextMenu';
 import { TaskTimer } from '@/components/employee/TaskTimer';
 import { useAgency } from '@/contexts/AgencyContext';
+import { getPlanningDeltaHours } from '@/utils/hoursTracking';
+import { formatDecimalHoursAsHm } from '@/utils/timerDisplay';
+import { round2 } from '@/utils/numbers';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 interface AllocationTaskRowProps {
@@ -41,6 +44,8 @@ interface AllocationTaskRowProps {
     showTaskTimer?: boolean;
     /** Callback al registrar tiempo (refrescar allocations) */
     onTimeLogged?: (allocationId: string, hoursLogged: number) => void;
+    /** Suma de time_entries para esta allocation (mismo empleado); alinea UI si Real en BD está desfasado */
+    timeEntriesSum?: number;
 }
 
 export function AllocationTaskRow({
@@ -68,6 +73,7 @@ export function AllocationTaskRow({
     isMobile = false,
     showTaskTimer = false,
     onTimeLogged,
+    timeEntriesSum,
 }: AllocationTaskRowProps) {
     const weeklyCloseDay = useWeeklyCloseDay();
     const { currentAgency } = useAgency();
@@ -82,8 +88,9 @@ export function AllocationTaskRow({
     const isDepReady = depTask?.status === 'completed';
     const blockingTasks = allocations.filter(a => a.dependencyId === alloc.id && a.status !== 'completed');
 
-    // Calcular balance individual de la tarea
-    const taskBalance = isCompleted ? Math.round(((alloc.hoursComputed || 0) - (alloc.hoursActual || 0)) * 100) / 100 : 0;
+    const taskDelta = getPlanningDeltaHours(alloc, preference);
+    const trackedHoursFromTimer =
+        showTaskTimer && timeEntriesSum !== undefined ? round2(timeEntriesSum) : null;
 
     return (
         <div className={cn(
@@ -270,6 +277,7 @@ export function AllocationTaskRow({
                                 <div className={cn("flex items-center bg-blue-100 text-blue-800 rounded px-1.5 py-0.5 border border-blue-200", isMobile && "px-2 py-1")}>
                                     <span className={cn("font-medium mr-1", isMobile ? "text-sm" : "text-[10px]")}>Real:</span>
                                     <input
+                                        key={`${alloc.id}-hoursActual-${alloc.hoursActual ?? 0}`}
                                         type="number"
                                         step="0.5"
                                         min="0"
@@ -296,21 +304,39 @@ export function AllocationTaskRow({
                                     />
                                 </div>
                                 )}
+                                {showTaskTimer && trackedHoursFromTimer !== null && trackedHoursFromTimer > 0 && (
+                                    <div
+                                        key={`${alloc.id}-timer-readonly-${trackedHoursFromTimer}`}
+                                        className={cn(
+                                            'inline-flex items-center gap-1 px-2 py-0.5 rounded-full border font-mono font-medium tabular-nums',
+                                            'bg-slate-50 border-slate-200 text-slate-600',
+                                            isMobile ? 'text-xs' : 'text-[10px]'
+                                        )}
+                                        title="Tiempo imputado con el cronómetro (suma de registros). Puede diferir del campo Real si ajustas las horas a mano."
+                                        role="status"
+                                    >
+                                        <Clock className={cn('text-slate-400 shrink-0', isMobile ? 'w-3.5 h-3.5' : 'w-3 h-3')} aria-hidden />
+                                        {formatDecimalHoursAsHm(trackedHoursFromTimer)}
+                                    </div>
+                                )}
                             </div>
 
-                            {/* BALANCE de la tarea (solo si hay diferencia) */}
-                            {Math.abs(taskBalance) > 0.01 && (
+                            {/* Delta planificación (solo si hay diferencia respecto a estimado o computado según agencia) */}
+                            {taskDelta !== null && Math.abs(taskDelta) > 0.01 && (
                                 <div className={cn(
                                     "inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium",
                                     isMobile ? "text-sm" : "text-[10px]",
-                                    taskBalance >= 0
+                                    taskDelta >= 0
                                         ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
                                         : "bg-red-100 text-red-700 border border-red-200"
                                 )}>
-                                    {taskBalance >= 0 ? <TrendingUp className={cn("shrink-0", isMobile ? "w-4 h-4" : "w-3 h-3")} /> : <TrendingDown className={cn("shrink-0", isMobile ? "w-4 h-4" : "w-3 h-3")} />}
-                                    <span>{taskBalance >= 0 ? 'Ganancia' : 'Pérdida'}:</span>
-                                    <span className={cn("font-bold font-mono", isMobile && "text-base")}>{taskBalance > 0 ? '+' : ''}{taskBalance}h</span>
+                                    {taskDelta >= 0 ? <TrendingUp className={cn("shrink-0", isMobile ? "w-4 h-4" : "w-3 h-3")} /> : <TrendingDown className={cn("shrink-0", isMobile ? "w-4 h-4" : "w-3 h-3")} />}
+                                    <span>{taskDelta >= 0 ? 'Ganancia' : 'Pérdida'}:</span>
+                                    <span className={cn("font-bold font-mono", isMobile && "text-base")}>{taskDelta > 0 ? '+' : ''}{taskDelta}h</span>
                                 </div>
+                            )}
+                            {taskDelta !== null && Math.abs(taskDelta) <= 0.01 && (
+                                <span className={cn("text-slate-400", isMobile ? "text-xs" : "text-[10px]")}>Exacto</span>
                             )}
 
                             {/* Badge Weekly si horas=0 por ajuste de weekly */}

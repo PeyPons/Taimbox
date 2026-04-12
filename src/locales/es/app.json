@@ -1006,7 +1006,7 @@
       "computed": "Horas Computadas",
       "computedDesc": "(Recomendado) Validadas tras el Weekly.",
       "actual": "Horas Reales",
-      "actualDesc": "Solo horas imputadas en el tracker."
+      "actualDesc": "Prioriza las horas del campo Real para progreso y rentabilidad: incluyen el tiempo imputado con el cronómetro y puedes editarlas para corregir si hace falta."
     },
     "modules": {
       "title": "Funcionalidades activas",

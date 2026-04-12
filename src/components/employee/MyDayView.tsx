@@ -18,6 +18,9 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { Allocation } from '@/types';
 import { parseDateStringLocal } from '@/utils/dateUtils';
+import { supabase } from '@/lib/supabase';
+import { round2 } from '@/utils/numbers';
+import { toast } from '@/lib/notify';
 
 export interface MyDayViewProps {
   employeeId: string;
@@ -147,21 +150,82 @@ export function MyDayView({
   );
 
   const handleCompleteSubmit = async (allocation: Allocation) => {
+    let flushHappened = false;
+    let flushHoursForFallback: number | null = null;
+
+    if (isTimeTrackerEnabled && currentUser?.id === allocation.employeeId) {
+      const { data: active } = await supabase
+        .from('active_timers')
+        .select('started_at, allocation_id')
+        .eq('employee_id', allocation.employeeId)
+        .maybeSingle();
+      if (active?.started_at && active.allocation_id === allocation.id) {
+        let secondsToLog = Math.max(0, Math.floor((Date.now() - new Date(active.started_at).getTime()) / 1000));
+        if (secondsToLog < 1) secondsToLog = 1;
+        const hoursToLog = Number((secondsToLog / 3600).toFixed(6));
+        flushHoursForFallback = hoursToLog;
+        const pDate = new Date().toISOString().split('T')[0];
+        const { error } = await supabase.rpc('log_timer_hours', {
+          p_employee_id: allocation.employeeId,
+          p_allocation_id: allocation.id,
+          p_hours: hoursToLog,
+          p_notes: null,
+          p_date: pDate,
+        });
+        if (error) {
+          toast.error('No se pudo cerrar el cronómetro. Para el cronómetro e inténtalo de nuevo.');
+          return;
+        }
+        flushHappened = true;
+        window.dispatchEvent(new CustomEvent('timeboxing_timer_stopped'));
+        new BroadcastChannel('timer_sync').postMessage('update');
+      }
+    }
+
+    const assigned = allocation.hoursAssigned;
+    let nextActual = completionData.actual;
+    let nextComputed = completionData.computed;
+
+    if (isTimeTrackerEnabled) {
+      const { data: fresh } = await supabase
+        .from('allocations')
+        .select('hours_actual')
+        .eq('id', allocation.id)
+        .maybeSingle();
+      const rawA = fresh?.hours_actual != null ? Number(fresh.hours_actual) : 0;
+      const roundedA = round2(rawA);
+      const dbActual = rawA > 0 && roundedA === 0 ? rawA : roundedA;
+      if (rawA > 0) {
+        nextActual = dbActual;
+        nextComputed = preference === 'actual' ? nextActual : assigned;
+      } else if (flushHappened && flushHoursForFallback != null) {
+        nextActual = round2((allocation.hoursActual ?? 0) + flushHoursForFallback);
+        nextComputed = preference === 'actual' ? nextActual : assigned;
+      } else if (preference === 'actual') {
+        nextComputed = nextActual;
+      }
+      if (flushHappened) void loadDataForMonth(today);
+    } else if (preference === 'actual') {
+      nextComputed = nextActual;
+    }
+
     setCompletedToday(prev => [...prev, allocation.id]);
     setPopoverOpenId(null);
     await updateAllocation({
       ...allocation,
       status: 'completed',
-      hoursActual: completionData.actual,
-      hoursComputed: completionData.computed,
+      hoursActual: nextActual,
+      hoursComputed: nextComputed,
     });
   };
 
   const openCompletion = (allocation: Allocation) => {
-    setCompletionData({
-      actual: allocation.hoursAssigned,
-      computed: allocation.hoursAssigned,
-    });
+    const assigned = allocation.hoursAssigned;
+    const hoursActualNum = allocation.hoursActual ?? 0;
+    const preserveTracked = isTimeTrackerEnabled && hoursActualNum > 0;
+    const actual = preserveTracked ? hoursActualNum : assigned;
+    const computed = preference === 'actual' ? actual : assigned;
+    setCompletionData({ actual, computed });
     setPopoverOpenId(allocation.id);
   };
 

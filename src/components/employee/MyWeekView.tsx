@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { Deadline } from '@/types';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
-import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
+import { getEffectiveCompletedHours, getPlanningDeltaHours } from '@/utils/hoursTracking';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
 
 interface MyWeekViewProps {
@@ -89,7 +89,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
       totalComputed: round2(totalComputed),
       executionRate: round2(executionRate)
     };
-  }, [employeeId, viewDate, monthlyAllocations, getEmployeeMonthlyLoad]);
+  }, [employeeId, viewDate, monthlyAllocations, getEmployeeMonthlyLoad, preference]);
 
   // Agrupar por proyecto con métricas de impacto y compañeros detallados
   const projectGroups = useMemo(() => {
@@ -123,6 +123,8 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
       }[];
       myImpactPercentage: number;
       hoursMissing: number; // Horas faltantes por asignar (si aplica)
+      /** Suma de getPlanningDeltaHours en tareas completadas (misma semántica que el planificador). */
+      myPlanDeltaSum: number;
     }> = {};
 
     // Procesar mis allocations
@@ -155,7 +157,8 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
           projectPercentageUsed: 0,
           teammates: [],
           myImpactPercentage: 0,
-          hoursMissing: 0
+          hoursMissing: 0,
+          myPlanDeltaSum: 0
         };
       }
 
@@ -166,6 +169,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
         groups[alloc.projectId].myReal += alloc.hoursActual || 0;
         groups[alloc.projectId].myComputed += getEffectiveCompletedHours(alloc, preference);
         groups[alloc.projectId].myCompletedTasks += 1;
+        groups[alloc.projectId].myPlanDeltaSum += getPlanningDeltaHours(alloc, preference) ?? 0;
       }
     });
 
@@ -245,10 +249,11 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
         ...g,
         myEstimated: round2(g.myEstimated),
         myReal: round2(g.myReal),
-        myComputed: round2(g.myComputed)
+        myComputed: round2(g.myComputed),
+        myPlanDeltaSum: round2(g.myPlanDeltaSum)
       }))
       .sort((a, b) => b.myComputed - a.myComputed);
-  }, [monthlyAllocations, allocations, projects, clients, employees, employeeId, viewDate]);
+  }, [monthlyAllocations, allocations, projects, clients, employees, employeeId, viewDate, preference, deadlines]);
 
   // Lista de todos los compañeros únicos para filtro
   const allTeammates = useMemo(() => {
@@ -406,7 +411,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {filteredProjects.map(group => {
-              const balance = round2(group.myComputed - group.myReal);
+              const balance = group.myPlanDeltaSum;
               const isPositive = balance >= 0;
               const completionRate = group.myTasks > 0 ? round2((group.myCompletedTasks / group.myTasks) * 100) : 0;
               const isHighImpact = group.myImpactPercentage >= 50;
@@ -473,7 +478,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                                   <SensitiveText kind="employee" id={tm.id}>{tm.name}</SensitiveText>
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                  {tm.hoursComputed}h computadas ({tm.impactPercentage}%)
+                                  {tm.hoursComputed}h {preference === 'actual' ? 'reales' : 'computadas'} ({tm.impactPercentage}%)
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -488,7 +493,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                               <TooltipContent>
                                 {group.teammates.slice(4).map(tm => (
                                   <div key={tm.id} className="text-xs">
-                                    <SensitiveText kind="employee" id={tm.id}>{tm.name}</SensitiveText>: {tm.hoursComputed}h
+                                    <SensitiveText kind="employee" id={tm.id}>{tm.name}</SensitiveText>: {tm.hoursComputed}h {preference === 'actual' ? 'real' : 'comp.'}
                                   </div>
                                 ))}
                               </TooltipContent>
@@ -514,7 +519,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                             <span className="font-bold text-blue-600 ml-1">{group.projectTotalPlanned}h</span>
                           </div>
                           <div>
-                            <span className="text-slate-400">Comp:</span>
+                            <span className="text-slate-400">{preference === 'actual' ? 'Real:' : 'Comp:'}</span>
                             <span className="font-bold text-emerald-600 ml-1">{group.projectTotalComputedAll}h</span>
                           </div>
                           <div>
@@ -551,7 +556,9 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                             </div>
                             <div className="flex items-center gap-2 text-[10px]">
                               <span className="text-blue-600">Plan: {group.myEstimated}h</span>
-                              <span className="text-emerald-600">Comp: {group.myComputed}h</span>
+                              <span className="text-emerald-600">
+                                {preference === 'actual' ? `Real: ${group.myReal}h` : `Comp: ${group.myComputed}h`}
+                              </span>
                             </div>
                           </div>
                           {/* Compañeros */}
@@ -570,7 +577,9 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                               </div>
                               <div className="flex items-center gap-2 text-[10px]">
                                 <span className="text-blue-600">Plan: {tm.hoursPlanned}h</span>
-                                <span className="text-emerald-600">Comp: {tm.hoursComputed}h</span>
+                                <span className="text-emerald-600">
+                                  {preference === 'actual' ? `Real: ${tm.hoursComputed}h` : `Comp: ${tm.hoursComputed}h`}
+                                </span>
                               </div>
                             </div>
                           ))}
@@ -585,6 +594,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                         estimated={group.myEstimated}
                         real={group.myReal}
                         computed={group.myComputed}
+                        showComputed={preference !== 'actual'}
                         size="sm"
                       />
                     </div>
@@ -593,13 +603,17 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
                     {group.myCompletedTasks > 0 && (
                       <div className={cn(
                         "flex items-center justify-between px-3 py-2 rounded-lg mt-auto",
-                        isPositive ? "bg-emerald-50" : "bg-red-50"
+                        balance === 0 ? "bg-slate-50" : isPositive ? "bg-emerald-50" : "bg-red-50"
                       )}>
                         <span className="text-xs font-medium text-slate-600">Balance</span>
-                        <div className={cn("flex items-center gap-1 font-bold text-sm", isPositive ? "text-emerald-600" : "text-red-600")}>
-                          {isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                          {isPositive ? '+' : ''}{balance}h
-                        </div>
+                        {balance === 0 ? (
+                          <span className="text-xs font-semibold text-slate-500">Exacto</span>
+                        ) : (
+                          <div className={cn("flex items-center gap-1 font-bold text-sm", isPositive ? "text-emerald-600" : "text-red-600")}>
+                            {isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                            {isPositive ? '+' : ''}{balance}h
+                          </div>
+                        )}
                       </div>
                     )}
                   </CardContent>

@@ -5,6 +5,8 @@ interface MetricsCardProps {
   estimated?: number;
   real?: number;
   computed?: number;
+  /** Si false, solo 2 columnas (estimado + real); oculta computado aunque venga definido. */
+  showComputed?: boolean;
   label?: string;
   className?: string;
   showLabels?: boolean;
@@ -15,6 +17,7 @@ export function MetricsCard({
   estimated, 
   real, 
   computed, 
+  showComputed = true,
   label,
   className,
   showLabels = true,
@@ -29,7 +32,7 @@ export function MetricsCard({
   const classes = sizeClasses[size];
 
   return (
-    <div className={cn("grid grid-cols-3 gap-2 text-center", className)}>
+    <div className={cn("grid gap-2 text-center", showComputed ? "grid-cols-3" : "grid-cols-2", className)}>
       {estimated !== undefined && (
         <div className={cn("space-y-0.5", classes.gap)}>
           <p className={cn("font-bold text-slate-700", classes.text)}>{estimated}h</p>
@@ -42,7 +45,7 @@ export function MetricsCard({
           {showLabels && <p className={cn("text-blue-400 uppercase", classes.label)}>Real</p>}
         </div>
       )}
-      {computed !== undefined && (
+      {showComputed && computed !== undefined && (
         <div className={cn("space-y-0.5", classes.gap)}>
           <p className={cn("font-bold text-emerald-600", classes.text)}>{computed}h</p>
           {showLabels && <p className={cn("text-emerald-400 uppercase", classes.label)}>Computado</p>}

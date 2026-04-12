@@ -764,7 +764,7 @@
       "computed": "Computed Hours",
       "computedDesc": "(Recommended) Validated after the Weekly.",
       "actual": "Actual Hours",
-      "actualDesc": "Only hours logged in the tracker."
+      "actualDesc": "Prioritize hours in the Real field for progress and profitability: they include time logged with the task timer, and you can edit them to correct when needed."
     },
     "modules": {
       "title": "Active features",

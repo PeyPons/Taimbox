@@ -66,6 +66,8 @@ export function CloseTasksDialog({ open, onOpenChange, employeeId }: CloseTasksD
         if (!hours) continue;
 
         const actual = parseFloat(hours.actual) || 0;
+        // Modo agencia "solo reales": igualar computed a actual a propósito (no es bug). Así facturación y
+        // getEffectiveCompletedHours usan una sola fuente. Desviación estimación vs real en UI: getPlanningDeltaHours.
         const computed = preference === 'actual' ? actual : (parseFloat(hours.computed) || actual); // Si no se especifica, usar actual
 
         if (actual <= 0) {

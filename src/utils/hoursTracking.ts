@@ -1,4 +1,27 @@
 import { Allocation, AgencySettings } from '@/types';
+import { round2 } from '@/utils/numbers';
+
+/**
+ * Delta de planificación por tarea **completada** para mostrar en planificador / dashboard.
+ *
+ * - Modo `computed` (por defecto): horas computadas − horas reales (ajuste Weekly vs trabajo registrado).
+ * - Modo `actual`: horas estimadas (`hoursAssigned`) − horas reales. En cierre se persiste `hoursComputed === hoursActual`
+ *   a propósito (`getEffectiveCompletedHours`); la UI de “¿lento/rápido?” debe usar este delta, no `computed − actual`.
+ *
+ * **Solo sumar/agregar sobre allocations con `status === 'completed'`.** Si la tarea no está completada, no aplica.
+ */
+export function getPlanningDeltaHours(
+  allocation: Allocation,
+  preference?: AgencySettings['hoursTrackingPreference']
+): number | null {
+  if (allocation.status !== 'completed') {
+    return null;
+  }
+  if (preference === 'actual') {
+    return round2((allocation.hoursAssigned ?? 0) - (allocation.hoursActual ?? 0));
+  }
+  return round2((allocation.hoursComputed ?? 0) - (allocation.hoursActual ?? 0));
+}
 
 /**
  * Depender de la configuración de la agencia, este helper devuelve las horas validadas (computadas)

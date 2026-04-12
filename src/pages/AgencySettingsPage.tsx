@@ -778,7 +778,7 @@ export default function AgencySettingsPage() {
                         <span className="flex flex-col">
                           <span className="block text-sm font-medium text-slate-900">{t('agency.general.actual', 'Horas Reales')}</span>
                           <span className="mt-1 flex items-center text-sm text-slate-500">
-                            {t('agency.general.actualDesc', 'Solo horas imputadas en el tracker.')}
+                            {t('agency.general.actualDesc', 'Prioriza las horas del campo Real para progreso y rentabilidad: incluyen el tiempo imputado con el cronómetro y puedes editarlas para corregir si hace falta.')}
                           </span>
                         </span>
                       </span>
