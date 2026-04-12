@@ -1,0 +1,31 @@
+---
+description: >-
+  Alinear docs modulares y DOCUMENTACION.md solo cuando cambie comportamiento
+  observable por el usuario o contratos documentados (API, Edge, RLS, datos).
+  No para refactors internos ni fixes triviales. Al editar docs/ o DOCUMENTACION.md.
+globs: docs/**/*.md,DOCUMENTACION.md
+alwaysApply: false
+---
+
+# Documentación y cambios de producto (cualquier área)
+
+## Por qué no va con `alwaysApply: true`
+
+Si esta regla se aplicara **siempre**, Cursor tendería a proponer cambios en `docs/` y nuevas filas en **`DOCUMENTACION.md`** en tareas donde **no hay nada que documentar** (p. ej. un fix de una línea o un refactor interno). El índice se llena de ruido y deja de servir como referencia. Por eso la regla usa **`globs`** (archivos bajo `docs/` y el índice) y el agente debe seguir además la skill **actualizar-documentacion-taimbox** cuando el usuario pida documentar o al cerrar trabajo claramente de producto/contratos.
+
+## Criterio: cuándo actualizar
+
+**Sí** entra en juego este flujo cuando el trabajo modifica:
+
+- **Comportamiento observable:** flujos de pantalla, reglas de negocio que ve el usuario, permisos efectivos en UI, copy/rutas que cambian la experiencia.
+- **Contratos que otros leen en `docs/`** o deberían leer: integraciones, Edge Functions, API, modelo de datos descrito en documentación.
+
+**No** hace falta ampliar `docs/` ni el índice por refactors sin efecto en producto, fixes triviales, UI cosmética sin cambio de comportamiento, ni cuando el usuario pide explícitamente no documentar en esa tarea.
+
+## Pasos cuando sí aplica
+
+1. Usa **[DOCUMENTACION.md](../../DOCUMENTACION.md)** como índice y abre **solo** el/los **`docs/*.md`** que correspondan al tema (p. ej. `03` lógica, `04` contextos/Realtime, `07` extensión y UX operativa, `10` gotchas, etc.). No cargues toda `docs/` de golpe.
+2. **En el mismo cambio** (mismo commit/PR), **actualiza** el apartado afectado en ese módulo, o **indica al usuario** con claridad si el código corrige un doc desactualizado (el código sigue siendo fuente de verdad frente a texto obsoleto).
+3. Si **añades, renombras o repartes** archivos bajo `docs/`, **actualiza la fila** correspondiente en **DOCUMENTACION.md** en ese mismo cambio. **No** añadas filas al índice por cambios solo en `src/` que no justifiquen un módulo nuevo o una reorganización documental.
+
+**Mapa / checklist de impacto:** si además tocas types, `AppContext`, fechas, permisos, RLS, etc., sigue **[docs/08-mapa-dependencias.md](../../docs/08-mapa-dependencias.md)** y **[docs/09-checklist-modificacion.md](../../docs/09-checklist-modificacion.md)** como hasta ahora.

@@ -35,6 +35,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
+import { formatEhrTargetForDisplay } from '@/utils/positiveDecimalInput';
 import { isAllocationInEffectiveMonth, getWorkingDaysInMonth, getWorkingDaysElapsedInMonth } from '@/utils/dateUtils';
 import type { Project, Employee } from '@/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -874,7 +875,9 @@ export default function FinancialHealthPage() {
                                     </div>
                                     <p className="text-xs text-slate-600 mt-1">
                                         Objetivo de la agencia:{' '}
-                                        <span className="font-semibold tabular-nums">{ehrTarget.toFixed(0)} €/h</span>
+                                        <span className="font-semibold tabular-nums">
+                                          {formatEhrTargetForDisplay(ehrTarget)} €/h
+                                        </span>
                                     </p>
                                     {totalHoursForView > 0 && (
                                         <p className="text-[11px] mt-1 text-slate-500">

@@ -24,6 +24,11 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { AVAILABLE_INTEGRATIONS } from '@/config/integrations';
 import { CustomProjectFilter, RolePermissions, ProjectAliasingRule, DepartmentDefinition } from '@/types';
 import { normalizeDepartments } from '@/utils/departmentUtils';
+import {
+  numberToPositiveDecimalInputString,
+  parsePositiveDecimalInput,
+  sanitizePositiveDecimalInput,
+} from '@/utils/positiveDecimalInput';
 import { DEFAULT_FILTERS } from '@/hooks/useProjectFilters';
 import { UserPermissions, PERMISSION_LABELS, DEFAULT_PERMISSIONS } from '@/types/permissions';
 import {
@@ -274,7 +279,9 @@ export default function AgencySettingsPage() {
   const [openExcludeClients, setOpenExcludeClients] = useState(false);
 
   /** Objetivo Precio Hora Efectivo (€/h) en Rentabilidad. Por defecto 75. */
-  const [ehrTarget, setEhrTarget] = useState(currentAgency?.settings?.ehrTarget ?? 75);
+  const [ehrTargetInput, setEhrTargetInput] = useState(() =>
+    numberToPositiveDecimalInputString(currentAgency?.settings?.ehrTarget ?? 75, 75)
+  );
   const [hoursTrackingPreference, setHoursTrackingPreference] = useState<'computed' | 'actual'>(
     currentAgency?.settings?.hoursTrackingPreference ?? 'computed'
   );
@@ -328,7 +335,9 @@ export default function AgencySettingsPage() {
         projectIds: currentAgency.settings?.planningPrecisionExclusions?.projectIds ?? [],
         clientIds: currentAgency.settings?.planningPrecisionExclusions?.clientIds ?? []
       });
-      setEhrTarget(currentAgency.settings?.ehrTarget ?? 75);
+      setEhrTargetInput(
+        numberToPositiveDecimalInputString(currentAgency.settings?.ehrTarget ?? 75, 75)
+      );
       setHoursTrackingPreference(currentAgency.settings?.hoursTrackingPreference ?? 'computed');
       setRadarLowProgressExcludeKeywords(currentAgency.settings?.radarLowProgressExcludeKeywords ?? []);
       fetchConnectedAccounts();
@@ -418,6 +427,7 @@ export default function AgencySettingsPage() {
 
     setSaving(true);
     try {
+      const ehrTarget = parsePositiveDecimalInput(ehrTargetInput, 75, 1);
       await updateSettings({
         modules,
         roles,
@@ -699,18 +709,14 @@ export default function AgencySettingsPage() {
                   <Label htmlFor="ehr-target">{t('agency.general.ehrTarget', 'Objetivo Precio Hora Efectivo (€/h)')}</Label>
                   <Input
                     id="ehr-target"
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={ehrTarget}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      if (raw === '') {
-                        setEhrTarget(75);
-                        return;
-                      }
-                      const v = parseInt(raw, 10);
-                      if (!Number.isNaN(v) && v >= 1) setEhrTarget(v);
+                    type="text"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    value={ehrTargetInput}
+                    onChange={(e) => setEhrTargetInput(sanitizePositiveDecimalInput(e.target.value))}
+                    onBlur={() => {
+                      const v = parsePositiveDecimalInput(ehrTargetInput, 75, 1);
+                      setEhrTargetInput(numberToPositiveDecimalInputString(v, 75));
                     }}
                   />
                   <p className="text-xs text-slate-500">{t('agency.general.ehrNote', 'Valor mínimo considerado saludable. Por defecto 75 €/h.')}</p>
@@ -1758,86 +1764,55 @@ export default function AgencySettingsPage() {
                     <Database className="h-4 w-4 text-blue-600" />
                     <h3 className="font-semibold text-sm text-slate-700 uppercase">{t('agency.integrations.crm', 'CRM')}</h3>
                   </div>
-                  {Object.values(AVAILABLE_INTEGRATIONS)
-                    .filter(integration => integration.category === 'crm')
-                    .map(integration => {
-                      const isEnabled = enabledIntegrations[integration.id] ?? false;
-                      const hasDependencyIssue = integration.dependencies?.some(
-                        depId => !(enabledIntegrations[depId] ?? false)
-                      ) ?? false;
-
-                      return (
-                        <div key={integration.id} className="flex items-start justify-between p-4 rounded-lg border bg-white">
-                          <div className="flex-1 space-y-1">
-                            <div className="flex items-center gap-2">
-                              <Label className="font-medium text-slate-900">
-                                {t(`agency.integrations.items.${integration.id}.name`, integration.name)}
-                              </Label>
-                              <Badge variant="outline" className="text-xs">
-                                {integration.category}
-                              </Badge>
-                              {hasDependencyIssue && (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger>
-                                      <AlertTriangle className="h-4 w-4 text-amber-500" />
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>{t('agency.integrations.dependencyError', { name: integration.name, deps: integration.dependencies?.map(id => AVAILABLE_INTEGRATIONS[id]?.name).join(', ') })}</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
-                            </div>
-                            <p className="text-sm text-slate-600">
-                              {t(`agency.integrations.items.${integration.id}.description`, integration.description)}
-                            </p>
-                            {hasDependencyIssue && isEnabled && (
-                              <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
-                                <AlertTriangle className="h-3 w-3" />
-                                {t('agency.integrations.dependencyWarning', 'Esta integración requiere dependencias activas')}
-                              </p>
-                            )}
+                  {(() => {
+                    const crmPackOn =
+                      Boolean(enabledIntegrations.crm_user_id) && Boolean(enabledIntegrations.crm_export);
+                    const crmLegacyPartial =
+                      Boolean(enabledIntegrations.crm_user_id) && !Boolean(enabledIntegrations.crm_export);
+                    return (
+                      <div className="flex items-start justify-between p-4 rounded-lg border bg-white gap-4">
+                        <div className="flex-1 space-y-2 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Label htmlFor="crm-pack-switch" className="font-medium text-slate-900">
+                              {t('agency.integrations.crmPackTitle', 'Integración CRM (exportación CSV)')}
+                            </Label>
+                            <Badge variant="outline" className="text-xs">
+                              crm
+                            </Badge>
                           </div>
-                          <Switch
-                            checked={isEnabled}
-                            onCheckedChange={(checked) => {
-                              // Validate dependencies before enabling
-                              if (checked && integration.dependencies) {
-                                const missingDeps = integration.dependencies.filter(
-                                  depId => !(enabledIntegrations[depId] ?? false)
-                                );
-                                if (missingDeps.length > 0) {
-                                  const depNames = missingDeps.map(id => AVAILABLE_INTEGRATIONS[id]?.name).join(', ');
-                                  toast.warning(t('agency.integrations.dependencyError', { name: integration.name, deps: depNames }));
-                                  return;
-                                }
-                              }
-
-                              // Warn if disabling a dependency
-                              if (!checked && integration.id === 'crm_user_id') {
-                                const hasCrmExport = enabledIntegrations['crm_export'] ?? false;
-                                if (hasCrmExport) {
-                                  toast.warning(t('agency.integrations.crmUserIdWarning', 'Si desactivas "ID Usuario CRM", también se desactivará "Exportación de Tareas al CRM"'));
-                                  setEnabledIntegrations(prev => ({
-                                    ...prev,
-                                    [integration.id]: false,
-                                    crm_export: false
-                                  }));
-                                  return;
-                                }
-                              }
-
-                              setEnabledIntegrations(prev => ({
-                                ...prev,
-                                [integration.id]: checked
-                              }));
-                            }}
-                            className="ml-4"
-                          />
+                          <p className="text-sm text-slate-600">
+                            {t(
+                              'agency.integrations.crmPackDescription',
+                              'Activa el enlace con tu CRM u otro sistema: cada miembro puede indicar su ID de usuario en su perfil y, en cada proyecto, el ID externo del proyecto. Quien tenga permiso podrá exportar las tareas del mes a CSV (tarea, ID de usuario CRM, ID de proyecto externo y horas).'
+                            )}
+                          </p>
+                          {crmLegacyPartial && (
+                            <p className="text-xs text-amber-700 flex items-start gap-1.5">
+                              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                              <span>
+                                {t(
+                                  'agency.integrations.crmPackLegacyHint',
+                                  'Solo tenías activado el ID de usuario en perfiles. Activa el interruptor para completar la integración (exportación e ID de proyecto en fichas).'
+                                )}
+                              </span>
+                            </p>
+                          )}
                         </div>
-                      );
-                    })}
+                        <Switch
+                          id="crm-pack-switch"
+                          checked={crmPackOn}
+                          onCheckedChange={(checked) => {
+                            setEnabledIntegrations((prev) => ({
+                              ...prev,
+                              crm_user_id: checked,
+                              crm_export: checked,
+                            }));
+                          }}
+                          className="ml-0 shrink-0"
+                        />
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Otras integraciones (modo demostración, etc.) */}

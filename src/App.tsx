@@ -61,6 +61,7 @@ import { ModuleGuard } from "./components/auth/ModuleGuard";
 import { PlanGuard } from "./components/auth/PlanGuard";
 import { BrandingEffect } from "./components/layout/BrandingEffect";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { AgencySearchParamSync } from "./components/agency/AgencySearchParamSync";
 import { CookieBanner } from "./components/landing/CookieBanner";
 import { PublicLocaleSync } from "@/i18n/PublicLocaleSync";
 
@@ -146,6 +147,7 @@ const App = () => (
                   <TooltipProvider>
                     <BrandingEffect />
                     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                    <AgencySearchParamSync />
                     <PublicLocaleSync />
                     <Toaster />
                     <NotificationProvider>

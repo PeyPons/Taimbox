@@ -101,9 +101,9 @@ export interface AgencySettings {
     googleClientSecret?: string;
   };
   enabledIntegrations?: {
-    weekly_feedback?: boolean;       // Sistema de cierre semanal (Weekly Reports)
-    crm_export?: boolean;            // Exportación de tareas al CRM
-    crm_user_id?: boolean;           // Campo ID Usuario CRM en perfiles
+    weekly_feedback?: boolean;       // Cierre semanal: bloquea edición directa de semanas pasadas en planificador; cambios vía WeeklyReportDialog
+    crm_export?: boolean;            // CSV export + project external_id (CRM project ID) in project forms
+    crm_user_id?: boolean;           // Employee profile field for external / CRM user id
     anonymize_ads_for_video?: boolean; // Modo demostración: oculta nombres en Ads
   };
   // Weekly system configuration
@@ -217,7 +217,8 @@ export interface Project {
   okrs?: OKR[];
   deliverables_log?: Record<string, string[]>;
   externalId?: number;    // ID del proyecto en el CRM
-  projectType?: string;   // 'PPC' | 'Entregable' | 'Mensual'
+  /** Valores predefinidos habituales: ver `PROJECT_TYPE_PRESET_VALUES` en `src/config/projectTypePresets.ts`. */
+  projectType?: string;
   isHidden?: boolean;     // Si el proyecto est? oculto
   /** ID del departamento responsable (para filtrado en reportes por ?rea). */
   responsibleDepartmentId?: string | null;

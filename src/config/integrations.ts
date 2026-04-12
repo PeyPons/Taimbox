@@ -11,22 +11,25 @@ export const AVAILABLE_INTEGRATIONS: Record<string, IntegrationDefinition> = {
   weekly_feedback: {
     id: 'weekly_feedback',
     name: 'Weekly',
-    description: 'Gestiona tareas abiertas y transferencias semanales',
+    description:
+      'Tras el día de cierre, las semanas pasadas no se editan en el planificador: el equipo cierra pendientes desde Weekly (horas, posponer, transferir, desglosar…).',
     category: 'workflow',
     requiresConfig: false,
   },
   crm_export: {
     id: 'crm_export',
-    name: 'Exportación de Tareas al CRM',
-    description: 'Permite exportar tareas planificadas en formato CSV para importar al CRM',
+    name: 'Exportación de tareas al CRM',
+    description:
+      'Exporta la planificación a CSV y muestra en cada proyecto el campo de ID externo (CRM) para alinearlo con tu sistema.',
     category: 'crm',
     requiresConfig: false,
     dependencies: ['crm_user_id'], // Requiere que crm_user_id esté activo
   },
   crm_user_id: {
     id: 'crm_user_id',
-    name: 'ID Usuario CRM',
-    description: 'Muestra el campo ID Usuario CRM en los perfiles de empleados. Necesario para exportar tareas al CRM',
+    name: 'ID de usuario en el CRM',
+    description:
+      'Activa en el perfil de cada empleado un campo para su ID en el sistema externo; la exportación CSV lo usa para enlazar personas y tareas.',
     category: 'crm',
     requiresConfig: false,
   },

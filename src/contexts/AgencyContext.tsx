@@ -69,6 +69,17 @@ interface AgencyContextType {
   getAgencyMembers: (agencyId: string) => Promise<AgencyMember[]>;
   removeUserFromAgency: (userId: string, agencyId: string) => Promise<{ completelyRemoved: boolean }>;
   transferAgencyOwnership: (newOwnerId: string, agencyId: string) => Promise<void>;
+  inviteUserToAgency: (
+    email: string,
+    role?: string,
+    department?: string
+  ) => Promise<{ employeeId?: string; userId?: string } | null>;
+  updateUserAgencyRole: (
+    userId: string,
+    agencyId: string,
+    role: string,
+    department?: string
+  ) => Promise<void>;
 }
 
 const AgencyContext = createContext<AgencyContextType | undefined>(undefined);
@@ -258,20 +269,26 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
 
         setAvailableAgencies(agenciesList);
 
-        // Usar localStorage para recordar la preferencia
         const storageKey = `selected_agency_${user.id}`;
-        const savedAgencyId = localStorage.getItem(storageKey);
+        const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+        const urlAgencyId = params?.get('agency');
 
-        if (savedAgencyId) {
-          // Buscar el empleado con la agencia guardada
-          const savedEmployee = allEmployees.find(emp => emp.agency_id === savedAgencyId);
-          if (savedEmployee) {
-            selectedEmployee = savedEmployee;
-            console.debug('[AgencyContext] Usando agencia guardada:', savedAgencyId);
+        if (urlAgencyId && uniqueAgencyIds.includes(urlAgencyId)) {
+          const urlEmployee = allEmployees.find(emp => emp.agency_id === urlAgencyId);
+          if (urlEmployee) {
+            selectedEmployee = urlEmployee;
+            localStorage.setItem(storageKey, urlAgencyId);
+            console.debug('[AgencyContext] Usando agencia desde URL:', urlAgencyId);
           }
         } else {
-          // Si no hay preferencia guardada, usar la más reciente y guardarla
-          if (selectedEmployee?.agency_id) {
+          const savedAgencyId = localStorage.getItem(storageKey);
+          if (savedAgencyId) {
+            const savedEmployee = allEmployees.find(emp => emp.agency_id === savedAgencyId);
+            if (savedEmployee) {
+              selectedEmployee = savedEmployee;
+              console.debug('[AgencyContext] Usando agencia guardada:', savedAgencyId);
+            }
+          } else if (selectedEmployee?.agency_id) {
             localStorage.setItem(storageKey, selectedEmployee.agency_id);
             console.debug('[AgencyContext] Guardando agencia por defecto:', selectedEmployee.agency_id);
           }
@@ -450,6 +467,67 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const updateUserAgencyRole = useCallback(
+    async (userId: string, agencyId: string, role: string, department?: string) => {
+      const { error: empError } = await supabase
+        .from('employees')
+        .update({
+          role: role || null,
+          department: department ?? null,
+        })
+        .eq('user_id', userId)
+        .eq('agency_id', agencyId);
+      if (empError) throw new Error(empError.message);
+      const { error: uaErr } = await supabase
+        .from('user_agencies')
+        .update({
+          role: role || null,
+          department: department ?? null,
+        })
+        .eq('user_id', userId)
+        .eq('agency_id', agencyId);
+      if (uaErr && uaErr.code !== '42P01') {
+        console.warn('[AgencyContext] user_agencies update:', uaErr.message);
+      }
+      await fetchAgencyForUser();
+    },
+    [fetchAgencyForUser]
+  );
+
+  const inviteUserToAgency = useCallback(
+    async (email: string, role?: string, department?: string) => {
+      if (!user?.id) throw new Error('Debes iniciar sesión para invitar usuarios.');
+      if (!currentAgency?.id) throw new Error('No hay agencia seleccionada.');
+      const { data, error } = await supabase.functions.invoke('invite-user-to-agency', {
+        body: {
+          email: email.trim().toLowerCase(),
+          agencyId: currentAgency.id,
+          role: role ?? null,
+          department: department ?? null,
+          inviterUserId: user.id,
+        },
+      });
+      if (error) {
+        let msg = error.message || 'Error al invitar';
+        try {
+          const ctx = error as { context?: Response };
+          if (ctx.context && typeof ctx.context.json === 'function') {
+            const j = await ctx.context.json();
+            if (j?.error && typeof j.error === 'string') msg = j.error;
+          }
+        } catch {
+          /* ignore */
+        }
+        throw new Error(msg);
+      }
+      const body = data as { error?: string; employeeId?: string; userId?: string } | null;
+      if (body?.error) throw new Error(body.error);
+      await fetchAgencyForUser();
+      return body;
+    },
+    [user?.id, currentAgency?.id, fetchAgencyForUser]
+  );
+
   const value = {
     currentAgency,
     isLoading,
@@ -463,6 +541,8 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
     getAgencyMembers,
     removeUserFromAgency,
     transferAgencyOwnership,
+    inviteUserToAgency,
+    updateUserAgencyRole,
     updateSettings: async (settings: Partial<AgencySettings>) => {
       if (!currentAgency?.id) return;
 

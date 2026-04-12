@@ -490,6 +490,7 @@
     "title": "Mis Agencias",
     "description": "Gestiona tus agencias o crea una nueva.",
     "newAgency": "Nueva Agencia",
+    "hubIntro": "Elige la agencia activa si tienes varias. Los accesos de abajo enlazan con el mismo criterio que Configuración de agencia: rentabilidad (objetivo €/h), horas computadas frente a reales, Conexiones (Weekly, CRM, anuncios) y módulos del menú.",
     "accessCount_one": "Tienes acceso a 1 agencia",
     "accessCount_other": "Tienes acceso a {{count}} agencias",
     "manageCurrent": "Gestiona tu agencia actual",
@@ -497,14 +498,28 @@
     "myAgency": "Mi Agencia",
     "currentAgencyText": "Agencia actual",
     "currentBadge": "Actual",
+    "guide": {
+      "title": "Qué encontrarás en cada sitio",
+      "lead": "Resumen alineado con la pantalla de configuración para que Weekly, CRM y el objetivo de precio hora no mezclen conceptos distintos.",
+      "settingsHeading": "Configuración de agencia",
+      "settingsLi1": "General y rentabilidad: nombre, slug y objetivo de precio hora efectivo (€/h) que usa la página Rentabilidad; solo valores positivos, coma o punto como decimal y máximo dos decimales.",
+      "settingsLi2": "Seguimiento de horas: eliges si el avance y la rentabilidad priorizan horas computadas (imputación comercial al cliente o presupuesto) o solo las horas reales dedicadas; no obliga a usar el cronómetro.",
+      "settingsLi3": "Conexiones — Weekly: el día de cierre define cuándo una semana queda cerrada para ediciones directas en el planificador; el cierre de pendientes se hace desde el flujo Weekly. Las cuentas Meta y Google Ads se configuran aquí si el módulo PPC está activo.",
+      "settingsLi4": "Conexiones — CRM: un solo interruptor para activar a la vez el ID de usuario en perfiles, el ID externo del proyecto en cada proyecto y la exportación mensual a CSV (tarea, IDs y horas).",
+      "settingsLi5": "Organización, equipo (roles y permisos del menú), proyectos (filtros y aliasing), funcionalidades visibles (OKRs, Deadlines, cronómetro…), apariencia y plan o facturación.",
+      "teamHeading": "Equipo",
+      "teamBody": "Personas, departamentos y datos operativos del staff en el día a día. No es la misma pantalla que los administradores con acceso a la agencia en Taimbox.",
+      "adminsHeading": "Administradores de la agencia",
+      "adminsBody": "Quién tiene acceso a esta agencia en la cuenta: invitar, quitar y, si aplica, traspasar titularidad. Los roles internos (qué ve cada rol en el menú) se configuran en la pestaña Equipo dentro de Configuración de agencia."
+    },
     "buttons": {
       "team": "Equipo",
       "admins": "Administradores",
-      "settings": "Configuración",
+      "settings": "Configuración de agencia",
       "switchToThis": "Cambiar a esta agencia",
       "switching": "Cambiando...",
       "adminsShort": "Admins",
-      "settingsShort": "Config"
+      "settingsShort": "Agencia"
     },
     "toast": {
       "switchSuccess": "Agencia cambiada correctamente",
@@ -913,6 +928,12 @@
   },
   "common": {
     "name": "Nombre",
+    "continue": "Continuar",
+    "back": "Atrás",
+    "skip": "Omitir",
+    "role": "Rol",
+    "department": "Departamento",
+    "color": "Color",
     "hours": "Horas",
     "cancel": "Cancelar",
     "saving": "Guardando...",
@@ -1000,13 +1021,13 @@
       "profitability": "Rentabilidad",
       "profitabilityDesc": "Objetivo de precio hora efectivo usado en la página Rentabilidad para KPIs y alertas",
       "ehrTarget": "Objetivo Precio Hora Efectivo (€/h)",
-      "ehrNote": "Valor mínimo considerado saludable. Por defecto 75 €/h.",
+      "ehrNote": "Solo valores positivos; mínimo 1 €/h. Puedes usar coma o punto como decimal (máx. 2 decimales). Por defecto 75 €/h.",
       "tracking": "Preferencia de Seguimiento",
-      "trackingDesc": "Decide qué horas se utilizarán para calcular los progresos y la rentabilidad.",
+      "trackingDesc": "Define si el avance y la rentabilidad se calculan con las horas imputadas al cliente/presupuesto (computadas) o solo con el tiempo real dedicado.",
       "computed": "Horas Computadas",
-      "computedDesc": "(Recomendado) Validadas tras el Weekly.",
+      "computedDesc": "En tareas completadas, informes y progreso usan sobre todo las horas computadas. Podéis mantenerlas distintas de las reales (ej. 1,5 h de trabajo y 2 h imputadas por complejidad o margen).",
       "actual": "Horas Reales",
-      "actualDesc": "Prioriza las horas del campo Real para progreso y rentabilidad: incluyen el tiempo imputado con el cronómetro y puedes editarlas para corregir si hace falta."
+      "actualDesc": "En tareas completadas, informes y progreso usan las horas reales; en la interfaz las computadas se igualan a las reales. No exige cronómetro: el tiempo puede registrarse a mano."
     },
     "modules": {
       "title": "Funcionalidades activas",
@@ -1018,7 +1039,7 @@
       "ppcDesc": "Google/Meta Ads e informes de inversión.",
       "ppcEffect": "Afecta a: entradas Google Ads / Meta Ads y rutas /ads, /meta-ads (además de permisos de rol).",
       "weeklyFeedback": "Weekly Feedback",
-      "weeklyFeedbackDesc": "Cierre de semana, reflexiones y rollover de tareas.",
+      "weeklyFeedbackDesc": "Previsión semanal y cierre en planificador; con la integración Weekly activa en Conexiones, las semanas ya cerradas no se retocan a mano en el calendario.",
       "professionalGoals": "Objetivos profesionales (OKRs)",
       "professionalGoalsDesc": "Metas por empleado en la vista Objetivos.",
       "professionalGoalsEffect": "Afecta a: entrada Objetivos y ruta /okrs (además del permiso de rol).",
@@ -1089,23 +1110,26 @@
       "crm": "CRM",
       "other": "Privacidad y demostración",
       "weeklyCloseDay": "Día de cierre semanal",
-      "weeklyCloseDayDesc": "Determina qué tareas se consideran \"de esta semana\".",
+      "weeklyCloseDayDesc": "Último día de la semana operativa (desde el lunes de cada semana). Pasada esa fecha, las tareas de esa semana dejan de editarse en el planificador y solo se gestionan con el flujo Weekly.",
       "selectDay": "Selecciona un día",
       "dependencyWarning": "Esta integración requiere dependencias activas",
       "dependencyError": "Para activar \"{{name}}\", primero debes activar: {{deps}}",
       "crmUserIdWarning": "Si desactivas \"ID Usuario CRM\", también se desactivará \"Exportación de Tareas al CRM\"",
+      "crmPackTitle": "Integración CRM (exportación CSV)",
+      "crmPackDescription": "Activa el enlace con tu CRM u otro sistema: cada miembro puede indicar su ID de usuario en su perfil y, en cada proyecto, el ID externo del proyecto. Quien tenga permiso podrá exportar las tareas del mes a CSV (tarea, ID de usuario CRM, ID de proyecto externo y horas).",
+      "crmPackLegacyHint": "Solo tenías activado el ID de usuario en perfiles. Activa el interruptor para completar la integración (exportación e ID de proyecto en fichas).",
       "items": {
         "weekly_feedback": {
           "name": "Weekly",
-          "description": "Gestiona tareas abiertas y transferencias semanales"
+          "description": "Bloquea la edición directa en el planificador cuando la semana ya ha cerrado; el equipo resuelve pendientes desde Weekly (completar horas, posponer, transferir, desglosar…)."
         },
         "crm_export": {
           "name": "Exportación de Tareas al CRM",
-          "description": "Permite exportar tareas planificadas en formato CSV para importar al CRM"
+          "description": "Exporta la planificación a CSV y activa en cada proyecto el campo de ID externo del proyecto (CRM) para cruzarlo con tu sistema."
         },
         "crm_user_id": {
           "name": "ID Usuario CRM",
-          "description": "Muestra el campo ID Usuario CRM en los perfiles de empleados. Necesario para exportar tareas al CRM"
+          "description": "Muestra en el perfil de cada miembro del equipo un campo para su ID en el CRM u otro sistema externo. Necesario para la exportación."
         },
         "anonymize_ads_for_video": {
           "name": "Modo demostración (ocultar datos sensibles)",
@@ -1113,8 +1137,8 @@
         }
       },
       "weekly": {
-        "title": "Weekly Feedback",
-        "description": "Configura el envío automático del formulario de feedback semanal.",
+        "title": "Cierre semanal (Weekly)",
+        "description": "El cierre lo hace cada persona desde el planificador (botón Weekly). El día de cierre define cuándo una semana queda cerrada para ediciones directas.",
         "sendDay": "Día de envío",
         "sendTime": "Hora de envío"
       },
@@ -1165,6 +1189,251 @@
     },
     "saveChanges": "Guardar Cambios",
     "saving": "Guardando..."
+  },
+  "onboarding": {
+    "loading": "Cargando configuración...",
+    "done": "¡Configuración completada!",
+    "finish": "Completar",
+    "footer": "Todo lo que ves aquí lo puedes editar después en Configuración de agencia (nombre, módulos, departamentos, conexiones…).",
+    "wizard": {
+      "stepProgress": "{{current}}/{{total}}",
+      "stepProgressAria": "Paso {{current}} de {{total}}",
+      "timeAndReadyFirst": "Suele tardar poco. Si cerráis, guardamos el paso y podéis seguir después."
+    },
+    "common": {
+      "moreDetails": "Más detalles"
+    },
+    "errors": {
+      "save": "Error al guardar",
+      "team": "Error al procesar el equipo",
+      "client": "Error al crear el cliente",
+      "noClient": "No hay cliente",
+      "project": "Error al crear el proyecto"
+    },
+    "steps": {
+      "agencyProfile": {
+        "title": "Cómo trabaja tu agencia",
+        "desc": "Define tu referencia económica, cómo contáis el tiempo y qué partes de Taimbox queréis usar."
+      },
+      "integrations": {
+        "title": "Conexiones con tu forma de trabajar",
+        "desc": "Opcional: integración Weekly (bloqueo de semanas pasadas en el planificador + cierre desde Weekly), CRM y más. Puedes dejarlo apagado y configurarlo luego en Conexiones."
+      },
+      "departments": {
+        "title": "Departamentos",
+        "desc": "Equipos o áreas (SEO, diseño, cuentas…). Sirven para filtrar el planificador y asignar responsables."
+      },
+      "roles": {
+        "title": "Roles",
+        "desc": "Etiquetas como «Account» o «Diseñador». Luego podrás afinar permisos en la gestión de agencia."
+      },
+      "employees": {
+        "title": "Equipo",
+        "desc": "Invita por email (sin contraseña aquí): recibirán un enlace para entrar. Puedes saltarte este paso."
+      },
+      "client": {
+        "title": "Primer cliente",
+        "desc": "La empresa o marca a la que facturáis. Los proyectos van «dentro» de un cliente."
+      },
+      "project": {
+        "title": "Primer proyecto",
+        "desc": "Un encargo concreto (campaña, retainer, web…). Aquí defines horas previstas y fee mensual."
+      }
+    },
+    "ehr": {
+      "label": "Objetivo precio hora efectivo (€/h)",
+      "calloutTitle": "Qué es este valor",
+      "calloutBullets": [
+        "Media objetivo ingresos ÷ horas para seguir rentabilidad (Salud financiera).",
+        "No es el precio que cobras en cada proyecto.",
+        "Solo valores positivos; coma o punto decimal; máximo dos decimales."
+      ],
+      "learnMore": "¿Qué es el precio hora efectivo?",
+      "whatIs": "Es el precio por hora «objetivo» que quieres sacar de media (ingresos ÷ horas) para cubrir costes y margen. Taimbox lo usa en paneles de salud financiera y avisos; no es lo que cobras al cliente en cada proyecto.",
+      "placeholderHint": "Revisa o ajusta el valor; si lo dejas vacío usaremos la sugerencia del placeholder."
+    },
+    "hours": {
+      "label": "¿Cómo tratáis las horas en Taimbox?",
+      "computed": "Horas computadas frente a reales",
+      "computedHelp": "Podéis registrar por separado lo dedicado y lo que imputáis al cliente o al presupuesto: por ejemplo 1,5 h de trabajo y 2 h «computadas» por complejidad o rentabilidad. Útil cuando ese ajuste comercial es habitual.",
+      "computedBullets": [
+        "Dos cifras: dedicadas e imputadas al cliente o presupuesto.",
+        "Ej.: 1,5 h trabajadas y 2 h computadas por margen o complejidad.",
+        "Ideal si ese ajuste comercial es habitual."
+      ],
+      "actual": "Solo horas reales",
+      "actualHelp": "El dato principal es el tiempo efectivamente dedicado; las horas computadas se igualan a las reales. No obliga a usar el cronómetro: podéis anotarlas a mano. Elegid esto si no necesitáis ese desglose comercial.",
+      "actualBullets": [
+        "Una cifra: el tiempo efectivamente dedicado.",
+        "Las computadas se igualan a las reales.",
+        "Sin cronómetro obligatorio; podéis anotar a mano."
+      ]
+    },
+    "modules": {
+      "title": "Funciones del producto",
+      "sectionIntroShort": "Cada interruptor muestra u oculta una entrada del menú. Podrás cambiarlo después en Configuración de agencia.",
+      "sectionIntro": "Cada opción activa una sección en el menú. Si desactivas algo, el equipo no lo verá hasta que lo enciendas en Configuración de agencia.",
+      "deadlinesTitle": "Deadlines (entregas con fecha)",
+      "deadlinesSummary": "Tareas con fecha límite y seguimiento por cliente o proyecto (en paralelo al planificador).",
+      "deadlinesHelp": "Listas de tareas con fecha límite: ver qué vence, reordenar y hacer seguimiento del trabajo por cliente o proyecto. No sustituye al planificador de horas; va en paralelo.",
+      "trackerSummary": "Cronómetro por tarea para registrar tiempo real frente a lo planificado.",
+      "trackerHelp": "Cada persona puede iniciar y parar un contador por tarea para registrar tiempo real. Útil si facturáis o analizáis horas reales frente a lo planificado.",
+      "okrsTitle": "OKRs (objetivos del equipo)",
+      "okrsSummary": "Objetivos medibles por persona o equipo (marco OKR en el menú).",
+      "okrsHelp": "Objetivos y resultados medibles por persona o equipo (metas trimestrales, hitos, etc.). Es la sección «OKRs» del menú; si no trabajáis con ese marco, puedes dejarla apagada.",
+      "ppcDetailsTrigger": "Detalles sobre PPC e integraciones",
+      "ppcLater": "Se activa después en agencia",
+      "ppcLead": "Los informes y enlaces oficiales con Google Ads y Meta son una parte avanzada de Taimbox, con coste de API e implicación técnica.",
+      "ppcBody": "Por diseño no forma parte del alta inicial: cuando lo necesitéis, lo habilitáis con tranquilidad en Configuración de agencia → Conexiones, con la vinculación OAuth que exigen las plataformas.",
+      "ppcReassurance": "No tienes que decidir nada ahora: el planificador, clientes y el resto de módulos funcionan sin PPC.",
+      "ppcPlanNote": "Tu plan actual no incluye este módulo."
+    },
+    "tracker": {
+      "max": "Límite por tarea (cronómetro)",
+      "maxShort": "Máx. por sesión",
+      "maxInfoLabel": "Qué hace este límite",
+      "maxHint": "Las sesiones de más de este tiempo se detienen solas; evita cronómetros olvidados encendidos."
+    },
+    "integrations": {
+      "needsDeps": "Activa antes: {{list}}",
+      "deps": "Requiere dependencias activas",
+      "calloutTitle": "Conexiones opcionales",
+      "calloutBullets": [
+        "Todo es opcional; lo mismo está en Configuración de agencia → Conexiones.",
+        "Weekly: al cerrar la semana, el planificador deja de admitir retoques manuales en esa semana.",
+        "CRM: un interruptor para IDs en perfiles y proyectos más exportación CSV mensual."
+      ],
+      "weeklyCardHelp": "Con Weekly activo, las semanas cerradas no se reescriben a mano en el calendario: los cambios pasan por el flujo Weekly. Si preferís libertad total, déjalo apagado.",
+      "weeklyCloseHelpShort": "Último día de la semana operativa (desde el lunes). Pasada esa fecha, esa semana queda cerrada para edición directa en el planificador.",
+      "crmPackShort": "Un interruptor: ID de usuario en perfiles, ID externo en proyectos y exportación CSV mensual (tarea, IDs y horas).",
+      "intro": "Puedes dejarlo para más adelante: en Conexiones (configuración de agencia) lo activarás cuando conozcas mejor el flujo.",
+      "introAccordion": "Conexiones opcionales",
+      "weeklyExtra": "Activa un modo más disciplinado: el planificador no permite reescribir a mano semanas ya cerradas; los movimientos pasan por el cierre Weekly. Si preferís editar el pasado con libertad, déjalo apagado.",
+      "crmGroup": "CRM",
+      "skip": "Omitir y continuar sin cambios",
+      "skipToast": "Podrás configurar esto en Conexiones cuando quieras.",
+      "weeklyCloseHelp": "Fin de la semana operativa (desde el lunes de cada semana). Pasada esa fecha, esa semana ya no admite ediciones directas en el planificador: hay que usar Weekly. No tiene por qué ser viernes.",
+      "crmIntro": "Un solo interruptor: perfiles con ID de usuario CRM, proyectos con ID externo y exportación mensual a CSV con tarea, ID de usuario, ID de proyecto y horas."
+    },
+    "departments": {
+      "calloutTitle": "Departamentos",
+      "calloutBullets": [
+        "Área o equipo para filtrar el planificador y asignar responsable de proyecto.",
+        "Necesitas al menos uno para continuar el asistente."
+      ],
+      "addHintShort": "Nombre y color; luego ajusta la vista del planificador en cada ficha.",
+      "stepIntro": "Un departamento es un grupo de personas o un área de negocio. Sirve para colorear y filtrar en el planificador y para decir quién «posee» un proyecto.",
+      "stepIntroAccordion": "¿Qué es un departamento?",
+      "placeholder": "Nombre del departamento",
+      "max": "Máximo 5 departamentos",
+      "duplicate": "Ese nombre ya existe",
+      "needOne": "Añade al menos un departamento",
+      "addTitle": "Añadir departamento",
+      "addHint": "Crea al menos uno para organizar el planificador y asignar responsables.",
+      "addButton": "Añadir departamento",
+      "mustCreate": "Añade al menos un departamento para continuar.",
+      "listTitle": "Tus departamentos"
+    },
+    "dept": {
+      "viewWeekly": "Mi semana",
+      "viewDaily": "Mi día",
+      "viewExplainTitle": "Vista por defecto en planificador",
+      "viewWeeklyHelp": "Ves la carga por semanas en el calendario (planificación conjunta).",
+      "viewDailyHelp": "Enfocado en un día: tareas y bloques del día actual.",
+      "strict": "Vista estricta",
+      "strictHelp": "Si está activa, este departamento no puede cambiar libremente de vista en el planificador."
+    },
+    "roles": {
+      "calloutTitle": "Roles",
+      "calloutBullets": [
+        "Etiqueta por persona (Account, Creativo…).",
+        "«Administrador» puede gestionar la agencia; el resto lo personalizas.",
+        "Los permisos del menú se afinan después en Configuración de agencia → Equipo."
+      ],
+      "intro": "Los roles son etiquetas que asignas a cada persona (p. ej. Account, Creativo). «Administrador» puede gestionar la agencia; el resto son personalizables. Los permisos finos se ajustan después en la gestión de equipo.",
+      "introAccordion": "Sobre los roles",
+      "newPlaceholder": "Nombre del nuevo rol…",
+      "needOne": "Define al menos un rol",
+      "max": "Máximo 10 roles",
+      "reserved": "Nombre reservado"
+    },
+    "team": {
+      "calloutTitle": "Invitaciones",
+      "calloutBullets": [
+        "Paso opcional: invita ahora o más tarde desde Equipo.",
+        "Sin pulsar «Añadir a la lista», lo escrito no se guarda ni se envía correo.",
+        "Si continúas con personas en la lista, el asistente envía las invitaciones."
+      ],
+      "noPasswordShort": "Solo email: cada persona crea su contraseña desde el enlace del correo.",
+      "introAccordion": "Cómo funcionan las invitaciones",
+      "stepTitle": "Invitar al equipo",
+      "hintShort": "Este paso es opcional. Si rellenas datos, debes pulsar el botón principal abajo para añadir a esa persona a la lista; al continuar el asistente se envían las invitaciones.",
+      "hint": "Opcional: añade compañeros ahora o más tarde. Les llegará un correo con enlace para crear su contraseña (no hace falta que les des una clave aquí). El horario por día sirve para calcular la capacidad semanal en el planificador.",
+      "listLabel": "Personas en la lista (invitación al pulsar Continuar)",
+      "formTitle": "Datos de la nueva persona",
+      "noPassword": "Aquí no hay campo de contraseña: solo el email. Cada uno creará su clave desde el enlace del correo de invitación.",
+      "namePh": "Ej. Ana López",
+      "emailLabel": "Email de trabajo",
+      "emailPh": "correo@empresa.com",
+      "addCta": "Añadir a la lista y preparar invitación",
+      "addHelper": "Si no pulsas este botón, lo que has escrito arriba no se guarda: no se envía ningún correo hasta que añadas a la lista y luego des a Continuar.",
+      "skipExplainer": "«Omitir» significa seguir solo tú por ahora. Podrás invitar gente después desde Equipo. No se envía ningún email en este paso si no hay nadie en la lista.",
+      "scheduleHelp": "Cuántas horas suele trabajar esa persona cada día (no es el calendario de vacaciones). Se suman para la capacidad semanal.",
+      "nameEmail": "Nombre y email obligatorios",
+      "duplicateEmail": "Ese email ya está en la lista",
+      "selfEmail": "No puedes invitarte a ti mismo aquí",
+      "fullName": "Nombre completo",
+      "schedule": "Horas disponibles por día",
+      "add": "Añadir",
+      "continue": "Continuar",
+      "invited": "Invitaciones enviadas"
+    },
+    "client": {
+      "calloutTitle": "Cliente",
+      "calloutBullets": [
+        "Marca o empresa que os paga.",
+        "Varios proyectos pueden colgar del mismo cliente.",
+        "El color es solo visual en tablas y planificador."
+      ],
+      "intro": "El cliente es la marca o empresa que os paga. Debajo del mismo cliente podréis tener varios proyectos (campañas, meses, entregas…). El color ayuda a reconocerlo en tablas y en el planificador.",
+      "introAccordion": "¿Qué es un cliente?",
+      "name": "Nombre del cliente",
+      "nameHelp": "Nombre comercial o fiscal tal como lo reconoce el equipo.",
+      "namePh": "Ej. Acme Retail",
+      "colorHelp": "Solo visual: barras y etiquetas donde aparezca este cliente."
+    },
+    "project": {
+      "calloutTitle": "Proyecto",
+      "calloutBullets": [
+        "Encargo concreto (campaña, retainer, web…).",
+        "Horas mensuales = previsión de carga.",
+        "Fee mensual = lo que paga el cliente ese mes por el proyecto (no es precio por hora)."
+      ],
+      "intro": "El proyecto es el encargo concreto (por ejemplo «SEO Q2» o «Mantenimiento web»). Las horas mensuales son la previsión de carga; el fee mensual es lo que el cliente paga por ese proyecto en un mes.",
+      "introAccordion": "¿Qué es un proyecto?",
+      "name": "Nombre del proyecto",
+      "nameHelp": "Un nombre que entienda todo el equipo; puede incluir cliente o mes si os ayuda.",
+      "namePh": "Ej. Contenidos blog — marzo",
+      "dept": "Departamento responsable",
+      "deptHelp": "Qué área «lidera» el proyecto en informes y filtros. Podéis dejarlo sin asignar si aún no aplica.",
+      "deptPh": "Seleccionar",
+      "deptNone": "Sin asignar",
+      "type": "Tipo (opcional)",
+      "typeNone": "Ninguno",
+      "typeHint": "Etiqueta interna del proyecto; la lista es común a todas las agencias (se puede ampliar en el futuro desde configuración).",
+      "types": {
+        "PPC": "PPC (campañas de pago)",
+        "Entregable": "Por entrega / proyecto cerrado",
+        "Mensual": "Retainer o fee mensual fijo"
+      },
+      "budget": "Horas mensuales (objetivo)",
+      "budgetHelp": "Horas que planeáis dedicar a este proyecto en un mes de media. Sirve para comparar con lo planificado y lo real en informes.",
+      "minH": "Mínimo de horas (opcional)",
+      "minHHelp": "Suelo mínimo mensual que garantizáis al cliente; puede ser 0 si no aplica.",
+      "fee": "Fee / hora (€)",
+      "monthlyFee": "Fee mensual (€)",
+      "monthlyFeeHint": "Importe total que paga el cliente por este proyecto al mes (no es precio por hora)."
+    }
   },
   "clients": {
     "search": "Buscar cliente...",

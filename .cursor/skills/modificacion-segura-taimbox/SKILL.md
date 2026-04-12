@@ -35,6 +35,13 @@ Reducir regresiones al tocar **tipos**, **contextos**, **fechas/capacidad**, **p
 
 Según el tema, el índice en `DOCUMENTACION.md` apunta a otros módulos (`docs/02`, `docs/04`, `docs/05`, `docs/07`, etc.); ábrelos **solo** si el cambio lo exige.
 
+**Cambios de producto visibles o contratos documentados:** sigue la skill **[actualizar-documentacion-taimbox](../actualizar-documentacion-taimbox/SKILL.md)** y la regla **`.cursor/rules/documentacion-cambios-producto.mdc`** (no va con `alwaysApply`, para no generar ruido en el índice). Alinea `docs/*` y **`DOCUMENTACION.md`** solo cuando cambie comportamiento observable o contratos entre módulos, no por refactors internos o fixes triviales.
+
+### Documentar además (fuera de docs/08–09)
+
+- **Admin de plataforma, impersonación, `AgencyContext`, query `?agency=`, sidebar/footer en vista admin:** el detalle canónico está en **[docs/07-mantenimiento-extension.md](../../../docs/07-mantenimiento-extension.md)** (§ área administrativa) y en la nota de **[docs/11-notas-adicionales-readme.md](../../../docs/11-notas-adicionales-readme.md)**. Si actualizas esos archivos, **en el mismo cambio** ajusta la fila correspondiente en [DOCUMENTACION.md](../../../DOCUMENTACION.md).
+- **Cronómetro / `time_entries` / Tiempos / Real en planificador:** detalle en **`docs/07`** (§ cronómetro y planificador).
+
 ## Checklist mínima de trabajo
 
 1. Identificar qué filas de la **sección 8** de `docs/08` aplican (types / contexto / utilidades).

@@ -1,6 +1,7 @@
 // supabase/functions/register-agency/index.ts
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { sendWelcomeOrInvitationEmail } from "../_shared/welcome-and-invitation-email.ts"
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -141,16 +142,12 @@ serve(async (req) => {
                 name: cleanAgencyName,
                 slug: finalSlug,
                 settings: {
-                    // Módulos por defecto (nombres genéricos)
+                    // Módulos mínimos; el onboarding guía el resto según plan (PLAN_MODULES)
                     modules: {
-                        projects: true, // Antes seo/ppc
-                        weeklyFeedback: true,
-                        professionalGoals: true,
-                        deadlines: true
+                        deadlines: true,
+                        timeTracker: true,
                     },
-                    // Filtros vacíos por defecto
                     projectFilters: [],
-                    // Roles: crear automáticamente el rol "Administrador" con todos los permisos
                     roles: [{
                         name: 'Administrador',
                         permissions: {
@@ -253,42 +250,19 @@ serve(async (req) => {
             console.log(`Relación user_agencies creada para usuario ${userId} y agencia ${agencyData.id}`)
         }
 
-        // 10. Enviar email de bienvenida (fire-and-forget)
+        // 10. Email de bienvenida vía Resend (misma vía que request-password-reset: sin fetch a otra función)
         try {
-            const emailRes = await fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${supabaseServiceKey}`,
-                },
-                body: JSON.stringify({
-                    email: cleanEmail,
-                    name: cleanName,
-                    agencyName: cleanAgencyName,
-                    type: 'registration',
-                }),
+            const emailResult = await sendWelcomeOrInvitationEmail(supabaseAdmin, {
+                email: cleanEmail,
+                name: cleanName,
+                agencyName: cleanAgencyName,
+                type: 'registration',
             })
-
-            let emailBody: any = null
-            try {
-                emailBody = await emailRes.json()
-            } catch {
-                // Respuesta no-JSON; no bloqueamos el registro, pero lo dejamos en logs.
-                emailBody = await emailRes.text().catch(() => null)
-            }
-
-            if (!emailRes.ok) {
-                console.warn(`No se pudo enviar email de bienvenida a ${cleanEmail} (HTTP ${emailRes.status})`, {
-                    body: emailBody,
-                })
-            } else if (emailBody?.success === false) {
-                console.warn(`Resend rechazó el email de bienvenida a ${cleanEmail}`, emailBody)
-            } else {
-                console.log(`Email de bienvenida enviado a ${cleanEmail}`)
+            if (!emailResult.success) {
+                console.warn(`No se pudo enviar email de bienvenida a ${cleanEmail}:`, emailResult.error)
             }
         } catch (emailError) {
             console.warn(`No se pudo enviar email de bienvenida a ${cleanEmail}:`, emailError)
-            // No falla el registro si el email no se envía
         }
 
         // 11. Retornar datos para auto-login

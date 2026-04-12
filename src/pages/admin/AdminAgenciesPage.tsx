@@ -136,6 +136,7 @@ export default function AdminAgenciesPage() {
     } catch (e: unknown) {
       console.error("[AdminAgenciesPage] Error accediendo como agencia:", e);
       toast.error(t("admin.agencies.errImpersonate", "No se pudo acceder como esta agencia"));
+    } finally {
       setImpersonatingId(null);
     }
   };

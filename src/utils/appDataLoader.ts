@@ -27,6 +27,7 @@ interface SupabaseEmployee {
   user_id?: string;
   role?: string;
   department?: string;
+  department_id?: string | null;
   avatar_url?: string;
   default_weekly_capacity: number;
   work_schedule?: unknown;
@@ -201,6 +202,7 @@ export async function fetchInitialAppData({
         email: e.email,
         user_id: e.user_id,
         department: e.department,
+        departmentId: e.department_id ?? undefined,
         hourlyRate: e.hourly_rate || 0,
         crmUserId: e.crm_user_id,
         welcomeTourCompleted: e.welcome_tour_completed === true,

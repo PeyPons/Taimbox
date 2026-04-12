@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAgency } from '@/contexts/AgencyContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Building2, Settings, Loader2, Check, Users, Shield, Plus } from 'lucide-react';
 import { toast } from '@/lib/notify';
@@ -51,7 +51,7 @@ export default function AgenciesPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-        <div>
+        <div className="min-w-0 max-w-3xl">
           <h1 className="text-3xl font-bold text-slate-900">{t('agencies.title', 'Mis Agencias')}</h1>
           <p className="text-slate-600 mt-1">
             {hasMultipleAgencies
@@ -59,6 +59,7 @@ export default function AgenciesPage() {
               : t('agencies.manageCurrent', 'Gestiona tu agencia actual')
             }
           </p>
+          <p className="text-sm text-slate-600 mt-2 leading-relaxed">{t('agencies.hubIntro')}</p>
         </div>
         {hasPermission('can_access_agency_settings') && (
           <Button onClick={() => navigate('/agencies?action=create')} className="gap-2 shrink-0">
@@ -67,6 +68,35 @@ export default function AgenciesPage() {
           </Button>
         )}
       </div>
+
+      <Card className="mb-6 border-slate-200 bg-slate-50/60 shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold text-slate-900">{t('agencies.guide.title')}</CardTitle>
+          <CardDescription className="text-sm text-slate-600 leading-relaxed">{t('agencies.guide.lead')}</CardDescription>
+        </CardHeader>
+        <CardContent className="text-sm text-slate-700 space-y-4 pt-0">
+          <div>
+            <p className="font-medium text-slate-900">{t('agencies.guide.settingsHeading')}</p>
+            <ul className="list-disc pl-5 mt-2 space-y-1.5 text-slate-600 leading-relaxed">
+              <li>{t('agencies.guide.settingsLi1')}</li>
+              <li>{t('agencies.guide.settingsLi2')}</li>
+              <li>{t('agencies.guide.settingsLi3')}</li>
+              <li>{t('agencies.guide.settingsLi4')}</li>
+              <li>{t('agencies.guide.settingsLi5')}</li>
+            </ul>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-slate-100 bg-white/80 p-3">
+              <p className="font-medium text-slate-900">{t('agencies.guide.teamHeading')}</p>
+              <p className="mt-1 text-slate-600 leading-relaxed">{t('agencies.guide.teamBody')}</p>
+            </div>
+            <div className="rounded-lg border border-slate-100 bg-white/80 p-3">
+              <p className="font-medium text-slate-900">{t('agencies.guide.adminsHeading')}</p>
+              <p className="mt-1 text-slate-600 leading-relaxed">{t('agencies.guide.adminsBody')}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {!hasMultipleAgencies ? (
         // Vista cuando solo hay una agencia
@@ -110,7 +140,7 @@ export default function AgenciesPage() {
                 className="gap-2"
               >
                 <Settings className="h-4 w-4" />
-                {t('agencies.buttons.settings', 'Configuración')}
+                {t('agencies.buttons.settings')}
               </Button>
             </div>
           </CardContent>
@@ -194,9 +224,10 @@ export default function AgenciesPage() {
                           variant="outline"
                           className="flex-1 min-w-0"
                           onClick={() => navigate('/agency')}
+                          title={t('agencies.buttons.settings')}
                         >
-                          <Settings className="h-4 w-4 mr-2" />
-                          {t('agencies.buttons.settingsShort', 'Config')}
+                          <Settings className="h-4 w-4 mr-2 shrink-0" />
+                          <span className="truncate">{t('agencies.buttons.settingsShort')}</span>
                         </Button>
                       </div>
                     )}

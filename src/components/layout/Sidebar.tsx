@@ -89,9 +89,9 @@ function NavGroup({ label, icon: Icon, children, isActive = false }: NavGroupPro
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser, employees, projects } = useApp();
+  const { currentUser, employees, projects, isLoading: isAppDataLoading } = useApp();
   const { canAccess, hasPermission } = usePermissions();
-  const { currentAgency, availableAgencies } = useAgency();
+  const { currentAgency, availableAgencies, isLoading: isAgencyLoading } = useAgency();
   const { t } = useAppTranslation();
 
   const showPitchBanner = useMemo(() => {
@@ -130,8 +130,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const hasAgencyPaths = location.pathname === '/agency' || location.pathname === '/agencies' || location.pathname.startsWith('/agencies/');
   const searchParams = new URLSearchParams(location.search || '');
   const isAgenciesCreate = location.pathname === '/agencies' && searchParams.get('action') === 'create';
-  const { signOut } = useAuth();
+  const { signOut, user: authUser } = useAuth();
   const { isPlatformAdmin } = usePlatformAdmin();
+  const authSessionProfile = useMemo(() => {
+    if (!authUser) return null;
+    const m = authUser.user_metadata as Record<string, unknown> | undefined;
+    const str = (k: string) => (typeof m?.[k] === 'string' ? (m[k] as string) : undefined);
+    const avatarUrl = str('avatar_url') ?? str('picture');
+    const fullName = str('full_name') ?? str('name');
+    const email = authUser.email ?? '';
+    const displayName = fullName || (email ? email.split('@')[0]! : 'Usuario');
+    return { avatarUrl, displayName, email };
+  }, [authUser]);
 
   const handleLogout = async () => {
     try {
@@ -151,7 +161,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     timeTracker: false
   };
 
-  const isTimeTrackerEnabled = (modules.timeTracker === true) && (currentUser?.user_id != null);
+  const isTimeTrackerEnabled = modules.timeTracker === true;
   const activeTimer = useActiveTimerForSidebar(isTimeTrackerEnabled ? currentUser?.id : undefined);
 
   // Misma magnitud que TaskTimer/useTaskTimer: base hoy en la tarea + sesión en curso (tick 1s)
@@ -472,7 +482,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         <SidebarImpersonationPanel />
 
-        {/* Footer: una sola línea — avatar, nombre, vista, logout (sin nombre agencia) */}
+        {/* Footer: empleado en agencia actual, o sesión Auth si no hay fila de empleado (p. ej. admin en vista de agencia) */}
         <div className="px-2 py-1.5 border-t border-slate-800 bg-slate-950/50">
           {currentUser ? (
             <div className="flex items-center gap-1.5 min-h-0 text-[11px] overflow-hidden">
@@ -486,6 +496,32 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <SensitiveText kind="employee" id={currentUser.id}>
                   {currentUser.first_name || currentUser.name}
                 </SensitiveText>
+              </span>
+              {hasMultipleAgencies && <AgencySelectorCompact inline />}
+              <DepartmentViewSelector inline />
+              <button
+                onClick={handleLogout}
+                className="p-1 text-slate-500 hover:text-red-400 hover:bg-red-950/30 rounded shrink-0"
+                title={t('sidebar.footer.logout', 'Cerrar sesión')}
+              >
+                <LogOut className="h-3 w-3" />
+              </button>
+            </div>
+          ) : authSessionProfile && !isAppDataLoading && !isAgencyLoading ? (
+            <div className="flex items-center gap-1.5 min-h-0 text-[11px] overflow-hidden">
+              <Avatar className="h-6 w-6 shrink-0 border border-amber-500/35">
+                <AvatarImage src={authSessionProfile.avatarUrl} alt={authSessionProfile.displayName} />
+                <AvatarFallback className="bg-amber-700/80 text-white text-[10px]">
+                  {authSessionProfile.displayName.charAt(0).toUpperCase() || <User className="h-2.5 w-2.5" />}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-slate-200 truncate min-w-0 flex-1 flex flex-col leading-tight">
+                <span className="font-medium truncate">{authSessionProfile.displayName}</span>
+                {authSessionProfile.email ? (
+                  <span className="text-[9px] text-slate-400 font-normal truncate" title={authSessionProfile.email}>
+                    {authSessionProfile.email}
+                  </span>
+                ) : null}
               </span>
               {hasMultipleAgencies && <AgencySelectorCompact inline />}
               <DepartmentViewSelector inline />

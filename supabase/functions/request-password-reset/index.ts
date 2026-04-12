@@ -1,6 +1,7 @@
 // supabase/functions/request-password-reset/index.ts
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { sendEmail } from "../_shared/resend.ts"
+import { generatePasswordRecoveryUrl, getSiteUrl } from "../_shared/password-recovery-url.ts"
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -171,7 +172,7 @@ Deno.serve(async (req) => {
         }
 
         const cleanEmail = email.trim().toLowerCase()
-        const siteUrl = Deno.env.get('CHECKOUT_BASE_URL') || Deno.env.get('SITE_URL') || 'https://taimbox.com'
+        const siteUrl = getSiteUrl()
 
         console.log(`[request-password-reset] Solicitud para: ${cleanEmail}`)
 
@@ -185,16 +186,9 @@ Deno.serve(async (req) => {
             .maybeSingle()
         if (employee?.name) userName = employee.name
 
-        // Generar enlace de recuperación (funciona para cualquier usuario en auth.users)
-        const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-            type: 'recovery',
-            email: cleanEmail,
-            options: {
-                redirectTo: `${siteUrl}/reset-password`,
-            },
-        })
+        const { resetUrl, error: linkError } = await generatePasswordRecoveryUrl(supabaseAdmin, cleanEmail)
 
-        if (linkError) {
+        if (linkError || !resetUrl) {
             console.log('[request-password-reset] Error generando link (email puede no existir en auth):', linkError?.message ?? linkError)
             // Devolver 200 igualmente para no revelar info
             return new Response(
@@ -204,35 +198,6 @@ Deno.serve(async (req) => {
                     status: 200,
                 }
             )
-        }
-
-        // Construir URL de reset con los parámetros del token
-        // generateLink devuelve action_link que contiene los parámetros necesarios
-        // Pero como estamos en self-hosted y queremos control del email,
-        // extraemos token_hash y type del action_link
-        const actionLink = linkData?.properties?.action_link || ''
-        let resetUrl = `${siteUrl}/reset-password`
-
-        if (actionLink) {
-            try {
-                const url = new URL(actionLink)
-                const tokenHash = url.searchParams.get('token_hash') || url.hash?.match(/token_hash=([^&]+)/)?.[1]
-                const type = url.searchParams.get('type') || 'recovery'
-
-                if (tokenHash) {
-                    resetUrl = `${siteUrl}/reset-password?token_hash=${tokenHash}&type=${type}`
-                } else {
-                    // Fallback: extraer token del action_link completo
-                    // El formato puede variar según la versión de Supabase
-                    const token = url.searchParams.get('token') || url.hash?.match(/access_token=([^&]+)/)?.[1]
-                    if (token) {
-                        // La UI espera `token_hash`, pero algunos formatos del action_link exponen el valor bajo `token`.
-                        resetUrl = `${siteUrl}/reset-password?token_hash=${token}&type=recovery`
-                    }
-                }
-            } catch (urlError) {
-                console.warn('[request-password-reset] Error parseando action_link, usando URL básica:', urlError)
-            }
         }
 
         console.log(`[request-password-reset] Enviando email de reset a ${cleanEmail}`)

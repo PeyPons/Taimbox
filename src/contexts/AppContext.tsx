@@ -144,7 +144,7 @@ interface AppContextType {
   updateEmployee: (employee: Employee) => Promise<void>;
   deleteEmployee: (id: string) => Promise<void>;
   toggleEmployeeActive: (id: string) => Promise<void>;
-  addClient: (client: Omit<Client, 'id'>) => void;
+  addClient: (client: Omit<Client, 'id'>) => Promise<Client | null>;
   updateClient: (client: Client) => void;
   deleteClient: (id: string) => void;
   addProject: (project: Omit<Project, 'id'>) => void;
@@ -561,6 +561,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       user_id: employee.user_id,
       role: employee.role,
       department: employee.department,
+      department_id: employee.departmentId ?? null,
       avatar_url: employee.avatarUrl,
       default_weekly_capacity: employee.defaultWeeklyCapacity,
       work_schedule: employee.workSchedule,
@@ -588,6 +589,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         last_name: data.last_name,
         email: data.email,
         user_id: data.user_id,
+        departmentId: data.department_id ?? undefined,
         hourlyRate: data.hourly_rate || 0,
         crmUserId: data.crm_user_id,
         welcomeTourCompleted: data.welcome_tour_completed === true,
@@ -611,6 +613,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       user_id: employee.user_id,
       role: employee.role,
       department: employee.department,
+      department_id: employee.departmentId ?? null,
       avatar_url: employee.avatarUrl,
       default_weekly_capacity: employee.defaultWeeklyCapacity,
       work_schedule: employee.workSchedule,
@@ -873,26 +876,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [allocations, currentAgency?.id]);
 
   // --- CLIENTS ---
-  const addClient = useCallback(async (client: Omit<Client, 'id'>) => {
+  const addClient = useCallback(async (client: Omit<Client, 'id'>): Promise<Client | null> => {
     if (!currentAgency?.id) {
       toast.error('No hay agencia seleccionada');
-      return;
+      return null;
     }
 
-    const { data } = await supabase.from('clients').insert({
+    const { data, error } = await supabase.from('clients').insert({
       agency_id: client.agencyId || currentAgency.id,
       name: client.name,
       color: client.color
     }).select().single();
 
+    if (error) {
+      console.error('Error creando cliente:', error);
+      toast.error(error.message || 'Error al crear el cliente');
+      return null;
+    }
+
     if (data) {
-      setClients(prev => [...prev, {
+      const newClient: Client = {
         id: data.id,
         agencyId: data.agency_id,
         name: data.name,
         color: data.color
-      }]);
+      };
+      setClients(prev => [...prev, newClient]);
+      return newClient;
     }
+    return null;
   }, [currentAgency?.id]);
 
   const updateClient = useCallback(async (client: Client) => {

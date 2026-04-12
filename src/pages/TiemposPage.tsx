@@ -35,7 +35,16 @@ export default function TiemposPage() {
   const [rows, setRows] = useState<TeamActiveTimerRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [, setTick] = useState(0);
-  const isTimeTrackerEnabled = (currentAgency?.settings?.modules?.timeTracker ?? false) && currentUser?.user_id != null;
+  // Misma regla que Sidebar + ModuleGuard: solo el flag de agencia (el menú / ruta ya exigen módulo activo).
+  const modules = currentAgency?.settings?.modules || {
+    seo: true,
+    ppc: true,
+    weeklyFeedback: true,
+    professionalGoals: true,
+    deadlines: true,
+    timeTracker: false,
+  };
+  const isTimeTrackerEnabled = modules.timeTracker === true;
   const activeTimer = useActiveTimerForSidebar(isTimeTrackerEnabled ? currentUser?.id : undefined);
 
   const fetchTeamTimers = useCallback(async () => {

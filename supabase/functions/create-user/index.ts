@@ -1,6 +1,7 @@
 // supabase/functions/create-user/index.ts
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { sendWelcomeOrInvitationEmail } from "../_shared/welcome-and-invitation-email.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -168,48 +169,25 @@ serve(async (req) => {
 
     console.log(`Usuario creado exitosamente: ${user.user.id}`)
 
-    // 7b. Enviar email de bienvenida (fire-and-forget)
+    // 7b. Email de invitación vía Resend (misma vía que request-password-reset)
     try {
-      // Obtener nombre de la agencia
       const { data: agencyForEmail } = await supabaseAdmin
         .from('agencies')
         .select('name')
         .eq('id', callerEmployee.agency_id)
         .single()
 
-      const emailRes = await fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-        },
-        body: JSON.stringify({
-          email: cleanEmail,
-          name: name || cleanEmail,
-          agencyName: agencyForEmail?.name || 'tu agencia',
-          type: 'invitation',
-        }),
+      const emailResult = await sendWelcomeOrInvitationEmail(supabaseAdmin, {
+        email: cleanEmail,
+        name: name || cleanEmail,
+        agencyName: agencyForEmail?.name || 'tu agencia',
+        type: 'invitation',
       })
-
-      let emailBody: any = null
-      try {
-        emailBody = await emailRes.json()
-      } catch {
-        // Respuesta no-JSON; no bloqueamos el registro, pero lo dejamos en logs.
-        emailBody = await emailRes.text().catch(() => null)
-      }
-
-      if (!emailRes.ok) {
-        console.warn(`No se pudo enviar email de bienvenida a ${cleanEmail} (HTTP ${emailRes.status})`, {
-          body: emailBody,
-        })
-      } else if (emailBody?.success === false) {
-        console.warn(`Resend rechazó el email de bienvenida a ${cleanEmail}`, emailBody)
-      } else {
-        console.log(`Email de bienvenida enviado a ${cleanEmail}`)
+      if (!emailResult.success) {
+        console.warn(`No se pudo enviar email de invitación a ${cleanEmail}:`, emailResult.error)
       }
     } catch (emailError) {
-      console.warn(`No se pudo enviar email de bienvenida a ${cleanEmail}:`, emailError)
+      console.warn(`No se pudo enviar email de invitación a ${cleanEmail}:`, emailError)
     }
 
     // 8. Devolver el ID del usuario creado al frontend
