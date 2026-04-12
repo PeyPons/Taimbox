@@ -57,7 +57,7 @@ Si modificas una interface, revisa estos consumidores:
 | `useAllocationActions.ts` | `AllocationSheet.tsx`, `AllocationFormDialog.tsx`, `MyDayView.tsx` (completar / cronómetro); coherencia con `timerReconcile.ts` y `time_entries` al marcar completada |
 | `useTaskTimer.ts` / `useActiveTimerForSidebar.ts` | `TaskTimer.tsx`, `Sidebar.tsx`, `TiemposPage.tsx`, `AllocationSheet.tsx`; ver `docs/07` (drift, BroadcastChannel, Real vs entradas) |
 | `timerReconcile.ts` / `timerDisplay.ts` | `useAllocationActions.ts`, planificador (`AllocationSheet`, `AllocationTaskRow`); solo completar + formato HH:MM |
-| `useWeeklyCloseMutations.ts` | `WeeklyReportDialog.tsx`, `TaskPartialCloseDialog.tsx` (mutaciones compartidas de cierre Weekly / parcial; exporta `WEEKLY_SLOT_EXTRA_MONTHS`, reexporta `parseWeeklyCloseHours`, `normalizeWeeklyHourInput` desde `weeklyCloseShared.ts`; `applyRollover` → RPC `partial_close_rollover`) |
+| `useWeeklyCloseMutations.ts` | `WeeklyReportDialog.tsx`, `TaskPartialCloseDialog.tsx` (mutaciones compartidas de cierre Weekly / parcial; exporta `WEEKLY_SLOT_EXTRA_MONTHS`, reexporta `parseWeeklyCloseHours`, `normalizeWeeklyHourInput` desde `weeklyCloseShared.ts`; `applyRollover` → RPC `partial_close_rollover` + `logUpdate`/`logCreate` en `auditService` para no perder historial) |
 | `weeklyCloseShared.ts` | `useWeeklyCloseMutations.ts`, `TaskPartialCloseDialog.tsx` (validación y parse de horas para posponer / completar) |
 | `useDeadlines.ts` | Acepta `{ agencyId }`; usado donde se cargan deadlines. Componentes que cargan deadlines usan `fetchDeadlinesForMonth(monthKey, currentAgency?.id)` directamente o vía hook. |
 

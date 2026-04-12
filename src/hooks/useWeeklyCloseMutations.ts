@@ -5,6 +5,8 @@ import { toast } from '@/lib/notify';
 import { supabase } from '@/lib/supabase';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
+import { logCreate, logUpdate } from '@/services/auditService';
+import { round2 } from '@/utils/numbers';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { collectSelectableFutureWeekSlots, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { normalizeWeeklyHourInput, parseWeeklyCloseHours } from '@/utils/weeklyCloseShared';
@@ -13,6 +15,36 @@ import type { Allocation } from '@/types';
 export const WEEKLY_SLOT_EXTRA_MONTHS = 1;
 
 export { normalizeWeeklyHourInput, parseWeeklyCloseHours } from '@/utils/weeklyCloseShared';
+
+/** Fila `allocations` desde Supabase → forma camelCase coherente con `logCreate` en AppContext (historial / ActivityLog). */
+function mapAllocationRowForAudit(row: Record<string, unknown>): Record<string, unknown> {
+  return {
+    id: row.id,
+    employeeId: row.employee_id,
+    projectId: row.project_id,
+    weekStartDate: row.week_start_date,
+    hoursAssigned: round2(Number(row.hours_assigned)),
+    hoursActual: row.hours_actual != null ? round2(Number(row.hours_actual)) : undefined,
+    hoursComputed: row.hours_computed != null ? round2(Number(row.hours_computed)) : undefined,
+    status: row.status || 'planned',
+    description: row.description ?? undefined,
+    taskName: row.task_name ?? undefined,
+    dependencyId: row.dependency_id ?? undefined,
+    transferredFromAllocationId: row.transferred_from_allocation_id ?? undefined,
+    distributionSourceAllocationId: row.distribution_source_allocation_id ?? undefined,
+    parentAllocationId: row.parent_allocation_id ?? undefined,
+    originalTransferredTaskName: row.original_transferred_task_name ?? undefined,
+    transferSourceEmployeeId: row.transfer_source_employee_id ?? undefined,
+    userPriority: row.user_priority ?? null,
+    focusDate: row.focus_date ?? null,
+    isLocked: row.is_locked ?? false,
+  };
+}
+
+function parseRolloverNewAllocationId(data: unknown): string | null {
+  if (typeof data === 'string' && /^[0-9a-f-]{36}$/i.test(data)) return data;
+  return null;
+}
 
 export interface DistributionRowInput {
   taskName: string;
@@ -307,7 +339,7 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
         comment ||
         `Tarea con rollover: ${actual.toFixed(2)}h registradas, ${newEstimate.toFixed(2)}h planificadas desde ${destLabel}`;
 
-      const { error: rpcError } = await supabase.rpc('partial_close_rollover', {
+      const { data: rpcData, error: rpcError } = await supabase.rpc('partial_close_rollover', {
         p_original_id: task.id,
         p_hours_actual: actual,
         p_hours_computed: computed,
@@ -322,11 +354,37 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
         return false;
       }
 
+      // La RPC no pasa por addAllocation/updateAllocation: sin esto el historial (audit_logs) pierde la continuación semanal.
+      const agencyId = currentAgency?.id;
+      if (agencyId) {
+        const mergedParent: Allocation = {
+          ...task,
+          hoursActual: round2(actual),
+          hoursComputed: round2(computed),
+          status: 'completed',
+        };
+        void logUpdate(
+          agencyId,
+          'ALLOCATION',
+          task.id,
+          task as unknown as Record<string, unknown>,
+          mergedParent as unknown as Record<string, unknown>,
+        );
+
+        const newId = parseRolloverNewAllocationId(rpcData);
+        if (newId) {
+          const { data: newRow } = await supabase.from('allocations').select('*').eq('id', newId).maybeSingle();
+          if (newRow && typeof newRow === 'object') {
+            void logCreate(agencyId, 'ALLOCATION', newId, mapAllocationRowForAudit(newRow as Record<string, unknown>));
+          }
+        }
+      }
+
       await loadDataForMonth(startOfMonth(parseISO(task.weekStartDate)));
       await loadDataForMonth(destSlot.viewMonth);
       return true;
     },
-    [getSlotsForTaskWeek, loadDataForMonth]
+    [currentAgency?.id, getSlotsForTaskWeek, loadDataForMonth]
   );
 
   const applyDistribute = useCallback(

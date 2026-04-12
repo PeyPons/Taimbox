@@ -1,6 +1,13 @@
-import { addDays, format } from 'date-fns';
+import { addDays, format, startOfWeek } from 'date-fns';
 import { Allocation, Employee, LoadStatus, Project } from '@/types';
-import { getWorkingDaysInRange, getMonthlyCapacity, getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import {
+  getWorkingDaysInRange,
+  getMonthlyCapacity,
+  getWeeksForMonth,
+  getStorageKey,
+  isAllocationInEffectiveMonth,
+  parseDateStringLocal,
+} from '@/utils/dateUtils';
 import { Absence, TeamEvent } from '@/types';
 import { getCapacityReductionBreakdown } from '@/utils/capacityUtils';
 import { round2 } from '@/utils/numbers';
@@ -49,18 +56,38 @@ export function computeEmployeeLoadForWeek(
     )
   );
 
-  const weekStartDate = new Date(weekStart);
-  const weekEndDate = addDays(weekStartDate, 6);
-  const rangeStart = effectiveStart || weekStartDate;
-  const rangeEnd = effectiveEnd || weekEndDate;
-
-  let baseCapacity: number;
+  /**
+   * Rango de fechas donde esta fila del planificador tiene sentido (L–D o tramo partido en fin de mes).
+   * Sin esto, Weekly / redistribución usaban `defaultWeeklyCapacity` (p. ej. 38h) para toda la semana ISO
+   * y las ausencias se evaluaban en Mon–Sun completo → mismo "38h libres" en mayo aunque la semana sea corta
+   * o con vacaciones en días laborables del tramo visible.
+   */
+  let rangeStart: Date;
+  let rangeEnd: Date;
   if (effectiveStart && effectiveEnd) {
-    const { totalHours: capacityHours } = getWorkingDaysInRange(effectiveStart, effectiveEnd, employee.workSchedule);
-    baseCapacity = capacityHours;
+    rangeStart = effectiveStart;
+    rangeEnd = effectiveEnd;
+  } else if (viewMonth) {
+    const weeksInMonth = getWeeksForMonth(viewMonth);
+    const matched = weeksInMonth.find(w => getStorageKey(w.weekStart, viewMonth) === weekStart);
+    if (matched) {
+      rangeStart = matched.effectiveStart;
+      rangeEnd = matched.effectiveEnd;
+    } else {
+      const anchor = parseDateStringLocal(weekStart);
+      const monday = startOfWeek(anchor, { weekStartsOn: 1 });
+      rangeStart = monday;
+      rangeEnd = addDays(monday, 6);
+    }
   } else {
-    baseCapacity = employee.defaultWeeklyCapacity;
+    const anchor = parseDateStringLocal(weekStart);
+    const monday = startOfWeek(anchor, { weekStartsOn: 1 });
+    rangeStart = monday;
+    rangeEnd = addDays(monday, 6);
   }
+
+  const { totalHours: capacityHours } = getWorkingDaysInRange(rangeStart, rangeEnd, employee.workSchedule);
+  const baseCapacity = capacityHours;
 
   let reducedCapacity = baseCapacity;
 

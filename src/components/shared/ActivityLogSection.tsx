@@ -114,14 +114,21 @@ function treeTouchesWeeklyContinuation(node: TaskNode, allocations: Allocation[]
     return node.children.some(c => treeTouchesWeeklyContinuation(c, allocations));
 }
 
-function nodeMatchesSearchQuery(node: TaskNode, q: string, formatProjectName: (n: string) => string): boolean {
+function nodeMatchesSearchQuery(
+    node: TaskNode,
+    q: string,
+    formatProjectName: (n: string) => string,
+    allocations: Allocation[],
+): boolean {
     if (!q) return true;
     const lower = q.toLowerCase();
-    const hay = [formatProjectName(node.projectName || ''), node.clientName || '', node.taskName || '']
+    const alloc = allocations.find(a => a.id === node.id);
+    const origName = alloc?.originalTransferredTaskName || '';
+    const hay = [formatProjectName(node.projectName || ''), node.clientName || '', node.taskName || '', origName]
         .join(' ')
         .toLowerCase();
     if (hay.includes(lower)) return true;
-    return node.children.some(c => nodeMatchesSearchQuery(c, q, formatProjectName));
+    return node.children.some(c => nodeMatchesSearchQuery(c, q, formatProjectName, allocations));
 }
 
 export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLogSectionProps) {
@@ -624,7 +631,7 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
             list = list
                 .map(g => ({
                     ...g,
-                    nodes: g.nodes.filter(n => nodeMatchesSearchQuery(n, q, formatProjectName)),
+                    nodes: g.nodes.filter(n => nodeMatchesSearchQuery(n, q, formatProjectName, allocations ?? [])),
                 }))
                 .filter(g => g.nodes.length > 0);
         }
