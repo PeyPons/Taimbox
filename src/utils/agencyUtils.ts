@@ -116,7 +116,7 @@ export async function mapSupabaseAgency(data: SupabaseAgency): Promise<Agency> {
 export async function getAgencyMembersUtil(agencyId: string): Promise<AgencyMember[]> {
   const { data: employees, error: employeesError } = await supabase
     .from('employees')
-    .select('id, user_id, name, email, role, department, is_active')
+    .select('id, user_id, name, email, role, department, is_active, created_at')
     .eq('agency_id', agencyId)
     .order('name');
 
@@ -154,10 +154,46 @@ export async function getAgencyMembersUtil(agencyId: string): Promise<AgencyMemb
     userAgenciesData = uaData || [];
   }
 
+  const settingsOwnerId =
+    typeof agencySettings.ownerUserId === 'string' && agencySettings.ownerUserId.trim() !== ''
+      ? agencySettings.ownerUserId.trim()
+      : null;
+  const primaryTrueCount = userAgenciesData.filter(ua => ua.is_primary === true).length;
+
+  let inferredLegacyOwnerId: string | null = null;
+  if (!settingsOwnerId && primaryTrueCount > 1) {
+    const adminEmps = employees
+      .filter(e => e.user_id && checkAdminPermission(e.role ?? null, agencySettings))
+      .slice()
+      .sort((a, b) => {
+        const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return ta - tb;
+      });
+    inferredLegacyOwnerId = adminEmps[0]?.user_id ?? null;
+  }
+
   const members: AgencyMember[] = employees.map(emp => {
     const userAgency = userAgenciesData.find(ua => ua.user_id === emp.user_id);
-    const isPrimary = userAgency?.is_primary ?? false;
-    const isAdmin = isPrimary || checkAdminPermission(emp.role, agencySettings);
+    const uaIsPrimary = userAgency?.is_primary ?? false;
+
+    let isAgencyOwner = false;
+    if (settingsOwnerId && emp.user_id === settingsOwnerId) {
+      isAgencyOwner = true;
+    } else if (!settingsOwnerId && primaryTrueCount === 1 && uaIsPrimary) {
+      // Legado: antes se mezclaba “agencia por defecto” (is_primary) con propietario; solo si hay un único is_primary en la agencia
+      isAgencyOwner = true;
+    } else if (
+      !settingsOwnerId &&
+      primaryTrueCount > 1 &&
+      inferredLegacyOwnerId &&
+      emp.user_id === inferredLegacyOwnerId
+    ) {
+      // Varios is_primary=true (agencia única por usuario): mostrar un solo Owner como el admin más antiguo hasta que exista ownerUserId en settings
+      isAgencyOwner = true;
+    }
+
+    const isAdmin = isAgencyOwner || checkAdminPermission(emp.role, agencySettings);
 
     return {
       id: emp.id,
@@ -168,7 +204,7 @@ export async function getAgencyMembersUtil(agencyId: string): Promise<AgencyMemb
       department: emp.department || null,
       isActive: emp.is_active ?? true,
       isAdmin,
-      isPrimary,
+      isPrimary: isAgencyOwner,
     };
   });
 
@@ -217,16 +253,9 @@ export async function removeUserFromAgencyUtil(
 }
 
 export async function transferAgencyOwnershipUtil(newOwnerId: string, agencyId: string): Promise<void> {
-  const { error: resetError } = await supabase
-    .from('user_agencies')
-    .update({ is_primary: false })
-    .eq('agency_id', agencyId);
-
-  if (resetError) {
-    console.error('[AgencyUtils] Error reseteando is_primary:', resetError);
-    throw new Error('Error al transferir propiedad');
-  }
-
+  // No poner is_primary = false en toda la agencia: rompe la sesión/RLS de los demás miembros
+  // (cada usuario usa su fila user_agencies para “agencia por defecto” y, en algunos despliegues, políticas).
+  // La propiedad real va en agencies.settings.ownerUserId (más abajo).
   const { error: setOwnerError } = await supabase
     .from('user_agencies')
     .update({ is_primary: true })
@@ -236,6 +265,27 @@ export async function transferAgencyOwnershipUtil(newOwnerId: string, agencyId: 
   if (setOwnerError) {
     console.error('[AgencyUtils] Error estableciendo nuevo owner:', setOwnerError);
     throw new Error('Error al establecer nuevo propietario');
+  }
+
+  const { data: agencyRow, error: agencyFetchError } = await supabase
+    .from('agencies')
+    .select('settings')
+    .eq('id', agencyId)
+    .single();
+
+  if (agencyFetchError) {
+    console.error('[AgencyUtils] Error leyendo settings para ownerUserId:', agencyFetchError);
+  } else {
+    const prevSettings = (agencyRow?.settings || {}) as AgencySettings;
+    const nextSettings: AgencySettings = { ...prevSettings, ownerUserId: newOwnerId };
+    const { error: settingsError } = await supabase
+      .from('agencies')
+      .update({ settings: nextSettings })
+      .eq('id', agencyId);
+
+    if (settingsError) {
+      console.error('[AgencyUtils] Error guardando ownerUserId en settings:', settingsError);
+    }
   }
 
   const { data: newOwnerEmployee } = await supabase

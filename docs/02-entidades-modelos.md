@@ -1,6 +1,8 @@
 ﻿
 ## 2. Glosario de Entidades y Modelos de Datos
 
+> **DDL de referencia (tablas/columnas):** [13-esquema-base-datos.md](13-esquema-base-datos.md) y [`sql/schema-snapshot-context.sql`](sql/schema-snapshot-context.sql) — snapshot de contexto; migraciones ejecutables en `supabase/migrations/`.
+
 A continuación se detallan las entidades principales del sistema, sus variables clave y su propósito.
 
 ### 2.1. Agencia (`Agency`)

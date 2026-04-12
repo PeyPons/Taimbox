@@ -83,6 +83,8 @@ export interface RolePermissions {
 }
 
 export interface AgencySettings {
+  /** Usuario Auth propietario de la agencia (facturación / transferencia). No confundir con user_agencies.is_primary (agencia por defecto por usuario). */
+  ownerUserId?: string;
   modules?: AgencyModules;
   roles?: RolePermissions[];
   /** Lista de departamentos/?reas (nombre + color). Legacy: puede ser string[]; normalizar a DepartmentDefinition[] en la UI. */

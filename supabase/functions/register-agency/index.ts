@@ -142,6 +142,7 @@ serve(async (req) => {
                 name: cleanAgencyName,
                 slug: finalSlug,
                 settings: {
+                    ownerUserId: userId,
                     // Módulos mínimos; el onboarding guía el resto según plan (PLAN_MODULES)
                     modules: {
                         deadlines: true,

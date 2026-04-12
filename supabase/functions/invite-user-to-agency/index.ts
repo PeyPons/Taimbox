@@ -344,6 +344,14 @@ serve(async (req) => {
         .maybeSingle()
 
       if (!existingUserAgency) {
+        const { data: uaRowsForUser } = await supabaseAdmin
+          .from('user_agencies')
+          .select('is_primary')
+          .eq('user_id', userId)
+
+        const userAlreadyHasPrimary = (uaRowsForUser || []).some((r: { is_primary: boolean }) => r.is_primary === true)
+        const isPrimaryForNewRow = !userAlreadyHasPrimary
+
         // No existe, crear la relación
         const { error: userAgencyError } = await supabaseAdmin
           .from('user_agencies')
@@ -352,7 +360,7 @@ serve(async (req) => {
             agency_id: agencyId,
             role: role || null,
             department: department || null,
-            is_primary: false // No es primaria porque el usuario ya tiene otra agencia o es nuevo
+            is_primary: isPrimaryForNewRow
           })
 
         if (userAgencyError) {

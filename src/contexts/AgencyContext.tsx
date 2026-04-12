@@ -42,7 +42,8 @@ export interface AgencyMember {
   department: string | null;
   isActive: boolean;
   isAdmin: boolean;     // Calculado: role contiene keywords de admin
-  isPrimary: boolean;   // De user_agencies.is_primary
+  /** Propietario de la agencia (settings.ownerUserId o heurística legacy); no es user_agencies.is_primary */
+  isPrimary: boolean;
 }
 
 // Tipo exportado para agencias del usuario con más detalles
@@ -116,14 +117,15 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
     setError(null);
 
     try {
-      // 0. Si hay agencia primary en user_agencies (ej. impersonación), la priorizamos
-      const { data: userAgenciesPrimary } = await supabase
+      // 0. Agencia marcada is_primary en user_agencies (preferencia por defecto del usuario).
+      // .limit(1): si hay datos inconsistentes (varias filas is_primary), evitamos error de maybeSingle.
+      const { data: primaryRows } = await supabase
         .from('user_agencies')
         .select('agency_id')
         .eq('user_id', user.id)
         .eq('is_primary', true)
-        .maybeSingle();
-      const primaryAgencyId = userAgenciesPrimary?.agency_id ?? null;
+        .limit(1);
+      const primaryAgencyId = primaryRows?.[0]?.agency_id ?? null;
 
       // 1. Buscar TODOS los empleados por email para obtener todas las agencias
       const { data: employeesData, error: employeeError } = await supabase
@@ -253,6 +255,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Obtener información de todas las agencias disponibles
+      let usedExplicitAgencyChoice = false;
       if (allEmployees.length > 1) {
         const uniqueAgencyIds = [...new Set(allEmployees.map(emp => emp.agency_id))];
 
@@ -278,14 +281,16 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
           if (urlEmployee) {
             selectedEmployee = urlEmployee;
             localStorage.setItem(storageKey, urlAgencyId);
+            usedExplicitAgencyChoice = true;
             console.debug('[AgencyContext] Usando agencia desde URL:', urlAgencyId);
           }
         } else {
           const savedAgencyId = localStorage.getItem(storageKey);
-          if (savedAgencyId) {
+          if (savedAgencyId && uniqueAgencyIds.includes(savedAgencyId)) {
             const savedEmployee = allEmployees.find(emp => emp.agency_id === savedAgencyId);
             if (savedEmployee) {
               selectedEmployee = savedEmployee;
+              usedExplicitAgencyChoice = true;
               console.debug('[AgencyContext] Usando agencia guardada:', savedAgencyId);
             }
           } else if (selectedEmployee?.agency_id) {
@@ -297,8 +302,30 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
         setAvailableAgencies([]);
       }
 
-      // Priorizar agencia con is_primary (ej. impersonación desde admin)
-      const agencyIdToLoad = primaryAgencyId || selectedEmployee?.agency_id;
+      const primaryMatchesMembership =
+        !!primaryAgencyId && allEmployees.some(emp => emp.agency_id === primaryAgencyId);
+
+      // No usar is_primary por encima de URL/localStorage: si no, al cambiar de agencia el contexto
+      // seguía cargando la “primaria” y el planificador / Realtime parecían no aplicar cambios.
+      let agencyIdToLoad: string | null = null;
+      if (usedExplicitAgencyChoice && selectedEmployee?.agency_id) {
+        agencyIdToLoad = selectedEmployee.agency_id;
+      } else if (allEmployees.length > 1 && primaryMatchesMembership && primaryAgencyId) {
+        agencyIdToLoad = primaryAgencyId;
+      } else {
+        agencyIdToLoad = selectedEmployee?.agency_id ?? primaryAgencyId ?? null;
+      }
+
+      if (agencyIdToLoad) {
+        const empForLoad = allEmployees.find(emp => emp.agency_id === agencyIdToLoad);
+        if (empForLoad) {
+          selectedEmployee = empForLoad;
+          if (allEmployees.length > 1 && typeof window !== 'undefined') {
+            localStorage.setItem(`selected_agency_${user.id}`, agencyIdToLoad);
+          }
+        }
+      }
+
       if (primaryAgencyId && !allEmployees.some(emp => emp.agency_id === primaryAgencyId)) {
         const { data: primaryAgencyData } = await supabase
           .from('agencies')

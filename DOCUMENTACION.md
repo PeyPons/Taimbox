@@ -21,5 +21,6 @@
 | [docs/10-gotchas-y-contenido.md](docs/10-gotchas-y-contenido.md) | Patrones problemáticos en React/ datos, mantenimiento de copy, landings, notificaciones, tours y ortografía. |
 | [docs/11-notas-adicionales-readme.md](docs/11-notas-adicionales-readme.md) | Rescate del README histórico: inventario de páginas, pitch/outreach, `errorService`/`auditService`, `constants`/`integrations`, fragmentos de checklist (móvil, Popover+Command), **admin de plataforma e impersonación** (UX, `?agency=`, footer sesión). |
 | [docs/12-onboarding-registro.md](docs/12-onboarding-registro.md) | Flujo registro + `OnboardingWizard`, invitaciones con enlace de contraseña, `department_config`, correos Resend (`RESEND_*`, `SITE_URL`, `supabase/.env.example`) y Edge Functions relacionadas. |
+| [docs/13-esquema-base-datos.md](docs/13-esquema-base-datos.md) | Referencia del modelo relacional: multi-tenant, `user_agencies`, planificador/tiempo, Ads; enlace al DDL de contexto en `docs/sql/schema-snapshot-context.sql` (no sustituye a migraciones). |
 
-Para una lectura continua equivalente al monolito antiguo, abre los archivos en orden numérico (`00` → `12`).
+Para una lectura continua equivalente al monolito antiguo, abre los archivos en orden numérico (`00` → `13`).
