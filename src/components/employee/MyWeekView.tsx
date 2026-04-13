@@ -3,19 +3,18 @@ import { useAppOrDemo } from '@/hooks/useAppOrDemo';
 import { useAgency } from '@/contexts/AgencyContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
-import { MetricsCard } from '@/components/shared/MetricsCard';
-import { format, isSameMonth, parseISO } from 'date-fns';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { format } from 'date-fns';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
 import {
-  Sparkles, TrendingUp, TrendingDown, Users, Target,
-  CheckCircle2, Clock, Award, Filter, Check, ChevronDown
+  Sparkles, Target,
+  CheckCircle2, Clock, Filter, Check, ChevronDown, Search
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
@@ -31,14 +30,58 @@ interface MyWeekViewProps {
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
+const clampPct = (n: number) => Math.max(0, Math.min(100, n));
+
+type UtilTone = 'muted' | 'ok' | 'warn' | 'over';
+
+function utilizationTone(planned: number, spent: number): UtilTone {
+  if (planned <= 0) return spent > 0 ? 'ok' : 'muted';
+  const ratio = spent / planned;
+  if (ratio > 1) return 'over';
+  if (ratio >= 0.85) return 'warn';
+  if (spent <= 0) return 'muted';
+  return 'ok';
+}
+
+function projectConsumptionTone(pctUsed: number): UtilTone {
+  if (pctUsed > 100) return 'over';
+  if (pctUsed >= 85) return 'warn';
+  return 'ok';
+}
+
+function utilizationPercentage(planned: number, spent: number): number {
+  if (planned <= 0) return spent > 0 ? 100 : 0;
+  return round2((spent / planned) * 100);
+}
+
+const MEMBER_TONE_BADGE: Record<UtilTone, string> = {
+  muted: 'bg-slate-100 text-slate-600 border-slate-200',
+  ok: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+  warn: 'bg-amber-50 text-amber-900 border-amber-200',
+  over: 'bg-red-50 text-red-800 border-red-200'
+};
+
+const MEMBER_TONE_BAR: Record<UtilTone, string> = {
+  muted: 'bg-slate-200',
+  ok: 'bg-emerald-600',
+  warn: 'bg-amber-500',
+  over: 'bg-red-600'
+};
+
+const PROJECT_BADGE: Record<UtilTone, string> = {
+  muted: 'bg-slate-50 text-slate-600 border-slate-200',
+  ok: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+  warn: 'bg-amber-50 text-amber-900 border-amber-200',
+  over: 'bg-red-50 text-red-800 border-red-200'
+};
+
 export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyWeekViewProps) {
   const { allocations, projects, clients, employees, getEmployeeMonthlyLoad } = useAppOrDemo();
   const { currentAgency } = useAgency();
   const { formatName: formatProjectName } = useProjectAliasing();
 
-  const [filterProject, setFilterProject] = useState<string>('all');
+  const [projectsSearchQuery, setProjectsSearchQuery] = useState('');
   const [filterTeammate, setFilterTeammate] = useState<string>('all');
-  const [openFilterProject, setOpenFilterProject] = useState(false);
   const [openFilterTeammate, setOpenFilterTeammate] = useState(false);
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
 
@@ -59,6 +102,7 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
   }, [monthKey, currentAgency?.id]);
 
   const monthLabel = format(viewDate, 'MMMM yyyy', { locale: es });
+  const myEmployee = employees.find(e => e.id === employeeId);
 
   // Allocations del mes para este empleado
   const monthlyAllocations = allocations.filter(a =>
@@ -262,14 +306,17 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
     return Array.from(set).map(id => employees.find(e => e.id === id)).filter(Boolean);
   }, [projectGroups, employees]);
 
-  // Filtrar proyectos
+  // Filtrar proyectos (texto libre como en Control de planificación + filtro por compañero)
   const filteredProjects = useMemo(() => {
+    const q = projectsSearchQuery.trim().toLowerCase();
     return projectGroups.filter(g => {
-      if (filterProject !== 'all' && g.projectId !== filterProject) return false;
       if (filterTeammate !== 'all' && !g.teammates.some(t => t.id === filterTeammate)) return false;
-      return true;
+      if (!q) return true;
+      const projectLabel = formatProjectName(g.projectName).toLowerCase();
+      const clientLabel = g.clientName.toLowerCase();
+      return projectLabel.includes(q) || clientLabel.includes(q);
     });
-  }, [projectGroups, filterProject, filterTeammate]);
+  }, [projectGroups, projectsSearchQuery, filterTeammate, formatProjectName]);
 
   return (
     <TooltipProvider>
@@ -315,83 +362,79 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
             </div>
           </div>
 
-          {/* Filtros */}
-          {(projectGroups.length > 1 || allTeammates.length > 0) && (
-            <div className="flex items-center gap-3 flex-wrap">
+          {/* Búsqueda y filtros (mismo patrón que Control de planificación / coherencia global) */}
+          {projectGroups.length > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 sm:p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-slate-400" />
-                <Popover open={openFilterProject} onOpenChange={setOpenFilterProject}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-[180px] h-8 text-xs justify-between font-normal">
-                      <span className="truncate">
-                        {filterProject === 'all'
-                          ? 'Todos los proyectos'
-                          : (
-                              <SensitiveText kind="project" id={filterProject}>
-                                {formatProjectName(projectGroups.find(g => g.projectId === filterProject)?.projectName ?? '')}
-                              </SensitiveText>
-                            )}
-                      </span>
-                      <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                    <Command>
-                      <CommandList className="max-h-[280px]">
-                        <CommandGroup>
-                          <CommandItem value="Todos los proyectos" onSelect={() => { setFilterProject('all'); setOpenFilterProject(false); }}>
-                            <Check className={cn('mr-2 h-4 w-4 shrink-0', filterProject === 'all' ? 'opacity-100' : 'opacity-0')} />
-                            Todos los proyectos
-                          </CommandItem>
-                          {projectGroups.map(g => (
-                            <CommandItem key={g.projectId} value={formatProjectName(g.projectName)} onSelect={() => { setFilterProject(g.projectId); setOpenFilterProject(false); }}>
-                              <Check className={cn('mr-2 h-4 w-4 shrink-0', filterProject === g.projectId ? 'opacity-100' : 'opacity-0')} />
-                              <SensitiveText kind="project" id={g.projectId}>{formatProjectName(g.projectName)}</SensitiveText>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <Filter className="h-4 w-4 text-slate-400 shrink-0" />
+                <span className="text-xs text-slate-600">Filtros y búsqueda</span>
               </div>
-
-              {allTeammates.length > 0 && (
-                <Popover open={openFilterTeammate} onOpenChange={setOpenFilterTeammate}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-[180px] h-8 text-xs justify-between font-normal">
-                      <span className="truncate">
-                        {filterTeammate === 'all'
-                          ? 'Todos los compañeros'
-                          : (
-                              <SensitiveText kind="employee" id={filterTeammate}>
-                                {allTeammates.find(e => e?.id === filterTeammate)?.name ?? 'Compañero'}
-                              </SensitiveText>
-                            )}
-                      </span>
-                      <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                    <Command>
-                      <CommandList className="max-h-[280px]">
-                        <CommandGroup>
-                          <CommandItem value="Todos los compañeros" onSelect={() => { setFilterTeammate('all'); setOpenFilterTeammate(false); }}>
-                            <Check className={cn('mr-2 h-4 w-4 shrink-0', filterTeammate === 'all' ? 'opacity-100' : 'opacity-0')} />
-                            Todos los compañeros
-                          </CommandItem>
-                          {allTeammates.map(emp => emp && (
-                            <CommandItem key={emp.id} value={emp.name || ''} onSelect={() => { setFilterTeammate(emp.id); setOpenFilterTeammate(false); }}>
-                              <Check className={cn('mr-2 h-4 w-4 shrink-0', filterTeammate === emp.id ? 'opacity-100' : 'opacity-0')} />
-                              <SensitiveText kind="employee" id={emp.id}>{emp.name}</SensitiveText>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+              {(projectsSearchQuery.trim() || filterTeammate !== 'all') && (
+                <p className="text-xs text-slate-500">
+                  Mostrando <strong>{filteredProjects.length}</strong> de {projectGroups.length} proyecto{projectGroups.length !== 1 ? 's' : ''}.
+                </p>
               )}
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="relative min-w-[200px] flex-1 sm:flex-initial sm:min-w-[220px] max-w-full">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <Input
+                    placeholder="Buscar por proyecto o cliente..."
+                    value={projectsSearchQuery}
+                    onChange={(e) => setProjectsSearchQuery(e.target.value)}
+                    className="pl-9 h-10 w-full bg-white border-slate-200 shadow-sm"
+                    aria-label="Buscar en mis proyectos"
+                  />
+                </div>
+                {allTeammates.length > 0 && (
+                  <Popover open={openFilterTeammate} onOpenChange={setOpenFilterTeammate}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="min-w-[220px] h-10 text-sm justify-between font-normal w-full sm:w-auto">
+                        <span className="truncate">
+                          {filterTeammate === 'all'
+                            ? 'Todos los compañeros'
+                            : (
+                                <SensitiveText kind="employee" id={filterTeammate}>
+                                  {allTeammates.find(e => e?.id === filterTeammate)?.name ?? 'Compañero'}
+                                </SensitiveText>
+                              )}
+                        </span>
+                        <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="min-w-[300px] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Buscar compañero..." />
+                        <CommandList className="max-h-[320px]">
+                          <CommandEmpty>No se encontraron compañeros.</CommandEmpty>
+                          <CommandGroup>
+                            <CommandItem
+                              value="Todos los compañeros"
+                              className="py-2.5"
+                              onSelect={() => { setFilterTeammate('all'); setOpenFilterTeammate(false); }}
+                            >
+                              <Check className={cn('mr-2 h-4 w-4 shrink-0', filterTeammate === 'all' ? 'opacity-100' : 'opacity-0')} />
+                              Todos los compañeros
+                            </CommandItem>
+                            {allTeammates.map(emp => emp && (
+                              <CommandItem
+                                key={emp.id}
+                                value={emp.name || emp.id}
+                                className="py-2.5"
+                                onSelect={() => { setFilterTeammate(emp.id); setOpenFilterTeammate(false); }}
+                              >
+                                <Check className={cn('mr-2 h-4 w-4 shrink-0', filterTeammate === emp.id ? 'opacity-100' : 'opacity-0')} />
+                                <span className="truncate">
+                                  <SensitiveText kind="employee" id={emp.id}>{emp.name}</SensitiveText>
+                                </span>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -402,220 +445,329 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
             <CardContent className="py-12 text-center">
               <Sparkles className="h-12 w-12 mx-auto mb-4 text-slate-300" />
               <p className="text-muted-foreground">
-                {filterProject !== 'all' || filterTeammate !== 'all'
-                  ? "No hay proyectos con esos filtros."
-                  : "Sin proyectos asignados este mes."}
+                {projectGroups.length === 0
+                  ? 'Sin proyectos asignados este mes.'
+                  : 'No hay proyectos que coincidan con tu búsqueda o filtros.'}
               </p>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 min-w-0 items-start">
             {filteredProjects.map(group => {
               const balance = group.myPlanDeltaSum;
               const isPositive = balance >= 0;
-              const completionRate = group.myTasks > 0 ? round2((group.myCompletedTasks / group.myTasks) * 100) : 0;
-              const isHighImpact = group.myImpactPercentage >= 50;
-              const isMediumImpact = group.myImpactPercentage >= 25 && group.myImpactPercentage < 50;
+              const mySpent = preference === 'actual' ? group.myReal : group.myComputed;
+              const hasProjectBudget = group.projectBudget > 0;
+              const consumptionTone = hasProjectBudget
+                ? projectConsumptionTone(group.projectPercentageUsed)
+                : null;
+              const headerBadgeTone: UtilTone = hasProjectBudget
+                ? consumptionTone!
+                : group.myImpactPercentage >= 50
+                  ? 'ok'
+                  : group.myImpactPercentage >= 25
+                    ? 'warn'
+                    : 'muted';
+              const planMilestonePct = group.projectBudget > 0
+                ? clampPct((group.projectTotalAssigned / group.projectBudget) * 100)
+                : 0;
+              const consumptionFillPct = group.projectBudget > 0
+                ? clampPct((group.projectTotalComputedAll / group.projectBudget) * 100)
+                : 0;
+
+              const headerMembers: { id: string; name: string; avatarUrl?: string; isMe?: boolean }[] = [
+                {
+                  id: employeeId,
+                  name: myEmployee?.name || 'Tú',
+                  avatarUrl: myEmployee?.avatarUrl,
+                  isMe: true
+                },
+                ...group.teammates.map(tm => ({ id: tm.id, name: tm.name, avatarUrl: tm.avatarUrl }))
+              ];
 
               return (
-                <Card key={group.projectId} className={cn("flex flex-col h-full transition-all hover:shadow-md", isHighImpact && "ring-2 ring-emerald-200")}>
-                  {/* Header */}
-                  <CardHeader className="pb-2 pt-4 px-4">
-                    <div className="flex items-start justify-between gap-2">
+                <Card
+                  key={group.projectId}
+                  className={cn(
+                    'flex flex-col min-w-0 transition-all hover:shadow-md rounded-xl border overflow-hidden',
+                    !hasProjectBudget && 'border-slate-200',
+                    hasProjectBudget && consumptionTone === 'ok' && 'border-emerald-200/90',
+                    hasProjectBudget && consumptionTone === 'warn' && 'border-amber-200/90',
+                    hasProjectBudget && consumptionTone === 'over' && 'border-red-200/90',
+                    hasProjectBudget && consumptionTone === 'muted' && 'border-slate-200'
+                  )}
+                >
+                  <CardHeader className="pb-2 pt-4 px-4 space-y-3 min-w-0">
+                    <div className="flex items-start justify-between gap-3 min-w-0">
                       <div className="min-w-0 flex-1">
-                        <CardTitle className="text-sm font-bold truncate" title={group.projectName}>
+                        <CardTitle className="text-sm font-bold text-slate-900 truncate leading-tight" title={group.projectName}>
                           <SensitiveText kind="project" id={group.projectId}>{formatProjectName(group.projectName)}</SensitiveText>
                         </CardTitle>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: group.clientColor }} />
-                          <span className="text-xs text-muted-foreground truncate">
-                            <SensitiveText kind="account" id={group.clientId}>{group.clientName}</SensitiveText>
-                          </span>
-                        </div>
+                        <p className="text-xs text-muted-foreground truncate mt-1">
+                          <SensitiveText kind="account" id={group.clientId}>{group.clientName}</SensitiveText>
+                        </p>
                       </div>
 
-                      {/* Badge de impacto */}
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Badge variant="outline" className={cn(
-                            "shrink-0 gap-1",
-                            isHighImpact ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : isMediumImpact ? "bg-primary/10 text-indigo-700 border-indigo-200"
-                                : "bg-slate-50 text-slate-600 border-slate-200"
-                          )}>
-                            {isHighImpact ? <Award className="h-3 w-3" /> : <Target className="h-3 w-3" />}
-                            {group.myImpactPercentage}%
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent side="left" className="max-w-[200px]">
-                          <p className="font-semibold mb-1">
-                            {isHighImpact ? "¡Alto impacto!" : isMediumImpact ? "Impacto notable" : "Tu contribución"}
-                          </p>
-                          <p className="text-xs">
-                            Aportas el {group.myImpactPercentage}% del trabajo total del proyecto este mes.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
+                      <div className="flex flex-col items-end gap-2 shrink-0">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className={cn('shrink-0 font-semibold tabular-nums', PROJECT_BADGE[headerBadgeTone])}>
+                              {group.projectBudget > 0
+                                ? `${round2(group.projectPercentageUsed)}%`
+                                : `${group.myImpactPercentage}%`}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent side="left" className="max-w-[220px]">
+                            {group.projectBudget > 0 ? (
+                              <>
+                                <p className="font-semibold mb-1">Consumo vs presupuesto</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {group.projectTotalComputedAll}h registradas sobre {group.projectBudget}h de presupuesto del cliente este mes.
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <p className="font-semibold mb-1">Tu contribución</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Aportas el {group.myImpactPercentage}% del trabajo computado del proyecto este mes.
+                                </p>
+                              </>
+                            )}
+                          </TooltipContent>
+                        </Tooltip>
 
-                    {/* Compañeros con avatares */}
-                    {group.teammates.length > 0 && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <Users className="h-3 w-3 text-slate-400" />
                         <div className="flex -space-x-2">
-                          {group.teammates.slice(0, 4).map(tm => (
-                            <Tooltip key={tm.id}>
-                              <TooltipTrigger>
-                                <Avatar className="h-6 w-6 border-2 border-white">
-                                  <AvatarImage src={tm.avatarUrl} />
-                                  <AvatarFallback className="text-[10px] bg-slate-100">
-                                    {tm.name.substring(0, 2).toUpperCase()}
+                          {headerMembers.slice(0, 5).map((m) => (
+                            <Tooltip key={m.id}>
+                              <TooltipTrigger asChild>
+                                <Avatar className={cn('h-7 w-7 border-2 border-white shadow-sm', m.isMe && 'ring-2 ring-emerald-200')}>
+                                  <AvatarImage src={m.avatarUrl} />
+                                  <AvatarFallback
+                                    className={cn(
+                                      'text-[10px] font-semibold',
+                                      m.isMe ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
+                                    )}
+                                  >
+                                    {m.isMe ? 'TÚ' : m.name.substring(0, 2).toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p className="font-semibold">
-                                  <SensitiveText kind="employee" id={tm.id}>{tm.name}</SensitiveText>
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {tm.hoursComputed}h {preference === 'actual' ? 'reales' : 'computadas'} ({tm.impactPercentage}%)
-                                </p>
+                                {m.isMe ? (
+                                  <span className="font-medium">Tú</span>
+                                ) : (
+                                  <SensitiveText kind="employee" id={m.id} className="font-medium">
+                                    {m.name}
+                                  </SensitiveText>
+                                )}
                               </TooltipContent>
                             </Tooltip>
                           ))}
-                          {group.teammates.length > 4 && (
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <div className="h-6 w-6 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] font-medium text-slate-600">
-                                  +{group.teammates.length - 4}
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {group.teammates.slice(4).map(tm => (
-                                  <div key={tm.id} className="text-xs">
-                                    <SensitiveText kind="employee" id={tm.id}>{tm.name}</SensitiveText>: {tm.hoursComputed}h {preference === 'actual' ? 'real' : 'comp.'}
-                                  </div>
-                                ))}
-                              </TooltipContent>
-                            </Tooltip>
+                          {headerMembers.length > 5 && (
+                            <div className="h-7 w-7 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] font-semibold text-slate-600 z-0">
+                              +{headerMembers.length - 5}
+                            </div>
                           )}
                         </div>
+                      </div>
+                    </div>
+
+                    {group.projectBudget > 0 && (
+                      <div className="space-y-2 pt-1 border-t border-slate-100">
+                        <div className="flex items-center justify-between gap-2 min-w-0">
+                          <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide truncate min-w-0">
+                            Consumo del proyecto
+                          </span>
+                          <span className="text-xs font-bold text-slate-800 tabular-nums shrink-0 text-right">
+                            {group.projectTotalComputedAll}h / {group.projectBudget}h
+                          </span>
+                        </div>
+                        <div className="space-y-1.5 min-w-0">
+                          <div className="relative min-w-0">
+                            <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                              <div
+                                className={cn(
+                                  'h-full rounded-full transition-all',
+                                  MEMBER_TONE_BAR[projectConsumptionTone(group.projectPercentageUsed)]
+                                )}
+                                style={{ width: `${consumptionFillPct}%` }}
+                              />
+                            </div>
+                            {planMilestonePct > 0 && (
+                              <div
+                                className="pointer-events-none absolute left-0 right-0 top-0 h-2.5"
+                                aria-hidden
+                              >
+                                <div
+                                  className="absolute top-0 h-full w-px bg-slate-500/70 -translate-x-1/2"
+                                  style={{ left: `${planMilestonePct}%` }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-baseline justify-between gap-3 text-[10px] text-slate-500 min-w-0">
+                            <span className="tabular-nums shrink-0">0h</span>
+                            <span className="tabular-nums shrink-0 text-right">
+                              {round2(group.projectBudget)}h
+                            </span>
+                          </div>
+                          <p
+                            className="text-[10px] text-center font-medium text-slate-600 leading-snug px-0.5 min-w-0 break-words"
+                            title={
+                              group.projectTotalAssigned > 0
+                                ? `Plan asignado (mes): ${group.projectTotalAssigned}h`
+                                : undefined
+                            }
+                          >
+                            {group.projectTotalAssigned > 0
+                              ? `Plan asignado (mes): ${group.projectTotalAssigned}h`
+                              : '—'}
+                          </p>
+                        </div>
+                        {group.hoursMissing > 0 && (
+                          <p className="text-[10px] text-amber-700 font-medium leading-snug">
+                            Faltan {group.hoursMissing}h por asignar respecto al objetivo del proyecto.
+                          </p>
+                        )}
                       </div>
                     )}
                   </CardHeader>
 
-                  <CardContent className="px-4 pb-4 pt-2 space-y-3 flex-1 flex flex-col">
-                    {/* Total cliente */}
-                    {group.projectBudget > 0 && (
-                      <div className="space-y-1.5 pb-2 border-b">
-                        <div className="text-[10px] font-semibold text-slate-500 uppercase">Total cliente</div>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div>
-                            <span className="text-slate-400">Asignadas:</span>
-                            <span className="font-bold text-slate-700 ml-1">{group.projectTotalAssigned}h</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-400">Plan:</span>
-                            <span className="font-bold text-blue-600 ml-1">{group.projectTotalPlanned}h</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-400">{preference === 'actual' ? 'Real:' : 'Comp:'}</span>
-                            <span className="font-bold text-emerald-600 ml-1">{group.projectTotalComputedAll}h</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-400">Usado:</span>
-                            <span className={cn("font-bold ml-1", group.projectPercentageUsed > 100 ? "text-red-600" : group.projectPercentageUsed > 80 ? "text-amber-600" : "text-emerald-600")}>
-                              {group.projectPercentageUsed}%
-                            </span>
-                          </div>
-                        </div>
-                        {group.hoursMissing > 0 && (
-                          <div className="text-[10px] text-amber-600 font-medium mt-1">
-                            ⚠️ Faltan {group.hoursMissing}h por asignar
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Equipo */}
+                  <CardContent className="px-4 pb-4 pt-0 space-y-3 min-w-0">
                     {(group.teammates.length > 0 || group.myEstimated > 0) && (
-                      <div className="space-y-1.5">
-                        <div className="text-[10px] font-semibold text-slate-500 uppercase">
-                          Equipo ({group.teammates.length + 1})
-                        </div>
-                        <div className="space-y-1.5 max-h-32 overflow-y-auto">
-                          {/* Tú */}
-                          <div className="flex items-center justify-between text-xs px-2 py-1 bg-slate-50 rounded">
-                            <div className="flex items-center gap-1.5">
-                              <Avatar className="h-5 w-5 border border-slate-300">
-                                <AvatarFallback className="text-[9px] bg-indigo-100 text-indigo-700">
-                                  Tú
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="font-medium text-slate-700">Tú</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-[10px]">
-                              <span className="text-blue-600">Plan: {group.myEstimated}h</span>
-                              <span className="text-emerald-600">
-                                {preference === 'actual' ? `Real: ${group.myReal}h` : `Comp: ${group.myComputed}h`}
-                              </span>
-                            </div>
+                      <div className="space-y-2 min-w-0">
+                        <div className="flex items-center justify-between gap-2 min-w-0">
+                          <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
+                            Equipo
                           </div>
-                          {/* Compañeros */}
-                          {group.teammates.map(tm => (
-                            <div key={tm.id} className="flex items-center justify-between text-xs px-2 py-1">
-                              <div className="flex items-center gap-1.5">
-                                <Avatar className="h-5 w-5 border border-slate-300">
-                                  <AvatarImage src={tm.avatarUrl} />
-                                  <AvatarFallback className="text-[9px] bg-slate-100">
-                                    {tm.name.substring(0, 2).toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span className="font-medium text-slate-700 truncate max-w-[80px]">
-                                  <SensitiveText kind="employee" id={tm.id}>{tm.name.split(' ')[0]}</SensitiveText>
-                                </span>
+                          <div className="text-[10px] text-slate-400 truncate">
+                            {preference === 'actual' ? 'Real / Plan' : 'Computado / Plan'}
+                          </div>
+                        </div>
+                        <div className="space-y-3 min-w-0">
+                          {group.myEstimated > 0 && (() => {
+                            const tone = utilizationTone(group.myEstimated, mySpent);
+                            const pct = utilizationPercentage(group.myEstimated, mySpent);
+                            const barW = group.myEstimated > 0
+                              ? clampPct((mySpent / group.myEstimated) * 100)
+                              : 0;
+                            return (
+                              <div key="me" className="space-y-1 min-w-0">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <Avatar className="h-6 w-6 border border-emerald-200 shrink-0">
+                                    <AvatarImage src={myEmployee?.avatarUrl} />
+                                    <AvatarFallback className="text-[9px] bg-emerald-100 text-emerald-800 font-semibold">
+                                      TÚ
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-xs font-medium text-slate-800 truncate min-w-0 flex-1">
+                                    Tú
+                                  </span>
+                                  <div className="flex items-center gap-1.5 shrink-0 min-w-0">
+                                    <span className="text-[11px] font-medium text-slate-600 tabular-nums whitespace-nowrap text-right">
+                                      {mySpent} / {group.myEstimated}h
+                                    </span>
+                                    <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0 h-5 font-semibold tabular-nums shrink-0', MEMBER_TONE_BADGE[tone])}>
+                                      {pct}%
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden ml-8 min-w-0">
+                                  <div
+                                    className={cn('h-full rounded-full', MEMBER_TONE_BAR[tone])}
+                                    style={{ width: `${barW}%` }}
+                                  />
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2 text-[10px]">
-                                <span className="text-blue-600">Plan: {tm.hoursPlanned}h</span>
-                                <span className="text-emerald-600">
-                                  {preference === 'actual' ? `Real: ${tm.hoursComputed}h` : `Comp: ${tm.hoursComputed}h`}
-                                </span>
+                            );
+                          })()}
+                          {group.teammates.map((tm) => {
+                            const tone = utilizationTone(tm.hoursPlanned, tm.hoursComputed);
+                            const pct = utilizationPercentage(tm.hoursPlanned, tm.hoursComputed);
+                            const barW = tm.hoursPlanned > 0
+                              ? clampPct((tm.hoursComputed / tm.hoursPlanned) * 100)
+                              : 0;
+                            return (
+                              <div key={tm.id} className="space-y-1 min-w-0">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <Avatar className="h-6 w-6 border border-slate-200 shrink-0">
+                                    <AvatarImage src={tm.avatarUrl} />
+                                    <AvatarFallback className="text-[9px] bg-slate-100 text-slate-700 font-medium">
+                                      {tm.name.substring(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-xs font-medium text-slate-800 truncate min-w-0 flex-1">
+                                    <SensitiveText kind="employee" id={tm.id}>{tm.name.split(' ')[0]}</SensitiveText>
+                                  </span>
+                                  <div className="flex items-center gap-1.5 shrink-0 min-w-0">
+                                    <span className="text-[11px] font-medium text-slate-600 tabular-nums whitespace-nowrap text-right">
+                                      {tm.hoursComputed} / {tm.hoursPlanned}h
+                                    </span>
+                                    <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0 h-5 font-semibold tabular-nums shrink-0', MEMBER_TONE_BADGE[tone])}>
+                                      {pct}%
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden ml-8 min-w-0">
+                                  <div
+                                    className={cn('h-full rounded-full', MEMBER_TONE_BAR[tone])}
+                                    style={{ width: `${barW}%` }}
+                                  />
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     )}
 
-                    {/* Mis métricas */}
-                    <div className="pt-2 border-t flex-1">
-                      <div className="text-[10px] font-semibold text-slate-500 uppercase mb-2">Mis métricas</div>
-                      <MetricsCard
-                        estimated={group.myEstimated}
-                        real={group.myReal}
-                        computed={group.myComputed}
-                        showComputed={preference !== 'actual'}
-                        size="sm"
-                      />
-                    </div>
-
-                    {/* Balance - siempre al final */}
-                    {group.myCompletedTasks > 0 && (
-                      <div className={cn(
-                        "flex items-center justify-between px-3 py-2 rounded-lg mt-auto",
-                        balance === 0 ? "bg-slate-50" : isPositive ? "bg-emerald-50" : "bg-red-50"
-                      )}>
-                        <span className="text-xs font-medium text-slate-600">Balance</span>
-                        {balance === 0 ? (
-                          <span className="text-xs font-semibold text-slate-500">Exacto</span>
+                    <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 min-w-0">
+                      <div className="rounded-lg bg-slate-100/90 px-1.5 sm:px-2 py-2 text-center min-w-0">
+                        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide truncate">Estimado</p>
+                        <p className="text-sm font-bold text-slate-900 tabular-nums mt-0.5 truncate">{group.myEstimated}h</p>
+                      </div>
+                      <div className="rounded-lg bg-slate-100/90 px-1.5 sm:px-2 py-2 text-center min-w-0">
+                        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide truncate">
+                          {preference === 'actual' ? 'Real' : 'Computado'}
+                        </p>
+                        <p className="text-sm font-bold text-emerald-700 tabular-nums mt-0.5 truncate">
+                          {preference === 'actual' ? group.myReal : group.myComputed}h
+                        </p>
+                      </div>
+                      <div
+                        className={cn(
+                          'rounded-lg px-1.5 sm:px-2 py-2 text-center border min-w-0',
+                          balance === 0 && 'bg-slate-100/90 border-slate-200',
+                          balance > 0 && 'bg-emerald-50 border-emerald-200',
+                          balance < 0 && 'bg-red-50 border-red-200'
+                        )}
+                      >
+                        <p
+                          className={cn(
+                            'text-[10px] font-semibold uppercase tracking-wide',
+                            balance === 0 && 'text-slate-500',
+                            balance > 0 && 'text-emerald-800',
+                            balance < 0 && 'text-red-800'
+                          )}
+                        >
+                          Balance
+                        </p>
+                        {group.myCompletedTasks === 0 ? (
+                          <p className="text-xs font-semibold text-slate-500 mt-1">—</p>
+                        ) : balance === 0 ? (
+                          <p className="text-sm font-bold text-slate-600 tabular-nums mt-0.5 truncate">0h</p>
                         ) : (
-                          <div className={cn("flex items-center gap-1 font-bold text-sm", isPositive ? "text-emerald-600" : "text-red-600")}>
-                            {isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                          <p
+                            className={cn(
+                              'text-sm font-bold tabular-nums mt-0.5 truncate',
+                              isPositive ? 'text-emerald-800' : 'text-red-800'
+                            )}
+                          >
                             {isPositive ? '+' : ''}{balance}h
-                          </div>
+                          </p>
                         )}
                       </div>
-                    )}
+                    </div>
                   </CardContent>
                 </Card>
               );
