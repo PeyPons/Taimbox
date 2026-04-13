@@ -326,8 +326,8 @@ export function useWeeklyCloseMutations(viewDate: Date): UseWeeklyCloseMutations
         toast.error(`"${task.taskName}": elige semana destino`);
         return false;
       }
-      if (actual <= 0) {
-        toast.error(`"${task.taskName}" necesita horas reales > 0`);
+      if (actual < 0) {
+        toast.error(`"${task.taskName}": las horas reales no pueden ser negativas`);
         return false;
       }
       if (newEstimate <= 0) {

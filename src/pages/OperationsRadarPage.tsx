@@ -339,29 +339,50 @@ export default function OperationsRadarPage() {
                                                         <SensitiveText kind="task" id={allocation.id}>{blockerTaskName}</SensitiveText>
                                                     </span>
                                                 </p>
-                                                {/* Tarea(s) bloqueada(s) */}
+                                                {/* Tarea(s) bloqueada(s): una sola en la misma línea que la etiqueta (como tarea bloqueadora); varias en lista */}
                                                 {blockedTaskDetails.length > 0 && (
-                                                    <div className="text-[11px]">
-                                                        <span className="font-medium text-slate-500">
-                                                            {blockedTaskDetails.length === 1 ? t('operationsRadar.blockedTask_one', 'Tarea bloqueada:') : t('operationsRadar.blockedTask_other', 'Tareas bloqueadas:')}
-                                                        </span>
-                                                        <ul className="mt-0.5 list-none space-y-0.5 pl-0">
-                                                            {blockedTaskDetails.map((b, i) => (
-                                                                <li key={i} className="text-slate-700">
-                                                                    ·{' '}
-                                                                    <span className="text-slate-800">
-                                                                        <SensitiveText kind="task" id={b.allocationId}>{b.taskName}</SensitiveText>
-                                                                    </span>
-                                                                    <span className="text-slate-500">
-                                                                        {' '}
-                                                                        (
-                                                                        <SensitiveText kind="employee" id={b.employeeId}>{b.employeeName}</SensitiveText>
-                                                                        )
-                                                                    </span>
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    </div>
+                                                    blockedTaskDetails.length === 1 ? (
+                                                        <p className="text-[11px] text-slate-600">
+                                                            <span className="font-medium text-slate-500">
+                                                                {t('operationsRadar.blockedTask_one', 'Tarea bloqueada:')}
+                                                            </span>{' '}
+                                                            <span className="text-slate-800">
+                                                                <SensitiveText kind="task" id={blockedTaskDetails[0].allocationId}>
+                                                                    {blockedTaskDetails[0].taskName}
+                                                                </SensitiveText>
+                                                            </span>
+                                                            <span className="text-slate-500">
+                                                                {' '}
+                                                                (
+                                                                <SensitiveText kind="employee" id={blockedTaskDetails[0].employeeId}>
+                                                                    {blockedTaskDetails[0].employeeName}
+                                                                </SensitiveText>
+                                                                )
+                                                            </span>
+                                                        </p>
+                                                    ) : (
+                                                        <div className="text-[11px]">
+                                                            <span className="font-medium text-slate-500">
+                                                                {t('operationsRadar.blockedTask_other', 'Tareas bloqueadas:')}
+                                                            </span>
+                                                            <ul className="mt-0.5 list-none space-y-0.5 pl-0">
+                                                                {blockedTaskDetails.map((b, i) => (
+                                                                    <li key={i} className="text-slate-700">
+                                                                        ·{' '}
+                                                                        <span className="text-slate-800">
+                                                                            <SensitiveText kind="task" id={b.allocationId}>{b.taskName}</SensitiveText>
+                                                                        </span>
+                                                                        <span className="text-slate-500">
+                                                                            {' '}
+                                                                            (
+                                                                            <SensitiveText kind="employee" id={b.employeeId}>{b.employeeName}</SensitiveText>
+                                                                            )
+                                                                        </span>
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    )
                                                 )}
                                             </div>
                                         </li>

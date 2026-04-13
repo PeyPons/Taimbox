@@ -300,10 +300,12 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
     } else if (action === 'postpone') {
       if (!rolloverTargetWeek[taskId]) return 'error';
       const h = rolloverHours[taskId];
-      if (!h?.actual || parseHours(h.actual) <= 0) return 'error';
+      const act = parseHours(h?.actual ?? '0');
+      if (act < 0) return 'error';
       const t = allTasks.find(x => x.id === taskId);
       if (!t) return 'error';
-      const rem = round2(t.hoursAssigned - parseHours(h.actual));
+      if (act > t.hoursAssigned) return 'error';
+      const rem = round2(t.hoursAssigned - act);
       if (rem <= 0) return 'error';
     } else if (action === 'moveToEmployee') {
       if (!moveToEmployee[taskId] || !moveToWeek[taskId]) return 'error';
@@ -347,8 +349,10 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
       if (rSlots.length === 0) { canSubmit = false; validationErrors.push(`"${task.taskName}": sin semanas futuras`); }
       if (!rolloverTargetWeek[task.id] || !rSlots.some(s => s.storageKey === rolloverTargetWeek[task.id])) { canSubmit = false; validationErrors.push(`"${task.taskName}": elige semana destino`); }
       const h = rolloverHours[task.id];
-      if (!h?.actual || parseHours(h.actual) <= 0) { canSubmit = false; validationErrors.push(`"${task.taskName}": horas realizadas > 0`); }
-      const rem = round2(task.hoursAssigned - parseHours(h.actual));
+      const actPost = h ? parseHours(h.actual) : 0;
+      if (actPost < 0) { canSubmit = false; validationErrors.push(`"${task.taskName}": las horas realizadas no pueden ser negativas`); }
+      if (actPost > task.hoursAssigned) { canSubmit = false; validationErrors.push(`"${task.taskName}": las horas realizadas no pueden superar el estimado`); }
+      const rem = round2(task.hoursAssigned - actPost);
       if (rem <= 0) { canSubmit = false; validationErrors.push(`"${task.taskName}": debe quedar saldo para posponer (horas realizadas < estimado)`); }
       else {
         const dSlot = rSlots.find(s => s.storageKey === rolloverTargetWeek[task.id]);
@@ -462,8 +466,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
       setRolloverHours(prev => ({
         ...prev,
         [task.id]: {
-          actual: (task.hoursActual || missingHours || 0).toFixed(2),
-          computed: (task.hoursComputed || task.hoursActual || missingHours || 0).toFixed(2),
+          actual: (task.hoursActual ?? 0).toFixed(2),
+          computed: (task.hoursComputed ?? task.hoursActual ?? 0).toFixed(2),
         },
       }));
       if (rSlots[0]) setRolloverTargetWeek(prev => ({ ...prev, [task.id]: rSlots[0].storageKey }));
@@ -502,13 +506,10 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
         } else if (action === 'postpone') {
           const hours = rolloverHours[task.id];
           const destWeekStr = rolloverTargetWeek[task.id] || '';
-          if (!hours) {
-            toast.error(`"${task.taskName}" necesita horas realizadas`);
-            continue;
-          }
-          const actual = parseHours(hours.actual);
+          const actual = hours ? parseHours(hours.actual) : 0;
           // Igual que en 'keep': en modo actual persistimos computed === actual a propósito.
-          const computed = preference === 'actual' ? actual : (parseHours(hours.computed) || actual);
+          const computed =
+            preference === 'actual' ? actual : hours ? parseHours(hours.computed) || actual : actual;
           const newEstimate = round2(task.hoursAssigned - actual);
           if (newEstimate <= 0) {
             toast.error(`"${task.taskName}": debe quedar saldo para posponer`);
@@ -849,8 +850,8 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                           {/* POSTPONE: mismo criterio que cierre parcial (saldo = estimado − realizadas → rollover) */}
                           {taskActions[selectedTask.id] === 'postpone' && (() => {
                             const hours = rolloverHours[selectedTask.id] || {
-                              actual: (selectedTask.hoursActual || selectedMissingHours || 0).toFixed(2),
-                              computed: (selectedTask.hoursComputed || selectedTask.hoursActual || selectedMissingHours || 0).toFixed(2)
+                              actual: (selectedTask.hoursActual ?? 0).toFixed(2),
+                              computed: (selectedTask.hoursComputed ?? selectedTask.hoursActual ?? 0).toFixed(2)
                             };
                             const rSlots = weekSlotsFor(selectedTask.weekStartDate);
                             const pendNext = Math.max(0, round2(selectedTask.hoursAssigned - parseHours(hours.actual)));
@@ -877,7 +878,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                                       <span className="font-mono font-semibold text-foreground">
                                         {pendNext.toFixed(2)}h
                                       </span>{' '}
-                                      (estimado menos horas realizadas; se planificarán al cerrar)
+                                      (con 0h realizadas se mueve todo el estimado; se planificará al cerrar)
                                     </p>
                                   </div>
                                   {preference !== 'actual' && (

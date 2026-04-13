@@ -6,6 +6,60 @@ import { WorkSchedule } from '@/types';
 export const getMonthName = (date: Date) => format(date, 'MMMM', { locale: es });
 export const formatDateToISO = (date: Date) => format(date, 'yyyy-MM-dd');
 
+/** Tramo de semana como en el planificador (puede ser semana partida entre meses). */
+export type PlannerWeekSlice = {
+  weekStart: Date;
+  effectiveStart?: Date;
+  effectiveEnd?: Date;
+};
+
+/**
+ * Rango laboral visible tipo "7–11 abr" (lun–vie en el tramo efectivo).
+ * Alineado con las cabeceras del calendario del dashboard de equipo.
+ */
+export function formatPlannerWeekWorkingRangeLabel(week: PlannerWeekSlice): string {
+  const effectiveStart = week.effectiveStart || week.weekStart;
+  const effectiveEnd = week.effectiveEnd || addDays(week.weekStart, 6);
+  const workingDays: Date[] = [];
+  let current = new Date(effectiveStart);
+  while (current <= effectiveEnd) {
+    const dayOfWeek = current.getDay();
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) workingDays.push(new Date(current));
+    current = addDays(current, 1);
+  }
+  const first = workingDays[0];
+  const last = workingDays[workingDays.length - 1];
+  if (first && last) {
+    return `${format(first, 'd', { locale: es })}–${format(last, 'd MMM', { locale: es })}`;
+  }
+  return `${format(effectiveStart, 'd', { locale: es })}–${format(effectiveEnd, 'd MMM', { locale: es })}`;
+}
+
+/**
+ * Resuelve el índice de `weeks` (mes vista) para una clave de tarea `yyyy-MM-dd` o legado `yyyy-MM-W01`.
+ */
+export function findWeekIndexForTaskWeekDate(taskWeekDate: string, weeks: PlannerWeekSlice[], viewMonth: Date): number {
+  const trimmed = taskWeekDate.trim();
+  const byKey = weeks.findIndex((w, i) => {
+    const ymd = format(w.weekStart, 'yyyy-MM-dd');
+    if (ymd === trimmed) return true;
+    if (getStorageKey(w.weekStart, viewMonth) === trimmed) return true;
+    const legacyKey = `${viewMonth.getFullYear()}-${String(viewMonth.getMonth() + 1).padStart(2, '0')}-W${String(i + 1).padStart(2, '0')}`;
+    return legacyKey === trimmed;
+  });
+  if (byKey >= 0) return byKey;
+
+  const d = parseDateStringLocal(trimmed);
+  if (Number.isNaN(d.getTime())) return -1;
+
+  return weeks.findIndex(w => {
+    const start = startOfDay(w.effectiveStart || w.weekStart);
+    const end = startOfDay(w.effectiveEnd || addDays(w.weekStart, 6));
+    const dd = startOfDay(d);
+    return dd >= start && dd <= end;
+  });
+}
+
 /**
  * Interpreta `YYYY-MM-DD` como fecha **local** a medianoche.
  * Evita desfases de un día respecto a `parseISO` en husos UTC− (la cadena sin hora se trata como UTC medianoche).

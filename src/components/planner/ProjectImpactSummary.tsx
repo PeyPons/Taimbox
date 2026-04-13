@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Project, Allocation, NewTaskRow, Deadline, Employee } from '@/types';
 import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { format, startOfMonth } from 'date-fns';
-import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { findWeekIndexForTaskWeekDate, formatPlannerWeekWorkingRangeLabel, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
 
@@ -193,11 +193,8 @@ export function ProjectImpactSummary({
         if (hours > 0) {
           const taskEmpId = task.employeeId || employeeId;
           if (!impact[task.weekDate]) {
-            const weekIndex = weeks.findIndex(w => {
-              const storageKey = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-W${String(weeks.indexOf(w) + 1).padStart(2, '0')}`;
-              return storageKey === task.weekDate || w.weekStart.toISOString().split('T')[0] === task.weekDate;
-            });
-            const weekData = weeks[weekIndex] || weeks[0];
+            const weekIndex = findWeekIndexForTaskWeekDate(task.weekDate, weeks, viewDate);
+            const weekData = weeks[weekIndex >= 0 ? weekIndex : 0];
             impact[task.weekDate] = {
               weekIndex: weekIndex >= 0 ? weekIndex : 0,
               adding: 0,
@@ -418,7 +415,8 @@ export function ProjectImpactSummary({
           ) : (
             <div className="grid grid-cols-1 gap-2">
               {weekImpact.map(w => {
-                const weekLabel = `Semana ${w.weekIndex + 1}`;
+                const weekMeta = weeks[w.weekIndex];
+                const weekLabel = weekMeta ? formatPlannerWeekWorkingRangeLabel(weekMeta) : `Semana ${w.weekIndex + 1}`;
                 return (
                   <div key={w.weekDate} className={cn("p-2.5 rounded border text-xs",
                     w.exceeds ? "bg-red-50 border-red-200" : "bg-white border-slate-200"
@@ -525,8 +523,8 @@ export function ProjectImpactSummary({
           ) : (
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
           )}
-          <span className={cn("font-medium", w.exceeds ? "text-amber-700" : "text-emerald-700")}>
-            S{w.weekIndex + 1}
+          <span className={cn("font-medium max-w-[140px] truncate", w.exceeds ? "text-amber-700" : "text-emerald-700")} title={weeks[w.weekIndex] ? formatPlannerWeekWorkingRangeLabel(weeks[w.weekIndex]) : undefined}>
+            {weeks[w.weekIndex] ? formatPlannerWeekWorkingRangeLabel(weeks[w.weekIndex]) : `Sem. ${w.weekIndex + 1}`}
           </span>
           <span className={cn("tabular-nums text-[10px]", w.exceeds ? "text-amber-600" : "text-emerald-600")}>
             {w.newTotal}h/{w.capacity}h

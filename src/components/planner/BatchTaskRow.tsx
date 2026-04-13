@@ -8,7 +8,7 @@ import { Check, X, Plus, Trash2, AlertTriangle, Link as LinkIcon, User, ChevronD
 import { Project, Employee, Allocation, NewTaskRow, Client, Deadline } from '@/types';
 import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { useState, useMemo } from 'react';
-import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { findWeekIndexForTaskWeekDate, formatPlannerWeekWorkingRangeLabel, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 
 interface BatchTaskRowProps {
@@ -18,7 +18,7 @@ interface BatchTaskRowProps {
     removeTaskRow: (id: string) => void;
     canRemove: boolean;
     activeProjects: Project[];
-    weeks: { weekStart: Date }[];
+    weeks: { weekStart: Date; effectiveStart?: Date; effectiveEnd?: Date }[];
     employees: Employee[];
     clients: Client[];
     getProjectBudgetStatus: (projectId: string) => ProjectBudgetStatus;
@@ -440,19 +440,23 @@ export function BatchTaskRow({
                         <Popover open={openWeek} onOpenChange={setOpenWeek}>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" className={cn("w-full h-11 sm:h-9 min-h-[44px] sm:min-h-0 text-xs pl-2 pr-1 justify-between font-normal", isWeekOverloaded && "border-red-300 text-red-700 bg-red-50")}>
-                                    <span className="truncate">{task.weekDate ? `Sem ${weeks.findIndex(w => format(w.weekStart, 'yyyy-MM-dd') === task.weekDate) + 1 || ''}` : 'Semana'}</span>
+                                    <span className="truncate">{task.weekDate ? (() => {
+                                        const idx = viewDate ? findWeekIndexForTaskWeekDate(task.weekDate, weeks, viewDate) : -1;
+                                        const wm = idx >= 0 ? weeks[idx] : weeks.find(w => format(w.weekStart, 'yyyy-MM-dd') === task.weekDate);
+                                        return wm ? formatPlannerWeekWorkingRangeLabel(wm) : 'Semana';
+                                    })() : 'Semana'}</span>
                                     <ChevronDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                                 <Command>
                                     <CommandList className="max-h-[280px]">
-                                        {weeks.map((w, i) => {
+                                        {weeks.map((w) => {
                                             const val = format(w.weekStart, 'yyyy-MM-dd');
                                             return (
                                                 <CommandItem key={val} value={val} onSelect={() => { updateTaskRow(task.id, 'weekDate', val); setOpenWeek(false); }}>
                                                     <Check className={cn('mr-2 h-4 w-4 shrink-0', task.weekDate === val ? 'opacity-100' : 'opacity-0')} />
-                                                    Sem {i + 1}
+                                                    {formatPlannerWeekWorkingRangeLabel(w)}
                                                 </CommandItem>
                                             );
                                         })}

@@ -30,8 +30,15 @@ export function validatePostponeRemaining(
   hoursAssigned: number,
   destWeek: string | undefined
 ): { ok: true; remaining: number } | { ok: false; message: string } {
-  const errActual = validateKeepHours(actual);
-  if (errActual) return { ok: false, message: errActual };
+  if (Number.isNaN(actual) || actual < 0) {
+    return { ok: false, message: 'Las horas realizadas no pueden ser negativas' };
+  }
+  if (actual > hoursAssigned) {
+    return {
+      ok: false,
+      message: 'Las horas realizadas no pueden superar el estimado de esta asignación',
+    };
+  }
   if (!destWeek?.trim()) return { ok: false, message: 'Selecciona la semana en la que quieres planificar lo pendiente' };
   const remaining = Math.round((hoursAssigned - actual) * 100) / 100;
   if (remaining <= 0) {

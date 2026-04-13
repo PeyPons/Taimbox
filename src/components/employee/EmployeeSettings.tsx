@@ -1,5 +1,5 @@
 // Componente de ajustes de cuenta del empleado
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/contexts/AppContext';
 import { supabase } from '@/lib/supabase';
@@ -20,6 +20,18 @@ const LANGUAGES = [
   { code: 'en', label: 'English', flag: '🇺🇸' },
 ] as const;
 
+/** Semilla actual del avatar DiceBear (para placeholder y copy claro: no es el email). */
+function dicebearSeedFromAvatarUrl(url: string | undefined | null): string | null {
+  if (!url || !url.includes('dicebear.com')) return null;
+  try {
+    const seed = new URL(url).searchParams.get('seed');
+    if (!seed) return null;
+    return decodeURIComponent(seed.replace(/\+/g, ' '));
+  } catch {
+    return null;
+  }
+}
+
 export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
   const { employees, updateEmployee, currentUser } = useApp();
   const { i18n } = useTranslation();
@@ -35,6 +47,20 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
   // Estados para avatar
   const [avatarPhrase, setAvatarPhrase] = useState('');
   const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
+  /** Evita autofill de email: el input empieza readonly y se desbloquea al enfocar. */
+  const [avatarSeedUnlocked, setAvatarSeedUnlocked] = useState(false);
+
+  const currentAvatarSeed = useMemo(() => {
+    if (!employee) return '';
+    return (dicebearSeedFromAvatarUrl(employee.avatarUrl) ?? employee.name.trim()) || 'tu nombre';
+  }, [employee]);
+
+  const avatarPhrasePlaceholder = useMemo(() => {
+    const s = currentAvatarSeed;
+    if (!s) return 'Escribe una frase para tu avatar (no es tu correo)';
+    if (s.length <= 72) return `Frase actual: «${s}» — escribe otra para cambiar`;
+    return `Frase actual: «${s.slice(0, 69)}…» — escribe otra para cambiar`;
+  }, [currentAvatarSeed]);
 
   if (!employee || !currentUser || currentUser.id !== employeeId) {
     return null;
@@ -140,7 +166,21 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
   const currentAvatarUrl = previewAvatar || employee.avatarUrl || generateAvatarUrl(employee.name);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) {
+          setAvatarSeedUnlocked(false);
+        } else {
+          setAvatarPhrase('');
+          setPreviewAvatar(null);
+          setAvatarSeedUnlocked(false);
+          setNewPassword('');
+          setConfirmPassword('');
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2" size="sm">
           <Settings className="h-4 w-4" />
@@ -159,6 +199,16 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* Trampa de autofill: los gestores suelen rellenar el primer campo de texto junto a contraseñas con el email. */}
+          <input
+            type="text"
+            name="user-identifier-decoy"
+            autoComplete="username"
+            defaultValue=""
+            className="sr-only"
+            tabIndex={-1}
+            aria-hidden="true"
+          />
           {/* Sección Avatar */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
@@ -181,12 +231,18 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
                   <Input
                     id="avatar-phrase"
                     name="avatar-seed-phrase"
-                    autoComplete="off"
+                    type="text"
+                    inputMode="text"
+                    autoComplete="nickname"
+                    autoCapitalize="sentences"
                     data-1p-ignore
                     data-lpignore="true"
-                    placeholder="Ej: Mi nombre es Alex"
+                    data-form-type="other"
+                    readOnly={!avatarSeedUnlocked}
+                    placeholder={avatarPhrasePlaceholder}
                     value={avatarPhrase}
                     onChange={(e) => handleAvatarPhraseChange(e.target.value)}
+                    onFocus={() => setAvatarSeedUnlocked(true)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && avatarPhrase.trim()) {
                         handleUpdateAvatar();
@@ -204,7 +260,9 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
                   </Button>
                 </div>
                 <p className="text-xs text-slate-500">
-                  Escribe cualquier frase y se generará un avatar único. Haz clic en «Guardar avatar» para aplicar el cambio (no hace falta cambiar la contraseña).
+                  No es tu correo: solo una frase o palabra para el generador de caras. El placeholder muestra la frase
+                  que usa tu avatar ahora. Haz clic en «Guardar avatar» para aplicar el cambio (no hace falta cambiar la
+                  contraseña).
                 </p>
               </div>
             </div>
@@ -264,6 +322,7 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
                 <Input
                   id="new-password"
                   type="password"
+                  autoComplete="new-password"
                   placeholder="Mínimo 6 caracteres"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -275,6 +334,7 @@ export function EmployeeSettings({ employeeId }: EmployeeSettingsProps) {
                 <Input
                   id="confirm-password"
                   type="password"
+                  autoComplete="new-password"
                   placeholder="Repite la nueva contraseña"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}

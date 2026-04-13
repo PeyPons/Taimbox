@@ -15,7 +15,7 @@
 | [docs/04-contextos-realtime.md](docs/04-contextos-realtime.md) | AppContext (carga, upsert, `loadedMonthsRef` tras allocations OK, deduplicación de carga por mes), Realtime, canales unificados en Deadlines y bloqueos. |
 | [docs/05-integraciones-automatizacion.md](docs/05-integraciones-automatizacion.md) | Edge Functions (inventario, OAuth Google/Meta, emails, modo demo), Stripe, variables de entorno, despliegue y troubleshooting. |
 | [docs/06-glosario-variables.md](docs/06-glosario-variables.md) | Tabla corta de términos técnicos (RLS, RBAC, micros, etc.). |
-| [docs/07-mantenimiento-extension.md](docs/07-mantenimiento-extension.md) | Cómo extender tablas, cronómetro (drift, eventos, **Real vs `time_entries`**, página Tiempos y `ModuleGuard`), RLS y API tokens, admin de plataforma, operaciones, rentabilidad y permisos. |
+| [docs/07-mantenimiento-extension.md](docs/07-mantenimiento-extension.md) | Cómo extender tablas, cronómetro (drift, eventos, **Real vs `time_entries`**, página Tiempos y `ModuleGuard`), RLS y API tokens, admin de plataforma, operaciones, rentabilidad y permisos; cierre parcial / rollover (incl. migración `20260413120000` para posponer con 0h reales). |
 | [docs/08-mapa-dependencias.md](docs/08-mapa-dependencias.md) | Mapa de impacto por types, contextos, hooks, componentes y flujo de carga de mes. |
 | [docs/09-checklist-modificacion.md](docs/09-checklist-modificacion.md) | Checklist antes de tocar types, AppContext, fechas, permisos, Realtime, RLS, deadlines o aliasing. |
 | [docs/10-gotchas-y-contenido.md](docs/10-gotchas-y-contenido.md) | Patrones problemáticos en React/ datos, mantenimiento de copy, landings, notificaciones, tours y ortografía. |

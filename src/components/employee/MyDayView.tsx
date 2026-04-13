@@ -82,12 +82,12 @@ export function MyDayView({
         schedule.friday,
         schedule.saturday,
       ];
-      return scheduleMap[dayIndex] || 0;
+      return round2(scheduleMap[dayIndex] || 0);
     }
     if (currentUser?.defaultWeeklyCapacity) {
       const dayIndex = getDay(today);
       if (dayIndex === 0 || dayIndex === 6) return 0;
-      return currentUser.defaultWeeklyCapacity / 5;
+      return round2(currentUser.defaultWeeklyCapacity / 5);
     }
     return 8;
   }, [currentUser, today]);
@@ -282,7 +282,7 @@ export function MyDayView({
           <div className="flex items-center gap-2 flex-wrap min-w-0">
             <div className={cn('flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium', isOverdue ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-600')}>
               <Clock className="h-3 w-3 shrink-0" />
-              <span>{task.hoursAssigned}h</span>
+              <span>{round2(Number(task.hoursAssigned) || 0)}h</span>
             </div>
             {isTimeTrackerEnabled && currentUser && (
               <TaskTimer employeeId={currentUser.id} allocationId={task.id} onTimeLogged={handleTimeLogged} beforeStart={() => ensureFocusForTimer(task)} />
@@ -367,7 +367,7 @@ export function MyDayView({
   };
 
   const totalFocusHours = useMemo(
-    () => focusTasks.reduce((s, t) => s + t.hoursAssigned, 0),
+    () => round2(focusTasks.reduce((s, t) => s + (Number(t.hoursAssigned) || 0), 0)),
     [focusTasks]
   );
 

@@ -77,11 +77,8 @@ export function TaskPartialCloseDialog({
 
   useEffect(() => {
     if (!open || !allocation) return;
-    const missingHours = allocation.hoursAssigned - (allocation.hoursActual || 0);
-    setActualStr((allocation.hoursActual || missingHours || 0).toFixed(2));
-    setComputedStr(
-      (allocation.hoursComputed || allocation.hoursActual || missingHours || 0).toFixed(2)
-    );
+    setActualStr((allocation.hoursActual ?? 0).toFixed(2));
+    setComputedStr((allocation.hoursComputed ?? allocation.hoursActual ?? 0).toFixed(2));
     const s = getSlotsForTaskWeek(allocation.weekStartDate);
     setDestWeek(s[0]?.storageKey || '');
     setMode('postpone');
@@ -183,7 +180,11 @@ export function TaskPartialCloseDialog({
         comment || undefined
       );
       if (okR) {
-        toast.success('Avance registrado; lo pendiente quedó planificado en la semana elegida');
+        toast.success(
+          actual <= 0
+            ? 'Tarea replanificada en la semana elegida'
+            : 'Avance registrado; lo pendiente quedó planificado en la semana elegida'
+        );
         onOpenChange(false);
       }
     } finally {
@@ -201,8 +202,8 @@ export function TaskPartialCloseDialog({
             Registrar avance y posponer
           </DialogTitle>
           <DialogDescription id="partial-close-desc">
-            Indica cuánto has trabajado. Puedes cerrar la tarea aquí o dejar el tiempo pendiente
-            planificado en otra semana (el saldo se calcula solo).
+            Indica cuánto has trabajado (0 es válido si no hubo avance). Puedes cerrar la tarea aquí o
+            dejar el tiempo pendiente planificado en otra semana (el saldo se calcula solo).
           </DialogDescription>
         </DialogHeader>
 
@@ -234,7 +235,7 @@ export function TaskPartialCloseDialog({
                 <span className="font-mono font-semibold text-foreground">
                   {hoursRemainingToPostpone.toFixed(2)}h
                 </span>{' '}
-                (estimado menos horas realizadas; se planificarán al confirmar)
+                (estimado menos horas realizadas; con 0h se mueve todo el estimado a la semana elegida)
               </p>
             )}
           </div>
