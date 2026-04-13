@@ -145,7 +145,7 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
     isAdmin: false,
     addEmployee: () => Promise.resolve(),
     updateEmployee: () => Promise.resolve(),
-    deleteEmployee: () => Promise.resolve(),
+    deleteEmployee: async () => true,
     toggleEmployeeActive: () => Promise.resolve(),
     addClient: () => { },
     updateClient: () => { },

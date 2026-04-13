@@ -8,24 +8,20 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-    // 1. Manejo de CORS
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
 
     try {
-        // 2. Cliente Admin
         const supabaseAdmin = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         )
 
-        // 3. Validar variables
         if (!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) {
             throw new Error('Falta la Service Role Key')
         }
 
-        // 4. Parsear body
         const { userId } = await req.json()
 
         if (!userId) {
@@ -34,7 +30,34 @@ serve(async (req) => {
 
         console.log(`Eliminando usuario Auth: ${userId}`)
 
-        // 5. Eliminar usuario de Auth
+        const { error: uaErr } = await supabaseAdmin.from('user_agencies').delete().eq('user_id', userId)
+        if (uaErr) {
+            console.error('delete-user: user_agencies', uaErr)
+        }
+
+        const { error: empErr } = await supabaseAdmin.from('employees').update({ user_id: null }).eq('user_id', userId)
+        if (empErr) {
+            console.error('delete-user: employees user_id null', empErr)
+        }
+
+        const { error: paErr } = await supabaseAdmin.from('platform_admins').delete().eq('user_id', userId)
+        if (paErr) {
+            console.warn('delete-user: platform_admins (puede no existir fila)', paErr)
+        }
+
+        const { error: alErr } = await supabaseAdmin.from('audit_logs').delete().eq('user_id', userId)
+        if (alErr) {
+            console.warn('delete-user: audit_logs', alErr)
+        }
+
+        const { error: stErr } = await supabaseAdmin
+            .from('support_tickets')
+            .update({ reporter_user_id: null })
+            .eq('reporter_user_id', userId)
+        if (stErr) {
+            console.warn('delete-user: support_tickets reporter', stErr)
+        }
+
         const { data, error } = await supabaseAdmin.auth.admin.deleteUser(userId)
 
         if (error) {

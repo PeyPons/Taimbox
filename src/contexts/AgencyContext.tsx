@@ -127,6 +127,18 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
         .limit(1);
       const primaryAgencyId = primaryRows?.[0]?.agency_id ?? null;
 
+      const urlParams =
+        typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const urlAgencyFromQuery = urlParams?.get('agency')?.trim() || null;
+
+      const { data: uaMembershipRows } = await supabase
+        .from('user_agencies')
+        .select('agency_id')
+        .eq('user_id', user.id);
+      const membershipAgencyIds = [...new Set((uaMembershipRows || []).map(r => r.agency_id))];
+      const urlAgencyInMembership =
+        !!(urlAgencyFromQuery && membershipAgencyIds.includes(urlAgencyFromQuery));
+
       // 1. Buscar TODOS los empleados por email para obtener todas las agencias
       const { data: employeesData, error: employeeError } = await supabase
         .from('employees')
@@ -161,14 +173,11 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
         selectedEmployee = allEmployees[0];
 
         if (userIdError || !selectedEmployee?.agency_id) {
-          // Fallback: obtener agencias desde user_agencies y buscar empleado en esas agencias
-          console.debug('[AgencyContext] Fallback: buscando agencias en user_agencies para user_id:', user.id);
-          const { data: userAgenciesData, error: uaError } = await supabase
-            .from('user_agencies')
-            .select('agency_id')
-            .eq('user_id', user.id);
+          // Fallback: agencias ya cargadas en user_agencies; buscar empleado en esas agencias
+          console.debug('[AgencyContext] Fallback: buscando empleado en agencias de user_agencies:', user.id);
+          const userAgenciesData = uaMembershipRows || [];
 
-          if (!uaError && userAgenciesData && userAgenciesData.length > 0) {
+          if (userAgenciesData.length > 0) {
             const agencyIds = userAgenciesData.map(ua => ua.agency_id);
             // Buscar empleado por user_id en esas agencias (evita depender de email en .or())
             const { data: employeesByAgencies, error: empByAgenciesError } = await supabase
@@ -200,7 +209,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
 
           if (!selectedEmployee?.agency_id) {
             // Reparar si no hay filas en user_agencies pero el usuario podría tener empleado (ej. tras "Salir de vista" que borró la fila)
-            const hasNoUserAgencies = !userAgenciesData || userAgenciesData.length === 0;
+            const hasNoUserAgencies = !uaMembershipRows || uaMembershipRows.length === 0;
             if (hasNoUserAgencies && !repairAttemptedRef.current) {
               repairAttemptedRef.current = true;
               try {
@@ -213,10 +222,8 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
             // Sin empleado pero con user_agencies (ej. platform admin "accediendo como" agencia)
             if (userAgenciesData && userAgenciesData.length > 0) {
               const agencyIds = userAgenciesData.map(ua => ua.agency_id);
-              const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-              const urlAgencyId = params?.get('agency');
-              const selectedAgencyId = urlAgencyId && agencyIds.includes(urlAgencyId)
-                ? urlAgencyId
+              const selectedAgencyId = urlAgencyFromQuery && agencyIds.includes(urlAgencyFromQuery)
+                ? urlAgencyFromQuery
                 : agencyIds[0];
               if (selectedAgencyId) {
                 const storageKey = `selected_agency_${user.id}`;
@@ -258,12 +265,12 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       let usedExplicitAgencyChoice = false;
       if (allEmployees.length > 1) {
         const uniqueAgencyIds = [...new Set(allEmployees.map(emp => emp.agency_id))];
+        const unionAgencyIds = [...new Set([...uniqueAgencyIds, ...membershipAgencyIds])];
 
-        // Obtener nombres de todas las agencias
         const { data: agenciesData } = await supabase
           .from('agencies')
           .select('id, name')
-          .in('id', uniqueAgencyIds);
+          .in('id', unionAgencyIds);
 
         const agenciesList = (agenciesData || []).map(ag => ({
           agencyId: ag.id,
@@ -273,25 +280,26 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
         setAvailableAgencies(agenciesList);
 
         const storageKey = `selected_agency_${user.id}`;
-        const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-        const urlAgencyId = params?.get('agency');
 
-        if (urlAgencyId && uniqueAgencyIds.includes(urlAgencyId)) {
-          const urlEmployee = allEmployees.find(emp => emp.agency_id === urlAgencyId);
+        if (urlAgencyFromQuery && membershipAgencyIds.includes(urlAgencyFromQuery)) {
+          const urlEmployee = allEmployees.find(emp => emp.agency_id === urlAgencyFromQuery);
           if (urlEmployee) {
             selectedEmployee = urlEmployee;
-            localStorage.setItem(storageKey, urlAgencyId);
-            usedExplicitAgencyChoice = true;
-            console.debug('[AgencyContext] Usando agencia desde URL:', urlAgencyId);
           }
+          localStorage.setItem(storageKey, urlAgencyFromQuery);
+          usedExplicitAgencyChoice = true;
+          console.debug('[AgencyContext] Usando agencia desde URL (membresía user_agencies):', urlAgencyFromQuery);
         } else {
           const savedAgencyId = localStorage.getItem(storageKey);
-          if (savedAgencyId && uniqueAgencyIds.includes(savedAgencyId)) {
+          if (savedAgencyId && membershipAgencyIds.includes(savedAgencyId)) {
             const savedEmployee = allEmployees.find(emp => emp.agency_id === savedAgencyId);
             if (savedEmployee) {
               selectedEmployee = savedEmployee;
               usedExplicitAgencyChoice = true;
               console.debug('[AgencyContext] Usando agencia guardada:', savedAgencyId);
+            } else {
+              usedExplicitAgencyChoice = true;
+              console.debug('[AgencyContext] Agencia guardada solo en user_agencies (p. ej. impersonación):', savedAgencyId);
             }
           } else if (selectedEmployee?.agency_id) {
             localStorage.setItem(storageKey, selectedEmployee.agency_id);
@@ -299,7 +307,17 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } else {
-        setAvailableAgencies([]);
+        if (membershipAgencyIds.length > 1) {
+          const { data: agenciesData } = await supabase
+            .from('agencies')
+            .select('id, name')
+            .in('id', membershipAgencyIds);
+          setAvailableAgencies(
+            (agenciesData || []).map(ag => ({ agencyId: ag.id, agencyName: ag.name }))
+          );
+        } else {
+          setAvailableAgencies([]);
+        }
       }
 
       const primaryMatchesMembership =
@@ -307,9 +325,30 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
 
       // No usar is_primary por encima de URL/localStorage: si no, al cambiar de agencia el contexto
       // seguía cargando la “primaria” y el planificador / Realtime parecían no aplicar cambios.
+      const storageKeyAgency = `selected_agency_${user.id}`;
       let agencyIdToLoad: string | null = null;
-      if (usedExplicitAgencyChoice && selectedEmployee?.agency_id) {
-        agencyIdToLoad = selectedEmployee.agency_id;
+
+      if (urlAgencyInMembership && urlAgencyFromQuery) {
+        agencyIdToLoad = urlAgencyFromQuery;
+        const empForUrl = allEmployees.find(emp => emp.agency_id === urlAgencyFromQuery);
+        if (empForUrl) {
+          selectedEmployee = empForUrl;
+        }
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(storageKeyAgency, urlAgencyFromQuery);
+        }
+        console.debug('[AgencyContext] agencyIdToLoad priorizado por ?agency= en membresía:', urlAgencyFromQuery);
+      } else if (usedExplicitAgencyChoice) {
+        const savedOnly = typeof window !== 'undefined' ? localStorage.getItem(storageKeyAgency) : null;
+        if (savedOnly && membershipAgencyIds.includes(savedOnly)) {
+          agencyIdToLoad = savedOnly;
+          const empSaved = allEmployees.find(emp => emp.agency_id === savedOnly);
+          if (empSaved) {
+            selectedEmployee = empSaved;
+          }
+        } else if (selectedEmployee?.agency_id) {
+          agencyIdToLoad = selectedEmployee.agency_id;
+        }
       } else if (allEmployees.length > 1 && primaryMatchesMembership && primaryAgencyId) {
         agencyIdToLoad = primaryAgencyId;
       } else {
@@ -320,9 +359,12 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
         const empForLoad = allEmployees.find(emp => emp.agency_id === agencyIdToLoad);
         if (empForLoad) {
           selectedEmployee = empForLoad;
-          if (allEmployees.length > 1 && typeof window !== 'undefined') {
-            localStorage.setItem(`selected_agency_${user.id}`, agencyIdToLoad);
-          }
+        }
+        if (
+          (allEmployees.length > 1 || membershipAgencyIds.length > 1 || urlAgencyInMembership) &&
+          typeof window !== 'undefined'
+        ) {
+          localStorage.setItem(storageKeyAgency, agencyIdToLoad);
         }
       }
 

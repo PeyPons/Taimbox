@@ -780,7 +780,7 @@
     },
     "dialogs": {
       "deleteTitle": "¿Eliminar miembro de la agencia?",
-      "deleteDesc": "Esta acción desvinculará a {{name}} de esta agencia.",
+      "deleteDesc": "Desvinculará a {{name}} de esta agencia. Si no pertenece a ninguna otra agencia en Taimbox, también se borrarán sus datos en esta agencia y su cuenta de acceso.",
       "lastAdminWarning": "⚠️ Este es el último administrador. No puedes eliminarlo.",
       "transferTitle": "Transferir propiedad de la agencia",
       "transferDesc": "Selecciona el nuevo propietario de la agencia. El propietario actual perderá sus privilegios de propietario.",
@@ -794,8 +794,8 @@
       "noAccess": "No tienes acceso a esta agencia",
       "loadError": "Error al cargar los miembros",
       "lastAdminError": "No puedes eliminar al último administrador de la agencia",
-      "userDeleted": "Usuario eliminado completamente del sistema",
-      "userUnlinked": "Usuario desvinculado de esta agencia",
+      "userDeleted": "Miembro eliminado: datos en esta agencia y cuenta de acceso borrados (no tenía otras agencias)",
+      "userUnlinked": "Usuario desvinculado de esta agencia. Sigue existiendo la cuenta de acceso y puede tener datos en otras agencias.",
       "deleteError": "Error al eliminar el miembro",
       "transferSuccess": "Propiedad de la agencia transferida correctamente",
       "transferError": "Error al transferir la propiedad"
@@ -935,6 +935,10 @@
     "limits": {
       "starterLimit": "Tu agencia supera el límite del Plan Starter. Pasa a Pro o Business para añadir más empleados.",
       "planReached": "Has alcanzado el límite de empleados de tu plan. Actualiza tu plan en Plan y facturación."
+    },
+    "employeeCard": {
+      "deleteSuccess": "Empleado eliminado",
+      "deleteError": "No se pudo eliminar el empleado"
     },
     "pulse": {
       "title": "Team Pulse",

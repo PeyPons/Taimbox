@@ -657,6 +657,10 @@
       "starterLimit": "Your agency exceeds the Starter Plan limit. Upgrade to Pro or Business to add more employees.",
       "planReached": "You have reached your plan's employee limit. Update your plan in Plan & Billing."
     },
+    "employeeCard": {
+      "deleteSuccess": "Employee removed",
+      "deleteError": "Could not remove the employee"
+    },
     "pulse": {
       "title": "Team Pulse",
       "subtitle": "Daily team progress summary",
@@ -1233,7 +1237,7 @@
     },
     "dialogs": {
       "deleteTitle": "Remove member from agency?",
-      "deleteDesc": "This action will unlink {{name}} from this agency.",
+      "deleteDesc": "This will unlink {{name}} from this agency. If they are not in any other Taimbox agency, their data in this agency and their login account will also be deleted.",
       "lastAdminWarning": "⚠️ This is the last administrator. You cannot remove them.",
       "transferTitle": "Transfer agency ownership",
       "transferDesc": "Select the new owner of the agency. The current owner will lose their owner privileges.",
@@ -1247,8 +1251,8 @@
       "noAccess": "You do not have access to this agency",
       "loadError": "Error loading members",
       "lastAdminError": "You cannot remove the last administrator of the agency",
-      "userDeleted": "User completely removed from the system",
-      "userUnlinked": "User unlinked from this agency",
+      "userDeleted": "Member removed: data in this agency and login deleted (no other agencies)",
+      "userUnlinked": "User unlinked from this agency. Their login account still exists and they may have data in other agencies.",
       "deleteError": "Error removing the member",
       "transferSuccess": "Agency ownership transferred successfully",
       "transferError": "Error transferring ownership"

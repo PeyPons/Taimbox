@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { getValidRole, getValidDepartment } from '@/utils/roleUtils';
 import { normalizeDepartments } from '@/utils/departmentUtils';
 import { toast } from '@/lib/notify';
@@ -29,6 +30,7 @@ interface EmployeeCardProps {
 export const EmployeeCard = memo(function EmployeeCard({ employee }: EmployeeCardProps) {
   const { deleteEmployee, toggleEmployeeActive } = useApp();
   const { currentAgency } = useAgency();
+  const { t } = useAppTranslation();
   
   // Obtener roles y departamentos disponibles
   const availableRoles = currentAgency?.settings?.roles || [];
@@ -43,10 +45,14 @@ export const EmployeeCard = memo(function EmployeeCard({ employee }: EmployeeCar
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = (e: React.MouseEvent) => {
+  const confirmDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    deleteEmployee(employee.id);
-    toast.success("Empleado eliminado");
+    const ok = await deleteEmployee(employee.id);
+    if (ok) {
+      toast.success(t('team.employeeCard.deleteSuccess', 'Empleado eliminado'));
+    } else {
+      toast.error(t('team.employeeCard.deleteError', 'No se pudo eliminar el empleado'));
+    }
     setShowDeleteConfirm(false);
   };
 

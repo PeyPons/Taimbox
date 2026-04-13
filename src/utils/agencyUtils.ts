@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { Agency, AgencySettings } from '@/types';
 import type { AgencyMember } from '@/contexts/AgencyContext';
+import { invokeDeleteAuthUser, purgeEmployeeRowAndRelatedData } from '@/utils/employeeDeletionUtils';
 
 interface SupabaseAgency {
   id: string;
@@ -226,7 +227,49 @@ export async function removeUserFromAgencyUtil(
     throw new Error('Error al verificar agencias del usuario');
   }
 
-  const hasOtherAgencies = otherAgencies && otherAgencies.length > 0;
+  const hasOtherAgencies = (otherAgencies?.length ?? 0) > 0;
+
+  const { data: empRow, error: empFetchError } = await supabase
+    .from('employees')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('agency_id', agencyId)
+    .maybeSingle();
+
+  if (empFetchError) {
+    console.error('[AgencyUtils] Error obteniendo empleado:', empFetchError);
+    throw new Error('Error al localizar el miembro en la agencia');
+  }
+
+  if (!hasOtherAgencies) {
+    const { error: uaError } = await supabase
+      .from('user_agencies')
+      .delete()
+      .eq('user_id', userId)
+      .eq('agency_id', agencyId);
+
+    if (uaError) {
+      console.error('[AgencyUtils] Error eliminando de user_agencies:', uaError);
+      throw new Error('Error al desvincular el usuario de la agencia');
+    }
+
+    if (empRow?.id) {
+      const purge = await purgeEmployeeRowAndRelatedData(empRow.id);
+      if (!purge.ok) {
+        throw new Error(purge.error);
+      }
+    }
+
+    const authResult = await invokeDeleteAuthUser(userId);
+    if (!authResult.ok) {
+      throw new Error(
+        authResult.error ||
+          'Los datos del miembro se eliminaron, pero no se pudo eliminar la cuenta de acceso'
+      );
+    }
+
+    return { completelyRemoved: true };
+  }
 
   const { error: employeeError } = await supabase
     .from('employees')
@@ -247,9 +290,10 @@ export async function removeUserFromAgencyUtil(
 
   if (uaError) {
     console.error('[AgencyUtils] Error eliminando de user_agencies:', uaError);
+    throw new Error('Error al desvincular el usuario de la agencia');
   }
 
-  return { completelyRemoved: !hasOtherAgencies };
+  return { completelyRemoved: false };
 }
 
 export async function transferAgencyOwnershipUtil(newOwnerId: string, agencyId: string): Promise<void> {

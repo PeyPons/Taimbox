@@ -31,7 +31,7 @@ export function useAppOrDemo() {
           isAdmin: false,
           addEmployee: () => Promise.resolve(null),
           updateEmployee: () => Promise.resolve(null),
-          deleteEmployee: () => Promise.resolve(null),
+          deleteEmployee: async () => true,
           toggleEmployeeActive: () => Promise.resolve(null),
           addClient: () => Promise.resolve(null),
           updateClient: () => Promise.resolve(null),

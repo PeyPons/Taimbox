@@ -20,11 +20,13 @@ key={`proj-${inc.projectId}`}  // Para proyectos
 key={`emp-${emp.employeeId}`}  // Para empleados
 ```
 
-### 10.3 Eliminación de empleados (limpieza en BD)
+### 10.3 Eliminación de empleados y miembros (limpieza en BD)
 Al eliminar un empleado **debe borrarse todo rastro en la base de datos**. No se debe solo ocultar en UI.
-- **Función en BD**: `cleanup_employee_data(p_employee_id uuid)` elimina: `active_timers`, `timer_sessions`, `time_entries`, `allocations`, `absences`, `weekly_feedback`, `user_routines`, `professional_goals`, `task_transfers`; actualiza `deadlines.employee_hours` y `team_events.affected_employee_ids`.
-- **Flujo**: En `AppContext.deleteEmployee` se llama primero a `supabase.rpc('cleanup_employee_data', { p_employee_id: id })` y después al `DELETE` en `employees`. Si la migración no está aplicada, el usuario verá un toast indicándolo.
-- **Estado local**: Tras el cleanup se actualizan también `weeklyFeedback`, `userRoutines` y `teamEvents` en el estado para que la UI no muestre datos huérfanos.
+- **Función en BD**: `cleanup_employee_data(p_employee_id uuid)` (migración `20260414130000_cleanup_employee_data_and_admin_delete_agency.sql`) elimina o desreferencia: `active_timers`, `timer_sessions`, `time_entries`, `task_transfers`, `weekly_feedback`, `user_routines`, `professional_goals`, `project_editing_locks`, `absences`, filas y referencias en `global_assignments`, `allocations` (tras anular FKs cruzadas), y actualiza `deadlines.employee_hours` y `team_events.affected_employee_ids`. Comprueba que el llamador pertenece a la misma agencia que el empleado (o es `platform_admin`). No borra la fila `employees`.
+- **Flujo equipo**: `purgeEmployeeRowAndRelatedData` en `src/utils/employeeDeletionUtils.ts` ejecuta el RPC y luego `DELETE` en `employees`. `AppContext.deleteEmployee` solo llama a `delete-user` (Edge) si el usuario **no** tiene más filas en `employees` ni en `user_agencies`.
+- **Gestión de agencia**: Si el miembro **no** tiene otra agencia, `removeUserFromAgencyUtil` desvincula, purga empleado e invoca `delete-user`. Si tiene otras agencias, solo desactiva y quita `user_agencies` para esa agencia.
+- **Estado local**: Tras el borrado se actualizan `employees`, `allocations`, `absences`, `weeklyFeedback`, `userRoutines` y `teamEvents` en contexto.
+- **Agencias (admin plataforma)**: RPC `admin_delete_agency(p_agency_id)` borra datos de la agencia; la Edge Function `admin-delete-agency` cancela suscripción Stripe si existe y luego llama al RPC. **Irreversible.**
 
 ### 10.4 Informe de coherencia (GlobalPlanningInconsistencies)
 - **Un empleado, una fila por proyecto**: La lista "Empleados afectados" se construye con un `Map` por `employeeId` por proyecto, de modo que cada persona aparece como máximo una vez por proyecto (evita duplicados donde en una fila salía "en deadline" y en otra "no en deadline").

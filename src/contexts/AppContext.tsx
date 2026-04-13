@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { toast } from '@/lib/notify';
 import { logCreate, logUpdate, logDelete } from '@/services/auditService';
+import { countAuthLinksForUser, invokeDeleteAuthUser, purgeEmployeeRowAndRelatedData } from '@/utils/employeeDeletionUtils';
 
 // Tipos para respuestas de Supabase (snake_case)
 interface SupabaseEmployee {
@@ -142,7 +143,7 @@ interface AppContextType {
   fetchArchivedProjects: () => Promise<void>;
   addEmployee: (employee: Omit<Employee, 'id'>) => Promise<void>;
   updateEmployee: (employee: Employee) => Promise<void>;
-  deleteEmployee: (id: string) => Promise<void>;
+  deleteEmployee: (id: string) => Promise<boolean>;
   toggleEmployeeActive: (id: string) => Promise<void>;
   addClient: (client: Omit<Client, 'id'>) => Promise<Client | null>;
   updateClient: (client: Client) => void;
@@ -204,6 +205,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const hasLinkedUserRef = useRef<string | null>(null);
   // Ref para evitar cascadas al cambiar de pestaña (Supabase refresca token y re-emite authUser con nueva ref)
   const prevAuthUserIdRef = useRef<string | null>(null);
+  /** Evita saltar la re-vinculación cuando solo cambia la agencia activa (p. ej. admin impersonando otra). */
+  const lastCurrentUserAgencyRef = useRef<string | null>(null);
   // Ref para acceder a employees sin trigger re-renders
   const employeesRef = useRef<Employee[]>([]);
   // Ref para trackear meses cargados globalmente (centralizado)
@@ -497,7 +500,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (isLoading) return;
     if (employeesRef.current.length === 0) return;
 
-    if (authUser?.id != null && authUser.id === prevAuthUserIdRef.current && hasLinkedUserRef.current != null) {
+    if (
+      authUser?.id != null &&
+      authUser.id === prevAuthUserIdRef.current &&
+      hasLinkedUserRef.current != null &&
+      currentAgency?.id === lastCurrentUserAgencyRef.current
+    ) {
       return;
     }
     if (!authUser?.id) {
@@ -509,11 +517,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Buscar empleado por user_id o por email (usar ref para evitar dependencia)
-      const foundEmployee = employeesRef.current.find(e =>
+      const matchAuth = (e: Employee) =>
         e.user_id === authUser.id ||
-        (e.email && authUser.email && e.email.toLowerCase() === authUser.email.toLowerCase())
-      );
+        (!!e.email && !!authUser.email && e.email.toLowerCase() === authUser.email.toLowerCase());
+
+      const foundEmployee =
+        (currentAgency?.id
+          ? employeesRef.current.find(e => e.agencyId === currentAgency.id && matchAuth(e))
+          : undefined) ?? employeesRef.current.find(matchAuth);
 
       if (foundEmployee) {
         // Marcar como vinculado INMEDIATAMENTE (antes de cualquier setState)
@@ -526,6 +537,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           // Actualizar currentUser PRIMERO (optimistic update)
           const updatedEmployee = { ...foundEmployee, user_id: authUser.id };
           setCurrentUser(updatedEmployee);
+          lastCurrentUserAgencyRef.current = currentAgency?.id ?? null;
 
           // Luego persistir en BD (sin actualizar employees para evitar re-trigger)
           supabase
@@ -543,18 +555,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           // Empleado encontrado para usuario autenticado
           setCurrentUser(foundEmployee);
         }
+        lastCurrentUserAgencyRef.current = currentAgency?.id ?? null;
       } else {
         console.warn('[AppContext] No se encontró empleado para usuario Auth:', authUser.email);
         setCurrentUser(undefined);
+        lastCurrentUserAgencyRef.current = currentAgency?.id ?? null;
       }
     } else {
       // Usuario deslogueado - resetear
       hasLinkedUserRef.current = null;
       prevAuthUserIdRef.current = null;
+      lastCurrentUserAgencyRef.current = null;
       setCurrentUser(undefined);
     }
     prevAuthUserIdRef.current = authUser?.id ?? null;
-  }, [authUser, isAuthInitialized, isLoading]);
+  }, [authUser, isAuthInitialized, isLoading, currentAgency?.id]);
 
   const addEmployee = useCallback(async (employee: Omit<Employee, 'id'>) => {
     if (!currentAgency?.id) {
@@ -665,19 +680,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const deleteEmployee = useCallback(async (id: string) => {
+  const deleteEmployee = useCallback(async (id: string): Promise<boolean> => {
     const employeeToDelete = employeesRef.current.find(e => e.id === id);
+    const authUserId = employeeToDelete?.user_id ?? null;
 
-    // 1. Limpiar en BD todo rastro del empleado (allocations, absences, deadlines.employee_hours, etc.)
-    const { error: cleanupError } = await supabase.rpc('cleanup_employee_data', { p_employee_id: id });
-    if (cleanupError) {
-      console.error('Error limpiando datos del empleado:', cleanupError);
-      toast.error('Error al eliminar datos asociados al empleado. ¿Está aplicada la migración cleanup_employee_on_delete?');
-      return;
+    const purge = await purgeEmployeeRowAndRelatedData(id);
+    if (!purge.ok) {
+      console.error('Error eliminando empleado:', purge.error);
+      const msg = purge.error.toLowerCase();
+      toast.error(
+        msg.includes('cleanup_employee') || msg.includes('function') || msg.includes('does not exist')
+          ? 'Error al eliminar datos asociados al empleado. Comprueba que la migración cleanup_employee_data está aplicada.'
+          : purge.error
+      );
+      return false;
     }
 
-    // 2. Actualización optimista UI (alineada con lo que borra cleanup_employee_data)
-    setEmployees(prev => prev.filter(e => e.id !== id));
+    setEmployees(prev => {
+      const next = prev.filter(e => e.id !== id);
+      employeesRef.current = next;
+      return next;
+    });
     setAllocations(prev => prev.filter(a => a.employeeId !== id));
     setAbsences(prev => prev.filter(a => a.employeeId !== id));
     setWeeklyFeedback(prev => prev.filter(f => f.employeeId !== id));
@@ -689,33 +712,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         : te.affectedEmployeeIds
     })));
 
-    // 3. Borrar de la tabla employees
-    const { error } = await supabase.from('employees').delete().eq('id', id);
-
-    if (error) {
-      console.error('Error eliminando empleado de BD:', error);
-      toast.error('Error eliminando empleado');
-      return;
-    }
-
-    // 4. Borrar de Auth (si tiene user_id)
-    if (employeeToDelete?.user_id) {
-      // Eliminar usuario Auth asociado
-      try {
-        const { error: fnError } = await supabase.functions.invoke('delete-user', {
-          body: { userId: employeeToDelete.user_id }
-        });
-
-        if (fnError) {
-          console.error('Error eliminando usuario Auth (invoke):', fnError);
-          toast.warning('Empleado eliminado, pero el usuario de acceso podría seguir activo (error de sincronización).');
-        } else {
-          // Usuario Auth eliminado correctamente
+    if (authUserId) {
+      const links = await countAuthLinksForUser(authUserId);
+      if (!links) {
+        toast.warning(
+          'Empleado eliminado, pero no se pudo comprobar si la cuenta de acceso sigue en uso en otras agencias.'
+        );
+        return true;
+      }
+      if (links.employees === 0 && links.userAgencies === 0) {
+        const authRes = await invokeDeleteAuthUser(authUserId);
+        if (!authRes.ok) {
+          console.error('Error eliminando usuario Auth:', authRes.error);
+          toast.warning(
+            'Empleado eliminado, pero el usuario de acceso podría seguir activo (error de sincronización).'
+          );
         }
-      } catch (err) {
-        console.error('Error invocando delete-user:', err);
+      } else {
+        toast.info(
+          'Empleado eliminado en esta agencia. La cuenta de acceso sigue activa porque el usuario está vinculado a otra agencia.'
+        );
       }
     }
+
+    return true;
   }, []);
 
   const toggleEmployeeActive = useCallback(async (id: string) => {

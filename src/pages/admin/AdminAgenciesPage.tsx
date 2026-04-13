@@ -27,8 +27,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Loader2, Search, Pause, Play, LogIn, CreditCard } from "lucide-react";
+import { Loader2, Search, Pause, Play, LogIn, CreditCard, Trash2 } from "lucide-react";
 import { toast } from "@/lib/notify";
+import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface AgencyRow {
   id: string;
@@ -55,6 +65,9 @@ export default function AdminAgenciesPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
   const [settingPlanId, setSettingPlanId] = useState<string | null>(null);
+  const [purgeTarget, setPurgeTarget] = useState<AgencyRow | null>(null);
+  const [purgeSlugConfirm, setPurgeSlugConfirm] = useState("");
+  const [purgingId, setPurgingId] = useState<string | null>(null);
 
   const fetchAgencies = useCallback(async () => {
     setLoading(true);
@@ -121,6 +134,36 @@ export default function AdminAgenciesPage() {
       toast.error(t("admin.agencies.errStatus", "Error al actualizar estado"));
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const executePurgeAgency = async () => {
+    if (!purgeTarget || purgeSlugConfirm.trim() !== purgeTarget.slug) return;
+    setPurgingId(purgeTarget.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-delete-agency", {
+        body: { agencyId: purgeTarget.id },
+      });
+      if (error) {
+        const bodyMsg = (data as { error?: string } | null)?.error;
+        throw new Error(bodyMsg ?? error.message ?? "Error al invocar la función");
+      }
+      if (data && typeof data === "object" && "error" in data && (data as { error?: string }).error) {
+        throw new Error(String((data as { error: string }).error));
+      }
+      toast.success(
+        t("admin.agencies.purgeSuccess", "Agencia eliminada permanentemente de la base de datos")
+      );
+      setPurgeTarget(null);
+      setPurgeSlugConfirm("");
+      await fetchAgencies();
+    } catch (e: unknown) {
+      console.error("[AdminAgenciesPage] purge agency:", e);
+      toast.error(
+        e instanceof Error ? e.message : t("admin.agencies.purgeError", "No se pudo eliminar la agencia")
+      );
+    } finally {
+      setPurgingId(null);
     }
   };
 
@@ -369,6 +412,26 @@ export default function AdminAgenciesPage() {
                             )}
                           </Button>
                         )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          title={t(
+                            "admin.agencies.purgeTitle",
+                            "Eliminar agencia y todos sus datos (irreversible)"
+                          )}
+                          onClick={() => {
+                            setPurgeTarget(agency);
+                            setPurgeSlugConfirm("");
+                          }}
+                          disabled={purgingId === agency.id}
+                        >
+                          {purgingId === agency.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -378,6 +441,73 @@ export default function AdminAgenciesPage() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog
+        open={purgeTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPurgeTarget(null);
+            setPurgeSlugConfirm("");
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("admin.agencies.purgeDialogTitle", "Eliminar agencia para siempre")}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm text-slate-600">
+                <p>
+                  {t(
+                    "admin.agencies.purgeDialogBody",
+                    "Se cancelará la suscripción en Stripe si existe, y se borrarán empleados, proyectos, asignaciones y el resto de datos de esta agencia. No hay vuelta atrás."
+                  )}
+                </p>
+                {purgeTarget && (
+                  <p className="font-medium text-slate-800">
+                    {t("admin.agencies.purgeConfirmSlug", "Escribe el slug de la agencia para confirmar:")}{" "}
+                    <code className="rounded bg-slate-100 px-1 py-0.5">{purgeTarget.slug}</code>
+                  </p>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="purge-slug-confirm" className="sr-only">
+              Slug
+            </Label>
+            <Input
+              id="purge-slug-confirm"
+              value={purgeSlugConfirm}
+              onChange={(e) => setPurgeSlugConfirm(e.target.value)}
+              placeholder={purgeTarget?.slug ?? "slug"}
+              autoComplete="off"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={purgingId !== null}>
+              {t("common.cancel", "Cancelar")}
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={
+                purgingId !== null ||
+                !purgeTarget ||
+                purgeSlugConfirm.trim() !== purgeTarget.slug
+              }
+              onClick={() => void executePurgeAgency()}
+            >
+              {purgingId ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                t("admin.agencies.purgeConfirm", "Eliminar permanentemente")
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

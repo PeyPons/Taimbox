@@ -19,7 +19,8 @@ Funciones serverless que corren en Deno dentro del contenedor `supabase-edge-fun
 | `revoke-api-token` | `supabase/functions/revoke-api-token/index.ts` | Revoca un token API (marca `is_active = false`). |
 | `create-user` | `supabase/functions/create-user/index.ts` | Crea usuario en Auth + `employees`. |
 | `update-user` | `supabase/functions/update-user/index.ts` | Actualiza usuario en Auth. |
-| `delete-user` | `supabase/functions/delete-user/index.ts` | Elimina usuario de Auth. |
+| `delete-user` | `supabase/functions/delete-user/index.ts` | Elimina usuario de Auth; antes limpia `user_agencies`, pone `employees.user_id` a null, quita `platform_admins` y `audit_logs` del usuario, y anula `support_tickets.reporter_user_id`. |
+| `admin-delete-agency` | `supabase/functions/admin-delete-agency/index.ts` | Solo si `is_platform_admin`: cancela suscripción Stripe si hay `stripe_subscription_id`, luego RPC `admin_delete_agency`. **Irreversible.** |
 | `invite-user-to-agency` | `supabase/functions/invite-user-to-agency/index.ts` | Invita a un usuario existente a una agencia. |
 | `register-agency` | `supabase/functions/register-agency/index.ts` | Registra una nueva agencia (alta inicial). Asigna plan Business con trial 14 días por defecto. Inserta `settings` mínimos (módulos base); el asistente en app completa el resto. |
 | `add-platform-admin` | `supabase/functions/add-platform-admin/index.ts` | Añade un usuario como admin de plataforma. |
