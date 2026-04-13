@@ -11,7 +11,41 @@ import { supabase } from '@/lib/supabase';
 import { round2 } from '@/utils/numbers';
 import { mergeActualWithTimeEntriesSum } from '@/utils/timerReconcile';
 
-export function useAllocationActions(employeeId: string, weeks: { weekStart: Date }[], canAssignToOthers: boolean, isWeeklyEnabled: boolean = true) {
+const WEEKLY_PAST_EDIT_TOAST =
+    'No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.';
+/** Evita doble toast (p. ej. React Strict Mode o efecto duplicado) para el mismo bloqueo en poco tiempo. */
+let weeklyPastEditToastLast: { allocationId: string; at: number } | null = null;
+const WEEKLY_PAST_EDIT_TOAST_DEDUP_MS = 2500;
+
+function toastWeeklyPastEditBlockedOnce(allocationId: string): void {
+    const now = Date.now();
+    if (
+        weeklyPastEditToastLast &&
+        weeklyPastEditToastLast.allocationId === allocationId &&
+        now - weeklyPastEditToastLast.at < WEEKLY_PAST_EDIT_TOAST_DEDUP_MS
+    ) {
+        return;
+    }
+    weeklyPastEditToastLast = { allocationId, at: now };
+    toast.error(WEEKLY_PAST_EDIT_TOAST);
+}
+
+export interface UseAllocationActionsOptions {
+    /**
+     * Omite el bloqueo de edición en semanas ya cerradas (Weekly).
+     * Usar solo en contextos administrativos (p. ej. seguimiento operativo / coherencia).
+     */
+    allowEditPastWeeks?: boolean;
+}
+
+export function useAllocationActions(
+    employeeId: string,
+    weeks: { weekStart: Date }[],
+    canAssignToOthers: boolean,
+    isWeeklyEnabled: boolean = true,
+    options?: UseAllocationActionsOptions
+) {
+    const allowEditPastWeeks = options?.allowEditPastWeeks === true;
     const { addAllocation, updateAllocation, deleteAllocation } = useApp();
     const weeklyCloseDay = useWeeklyCloseDay();
     const { currentAgency } = useAgency();
@@ -167,17 +201,17 @@ export function useAllocationActions(employeeId: string, weeks: { weekStart: Dat
         }
     };
 
-    const startEditFull = (allocation: Allocation) => {
-        if (guardSoftLock()) return;
-        if (isWeeklyEnabled) {
+    const startEditFull = (allocation: Allocation): boolean => {
+        if (guardSoftLock()) return false;
+        if (isWeeklyEnabled && !allowEditPastWeeks) {
             try {
                 const taskWeekDate = parseISO(allocation.weekStartDate);
                 const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
                 const today = new Date();
 
                 if (taskWeekEnd < today) {
-                    toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
-                    return;
+                    toastWeeklyPastEditBlockedOnce(allocation.id);
+                    return false;
                 }
             } catch {
                 // Si hay error parseando, permitir editar
@@ -192,6 +226,7 @@ export function useAllocationActions(employeeId: string, weeks: { weekStart: Dat
         setEditWeek(allocation.weekStartDate);
         setEditDependencyId(allocation.dependencyId || 'none');
         setIsFormOpen(true);
+        return true;
     };
 
     const handleDeleteClick = () => {
@@ -326,14 +361,14 @@ export function useAllocationActions(employeeId: string, weeks: { weekStart: Dat
 
     const startInlineEdit = (allocation: Allocation) => {
         if (guardSoftLock()) return;
-        if (isWeeklyEnabled) {
+        if (isWeeklyEnabled && !allowEditPastWeeks) {
             try {
                 const taskWeekDate = parseISO(allocation.weekStartDate);
                 const taskWeekEnd = getWeekEndDate(taskWeekDate, weeklyCloseDay);
                 const today = new Date();
 
                 if (taskWeekEnd < today) {
-                    toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
+                    toastWeeklyPastEditBlockedOnce(allocation.id);
                     return;
                 }
             } catch {

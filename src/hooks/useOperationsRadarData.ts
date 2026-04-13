@@ -65,6 +65,8 @@ export function useOperationsRadarData(params: {
     const risks: Array<ProjectMetricItem & { riskLevel: RadarRiskLevel; riskReason: string; riskType: RadarRiskType }> = [];
 
     projectMetrics.forEach(p => {
+      // Solo horas "reales" (hoursActual). El exceso por plan + computado vs presupuesto
+      // se resuelve en OperationsRadarPage con effectiveUsage (coherente con la tarjeta de coherencia).
       const hoursOverBudget = p.actual - p.budget;
       const completionRate = p.budget > 0 ? (p.actual / p.budget) * 100 : 0;
       const projectNameLower = p.projectName.toLowerCase();

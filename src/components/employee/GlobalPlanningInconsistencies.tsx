@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   AlertTriangle, CheckCircle2, Users, TrendingUp, TrendingDown,
   Info, ChevronDown, ChevronUp, Filter, Check, Search,
-  Ban, CircleDashed, Clock, AlertOctagon, LayoutGrid, ListTodo
+  Ban, CircleDashed, Clock, AlertOctagon, LayoutGrid, ListTodo, Pencil
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CONSTANTS } from '@/config/constants';
@@ -31,6 +31,8 @@ import { computeGlobalPlanningInconsistencies, filterInconsistenciesBySearch, ty
 import { round2 } from '@/utils/numbers';
 import type { ProjectRowItem, ProjectStatusType } from '@/hooks/useOperationsRadarData';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
+import { usePermissions } from '@/hooks/usePermissions';
+import { CoherenceAllocationEditDialog } from '@/components/employee/CoherenceAllocationEditDialog';
 
 const WEEK_START_MONDAY = { weekStartsOn: 1 as const };
 
@@ -78,7 +80,9 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
   operationsRadar,
 }: GlobalPlanningInconsistenciesProps) {
   const { allocations } = useAppAllocations();
-  const { employees } = useAppEmployees();
+  const { employees, currentUser } = useAppEmployees();
+  const { hasPermission } = usePermissions();
+  const canAssignTasksToOthers = hasPermission('can_assign_tasks_to_others');
   const { projects, clients } = useAppProjects();
   const { currentAgency } = useAgency();
   const preference = currentAgency?.settings?.hoursTrackingPreference;
@@ -94,6 +98,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
   const [openFilterProject, setOpenFilterProject] = useState(false);
   const [coherenceSearchQuery, setCoherenceSearchQuery] = useState('');
   const [tasksModalProjectId, setTasksModalProjectId] = useState<string | null>(null);
+  const [coherenceEditTask, setCoherenceEditTask] = useState<Allocation | null>(null);
   const listTopRef = useRef<HTMLDivElement>(null);
   const { formatName: formatProjectName } = useProjectAliasing();
   const { isActive: isPrivacyDemo, anonymizer: privacyAnonymizer } = usePrivacyDemo();
@@ -262,10 +267,10 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
     <TooltipProvider>
       <Card className="border-l-4 border-l-amber-500 overflow-hidden min-w-0">
         <CardHeader className="pb-2">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <CardTitle className="text-base flex items-center gap-2 min-w-0">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            <CardTitle className="text-base flex items-center gap-2 shrink-0">
               <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
-              <span className="truncate">Coherencia de planificación global</span>
+              <span className="leading-snug">Coherencia de planificación global</span>
               <Tooltip>
                 <TooltipTrigger className="shrink-0">
                   <Info className="h-4 w-4 text-slate-400" />
@@ -278,7 +283,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                 </TooltipContent>
               </Tooltip>
             </CardTitle>
-            <div className="flex flex-col gap-2 w-full min-w-0 sm:max-w-none">
+            <div className="flex w-full min-w-0 flex-1 flex-col gap-2">
               {showLocalProjectSearch && (
                 <div className="flex items-center gap-2">
                   <Filter className="h-4 w-4 text-slate-400 shrink-0" />
@@ -930,6 +935,8 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                         pending.map(task => {
                           const emp = employees?.find(e => e.id === task.employeeId);
                           const weekSpan = formatTaskWeekCalendarSpan(task.weekStartDate, dateLocale);
+                          const canEditThisTask =
+                            canAssignTasksToOthers || task.employeeId === currentUser?.id;
                           return (
                             <div
                               key={task.id}
@@ -955,6 +962,18 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                                   </p>
                                 </div>
                               </div>
+                              {canEditThisTask && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 shrink-0 text-slate-500 hover:text-slate-800"
+                                  onClick={() => setCoherenceEditTask(task)}
+                                  aria-label={t('operationsRadar.coherenceTasksEditAria', 'Editar tarea')}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
                               <div className="flex min-w-[3.5rem] shrink-0 flex-col items-end justify-start gap-0.5 pl-1 text-right tabular-nums">
                                 <span className="whitespace-nowrap font-mono text-sm font-bold leading-tight text-slate-800">
                                   {task.hoursAssigned ?? 0}h
@@ -977,6 +996,8 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                         completed.map(task => {
                           const emp = employees?.find(e => e.id === task.employeeId);
                           const weekSpan = formatTaskWeekCalendarSpan(task.weekStartDate, dateLocale);
+                          const canEditThisTask =
+                            canAssignTasksToOthers || task.employeeId === currentUser?.id;
                           return (
                             <div
                               key={task.id}
@@ -1002,6 +1023,18 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                                   </p>
                                 </div>
                               </div>
+                              {canEditThisTask && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 shrink-0 text-slate-500 hover:text-slate-800"
+                                  onClick={() => setCoherenceEditTask(task)}
+                                  aria-label={t('operationsRadar.coherenceTasksEditAria', 'Editar tarea')}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
                               <div className="flex min-w-[7.25rem] shrink-0 flex-col items-end justify-start gap-0.5 text-right tabular-nums">
                                 <span className="max-w-full whitespace-nowrap font-mono text-[10px] leading-tight text-slate-600">
                                   {t('operationsRadar.taskEstShort', 'Est')}: {task.hoursAssigned ?? 0}h
@@ -1029,6 +1062,16 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
           ) : null}
         </DialogContent>
       </Dialog>
+
+      {coherenceEditTask ? (
+        <CoherenceAllocationEditDialog
+          key={coherenceEditTask.id}
+          allocation={coherenceEditTask}
+          viewDate={viewDate}
+          deadlines={deadlines}
+          onDismiss={() => setCoherenceEditTask(null)}
+        />
+      ) : null}
     </TooltipProvider>
   );
 });

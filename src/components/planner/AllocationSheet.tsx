@@ -16,7 +16,7 @@ import { useAgency } from '@/contexts/AgencyContext';
 import { Allocation, Project } from '@/types';
 import { CalendarDays, X, ChevronLeft, ChevronRight, MoreHorizontal, ArrowRightCircle, Search, TrendingUp, TrendingDown, CheckCircle2, Users, ChevronDown, Palmtree, Zap, Clock, LayoutGrid, Calendar, FoldVertical, UnfoldVertical, ArrowUpDown, SortAsc, SortDesc, GanttChart, Filter, SlidersHorizontal, ArrowRightLeft, Lock, Check, Plus, Link as LinkIcon, AlertTriangle, AlertOctagon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth, getWeekEndDate, isAllocationWeekPastForWeekly } from '@/utils/dateUtils';
+import { getWeeksForMonth, getStorageKey, isAllocationInEffectiveMonth, getWeekEndDate } from '@/utils/dateUtils';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import { format, addMonths, subMonths, isSameMonth, parseISO, addDays, isBefore, startOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -924,10 +924,6 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                       className={cn("font-medium text-sm leading-tight break-words cursor-pointer", isCompleted && "line-through text-slate-400", pendingTransferMobile && "cursor-not-allowed opacity-70")}
                                                       onClick={() => {
                                                         if (pendingTransferMobile) return;
-                                                        if (isWeeklyEnabled && isAllocationWeekPastForWeekly(alloc.weekStartDate, weeklyCloseDay)) {
-                                                          toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
-                                                          return;
-                                                        }
                                                         startEditFull(alloc);
                                                       }}
                                                     >
@@ -970,10 +966,6 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                   nextWeekStart={nextWeekNavStart}
                                                   onStartEditFull={() => {
                                                     if (pendingTransferMobile) return;
-                                                    if (isWeeklyEnabled && isAllocationWeekPastForWeekly(alloc.weekStartDate, weeklyCloseDay)) {
-                                                      toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
-                                                      return;
-                                                    }
                                                     startEditFull(alloc);
                                                   }}
                                                   onTransfer={() => {
@@ -1320,10 +1312,6 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                                         nextWeekStart={nextWeekNavStart}
                                                         onStartEditFull={() => {
                                                           if (pendingTransfer) return;
-                                                          if (isWeeklyEnabled && isAllocationWeekPastForWeekly(alloc.weekStartDate, weeklyCloseDay)) {
-                                                            toast.error('No puedes editar tareas de semanas pasadas. Usa el botón "Weekly" para gestionarlas.');
-                                                            return;
-                                                          }
                                                           startEditFull(alloc);
                                                         }}
                                                         onTransfer={() => {
