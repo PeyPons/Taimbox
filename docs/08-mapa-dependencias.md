@@ -16,6 +16,7 @@ Si modificas una interface, revisa estos consumidores:
 | `WorkSchedule` | `capacityUtils.ts`, `dateUtils.ts`, `AppContext.tsx` |
 | `Absence` / `TeamEvent` | `capacityUtils.ts`, `AppContext.tsx`, `AbsencesSheet.tsx` |
 | `TaskTransfer` | `useTaskTransfers.ts`, `TaskTransferComponents.tsx`, `AppContext.tsx` |
+| `NotificationRule` / `src/types/notifications.ts` | `NotificationRulesSection.tsx`, `AgencySettingsPage.tsx` (pestaña Notificaciones); Edge `notify-task-transfer`, `process-notification-rules` |
 | `UserPermissions` | `usePermissions.ts`, `src/types/permissions.ts`, `PermissionProtectedRoute` en `App.tsx` |
 | `OKR` / `ProfessionalGoal` | `GoalsContext.tsx`, `OkrsPage.tsx`, `ProfessionalGoalsSheet.tsx`, `EmployeeDashboard.tsx` |
 

@@ -25,7 +25,7 @@ Las plantillas HTML y el texto plano viven en `_shared/welcome-and-invitation-em
 Para que los correos **lleguen** (registro, invitación, reset):
 
 1. **API key**: crea clave en Resend → configura el secreto `RESEND_API_KEY` en el entorno de las Edge Functions (Supabase Dashboard → *Edge Functions* → *Secrets*, o variables del contenedor en self-hosted). Sin esto, `sendEmail` devuelve error y solo verás trazas en logs.
-2. **Remitente** (`RESEND_FROM_EMAIL`): opcional. Por defecto el código usa `Taimbox <onboarding@resend.dev>`. En cuenta gratuita de Resend, ese remitente **solo permite enviar al email con el que registraste Resend**; para usuarios reales verifica tu dominio en Resend y usa p. ej. `Taimbox <no-reply@tudominio.com>`.
+2. **Remitente** (`RESEND_FROM_EMAIL`): opcional. Por defecto el código usa `Taimbox <onboarding@resend.dev>`. En cuenta gratuita de Resend, ese remitente **solo permite enviar al email con el que registraste Resend**; para usuarios reales verifica tu dominio en Resend y usa p. ej. `Taimbox <noreply@tudominio.com>`. **Importante:** usar el dominio raíz verificado en Resend (ej. `taimbox.com`), no el subdominio de los registros SPF/MX (ej. `send.taimbox.com`); ese subdominio es para el return-path, no para el `From:` (ver troubleshooting en `docs/05`, § Resend 403).
 3. **Enlaces en el correo**: define `SITE_URL` (o `CHECKOUT_BASE_URL`, que tiene prioridad en el helper de reset) apuntando a tu app pública (`/login`, `/reset-password`).
 4. **Local**: copia `supabase/.env.example` → `supabase/.env`, rellena valores y usa `supabase functions serve` (ver también tabla de troubleshooting en `docs/05-integraciones-automatizacion.md`, § emails).
 

@@ -1,4 +1,4 @@
-﻿
+
 ## 5. Integraciones y Automatización
 
 Google Ads y Meta Ads se sincronizan **solo** mediante **Edge Functions** de Supabase (Deno en el contenedor `supabase-edge-functions`), invocadas desde la app, por cron o por automatización que llame a la API de funciones.
@@ -30,6 +30,8 @@ Funciones serverless que corren en Deno dentro del contenedor `supabase-edge-fun
 | `send-welcome-email` | `supabase/functions/send-welcome-email/index.ts` | Endpoint HTTP opcional; delega en `_shared/welcome-and-invitation-email.ts` (misma lógica que `register-agency` / `invite-user-to-agency` / `create-user`). Body: `{ email, name, agencyName, type }`. Invitaciones: enlace recovery vía `_shared/password-recovery-url.ts`. Envío: `_shared/resend.ts` (igual que `request-password-reset`). Requiere `RESEND_API_KEY`. |
 | `send-contact-email` | `supabase/functions/send-contact-email/index.ts` | Envía email interno a `CONTACT_TO_EMAIL` (default `hello@taimbox.com`) desde el formulario público `/contacto` vía Resend. Body: `{ name, email, subject, message }`. Requiere `RESEND_API_KEY`. La página `src/pages/ContactoPage.tsx` usa `useTranslation('landing')` y las claves `static.contact.seoTitle` / `static.contact.seoDescription` en `src/locales/{es,en}/landing.json` para `SeoTags`. |
 | `request-password-reset` | `supabase/functions/request-password-reset/index.ts` | Genera enlace de recuperación (`_shared/password-recovery-url.ts`) y lo envía por email vía Resend. Body: `{ email }`. Funciona para cualquier usuario en `auth.users`. Siempre devuelve 200 (previene enumeración). No requiere autenticación. |
+| `notify-task-transfer` | `supabase/functions/notify-task-transfer/index.ts` | Tras crear una solicitud en `task_transfers`, la app invoca con JWT de usuario. Comprueba que el actor sea `from_employee_id`, carga reglas `notification_rules` con `trigger_type = task_transfer_pending`, resuelve destinatarios y envía un correo vía `_shared/resend.ts`. Dedupe en `notification_deliveries` con clave prefijo `task_transfer` + id de transferencia. Requiere `RESEND_*`, `SUPABASE_ANON_KEY`. |
+| `process-notification-rules` | `supabase/functions/process-notification-rules/index.ts` | **Sin JWT** (`config.toml`: `verify_jwt = false`). POST con `Authorization: Bearer <NOTIFICATIONS_CRON_SECRET>`. Evalúa reglas `scheduled` (métricas de proyecto alineadas con ProjectsPage), envía alertas y registra envíos en `notification_deliveries`. Body opcional: `{ "agencyId"?: "uuid", "force"?: true }` (`force` ignora filtro de hora UTC). Requiere `NOTIFICATIONS_CRON_SECRET`, `RESEND_*`, `SUPABASE_SERVICE_ROLE_KEY`. Programar con cron (cada hora si usas `schedule_hour_utc` en reglas, o diario). |
 
 **Meta Ads — presupuesto y ritmo en la UI (`MetaAdsPage.tsx`):** El objetivo mensual y las alertas se basan en el **presupuesto mensual** que la agencia introduce en pantalla (persistido en `client_settings.budget_limit` por cuenta o cliente virtual). La vista compara **gasto medio diario** (lo gastado en el mes ÷ días transcurridos) con **objetivo medio diario** (presupuesto restante ÷ días que faltan). Los límites nativos de gasto siguen configurándose en Meta (campaña, conjunto, presupuesto compartido, etc.); no se muestra un «presupuesto diario importado» desde la API, para alinear el mensaje con el modelo de Meta y con lo que realmente sincroniza `sync-meta-ads`. En **Google Ads** (`AdsPage.tsx`) sí se usa `daily_budget` devuelto por la API cuando está disponible. La página importa desde `react` los hooks (`useState`, `useEffect`, `useMemo`, `useRef`) y `memo` usados por el componente memoizado de las tarjetas de estadísticas. Los filtros de la barra (cuentas ocultas, **sin inversión en el mes**) replican el comportamiento de `AdsPage` (`showHidden`, `showZeroSpend`).
 
@@ -52,10 +54,40 @@ Cuando el modo está activo, los textos sustituidos se muestran con efecto blur 
 **Cobertura ampliada (UI)**: en varias pantallas el modo también anonimiza otros campos (p. ej. empleados o clientes) además del nombre de proyecto; eso es **opcional por pantalla** y no sustituye el foco en **proyectos** como dato crítico frente a demos con terceros.
 
 #### Módulo compartido `_shared/resend.ts`
-Módulo reutilizable que exporta `sendEmail({ to, subject, html, text? })`. Usa la API HTTP de Resend (`https://api.resend.com/emails`). Variables: `RESEND_API_KEY` (obligatoria), `RESEND_FROM_EMAIL` (default: `Taimbox <onboarding@resend.dev>`). Sin dependencias externas.
+Módulo reutilizable que exporta `sendEmail({ to, subject, html, text? })`. Usa la API HTTP de Resend (`https://api.resend.com/emails`). Variables: `RESEND_API_KEY` (obligatoria), `RESEND_FROM_EMAIL` (default: `Taimbox <onboarding@resend.dev>`; en producción usar el dominio raíz verificado en Resend, p. ej. `Taimbox <noreply@taimbox.com>`, no el subdominio SPF). Sin dependencias externas.
 
 #### Módulo `_shared/welcome-and-invitation-email.ts`
 Exporta `sendWelcomeOrInvitationEmail(supabaseAdmin, { email, name, agencyName, type })` con `type`: `registration` | `invitation`. Construye HTML/texto y llama a `sendEmail` en el mismo runtime (no hace `fetch` a `send-welcome-email`). Lo usan `register-agency`, `invite-user-to-agency` y `create-user` para alinearse con el envío directo de `request-password-reset`.
+
+#### Notificaciones configurables (Resend)
+
+- **Tablas:** `notification_rules` (CRUD desde la app con RLS por `user_agencies`), `notification_deliveries` (solo inserción efectiva vía service role desde las funciones; sin políticas para `authenticated`).
+- **UI:** Configuración de agencia → pestaña **Notificaciones** (`AgencySettingsPage`).
+- **Transferencias:** `useTaskTransfers` invoca `notify-task-transfer` en segundo plano tras insertar la fila (el destinatario depende de la regla: p. ej. `transfer_target`).
+- **Programadas — `conditions` (JSON en `notification_rules.conditions`):**
+  - **`evaluation`:** `project_month_health` (por defecto; indicadores mensuales alineados con ProjectsPage) o **`deadline_coherence`** (misma base de cálculo que “Coherencia de planificación global” en seguimiento operativo). Los correos de coherencia enlazan a **`/operaciones`** y muestran desglose tipo tarjeta: deadline → plan → comp → “por computar” y delta, más empleados afectados.
+  - **Coherencia (`deadline_coherence`):** `coherence_min_abs_hours` (umbral mínimo en horas, valor absoluto), `coherence_op_status_in` (lista: `over-budget`, `behind-schedule`, `needs-planning`, `no-activity`, `in-rule`), `coherence_delivery_mode`: `per_project` (un envío por proyecto y mes) o `digest` (un solo correo con varios proyectos, hasta `coherence_digest_max`). Opcionales: `project_ids`, `client_ids` (filtran proyectos; la UI puede no exponerlos aún).
+  - **Dedupe:** `per_project` → clave `scheduled_coherence|<rule_id>|<project_id>|<YYYY-MM>`; `digest` → `scheduled_coherence_digest|<rule_id>|<YYYY-MM>`. Un acierto por clave y agencia evita reenvíos hasta el siguiente mes.
+  - **Mes evaluado:** el worker usa el **mes calendario en UTC** en la misma línea que el ramal `project_month_health`; si hiciera falta mes “local agencia”, habría que acotarlo explícitamente en código y documentación.
+- **Programadas — despliegue:** Define `NOTIFICATIONS_CRON_SECRET` en secrets del runtime (mismo patrón que `RESEND_API_KEY`). Ejemplo de llamada desde cron o CI:
+
+```bash
+curl -sS -X POST "$SUPABASE_FUNCTIONS_URL/process-notification-rules" \
+  -H "Authorization: Bearer $NOTIFICATIONS_CRON_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+En Supabase Cloud la URL suele ser `https://<project_ref>.supabase.co/functions/v1/<nombre_funcion>` (p. ej. `.../functions/v1/process-notification-rules`). En self-hosted, la ruta equivalente según tu reverse proxy o `kong`.
+
+**Raspberry Pi / servidor propio (cron en la misma máquina que Supabase):**
+
+- **URL:** Si Kong y las funciones escuchan solo en la red Docker, usa la URL interna que ya resuelva al servicio de funciones (p. ej. `http://kong:8000/functions/v1/process-notification-rules` desde otro contenedor, o `http://127.0.0.1:<puerto>/...` si publicaste el puerto en el host). Debe ser la misma base que usas para el resto de Edge Functions.
+- **Secreto:** No hardcodees `NOTIFICATIONS_CRON_SECRET` en el crontab en claro si puedes evitarlo. Opciones: archivo `~/.config/taimbox/notifications-cron.env` con permisos `600` y `source` antes del `curl`, o variables en un **systemd timer + service** (`EnvironmentFile=`).
+- **Frecuencia:** Si usas **hora UTC** en la regla (`schedule_hour_utc`), programa el disparo **cada hora** (p. ej. `0 * * * *` en crontab = minuto 0 de cada hora). La función ignora las horas que no coinciden. Si dejas la hora vacía en la regla, con un cron diario basta para “comprobar una vez al día”, siempre que te valga que la evaluación ocurra solo en ese momento.
+- **`curl` robusto:** Añade `-f` (falla si HTTP ≥ 400) para que el cron registre error si el secreto o la URL fallan: `curl -fsS ...`. Revisa salida: `2>&1 | logger -t taimbox-notifications` o redirección a un log rotado.
+- **systemd (alternativa a crontab):** Un `*.timer` OnCalendar hourly (o `*-*-* *:00:00`) que invoque un script que haga el `POST` suele ser más claro para logs y reinicios en la Pi.
+- **Pi:** El trabajo es ligero (un POST y lógica en Edge); no debería notarse. Evita escribir logs enormes en la SD sin rotación (`logrotate`). Mantén la Pi con hora NTP correcta (la hora UTC del worker depende del reloj del host que ejecuta las funciones / contenedor).
 
 #### Emails transaccionales (Resend)
 - **Registro**: Al registrar una agencia (`register-agency`), se envía email de bienvenida (fire-and-forget).
@@ -69,9 +101,11 @@ Exporta `sendWelcomeOrInvitationEmail(supabaseAdmin, { email, name, agencyName, 
 |----------|-------|----------|
 | **No llegan emails** (bienvenida, invitación, reset contraseña) | `RESEND_API_KEY` no configurada o faltante en el contenedor | Añadir en `.env`: `RESEND_API_KEY=re_xxxxxxxx` (obtener en [resend.com](https://resend.com) → API Keys). Si usas el contenedor manual, incluir `-e RESEND_API_KEY="$RESEND_API_KEY"` en el `docker run`. |
 | **Emails van a spam** | Dominio no verificado en Resend | En Resend Dashboard verificar el dominio (p. ej. `taimbox.com`) y añadir los registros DNS que indique. |
-| **Emails con remitente genérico** | `RESEND_FROM_EMAIL` no configurada | Añadir en `.env`: `RESEND_FROM_EMAIL=Taimbox <no-reply@taimbox.com>`. El dominio debe estar verificado en Resend. |
-| **"Olvidé mi contraseña" no envía email** | Usuario no existe en `auth.users` o error en Resend | La función siempre devuelve 200 (previene enumeración). Revisar logs: `docker logs functions --tail 50` y buscar `[request-password-reset]` o `[Resend]`. |
-| **Contenedor manual sin emails** | Variables Resend no pasadas al `docker run` | Incluir `-e RESEND_API_KEY="$RESEND_API_KEY"` y `-e RESEND_FROM_EMAIL="${RESEND_FROM_EMAIL:-Taimbox <no-reply@taimbox.com>}"` en el comando. Ver sección "Workaround: usar contenedor manual". |
+| **Emails con remitente genérico** | `RESEND_FROM_EMAIL` no configurada | Añadir en `.env`: `RESEND_FROM_EMAIL=Taimbox <noreply@taimbox.com>`. El dominio debe estar verificado en Resend. |
+| **Resend 403 «domain is not verified»** | `RESEND_FROM_EMAIL` usa un subdominio (p. ej. `@send.taimbox.com`) pero en Resend solo está verificado el dominio raíz (`taimbox.com`) | Usar el dominio raíz verificado: `RESEND_FROM_EMAIL=Taimbox <noreply@taimbox.com>`. **Ojo:** Resend configura registros SPF/MX en un subdominio `send` para el return-path, pero el remitente (`From:`) debe coincidir con el dominio verificado en el dashboard, no con el subdominio de los registros DNS. |
+| **"Olvidé mi contraseña" no envía email** | Usuario no existe en `auth.users` o error en Resend | La función siempre devuelve 200 (previene enumeración). Revisar logs: `docker logs supabase-edge-functions --tail 50` y buscar `[request-password-reset]` o `[Resend]`. |
+| **Contenedor manual sin emails** | Variables Resend no pasadas al `docker run` | Incluir `-e RESEND_API_KEY="$RESEND_API_KEY"` y `-e RESEND_FROM_EMAIL="${RESEND_FROM_EMAIL:-Taimbox <noreply@taimbox.com>}"` en el comando. Ver sección "Workaround: usar contenedor manual". |
+| **`{"message":"name resolution failed"}` en todas las funciones** | No es un error de Resend ni del Edge Runtime: **Kong** no puede resolver el hostname `functions` para enrutar al Edge Runtime. Ocurre cuando el contenedor se creó fuera de Docker Compose (p. ej. con el workaround manual) y perdió el alias de servicio `functions` en la red Docker | Ver sección «Solución de problemas: `name resolution failed` — alias `functions` en la red Docker» más abajo. |
 
 #### Arquitectura Google Ads OAuth (Modelo SaaS)
 
@@ -190,7 +224,7 @@ GOOGLE_DEVELOPER_TOKEN=<developer_token>
 META_APP_ID=<facebook_app_id>
 META_APP_SECRET=<facebook_app_secret>
 RESEND_API_KEY=<resend_api_key>
-RESEND_FROM_EMAIL=Taimbox <no-reply@taimbox.com>
+RESEND_FROM_EMAIL=Taimbox <noreply@taimbox.com>
 ```
 
 Opcional (solo lectura / pruebas sin OAuth por agencia): `META_ACCESS_TOKEN`.
@@ -256,22 +290,32 @@ Si al vincular **Google Ads**, **Meta Ads** o listar cuentas aparece **503 (Serv
 3. **Crash no capturado**  
    Si el body de la petición está vacío o no es JSON válido, las funciones devuelven **400** con mensaje claro. Si aun así ves 503, revisa los logs del contenedor para ver el stack trace.
 
-4. **DNS / «name resolution failed» (Meta Ads, Google, listados)**  
-   Si el body del error o los logs mencionan **`name resolution failed`** o fallos al resolver `graph.facebook.com` / `googleapis.com`, el contenedor **`supabase-edge-functions`** no está resolviendo nombres correctamente (común en Docker con DNS del host defectuoso o redes aisladas). El frontend reintenta automáticamente algunas llamadas ante 503, pero hay que corregir la red:
-   - En el `docker-compose` del servicio `functions`, añadir DNS públicos, p. ej.:
+4. **DNS / «name resolution failed» (Meta Ads, Google, listados, Resend)**  
+   Si el body del error o los logs mencionan **`name resolution failed`**, hay **dos causas distintas** que producen el mismo mensaje:
+
+   **a) Kong no puede resolver el hostname `functions` (causa más frecuente)**  
+   Kong enruta a `functions:9000`. Si el contenedor del Edge Runtime no tiene el alias `functions` en la red Docker `supabase_default`, Kong devuelve `{"message":"name resolution failed"}` **sin que la petición llegue al Edge Runtime** (no aparecen logs en el contenedor). Esto ocurre cuando el contenedor se creó fuera de Docker Compose (con `docker run` manual) y no se añadió `--network-alias functions`. Ver sección **«`name resolution failed` — alias `functions`»** más abajo.
+
+   **b) El Edge Runtime no resuelve hosts externos**  
+   Si los **logs del contenedor** muestran errores como `dns error: failed to lookup address information` al intentar llegar a `esm.sh`, `api.resend.com`, `graph.facebook.com` o `googleapis.com`, el problema es de DNS saliente. Solución:
+   - En el `docker-compose` del servicio `functions`, añadir DNS públicos:
      ```yaml
      dns:
        - 8.8.8.8
        - 8.8.4.4
      ```
-   - Reiniciar: `docker compose up -d functions` (o el comando equivalente en tu stack).
-   - Comprobar desde el contenedor: `docker exec -it supabase-edge-functions wget -qO- --timeout=5 https://graph.facebook.com/v21.0/ 2>&1 | head` (o `curl` si está instalado). Si falla por DNS, el problema es de resolución, no de código.
-   - Asegurar también que `SUPABASE_URL` sea alcanzable **desde dentro** del contenedor (p. ej. `http://kong:8000` en la red Docker de Supabase); si el runtime no puede resolver `kong`, el cliente de Supabase fallará al guardar el token tras OAuth.
-   - **Vite en local:** el hot reload puede remontar la página de Configuración y repetir muchas veces la llamada a `list-google-accounts`. El frontend **deduplica** la petición por `agency_id`, aplica un **debounce** y solo carga el listado cuando la pestaña **Integraciones** está activa, para no saturar la API mientras el 503 persiste en el servidor.
+   - Reiniciar: `docker compose up -d functions`.
+   - Asegurar que `SUPABASE_URL` sea alcanzable **desde dentro** del contenedor (p. ej. `http://kong:8000` en la red Docker de Supabase); si el runtime no puede resolver `kong`, el cliente de Supabase fallará.
+
+   **Cómo distinguir (a) de (b):** ejecutar `docker logs supabase-edge-functions --tail 20` **justo después** de la petición fallida. Si no aparece **ningún log nuevo** de la función invocada, es (a) — Kong no alcanza el Edge Runtime. Si aparecen logs con errores DNS, es (b) — el Edge Runtime no sale a Internet.
+
+   - **Verificar DNS desde la red Docker:** `docker run --rm --network supabase_default alpine nslookup functions` (debe resolver a la IP del contenedor) y `docker run --rm --network supabase_default alpine nslookup esm.sh` (debe resolver a IPs externas).
+   - **Vite en local:** el hot reload puede remontar la página de Configuración y repetir muchas veces la llamada a `list-google-accounts`. El frontend **deduplica** la petición por `agency_id`, aplica un **debounce** y solo carga el listado cuando la pestaña **Integraciones** está activa, para no saturar la API mientras el error persiste en el servidor.
 
 **Comprobar en el servidor:**
 - Que existan las carpetas `oauth-google-ads` y `list-google-accounts` dentro del volumen de functions.
 - Que el contenedor tenga las variables anteriores (`docker inspect ... | grep GOOGLE` y comprobar SUPABASE_*).
+- Que el alias `functions` esté registrado: `docker inspect supabase-edge-functions --format '{{json .NetworkSettings.Networks}}' | python3 -m json.tool` — buscar `functions` en `DNSNames` o `Aliases`.
 - Reproducir el error y ejecutar `docker logs supabase-edge-functions --tail 100` para ver el error exacto.
 
 #### Solución de problemas: HTTP 000, 404 y 301 al probar Edge Functions
@@ -338,7 +382,7 @@ Si los logs muestran `main function started` seguido de `shutdown signal receive
    Debe devolver `{"message":"ok"}` y HTTP:200.
 
 5. **Workaround: usar contenedor manual**  
-   Si el contenedor de Compose sigue en bucle y las causas anteriores no aplican, levantar el Edge Runtime manualmente. Kong enruta a `functions:9000`, así que el contenedor debe llamarse `functions` para que resuelva en la red.
+   Si el contenedor de Compose sigue en bucle y las causas anteriores no aplican, levantar el Edge Runtime manualmente. Kong enruta a `functions:9000`, así que el contenedor **debe tener el alias `functions`** en la red Docker para que Kong lo encuentre.
 
    **Importante:** No usar `--env-file .env` porque el `.env` tiene nombres como `SERVICE_ROLE_KEY` y la función espera `SUPABASE_SERVICE_ROLE_KEY`. Hay que pasar las variables explícitamente:
 
@@ -354,6 +398,7 @@ Si los logs muestran `main function started` seguido de `shutdown signal receive
    docker run -d --name functions \
      -v /home/alex/supabase-pi/supabase/docker/volumes/functions:/home/deno/functions:Z \
      --network supabase_default \
+     --network-alias functions \
      -e SUPABASE_URL=http://kong:8000 \
      -e SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
      -e SUPABASE_ANON_KEY="$ANON_KEY" \
@@ -367,15 +412,21 @@ Si los logs muestran `main function started` seguido de `shutdown signal receive
      -e STRIPE_PRICE_ID_PRO="${STRIPE_PRICE_ID_PRO:-}" \
      -e STRIPE_PRICE_ID_BUSINESS="${STRIPE_PRICE_ID_BUSINESS:-}" \
      -e RESEND_API_KEY="$RESEND_API_KEY" \
-     -e RESEND_FROM_EMAIL="${RESEND_FROM_EMAIL:-Taimbox <no-reply@taimbox.com>}" \
+     -e RESEND_FROM_EMAIL="${RESEND_FROM_EMAIL:-Taimbox <noreply@taimbox.com>}" \
      -e VERIFY_JWT="${FUNCTIONS_VERIFY_JWT:-true}" \
      supabase/edge-runtime:v1.69.28 \
      start --main-service /home/deno/functions/main
    ```
 
+   > **⚠️ Alias obligatorio:** `--network-alias functions` es **imprescindible**. Sin él, Kong no puede resolver `functions:9000` y todas las peticiones devuelven `{"message":"name resolution failed"}` sin que aparezca ningún log en el Edge Runtime. Si ya tienes el contenedor corriendo sin alias, puedes añadirlo en caliente:
+   > ```bash
+   > docker network disconnect supabase_default supabase-edge-functions
+   > docker network connect --alias functions supabase_default supabase-edge-functions
+   > ```
+
    Ajustar la ruta `/home/alex/` si el usuario o la instalación son distintos.
 
-   Verificar que responde: `curl -s https://api.taimbox.com/functions/v1/hello -H "Authorization: Bearer ANON_KEY"` debe devolver algo distinto de 503. O probar `oauth-google-ads` con un código de prueba: si devuelve 400 con "Google Error: Malformed auth code" → la función está operativa.
+   Verificar que responde: `curl -s https://api.taimbox.com/functions/v1/hello -H "Authorization: Bearer ANON_KEY"` debe devolver algo distinto de 503 o `name resolution failed`. O probar `oauth-google-ads` con un código de prueba: si devuelve 400 con "Google Error: Malformed auth code" → la función está operativa.
 
    Para volver al contenedor de Compose:
    ```bash
@@ -385,6 +436,39 @@ Si los logs muestran `main function started` seguido de `shutdown signal receive
    ```
 
    Si tras volver a Compose el bucle reaparece, mantener el contenedor manual como solución estable. Puedes crear un script `start-functions-manual.sh` con el bloque anterior para ejecutarlo tras reinicios del servidor.
+
+#### Solución de problemas: `name resolution failed` — alias `functions` en la red Docker
+
+Si **todas** las Edge Functions devuelven `{"message":"name resolution failed"}` y **no aparece ningún log** en `docker logs supabase-edge-functions`, el problema NO es de DNS externo ni del Edge Runtime: es **Kong** quien no puede resolver el upstream `functions:9000`.
+
+**Causa:** El contenedor `supabase-edge-functions` no tiene el alias de red `functions` en `supabase_default`. Cuando Docker Compose crea el contenedor, añade automáticamente el nombre del servicio (`functions`) como alias DNS en la red. Si el contenedor se creó manualmente (con `docker run --name functions` del workaround) o se reconectó a la red fuera de Compose, el alias se pierde.
+
+**Diagnóstico rápido:**
+```bash
+# ¿Existe el alias "functions"?
+docker inspect supabase-edge-functions --format '{{json .NetworkSettings.Networks}}' | python3 -m json.tool
+# Buscar "functions" en DNSNames o Aliases. Si no aparece → es el problema.
+
+# Verificar desde la red Docker:
+docker run --rm --network supabase_default alpine nslookup functions
+# Si devuelve NXDOMAIN → Kong no puede enrutar.
+```
+
+**Fix inmediato (sin recrear el contenedor):**
+```bash
+docker network disconnect supabase_default supabase-edge-functions
+docker network connect --alias functions supabase_default supabase-edge-functions
+```
+
+**Fix permanente:** usar `docker compose up -d functions` (Compose añade el alias automáticamente) o incluir `--network-alias functions` en el `docker run` del workaround manual (ver sección anterior).
+
+**Verificar:**
+```bash
+docker run --rm --network supabase_default alpine nslookup functions
+# Debe resolver a la IP del contenedor
+curl -s https://api.taimbox.com/functions/v1/hello -H "Authorization: Bearer ANON_KEY"
+# Debe devolver "Hello from Edge Functions!"
+```
 
 #### Solución de problemas: Google OAuth y API Google Ads
 

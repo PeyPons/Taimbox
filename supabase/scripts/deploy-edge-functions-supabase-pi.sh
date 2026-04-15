@@ -70,4 +70,20 @@ echo "[deploy] Reiniciando $SERVICE_NAME..."
   exit 1
 }
 
+# Verificar que el alias "functions" existe en la red Docker.
+# Kong enruta a functions:9000; sin el alias, TODAS las peticiones devuelven
+# {"message":"name resolution failed"} sin que aparezca log en el Edge Runtime.
+# Esto ocurre cuando el contenedor se creó fuera de Compose (workaround manual).
+CONTAINER_NAME="supabase-edge-functions"
+NETWORK_NAME="supabase_default"
+DNS_NAMES=$(docker inspect "$CONTAINER_NAME" --format '{{json .NetworkSettings.Networks}}' 2>/dev/null)
+if echo "$DNS_NAMES" | grep -q '"functions"'; then
+  echo "[deploy] Alias 'functions' OK en $NETWORK_NAME."
+else
+  echo "[deploy] ⚠️  Alias 'functions' NO encontrado. Reconectando con alias..."
+  docker network disconnect "$NETWORK_NAME" "$CONTAINER_NAME" 2>/dev/null || true
+  docker network connect --alias functions "$NETWORK_NAME" "$CONTAINER_NAME"
+  echo "[deploy] Alias 'functions' añadido."
+fi
+
 echo "[deploy] Listo."

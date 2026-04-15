@@ -36,6 +36,7 @@ Si el código o una migración **contradice** el snapshot, **prevalece el códig
 
 - **`ad_accounts_config`**, **`ads_sync_logs`**, **`meta_sync_logs`**, **`google_ads_campaigns`**, **`meta_ads_campaigns`**, **`google_ads_changes`**, **`segmentation_rules`**.
 - **`api_tokens`**: tokens de integración por agencia.
+- **`notification_rules`**, **`notification_deliveries`**: reglas de avisos por email por agencia y registro/dedupe de envíos (ver `docs/05`, Edge `notify-task-transfer` / `process-notification-rules`).
 - **`audit_logs`**: auditoría (usuario, agencia, recurso).
 - **`platform_admins`**: acceso al panel `/admin`.
 

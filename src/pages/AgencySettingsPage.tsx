@@ -17,7 +17,7 @@ import {
   Building2, Settings, Users, Palette, Save, Loader2,
   Filter, Plus, Trash2, HelpCircle, Info, X,
   Rocket, Facebook, Megaphone, PlusCircle, ShieldCheck, GitBranch, Database, AlertTriangle,
-  Eye, Lock, Unlock, Calendar, Check, ChevronDown, BarChart2, Layers, ExternalLink, Activity, CreditCard, LayoutGrid, LineChart
+  Eye, Lock, Unlock, Calendar, Check, ChevronDown, BarChart2, Layers, ExternalLink, Activity, CreditCard, LayoutGrid, LineChart, Bell
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { DepartmentViewConfigDialog } from '@/components/agencies/DepartmentViewConfigDialog';
 import { AgencyBillingTab } from '@/components/agencies/AgencyBillingTab';
+import { NotificationRulesSection } from '@/components/agency/NotificationRulesSection';
 import { useDepartmentConfigs } from '@/hooks/useDashboardView';
 import { useApp } from '@/contexts/AppContext';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
@@ -182,7 +183,7 @@ function GoogleAdsAccountSelect({
 
 const META_OAUTH_SCOPES = 'ads_read';
 
-const TAB_VALUES = ['general', 'departments', 'team', 'projects', 'modules', 'analytics', 'integrations', 'appearance', 'billing'] as const;
+const TAB_VALUES = ['general', 'departments', 'team', 'projects', 'modules', 'analytics', 'integrations', 'appearance', 'notifications', 'billing'] as const;
 
 export default function AgencySettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -649,6 +650,9 @@ export default function AgencySettingsPage() {
           </TabsTrigger>
           <TabsTrigger value="appearance" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
             <Palette className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.appearance', 'Apariencia')}</span>
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
+            <Bell className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.notifications', 'Notificaciones')}</span>
           </TabsTrigger>
           <TabsTrigger value="billing" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
             <CreditCard className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.billing', 'Plan y facturación')}</span>
@@ -2221,6 +2225,26 @@ export default function AgencySettingsPage() {
                     </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="notifications" className="mt-0 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="h-5 w-5 text-primary" />
+                  {t('agency.notifications.title', 'Notificaciones por email')}
+                </CardTitle>
+                <CardDescription>
+                  {t(
+                    'agency.notifications.description',
+                    'Reglas por agencia: transferencias de tareas y alertas programadas sobre el estado de los proyectos (Resend).',
+                  )}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <NotificationRulesSection agencyId={currentAgency.id} />
               </CardContent>
             </Card>
           </TabsContent>

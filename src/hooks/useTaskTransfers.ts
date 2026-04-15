@@ -59,16 +59,26 @@ export function useTaskTransfers(): UseTaskTransfersResult {
                 return false;
             }
 
-            const { error } = await supabase.from('task_transfers').insert({
-                allocation_id: params.allocationId,
-                from_employee_id: sourceEmployeeId,
-                to_employee_id: params.toEmployeeId,
-                hours_transferred: params.hoursTransferred,
-                reason: params.reason,
-                agency_id: currentUser.agencyId
-            });
+            const { data: insertedTransfer, error } = await supabase
+                .from('task_transfers')
+                .insert({
+                    allocation_id: params.allocationId,
+                    from_employee_id: sourceEmployeeId,
+                    to_employee_id: params.toEmployeeId,
+                    hours_transferred: params.hoursTransferred,
+                    reason: params.reason,
+                    agency_id: currentUser.agencyId
+                })
+                .select('id')
+                .maybeSingle();
 
             if (error) throw error;
+
+            if (insertedTransfer?.id) {
+                supabase.functions
+                    .invoke('notify-task-transfer', { body: { transferId: insertedTransfer.id } })
+                    .catch((err) => console.warn('[notify-task-transfer]', err));
+            }
 
             toast({ title: 'Solicitud enviada', description: 'El compañero recibirá la notificación.' });
             await fetchTransfers(); // Update global context
