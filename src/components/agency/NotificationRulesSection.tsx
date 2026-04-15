@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Bell, Eye, Loader2, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAgency } from '@/contexts/AgencyContext';
@@ -99,12 +99,23 @@ function rowToInsertPayload(r: Partial<NotificationRule> & { agencyId: string })
     }
   }
 
+  let schedule_hour_utc: number | null = null;
+  if (trigger === 'scheduled') {
+    const raw = r.scheduleHourUtc;
+    if (raw !== null && raw !== undefined) {
+      const h = Number(raw);
+      if (Number.isFinite(h)) {
+        schedule_hour_utc = Math.min(23, Math.max(0, Math.trunc(h)));
+      }
+    }
+  }
+
   return {
     agency_id: r.agencyId,
-    name: r.name ?? '',
+    name: String(r.name ?? '').trim(),
     enabled: r.enabled ?? true,
     trigger_type: trigger,
-    schedule_hour_utc: trigger === 'scheduled' ? r.scheduleHourUtc : null,
+    schedule_hour_utc,
     conditions,
     recipient_policy: r.recipientPolicy ?? 'transfer_target',
     recipient_role_name:
@@ -113,7 +124,13 @@ function rowToInsertPayload(r: Partial<NotificationRule> & { agencyId: string })
   };
 }
 
-export function NotificationRulesSection({ agencyId }: { agencyId: string }) {
+export type NotificationRulesSectionHandle = {
+  /** Persiste todas las reglas en pantalla (p. ej. al pulsar «Guardar cambios» global). */
+  saveAllRules: () => Promise<boolean>;
+};
+
+export const NotificationRulesSection = forwardRef<NotificationRulesSectionHandle, { agencyId: string }>(
+  function NotificationRulesSection({ agencyId }, ref) {
   const { toast } = useToast();
   const { currentAgency } = useAgency();
   const { allocations } = useAppAllocations();
@@ -128,9 +145,11 @@ export function NotificationRulesSection({ agencyId }: { agencyId: string }) {
   const [previewSubject, setPreviewSubject] = useState<string | null>(null);
   const [previewNote, setPreviewNote] = useState<string | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const rulesRef = useRef(rules);
+  rulesRef.current = rules;
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (skipLoadingState = false) => {
+    if (!skipLoadingState) setLoading(true);
     const { data, error } = await supabase
       .from('notification_rules')
       .select('*')
@@ -150,6 +169,52 @@ export function NotificationRulesSection({ agencyId }: { agencyId: string }) {
     }
     setLoading(false);
   }, [agencyId, toast]);
+
+  const persistRule = useCallback(
+    async (rule: NotificationRule) => {
+      const full = rowToInsertPayload({ ...rule, agencyId });
+      const updatePayload = { ...full };
+      delete (updatePayload as { agency_id?: string }).agency_id;
+      const result = await supabase
+        .from('notification_rules')
+        .update(updatePayload)
+        .eq('id', rule.id)
+        .select('id, name, schedule_hour_utc')
+        .single();
+      if (!result.error && result.data) {
+        const saved = result.data as Record<string, unknown>;
+        if (saved.name !== updatePayload.name || saved.schedule_hour_utc !== updatePayload.schedule_hour_utc) {
+          console.warn('[NotificationRules] Saved data mismatch', { sent: updatePayload, got: saved });
+        }
+      }
+      return result;
+    },
+    [agencyId],
+  );
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      async saveAllRules() {
+        const list = rulesRef.current;
+        if (list.length === 0) return true;
+        for (const rule of list) {
+          const { error } = await persistRule(rule);
+          if (error) {
+            toast({
+              title: 'Error al guardar reglas de notificación',
+              description: error.message,
+              variant: 'destructive',
+            });
+            return false;
+          }
+        }
+        await load();
+        return true;
+      },
+    }),
+    [persistRule, load, toast],
+  );
 
   useEffect(() => {
     void load();
@@ -180,19 +245,14 @@ export function NotificationRulesSection({ agencyId }: { agencyId: string }) {
 
   const saveRule = async (rule: NotificationRule) => {
     setSavingId(rule.id);
-    const full = rowToInsertPayload({
-      ...rule,
-      agencyId,
-    });
-    const updatePayload = { ...full };
-    delete (updatePayload as { agency_id?: string }).agency_id;
-    const { error } = await supabase.from('notification_rules').update(updatePayload).eq('id', rule.id);
+    const { error } = await persistRule(rule);
 
     if (error) {
+      console.error('[NotificationRules] save error', error);
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
       toast({ title: 'Guardado' });
-      await load();
+      await load(true);
     }
     setSavingId(null);
   };
@@ -318,7 +378,14 @@ export function NotificationRulesSection({ agencyId }: { agencyId: string }) {
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Bell className="h-5 w-5 text-primary shrink-0" />
-                  <CardTitle className="text-base">Regla de notificación</CardTitle>
+                  <CardTitle className="text-base">
+                    {rule.name && rule.name !== 'Nueva regla' ? rule.name : 'Regla de notificación'}
+                  </CardTitle>
+                  {rule.scheduleHourUtc !== null && rule.triggerType === 'scheduled' && (
+                    <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                      {String(rule.scheduleHourUtc).padStart(2, '0')}:00 UTC
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -655,4 +722,4 @@ export function NotificationRulesSection({ agencyId }: { agencyId: string }) {
       })}
     </div>
   );
-}
+});

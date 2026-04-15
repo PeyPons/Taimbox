@@ -107,6 +107,39 @@ En Supabase Cloud la URL suele ser `https://<project_ref>.supabase.co/functions/
 | **Contenedor manual sin emails** | Variables Resend no pasadas al `docker run` | Incluir `-e RESEND_API_KEY="$RESEND_API_KEY"` y `-e RESEND_FROM_EMAIL="${RESEND_FROM_EMAIL:-Taimbox <noreply@taimbox.com>}"` en el comando. Ver sección "Workaround: usar contenedor manual". |
 | **`{"message":"name resolution failed"}` en todas las funciones** | No es un error de Resend ni del Edge Runtime: **Kong** no puede resolver el hostname `functions` para enrutar al Edge Runtime. Ocurre cuando el contenedor se creó fuera de Docker Compose (p. ej. con el workaround manual) y perdió el alias de servicio `functions` en la red Docker | Ver sección «Solución de problemas: `name resolution failed` — alias `functions` en la red Docker» más abajo. |
 
+#### Solución de problemas: `process-notification-rules` (notificaciones programadas)
+
+| Problema | Causa | Diagnóstico | Solución |
+|----------|-------|-------------|----------|
+| **503 Service Unavailable** | El contenedor se está reiniciando (ciclo SIGTERM → startup). Kong no alcanza el Edge Runtime mientras arranca. | `docker logs supabase-edge-functions --tail 10` muestra `shutdown signal received: 15` → `main function started` en bucle. `docker ps` muestra "Up X seconds" (poco tiempo arriba). | Esperar unos segundos a que se estabilice y reintentar. Si persiste, ver sección "Edge Runtime reiniciándose en bucle" más arriba. |
+| **401 Unauthorized `{"error":"Unauthorized"}`** | El Bearer token del `curl` **no coincide** con `NOTIFICATIONS_CRON_SECRET` del contenedor. Ocurre cuando la variable de shell tiene un placeholder o valor antiguo. | 1) Comprobar qué envía el curl: `echo $NOTIFICATIONS_CRON_SECRET`. 2) Comprobar qué tiene el contenedor: `docker inspect supabase-edge-functions --format '{{range .Config.Env}}{{println .}}{{end}}' \| grep NOTIFICATIONS_CRON_SECRET`. 3) Si no coinciden → es el problema. | Exportar en la shell el **mismo valor** que tiene el contenedor: `export NOTIFICATIONS_CRON_SECRET="<valor_del_contenedor>"`. Para evitar esto en cron, guardar el secreto en un archivo env (p. ej. `~/.config/taimbox/notifications-cron.env`) y hacer `source` antes del curl. |
+| **401 pero el secreto parece correcto** | `NOTIFICATIONS_CRON_SECRET` no está definida en el contenedor (la función lee `Deno.env.get("NOTIFICATIONS_CRON_SECRET")` y si es vacía/null, **siempre** rechaza). | `docker inspect supabase-edge-functions --format '{{range .Config.Env}}{{println .}}{{end}}' \| grep NOTIFICATIONS` — si no sale nada, falta la variable. | Añadir `-e NOTIFICATIONS_CRON_SECRET="$NOTIFICATIONS_CRON_SECRET"` al `docker run` manual (ver workaround más abajo) o al `docker-compose.yml` del servicio `functions`. Reiniciar el contenedor. |
+| **503 intermitente, luego 401** | El curl se lanzó justo cuando el contenedor se reiniciaba (→ 503 de Kong). Tras estabilizarse, la función responde pero el token no coincide (→ 401). | Primer intento: 503 (Kong no alcanza). Segundo intento con `-vvv`: HTTP 401 en los headers. | Resolver el 401 con el secreto correcto (ver fila anterior). El 503 inicial se resuelve solo al estabilizarse el contenedor. |
+| **Funciones no encontradas en el volumen** (`ls` falla) | Al ejecutar como `root`, `~/supabase-pi/...` expande a `/root/supabase-pi/` en vez de `/home/alex/supabase-pi/`. | `ls /home/alex/supabase-pi/supabase/docker/volumes/functions/process-notification-rules/` (ruta absoluta, no con `~`). | Usar siempre **rutas absolutas** en los comandos de diagnóstico. Las funciones están en `/home/alex/supabase-pi/supabase/docker/volumes/functions/`. |
+| **Funciones no desplegadas** | Se hizo `git pull` pero no se copió al volumen de Docker. | `ls /home/alex/supabase-pi/supabase/docker/volumes/functions/` — no aparecen las carpetas de funciones o `_shared`. | Ejecutar el script de despliegue: `cd /home/alex/Timeboxing && ./supabase/scripts/deploy-edge-functions-supabase-pi.sh`. |
+
+**Checklist rápida para probar `process-notification-rules` desde el servidor:**
+
+```bash
+# 1. Verificar que el contenedor está estable
+docker ps | grep edge-functions  # debe llevar >30s arriba
+
+# 2. Verificar que la variable existe en el contenedor
+docker inspect supabase-edge-functions --format '{{range .Config.Env}}{{println .}}{{end}}' | grep NOTIFICATIONS_CRON
+
+# 3. Exportar el MISMO valor en la shell
+export NOTIFICATIONS_CRON_SECRET="<pegar_valor_del_paso_2>"
+
+# 4. Probar con force=true (ignora filtro de hora UTC)
+curl -fsS -X POST "https://api.taimbox.com/functions/v1/process-notification-rules" \
+  -H "Authorization: Bearer $NOTIFICATIONS_CRON_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"force": true}'
+
+# 5. Si falla, ver logs para el error exacto
+docker logs supabase-edge-functions --tail 20
+```
+
 #### Arquitectura Google Ads OAuth (Modelo SaaS)
 
 El flujo de Google Ads sigue un modelo SaaS donde la plataforma posee las credenciales OAuth y cada agencia solo autoriza su cuenta:
@@ -225,7 +258,10 @@ META_APP_ID=<facebook_app_id>
 META_APP_SECRET=<facebook_app_secret>
 RESEND_API_KEY=<resend_api_key>
 RESEND_FROM_EMAIL=Taimbox <noreply@taimbox.com>
+NOTIFICATIONS_CRON_SECRET=<secreto_aleatorio_largo>
 ```
+
+`NOTIFICATIONS_CRON_SECRET` solo es necesario si usas `process-notification-rules` (notificaciones programadas por cron). Genera un valor aleatorio largo (p. ej. `openssl rand -base64 48`) y usa **el mismo valor** en el contenedor y en el cron/script que hace el `curl`.
 
 Opcional (solo lectura / pruebas sin OAuth por agencia): `META_ACCESS_TOKEN`.
 
@@ -414,6 +450,7 @@ Si los logs muestran `main function started` seguido de `shutdown signal receive
      -e RESEND_API_KEY="$RESEND_API_KEY" \
      -e RESEND_FROM_EMAIL="${RESEND_FROM_EMAIL:-Taimbox <noreply@taimbox.com>}" \
      -e VERIFY_JWT="${FUNCTIONS_VERIFY_JWT:-true}" \
+     -e NOTIFICATIONS_CRON_SECRET="${NOTIFICATIONS_CRON_SECRET:-}" \
      supabase/edge-runtime:v1.69.28 \
      start --main-service /home/deno/functions/main
    ```

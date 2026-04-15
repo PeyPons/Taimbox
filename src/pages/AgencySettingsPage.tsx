@@ -49,7 +49,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { DepartmentViewConfigDialog } from '@/components/agencies/DepartmentViewConfigDialog';
 import { AgencyBillingTab } from '@/components/agencies/AgencyBillingTab';
-import { NotificationRulesSection } from '@/components/agency/NotificationRulesSection';
+import {
+  NotificationRulesSection,
+  type NotificationRulesSectionHandle,
+} from '@/components/agency/NotificationRulesSection';
 import { useDepartmentConfigs } from '@/hooks/useDashboardView';
 import { useApp } from '@/contexts/AppContext';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
@@ -195,6 +198,7 @@ export default function AgencySettingsPage() {
   const { hasPermission } = usePermissions();
   const { projects, clients } = useApp();
   const [saving, setSaving] = useState(false);
+  const notificationRulesRef = React.useRef<NotificationRulesSectionHandle | null>(null);
 
   // Estado local para edición
   const [agencyName, setAgencyName] = useState(currentAgency?.name || '');
@@ -452,6 +456,12 @@ export default function AgencySettingsPage() {
       // Si el nombre ha cambiado, actualizarlo por separado
       if (agencyName !== currentAgency.name) {
         await updateAgencyName(agencyName);
+      }
+
+      const notificationsOk = await notificationRulesRef.current?.saveAllRules();
+      if (notificationsOk === false) {
+        toast.error('La configuración general se guardó, pero falló guardar alguna regla de notificación.');
+        return;
       }
 
       toast.success('Configuración de agencia guardada');
@@ -2239,12 +2249,12 @@ export default function AgencySettingsPage() {
                 <CardDescription>
                   {t(
                     'agency.notifications.description',
-                    'Reglas por agencia: transferencias de tareas y alertas programadas sobre el estado de los proyectos (Resend).',
+                    'Reglas por agencia: transferencias de tareas y alertas programadas sobre el estado de los proyectos (Resend). El botón flotante «Guardar cambios» también guarda estas reglas.',
                   )}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <NotificationRulesSection agencyId={currentAgency.id} />
+                <NotificationRulesSection ref={notificationRulesRef} agencyId={currentAgency.id} />
               </CardContent>
             </Card>
           </TabsContent>
