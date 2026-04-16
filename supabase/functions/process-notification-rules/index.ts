@@ -196,7 +196,7 @@ serve(async (req) => {
 
   const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-  let body: { agencyId?: string; force?: boolean } = {};
+  let body: { agencyId?: string; force?: boolean; ignoreDedupe?: boolean } = {};
   try {
     if (req.headers.get("content-type")?.includes("application/json")) {
       body = await req.json();
@@ -205,6 +205,7 @@ serve(async (req) => {
 
   const filterAgencyId = typeof body.agencyId === "string" ? body.agencyId : null;
   const force = body.force === true;
+  const ignoreDedupe = body.ignoreDedupe === true;
 
   const now = new Date();
   const viewMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
@@ -241,7 +242,15 @@ serve(async (req) => {
   let emailsSent = 0;
   const errors: string[] = [];
 
-  console.log(`[process-notification-rules] rules found: ${(rules || []).length}, force=${force}, hourUtc=${hourUtc}, monthKey=${monthKey}`);
+  console.log(`[process-notification-rules] rules found: ${(rules || []).length}, force=${force}, ignoreDedupe=${ignoreDedupe}, hourUtc=${hourUtc}, monthKey=${monthKey}, filterAgencyId=${filterAgencyId ?? "-"}`);
+
+  if (!rules || rules.length === 0) {
+    const { data: anyRules } = await supabaseAdmin
+      .from("notification_rules")
+      .select("id, name, enabled, trigger_type, agency_id")
+      .limit(10);
+    console.log(`[process-notification-rules] diagnostic - rules in DB (any trigger/enabled): ${JSON.stringify(anyRules || [])}`);
+  }
 
   for (const rule of rules || []) {
     if (
@@ -384,8 +393,8 @@ serve(async (req) => {
           .eq("agency_id", agencyId)
           .eq("dedupe_key", dedupeKey)
           .maybeSingle();
-        console.log(`[process-notification-rules] digest dedupeKey=${dedupeKey} existing=${existing?.id ?? 'null'}`);
-        if (existing) continue;
+        console.log(`[process-notification-rules] digest dedupeKey=${dedupeKey} existing=${existing?.id ?? 'null'} ignoreDedupe=${ignoreDedupe}`);
+        if (existing && !ignoreDedupe) continue;
 
         const allEmpIds = [...new Set(flagged.flatMap((f) => f.inc.employees.map((e) => e.employeeId)))];
         const recipients = await resolveEmailsForPolicy({
@@ -420,21 +429,26 @@ serve(async (req) => {
         });
 
         if (sendResult.success) {
-          await supabaseAdmin.from("notification_deliveries").insert({
-            agency_id: agencyId,
-            rule_id: rule.id as string,
-            dedupe_key: dedupeKey,
-            trigger_type: "scheduled",
-            payload: {
-              kind: "deadline_coherence_digest",
-              month: monthKey,
-              project_ids: flagged.map((f) => f.inc.projectId),
-            },
-            recipient_emails: recipients,
-            resend_id: sendResult.id ?? null,
-            success: true,
-            error_message: null,
-          });
+          await supabaseAdmin
+            .from("notification_deliveries")
+            .upsert(
+              {
+                agency_id: agencyId,
+                rule_id: rule.id as string,
+                dedupe_key: dedupeKey,
+                trigger_type: "scheduled",
+                payload: {
+                  kind: "deadline_coherence_digest",
+                  month: monthKey,
+                  project_ids: flagged.map((f) => f.inc.projectId),
+                },
+                recipient_emails: recipients,
+                resend_id: sendResult.id ?? null,
+                success: true,
+                error_message: null,
+              },
+              { onConflict: "agency_id,dedupe_key" },
+            );
           emailsSent++;
         } else if (sendResult.error) {
           errors.push(`digest ${rule.id}: ${sendResult.error}`);
@@ -448,7 +462,7 @@ serve(async (req) => {
             .eq("agency_id", agencyId)
             .eq("dedupe_key", dedupeKey)
             .maybeSingle();
-          if (existing) continue;
+          if (existing && !ignoreDedupe) continue;
 
           const empIds = inc.employees.map((e) => e.employeeId);
           const recipients = await resolveEmailsForPolicy({
@@ -479,22 +493,27 @@ serve(async (req) => {
           });
 
           if (sendResult.success) {
-            await supabaseAdmin.from("notification_deliveries").insert({
-              agency_id: agencyId,
-              rule_id: rule.id as string,
-              dedupe_key: dedupeKey,
-              trigger_type: "scheduled",
-              payload: {
-                kind: "deadline_coherence",
-                month: monthKey,
-                project_id: inc.projectId,
-                op_status: opStatus,
-              },
-              recipient_emails: recipients,
-              resend_id: sendResult.id ?? null,
-              success: true,
-              error_message: null,
-            });
+            await supabaseAdmin
+              .from("notification_deliveries")
+              .upsert(
+                {
+                  agency_id: agencyId,
+                  rule_id: rule.id as string,
+                  dedupe_key: dedupeKey,
+                  trigger_type: "scheduled",
+                  payload: {
+                    kind: "deadline_coherence",
+                    month: monthKey,
+                    project_id: inc.projectId,
+                    op_status: opStatus,
+                  },
+                  recipient_emails: recipients,
+                  resend_id: sendResult.id ?? null,
+                  success: true,
+                  error_message: null,
+                },
+                { onConflict: "agency_id,dedupe_key" },
+              );
             emailsSent++;
           } else if (sendResult.error) {
             errors.push(`${inc.projectId}: ${sendResult.error}`);
@@ -557,7 +576,7 @@ serve(async (req) => {
         .eq("dedupe_key", dedupeKey)
         .maybeSingle();
 
-      if (existing) continue;
+      if (existing && !ignoreDedupe) continue;
 
       const policy = rule.recipient_policy as RecipientPolicy;
       const recipients = await resolveEmailsForPolicy({
@@ -598,21 +617,26 @@ serve(async (req) => {
       });
 
       if (sendResult.success) {
-        const { error: insErr } = await supabaseAdmin.from("notification_deliveries").insert({
-          agency_id: agencyId,
-          rule_id: rule.id as string,
-          dedupe_key: dedupeKey,
-          trigger_type: "scheduled",
-          payload: {
-            project_id: project.id,
-            month: monthKey,
-            flags: matchedFlags,
-          },
-          recipient_emails: recipients,
-          resend_id: sendResult.id ?? null,
-          success: true,
-          error_message: null,
-        });
+        const { error: insErr } = await supabaseAdmin
+          .from("notification_deliveries")
+          .upsert(
+            {
+              agency_id: agencyId,
+              rule_id: rule.id as string,
+              dedupe_key: dedupeKey,
+              trigger_type: "scheduled",
+              payload: {
+                project_id: project.id,
+                month: monthKey,
+                flags: matchedFlags,
+              },
+              recipient_emails: recipients,
+              resend_id: sendResult.id ?? null,
+              success: true,
+              error_message: null,
+            },
+            { onConflict: "agency_id,dedupe_key" },
+          );
 
         if (insErr) {
           console.error("[process-notification-rules] insert delivery", insErr);
