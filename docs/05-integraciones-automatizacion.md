@@ -116,7 +116,7 @@ En Supabase Cloud la URL suele ser `https://<project_ref>.supabase.co/functions/
 | **401 pero el secreto parece correcto** | `NOTIFICATIONS_CRON_SECRET` no está definida en el contenedor (la función lee `Deno.env.get("NOTIFICATIONS_CRON_SECRET")` y si es vacía/null, **siempre** rechaza). | `docker inspect supabase-edge-functions --format '{{range .Config.Env}}{{println .}}{{end}}' \| grep NOTIFICATIONS` — si no sale nada, falta la variable. | Añadir `-e NOTIFICATIONS_CRON_SECRET="$NOTIFICATIONS_CRON_SECRET"` al `docker run` manual (ver workaround más abajo) o al `docker-compose.yml` del servicio `functions`. Reiniciar el contenedor. |
 | **503 intermitente, luego 401** | El curl se lanzó justo cuando el contenedor se reiniciaba (→ 503 de Kong). Tras estabilizarse, la función responde pero el token no coincide (→ 401). | Primer intento: 503 (Kong no alcanza). Segundo intento con `-vvv`: HTTP 401 en los headers. | Resolver el 401 con el secreto correcto (ver fila anterior). El 503 inicial se resuelve solo al estabilizarse el contenedor. |
 | **Funciones no encontradas en el volumen** (`ls` falla) | Al ejecutar como `root`, `~/supabase-pi/...` expande a `/root/supabase-pi/` en vez de `/home/alex/supabase-pi/`. | `ls /home/alex/supabase-pi/supabase/docker/volumes/functions/process-notification-rules/` (ruta absoluta, no con `~`). | Usar siempre **rutas absolutas** en los comandos de diagnóstico. Las funciones están en `/home/alex/supabase-pi/supabase/docker/volumes/functions/`. |
-| **Funciones no desplegadas** | Se hizo `git pull` pero no se copió al volumen de Docker. | `ls /home/alex/supabase-pi/supabase/docker/volumes/functions/` — no aparecen las carpetas de funciones o `_shared`. | Ejecutar el script de despliegue: `cd /home/alex/Timeboxing && ./supabase/scripts/deploy-edge-functions-supabase-pi.sh`. |
+| **Funciones no desplegadas** | Se hizo `git pull` pero no se copió al volumen de Docker. | `ls /home/alex/supabase-pi/supabase/docker/volumes/functions/` — no aparecen las carpetas de funciones o `_shared`. | `cd /home/alex/Timeboxing && git pull && rsync -a ./supabase/functions/ /home/alex/supabase-pi/supabase/docker/volumes/functions/ && docker restart supabase-edge-functions` |
 
 **Checklist rápida para probar `process-notification-rules` desde el servidor:**
 
@@ -277,24 +277,19 @@ VITE_META_APP_ID=<identificador_de_la_aplicacion_meta>
 
 #### Despliegue de Edge Functions (self-hosted)
 
-El entorno usa Supabase self-hosted con Docker. El contenedor `supabase-edge-functions` lee las funciones desde un volumen montado. Rutas por defecto: Taimbox `~/Taimbox`, Supabase `~/supabase-pi/supabase/docker`. El script `supabase/scripts/deploy-edge-functions-supabase-pi.sh` hace rsync de `supabase/functions/` al volumen y reinicia el servicio `functions`.
+El entorno usa Supabase self-hosted con Docker. El contenedor `supabase-edge-functions` lee las funciones desde un volumen montado. Rutas: repo Taimbox `/home/alex/Timeboxing`, volumen de funciones `/home/alex/supabase-pi/supabase/docker/volumes/functions/`.
 
-**Comandos para desplegar (en el servidor, copiar y pegar):**
+**Comando para desplegar (copiar y pegar en el servidor):**
 ```bash
-cd ~/Taimbox
-git pull
-chmod +x supabase/scripts/deploy-edge-functions-supabase-pi.sh
-./supabase/scripts/deploy-edge-functions-supabase-pi.sh
+cd /home/alex/Timeboxing && git pull && rsync -a ./supabase/functions/ /home/alex/supabase-pi/supabase/docker/volumes/functions/ && docker restart supabase-edge-functions
 ```
 
-Si el proyecto está en otra ruta o Supabase en otro sitio: `export TIMBOXING_DIR=/ruta/Taimbox` y `export SUPABASE_DOCKER_DIR=/ruta/supabase-pi/supabase/docker` antes de ejecutar el script.
-
-**Resumen una línea:** `cd ~/Taimbox && git pull && chmod +x supabase/scripts/deploy-edge-functions-supabase-pi.sh && ./supabase/scripts/deploy-edge-functions-supabase-pi.sh`
+> **⚠️ No usar el script `deploy-edge-functions-supabase-pi.sh`** — el comando de arriba es más directo y fiable. `rsync -a` copia todo (funciones + `_shared/`) y `docker restart` aplica los cambios.
 
 **Para una sola función (más rápido):**
 ```bash
-cp -r ~/Taimbox/supabase/functions/<nombre-funcion> \
-      ~/supabase-pi/supabase/docker/volumes/functions/ \
+rsync -a /home/alex/Timeboxing/supabase/functions/<nombre-funcion> \
+      /home/alex/supabase-pi/supabase/docker/volumes/functions/ \
    && docker restart supabase-edge-functions
 ```
 
@@ -525,9 +520,8 @@ curl -s https://api.taimbox.com/functions/v1/hello -H "Authorization: Bearer ANO
    - Headers CORS
    - `Deno.serve(async (req) => { ... })`
    - Crear cliente Supabase con `SUPABASE_SERVICE_ROLE_KEY`
-3. Añadir la función al script `deploy-functions.sh`.
-4. Copiar al volumen de Docker y reiniciar `supabase-edge-functions`.
-5. La función estará accesible en `<SUPABASE_URL>/functions/v1/<nombre>`.
+3. Desplegar: `cd /home/alex/Timeboxing && git pull && rsync -a ./supabase/functions/ /home/alex/supabase-pi/supabase/docker/volumes/functions/ && docker restart supabase-edge-functions`
+4. La función estará accesible en `<SUPABASE_URL>/functions/v1/<nombre>`.
 
 > **⚠️ IMPORTANTE**: Los lints de VS Code sobre `Deno`, `esm.sh` y tipos implícitos `any` en archivos de Edge Functions son **esperados** — el IDE no tiene los tipos de Deno instalados. Estos errores no afectan al runtime en el servidor.
 

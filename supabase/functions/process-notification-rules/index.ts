@@ -384,6 +384,7 @@ serve(async (req) => {
           .eq("agency_id", agencyId)
           .eq("dedupe_key", dedupeKey)
           .maybeSingle();
+        console.log(`[process-notification-rules] digest dedupeKey=${dedupeKey} existing=${existing?.id ?? 'null'}`);
         if (existing) continue;
 
         const allEmpIds = [...new Set(flagged.flatMap((f) => f.inc.employees.map((e) => e.employeeId)))];
@@ -396,6 +397,7 @@ serve(async (req) => {
           agencySettings,
           involvedEmployeeIds: allEmpIds,
         });
+        console.log(`[process-notification-rules] policy=${policy} recipients=${JSON.stringify(recipients)} empIds=${allEmpIds.length}`);
         if (recipients.length === 0) continue;
 
         const intro =
