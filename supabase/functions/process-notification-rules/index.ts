@@ -241,6 +241,8 @@ serve(async (req) => {
   let emailsSent = 0;
   const errors: string[] = [];
 
+  console.log(`[process-notification-rules] rules found: ${(rules || []).length}, force=${force}, hourUtc=${hourUtc}, monthKey=${monthKey}`);
+
   for (const rule of rules || []) {
     if (
       rule.schedule_hour_utc !== null &&
@@ -265,6 +267,8 @@ serve(async (req) => {
     const hoursPref = hoursPreferenceFromSettings(agencySettings);
     const cond = parseConditions(rule.conditions);
 
+    console.log(`[process-notification-rules] rule=${rule.id} name="${rule.name}" eval=${cond.evaluation} agency="${agencyName}" hoursPref=${hoursPref}`);
+
     if (cond.evaluation === "deadline_coherence") {
       const { data: projectsFull } = await supabaseAdmin
         .from("projects")
@@ -281,6 +285,7 @@ serve(async (req) => {
       }>;
 
       const projectIds = projectsList.map((p) => p.id);
+      console.log(`[process-notification-rules] active projects: ${projectIds.length}`);
       if (!projectIds.length) continue;
 
       const clientByProjectId = new Map(projectsList.map((p) => [p.id, p.client_id]));
@@ -347,6 +352,12 @@ serve(async (req) => {
         hoursTrackingPreference: hoursPref,
       });
 
+      console.log(`[process-notification-rules] deadlines=${deadlines.length} allocs=${allocations.length} emps=${employees.length} inconsistencies=${inconsistencies.length}`);
+      for (const inc of inconsistencies) {
+        const st = operationalStatusFromInconsistency(inc, monthProgress);
+        console.log(`[process-notification-rules]   project="${inc.projectName}" diff=${inc.totalDifference}h status=${st} threshold=${cond.coherenceMinAbs} passesThreshold=${passesCoherenceThreshold(inc, cond.coherenceMinAbs)} statusAllowed=${cond.coherenceOpStatusIn.includes(st)}`);
+      }
+
       let flagged: Array<{ inc: Inconsistency; opStatus: CoherenceOpStatus }> = [];
 
       for (const inc of inconsistencies) {
@@ -359,6 +370,7 @@ serve(async (req) => {
         flagged.push({ inc, opStatus });
       }
 
+      console.log(`[process-notification-rules] flagged after all filters: ${flagged.length}`);
       if (!flagged.length) continue;
 
       const policy = rule.recipient_policy as RecipientPolicy;
