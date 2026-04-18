@@ -98,7 +98,7 @@ serve(async (req) => {
 
   const { data: project, error: pErr } = await supabaseAdmin
     .from("projects")
-    .select("id, name, agency_id")
+    .select("id, name, agency_id, client_id")
     .eq("id", completed.project_id as string)
     .maybeSingle();
 
@@ -183,16 +183,41 @@ serve(async (req) => {
 
   const { data: projects } = await supabaseAdmin
     .from("projects")
-    .select("id, name")
+    .select("id, name, client_id")
     .in("id", [...projectIds]);
 
   const projectNameById = new Map<string, string>();
+  const projectClientIdByProjectId = new Map<string, string | null>();
   for (const pr of projects || []) {
-    projectNameById.set(pr.id as string, (pr.name as string) || "Proyecto");
+    const pid = pr.id as string;
+    projectNameById.set(pid, (pr.name as string) || "Proyecto");
+    projectClientIdByProjectId.set(pid, (pr.client_id as string | null) ?? null);
+  }
+
+  const clientIdsNeeded = new Set<string>();
+  const bid = projectClientIdByProjectId.get(completed.project_id as string);
+  if (bid) clientIdsNeeded.add(bid);
+  for (const d of dependents) {
+    const cid = projectClientIdByProjectId.get(d.project_id as string);
+    if (cid) clientIdsNeeded.add(cid);
+  }
+
+  const clientNameById = new Map<string, string>();
+  if (clientIdsNeeded.size > 0) {
+    const { data: clientRows } = await supabaseAdmin
+      .from("clients")
+      .select("id, name")
+      .eq("agency_id", agencyId)
+      .in("id", [...clientIdsNeeded]);
+    for (const c of clientRows || []) {
+      clientNameById.set(c.id as string, (c.name as string) || "Cliente");
+    }
   }
 
   const blockingProjectName = projectNameById.get(completed.project_id as string) || "Proyecto";
-  const blockingTaskName = (completed.task_name as string) || "Tarea";
+  const blockingClientId = projectClientIdByProjectId.get(completed.project_id as string) ?? null;
+  const blockingClientName = blockingClientId ? clientNameById.get(blockingClientId) ?? null : null;
+  const blockingTaskName = (completed.task_name as string) || "Tarea sin nombre";
 
   const { data: closerEmp } = await supabaseAdmin
     .from("employees")
@@ -215,9 +240,12 @@ serve(async (req) => {
     .eq("agency_id", agencyId);
 
   const emailByEmpId = new Map<string, string>();
+  const empNameById = new Map<string, string>();
   for (const e of emps || []) {
     const em = (e.email as string | null)?.trim();
     if (em) emailByEmpId.set(e.id as string, em);
+    const nm = (e.name as string | null)?.trim();
+    if (nm) empNameById.set(e.id as string, nm);
   }
 
   const emailSet = new Set<string>();
@@ -234,27 +262,43 @@ serve(async (req) => {
   }
 
   const dependentLines = dependents.map((d) => {
-    const pn = projectNameById.get(d.project_id as string) || "Proyecto";
-    const tn = (d.task_name as string) || "Tarea";
-    return { taskName: tn, projectName: pn };
+    const pid = d.project_id as string;
+    const pn = projectNameById.get(pid) || "Proyecto";
+    const tn = (d.task_name as string) || "Tarea sin nombre";
+    const clId = projectClientIdByProjectId.get(pid) ?? null;
+    const clName = clId ? clientNameById.get(clId) ?? null : null;
+    const assignee =
+      empNameById.get(d.employee_id as string) || "Sin asignar";
+    return {
+      projectId: pid,
+      projectName: pn,
+      clientName: clName,
+      taskName: tn,
+      assigneeName: assignee,
+    };
   });
 
   const siteUrl = getSiteUrl().replace(/\/$/, "");
   const appUrl = `${siteUrl}/planner`;
+  const operationsUrl = `${siteUrl}/operaciones`;
 
   const { html, text } = dependencyUnblockEmailHtml({
     agencyName,
     closerName,
     blockingTaskName,
     blockingProjectName,
+    blockingClientName,
     dependents: dependentLines,
     appUrl,
+    operationsUrl,
   });
 
   const toList = [...emailSet];
+  const subjectTask =
+    blockingTaskName.length > 55 ? `${blockingTaskName.slice(0, 52)}…` : blockingTaskName;
   const sendResult = await sendEmail({
     to: toList,
-    subject: `Tarea desbloqueada — ${agencyName}`,
+    subject: `Tarea desbloqueada: ${subjectTask} · ${agencyName}`,
     html,
     text,
   });

@@ -19,6 +19,7 @@ import {
   Rocket, Facebook, Megaphone, PlusCircle, ShieldCheck, GitBranch, Database, AlertTriangle,
   Eye, Lock, Unlock, Calendar, Check, ChevronDown, BarChart2, Layers, ExternalLink, Activity, CreditCard, LayoutGrid, LineChart, Bell
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { AVAILABLE_INTEGRATIONS } from '@/config/integrations';
@@ -187,6 +188,25 @@ function GoogleAdsAccountSelect({
 const META_OAUTH_SCOPES = 'ads_read';
 
 const TAB_VALUES = ['general', 'departments', 'team', 'projects', 'modules', 'analytics', 'integrations', 'appearance', 'notifications', 'billing'] as const;
+type AgencySettingsTab = typeof TAB_VALUES[number];
+
+const TAB_CONFIG: Array<{
+  value: AgencySettingsTab;
+  icon: LucideIcon;
+  labelKey: string;
+  fallback: string;
+}> = [
+  { value: 'general', icon: Settings, labelKey: 'agency.tabs.general', fallback: 'General' },
+  { value: 'departments', icon: Layers, labelKey: 'agency.tabs.organization', fallback: 'Organización' },
+  { value: 'team', icon: Users, labelKey: 'agency.tabs.team', fallback: 'Equipo' },
+  { value: 'projects', icon: Filter, labelKey: 'agency.tabs.projects', fallback: 'Proyectos' },
+  { value: 'modules', icon: LayoutGrid, labelKey: 'agency.tabs.features', fallback: 'Funcionalidades' },
+  { value: 'analytics', icon: LineChart, labelKey: 'agency.tabs.analytics', fallback: 'Analítica' },
+  { value: 'integrations', icon: Rocket, labelKey: 'agency.tabs.connections', fallback: 'Conexiones' },
+  { value: 'appearance', icon: Palette, labelKey: 'agency.tabs.appearance', fallback: 'Apariencia' },
+  { value: 'notifications', icon: Bell, labelKey: 'agency.tabs.notifications', fallback: 'Notificaciones' },
+  { value: 'billing', icon: CreditCard, labelKey: 'agency.tabs.billing', fallback: 'Plan y facturación' },
+];
 
 export default function AgencySettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -625,8 +645,10 @@ export default function AgencySettingsPage() {
     );
   }
 
+  const activeTabMeta = TAB_CONFIG.find((tab) => tab.value === activeTab) ?? TAB_CONFIG[0];
+
   return (
-    <div className="max-w-5xl mx-auto p-4 sm:p-6 pb-24">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 pb-24">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
@@ -634,47 +656,37 @@ export default function AgencySettingsPage() {
             {t('agency.title', 'Configuración de agencia')}
           </h1>
           <p className="text-slate-500 mt-1">{t('agency.subtitle', 'Elige una sección para ver y editar la configuración')}</p>
+          <p className="text-xs text-slate-400 mt-1">
+            {t('agency.activeSection', 'Sección activa')}: {t(activeTabMeta.labelKey, activeTabMeta.fallback)}
+          </p>
         </div>
         <Badge variant="outline" className="text-sm w-fit">
           {currentAgency.slug}
         </Badge>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => setSearchParams({ tab: v })} className="mt-6 flex flex-col lg:flex-row gap-6">
-        <TabsList className="flex flex-row lg:flex-col lg:w-52 h-auto p-2 rounded-xl bg-slate-100 border border-slate-200 shrink-0 lg:sticky lg:top-4 self-start w-full overflow-x-auto flex-nowrap">
-          <TabsTrigger value="general" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <Settings className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.general', 'General')}</span>
-          </TabsTrigger>
-          <TabsTrigger value="departments" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <Layers className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.organization', 'Organización')}</span>
-          </TabsTrigger>
-          <TabsTrigger value="team" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <Users className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.team', 'Equipo')}</span>
-          </TabsTrigger>
-          <TabsTrigger value="projects" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <Filter className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.projects', 'Proyectos')}</span>
-          </TabsTrigger>
-          <TabsTrigger value="modules" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <LayoutGrid className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.features', 'Funcionalidades')}</span>
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <LineChart className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.analytics', 'Analítica')}</span>
-          </TabsTrigger>
-          <TabsTrigger value="integrations" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <Rocket className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.connections', 'Conexiones')}</span>
-          </TabsTrigger>
-          <TabsTrigger value="appearance" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <Palette className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.appearance', 'Apariencia')}</span>
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <Bell className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.notifications', 'Notificaciones')}</span>
-          </TabsTrigger>
-          <TabsTrigger value="billing" className="flex-1 lg:flex-none justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0">
-            <CreditCard className="h-4 w-4 shrink-0" /> <span className="truncate">{t('agency.tabs.billing', 'Plan y facturación')}</span>
-          </TabsTrigger>
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => setSearchParams({ tab: v })}
+        className="mt-6 grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]"
+      >
+        <TabsList className="grid grid-flow-col auto-cols-fr lg:grid-flow-row lg:auto-cols-auto lg:w-full h-auto p-2 rounded-xl bg-slate-100 border border-slate-200 lg:sticky lg:top-4 self-start w-full overflow-x-auto lg:overflow-visible">
+          {TAB_CONFIG.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="justify-start gap-2 rounded-lg px-4 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm min-w-0"
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="truncate">{t(tab.labelKey, tab.fallback)}</span>
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
 
-        <div className="flex-1 min-w-0 space-y-6">
+        <div className="min-w-0 space-y-6 rounded-2xl border border-slate-200 bg-white/80 shadow-sm p-3 sm:p-4 lg:p-6">
           <TabsContent value="general" className="mt-0 space-y-6">
             {/* Información General */}
             <Card>
@@ -2288,12 +2300,7 @@ export default function AgencySettingsPage() {
                   <Bell className="h-5 w-5 text-primary" />
                   {t('agency.notifications.title', 'Notificaciones por email')}
                 </CardTitle>
-                <CardDescription>
-                  {t(
-                    'agency.notifications.description',
-                    'Reglas por agencia: transferencias de tareas y alertas programadas sobre el estado de los proyectos (Resend). El botón flotante «Guardar cambios» también guarda estas reglas.',
-                  )}
-                </CardDescription>
+                <CardDescription>{t('agency.notifications.description')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <NotificationRulesSection ref={notificationRulesRef} agencyId={currentAgency.id} />
@@ -2302,10 +2309,6 @@ export default function AgencySettingsPage() {
           </TabsContent>
 
           <TabsContent value="billing" className="mt-0 space-y-6">
-            <div className="flex items-center gap-2 mb-4">
-              <CreditCard className="h-5 w-5 text-blue-600" />
-              <h3 className="font-semibold text-lg text-slate-900">{t('agency.billing.title', 'Suscripción y Facturación')}</h3>
-            </div>
             <AgencyBillingTab />
           </TabsContent>
         </div>
