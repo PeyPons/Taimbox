@@ -112,6 +112,7 @@ const DeadlinesPage = lazyWithRetry(() => import("./pages/DeadlinesPage"));
 const WeeklyForecastPage = lazyWithRetry(() => import("./pages/WeeklyForecastPage"));
 const OkrsPage = lazyWithRetry(() => import("./pages/OkrsPage"));
 const AgencySettingsPage = lazyWithRetry(() => import("./pages/AgencySettingsPage"));
+const DataExportHubPage = lazyWithRetry(() => import("./pages/DataExportHubPage"));
 const AgenciesPage = lazyWithRetry(() => import("./pages/AgenciesPage"));
 const AgencyManagementPage = lazyWithRetry(() => import("./pages/AgencyManagementPage"));
 const TeamCapacityPage = lazyWithRetry(() => import("./pages/TeamCapacityPage"));
@@ -289,6 +290,7 @@ const App = () => (
                             <Route path="/weekly-forecast" element={<Suspense fallback={<PageLoader />}><PlanGuard><PermissionProtectedRoute requiredPermission="/team-capacity"><WeeklyForecastPage /></PermissionProtectedRoute></PlanGuard></Suspense>} />
                             <Route path="/settings" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><SettingsPage /></PermissionProtectedRoute></Suspense>} />
                             <Route path="/agency" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/agency"><AgencySettingsPage /></PermissionProtectedRoute></Suspense>} />
+                            <Route path="/exportacion-informes" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/exportacion-informes"><DataExportHubPage /></PermissionProtectedRoute></Suspense>} />
                             <Route path="/agencies" element={<Suspense fallback={<PageLoader />}><AgenciesPage /></Suspense>} />
                             <Route path="/agencies/:id/manage" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><AgencyManagementPage /></PermissionProtectedRoute></Suspense>} />
                             <Route path="/ads" element={<Suspense fallback={<PageLoader />}><PlanGuard><PermissionProtectedRoute requiredPermission="/ads"><ModuleGuard module="ppc"><AdsPage /></ModuleGuard></PermissionProtectedRoute></PlanGuard></Suspense>} />

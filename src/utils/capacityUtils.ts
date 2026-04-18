@@ -8,6 +8,7 @@
 
 import { Absence, TeamEvent, WorkSchedule } from '@/types';
 import { eachDayOfInterval, getDay, parseISO, startOfDay, endOfDay, isWithinInterval, format } from 'date-fns';
+import { teamEventCalendarDay } from '@/utils/teamEventUtils';
 
 const DAY_KEYS: (keyof WorkSchedule)[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
@@ -111,12 +112,11 @@ export function getEventHoursForDay(
     const dateStr = format(date, 'yyyy-MM-dd');
 
     teamEvents.forEach(event => {
-        const eventDateStr = format(new Date(event.date), 'yyyy-MM-dd');
+        const eventDateStr = format(teamEventCalendarDay(event), 'yyyy-MM-dd');
 
         if (eventDateStr === dateStr) {
-            // Check if employee is affected
-            const isAffected = event.affectedEmployeeIds === 'all' ||
-                event.affectedEmployeeIds.includes(employeeId);
+            const ids = event.affectedEmployeeIds;
+            const isAffected = ids === 'all' || (Array.isArray(ids) && ids.includes(employeeId));
 
             if (isAffected) {
                 if (event.hoursReduction >= 8) {
@@ -197,8 +197,8 @@ export function getCapacityReductionInRange(
 
     // Filter relevant events
     const relevantEvents = teamEvents.filter(event => {
-        const eventDate = new Date(event.date);
-        return eventDate >= rangeStart && eventDate <= rangeEnd;
+        const eventDay = teamEventCalendarDay(event);
+        return isWithinInterval(eventDay, { start: rangeStart, end: rangeEnd });
     });
 
     // Sum up day-by-day reductions
@@ -278,15 +278,15 @@ export function getCapacityReductionBreakdown(
 
     // Process events (only for days not fully covered by absences)
     teamEvents.forEach(event => {
-        const eventDate = new Date(event.date);
-        if (eventDate < rangeStart || eventDate > rangeEnd) return;
+        const eventDay = teamEventCalendarDay(event);
+        if (!isWithinInterval(eventDay, { start: rangeStart, end: rangeEnd })) return;
 
-        const isAffected = event.affectedEmployeeIds === 'all' ||
-            event.affectedEmployeeIds.includes(employeeId);
+        const ids = event.affectedEmployeeIds;
+        const isAffected = ids === 'all' || (Array.isArray(ids) && ids.includes(employeeId));
         if (!isAffected) return;
 
-        const dayKey = format(eventDate, 'yyyy-MM-dd');
-        const scheduledHours = getScheduledHoursForDay(eventDate, workSchedule);
+        const dayKey = format(eventDay, 'yyyy-MM-dd');
+        const scheduledHours = getScheduledHoursForDay(eventDay, workSchedule);
         const existingHours = daysAccountedFor.get(dayKey) || 0;
 
         if (scheduledHours > 0 && existingHours < scheduledHours) {

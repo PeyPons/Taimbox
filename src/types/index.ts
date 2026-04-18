@@ -82,6 +82,55 @@ export interface RolePermissions {
   permissions: import('./permissions').UserPermissions;
 }
 
+/** Reparto de un gasto común a toda la agencia (por horas del mes). */
+export type CommonExpenseAllocationGlobal = { type: 'global' };
+
+/** Reparto solo entre empleados de un departamento (por horas). */
+export type CommonExpenseAllocationDepartment = { type: 'department'; departmentId: string };
+
+/** Importe partido por porcentajes entre departamentos; dentro de cada uno, por horas. */
+export type CommonExpenseAllocationSplitPercent = {
+  type: 'split_percent';
+  parts: { departmentId: string; percent: number }[];
+};
+
+export type CommonExpenseAllocation =
+  | CommonExpenseAllocationGlobal
+  | CommonExpenseAllocationDepartment
+  | CommonExpenseAllocationSplitPercent;
+
+/** Línea de gasto común mensual (la clave `yyyy-MM` vive en `AgencySettings.commonExpensesByMonth`). */
+export interface CommonExpenseEntry {
+  id: string;
+  label: string;
+  /** Importe mensual en €; debe ser >= 0. */
+  amount: number;
+  allocation: CommonExpenseAllocation;
+  notes?: string;
+  /**
+   * Solo en `AgencySettings.commonExpensesRecurring`: primer mes (yyyy-MM, inclusive) en que aplica el gasto fijo mensual.
+   * No usar en entradas de `commonExpensesByMonth` (se ignoran al persistir si aparecieran).
+   */
+  recurringFromMonth?: string;
+  /**
+   * Solo recurrentes: último mes (yyyy-MM, inclusive). Sin definir = sigue aplicando en meses posteriores.
+   */
+  recurringUntilMonth?: string;
+  /**
+   * Cómo se reparte el importe dentro del scope resuelto por `allocation`.
+   *  - `byHours` (default, compat): proporcional a las horas del mes; excluye empleados con 0 h.
+   *  - `byHeadcount`: a partes iguales entre todos los empleados del scope (incluye quien no usa Taimbox).
+   *  - `byPayroll`: proporcional a la nómina mensual (`Employee.hourlyRate`) dentro del scope.
+   * Omitido = `byHours` para no romper datos existentes.
+   */
+  distribution?: 'byHours' | 'byHeadcount' | 'byPayroll';
+  /**
+   * Extensible sin romper consumidores (p. ej. futuro reparto por `Project.responsibleDepartmentId`).
+   * Valores opacos para el MVP.
+   */
+  scope?: Record<string, unknown>;
+}
+
 export interface AgencySettings {
   /** Usuario Auth propietario de la agencia (facturación / transferencia). No confundir con user_agencies.is_primary (agencia por defecto por usuario). */
   ownerUserId?: string;
@@ -128,6 +177,16 @@ export interface AgencySettings {
    * Por defecto activo (`undefined` o `true`). Solo `false` desactiva el aviso.
    */
   dependencyUnblockEmailsEnabled?: boolean;
+  /**
+   * Gastos comunes por mes (`yyyy-MM`). Histórico: cada mes puede tener líneas puntuales;
+   * editar un mes no altera otros.
+   */
+  commonExpensesByMonth?: Record<string, CommonExpenseEntry[]>;
+  /**
+   * Gastos fijos mensuales que aplican desde `recurringFromMonth` (inclusive) y hasta `recurringUntilMonth` si está definido.
+   * Para un mes M se combinan con `commonExpensesByMonth[M]` (primero recurrentes aplicables, luego líneas del mes).
+   */
+  commonExpensesRecurring?: CommonExpenseEntry[];
 }
 
 export type AgencyStatus = 'active' | 'suspended';

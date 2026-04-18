@@ -46,6 +46,7 @@ export const ROUTE_PERMISSIONS: Record<string, keyof UserPermissions> = {
   '/weekly-forecast': 'can_access_weekly_forecast',
   '/settings': 'can_access_settings',
   '/agency': 'can_access_agency_settings',
+  '/exportacion-informes': 'can_access_agency_settings',
   '/api-keys': 'can_access_api_keys',
   '/soporte': 'can_access_support',
 };

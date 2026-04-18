@@ -7,6 +7,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { toast } from '@/lib/notify';
 import { supabase } from '@/lib/supabase';
+import { fetchGlobalAssignmentsForMonth } from '@/utils/globalAssignmentsUtils';
 import { Deadline, GlobalAssignment, Project, Client, Employee, Absence, TeamEvent } from '@/types';
 import { getEffectiveBudget } from '@/utils/budgetUtils';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
@@ -92,39 +93,9 @@ export function useDeadlinesPageData(params: UseDeadlinesPageDataParams) {
 
   const loadGlobalAssignments = async () => {
     try {
-      const { data, error } = await supabase
-        .from('global_assignments')
-        .select('*')
-        .eq('month', selectedMonth)
-        .eq('agency_id', currentAgency?.id)
-        .order('created_at', { ascending: false });
-
+      const { data, error } = await fetchGlobalAssignmentsForMonth(selectedMonth, currentAgency?.id);
       if (error) throw error;
-
-      if (data) {
-        setGlobalAssignments(
-          data.map(
-            (g: {
-              id: string;
-              month: string;
-              name: string;
-              hours: number;
-              affects_all: boolean;
-              affected_employee_ids?: string[];
-              employee_id?: string;
-              created_by?: string;
-            }) => ({
-              id: g.id,
-              month: g.month,
-              name: g.name,
-              hours: Number(g.hours),
-              affectsAll: g.affects_all,
-              affectedEmployeeIds: (g.affected_employee_ids || []) as string[],
-              employeeId: g.employee_id || g.created_by,
-            })
-          )
-        );
-      }
+      setGlobalAssignments(data);
     } catch (error) {
       console.error('Error cargando asignaciones globales:', error);
     }

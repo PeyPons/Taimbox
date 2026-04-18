@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { format, startOfWeek } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import {
   Employee,
@@ -432,6 +432,9 @@ export async function loadMonthData({
     weekStartDates.length > 0
       ? weekStartDates[weekStartDates.length - 1]
       : format(monthEnd, 'yyyy-MM-dd');
+  /** Incluir el lunes ISO de la semana que contiene el día 1 (filas legacy con week_start del mes anterior). */
+  const isoMondayOfMonth = format(startOfWeek(monthStart, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+  const minFetchWeek = [minWeekStart, isoMondayOfMonth].sort()[0];
 
   try {
     const startStr = format(monthStart, 'yyyy-MM-dd');
@@ -442,7 +445,7 @@ export async function loadMonthData({
         .from('allocations')
         .select('*, employees!allocations_employee_id_fkey!inner(agency_id)')
         .eq('employees.agency_id', agencyId)
-        .gte('week_start_date', minWeekStart)
+        .gte('week_start_date', minFetchWeek)
         .lte('week_start_date', maxWeekStart),
       supabase
         .from('absences')
@@ -460,7 +463,7 @@ export async function loadMonthData({
         .from('weekly_feedback')
         .select('*, employees!inner(agency_id)')
         .eq('employees.agency_id', agencyId)
-        .gte('week_start_date', minWeekStart)
+        .gte('week_start_date', minFetchWeek)
         .lte('week_start_date', maxWeekStart),
     ]);
 

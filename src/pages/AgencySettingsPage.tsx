@@ -16,7 +16,7 @@ import { toast } from '@/lib/notify';
 import {
   Building2, Settings, Users, Palette, Save, Loader2,
   Filter, Plus, Trash2, HelpCircle, Info, X,
-  Rocket, Facebook, Megaphone, PlusCircle, ShieldCheck, GitBranch, Database, AlertTriangle,
+  Rocket, Facebook, Megaphone, PlusCircle, ShieldCheck, GitBranch, Database, AlertTriangle, Download,
   Eye, Lock, Unlock, Calendar, Check, ChevronDown, BarChart2, Layers, ExternalLink, Activity, CreditCard, LayoutGrid, LineChart, Bell
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -25,11 +25,6 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { AVAILABLE_INTEGRATIONS } from '@/config/integrations';
 import { CustomProjectFilter, RolePermissions, ProjectAliasingRule, DepartmentDefinition } from '@/types';
 import { normalizeDepartments } from '@/utils/departmentUtils';
-import {
-  numberToPositiveDecimalInputString,
-  parsePositiveDecimalInput,
-  sanitizePositiveDecimalInput,
-} from '@/utils/positiveDecimalInput';
 import { DEFAULT_FILTERS } from '@/hooks/useProjectFilters';
 import { UserPermissions, PERMISSION_LABELS, DEFAULT_PERMISSIONS } from '@/types/permissions';
 import {
@@ -303,10 +298,6 @@ export default function AgencySettingsPage() {
   const [openExcludeProjects, setOpenExcludeProjects] = useState(false);
   const [openExcludeClients, setOpenExcludeClients] = useState(false);
 
-  /** Objetivo Precio Hora Efectivo (€/h) en Rentabilidad. Por defecto 75. */
-  const [ehrTargetInput, setEhrTargetInput] = useState(() =>
-    numberToPositiveDecimalInputString(currentAgency?.settings?.ehrTarget ?? 75, 75)
-  );
   const [hoursTrackingPreference, setHoursTrackingPreference] = useState<'computed' | 'actual'>(
     currentAgency?.settings?.hoursTrackingPreference ?? 'computed'
   );
@@ -363,9 +354,6 @@ export default function AgencySettingsPage() {
         projectIds: currentAgency.settings?.planningPrecisionExclusions?.projectIds ?? [],
         clientIds: currentAgency.settings?.planningPrecisionExclusions?.clientIds ?? []
       });
-      setEhrTargetInput(
-        numberToPositiveDecimalInputString(currentAgency.settings?.ehrTarget ?? 75, 75)
-      );
       setHoursTrackingPreference(currentAgency.settings?.hoursTrackingPreference ?? 'computed');
       setRadarLowProgressExcludeKeywords(currentAgency.settings?.radarLowProgressExcludeKeywords ?? []);
       setDependencyUnblockEmailsEnabled(currentAgency.settings?.dependencyUnblockEmailsEnabled !== false);
@@ -456,7 +444,6 @@ export default function AgencySettingsPage() {
 
     setSaving(true);
     try {
-      const ehrTarget = parsePositiveDecimalInput(ehrTargetInput, 75, 1);
       await updateSettings({
         modules,
         roles,
@@ -472,7 +459,6 @@ export default function AgencySettingsPage() {
         weeklyCloseDay,
         planningPrecisionExclusions,
         timeTrackerMaxHours,
-        ehrTarget,
         hoursTrackingPreference,
         radarLowProgressExcludeKeywords,
         dependencyUnblockEmailsEnabled,
@@ -724,37 +710,6 @@ export default function AgencySettingsPage() {
               </CardContent>
             </Card>
 
-            {/* Rentabilidad */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart2 className="h-5 w-5 text-primary" />
-                  {t('agency.general.profitability', 'Rentabilidad')}
-                </CardTitle>
-                <CardDescription>
-                  {t('agency.general.profitabilityDesc', 'Objetivo de precio hora efectivo usado en la página Rentabilidad para KPIs y alertas')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="max-w-xs space-y-2">
-                  <Label htmlFor="ehr-target">{t('agency.general.ehrTarget', 'Objetivo Precio Hora Efectivo (€/h)')}</Label>
-                  <Input
-                    id="ehr-target"
-                    type="text"
-                    inputMode="decimal"
-                    autoComplete="off"
-                    value={ehrTargetInput}
-                    onChange={(e) => setEhrTargetInput(sanitizePositiveDecimalInput(e.target.value))}
-                    onBlur={() => {
-                      const v = parsePositiveDecimalInput(ehrTargetInput, 75, 1);
-                      setEhrTargetInput(numberToPositiveDecimalInputString(v, 75));
-                    }}
-                  />
-                  <p className="text-xs text-slate-500">{t('agency.general.ehrNote', 'Valor mínimo considerado saludable. Por defecto 75 €/h.')}</p>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Preferencias de Seguimiento */}
             <Card>
               <CardHeader>
@@ -825,6 +780,26 @@ export default function AgencySettingsPage() {
                     </label>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Download className="h-5 w-5 text-slate-600" />
+                  {t('agency.general.dataExportTitle', 'Exportación para informes')}
+                </CardTitle>
+                <CardDescription>
+                  {t('agency.general.dataExportDesc', 'Descarga JSON por mes (deadlines, planificación, coherencia, radar, rentabilidad, ausencias) para análisis o informes externos.')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/exportacion-informes" className="gap-2">
+                    <Download className="h-4 w-4" />
+                    {t('agency.general.dataExportButton', 'Abrir hub de exportación')}
+                  </Link>
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>

@@ -13,7 +13,10 @@ El núcleo del modelo **multi-tenant**. Cada usuario pertenece a una o más agen
     - `modules`: Módulos habilitados (Ads/PPC, etc.).
     - `branding`: Colores y logotipos personalizados.
     - `projectAliasingRules`: Reglas para renombrado automático de proyectos.
-    - `ehrTarget`: Opcional. Objetivo de Precio Hora Efectivo (€/h) en **Rentabilidad**. Si no se define, se usa 75 €/h o la media de coste por hora de la agencia si es superior. Se edita en Configuración de agencia → General → Rentabilidad.
+    - `ehrTarget`: Opcional. Objetivo de Precio Hora Efectivo (€/h) en **Rentabilidad**. Si no se define, se usa 75 €/h o la media de coste por hora de la agencia si es superior. Se edita en la página **Rentabilidad** (diálogo «Objetivo y gastos»).
+    - `commonExpensesByMonth`: Opcional. Gastos comunes puntuales por clave `yyyy-MM`.
+    - `commonExpensesRecurring`: Opcional. Gastos fijos mensuales con `recurringFromMonth` (y `recurringUntilMonth` opcional); se combinan con las líneas del mes al calcular overhead en Rentabilidad.
+    - `CommonExpenseEntry.distribution`: Opcional, define cómo se reparte el importe dentro del scope (`allocation`). Valores: `byHours` (default, proporcional a horas del mes; excluye 0 h), `byHeadcount` (a partes iguales, incluye empleados sin horas) y `byPayroll` (proporcional a la nómina mensual). Si falta, se comporta como `byHours` para compatibilidad con datos previos.
 
 #### Sistema de Roles Dinámicos
 Cada agencia define sus propios roles con permisos granulares:

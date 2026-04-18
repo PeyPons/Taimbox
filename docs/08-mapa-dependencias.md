@@ -12,7 +12,7 @@ Si modificas una interface, revisa estos consumidores:
 | `Allocation` | `AppContext.tsx`, `useAllocationSheet.ts`, `AllocationSheet.tsx`, `PlannerGrid.tsx`, `MobilePlannerView.tsx`, `WeekCell.tsx`, `useProjectMetrics.ts`, `useTaskTransfers.ts` |
 | `Employee` | `AppContext.tsx`, `AgencyContext.tsx`, `EmployeeRow.tsx`, `TeamPage.tsx`, `usePermissions.ts`, `capacityUtils.ts` |
 | `Project` | `AppContext.tsx`, `ProjectsPage.tsx`, `ClientsAndProjectsPage.tsx`, `useAllocationSheet.ts`, `useProjectMetrics.ts` |
-| `Agency` / `AgencySettings` | `AgencyContext.tsx`, `AgencySettingsPage.tsx`, `usePermissions.ts` |
+| `Agency` / `AgencySettings` (incl. `commonExpensesByMonth`, `commonExpensesRecurring`, tipos `CommonExpense*` con `distribution` byHours/byHeadcount/byPayroll) | `AgencyContext.tsx`, `CommonExpensesSettingsCard.tsx`, `FinancialHealthPage.tsx`, `commonExpensesAllocation.ts`, `usePermissions.ts` |
 | `WorkSchedule` | `capacityUtils.ts`, `dateUtils.ts`, `AppContext.tsx` |
 | `Absence` / `TeamEvent` | `capacityUtils.ts`, `AppContext.tsx`, `AbsencesSheet.tsx` |
 | `TaskTransfer` | `useTaskTransfers.ts`, `TaskTransferComponents.tsx`, `AppContext.tsx` |
@@ -45,6 +45,7 @@ Si modificas una interface, revisa estos consumidores:
 | `capacityUtils.ts` → `getScheduledHoursForDay()` | Todas las funciones de capacidad, `WeekCell.tsx` |
 | `taskPermissions.ts` → `canEditTask()` | `AllocationSheet.tsx`, cualquier UI de edición de tareas |
 | `permissions.ts` → `ROUTE_PERMISSIONS` | `App.tsx` (guards), `PermissionProtectedRoute.tsx`, `Sidebar.tsx` |
+| `commonExpensesAllocation.ts` (firma extendida con `getEmployeePayroll` para `distribution: byPayroll`) | `FinancialHealthPage.tsx` (coste cargado, desglose nómina/overhead por proyecto/empleado, KPI «Gastos comunes del mes», guardado y validación vía diálogo); `CommonExpensesSettingsCard.tsx` (selector de Reparto por línea); tests en `src/utils/__tests__/commonExpensesAllocation.test.ts` cubren 9 combos scope × distribution |
 
 ### 8.4 Dependencias de Hooks
 

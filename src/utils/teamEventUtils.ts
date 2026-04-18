@@ -1,20 +1,25 @@
+import { endOfDay, isWithinInterval, startOfDay } from 'date-fns';
 import { TeamEvent, WorkSchedule, Absence } from '@/types';
+import { parseDateStringLocal } from '@/utils/dateUtils';
+
+/** Día civil local del evento (evita `new Date('yyyy-MM-dd')` en UTC que desplaza el día). */
+export function teamEventCalendarDay(event: TeamEvent): Date {
+  const raw = typeof event.date === 'string' ? event.date : String(event.date);
+  const ymd = raw.length >= 10 ? raw.slice(0, 10) : raw;
+  return startOfDay(parseDateStringLocal(ymd));
+}
 
 /**
  * Verifica si una fecha específica está cubierta por alguna ausencia del empleado
  */
 function isDateCoveredByAbsence(date: Date, absences: Absence[]): boolean {
+  const checkDay = startOfDay(date);
   return absences.some(absence => {
-    const startDate = new Date(absence.startDate);
-    const endDate = new Date(absence.endDate);
-    
-    // Normalizar a medianoche para comparación correcta
-    const checkDate = new Date(date);
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(23, 59, 59, 999);
-    checkDate.setHours(12, 0, 0, 0);
-    
-    return checkDate >= startDate && checkDate <= endDate;
+    const s = absence.startDate.length >= 10 ? absence.startDate.slice(0, 10) : absence.startDate;
+    const e = absence.endDate.length >= 10 ? absence.endDate.slice(0, 10) : absence.endDate;
+    const absStart = startOfDay(parseDateStringLocal(s));
+    const absEnd = startOfDay(parseDateStringLocal(e));
+    return isWithinInterval(checkDay, { start: absStart, end: absEnd });
   });
 }
 
@@ -34,39 +39,45 @@ export function getTeamEventHoursInRange(
   employeeAbsences: Absence[] = []  // NUEVO: recibe las ausencias del empleado
 ): number {
   let totalHours = 0;
+  const rangeFrom = startOfDay(startDate);
+  const rangeTo = endOfDay(endDate);
 
   teamEvents.forEach(event => {
-    const eventDate = new Date(event.date);
-    
-    // Check if event falls within range
-    if (eventDate >= startDate && eventDate <= endDate) {
-      // Check if employee is affected
-      const isAffected = event.affectedEmployeeIds === 'all' || 
-                         event.affectedEmployeeIds.includes(employeeId);
-      
-      if (isAffected) {
-        // NUEVO: No contar si el empleado ya está de ausencia ese día
-        if (isDateCoveredByAbsence(eventDate, employeeAbsences)) {
-          return; // Skip este evento, ya está de ausencia
-        }
-        
-        // Get employee's scheduled hours for that day
-        const dayOfWeek = eventDate.getDay();
-        const dayNames: (keyof WorkSchedule)[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        const dayName = dayNames[dayOfWeek];
-        const employeeHoursForDay = workSchedule[dayName] || 0;
-        
-        // Only count if employee works on that day
-        if (employeeHoursForDay > 0) {
-          if (event.hoursReduction >= 8) {
-            // Día completo: usar horario del empleado
-            totalHours += employeeHoursForDay;
-          } else {
-            // Reducción parcial: usar el valor configurado,
-            // pero nunca más que las horas que trabaja ese día
-            totalHours += Math.min(event.hoursReduction, employeeHoursForDay);
-          }
-        }
+    const eventDay = teamEventCalendarDay(event);
+
+    if (!isWithinInterval(eventDay, { start: rangeFrom, end: rangeTo })) {
+      return;
+    }
+
+    const ids = event.affectedEmployeeIds;
+    const isAffected = ids === 'all' || (Array.isArray(ids) && ids.includes(employeeId));
+
+    if (!isAffected) {
+      return;
+    }
+
+    if (isDateCoveredByAbsence(eventDay, employeeAbsences)) {
+      return;
+    }
+
+    const dayOfWeek = eventDay.getDay();
+    const dayNames: (keyof WorkSchedule)[] = [
+      'sunday',
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+    ];
+    const dayName = dayNames[dayOfWeek];
+    const employeeHoursForDay = workSchedule[dayName] || 0;
+
+    if (employeeHoursForDay > 0) {
+      if (event.hoursReduction >= 8) {
+        totalHours += employeeHoursForDay;
+      } else {
+        totalHours += Math.min(event.hoursReduction, employeeHoursForDay);
       }
     }
   });
@@ -89,37 +100,49 @@ export function getTeamEventDetailsInRange(
   employeeAbsences: Absence[] = []  // NUEVO: recibe las ausencias del empleado
 ): { name: string; date: Date; hours: number }[] {
   const details: { name: string; date: Date; hours: number }[] = [];
+  const rangeFrom = startOfDay(startDate);
+  const rangeTo = endOfDay(endDate);
 
   teamEvents.forEach(event => {
-    const eventDate = new Date(event.date);
-    
-    if (eventDate >= startDate && eventDate <= endDate) {
-      const isAffected = event.affectedEmployeeIds === 'all' || 
-                         event.affectedEmployeeIds.includes(employeeId);
-      
-      if (isAffected) {
-        // NUEVO: No incluir si el empleado ya está de ausencia ese día
-        if (isDateCoveredByAbsence(eventDate, employeeAbsences)) {
-          return; // Skip este evento
-        }
-        
-        const dayOfWeek = eventDate.getDay();
-        const dayNames: (keyof WorkSchedule)[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        const dayName = dayNames[dayOfWeek];
-        const employeeHoursForDay = workSchedule[dayName] || 0;
-        
-        if (employeeHoursForDay > 0) {
-          const hoursReduced = event.hoursReduction >= 8 
-            ? employeeHoursForDay 
-            : Math.min(event.hoursReduction, employeeHoursForDay);
-          
-          details.push({
-            name: event.name,
-            date: eventDate,
-            hours: hoursReduced
-          });
-        }
-      }
+    const eventDay = teamEventCalendarDay(event);
+
+    if (!isWithinInterval(eventDay, { start: rangeFrom, end: rangeTo })) {
+      return;
+    }
+
+    const ids = event.affectedEmployeeIds;
+    const isAffected = ids === 'all' || (Array.isArray(ids) && ids.includes(employeeId));
+
+    if (!isAffected) {
+      return;
+    }
+
+    if (isDateCoveredByAbsence(eventDay, employeeAbsences)) {
+      return;
+    }
+
+    const dayOfWeek = eventDay.getDay();
+    const dayNames: (keyof WorkSchedule)[] = [
+      'sunday',
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+    ];
+    const dayName = dayNames[dayOfWeek];
+    const employeeHoursForDay = workSchedule[dayName] || 0;
+
+    if (employeeHoursForDay > 0) {
+      const hoursReduced =
+        event.hoursReduction >= 8 ? employeeHoursForDay : Math.min(event.hoursReduction, employeeHoursForDay);
+
+      details.push({
+        name: event.name,
+        date: eventDay,
+        hours: hoursReduced,
+      });
     }
   });
 
