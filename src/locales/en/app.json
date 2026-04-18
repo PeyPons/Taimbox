@@ -766,6 +766,7 @@
       "integrations": "Connections",
       "departments": "Organization",
       "appearance": "Appearance",
+      "notifications": "Notifications",
       "billing": "Plan & Billing"
     },
     "organization": {
@@ -835,6 +836,14 @@
       "description": "Customize your agency's appearance",
       "primaryColor": "Primary Color",
       "preview": "Preview"
+    },
+    "notifications": {
+      "eventsTitle": "Dependency alerts",
+      "eventsDescription": "Hybrid default: on so teams don’t miss when a blocking task is completed. Turn it off here for the whole agency if you prefer no email.",
+      "title": "Email notifications",
+      "description": "Per-agency rules: task transfers and scheduled project alerts (Resend). The floating “Save changes” button also saves these rules.",
+      "dependencyUnblockLabel": "Email when dependent tasks unblock",
+      "dependencyUnblockHint": "Sent to whoever owned the completed task and assignees of tasks that depended on it (if they have an email on their profile)."
     },
     "team": {
       "title": "Role Management",
@@ -1154,7 +1163,10 @@
     "weekShort": "Wk",
     "taskEstShort": "Est.",
     "coherenceNoDeadlineBanner": "This project is not on this month's deadline; the row below sums the team's planned and computed hours.",
-    "coherenceDeadlineDeltaTooltip": "Month plan + computed minus deadline total. Negative: still under the deadline; positive: above the agreement in Deadlines.",
+    "coherenceDeltaVsDeadline": "vs deadline",
+    "coherenceDeltaPlanPlusComp": "Plan+Comp",
+    "coherenceDeltaEmployeeVsDl": "vs DL",
+    "coherenceDeadlineDeltaTooltip": "Not the same as “To compute”: (month Plan + Computed) minus the hours agreed in Deadlines. Negative: headroom under the agreement; positive: above the agreement.",
     "coherenceNoDeadlineSumTooltip": "No deadline baseline this month: planned + computed team hours (flagged because there is nothing to compare in Deadlines)."
   },
   "sidebar": {

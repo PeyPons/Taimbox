@@ -1,5 +1,5 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { Bell, Eye, Loader2, Plus, Trash2 } from 'lucide-react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { Bell, Check, ChevronsUpDown, Eye, Loader2, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useAppAllocations, useAppEmployees, useAppProjects } from '@/contexts/AppContext';
@@ -17,6 +17,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import {
   mapNotificationRuleFromDb,
@@ -25,6 +35,7 @@ import {
   type NotificationIssueFlag,
   type NotificationRecipientPolicy,
   type NotificationRule,
+  type NotificationRuleConditions,
   type NotificationTriggerType,
 } from '@/types/notifications';
 
@@ -70,33 +81,67 @@ const COHERENCE_STATUS_OPTIONS: { id: CoherenceOpStatus; label: string }[] = [
   { id: 'in-rule', label: 'En regla (solo si quieres avisos incluso OK)' },
 ];
 
+/** Conserva periodicidad, día de la semana y filtros al cambiar el modo de evaluación. */
+function preservedScheduleScopeAndFilters(rule: NotificationRule): Pick<
+  NotificationRuleConditions,
+  'periodicity' | 'schedule_day_of_week' | 'project_ids' | 'client_ids'
+> {
+  const c = rule.conditions;
+  const out: Pick<
+    NotificationRuleConditions,
+    'periodicity' | 'schedule_day_of_week' | 'project_ids' | 'client_ids'
+  > = {
+    periodicity: c.periodicity ?? 'monthly',
+    project_ids: c.project_ids?.length ? [...c.project_ids] : undefined,
+    client_ids: c.client_ids?.length ? [...c.client_ids] : undefined,
+  };
+  if (c.periodicity === 'weekly' && typeof c.schedule_day_of_week === 'number') {
+    out.schedule_day_of_week = c.schedule_day_of_week;
+  }
+  return out;
+}
+
+function scheduledConditionsPayload(r: Partial<NotificationRule>): Record<string, unknown> {
+  const evalMode: NotificationEvaluationMode = r.conditions?.evaluation ?? 'project_month_health';
+  const periodicity = r.conditions?.periodicity ?? 'monthly';
+  const schedule: Record<string, unknown> = { periodicity };
+  if (periodicity === 'weekly') {
+    const dow = r.conditions?.schedule_day_of_week;
+    schedule.schedule_day_of_week =
+      typeof dow === 'number' && dow >= 1 && dow <= 7 ? Math.floor(dow) : 1;
+  }
+  const scope = {
+    project_ids: r.conditions?.project_ids?.length ? r.conditions.project_ids : undefined,
+    client_ids: r.conditions?.client_ids?.length ? r.conditions.client_ids : undefined,
+  };
+  if (evalMode === 'deadline_coherence') {
+    const opIn =
+      r.conditions?.coherence_op_status_in && r.conditions.coherence_op_status_in.length > 0
+        ? r.conditions.coherence_op_status_in
+        : [...DEFAULT_COHERENCE_STATUSES];
+    return {
+      evaluation: 'deadline_coherence',
+      ...scope,
+      ...schedule,
+      coherence_min_abs_hours: r.conditions?.coherence_min_abs_hours ?? 0.05,
+      coherence_op_status_in: opIn,
+      coherence_delivery_mode: r.conditions?.coherence_delivery_mode ?? 'per_project',
+      coherence_digest_max: r.conditions?.coherence_digest_max ?? 12,
+    };
+  }
+  return {
+    evaluation: 'project_month_health',
+    ...scope,
+    ...schedule,
+    match_any: r.conditions?.match_any?.length ? r.conditions.match_any : defaultConditions(),
+  };
+}
+
 function rowToInsertPayload(r: Partial<NotificationRule> & { agencyId: string }) {
   const trigger = r.triggerType ?? 'task_transfer_pending';
   let conditions: Record<string, unknown> = {};
   if (trigger === 'scheduled') {
-    const evalMode: NotificationEvaluationMode = r.conditions?.evaluation ?? 'project_month_health';
-    if (evalMode === 'deadline_coherence') {
-      const opIn =
-        r.conditions?.coherence_op_status_in && r.conditions.coherence_op_status_in.length > 0
-          ? r.conditions.coherence_op_status_in
-          : [...DEFAULT_COHERENCE_STATUSES];
-      conditions = {
-        evaluation: 'deadline_coherence',
-        project_ids: r.conditions?.project_ids?.length ? r.conditions.project_ids : undefined,
-        client_ids: r.conditions?.client_ids?.length ? r.conditions.client_ids : undefined,
-        coherence_min_abs_hours: r.conditions?.coherence_min_abs_hours ?? 0.05,
-        coherence_op_status_in: opIn,
-        coherence_delivery_mode: r.conditions?.coherence_delivery_mode ?? 'per_project',
-        coherence_digest_max: r.conditions?.coherence_digest_max ?? 12,
-      };
-    } else {
-      conditions = {
-        evaluation: 'project_month_health',
-        match_any: r.conditions?.match_any?.length ? r.conditions.match_any : defaultConditions(),
-        project_ids: r.conditions?.project_ids?.length ? r.conditions.project_ids : undefined,
-        client_ids: r.conditions?.client_ids?.length ? r.conditions.client_ids : undefined,
-      };
-    }
+    conditions = scheduledConditionsPayload(r);
   }
 
   let schedule_hour_utc: number | null = null;
@@ -129,12 +174,180 @@ export type NotificationRulesSectionHandle = {
   saveAllRules: () => Promise<boolean>;
 };
 
+type ClientRow = { id: string; name: string };
+type ProjectRow = { id: string; name: string; clientId: string };
+
+function RuleScheduledScopeFilters({
+  rule,
+  clients,
+  projects,
+  updateLocal,
+}: {
+  rule: NotificationRule;
+  clients: ClientRow[];
+  projects: ProjectRow[];
+  updateLocal: (id: string, patch: Partial<NotificationRule>) => void;
+}) {
+  const [openClients, setOpenClients] = useState(false);
+  const [openProjects, setOpenProjects] = useState(false);
+
+  const selectedClientIds = rule.conditions.client_ids ?? [];
+  const selectedProjectIds = rule.conditions.project_ids ?? [];
+
+  const sortedClients = useMemo(
+    () => [...clients].sort((a, b) => a.name.localeCompare(b.name, 'es')),
+    [clients],
+  );
+  const sortedProjects = useMemo(
+    () => [...projects].sort((a, b) => a.name.localeCompare(b.name, 'es')),
+    [projects],
+  );
+
+  const toggleClient = (clientId: string) => {
+    const set = new Set(selectedClientIds);
+    if (set.has(clientId)) set.delete(clientId);
+    else set.add(clientId);
+    const next = [...set];
+    updateLocal(rule.id, {
+      conditions: {
+        ...rule.conditions,
+        client_ids: next.length ? next : undefined,
+      },
+    });
+  };
+
+  const toggleProject = (projectId: string) => {
+    const set = new Set(selectedProjectIds);
+    if (set.has(projectId)) set.delete(projectId);
+    else set.add(projectId);
+    const next = [...set];
+    updateLocal(rule.id, {
+      conditions: {
+        ...rule.conditions,
+        project_ids: next.length ? next : undefined,
+      },
+    });
+  };
+
+  const clearClients = () =>
+    updateLocal(rule.id, { conditions: { ...rule.conditions, client_ids: undefined } });
+  const clearProjects = () =>
+    updateLocal(rule.id, { conditions: { ...rule.conditions, project_ids: undefined } });
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      <div className="space-y-2">
+        <Label>Clientes (opcional)</Label>
+        <Popover open={openClients} onOpenChange={setOpenClients}>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full justify-between font-normal"
+              aria-expanded={openClients}
+            >
+              <span className="truncate text-left">
+                {selectedClientIds.length === 0
+                  ? 'Todos los clientes'
+                  : `${selectedClientIds.length} cliente(s)`}
+              </span>
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+            <Command>
+              <CommandInput placeholder="Buscar cliente…" />
+              <CommandList>
+                <CommandEmpty>Sin resultados.</CommandEmpty>
+                <CommandGroup>
+                  {sortedClients.map((c) => {
+                    const sel = selectedClientIds.includes(c.id);
+                    return (
+                      <CommandItem
+                        key={c.id}
+                        value={`${c.name} ${c.id}`}
+                        onSelect={() => toggleClient(c.id)}
+                      >
+                        <Check className={cn('mr-2 h-4 w-4', sel ? 'opacity-100' : 'opacity-0')} />
+                        {c.name}
+                      </CommandItem>
+                    );
+                  })}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+            {selectedClientIds.length > 0 ? (
+              <div className="border-t p-2">
+                <Button type="button" variant="ghost" size="sm" className="w-full" onClick={clearClients}>
+                  Quitar filtro de clientes
+                </Button>
+              </div>
+            ) : null}
+          </PopoverContent>
+        </Popover>
+        <p className="text-xs text-slate-500">Si eliges uno o más, solo cuentan proyectos de esos clientes.</p>
+      </div>
+      <div className="space-y-2">
+        <Label>Proyectos (opcional)</Label>
+        <Popover open={openProjects} onOpenChange={setOpenProjects}>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full justify-between font-normal"
+              aria-expanded={openProjects}
+            >
+              <span className="truncate text-left">
+                {selectedProjectIds.length === 0
+                  ? 'Todos los proyectos'
+                  : `${selectedProjectIds.length} proyecto(s)`}
+              </span>
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+            <Command>
+              <CommandInput placeholder="Buscar proyecto…" />
+              <CommandList>
+                <CommandEmpty>Sin resultados.</CommandEmpty>
+                <CommandGroup>
+                  {sortedProjects.map((p) => {
+                    const sel = selectedProjectIds.includes(p.id);
+                    return (
+                      <CommandItem
+                        key={p.id}
+                        value={`${p.name} ${p.id}`}
+                        onSelect={() => toggleProject(p.id)}
+                      >
+                        <Check className={cn('mr-2 h-4 w-4', sel ? 'opacity-100' : 'opacity-0')} />
+                        {p.name}
+                      </CommandItem>
+                    );
+                  })}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+            {selectedProjectIds.length > 0 ? (
+              <div className="border-t p-2">
+                <Button type="button" variant="ghost" size="sm" className="w-full" onClick={clearProjects}>
+                  Quitar filtro de proyectos
+                </Button>
+              </div>
+            ) : null}
+          </PopoverContent>
+        </Popover>
+        <p className="text-xs text-slate-500">Si eliges proyectos concretos, la regla solo los evalúa.</p>
+      </div>
+    </div>
+  );
+}
+
 export const NotificationRulesSection = forwardRef<NotificationRulesSectionHandle, { agencyId: string }>(
   function NotificationRulesSection({ agencyId }, ref) {
   const { toast } = useToast();
   const { currentAgency } = useAgency();
   const { allocations } = useAppAllocations();
-  const { projects } = useAppProjects();
+  const { projects, clients } = useAppProjects();
   const { employees } = useAppEmployees();
   const [rules, setRules] = useState<NotificationRule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -341,10 +554,12 @@ export const NotificationRulesSection = forwardRef<NotificationRulesSectionHandl
         error={previewError}
       />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <p className="text-sm text-slate-600">
-          Los correos se envían con Resend (misma configuración que invitaciones y reset de contraseña). Las
-          reglas programadas requieren llamar a la Edge Function <code className="text-xs bg-slate-100 px-1 rounded">process-notification-rules</code> con un cron y el secreto{' '}
-          <code className="text-xs bg-slate-100 px-1 rounded">NOTIFICATIONS_CRON_SECRET</code> (ver documentación).
+        <p className="text-sm text-slate-600 max-w-3xl">
+          Aquí defines <strong>cuándo</strong> y <strong>a quién</strong> enviamos avisos por correo (el mismo canal
+          que usamos para invitaciones o recuperar contraseña). Las reglas <strong>programadas</strong> se revisan de
+          forma automática según la frecuencia y la hora que elijas. Si tu organización aloja Taimbox en servidores
+          propios, quien gestione esa instalación debe tener activada la revisión periódica en segundo plano; en el
+          servicio gestionado por Taimbox no tienes que configurar nada extra en esta pantalla.
         </p>
         <Button type="button" onClick={() => void addRule()} className="shrink-0">
           <Plus className="h-4 w-4 mr-2" />
@@ -382,7 +597,10 @@ export const NotificationRulesSection = forwardRef<NotificationRulesSectionHandl
                     {rule.name && rule.name !== 'Nueva regla' ? rule.name : 'Regla de notificación'}
                   </CardTitle>
                   {rule.scheduleHourUtc !== null && rule.triggerType === 'scheduled' && (
-                    <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                    <span
+                      className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full"
+                      title="Hora universal (UTC). Súmale el desfase de tu zona horaria para calcular la hora local."
+                    >
                       {String(rule.scheduleHourUtc).padStart(2, '0')}:00 UTC
                     </span>
                   )}
@@ -400,12 +618,14 @@ export const NotificationRulesSection = forwardRef<NotificationRulesSectionHandl
                   </Button>
                 </div>
               </div>
-              <CardDescription>Se evalúa en el servidor; no expone claves de Resend al navegador.</CardDescription>
+              <CardDescription>
+                Los avisos se envían de forma segura desde el sistema; aquí solo eliges reglas y destinatarios.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2 md:col-span-2">
-                  <Label>Nombre interno</Label>
+                  <Label>Nombre de la regla</Label>
                   <Input
                     value={rule.name}
                     onChange={(e) => updateLocal(rule.id, { name: e.target.value })}
@@ -434,6 +654,7 @@ export const NotificationRulesSection = forwardRef<NotificationRulesSectionHandl
                         patch.conditions = {
                           evaluation: 'project_month_health',
                           match_any: defaultConditions(),
+                          periodicity: 'monthly',
                         };
                       }
                       updateLocal(rule.id, patch);
@@ -444,7 +665,7 @@ export const NotificationRulesSection = forwardRef<NotificationRulesSectionHandl
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="task_transfer_pending">Al solicitar transferencia de tarea</SelectItem>
-                      <SelectItem value="scheduled">Programada (revisión mensual de proyectos)</SelectItem>
+                      <SelectItem value="scheduled">Programada (revisiones periódicas de proyectos)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -452,38 +673,99 @@ export const NotificationRulesSection = forwardRef<NotificationRulesSectionHandl
 
               {rule.triggerType === 'scheduled' ? (
                 <>
-                  <div className="space-y-2 max-w-xs">
-                    <Label>Hora UTC de envío (opcional)</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={23}
-                      placeholder="Vacío = cada vez que ejecute el cron"
-                      value={rule.scheduleHourUtc ?? ''}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        if (v === '') updateLocal(rule.id, { scheduleHourUtc: null });
-                        else {
-                          const n = parseInt(v, 10);
-                          if (!Number.isNaN(n) && n >= 0 && n <= 23) {
-                            updateLocal(rule.id, { scheduleHourUtc: n });
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="space-y-2">
+                      <Label>Frecuencia de envío</Label>
+                      <Select
+                        value={rule.conditions.periodicity || 'monthly'}
+                        onValueChange={(v) => {
+                          const p = v as 'daily' | 'weekly' | 'monthly';
+                          updateLocal(rule.id, {
+                            conditions: { ...rule.conditions, periodicity: p }
+                          });
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="daily">Diaria</SelectItem>
+                          <SelectItem value="weekly">Semanal</SelectItem>
+                          <SelectItem value="monthly">Mensual</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {(rule.conditions.periodicity === 'weekly') && (
+                      <div className="space-y-2">
+                        <Label>Día de la semana</Label>
+                        <Select
+                          value={rule.conditions.schedule_day_of_week ? String(rule.conditions.schedule_day_of_week) : '1'}
+                          onValueChange={(v) => {
+                            updateLocal(rule.id, {
+                              conditions: { ...rule.conditions, schedule_day_of_week: parseInt(v, 10) }
+                            });
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">Lunes</SelectItem>
+                            <SelectItem value="2">Martes</SelectItem>
+                            <SelectItem value="3">Miércoles</SelectItem>
+                            <SelectItem value="4">Jueves</SelectItem>
+                            <SelectItem value="5">Viernes</SelectItem>
+                            <SelectItem value="6">Sábado</SelectItem>
+                            <SelectItem value="7">Domingo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label>Hora preferida (UTC, 0–23)</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={23}
+                        placeholder="Cualquier hora"
+                        value={rule.scheduleHourUtc ?? ''}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === '') updateLocal(rule.id, { scheduleHourUtc: null });
+                          else {
+                            const n = parseInt(v, 10);
+                            if (!Number.isNaN(n) && n >= 0 && n <= 23) {
+                              updateLocal(rule.id, { scheduleHourUtc: n });
+                            }
                           }
-                        }
-                      }}
-                    />
-                    <p className="text-xs text-slate-500">
-                      Si indicas 0–23, la regla solo se evalúa en esa hora UTC cuando el cron llama cada hora.
-                    </p>
+                        }}
+                      />
+                    </div>
                   </div>
+                  <p className="text-xs text-slate-500">
+                    Si indicas una hora, solo en esa franja (UTC) comprobamos si hay que enviar el aviso. Si la dejas
+                    vacía, el sistema puede comprobarla en cada pasada automática (habitualmente una vez por hora).
+                    Para pasar a hora local, suma el desfase de tu zona respecto a UTC.
+                  </p>
+                  <RuleScheduledScopeFilters
+                    rule={rule}
+                    clients={clients.map((c) => ({ id: c.id, name: c.name }))}
+                    projects={projects.map((p) => ({ id: p.id, name: p.name, clientId: p.clientId }))}
+                    updateLocal={updateLocal}
+                  />
                   <div className="space-y-2 max-w-lg">
                     <Label>Tipo de revisión programada</Label>
                     <Select
                       value={evalMode}
                       onValueChange={(v) => {
                         const mode = v as NotificationEvaluationMode;
+                        const preserved = preservedScheduleScopeAndFilters(rule);
                         if (mode === 'deadline_coherence') {
                           updateLocal(rule.id, {
                             conditions: {
+                              ...preserved,
                               evaluation: 'deadline_coherence',
                               coherence_min_abs_hours: rule.conditions.coherence_min_abs_hours ?? 0.05,
                               coherence_op_status_in: [...DEFAULT_COHERENCE_STATUSES],
@@ -494,6 +776,7 @@ export const NotificationRulesSection = forwardRef<NotificationRulesSectionHandl
                         } else {
                           updateLocal(rule.id, {
                             conditions: {
+                              ...preserved,
                               evaluation: 'project_month_health',
                               match_any: rule.conditions.match_any?.length
                                 ? rule.conditions.match_any
@@ -508,21 +791,21 @@ export const NotificationRulesSection = forwardRef<NotificationRulesSectionHandl
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="project_month_health">
-                          Indicadores mensuales (presupuesto / planificación genérica)
+                          Indicadores del mes (presupuesto, ritmo y planificación)
                         </SelectItem>
                         <SelectItem value="deadline_coherence">
-                          Coherencia deadlines (como “Coherencia de planificación global” en Operaciones)
+                          Coherencia con deadlines (misma lógica que en Operaciones → seguimiento del mes)
                         </SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-slate-500">
-                      La opción de coherencia envía el detalle por proyecto: deadline, plan, computado y fila por
-                      empleado (quien se pasa o queda por debajo).
+                      Con coherencia, el correo incluye por proyecto el resumen del mes y, si aplica, una fila por
+                      persona con su parte del objetivo y las horas planificadas o imputadas.
                     </p>
                   </div>
                   {evalMode === 'project_month_health' ? (
                     <div className="space-y-2">
-                      <Label>Condiciones (cualquiera dispara el aviso)</Label>
+                      <Label>Avisar si se cumple alguna de estas condiciones</Label>
                       <div className="grid sm:grid-cols-2 gap-2">
                         {ISSUE_FLAGS.map((f) => (
                           <label key={f.id} className="flex items-center gap-2 text-sm cursor-pointer">

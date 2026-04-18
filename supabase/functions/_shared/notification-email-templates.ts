@@ -177,3 +177,85 @@ export function scheduledProjectAlertEmailHtml(params: {
 
   return { html, text };
 }
+
+export function dependencyUnblockEmailHtml(params: {
+  agencyName: string;
+  closerName: string;
+  blockingTaskName: string;
+  blockingProjectName: string;
+  dependents: { taskName: string; projectName: string }[];
+  appUrl: string;
+}): { html: string; text: string } {
+  const {
+    agencyName,
+    closerName,
+    blockingTaskName,
+    blockingProjectName,
+    dependents,
+    appUrl,
+  } = params;
+  const safe = {
+    agencyName: escapeHtml(agencyName),
+    closerName: escapeHtml(closerName),
+    blockingTaskName: escapeHtml(blockingTaskName),
+    blockingProjectName: escapeHtml(blockingProjectName),
+    appUrl: escapeHtml(appUrl),
+  };
+  const linesText = dependents.map(
+    (d) => `• ${d.taskName} (${d.projectName})`,
+  );
+  const listHtml = dependents
+    .map(
+      (d) => `
+    <tr>
+      <td style="padding:8px 12px;font-size:14px;color:#334155;line-height:1.5;border-bottom:1px solid #f1f5f9;">
+        <strong>${escapeHtml(d.taskName)}</strong>
+        <span style="color:#64748b;"> — ${escapeHtml(d.projectName)}</span>
+      </td>
+    </tr>`,
+    )
+    .join("");
+
+  const text = [
+    `Tarea completada: dependientes desbloqueados — ${agencyName}`,
+    ``,
+    `${closerName} marcó como completada la tarea «${blockingTaskName}» (${blockingProjectName}).`,
+    `Tareas que quedan listas para avanzar:`,
+    ...linesText,
+    ``,
+    `Abre el planificador: ${appUrl}`,
+  ].join("\n");
+
+  const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8" /><title>Tarea desbloqueada</title></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:system-ui,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;max-width:560px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+        <tr><td style="background:linear-gradient(135deg,#4f46e5,#6366f1);padding:24px 28px;text-align:center;">
+          <span style="font-size:20px;font-weight:700;color:#fff;">Taimbox</span>
+        </td></tr>
+        <tr><td style="padding:28px 28px 8px;">
+          <h1 style="margin:0 0 8px;font-size:20px;color:#0f172a;">Tarea completada — dependientes desbloqueados</h1>
+          <p style="margin:0;color:#64748b;font-size:14px;">${safe.agencyName}</p>
+        </td></tr>
+        <tr><td style="padding:8px 28px 28px;font-size:15px;color:#334155;line-height:1.6;">
+          <p style="margin:12px 0;"><strong>${safe.closerName}</strong> completó <strong>${safe.blockingTaskName}</strong> (${safe.blockingProjectName}).</p>
+          <p style="margin:16px 0 8px;font-size:13px;font-weight:600;color:#64748b;text-transform:uppercase;">Tareas que dependían de esta</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+            ${listHtml}
+          </table>
+          <p style="margin:24px 0 0;">
+            <a href="${safe.appUrl}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600;">Abrir planificador</a>
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  return { html, text };
+}

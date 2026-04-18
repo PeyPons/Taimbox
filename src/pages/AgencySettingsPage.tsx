@@ -296,6 +296,9 @@ export default function AgencySettingsPage() {
     currentAgency?.settings?.radarLowProgressExcludeKeywords ?? []
   );
   const [radarKeywordInput, setRadarKeywordInput] = useState('');
+  const [dependencyUnblockEmailsEnabled, setDependencyUnblockEmailsEnabled] = useState(
+    currentAgency?.settings?.dependencyUnblockEmailsEnabled !== false,
+  );
 
   // Department view configuration
   const [deptConfigDialogOpen, setDeptConfigDialogOpen] = useState(false);
@@ -345,6 +348,7 @@ export default function AgencySettingsPage() {
       );
       setHoursTrackingPreference(currentAgency.settings?.hoursTrackingPreference ?? 'computed');
       setRadarLowProgressExcludeKeywords(currentAgency.settings?.radarLowProgressExcludeKeywords ?? []);
+      setDependencyUnblockEmailsEnabled(currentAgency.settings?.dependencyUnblockEmailsEnabled !== false);
       fetchConnectedAccounts();
     }
   }, [currentAgency]);
@@ -450,7 +454,8 @@ export default function AgencySettingsPage() {
         timeTrackerMaxHours,
         ehrTarget,
         hoursTrackingPreference,
-        radarLowProgressExcludeKeywords
+        radarLowProgressExcludeKeywords,
+        dependencyUnblockEmailsEnabled,
       });
 
       // Si el nombre ha cambiado, actualizarlo por separado
@@ -2240,6 +2245,43 @@ export default function AgencySettingsPage() {
           </TabsContent>
 
           <TabsContent value="notifications" className="mt-0 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">
+                  {t('agency.notifications.eventsTitle', 'Avisos por dependencias')}
+                </CardTitle>
+                <CardDescription>
+                  {t(
+                    'agency.notifications.eventsDescription',
+                    'Modelo híbrido: activo por defecto para que nadie pierda el aviso cuando una tarea bloqueante se completa. Puedes desactivarlo aquí para toda la agencia.',
+                  )}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-1">
+                    <Label htmlFor="dependency-unblock-emails">
+                      {t(
+                        'agency.notifications.dependencyUnblockLabel',
+                        'Correo al desbloquear tareas dependientes',
+                      )}
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {t(
+                        'agency.notifications.dependencyUnblockHint',
+                        'Se envía a quien tenía la tarea completada y a los asignados de las tareas que dependían de ella (si tienen email en su perfil).',
+                      )}
+                    </p>
+                  </div>
+                  <Switch
+                    id="dependency-unblock-emails"
+                    checked={dependencyUnblockEmailsEnabled}
+                    onCheckedChange={setDependencyUnblockEmailsEnabled}
+                    className="shrink-0"
+                  />
+                </div>
+              </CardContent>
+            </Card>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

@@ -64,6 +64,8 @@ function issueLabels(flags: ProjectIssueFlag[]): string[] {
   return labels;
 }
 
+type SchedulePeriodicity = "daily" | "weekly" | "monthly";
+
 function parseConditions(raw: unknown): {
   matchAny: ProjectIssueFlag[];
   projectIds?: string[];
@@ -73,6 +75,8 @@ function parseConditions(raw: unknown): {
   coherenceOpStatusIn: CoherenceOpStatus[];
   coherenceDeliveryMode: "per_project" | "digest";
   coherenceDigestMax: number;
+  periodicity: SchedulePeriodicity;
+  scheduleDayOfWeek: number;
 } {
   if (!raw || typeof raw !== "object") {
     return {
@@ -82,6 +86,8 @@ function parseConditions(raw: unknown): {
       coherenceOpStatusIn: [...DEFAULT_COHERENCE_STATUSES],
       coherenceDeliveryMode: "per_project",
       coherenceDigestMax: 12,
+      periodicity: "monthly",
+      scheduleDayOfWeek: 1,
     };
   }
   const o = raw as Record<string, unknown>;
@@ -133,6 +139,13 @@ function parseConditions(raw: unknown): {
     ? Math.min(50, Math.floor(digestRaw))
     : 12;
 
+  const periodicity: SchedulePeriodicity =
+    o.periodicity === "daily" || o.periodicity === "weekly" ? o.periodicity : "monthly";
+  const scheduleDayOfWeek =
+    typeof o.schedule_day_of_week === "number" && o.schedule_day_of_week >= 1 && o.schedule_day_of_week <= 7
+      ? Math.floor(o.schedule_day_of_week)
+      : 1;
+
   return {
     matchAny,
     projectIds,
@@ -142,6 +155,8 @@ function parseConditions(raw: unknown): {
     coherenceOpStatusIn,
     coherenceDeliveryMode,
     coherenceDigestMax,
+    periodicity,
+    scheduleDayOfWeek,
   };
 }
 
@@ -276,7 +291,27 @@ serve(async (req) => {
     const hoursPref = hoursPreferenceFromSettings(agencySettings);
     const cond = parseConditions(rule.conditions);
 
-    console.log(`[process-notification-rules] rule=${rule.id} name="${rule.name}" eval=${cond.evaluation} agency="${agencyName}" hoursPref=${hoursPref}`);
+    // Filter weekly rules to only run on their specific day (unless forced)
+    if (cond.periodicity === "weekly" && !force) {
+      const currentDayOfWeek = now.getUTCDay() || 7; // 1=Mon, 7=Sun
+      if (currentDayOfWeek !== cond.scheduleDayOfWeek) continue;
+    }
+
+    // Determine Dedupe suffix based on periodicity
+    let periodSuffix = monthKey; // default monthly
+    if (cond.periodicity === "daily") {
+      periodSuffix = `${monthKey}-${String(now.getUTCDate()).padStart(2, "0")}`;
+    } else if (cond.periodicity === "weekly") {
+      const dDate = new Date(now.getTime());
+      const dDay = dDate.getUTCDay() || 7;
+      dDate.setUTCDate(dDate.getUTCDate() - dDay + 1); // Get Monday of this week
+      const y = dDate.getUTCFullYear();
+      const m = String(dDate.getUTCMonth() + 1).padStart(2, "0");
+      const d = String(dDate.getUTCDate()).padStart(2, "0");
+      periodSuffix = `W|${y}-${m}-${d}`;
+    }
+
+    console.log(`[process-notification-rules] rule=${rule.id} name="${rule.name}" eval=${cond.evaluation} periodicity=${cond.periodicity} suffix=${periodSuffix} agency="${agencyName}" hoursPref=${hoursPref}`);
 
     if (cond.evaluation === "deadline_coherence") {
       const { data: projectsFull } = await supabaseAdmin
@@ -386,7 +421,7 @@ serve(async (req) => {
 
       if (cond.coherenceDeliveryMode === "digest") {
         flagged = flagged.slice(0, cond.coherenceDigestMax);
-        const dedupeKey = `scheduled_coherence_digest|${rule.id}|${monthKey}`;
+        const dedupeKey = `scheduled_coherence_digest|${rule.id}|${periodSuffix}`;
         const { data: existing } = await supabaseAdmin
           .from("notification_deliveries")
           .select("id")
@@ -455,7 +490,7 @@ serve(async (req) => {
         }
       } else {
         for (const { inc, opStatus } of flagged) {
-          const dedupeKey = `scheduled_coherence|${rule.id}|${inc.projectId}|${monthKey}`;
+          const dedupeKey = `scheduled_coherence|${rule.id}|${inc.projectId}|${periodSuffix}`;
           const { data: existing } = await supabaseAdmin
             .from("notification_deliveries")
             .select("id")
@@ -568,7 +603,7 @@ serve(async (req) => {
         return one;
       });
 
-      const dedupeKey = `scheduled|${rule.id}|${project.id}|${monthKey}`;
+      const dedupeKey = `scheduled|${rule.id}|${project.id}|${periodSuffix}`;
       const { data: existing } = await supabaseAdmin
         .from("notification_deliveries")
         .select("id")

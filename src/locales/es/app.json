@@ -697,7 +697,10 @@
     "weekShort": "Sem.",
     "taskEstShort": "Est.",
     "coherenceNoDeadlineBanner": "Este proyecto no figura en el deadline del mes; la fila de abajo resume planificación y computo del equipo.",
-    "coherenceDeadlineDeltaTooltip": "Plan + computado del mes, menos el total del deadline. Negativo: aún queda margen respecto al deadline; positivo: por encima del acuerdo reflejado en el deadline.",
+    "coherenceDeltaVsDeadline": "Vs deadline",
+    "coherenceDeltaPlanPlusComp": "Plan+Comp",
+    "coherenceDeltaEmployeeVsDl": "Vs DL",
+    "coherenceDeadlineDeltaTooltip": "No es lo mismo que «Por computar»: es (Plan + Comp del mes) menos las horas acordadas en el deadline. Negativo: margen por debajo del acuerdo; positivo: por encima del acuerdo.",
     "coherenceNoDeadlineSumTooltip": "No hay deadline de referencia este mes: es la suma de planificado + computado del equipo (alerta al no poder contrastar con Deadlines)."
   },
   "sidebar": {
@@ -1045,6 +1048,7 @@
       "integrations": "Conexiones",
       "departments": "Organización",
       "appearance": "Apariencia",
+      "notifications": "Notificaciones",
       "billing": "Plan y facturación"
     },
     "organization": {
@@ -1114,6 +1118,14 @@
       "description": "Personaliza la apariencia de tu agencia",
       "primaryColor": "Color Principal",
       "preview": "Vista previa"
+    },
+    "notifications": {
+      "eventsTitle": "Avisos por dependencias",
+      "eventsDescription": "Modelo híbrido: activo por defecto para que nadie pierda el aviso cuando una tarea bloqueante se completa. Puedes desactivarlo aquí para toda la agencia.",
+      "title": "Notificaciones por email",
+      "description": "Reglas por agencia: transferencias de tareas y alertas programadas sobre el estado de los proyectos (Resend). El botón flotante «Guardar cambios» también guarda estas reglas.",
+      "dependencyUnblockLabel": "Correo al desbloquear tareas dependientes",
+      "dependencyUnblockHint": "Se envía a quien tenía la tarea completada y a los asignados de las tareas que dependían de ella (si tienen email en su perfil)."
     },
     "team": {
       "title": "Gestión de Roles",

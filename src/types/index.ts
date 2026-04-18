@@ -123,6 +123,11 @@ export interface AgencySettings {
   radarLowProgressExcludeKeywords?: string[];
   /** Prioriza usar horas reales en lugar de horas computadas para el cálculo de facturación, progreso y rentabilidad */
   hoursTrackingPreference?: 'computed' | 'actual';
+  /**
+   * Correo cuando una tarea bloqueante se marca completada y hay tareas dependientes.
+   * Por defecto activo (`undefined` o `true`). Solo `false` desactiva el aviso.
+   */
+  dependencyUnblockEmailsEnabled?: boolean;
 }
 
 export type AgencyStatus = 'active' | 'suspended';

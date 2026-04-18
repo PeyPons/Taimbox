@@ -39,6 +39,10 @@ export interface NotificationRuleConditions {
   coherence_op_status_in?: CoherenceOpStatus[];
   coherence_delivery_mode?: CoherenceDeliveryMode;
   coherence_digest_max?: number;
+
+  periodicity?: 'daily' | 'weekly' | 'monthly';
+  /** Día de la semana (1-7), para reglas semanales */
+  schedule_day_of_week?: number;
 }
 
 export interface NotificationRule {

@@ -823,6 +823,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!previousAllocation) return;
 
     const mergedAllocation: Allocation = { ...previousAllocation, ...patch };
+    const becameCompleted =
+      patch.status === 'completed' && previousAllocation.status !== 'completed';
 
     const snakeMap: Record<string, string> = {
       projectId: 'project_id',
@@ -879,6 +881,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           previousAllocation as unknown as Record<string, unknown>,
           mergedAllocation as unknown as Record<string, unknown>
         );
+      }
+
+      if (becameCompleted) {
+        void supabase.functions
+          .invoke('process-event-notifications', {
+            body: { completedAllocationId: patch.id },
+          })
+          .then(({ error: fnError }) => {
+            if (fnError) {
+              console.warn('[process-event-notifications]', fnError.message);
+            }
+          });
       }
     } catch (error) {
       console.error('Error updating allocation:', error);

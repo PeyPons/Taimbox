@@ -728,10 +728,13 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                               </>
                             )}
                             <span className="text-slate-300">→</span>
+                            <span className="text-slate-500 shrink-0">
+                              {t('operationsRadar.coherenceDeltaPlanPlusComp', 'Plan+Comp')}:
+                            </span>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className="flex items-center gap-1 font-bold text-amber-700 cursor-help border-b border-dotted border-amber-400/50">
-                                  <TrendingUp className="h-3 w-3" />
+                                <div className="inline-flex items-center gap-0.5 font-bold text-amber-700 cursor-help border-b border-dotted border-amber-400/50">
+                                  <TrendingUp className="h-3 w-3 shrink-0" />
                                   +{inc.totalDifference}h
                                 </div>
                               </TooltipTrigger>
@@ -768,23 +771,26 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                               </>
                             )}
                             <span className="text-slate-300">→</span>
+                            <span className="text-slate-500 shrink-0">
+                              {t('operationsRadar.coherenceDeltaVsDeadline', 'Vs deadline')}:
+                            </span>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <div
                                   className={cn(
-                                    'flex items-center gap-1 font-bold cursor-help border-b border-dotted',
+                                    'inline-flex items-center gap-0.5 font-bold cursor-help border-b border-dotted',
                                     isPositive ? 'text-amber-700 border-amber-500/40' : 'text-blue-700 border-blue-500/40'
                                   )}
                                 >
-                                  {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                                  {isPositive ? <TrendingUp className="h-3 w-3 shrink-0" /> : <TrendingDown className="h-3 w-3 shrink-0" />}
                                   {isPositive ? '+' : ''}
                                   {inc.totalDifference}h
                                 </div>
                               </TooltipTrigger>
-                              <TooltipContent side="bottom" className="max-w-[260px] text-xs">
+                              <TooltipContent side="bottom" className="max-w-[280px] text-xs">
                                 {t(
                                   'operationsRadar.coherenceDeadlineDeltaTooltip',
-                                  'Plan + computado del mes, menos el total del deadline. Negativo: aún queda margen respecto al deadline; positivo: por encima del acuerdo reflejado en el deadline.'
+                                  'No es lo mismo que «Por computar»: es (Plan + Comp del mes) menos las horas acordadas en el deadline. Negativo: margen por debajo del acuerdo; positivo: por encima del acuerdo.'
                                 )}
                               </TooltipContent>
                             </Tooltip>
@@ -870,6 +876,9 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                                       Comp: <span className="font-medium">{emp.computedHours}h</span>
                                     </span>
                                     <span className="text-slate-400">→</span>
+                                    <span className="text-slate-500 shrink-0">
+                                      {t('operationsRadar.coherenceDeltaEmployeeVsDl', 'Vs DL')}:
+                                    </span>
                                     <span className={cn("font-bold", empIsPositive ? "text-amber-600" : "text-blue-600")}>
                                       {empIsPositive ? '+' : ''}{emp.difference}h
                                     </span>

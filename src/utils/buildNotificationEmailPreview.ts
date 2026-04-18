@@ -206,14 +206,15 @@ export async function buildNotificationEmailPreview(
         return {
           html,
           subject: `${statusLabelEs(opStatus)}: ${inc.projectName} (${monthKey})`,
-          note: 'Ningún proyecto cumple ahora los filtros de esta regla (umbral y estados). Vista de formato con el primer proyecto de la lista de coherencia del mes (UTC).',
+          note:
+            'Ahora mismo ningún proyecto cumple el umbral y los estados de esta regla. Mostramos un ejemplo con el primer proyecto del informe de coherencia del mes (calendario universal UTC, igual que en el envío real).',
         };
       }
       return {
         html: `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/></head><body style="margin:0;font-family:system-ui;padding:24px;background:#f1f5f9;color:#334155;">
-<p>No hay datos de coherencia para <strong>${monthKey}</strong> (UTC) o no hay deadlines/asignaciones en proyectos activos.</p></body></html>`,
+<p>No hay datos de coherencia para <strong>${monthKey}</strong> o no hay deadlines ni planificación suficiente en proyectos activos.</p></body></html>`,
         subject: `Vista previa — coherencia (${monthKey})`,
-        note: 'Sin proyectos que mostrar con los datos cargados.',
+        note: 'No hay proyectos que mostrar con los datos actuales (o falta información de deadlines y planificación para este mes).',
       };
     }
 
@@ -293,7 +294,8 @@ export async function buildNotificationEmailPreview(
     return {
       html,
       subject: `Alerta de proyecto: Ejemplo — nombre del proyecto (${monthKey})`,
-      note: 'Ningún proyecto activo cumple ahora estas condiciones. Los textos reflejan las alertas que tienes marcadas. Mes de referencia: UTC (igual que el cron).',
+      note:
+        'Ahora mismo ningún proyecto activo cumple estas condiciones. El ejemplo muestra cómo se verían las alertas que tienes marcadas. El mes de referencia usa el calendario universal (UTC), igual que en el envío automático.',
     };
   }
 

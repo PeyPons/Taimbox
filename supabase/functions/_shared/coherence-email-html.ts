@@ -53,7 +53,7 @@ function renderProjectBlock(
   const borderLeftColor = isPositive ? "#f87171" : "#60a5fa";
 
   const budgetRow = inc.budgetHours > 0
-    ? renderMetricRow("Presupuesto", `${fmtHours(inc.budgetHours)}h`, "#334155")
+    ? renderMetricRow("Asignadas", `${fmtHours(inc.budgetHours)}h`, "#334155")
     : "";
   const minRow = inc.minimumHours > 0
     ? renderMetricRow("Mínimo", `${fmtHours(inc.minimumHours)}h`, "#334155")
@@ -62,7 +62,7 @@ function renderProjectBlock(
   const noDeadlineBanner = inc.totalDeadlineHours === 0
     ? `<tr><td colspan="2" style="padding:8px 0 2px;">
         <div style="padding:8px 12px;font-size:11px;color:#92400e;background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;">
-          ⚠️ Este proyecto no figura en el deadline del mes.
+          ⚠️ Este proyecto no figura en el deadline del mes; la tabla resume planificación y cómputo del equipo (misma base que en Seguimiento operativo).
         </div>
       </td></tr>`
     : "";
@@ -105,7 +105,7 @@ function renderProjectBlock(
           const empSign = empPos ? "+" : "";
           const deadlineInfo = emp.hasDeadline
             ? `<span style="font-size:11px;color:#64748b;">Deadline: <strong style="color:#334155;">${fmtHours(emp.deadlineHours)}h</strong></span>`
-            : `<span style="font-size:10px;color:#d97706;font-weight:600;font-style:italic;">Sin deadline</span>`;
+            : `<span style="font-size:10px;color:#d97706;font-weight:600;font-style:italic;">No incluido en deadline</span>`;
           return `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;margin-bottom:8px;">
             <div style="font-weight:600;font-size:13px;color:#1e293b;margin-bottom:8px;">${esc(emp.employeeName)}</div>
             <table role="presentation" cellpadding="0" cellspacing="0" width="100%">

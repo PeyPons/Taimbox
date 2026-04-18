@@ -40,7 +40,8 @@ export function NotificationEmailPreviewDialog({
               ) : null}
               {note ? <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5">{note}</p> : null}
               <p className="text-xs text-slate-500">
-                Vista aproximada del HTML que envía Resend. El cliente de correo puede aplicar estilos distintos.
+                Vista aproximada del mensaje que recibirán los destinatarios. Gmail, Outlook u otros programas pueden
+                mostrar pequeñas diferencias de formato.
               </p>
             </div>
           </DialogDescription>
