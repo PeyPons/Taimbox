@@ -227,16 +227,16 @@ serve(async (req) => {
 
   const closerName = (closerEmp?.name as string) || "Alguien";
 
-  const empIds = new Set<string>();
-  empIds.add(completed.employee_id as string);
+  const empIdsForContext = new Set<string>();
+  empIdsForContext.add(completed.employee_id as string);
   for (const d of dependents) {
-    if (d.employee_id) empIds.add(d.employee_id as string);
+    if (d.employee_id) empIdsForContext.add(d.employee_id as string);
   }
 
   const { data: emps } = await supabaseAdmin
     .from("employees")
     .select("id, email, name")
-    .in("id", [...empIds])
+    .in("id", [...empIdsForContext])
     .eq("agency_id", agencyId);
 
   const emailByEmpId = new Map<string, string>();
@@ -248,9 +248,11 @@ serve(async (req) => {
     if (nm) empNameById.set(e.id as string, nm);
   }
 
+  /** Solo quienes tenían asignada una tarea dependiente (desbloqueada), no quien cerró la bloqueadora. */
   const emailSet = new Set<string>();
-  for (const id of empIds) {
-    const em = emailByEmpId.get(id);
+  for (const d of dependents) {
+    if (!d.employee_id) continue;
+    const em = emailByEmpId.get(d.employee_id as string);
     if (em) emailSet.add(em);
   }
 
@@ -280,7 +282,6 @@ serve(async (req) => {
 
   const siteUrl = getSiteUrl().replace(/\/$/, "");
   const appUrl = `${siteUrl}/planner`;
-  const operationsUrl = `${siteUrl}/operaciones`;
 
   const { html, text } = dependencyUnblockEmailHtml({
     agencyName,
@@ -290,7 +291,6 @@ serve(async (req) => {
     blockingClientName,
     dependents: dependentLines,
     appUrl,
-    operationsUrl,
   });
 
   const toList = [...emailSet];
@@ -298,7 +298,7 @@ serve(async (req) => {
     blockingTaskName.length > 55 ? `${blockingTaskName.slice(0, 52)}…` : blockingTaskName;
   const sendResult = await sendEmail({
     to: toList,
-    subject: `Tarea desbloqueada: ${subjectTask} · ${agencyName}`,
+    subject: `Puedes avanzar con tus tareas: ${subjectTask} · ${agencyName}`,
     html,
     text,
   });

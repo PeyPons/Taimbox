@@ -1,4 +1,4 @@
-import { format, startOfWeek } from 'date-fns';
+import { endOfMonth, format, startOfMonth, startOfWeek } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import {
   Employee,
@@ -59,6 +59,9 @@ interface SupabaseProject {
   monthly_fee?: number;
   external_id?: string;
   project_type?: string;
+  deliverable_contract_fee?: number | null;
+  deliverable_start_date?: string | null;
+  deliverable_due_date?: string | null;
   is_hidden?: boolean;
   responsible_department_id?: string | null;
   okrs?: { id: string; title: string; progress: number }[];
@@ -242,6 +245,9 @@ export async function fetchInitialAppData({
             monthlyFee: p.monthly_fee,
             externalId: p.external_id ? Number(p.external_id) : undefined,
             projectType: p.project_type,
+            deliverableContractFee: p.deliverable_contract_fee ?? undefined,
+            deliverableStartDate: p.deliverable_start_date ?? undefined,
+            deliverableDueDate: p.deliverable_due_date ?? undefined,
             isHidden: p.is_hidden || false,
             responsibleDepartmentId: p.responsible_department_id ?? undefined,
             okrs: p.okrs,
@@ -404,6 +410,43 @@ export async function fetchInitialAppData({
   }
 }
 
+/**
+ * Ausencias que solapan el rango de calendario [rangeStart, rangeEnd] (cualquier día).
+ * Usar en exports multi‑mes: evita depender del merge en memoria tras varios `refetchMonthData`
+ * y asegura tramos que **cruzan límites de mes** (p. ej. vacaciones 28 mar – 4 abr).
+ */
+export async function fetchAbsencesOverlappingRange(
+  agencyId: string,
+  rangeStart: Date,
+  rangeEnd: Date
+): Promise<{ data: Absence[]; error: Error | null }> {
+  const startStr = format(startOfMonth(rangeStart), 'yyyy-MM-dd');
+  const endStr = format(endOfMonth(rangeEnd), 'yyyy-MM-dd');
+  try {
+    const { data, error } = await supabase
+      .from('absences')
+      .select('*, employees!inner(agency_id)')
+      .eq('employees.agency_id', agencyId)
+      .lte('start_date', endStr)
+      .gte('end_date', startStr);
+
+    if (error) return { data: [], error: new Error(error.message) };
+
+    const mapped: Absence[] = (data ?? []).map((a: SupabaseAbsence) => ({
+      id: a.id,
+      employeeId: a.employee_id,
+      startDate: a.start_date,
+      endDate: a.end_date,
+      type: (a.type || 'other') as Absence['type'],
+      description: a.description,
+      hours: a.hours,
+    }));
+    return { data: mapped, error: null };
+  } catch (e) {
+    return { data: [], error: e instanceof Error ? e : new Error(String(e)) };
+  }
+}
+
 export interface LoadMonthDataDeps {
   agencyId: string;
   month: Date;
@@ -469,6 +512,18 @@ export async function loadMonthData({
 
     if (allocRes.error) {
       console.error('Error cargando allocations del mes:', allocRes.error);
+      return false;
+    }
+    if (absRes.error) {
+      console.error('Error cargando ausencias del mes:', absRes.error);
+      return false;
+    }
+    if (evRes.error) {
+      console.error('Error cargando eventos del mes:', evRes.error);
+      return false;
+    }
+    if (feedRes.error) {
+      console.error('Error cargando feedback del mes:', feedRes.error);
       return false;
     }
 
@@ -579,10 +634,6 @@ export async function loadMonthData({
         return [...updatedPrev, ...newItems];
       });
     }
-    if (absRes.error) console.error('Error cargando ausencias del mes:', absRes.error);
-    if (evRes.error) console.error('Error cargando eventos del mes:', evRes.error);
-    if (feedRes.error) console.error('Error cargando feedback semanal del mes:', feedRes.error);
-
     return true;
   } catch (error) {
     console.error('Error cargando datos del mes:', error);

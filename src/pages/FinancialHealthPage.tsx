@@ -159,7 +159,11 @@ export default function FinancialHealthPage() {
                 return;
             }
             setDeadlinesForMonth(
-                (data || []).map(d => ({ projectId: d.projectId, month: d.month, budgetOverride: d.budgetOverride }))
+                (data || []).map(d => ({
+                    projectId: d.projectId,
+                    month: d.month,
+                    budgetOverride: d.budgetOverride,
+                }))
             );
         });
         return () => { cancelled = true; };

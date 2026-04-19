@@ -285,6 +285,14 @@ export interface Project {
   externalId?: number;    // ID del proyecto en el CRM
   /** Valores predefinidos habituales: ver `PROJECT_TYPE_PRESET_VALUES` en `src/config/projectTypePresets.ts`. */
   projectType?: string;
+  /**
+   * Solo entregables: importe total € del contrato. Si es null/undefined, `monthlyFee` se usa como total al prorratear por mes.
+   */
+  deliverableContractFee?: number | null;
+  /** Inicio de fase (YYYY-MM-DD), inclusivo. Con `deliverableDueDate` define el prorrateo de ingreso en rentabilidad. */
+  deliverableStartDate?: string | null;
+  /** Fin previsto (YYYY-MM-DD), inclusivo. */
+  deliverableDueDate?: string | null;
   isHidden?: boolean;     // Si el proyecto est? oculto
   /** ID del departamento responsable (para filtrado en reportes por ?rea). */
   responsibleDepartmentId?: string | null;

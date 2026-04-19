@@ -5,7 +5,7 @@ import { getWorkingDaysInRange, getMonthlyCapacity, getWeeksForMonth, getStorage
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange, getTeamEventDetailsInRange } from '@/utils/teamEventUtils';
 import { getCapacityReductionBreakdown } from '@/utils/capacityUtils';
-import { addDays, format, startOfMonth, endOfMonth } from 'date-fns';
+import { addDays, format, startOfMonth, endOfMonth, eachMonthOfInterval } from 'date-fns';
 import {
   computeClientTotalHoursForMonth,
   computeEmployeeLoadForWeek,
@@ -62,6 +62,9 @@ interface SupabaseProject {
   monthly_fee?: number;
   external_id?: string;
   project_type?: string;
+  deliverable_contract_fee?: number | null;
+  deliverable_start_date?: string | null;
+  deliverable_due_date?: string | null;
   is_hidden?: boolean;
   responsible_department_id?: string | null;
   okrs?: { id: string; title: string; progress: number }[];
@@ -168,6 +171,13 @@ interface AppContextType {
   getClientById: (id: string) => Client | undefined;
   loadDataForMonth: (month: Date) => Promise<boolean>;
   ensureMonthLoaded: (date: Date) => Promise<void>;
+  /**
+   * Vuelve a cargar allocations + ausencias + eventos + feedback del mes ignorando la caché.
+   * Útil para exportaciones: evita datos obsoletos si el mes ya estaba marcado como cargado antes de registrar nuevas ausencias.
+   */
+  refetchMonthData: (date: Date) => Promise<boolean>;
+  /** Precarga todos los meses del rango inclusive (inicio/fin normalizados a inicio de mes). */
+  ensureMonthsLoadedInRange: (start: Date, end: Date) => Promise<void>;
   addWeeklyFeedback: (feedback: Omit<WeeklyFeedback, 'id' | 'createdAt'>) => void;
   refreshData: (skipLoading?: boolean) => Promise<void>;
   userRoutines: UserRoutine[];
@@ -283,6 +293,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [loadDataForMonth]);
 
+  const refetchMonthData = useCallback(
+    async (date: Date): Promise<boolean> => {
+      if (!currentAgency?.id) return false;
+      const monthKey = format(date, 'yyyy-MM');
+      const pending = monthLoadInflightRef.current.get(monthKey);
+      if (pending) await pending;
+      loadedMonthsRef.current.delete(monthKey);
+      const ok = await loadDataForMonth(date);
+      if (ok) {
+        loadedMonthsRef.current.add(monthKey);
+      }
+      return ok;
+    },
+    [currentAgency?.id, loadDataForMonth]
+  );
+
+  const ensureMonthsLoadedInRange = useCallback(
+    async (start: Date, end: Date) => {
+      const from = startOfMonth(start);
+      const to = startOfMonth(end);
+      if (from > to) return;
+      for (const m of eachMonthOfInterval({ start: from, end: to })) {
+        await ensureMonthLoaded(m);
+      }
+    },
+    [ensureMonthLoaded]
+  );
+
   // Función para cargar proyectos archivados/completados bajo demanda
   const fetchArchivedProjects = useCallback(async () => {
     if (!currentAgency?.id) return;
@@ -310,6 +348,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         monthlyFee: p.monthly_fee,
         externalId: p.external_id ? Number(p.external_id) : undefined,
         projectType: p.project_type,
+        deliverableContractFee: p.deliverable_contract_fee ?? undefined,
+        deliverableStartDate: p.deliverable_start_date ?? undefined,
+        deliverableDueDate: p.deliverable_due_date ?? undefined,
         isHidden: p.is_hidden || false,
         responsibleDepartmentId: p.responsible_department_id ?? undefined,
         okrs: p.okrs,
@@ -373,6 +414,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       monthlyFee: row.monthly_fee,
       externalId: row.external_id ? Number(row.external_id) : undefined,
       projectType: row.project_type,
+      deliverableContractFee: row.deliverable_contract_fee ?? undefined,
+      deliverableStartDate: row.deliverable_start_date ?? undefined,
+      deliverableDueDate: row.deliverable_due_date ?? undefined,
       isHidden: row.is_hidden || false,
       responsibleDepartmentId: row.responsible_department_id ?? undefined,
       okrs: row.okrs,
@@ -978,7 +1022,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       minimum_hours: project.minimumHours,
       monthly_fee: project.monthlyFee,
       external_id: project.externalId,
-      responsible_department_id: project.responsibleDepartmentId ?? null
+      responsible_department_id: project.responsibleDepartmentId ?? null,
+      project_type: project.projectType ?? null,
+      deliverable_contract_fee: project.deliverableContractFee ?? null,
+      deliverable_start_date: project.deliverableStartDate?.trim() || null,
+      deliverable_due_date: project.deliverableDueDate?.trim() || null,
     }).select().single();
 
     if (data) {
@@ -992,7 +1040,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         minimumHours: round2(data.minimum_hours || 0),
         monthlyFee: round2(data.monthly_fee || 0),
         externalId: data.external_id ? Number(data.external_id) : undefined,
-        responsibleDepartmentId: data.responsible_department_id ?? undefined
+        responsibleDepartmentId: data.responsible_department_id ?? undefined,
+        projectType: data.project_type ?? undefined,
+        deliverableContractFee: data.deliverable_contract_fee ?? undefined,
+        deliverableStartDate: data.deliverable_start_date ?? undefined,
+        deliverableDueDate: data.deliverable_due_date ?? undefined,
+        okrs: project.okrs,
       }]);
     }
   }, [currentAgency?.id]);
@@ -1010,6 +1063,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       deliverables_log: project.deliverables_log,
       external_id: project.externalId,
       project_type: project.projectType,
+      deliverable_contract_fee: project.deliverableContractFee ?? null,
+      deliverable_start_date: project.deliverableStartDate?.trim() || null,
+      deliverable_due_date: project.deliverableDueDate?.trim() || null,
       is_hidden: project.isHidden || false,
       responsible_department_id: project.responsibleDepartmentId ?? null
     }).eq('id', project.id);
@@ -1306,6 +1362,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     getProjectHoursForMonth, getClientTotalHoursForMonth, getProjectById, getClientById,
     loadDataForMonth,
     ensureMonthLoaded,
+    refetchMonthData,
+    ensureMonthsLoadedInRange,
     addWeeklyFeedback,
     refreshData: fetchData,
     userRoutines, addRoutine, deleteRoutine, toggleRoutine,
@@ -1320,7 +1378,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addTeamEvent, updateTeamEvent, deleteTeamEvent,
     getEmployeeAllocationsForWeek, getEmployeeLoadForWeek, getEmployeeMonthlyLoad,
     getProjectHoursForMonth, getClientTotalHoursForMonth, getProjectById, getClientById,
-    loadDataForMonth, ensureMonthLoaded,
+    loadDataForMonth, ensureMonthLoaded, refetchMonthData, ensureMonthsLoadedInRange,
     addWeeklyFeedback, fetchData, userRoutines,
     pendingTransfers, outgoingTransfers]); // Added transfer deps
 
@@ -1356,6 +1414,8 @@ export function useAppAllocations() {
     getClientTotalHoursForMonth,
     loadDataForMonth,
     ensureMonthLoaded,
+    refetchMonthData,
+    ensureMonthsLoadedInRange,
   } = useApp();
 
   return {
@@ -1367,6 +1427,8 @@ export function useAppAllocations() {
     getClientTotalHoursForMonth,
     loadDataForMonth,
     ensureMonthLoaded,
+    refetchMonthData,
+    ensureMonthsLoadedInRange,
   };
 }
 

@@ -230,7 +230,6 @@ export function dependencyUnblockEmailHtml(params: {
   blockingClientName?: string | null;
   dependents: DependencyUnblockDependentRow[];
   appUrl: string;
-  operationsUrl?: string;
 }): { html: string; text: string } {
   const {
     agencyName,
@@ -240,7 +239,6 @@ export function dependencyUnblockEmailHtml(params: {
     blockingClientName,
     dependents,
     appUrl,
-    operationsUrl,
   } = params;
 
   const safe = {
@@ -249,7 +247,6 @@ export function dependencyUnblockEmailHtml(params: {
     blockingTaskName: escapeHtml(blockingTaskName),
     blockingProjectName: escapeHtml(blockingProjectName),
     appUrl: escapeHtml(appUrl),
-    operationsUrl: operationsUrl ? escapeHtml(operationsUrl) : "",
   };
 
   const blockingClientLine =
@@ -261,7 +258,7 @@ export function dependencyUnblockEmailHtml(params: {
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;border:1px solid #e0e7ff;border-radius:10px;overflow:hidden;background:#fafbff;">
       <tr>
         <td style="background:linear-gradient(90deg,#eef2ff 0%,#e0e7ff 100%);padding:10px 14px;border-bottom:1px solid #c7d2fe;">
-          <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:0.06em;color:#4338ca;text-transform:uppercase;">Tarea completada (desbloquea a otras)</p>
+          <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:0.06em;color:#4338ca;text-transform:uppercase;">Tarea que se acaba de completar</p>
         </td>
       </tr>
       <tr>
@@ -269,8 +266,8 @@ export function dependencyUnblockEmailHtml(params: {
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
             ${labeledRow("Proyecto", blockingProjectName)}
             ${blockingClientLine}
-            ${labeledRow("Tarea bloqueadora", blockingTaskName)}
-            ${labeledRow("Responsable", closerName)}
+            ${labeledRow("Tarea de la que dependías", blockingTaskName)}
+            ${labeledRow("Completada por", closerName)}
           </table>
         </td>
       </tr>
@@ -310,7 +307,7 @@ export function dependencyUnblockEmailHtml(params: {
       </tr>
       <tr>
         <td style="padding:0;">
-          <p style="margin:0;padding:8px 14px 0;font-size:10px;font-weight:700;letter-spacing:0.05em;color:#94a3b8;text-transform:uppercase;">Tareas que estaban esperando</p>
+          <p style="margin:0;padding:8px 14px 0;font-size:10px;font-weight:700;letter-spacing:0.05em;color:#94a3b8;text-transform:uppercase;">Tus tareas que ya puedes retomar</p>
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rowsInner}</table>
         </td>
       </tr>
@@ -323,15 +320,17 @@ export function dependencyUnblockEmailHtml(params: {
       ? `Cliente: ${blockingClientName.trim()}`
       : null;
   const textLines: string[] = [
-    `Tarea desbloqueada — ${agencyName}`,
+    `Puedes avanzar con tus tareas — ${agencyName}`,
+    ``,
+    `Una tarea de la que dependían las tuyas ya está hecha. Aquí tienes el resumen.`,
     ``,
     `── Tarea completada ──`,
     `Proyecto: ${blockingProjectName}`,
     ...(textBlockingClient ? [textBlockingClient] : []),
-    `Tarea bloqueadora: ${blockingTaskName}`,
-    `Responsable: ${closerName}`,
+    `Tarea: ${blockingTaskName}`,
+    `La completó: ${closerName}`,
     ``,
-    `── Tareas que quedan listas para avanzar ──`,
+    `── Tus tareas listas para seguir ──`,
   ];
   for (const g of groups) {
     textLines.push("");
@@ -340,21 +339,12 @@ export function dependencyUnblockEmailHtml(params: {
       textLines.push(`  · ${it.taskName} (asignada a ${it.assigneeName})`);
     }
   }
-  textLines.push("", `Planificador: ${appUrl}`);
-  if (operationsUrl) {
-    textLines.push(`Seguimiento operativo: ${operationsUrl}`);
-  }
-
-  const secondaryCta = safe.operationsUrl
-    ? `<p style="margin:12px 0 0;text-align:center;">
-            <a href="${safe.operationsUrl}" style="color:#4f46e5;font-size:14px;font-weight:600;text-decoration:underline;">Ver seguimiento operativo</a>
-          </p>`
-    : "";
+  textLines.push("", `Abrir planificador: ${appUrl}`);
 
   const html = `
 <!DOCTYPE html>
 <html lang="es">
-<head><meta charset="UTF-8" /><title>Tarea desbloqueada</title></head>
+<head><meta charset="UTF-8" /><title>Puedes avanzar con tus tareas</title></head>
 <body style="margin:0;padding:0;background:#f1f5f9;font-family:system-ui,-apple-system,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:28px 14px;">
     <tr><td align="center">
@@ -363,13 +353,13 @@ export function dependencyUnblockEmailHtml(params: {
           <span style="font-size:19px;font-weight:700;color:#fff;letter-spacing:-0.02em;">Taimbox</span>
         </td></tr>
         <tr><td style="padding:24px 24px 8px;">
-          <h1 style="margin:0 0 6px;font-size:20px;color:#0f172a;line-height:1.25;">Una tarea se completó y otras quedan desbloqueadas</h1>
+          <h1 style="margin:0 0 6px;font-size:20px;color:#0f172a;line-height:1.25;">Puedes seguir con tus tareas</h1>
           <p style="margin:0;color:#64748b;font-size:14px;">${safe.agencyName}</p>
         </td></tr>
         <tr><td style="padding:8px 24px 24px;font-size:15px;color:#334155;line-height:1.55;">
-          <p style="margin:0 0 18px;font-size:14px;color:#475569;">Mismo criterio que en <strong>Seguimiento operativo</strong>: proyecto, personas y nombre de cada tarea.</p>
+          <p style="margin:0 0 18px;font-size:14px;color:#475569;">Te escribimos porque una tarea que retrasaba las tuyas <strong>ya está hecha</strong>. Abajo ves el proyecto, quién la cerró y qué te toca a continuación.</p>
           ${completedSectionHtml}
-          <p style="margin:0 0 10px;font-size:10px;font-weight:700;letter-spacing:0.06em;color:#64748b;text-transform:uppercase;">Desbloqueadas (por proyecto)</p>
+          <p style="margin:0 0 10px;font-size:10px;font-weight:700;letter-spacing:0.06em;color:#64748b;text-transform:uppercase;">Resumen por proyecto</p>
           ${dependentsBlocksHtml}
           <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:8px auto 0;">
             <tr>
@@ -378,7 +368,6 @@ export function dependencyUnblockEmailHtml(params: {
               </td>
             </tr>
           </table>
-          ${secondaryCta}
         </td></tr>
       </table>
     </td></tr>

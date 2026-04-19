@@ -9,7 +9,7 @@ import {
   isWeekend,
 } from 'date-fns';
 import type { Allocation, Project, Employee, Client } from '@/types';
-import { getEffectiveBudget } from '@/utils/budgetUtils';
+import { getEffectiveBudget, getEffectiveMonthlyFee } from '@/utils/budgetUtils';
 import { getEffectiveAllocationHours } from '@/utils/hoursTracking';
 
 export interface ProjectMetrics {
@@ -198,7 +198,7 @@ export function computeProjectMetricsForMonth(
     const deadlineForMonth = deadlines?.find((d) => d.projectId === project.id && d.month === monthKey);
     const budget = getEffectiveBudget(project, deadlineForMonth);
     const minimum = project.minimumHours || 0;
-    const monthlyFee = project.monthlyFee || 0;
+    const monthlyFee = getEffectiveMonthlyFee(project, month);
     const hourlyRate = budget > 0 ? monthlyFee / budget : 0;
     const hoursValue = totalComputed * hourlyRate;
 

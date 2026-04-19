@@ -1,5 +1,6 @@
 import { Absence, WorkSchedule } from '@/types';
-import { eachDayOfInterval, getDay, parseISO, startOfDay, endOfDay, isWithinInterval, format } from 'date-fns';
+import { eachDayOfInterval, getDay, startOfDay, endOfDay, isWithinInterval, format } from 'date-fns';
+import { parseDateStringLocal } from '@/utils/dateUtils';
 
 const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
@@ -19,9 +20,9 @@ export const getAbsenceHoursInRange = (
 
   absences.forEach(absence => {
     try {
-        // Usamos parseISO para manejar correctamente strings 'YYYY-MM-DD' y normalizamos al inicio del día
-        const absStart = startOfDay(parseISO(absence.startDate));
-        const absEnd = startOfDay(parseISO(absence.endDate));
+        // YYYY-MM-DD como fecha local (evita desfase de parseISO en husos UTC−)
+        const absStart = startOfDay(parseDateStringLocal(absence.startDate));
+        const absEnd = startOfDay(parseDateStringLocal(absence.endDate));
 
         // Validación básica para evitar errores con fechas inválidas
         if (isNaN(absStart.getTime()) || isNaN(absEnd.getTime()) || absStart > absEnd) {

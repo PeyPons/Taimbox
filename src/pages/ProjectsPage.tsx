@@ -35,6 +35,9 @@ import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { toast } from '@/lib/notify';
 import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
+import { PROJECT_TYPE_PRESET_VALUES, PROJECT_TYPE_ENTREGABLE } from '@/config/projectTypePresets';
+import { parseDeliverableContractFeeInput } from '@/utils/deliverableProjectFields';
+import { PhaseDatePickerButton } from '@/components/projects/PhaseDatePickerButton';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -70,6 +73,10 @@ export default function ProjectsPage() {
 
   const [formData, setFormData] = useState({
     name: '', clientId: '', budgetHours: '', minimumHours: '', monthlyFee: '',
+    projectType: '',
+    deliverableContractFee: '',
+    deliverableStartDate: '',
+    deliverableDueDate: '',
     status: 'active' as 'active' | 'archived' | 'completed',
     externalId: '',
     okrs: [] as OKR[]
@@ -232,7 +239,11 @@ export default function ProjectsPage() {
   const openNewProject = () => {
     setIsCreating(true);
     setEditingId(null);
-    setFormData({ name: '', clientId: '', budgetHours: '0', minimumHours: '0', monthlyFee: '0', status: 'active', externalId: '', okrs: [] });
+    setFormData({
+      name: '', clientId: '', budgetHours: '0', minimumHours: '0', monthlyFee: '0',
+      projectType: '', deliverableContractFee: '', deliverableStartDate: '', deliverableDueDate: '',
+      status: 'active', externalId: '', okrs: [],
+    });
     setIsDialogOpen(true);
   };
 
@@ -242,8 +253,14 @@ export default function ProjectsPage() {
     setFormData({
       name: project.name, clientId: project.clientId,
       budgetHours: project.budgetHours?.toString() || '0', minimumHours: project.minimumHours?.toString() || '0',
-      monthlyFee: project.monthlyFee?.toString() || '0', status: project.status,
+      monthlyFee: project.monthlyFee?.toString() || '0', projectType: project.projectType ?? '', status: project.status,
       externalId: project.externalId?.toString() || '',
+      deliverableContractFee:
+        project.deliverableContractFee != null && Number.isFinite(project.deliverableContractFee)
+          ? String(project.deliverableContractFee)
+          : '',
+      deliverableStartDate: project.deliverableStartDate ?? '',
+      deliverableDueDate: project.deliverableDueDate ?? '',
       okrs: project.okrs || []
     });
     setIsDialogOpen(true);
@@ -279,6 +296,40 @@ export default function ProjectsPage() {
       return;
     }
 
+    const pt = formData.projectType.trim() ? formData.projectType.trim() : undefined;
+    const isEnt = pt === PROJECT_TYPE_ENTREGABLE;
+    if (isEnt) {
+      const s = formData.deliverableStartDate?.trim();
+      const e = formData.deliverableDueDate?.trim();
+      if (s && e) {
+        try {
+          const ds = parseISO(s);
+          const de = parseISO(e);
+          if (!Number.isNaN(ds.getTime()) && !Number.isNaN(de.getTime()) && de < ds) {
+            toast.error('La fecha fin del entregable debe ser posterior o igual al inicio');
+            return;
+          }
+        } catch {
+          /* continue */
+        }
+      }
+      if (formData.deliverableContractFee?.trim()) {
+        const parsed = parseDeliverableContractFeeInput(formData.deliverableContractFee);
+        if (parsed == null) {
+          toast.error('Importe total del contrato no válido');
+          return;
+        }
+      }
+    }
+
+    const deliverableContractFee = isEnt ? parseDeliverableContractFeeInput(formData.deliverableContractFee) : null;
+    const deliverableStartDate = isEnt && formData.deliverableStartDate?.trim()
+      ? formData.deliverableStartDate.trim()
+      : null;
+    const deliverableDueDate = isEnt && formData.deliverableDueDate?.trim()
+      ? formData.deliverableDueDate.trim()
+      : null;
+
     try {
       if (isCreating) {
         await addProject({
@@ -290,7 +341,11 @@ export default function ProjectsPage() {
           monthlyFee: monthlyFee,
           status: formData.status,
           externalId: formData.externalId !== '' ? Number(formData.externalId) : undefined,
-          okrs: formData.okrs
+          okrs: formData.okrs,
+          projectType: pt,
+          deliverableContractFee,
+          deliverableStartDate: deliverableStartDate ?? undefined,
+          deliverableDueDate: deliverableDueDate ?? undefined,
         });
         toast.success(t('projectsPage.toasts.created'));
       } else if (editingId) {
@@ -305,7 +360,11 @@ export default function ProjectsPage() {
             monthlyFee: monthlyFee,
             status: formData.status,
             externalId: formData.externalId !== '' ? Number(formData.externalId) : undefined,
-            okrs: formData.okrs
+            okrs: formData.okrs,
+            projectType: pt,
+            deliverableContractFee,
+            deliverableStartDate: deliverableStartDate ?? undefined,
+            deliverableDueDate: deliverableDueDate ?? undefined,
           });
           toast.success(t('projectsPage.toasts.updated'));
         } else {
@@ -1138,6 +1197,57 @@ export default function ProjectsPage() {
                 <Input type="number" value={formData.monthlyFee} onChange={e => setFormData({ ...formData, monthlyFee: e.target.value })} />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label>Tipo de proyecto</Label>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={formData.projectType}
+                onChange={(e) => setFormData({ ...formData, projectType: e.target.value })}
+              >
+                <option value="">Sin tipo / mixto</option>
+                {PROJECT_TYPE_PRESET_VALUES.map((v) => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-500">
+                «Entregable»: total y fechas de fase aquí; el ingreso por mes se prorratea en rentabilidad.
+              </p>
+            </div>
+            {formData.projectType === PROJECT_TYPE_ENTREGABLE && (
+              <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/80 p-4">
+                <p className="text-xs text-slate-600">
+                  Importe total opcional (vacío = se usa el fee mensual como total del contrato al prorratear).
+                </p>
+                <div className="space-y-2">
+                  <Label>Importe total contrato (€)</Label>
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="Ej: 12000"
+                    value={formData.deliverableContractFee}
+                    onChange={(e) => setFormData({ ...formData, deliverableContractFee: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Inicio fase</Label>
+                    <PhaseDatePickerButton
+                      value={formData.deliverableStartDate}
+                      onChange={(v) => setFormData({ ...formData, deliverableStartDate: v })}
+                      placeholder="Elegir inicio"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Fin previsto</Label>
+                    <PhaseDatePickerButton
+                      value={formData.deliverableDueDate}
+                      onChange={(v) => setFormData({ ...formData, deliverableDueDate: v })}
+                      placeholder="Elegir fin"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Estado</Label>

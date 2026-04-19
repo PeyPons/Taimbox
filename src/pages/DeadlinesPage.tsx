@@ -400,7 +400,7 @@ export default function DeadlinesPage() {
         notes: d.notes ?? null,
         employee_hours: d.employeeHours,
         is_hidden: d.isHidden ?? false,
-        budget_override: d.budgetOverride ?? null
+        budget_override: d.budgetOverride ?? null,
       }));
 
       const { data: insertedData, error: insertError } = await supabase
@@ -633,8 +633,16 @@ export default function DeadlinesPage() {
           <DeadlinesProjectEditSheet
             open={true}
             onOpenChange={(o) => !o && cancelEditingProject()}
-            project={{ id: project.id, name: project.name, budgetHours: project.budgetHours }}
-            deadline={deadline ? { budgetOverride: deadline.budgetOverride } : null}
+            project={{
+              id: project.id,
+              name: project.name,
+              budgetHours: project.budgetHours,
+            }}
+            deadline={
+              deadline
+                ? { budgetOverride: deadline.budgetOverride }
+                : null
+            }
             formData={inlineFormData}
             employees={activeEmployees}
             formatProjectName={formatProjectName}

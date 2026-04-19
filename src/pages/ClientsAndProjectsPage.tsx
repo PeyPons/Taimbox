@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
@@ -44,7 +44,10 @@ import { supabase } from '@/lib/supabase';
 import { ClientsAndProjectsFilters, type ClientsAndProjectsFiltersValues, type FilterType, type StatusFilter } from '@/components/clients-projects/ClientsAndProjectsFilters';
 import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
+import { PROJECT_TYPE_PRESET_VALUES, PROJECT_TYPE_ENTREGABLE } from '@/config/projectTypePresets';
 import { useSearchParams, useLocation } from 'react-router-dom';
+import { parseDeliverableContractFeeInput } from '@/utils/deliverableProjectFields';
+import { PhaseDatePickerButton } from '@/components/projects/PhaseDatePickerButton';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -178,21 +181,56 @@ export default function ClientsAndProjectsPage() {
   // Custom project filters from agency settings
   const { activeFilters, filterProject, getFilterDisplayName } = useProjectFilters();
 
-  const projectFormSchema = z.object({
-    name: z.string().min(1, t('clientsAndProjects.dialogs.newProject.nameRequired', 'El nombre es obligatorio')),
-    clientId: z.string().min(1, t('clientsAndProjects.dialogs.newProject.clientRequired', 'Debes seleccionar un cliente')),
-    budgetHours: z.coerce.number().min(0, t('clientsAndProjects.dialogs.newProject.budgetNonNegative', 'Las horas asignadas no pueden ser negativas')),
-    minimumHours: z.coerce.number().min(0, t('clientsAndProjects.dialogs.newProject.minHoursNonNegative', 'Las horas mínimas no pueden ser negativas')),
-    monthlyFee: z.coerce.number().min(0, t('clientsAndProjects.dialogs.newProject.feeNonNegative', 'El fee mensual no puede ser negativo')),
-    status: z.enum(['active', 'archived', 'completed']),
-    responsibleDepartmentId: z.string().optional().or(z.literal('')),
-    externalId: z.coerce.number().optional().or(z.literal('')),
-    okrs: z.array(z.object({
-      id: z.string(),
-      title: z.string(),
-      progress: z.number().min(0).max(100),
-    })).optional().default([]),
-  });
+  const projectFormSchema = z
+    .object({
+      name: z.string().min(1, t('clientsAndProjects.dialogs.newProject.nameRequired', 'El nombre es obligatorio')),
+      clientId: z.string().min(1, t('clientsAndProjects.dialogs.newProject.clientRequired', 'Debes seleccionar un cliente')),
+      budgetHours: z.coerce.number().min(0, t('clientsAndProjects.dialogs.newProject.budgetNonNegative', 'Las horas asignadas no pueden ser negativas')),
+      minimumHours: z.coerce.number().min(0, t('clientsAndProjects.dialogs.newProject.minHoursNonNegative', 'Las horas mínimas no pueden ser negativas')),
+      monthlyFee: z.coerce.number().min(0, t('clientsAndProjects.dialogs.newProject.feeNonNegative', 'El fee mensual no puede ser negativo')),
+      status: z.enum(['active', 'archived', 'completed']),
+      responsibleDepartmentId: z.string().optional().or(z.literal('')),
+      externalId: z.coerce.number().optional().or(z.literal('')),
+      okrs: z.array(z.object({
+        id: z.string(),
+        title: z.string(),
+        progress: z.number().min(0).max(100),
+      })).optional().default([]),
+      projectType: z.string().optional().default(''),
+      deliverableContractFee: z.string().optional().default(''),
+      deliverableStartDate: z.string().optional().default(''),
+      deliverableDueDate: z.string().optional().default(''),
+    })
+    .superRefine((data, ctx) => {
+      if (data.projectType !== PROJECT_TYPE_ENTREGABLE) return;
+      if (data.deliverableContractFee?.trim()) {
+        const parsed = parseDeliverableContractFeeInput(data.deliverableContractFee);
+        if (parsed == null) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: t('clientsAndProjects.dialogs.newProject.deliverableFeeInvalid', 'Importe total del contrato no válido'),
+            path: ['deliverableContractFee'],
+          });
+        }
+      }
+      const s = data.deliverableStartDate?.trim();
+      const e = data.deliverableDueDate?.trim();
+      if (s && e) {
+        try {
+          const ds = parseISO(s);
+          const de = parseISO(e);
+          if (!Number.isNaN(ds.getTime()) && !Number.isNaN(de.getTime()) && de < ds) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: t('clientsAndProjects.dialogs.newProject.deliverableDatesOrder', 'La fecha fin debe ser posterior o igual al inicio'),
+              path: ['deliverableDueDate'],
+            });
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+    });
 
   type ProjectFormValues = z.infer<typeof projectFormSchema>;
 
@@ -223,6 +261,10 @@ export default function ClientsAndProjectsPage() {
       responsibleDepartmentId: '',
       externalId: '',
       okrs: [],
+      projectType: '',
+      deliverableContractFee: '',
+      deliverableStartDate: '',
+      deliverableDueDate: '',
     },
   });
 
@@ -743,6 +785,10 @@ export default function ClientsAndProjectsPage() {
       responsibleDepartmentId: '',
       externalId: '',
       okrs: [],
+      projectType: '',
+      deliverableContractFee: '',
+      deliverableStartDate: '',
+      deliverableDueDate: '',
     });
   };
 
@@ -758,12 +804,27 @@ export default function ClientsAndProjectsPage() {
       status: project.status,
       responsibleDepartmentId: project.responsibleDepartmentId ?? '',
       externalId: project.externalId || '',
-      okrs: project.okrs || []
+      okrs: project.okrs || [],
+      projectType: project.projectType ?? '',
+      deliverableContractFee:
+        project.deliverableContractFee != null && Number.isFinite(project.deliverableContractFee)
+          ? String(project.deliverableContractFee)
+          : '',
+      deliverableStartDate: project.deliverableStartDate ?? '',
+      deliverableDueDate: project.deliverableDueDate ?? '',
     });
   };
 
   const onSaveProject = async (data: ProjectFormValues) => {
     try {
+      const pt = data.projectType?.trim() ? data.projectType.trim() : undefined;
+      const isEnt = pt === PROJECT_TYPE_ENTREGABLE;
+      const deliverableContractFee = isEnt ? parseDeliverableContractFeeInput(data.deliverableContractFee) : null;
+      const deliverableStartDate =
+        isEnt && data.deliverableStartDate?.trim() ? data.deliverableStartDate.trim() : null;
+      const deliverableDueDate =
+        isEnt && data.deliverableDueDate?.trim() ? data.deliverableDueDate.trim() : null;
+
       if (isAddingProject) {
         await addProject({
           name: data.name,
@@ -775,7 +836,11 @@ export default function ClientsAndProjectsPage() {
           responsibleDepartmentId: data.responsibleDepartmentId || undefined,
           externalId: data.externalId !== '' ? Number(data.externalId) : undefined,
           okrs: (data.okrs || []).map(o => ({ ...o, id: o.id || crypto.randomUUID() })) as OKR[],
-          agencyId: currentAgency?.id || ''
+          agencyId: currentAgency?.id || '',
+          projectType: pt,
+          deliverableContractFee,
+          deliverableStartDate: deliverableStartDate ?? undefined,
+          deliverableDueDate: deliverableDueDate ?? undefined,
         });
         toast.success('Proyecto creado');
       } else if (editingProject) {
@@ -789,7 +854,11 @@ export default function ClientsAndProjectsPage() {
           status: data.status,
           responsibleDepartmentId: data.responsibleDepartmentId || undefined,
           externalId: data.externalId !== '' ? Number(data.externalId) : undefined,
-          okrs: (data.okrs || []).map(o => ({ ...o, id: o.id || crypto.randomUUID() })) as OKR[]
+          okrs: (data.okrs || []).map(o => ({ ...o, id: o.id || crypto.randomUUID() })) as OKR[],
+          projectType: pt,
+          deliverableContractFee,
+          deliverableStartDate: deliverableStartDate ?? undefined,
+          deliverableDueDate: deliverableDueDate ?? undefined,
         });
         toast.success('Proyecto actualizado');
       }
@@ -1108,6 +1177,107 @@ export default function ClientsAndProjectsPage() {
                       )}
                     />
                   </div>
+                  <FormField
+                    control={projectForm.control}
+                    name="projectType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('clientsAndProjects.dialogs.newProject.projectType', 'Tipo de proyecto')}</FormLabel>
+                        <FormControl>
+                          <select
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            value={field.value ?? ''}
+                            onChange={(e) => field.onChange(e.target.value)}
+                          >
+                            <option value="">{t('clientsAndProjects.dialogs.newProject.projectTypeNone', 'Sin tipo / mixto')}</option>
+                            {PROJECT_TYPE_PRESET_VALUES.map((v) => (
+                              <option key={v} value={v}>
+                                {v}
+                              </option>
+                            ))}
+                          </select>
+                        </FormControl>
+                        <FormDescription>
+                          {t(
+                            'clientsAndProjects.dialogs.newProject.projectTypeHelp',
+                            '«Entregable»: importe total y fechas de fase se configuran aquí; el ingreso por mes se prorratea en rentabilidad. Retainers suelen ser «Mensual».'
+                          )}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {projectForm.watch('projectType') === PROJECT_TYPE_ENTREGABLE && (
+                    <div className="space-y-4 rounded-lg border border-border bg-muted/40 p-4">
+                      <p className="text-sm text-muted-foreground">
+                        {t(
+                          'clientsAndProjects.dialogs.newProject.deliverableBlockIntro',
+                          'Opcional: importe total del contrato distinto del fee mensual. Si lo dejas vacío, el fee mensual se usa como total al repartir entre meses. Las fechas acotan la fase (días de calendario).'
+                        )}
+                      </p>
+                      <FormField
+                        control={projectForm.control}
+                        name="deliverableContractFee"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              {t('clientsAndProjects.dialogs.newProject.deliverableTotalFee', 'Importe total contrato (€)')}
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="text" inputMode="decimal" placeholder="Ej: 12000" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <FormField
+                          control={projectForm.control}
+                          name="deliverableStartDate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                {t('clientsAndProjects.dialogs.newProject.deliverableStart', 'Inicio fase')}
+                              </FormLabel>
+                              <FormControl>
+                                <PhaseDatePickerButton
+                                  value={field.value ?? ''}
+                                  onChange={field.onChange}
+                                  placeholder={t(
+                                    'clientsAndProjects.dialogs.newProject.deliverableStartPh',
+                                    'Elegir inicio'
+                                  )}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={projectForm.control}
+                          name="deliverableDueDate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                {t('clientsAndProjects.dialogs.newProject.deliverableDue', 'Fin previsto')}
+                              </FormLabel>
+                              <FormControl>
+                                <PhaseDatePickerButton
+                                  value={field.value ?? ''}
+                                  onChange={field.onChange}
+                                  placeholder={t(
+                                    'clientsAndProjects.dialogs.newProject.deliverableDuePh',
+                                    'Elegir fin'
+                                  )}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  )}
                   <FormField
                     control={projectForm.control}
                     name="status"

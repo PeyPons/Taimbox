@@ -52,7 +52,10 @@ import {
   parsePositiveDecimalInput,
   sanitizePositiveDecimalInput,
 } from '@/utils/positiveDecimalInput';
-import { PROJECT_TYPE_PRESET_VALUES } from '@/config/projectTypePresets';
+import { PROJECT_TYPE_PRESET_VALUES, PROJECT_TYPE_ENTREGABLE } from '@/config/projectTypePresets';
+import { parseDeliverableContractFeeInput } from '@/utils/deliverableProjectFields';
+import { PhaseDatePickerButton } from '@/components/projects/PhaseDatePickerButton';
+import { parseISO } from 'date-fns';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { cn } from '@/lib/utils';
@@ -263,14 +266,49 @@ const clientSchema = z.object({
   color: z.string().min(1, 'Selecciona un color'),
 });
 
-const projectSchema = z.object({
-  name: z.string().min(2, 'El nombre del proyecto es obligatorio'),
-  budgetHours: z.number().min(1, 'El budget debe ser mayor a 0'),
-  minHours: z.number().min(0).optional(),
-  monthlyFee: z.number().min(0).optional(),
-  responsibleDepartmentId: z.string().optional(),
-  projectType: z.string().optional(),
-});
+const projectSchema = z
+  .object({
+    name: z.string().min(2, 'El nombre del proyecto es obligatorio'),
+    budgetHours: z.number().min(1, 'El budget debe ser mayor a 0'),
+    minHours: z.number().min(0).optional(),
+    monthlyFee: z.number().min(0).optional(),
+    responsibleDepartmentId: z.string().optional(),
+    projectType: z.string().optional(),
+    deliverableContractFee: z.string().optional().default(''),
+    deliverableStartDate: z.string().optional().default(''),
+    deliverableDueDate: z.string().optional().default(''),
+  })
+  .superRefine((data, ctx) => {
+    const pt = data.projectType === '__none__' || !data.projectType ? '' : data.projectType;
+    if (pt !== PROJECT_TYPE_ENTREGABLE) return;
+    if (data.deliverableContractFee?.trim()) {
+      const parsed = parseDeliverableContractFeeInput(data.deliverableContractFee);
+      if (parsed == null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Importe total del contrato no válido',
+          path: ['deliverableContractFee'],
+        });
+      }
+    }
+    const s = data.deliverableStartDate?.trim();
+    const e = data.deliverableDueDate?.trim();
+    if (s && e) {
+      try {
+        const ds = parseISO(s);
+        const de = parseISO(e);
+        if (!Number.isNaN(ds.getTime()) && !Number.isNaN(de.getTime()) && de < ds) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'La fecha fin debe ser posterior o igual al inicio',
+            path: ['deliverableDueDate'],
+          });
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+  });
 
 const CLIENT_COLORS = [
   '#FF5733', '#33FF57', '#3357FF', '#FF33F5', '#FFB533',
@@ -462,6 +500,9 @@ export default function OnboardingWizard() {
       monthlyFee: 0,
       responsibleDepartmentId: '__none__',
       projectType: '__none__',
+      deliverableContractFee: '',
+      deliverableStartDate: '',
+      deliverableDueDate: '',
     },
   });
 
@@ -840,6 +881,15 @@ export default function OnboardingWizard() {
         toast.error(t('onboarding.errors.noClient', 'No hay cliente'));
         return;
       }
+      const pt =
+        data.projectType && data.projectType !== '__none__' ? data.projectType : undefined;
+      const isEnt = pt === PROJECT_TYPE_ENTREGABLE;
+      const deliverableContractFee = isEnt ? parseDeliverableContractFeeInput(data.deliverableContractFee) : null;
+      const deliverableStartDate =
+        isEnt && data.deliverableStartDate?.trim() ? data.deliverableStartDate.trim() : null;
+      const deliverableDueDate =
+        isEnt && data.deliverableDueDate?.trim() ? data.deliverableDueDate.trim() : null;
+
       await addProject({
         name: data.name,
         clientId,
@@ -852,7 +902,10 @@ export default function OnboardingWizard() {
           data.responsibleDepartmentId && data.responsibleDepartmentId !== '__none__'
             ? data.responsibleDepartmentId
             : undefined,
-        projectType: data.projectType && data.projectType !== '__none__' ? data.projectType : undefined,
+        projectType: pt,
+        deliverableContractFee,
+        deliverableStartDate: deliverableStartDate ?? undefined,
+        deliverableDueDate: deliverableDueDate ?? undefined,
       });
       await completeSetup();
       toast.success(t('onboarding.done', '¡Configuración completada!'));
@@ -1837,6 +1890,67 @@ export default function OnboardingWizard() {
                         </FormItem>
                       )}
                     />
+                    {projectForm.watch('projectType') === PROJECT_TYPE_ENTREGABLE && (
+                      <div className="xl:col-span-2 space-y-4 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4">
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                          {t(
+                            'onboarding.project.deliverableBlock',
+                            'Si es un contrato por fase, indica el importe total (opcional: si lo dejas vacío se usa el fee mensual) y las fechas; el ingreso se repartirá por meses en rentabilidad. Puedes dejarlo en blanco y completarlo luego en Clientes.'
+                          )}
+                        </p>
+                        <FormField
+                          control={projectForm.control}
+                          name="deliverableContractFee"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                {t('onboarding.project.deliverableTotal', 'Importe total contrato (€)')}
+                              </FormLabel>
+                              <FormControl>
+                                <Input type="text" inputMode="decimal" placeholder="Ej: 12000" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          <FormField
+                            control={projectForm.control}
+                            name="deliverableStartDate"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{t('onboarding.project.deliverableStart', 'Inicio fase')}</FormLabel>
+                                <FormControl>
+                                  <PhaseDatePickerButton
+                                    value={field.value ?? ''}
+                                    onChange={field.onChange}
+                                    placeholder={t('onboarding.project.pickStart', 'Elegir inicio')}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={projectForm.control}
+                            name="deliverableDueDate"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>{t('onboarding.project.deliverableDue', 'Fin previsto')}</FormLabel>
+                                <FormControl>
+                                  <PhaseDatePickerButton
+                                    value={field.value ?? ''}
+                                    onChange={field.onChange}
+                                    placeholder={t('onboarding.project.pickDue', 'Elegir fin')}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+                    )}
                     <div className="xl:col-span-2">
                       <FormField
                         control={projectForm.control}

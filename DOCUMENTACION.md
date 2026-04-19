@@ -10,7 +10,7 @@
 |-----------|-----------------|
 | [docs/00-introduccion.md](docs/00-introduccion.md) | Título y propósito del documento técnico detallado original (incluye referencia al mapa de dependencias). |
 | [docs/01-arquitectura.md](docs/01-arquitectura.md) | Stack SPA, GTM y Consent Mode, i18n y rutas `/en`, reglas SEO y páginas públicas, convenciones del blog y API docs. |
-| [docs/02-entidades-modelos.md](docs/02-entidades-modelos.md) | Glosario de entidades (Agency, Employee, Project, Deadline, Allocation), aliasing, tablas de componentes y reglas multi-tenant. |
+| [docs/02-entidades-modelos.md](docs/02-entidades-modelos.md) | Glosario de entidades (Agency, Employee, Project con campos entregable/fechas, Deadline, Allocation), aliasing, tablas de componentes y reglas multi-tenant. |
 | [docs/03-logica-negocio.md](docs/03-logica-negocio.md) | Capacidad efectiva, split weeks, presupuesto efectivo y métricas de rentabilidad. |
 | [docs/04-contextos-realtime.md](docs/04-contextos-realtime.md) | AppContext (carga, upsert, `loadedMonthsRef` tras allocations OK, deduplicación de carga por mes), Realtime, canales unificados en Deadlines y bloqueos. |
 | [docs/05-integraciones-automatizacion.md](docs/05-integraciones-automatizacion.md) | Edge Functions (inventario, OAuth Google/Meta, emails, modo demo), notificaciones (`notify-task-transfer`, `process-event-notifications` por dependencias, `process-notification-rules` con periodicidad/dedupe diario-semanal-mensual, `NOTIFICATIONS_CRON_SECRET`, cron en Raspberry/self-hosted), `delete-user`, `admin-delete-agency`, Stripe, variables de entorno, despliegue y troubleshooting. |
@@ -20,7 +20,7 @@
 | [docs/09-checklist-modificacion.md](docs/09-checklist-modificacion.md) | Checklist antes de tocar types, AppContext, fechas, permisos, Realtime, RLS, deadlines o aliasing. |
 | [docs/10-gotchas-y-contenido.md](docs/10-gotchas-y-contenido.md) | Patrones problemáticos en React/ datos, mantenimiento de copy, landings, notificaciones, tours y ortografía. |
 | [docs/11-notas-adicionales-readme.md](docs/11-notas-adicionales-readme.md) | Rescate del README histórico: inventario de páginas, pitch/outreach, `errorService`/`auditService`, `constants`/`integrations`, fragmentos de checklist (móvil, Popover+Command), **admin de plataforma e impersonación** (UX, `?agency=`, footer sesión). |
-| [docs/12-onboarding-registro.md](docs/12-onboarding-registro.md) | Flujo registro + `OnboardingWizard`, invitaciones con enlace de contraseña, `department_config`, correos Resend (`RESEND_*`, `SITE_URL`, `supabase/.env.example`) y Edge Functions relacionadas. |
+| [docs/12-onboarding-registro.md](docs/12-onboarding-registro.md) | Flujo registro + `OnboardingWizard` (incl. primer proyecto con opciones Entregable), invitaciones con enlace de contraseña, `department_config`, correos Resend (`RESEND_*`, `SITE_URL`, `supabase/.env.example`) y Edge Functions relacionadas. |
 | [docs/13-esquema-base-datos.md](docs/13-esquema-base-datos.md) | Referencia del modelo relacional: multi-tenant, `user_agencies`, planificador/tiempo, Ads, `notification_rules` / `notification_deliveries`; enlace al DDL de contexto en `docs/sql/schema-snapshot-context.sql` (no sustituye a migraciones). |
 
 Para una lectura continua equivalente al monolito antiguo, abre los archivos en orden numérico (`00` → `13`).

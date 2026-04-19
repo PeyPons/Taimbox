@@ -11,7 +11,6 @@ import { ChevronDown, ChevronRight, Edit, EyeOff, Trash2, CheckCircle2 } from 'l
 import { cn } from '@/lib/utils';
 import { DeadlineEmployeeRow } from '@/components/deadlines/DeadlineEmployeeRow';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
-
 export interface InlineFormData {
   employeeHours: Record<string, number>;
   notes: string;
@@ -25,6 +24,8 @@ export interface ProjectItem {
   budgetHours?: number;
   minimumHours?: number;
   clientId?: string;
+  projectType?: string;
+  monthlyFee?: number;
 }
 
 export interface ClientItem {

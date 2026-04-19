@@ -403,7 +403,15 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
           setDeadlines((prev) =>
             prev.map((d) =>
               d.id === existingDeadline.id
-                ? { ...d, projectId, month: selectedMonth, notes: inlineFormData.notes, employeeHours: inlineFormData.employeeHours, isHidden: inlineFormData.isHidden, budgetOverride: inlineFormData.budgetOverride }
+                ? {
+                    ...d,
+                    projectId,
+                    month: selectedMonth,
+                    notes: inlineFormData.notes,
+                    employeeHours: inlineFormData.employeeHours,
+                    isHidden: inlineFormData.isHidden,
+                    budgetOverride: inlineFormData.budgetOverride,
+                  }
                 : d
             )
           );

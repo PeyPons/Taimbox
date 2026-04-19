@@ -7,6 +7,7 @@ Gestiona la carga de la base de datos principal (`employees`, `projects`, `alloc
 - **`loadedMonthsRef`**: Un Set que registra qué meses ya están en memoria para evitar llamadas redundantes a la base de datos.
 - **`loadMonthData` / `loadDataForMonth`**: devuelven `true` solo si la carga de **allocations** del mes terminó sin error (incluye mes sin tareas: merge con lista vacía). Otros recursos del mes (ausencias, eventos, feedback) pueden fallar en silencio aparte de log en consola.
 - **`ensureMonthLoaded`**: solo añade el mes a `loadedMonthsRef` cuando `loadDataForMonth` devuelve `true`; si falla allocations, no se marca y el siguiente cambio de vista al mes reintenta. Las peticiones en vuelo se deduplican por clave `yyyy-MM` (`monthLoadInflightRef`).
+- **`ensureMonthsLoadedInRange`**: recorre cada mes (inicio de mes) entre dos fechas y llama a `ensureMonthLoaded` en secuencia; útil para precargar varios meses (p. ej. vista de un entregable multi-mes) sin duplicar lógica de caché.
 
 ### 4.2. Estrategia de Realtime y Colaboración
 Para soportar múltiples usuarios concurrentes sin saturar conexiones WebSocket, utilizamos una estrategia de **Canales Unificados**.

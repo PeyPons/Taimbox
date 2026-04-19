@@ -10,7 +10,7 @@
    - **Departamentos**: `settings.departments` como `DepartmentDefinition[]` + upsert en `department_config` (vista por defecto, estricta). Se sincronizan IDs reales de `department_config` tras el upsert.
    - **Roles**: lista de roles con permisos (Administrador completo).
    - **Equipo (opcional)**: invitación vía `invite-user-to-agency` (sin contraseña en UI); email con enlace **Establecer contraseña** (`_shared/welcome-and-invitation-email.ts` + `generateLink` recovery, misma vía Resend que `request-password-reset`). Tras invitar se actualizan nombre, `work_schedule`, `department`, `department_id` y capacidad semanal.
-   - **Cliente y proyecto**: primer cliente; proyecto con `responsibleDepartmentId` y `projectType` opcional.
+   - **Cliente y proyecto**: primer cliente; proyecto con `responsibleDepartmentId` y `projectType` opcional. Si el tipo es **Entregable**, el mismo paso permite importe total y fechas de fase (`deliverable_*`), alineado con la cartera (`addProject` en `AppContext`).
 4. **`completeSetup`**: `agencies.setup_completed = true` y navegación a `/planner`.
 
 ## Invitaciones fuera del onboarding

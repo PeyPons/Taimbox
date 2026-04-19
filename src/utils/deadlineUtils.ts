@@ -20,7 +20,7 @@ function mapRowToDeadline(d: SupabaseDeadlineRow): Deadline {
     notes: d.notes,
     employeeHours: d.employee_hours || {},
     isHidden: d.is_hidden ?? false,
-    budgetOverride: d.budget_override ?? undefined
+    budgetOverride: d.budget_override ?? undefined,
   };
 }
 

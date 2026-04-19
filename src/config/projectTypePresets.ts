@@ -6,3 +6,6 @@
 export const PROJECT_TYPE_PRESET_VALUES = ['PPC', 'Entregable', 'Mensual'] as const;
 
 export type ProjectTypePreset = (typeof PROJECT_TYPE_PRESET_VALUES)[number];
+
+/** Valor persistido en `projects.project_type` para entregables (prorrateo de ingreso por mes según fechas en el proyecto). */
+export const PROJECT_TYPE_ENTREGABLE: ProjectTypePreset = 'Entregable';

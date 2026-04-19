@@ -22,12 +22,13 @@ import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { fetchGlobalAssignmentsForMonth } from '@/utils/globalAssignmentsUtils';
-import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { isAllocationInEffectiveMonth, parseDateStringLocal } from '@/utils/dateUtils';
 import { computeGlobalPlanningInconsistencies } from '@/utils/planningCoherenceCompute';
 import { computeProjectMetricsForMonth } from '@/utils/projectMetricsCompute';
 import { buildOperationsRadarExportPayload } from '@/utils/operationsRadarExport';
 import { buildRentabilityDiagnosticPayload } from '@/utils/reportExports/rentabilityDiagnostic';
 import { computeBuildRentabilityDiagnosticParams } from '@/utils/reportExports/financialHealthExportCompute';
+import { fetchAbsencesOverlappingRange } from '@/utils/appDataLoader';
 import {
   buildEmployeeMonthMiniExport,
   buildEmployeesConfigSnapshot,
@@ -88,13 +89,13 @@ function allocationsForMonth(allocations: Allocation[], month: Date): Allocation
 function absenceTouchesMonth(a: Absence, month: Date): boolean {
   const ms = startOfMonth(month);
   const me = endOfMonth(month);
-  const s = parseISO(a.startDate);
-  const e = parseISO(a.endDate);
+  const s = parseDateStringLocal(a.startDate);
+  const e = parseDateStringLocal(a.endDate);
   return !isAfter(s, me) && !isBefore(e, ms);
 }
 
 function teamEventInMonth(ev: TeamEvent, month: Date): boolean {
-  const d = parseISO(ev.date);
+  const d = parseDateStringLocal(ev.date);
   return !isBefore(d, startOfMonth(month)) && !isAfter(d, endOfMonth(month));
 }
 
@@ -111,8 +112,16 @@ function radarIsEndOfMonth(viewDate: Date): boolean {
 
 export default function DataExportHubPage() {
   const { t } = useTranslation('app');
-  const { projects, clients, allocations, employees, absences, teamEvents, weeklyFeedback, ensureMonthLoaded } =
-    useApp();
+  const {
+    projects,
+    clients,
+    allocations,
+    employees,
+    absences,
+    teamEvents,
+    weeklyFeedback,
+    refetchMonthData,
+  } = useApp();
   const { currentAgency } = useAgency();
   const { selectedDepartmentId, setSelectedDepartmentId } = useDepartmentView();
   const { historyMinDate: minReportingMonth } = useSubscriptionLimits();
@@ -185,11 +194,44 @@ export default function DataExportHubPage() {
     [selectedMonths, monthOptions]
   );
 
-  const ensureMonthsLoaded = useCallback(async () => {
+  /** Refresca desde Supabase cada mes seleccionado (ignora caché). Así las ausencias añadidas después de la primera visita al mes sí entran en el JSON del informe. */
+  const prepareExportMonths = useCallback(async () => {
+    const failed: string[] = [];
     for (const key of sortedSelectedMonths) {
-      await ensureMonthLoaded(monthKeyToDate(key));
+      const ok = await refetchMonthData(monthKeyToDate(key));
+      if (!ok) failed.push(key);
     }
-  }, [ensureMonthLoaded, sortedSelectedMonths]);
+    if (failed.length > 0) {
+      throw new Error(
+        t(
+          'dataExportHub.refreshFailed',
+          'No se pudieron cargar datos actualizados para: {{months}}. Revisa conexión y permisos (ausencias/eventos).',
+          { months: failed.join(', ') }
+        )
+      );
+    }
+  }, [refetchMonthData, sortedSelectedMonths, t]);
+
+  /** Una query al rango del export: incluye ausencias que cruzan de un mes a otro y no depende del orden de refetch en memoria. */
+  const loadAbsencesForExportRange = useCallback(async (): Promise<Absence[]> => {
+    if (!currentAgency?.id || sortedSelectedMonths.length === 0) {
+      return absences ?? [];
+    }
+    const from = startOfMonth(monthKeyToDate(sortedSelectedMonths[0]));
+    const to = endOfMonth(monthKeyToDate(sortedSelectedMonths[sortedSelectedMonths.length - 1]));
+    const { data, error } = await fetchAbsencesOverlappingRange(currentAgency.id, from, to);
+    if (error) {
+      console.error(error);
+      toast.error(
+        t(
+          'dataExportHub.absencesRangeError',
+          'No se pudieron cargar las ausencias del rango seleccionado. Reintenta o revisa permisos; se usan datos en memoria.'
+        )
+      );
+      return absences ?? [];
+    }
+    return data;
+  }, [absences, currentAgency?.id, sortedSelectedMonths, t]);
 
   const enrichDeadlines = useCallback(
     async (monthKey: string) => {
@@ -209,9 +251,9 @@ export default function DataExportHubPage() {
   );
 
   const buildMonthBundle = useCallback(
-    async (monthKey: string, inc: typeof bundleInclude) => {
+    async (monthKey: string, inc: typeof bundleInclude, absencesPool?: Absence[]) => {
       const monthDate = monthKeyToDate(monthKey);
-      await ensureMonthLoaded(monthDate);
+      const absPool = absencesPool ?? absences ?? [];
 
       const needDeadlinesFetch =
         inc.deadlines ||
@@ -324,7 +366,7 @@ export default function DataExportHubPage() {
         weeklyFeedback: WeeklyFeedback[];
       } | null = null;
       if (inc.absences) {
-        const absMonth = (absences ?? []).filter((a) => absenceTouchesMonth(a, monthDate));
+        const absMonth = absPool.filter((a) => absenceTouchesMonth(a, monthDate));
         const eventsMonth = (teamEvents ?? []).filter((e) => teamEventInMonth(e, monthDate));
         const feedbackMonth = (weeklyFeedback ?? []).filter((f) => weekFeedbackInMonth(f, monthDate));
         absencesPayload = {
@@ -343,7 +385,7 @@ export default function DataExportHubPage() {
           month: monthDate,
           employees: employees ?? [],
           allocations: allocations ?? [],
-          absences: absences ?? [],
+          absences: absPool,
           teamEvents: teamEvents ?? [],
           deadlines: deadlinesRows as Deadline[],
           globalAssignments: globalsData,
@@ -391,7 +433,6 @@ export default function DataExportHubPage() {
       };
     },
     [
-      ensureMonthLoaded,
       enrichDeadlines,
       currentAgency,
       allocations,
@@ -416,10 +457,11 @@ export default function DataExportHubPage() {
     }
     setBusy(true);
     try {
-      await ensureMonthsLoaded();
+      await prepareExportMonths();
+      const absencesPool = await loadAbsencesForExportRange();
       const months: Record<string, Record<string, unknown>> = {};
       for (const mk of sortedSelectedMonths) {
-        const part = await buildMonthBundle(mk, bundleInclude);
+        const part = await buildMonthBundle(mk, bundleInclude, absencesPool);
         const slice: Record<string, unknown> = {};
         if (part.deadlines) slice.deadlines = part.deadlines;
         if (part.globalAssignments) slice.globalAssignments = part.globalAssignments;
@@ -459,7 +501,8 @@ export default function DataExportHubPage() {
     }
     setBusy(true);
     try {
-      await ensureMonthsLoaded();
+      await prepareExportMonths();
+      const absencesPool = await loadAbsencesForExportRange();
       const zip = new JSZip();
       const employeesConfig = buildEmployeesConfigSnapshot(employees ?? [], allowedEmployeeIds);
       zip.file('employees-config.json', JSON.stringify(employeesConfig, null, 2));
@@ -485,6 +528,7 @@ export default function DataExportHubPage() {
             notes: [
               'Carpeta por mes (YYYY-MM). burnout-by-employee.json: ocupación vs capacidad neta, buffer para imprevistos y heurística de riesgo.',
               'Si no hay carpeta by-employee/, el alcance supera el límite (45) sin filtro de departamento: usa el agregado y planning-allocations.json.',
+              'Ausencias: se cargan para todo el rango del export (incluye tramos que cruzan de un mes a otro).',
             ],
           },
           null,
@@ -493,7 +537,7 @@ export default function DataExportHubPage() {
       );
 
       for (const mk of sortedSelectedMonths) {
-        const part = await buildMonthBundle(mk, bundleInclude);
+        const part = await buildMonthBundle(mk, bundleInclude, absencesPool);
         const folder = zip.folder(mk);
         if (!folder) continue;
 
@@ -514,7 +558,7 @@ export default function DataExportHubPage() {
           const monthDate = monthKeyToDate(mk);
           const monthAllocations = allocationsForMonth(allocations ?? [], monthDate);
           const monthDeadlineRows = (part.deadlines?.rows ?? []) as Deadline[];
-          const absM = (absences ?? []).filter((a) => absenceTouchesMonth(a, monthDate));
+          const absM = absencesPool.filter((a) => absenceTouchesMonth(a, monthDate));
           const evM = (teamEvents ?? []).filter((e) => teamEventInMonth(e, monthDate));
           const fbM = (weeklyFeedback ?? []).filter((f) => weekFeedbackInMonth(f, monthDate));
           const rowById = new Map(part.burnoutCapacity.rows.map((r) => [r.employeeId, r]));
@@ -552,7 +596,7 @@ export default function DataExportHubPage() {
 
   const exportOne = async (
     label: string,
-    build: (monthKey: string) => Promise<unknown>,
+    build: (monthKey: string, absencesPool: Absence[]) => Promise<unknown>,
     filename: (monthKey: string) => string
   ) => {
     if (sortedSelectedMonths.length === 0) {
@@ -561,9 +605,10 @@ export default function DataExportHubPage() {
     }
     setBusy(true);
     try {
-      await ensureMonthsLoaded();
+      await prepareExportMonths();
+      const absencesPool = await loadAbsencesForExportRange();
       for (const mk of sortedSelectedMonths) {
-        const data = await build(mk);
+        const data = await build(mk, absencesPool);
         downloadJson(filename(mk), data);
       }
       toast.success(t('dataExportHub.sectionSuccess', { label }));
@@ -710,7 +755,7 @@ export default function DataExportHubPage() {
         <p className="text-xs text-slate-600 max-w-2xl">
           {t(
             'dataExportHub.zipExplain',
-            'El ZIP incluye configuración de horarios por empleado, planificación, deadlines, ausencias, eventos, feedback, rentabilidad, radar, coherencia y un archivo de ocupación/burnout por mes. Con más de 45 personas sin filtrar por departamento, los JSON por empleado se omiten (sigue el agregado burnout-by-employee.json).'
+            'El ZIP incluye configuración de horarios por empleado, planificación, deadlines, ausencias, eventos, feedback, rentabilidad, radar, coherencia y un archivo de ocupación/burnout por mes. Las ausencias se consultan para todo el rango de meses seleccionados (incluye vacaciones que cruzan de un mes a otro). Con más de 45 personas sin filtrar por departamento, los JSON por empleado se omiten (sigue el agregado burnout-by-employee.json).'
           )}
         </p>
 
@@ -722,7 +767,7 @@ export default function DataExportHubPage() {
           onDownload={() =>
             exportOne(
               'Deadlines',
-              async (mk) => ({
+              async (mk, _absencesPool) => ({
                 schemaVersion: 1 as const,
                 exportedAt: new Date().toISOString(),
                 monthKey: mk,
@@ -742,7 +787,7 @@ export default function DataExportHubPage() {
           onDownload={() =>
             exportOne(
               'Global assignments',
-              async (mk) => {
+              async (mk, _absencesPool) => {
                 const { data, error } = await fetchGlobalAssignmentsForMonth(mk, currentAgency?.id);
                 if (error) throw error;
                 return {
@@ -765,9 +810,8 @@ export default function DataExportHubPage() {
           onDownload={() =>
             exportOne(
               'Planning',
-              async (mk) => {
+              async (mk, _absencesPool) => {
                 const monthDate = monthKeyToDate(mk);
-                await ensureMonthLoaded(monthDate);
                 const monthAllocations = allocationsForMonth(allocations ?? [], monthDate);
                 return {
                   schemaVersion: 1 as const,
@@ -790,9 +834,8 @@ export default function DataExportHubPage() {
           onDownload={() =>
             exportOne(
               'Coherence',
-              async (mk) => {
+              async (mk, _absencesPool) => {
                 const monthDate = monthKeyToDate(mk);
-                await ensureMonthLoaded(monthDate);
                 const { data: dl } = await fetchDeadlinesForMonth(mk, currentAgency?.id);
                 const coherence = computeGlobalPlanningInconsistencies({
                   deadlines: dl ?? [],
@@ -826,9 +869,8 @@ export default function DataExportHubPage() {
           onDownload={() =>
             exportOne(
               'Radar',
-              async (mk) => {
+              async (mk, _absencesPool) => {
                 const monthDate = monthKeyToDate(mk);
-                await ensureMonthLoaded(monthKeyToDate(mk));
                 const { data: dlRaw } = await fetchDeadlinesForMonth(mk, currentAgency?.id);
                 const deadlinesForMetrics = (dlRaw ?? []).map((d) => ({
                   projectId: d.projectId,
@@ -871,9 +913,8 @@ export default function DataExportHubPage() {
           onDownload={() =>
             exportOne(
               'Rentabilidad',
-              async (mk) => {
+              async (mk, _absencesPool) => {
                 const monthDate = monthKeyToDate(mk);
-                await ensureMonthLoaded(monthDate);
                 const { data: dlRaw } = await fetchDeadlinesForMonth(mk, currentAgency?.id);
                 const deadlinesForMetrics = (dlRaw ?? []).map((d) => ({
                   projectId: d.projectId,
@@ -910,14 +951,13 @@ export default function DataExportHubPage() {
           onDownload={() =>
             exportOne(
               'Absences',
-              async (mk) => {
+              async (mk, absencesPool) => {
                 const monthDate = monthKeyToDate(mk);
-                await ensureMonthLoaded(monthDate);
                 return {
                   schemaVersion: 1 as const,
                   exportedAt: new Date().toISOString(),
                   monthKey: mk,
-                  absences: (absences ?? []).filter((a) => absenceTouchesMonth(a, monthDate)),
+                  absences: absencesPool.filter((a) => absenceTouchesMonth(a, monthDate)),
                   teamEvents: (teamEvents ?? []).filter((e) => teamEventInMonth(e, monthDate)),
                   weeklyFeedback: (weeklyFeedback ?? []).filter((f) => weekFeedbackInMonth(f, monthDate)),
                 };
@@ -935,8 +975,8 @@ export default function DataExportHubPage() {
           onDownload={() =>
             exportOne(
               'Burnout',
-              async (mk) => {
-                const part = await buildMonthBundle(mk, bundleInclude);
+              async (mk, absencesPool) => {
+                const part = await buildMonthBundle(mk, bundleInclude, absencesPool);
                 if (!part.burnoutCapacity) throw new Error('burnout');
                 return part.burnoutCapacity;
               },

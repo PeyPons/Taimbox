@@ -39,7 +39,7 @@ Si modificas una interface, revisa estos consumidores:
 | `dateUtils.ts` → `collectSelectableFutureWeekSlots()` | `useWeeklyCloseMutations.ts` (slots de destino), `WeeklyReportDialog.tsx`, `TaskPartialCloseDialog.tsx` |
 | `dateUtils.ts` → `isAllocationInEffectiveMonth()` | `AppContext.tsx`, `usePlannerData.ts`, `useProjectMetrics.ts`, `appMetrics.ts` |
 | `dateUtils.ts` → `parseDateStringLocal()` | `WeeklyReportDialog.tsx` (pestañas y filtro de semana); `MyDayView.tsx` (alcance semanal y «Retrasada»); parseo local de `YYYY-MM-DD` |
-| `budgetUtils.ts` → `getEffectiveBudget()` | `DeadlinesPage`, `ClientsAndProjectsPage`, `useAllocationSheet` |
+| `budgetUtils.ts` → `getEffectiveBudget()` / `getEffectiveMonthlyFee()` | `DeadlinesPage`, `ClientsAndProjectsPage`, `useAllocationSheet`, `projectMetricsCompute` / `useProjectMetrics`, `FinancialHealthPage` |
 | `deadlineUtils.ts` → `fetchDeadlinesForMonth(monthKey, agencyId)` | `useDeadlines`, `DeadlinesPage`, `AllocationSheet`, `EmployeeDashboard`, `ClientsAndProjectsPage`, `PlanningInconsistenciesCard`, `MyWeekView`, `GlobalPlanningInconsistencies` |
 | `capacityUtils.ts` → `getDailyReduction()` | `getCapacityReductionInRange()`, `getCapacityReductionBreakdown()`, `AppContext.tsx`, `appMetrics.ts` |
 | `capacityUtils.ts` → `getScheduledHoursForDay()` | Todas las funciones de capacidad, `WeekCell.tsx` |
