@@ -66,6 +66,33 @@ describe('getEffectiveMonthlyFee', () => {
       )
     ).toBe(400);
   });
+
+  it('deliverableContractFee negativo o no finito ignora el override y usa monthlyFee como total', () => {
+    const jan = parseISO('2026-01-01');
+    const base = {
+      monthlyFee: 2000,
+      projectType: PROJECT_TYPE_ENTREGABLE,
+      deliverableStartDate: '2026-01-01',
+      deliverableDueDate: '2026-01-31',
+    };
+    expect(getEffectiveMonthlyFee({ ...base, deliverableContractFee: -100 }, jan)).toBe(2000);
+    expect(getEffectiveMonthlyFee({ ...base, deliverableContractFee: Number.NaN }, jan)).toBe(2000);
+  });
+
+  it('entregable con fase en varios meses prorratea por días de calendario', () => {
+    const jan = parseISO('2026-01-01');
+    const feb = parseISO('2026-02-01');
+    const project = {
+      monthlyFee: 0,
+      projectType: PROJECT_TYPE_ENTREGABLE,
+      deliverableContractFee: 3100,
+      deliverableStartDate: '2026-01-15',
+      deliverableDueDate: '2026-02-14',
+    };
+    // Fase 31 días: 17 en enero, 14 en febrero.
+    expect(getEffectiveMonthlyFee(project, jan)).toBeCloseTo((3100 * 17) / 31, 1);
+    expect(getEffectiveMonthlyFee(project, feb)).toBeCloseTo((3100 * 14) / 31, 1);
+  });
 });
 
 describe('getEffectiveBudget', () => {
