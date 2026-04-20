@@ -48,6 +48,7 @@ import { formatDecimalHoursAsHm } from '@/utils/timerDisplay';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
 import { useAllocationSheetMonthData } from '@/hooks/useAllocationSheetMonthData';
 import { round2 } from '@/utils/numbers';
+import { hoursCountedTowardLoad } from '@/utils/appMetrics';
 
 interface AllocationSheetProps {
   open: boolean;
@@ -430,8 +431,8 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
       if (!allCompletedA && allCompletedB) return -1;
 
       // Calcular horas del empleado actual en cada proyecto
-      const myHoursA = allocsA.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0);
-      const myHoursB = allocsB.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0);
+      const myHoursA = allocsA.reduce((sum, a) => sum + hoursCountedTowardLoad(a), 0);
+      const myHoursB = allocsB.reduce((sum, a) => sum + hoursCountedTowardLoad(a), 0);
 
       // Ordenar según opción seleccionada
       switch (sortOption) {
@@ -747,7 +748,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                       const load = getEmployeeLoadForWeek(employeeId, weekStartDate, week.effectiveStart, week.effectiveEnd, viewDate);
 
                       // Calcular Est, Real, Comp para el header (Real/Comp incluyen también horas del cronómetro en tareas pendientes)
-                      const weekEst = round2(weekAllocations.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0));
+                      const weekEst = round2(weekAllocations.reduce((sum, a) => sum + hoursCountedTowardLoad(a), 0));
                       const completedTasks = weekAllocations.filter(a => a.status === 'completed');
                       const weekReal = round2(weekAllocations.reduce((sum, a) => sum + (a.hoursActual || 0), 0));
                       const weekComp = round2(weekAllocations.reduce((sum, a) => sum + (a.status === 'completed' ? getEffectiveCompletedHours(a, preference) : 0), 0));
@@ -857,7 +858,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                 const sortedTasks = sortTasks(projAllocations);
 
                                 // Totales del proyecto esta semana (Real/Comp incluyen cronómetro en pendientes)
-                                const projEst = round2(projAllocations.reduce((s, a) => s + (a.hoursAssigned || 0), 0));
+                                const projEst = round2(projAllocations.reduce((s, a) => s + hoursCountedTowardLoad(a), 0));
                                 const projReal = round2(projAllocations.reduce((s, a) => s + (a.hoursActual || 0), 0));
                                 const projComp = round2(projAllocations.reduce((s, a) => s + (a.status === 'completed' ? getEffectiveCompletedHours(a, preference) : 0), 0));
                                 const hasAllocations = projAllocations.length > 0;
@@ -1620,7 +1621,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                               const completedCount = projAllocations.filter(a => a.status === 'completed').length;
                               const totalCount = projAllocations.length;
                               const myHoursInProject = {
-                                estimated: round2(projAllocations.reduce((sum, a) => sum + (a.hoursAssigned || 0), 0)),
+                                estimated: round2(projAllocations.reduce((sum, a) => sum + hoursCountedTowardLoad(a), 0)),
                                 completed: completedCount,
                                 computed: round2(projAllocations.filter(a => a.status === 'completed').reduce((sum, a) => sum + getEffectiveCompletedHours(a, preference), 0))
                               };
@@ -1797,7 +1798,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
                                     {projectIds.map(projId => {
                                       const project = getProjectById(projId);
                                       const projAllocs = filteredWeekAllocs.filter(a => a.projectId === projId);
-                                      const est = round2(projAllocs.reduce((s, a) => s + (a.hoursAssigned || 0), 0));
+                                      const est = round2(projAllocs.reduce((s, a) => s + hoursCountedTowardLoad(a), 0));
                                       const completed = projAllocs.filter(a => a.status === 'completed').length;
                                       const total = projAllocs.length;
                                       const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
