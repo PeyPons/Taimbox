@@ -12,6 +12,22 @@ import { Absence, TeamEvent } from '@/types';
 import { getCapacityReductionBreakdown } from '@/utils/capacityUtils';
 import { round2 } from '@/utils/numbers';
 
+/**
+ * Horas que cuentan hacia carga de planificación / capacidad por allocation.
+ * Completadas sin horas reales (p. ej. tramo cerrado en rollover weekly con 0h en esa semana)
+ * no deben seguir sumando `hours_assigned` residual: se usa `hours_computed` si hay, si no 0.
+ */
+export function hoursCountedTowardLoad(a: Allocation): number {
+  if (a.status === 'completed') {
+    const actual = Number(a.hoursActual || 0);
+    if (actual > 0) return actual;
+    const computed = a.hoursComputed != null ? Number(a.hoursComputed) : 0;
+    if (computed > 0) return computed;
+    return 0;
+  }
+  return Number(a.hoursAssigned || 0);
+}
+
 export function computeEmployeeLoadForWeek(
   employeeId: string,
   weekStart: string,
@@ -47,14 +63,7 @@ export function computeEmployeeLoadForWeek(
     employeeAllocations = employeeAllocations.filter(a => isAllocationInEffectiveMonth(a.weekStartDate, viewMonth));
   }
 
-  const totalHours = round2(
-    employeeAllocations.reduce(
-      (sum, a) =>
-        sum +
-        (a.status === 'completed' && (a.hoursActual || 0) > 0 ? Number(a.hoursActual) : Number(a.hoursAssigned)),
-      0
-    )
-  );
+  const totalHours = round2(employeeAllocations.reduce((sum, a) => sum + hoursCountedTowardLoad(a), 0));
 
   /**
    * Rango de fechas donde esta fila del planificador tiene sentido (L–D o tramo partido en fin de mes).
@@ -145,12 +154,7 @@ export function computeEmployeeMonthlyLoad(
         a.weekStartDate === weekStartDate &&
         isAllocationInEffectiveMonth(a.weekStartDate, monthStart)
     );
-    totalHours += tasks.reduce(
-      (sum, a) =>
-        sum +
-        (a.status === 'completed' && (a.hoursActual || 0) > 0 ? Number(a.hoursActual) : Number(a.hoursAssigned)),
-      0
-    );
+    totalHours += tasks.reduce((sum, a) => sum + hoursCountedTowardLoad(a), 0);
   });
   totalHours = round2(totalHours);
 
@@ -201,12 +205,7 @@ export function computeProjectHoursForMonth(
         a.weekStartDate === storageKey &&
         isAllocationInEffectiveMonth(a.weekStartDate, month)
     );
-    usedHours += tasks.reduce(
-      (sum, a) =>
-        sum +
-        (a.status === 'completed' && (a.hoursActual || 0) > 0 ? Number(a.hoursActual) : Number(a.hoursAssigned)),
-      0
-    );
+    usedHours += tasks.reduce((sum, a) => sum + hoursCountedTowardLoad(a), 0);
   });
   usedHours = round2(usedHours);
   const available = round2(Math.max(0, project.budgetHours - usedHours));
@@ -234,12 +233,7 @@ export function computeClientTotalHoursForMonth(
     weeks.forEach(week => {
       const storageKey = getStorageKey(week.weekStart, month);
       const tasks = allocations.filter(a => a.projectId === project.id && a.weekStartDate === storageKey);
-      totalUsed += tasks.reduce(
-        (sum, a) =>
-          sum +
-          (a.status === 'completed' && (a.hoursActual || 0) > 0 ? Number(a.hoursActual) : Number(a.hoursAssigned)),
-        0
-      );
+      totalUsed += tasks.reduce((sum, a) => sum + hoursCountedTowardLoad(a), 0);
     });
   });
 
