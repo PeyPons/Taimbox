@@ -250,7 +250,9 @@ export function dependencyUnblockEmailHtml(params: {
       : safeBlockingProject;
 
   const tasksLabel =
-    unblockedTasks.length > 1 ? "Tareas listas" : "Tarea lista";
+    unblockedTasks.length > 1
+      ? "Ya puedes comenzar con tus tareas"
+      : "Ya puedes comenzar";
 
   const tasksBodyHtml = unblockedTasks
     .map((t, idx) => {
@@ -286,7 +288,7 @@ export function dependencyUnblockEmailHtml(params: {
     `Tarea completada: ${blockingTaskName}`,
     `Completada por: ${closerName}`,
     ``,
-    `${tasksLabel}:`,
+    `${tasksLabel} —`,
   ];
   for (const t of unblockedTasks) {
     textLines.push(`· ${t.taskName}`);
@@ -362,7 +364,7 @@ export function dependencyUnblockEmailHtml(params: {
                     <img src="${safeAssigneeImg}" alt="${safeAssignee}" width="40" height="40" style="display:block;width:40px;height:40px;border-radius:50%;border:2px solid #4f46e5;background:#fff;box-shadow:0 0 0 3px #e0e7ff;" />
                   </td>
                   <td valign="middle">
-                    <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#4f46e5;text-transform:uppercase;letter-spacing:0.05em;line-height:1.4;">
+                    <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#4f46e5;line-height:1.4;">
                       ${escapeHtml(tasksLabel)}
                     </p>
                     ${tasksBodyHtml}
