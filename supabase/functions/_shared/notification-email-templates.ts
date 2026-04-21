@@ -178,140 +178,95 @@ export function scheduledProjectAlertEmailHtml(params: {
   return { html, text };
 }
 
-type DependencyUnblockDependentRow = {
-  projectId: string;
-  projectName: string;
-  clientName: string | null;
+/** Misma base que en `EmployeeSettings` / `EmployeeDialog` (fun-emoji 9.x). */
+const DICEBEAR_FUN_EMOJI_BASE = "https://api.dicebear.com/9.x/fun-emoji/svg";
+
+/**
+ * URL de avatar para el HTML del correo: usa `avatar_url` si es http(s), si no genera Dicebear con el nombre.
+ */
+export function employeeAvatarUrlForEmail(
+  avatarUrl: string | null | undefined,
+  displayName: string,
+): string {
+  const u = (avatarUrl ?? "").trim();
+  if (u.startsWith("http://") || u.startsWith("https://")) return u;
+  const seed = (displayName ?? "").trim() || "user";
+  return `${DICEBEAR_FUN_EMOJI_BASE}?seed=${encodeURIComponent(seed)}`;
+}
+
+export type DependencyUnblockUnblockedTaskRow = {
   taskName: string;
-  assigneeName: string;
-};
-
-function groupDependentsByProject(rows: DependencyUnblockDependentRow[]): Array<{
-  projectId: string;
   projectName: string;
   clientName: string | null;
-  items: { taskName: string; assigneeName: string }[];
-}> {
-  const map = new Map<
-    string,
-    { projectName: string; clientName: string | null; items: { taskName: string; assigneeName: string }[] }
-  >();
-  for (const d of rows) {
-    const cur = map.get(d.projectId);
-    const item = { taskName: d.taskName, assigneeName: d.assigneeName };
-    if (!cur) {
-      map.set(d.projectId, {
-        projectName: d.projectName,
-        clientName: d.clientName,
-        items: [item],
-      });
-    } else {
-      cur.items.push(item);
-    }
-  }
-  return [...map.entries()].map(([projectId, v]) => ({ projectId, ...v }));
-}
-
-function labeledRow(label: string, value: string): string {
-  const safeLabel = escapeHtml(label);
-  const safeValue = escapeHtml(value);
-  return `
-    <tr>
-      <td style="padding:6px 0;vertical-align:top;width:132px;font-size:13px;color:#64748b;font-weight:600;">${safeLabel}</td>
-      <td style="padding:6px 0;font-size:14px;color:#0f172a;line-height:1.45;">${safeValue}</td>
-    </tr>`;
-}
+};
 
 export function dependencyUnblockEmailHtml(params: {
   agencyName: string;
+  /** Primer nombre (o palabra) para el saludo. */
+  recipientFirstName: string;
+  /** Nombre completo del destinatario (p. ej. alt de imagen). */
+  assigneeName: string;
   closerName: string;
+  closerAvatarUrl: string;
+  assigneeAvatarUrl: string;
   blockingTaskName: string;
   blockingProjectName: string;
   blockingClientName?: string | null;
-  dependents: DependencyUnblockDependentRow[];
-  appUrl: string;
+  unblockedTasks: DependencyUnblockUnblockedTaskRow[];
 }): { html: string; text: string } {
   const {
     agencyName,
+    recipientFirstName,
+    assigneeName,
     closerName,
+    closerAvatarUrl,
+    assigneeAvatarUrl,
     blockingTaskName,
     blockingProjectName,
     blockingClientName,
-    dependents,
-    appUrl,
+    unblockedTasks,
   } = params;
 
-  const safe = {
-    agencyName: escapeHtml(agencyName),
-    closerName: escapeHtml(closerName),
-    blockingTaskName: escapeHtml(blockingTaskName),
-    blockingProjectName: escapeHtml(blockingProjectName),
-    appUrl: escapeHtml(appUrl),
-  };
+  const safeAgency = escapeHtml(agencyName);
+  const safeFirst = escapeHtml(recipientFirstName.trim() || "equipo");
+  const safeAssignee = escapeHtml(
+    assigneeName.trim() || recipientFirstName.trim() || "equipo",
+  );
+  const safeCloser = escapeHtml(closerName);
+  const safeBlockingTask = escapeHtml(blockingTaskName);
+  const safeBlockingProject = escapeHtml(blockingProjectName);
+  const safeCloserImg = escapeHtml(closerAvatarUrl);
+  const safeAssigneeImg = escapeHtml(assigneeAvatarUrl);
 
-  const blockingClientLine =
+  const plural = unblockedTasks.length > 1;
+  const titleTask = plural ? "tus tareas ya están desbloqueadas" : "tu tarea ya está desbloqueada";
+  const leadTask = plural
+    ? "Se cerraron los pasos previos que mantenían tu planificación en espera y ya puedes comenzar con tus tareas."
+    : "Se cerró el paso previo que mantenía tu planificación en espera y ya puedes comenzar con tu tarea.";
+
+  const projectClientLine =
     blockingClientName && blockingClientName.trim()
-      ? labeledRow("Cliente", blockingClientName.trim())
-      : "";
+      ? `${safeBlockingProject} <span style="font-weight:400;color:#64748b;">· ${escapeHtml(blockingClientName.trim())}</span>`
+      : safeBlockingProject;
 
-  const completedSectionHtml = `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;border:1px solid #e0e7ff;border-radius:10px;overflow:hidden;background:#fafbff;">
-      <tr>
-        <td style="background:linear-gradient(90deg,#eef2ff 0%,#e0e7ff 100%);padding:10px 14px;border-bottom:1px solid #c7d2fe;">
-          <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:0.06em;color:#4338ca;text-transform:uppercase;">Tarea que se acaba de completar</p>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:14px 16px 16px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
-            ${labeledRow("Proyecto", blockingProjectName)}
-            ${blockingClientLine}
-            ${labeledRow("Tarea de la que dependías", blockingTaskName)}
-            ${labeledRow("Completada por", closerName)}
-          </table>
-        </td>
-      </tr>
-    </table>`;
+  const tasksLabel =
+    unblockedTasks.length > 1 ? "Tareas listas" : "Tarea lista";
 
-  const groups = groupDependentsByProject(dependents);
-  const dependentsBlocksHtml = groups
-    .map((g) => {
-      const clientPart =
-        g.clientName && g.clientName.trim()
-          ? `<span style="color:#64748b;font-weight:500;"> · ${escapeHtml(g.clientName.trim())}</span>`
+  const tasksBodyHtml = unblockedTasks
+    .map((t, idx) => {
+      const safeTask = escapeHtml(t.taskName);
+      const clientBit =
+        t.clientName && t.clientName.trim()
+          ? ` <span style="font-weight:400;color:#64748b;">· ${escapeHtml(t.clientName.trim())}</span>`
           : "";
-      const rowsInner = g.items
-        .map((it, idx) => {
-          const border =
-            idx < g.items.length - 1 ? "border-bottom:1px solid #f1f5f9;" : "";
-          return `
-            <tr>
-              <td style="padding:10px 14px;${border}">
-                <p style="margin:0 0 4px;font-size:13px;color:#0f172a;font-weight:600;line-height:1.4;">${escapeHtml(it.taskName)}</p>
-                <p style="margin:0;font-size:12px;color:#64748b;">
-                  <span style="font-weight:600;color:#475569;">Asignada a:</span> ${escapeHtml(it.assigneeName)}
-                </p>
-              </td>
-            </tr>`;
-        })
-        .join("");
-      return `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 14px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff;">
-      <tr>
-        <td style="background:#f8fafc;padding:10px 14px;border-bottom:1px solid #e2e8f0;">
-          <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:0.06em;color:#64748b;text-transform:uppercase;">Proyecto</p>
-          <p style="margin:4px 0 0;font-size:15px;font-weight:700;color:#0f172a;line-height:1.35;">
-            ${escapeHtml(g.projectName)}${clientPart}
-          </p>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:0;">
-          <p style="margin:0;padding:8px 14px 0;font-size:10px;font-weight:700;letter-spacing:0.05em;color:#94a3b8;text-transform:uppercase;">Tus tareas que ya puedes retomar</p>
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rowsInner}</table>
-        </td>
-      </tr>
-    </table>`;
+      const projectLine =
+        unblockedTasks.length > 1
+          ? `<p style="margin:${idx === 0 ? "0" : "10px"} 0 0;font-size:11px;color:#64748b;line-height:1.45;">
+              <span style="font-weight:700;color:#475569;">Proyecto:</span>
+              ${escapeHtml(t.projectName)}${clientBit}
+            </p>`
+          : "";
+      return `<p style="margin:${idx === 0 ? "0" : "10px"} 0 0;font-size:14px;font-weight:600;color:#0f172a;line-height:1.45;">${safeTask}</p>${projectLine}`;
     })
     .join("");
 
@@ -320,57 +275,113 @@ export function dependencyUnblockEmailHtml(params: {
       ? `Cliente: ${blockingClientName.trim()}`
       : null;
   const textLines: string[] = [
-    `Puedes avanzar con tus tareas — ${agencyName}`,
+    `Hola ${recipientFirstName.trim() || "equipo"}, ${plural ? "tus tareas ya pueden avanzar" : "tu tarea ya puede avanzar"} — ${agencyName}`,
     ``,
-    `Una tarea de la que dependían las tuyas ya está hecha. Aquí tienes el resumen.`,
+    plural
+      ? `Se cerraron pasos previos y tu planificación deja de estar en espera.`
+      : `Se cerró un paso previo y tu planificación deja de estar en espera.`,
     ``,
-    `── Tarea completada ──`,
-    `Proyecto: ${blockingProjectName}`,
+    `Proyecto (tarea completada): ${blockingProjectName}`,
     ...(textBlockingClient ? [textBlockingClient] : []),
-    `Tarea: ${blockingTaskName}`,
-    `La completó: ${closerName}`,
+    `Tarea completada: ${blockingTaskName}`,
+    `Completada por: ${closerName}`,
     ``,
-    `── Tus tareas listas para seguir ──`,
+    `${tasksLabel}:`,
   ];
-  for (const g of groups) {
-    textLines.push("");
-    textLines.push(`▸ ${g.projectName}${g.clientName ? ` · ${g.clientName}` : ""}`);
-    for (const it of g.items) {
-      textLines.push(`  · ${it.taskName} (asignada a ${it.assigneeName})`);
-    }
+  for (const t of unblockedTasks) {
+    textLines.push(`· ${t.taskName}`);
+    textLines.push(`  ${t.projectName}${t.clientName ? ` · ${t.clientName}` : ""}`);
   }
-  textLines.push("", `Abrir planificador: ${appUrl}`);
+  textLines.push("", "Taimbox · notificación automática de seguimiento operativo.");
 
-  const html = `
-<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="es">
-<head><meta charset="UTF-8" /><title>Puedes avanzar con tus tareas</title></head>
-<body style="margin:0;padding:0;background:#f1f5f9;font-family:system-ui,-apple-system,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:28px 14px;">
-    <tr><td align="center">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;max-width:600px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
-        <tr><td style="background:linear-gradient(135deg,#4f46e5,#6366f1);padding:22px 24px;text-align:center;">
-          <span style="font-size:19px;font-weight:700;color:#fff;letter-spacing:-0.02em;">Taimbox</span>
-        </td></tr>
-        <tr><td style="padding:24px 24px 8px;">
-          <h1 style="margin:0 0 6px;font-size:20px;color:#0f172a;line-height:1.25;">Puedes seguir con tus tareas</h1>
-          <p style="margin:0;color:#64748b;font-size:14px;">${safe.agencyName}</p>
-        </td></tr>
-        <tr><td style="padding:8px 24px 24px;font-size:15px;color:#334155;line-height:1.55;">
-          <p style="margin:0 0 18px;font-size:14px;color:#475569;">Te escribimos porque una tarea que retrasaba las tuyas <strong>ya está hecha</strong>. Abajo ves el proyecto, quién la cerró y qué te toca a continuación.</p>
-          ${completedSectionHtml}
-          <p style="margin:0 0 10px;font-size:10px;font-weight:700;letter-spacing:0.06em;color:#64748b;text-transform:uppercase;">Resumen por proyecto</p>
-          ${dependentsBlocksHtml}
-          <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:8px auto 0;">
-            <tr>
-              <td style="border-radius:8px;background:#4f46e5;">
-                <a href="${safe.appUrl}" style="display:inline-block;padding:12px 22px;color:#fff;text-decoration:none;font-weight:600;font-size:15px;">Abrir planificador</a>
-              </td>
-            </tr>
-          </table>
-        </td></tr>
-      </table>
-    </td></tr>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dependencia resuelta</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f8fafc;font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f8fafc;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background-color:#ffffff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;">
+          <tr>
+            <td style="padding:32px 32px 24px;">
+              <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:0.1em;color:#64748b;text-transform:uppercase;">${safeAgency}</p>
+              <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#0f172a;font-weight:700;letter-spacing:-0.02em;">
+                Hola ${safeFirst}, ${escapeHtml(titleTask)}
+              </h1>
+              <p style="margin:0;font-size:15px;line-height:1.6;color:#475569;">
+                El flujo operativo ha avanzado. ${escapeHtml(leadTask)}
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 32px 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;">
+                <tr>
+                  <td style="padding:16px;">
+                    <p style="margin:0 0 4px;font-size:10px;font-weight:700;letter-spacing:0.1em;color:#64748b;text-transform:uppercase;">Proyecto afectado</p>
+                    <p style="margin:0;font-size:14px;font-weight:600;color:#0f172a;line-height:1.45;">
+                      ${projectClientLine}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 32px 32px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td width="40" valign="top" style="padding-right:16px;">
+                    <img src="${safeCloserImg}" alt="${safeCloser}" width="40" height="40" style="display:block;width:40px;height:40px;border-radius:50%;border:1px solid #cbd5e1;background:#fff;" />
+                  </td>
+                  <td valign="middle">
+                    <p style="margin:0 0 4px;font-size:13px;color:#475569;line-height:1.5;">
+                      <strong style="color:#0f172a;">${safeCloser}</strong> completó su tarea:
+                    </p>
+                    <p style="margin:0;font-size:13px;color:#64748b;line-height:1.45;text-decoration:line-through;">
+                      ${safeBlockingTask}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td width="40" align="center" style="padding:6px 16px 6px 0;">
+                    <div style="height:22px;width:2px;background-color:#e2e8f0;margin:0 auto;"></div>
+                  </td>
+                  <td>&nbsp;</td>
+                </tr>
+              </table>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td width="40" valign="top" style="padding-right:16px;">
+                    <img src="${safeAssigneeImg}" alt="${safeAssignee}" width="40" height="40" style="display:block;width:40px;height:40px;border-radius:50%;border:2px solid #4f46e5;background:#fff;box-shadow:0 0 0 3px #e0e7ff;" />
+                  </td>
+                  <td valign="middle">
+                    <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#4f46e5;text-transform:uppercase;letter-spacing:0.05em;line-height:1.4;">
+                      ${escapeHtml(tasksLabel)}
+                    </p>
+                    ${tasksBodyHtml}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+          <tr>
+            <td align="center" style="padding:24px 0;">
+              <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.1em;">Taimbox</p>
+              <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.5;">Notificación automática de seguimiento operativo.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
   </table>
 </body>
 </html>`;

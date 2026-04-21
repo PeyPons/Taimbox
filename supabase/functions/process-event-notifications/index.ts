@@ -1,8 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendEmail } from "../_shared/resend.ts";
-import { getSiteUrl } from "../_shared/password-recovery-url.ts";
-import { dependencyUnblockEmailHtml } from "../_shared/notification-email-templates.ts";
+import {
+  dependencyUnblockEmailHtml,
+  employeeAvatarUrlForEmail,
+} from "../_shared/notification-email-templates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -235,77 +237,105 @@ serve(async (req) => {
 
   const { data: emps } = await supabaseAdmin
     .from("employees")
-    .select("id, email, name")
+    .select("id, email, name, avatar_url")
     .in("id", [...empIdsForContext])
     .eq("agency_id", agencyId);
 
   const emailByEmpId = new Map<string, string>();
   const empNameById = new Map<string, string>();
+  const avatarUrlByEmpId = new Map<string, string | null>();
   for (const e of emps || []) {
     const em = (e.email as string | null)?.trim();
     if (em) emailByEmpId.set(e.id as string, em);
     const nm = (e.name as string | null)?.trim();
     if (nm) empNameById.set(e.id as string, nm);
+    const av = (e.avatar_url as string | null | undefined) ?? null;
+    avatarUrlByEmpId.set(e.id as string, av?.trim() || null);
   }
 
   /** Solo quienes tenían asignada una tarea dependiente (desbloqueada), no quien cerró la bloqueadora. */
-  const emailSet = new Set<string>();
+  const dependentsByAssignee = new Map<string, NonNullable<typeof dependents>[number][]>();
   for (const d of dependents) {
-    if (!d.employee_id) continue;
-    const em = emailByEmpId.get(d.employee_id as string);
-    if (em) emailSet.add(em);
+    const eid = d.employee_id as string | undefined;
+    if (!eid || !emailByEmpId.has(eid)) continue;
+    const cur = dependentsByAssignee.get(eid);
+    if (!cur) dependentsByAssignee.set(eid, [d]);
+    else cur.push(d);
   }
 
-  if (emailSet.size === 0) {
+  if (dependentsByAssignee.size === 0) {
     return new Response(JSON.stringify({ ok: true, skipped: "no_recipients" }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
-  const dependentLines = dependents.map((d) => {
-    const pid = d.project_id as string;
-    const pn = projectNameById.get(pid) || "Proyecto";
-    const tn = (d.task_name as string) || "Tarea sin nombre";
-    const clId = projectClientIdByProjectId.get(pid) ?? null;
-    const clName = clId ? clientNameById.get(clId) ?? null : null;
-    const assignee =
-      empNameById.get(d.employee_id as string) || "Sin asignar";
-    return {
-      projectId: pid,
-      projectName: pn,
-      clientName: clName,
-      taskName: tn,
-      assigneeName: assignee,
-    };
-  });
-
-  const siteUrl = getSiteUrl().replace(/\/$/, "");
-  const appUrl = `${siteUrl}/planner`;
-
-  const { html, text } = dependencyUnblockEmailHtml({
-    agencyName,
+  const closerAvatarUrl = employeeAvatarUrlForEmail(
+    avatarUrlByEmpId.get(completed.employee_id as string) ?? null,
     closerName,
-    blockingTaskName,
-    blockingProjectName,
-    blockingClientName,
-    dependents: dependentLines,
-    appUrl,
-  });
+  );
 
-  const toList = [...emailSet];
   const subjectTask =
     blockingTaskName.length > 55 ? `${blockingTaskName.slice(0, 52)}…` : blockingTaskName;
-  const sendResult = await sendEmail({
-    to: toList,
-    subject: `Puedes avanzar con tus tareas: ${subjectTask} · ${agencyName}`,
-    html,
-    text,
-  });
 
-  if (!sendResult.success) {
+  const sentEmails: string[] = [];
+  let lastError: string | undefined;
+
+  for (const [assigneeId, deps] of dependentsByAssignee) {
+    const toEmail = emailByEmpId.get(assigneeId);
+    if (!toEmail) continue;
+
+    const assigneeName = empNameById.get(assigneeId) || "Sin asignar";
+    const recipientFirstName = assigneeName.trim().split(/\s+/)[0] || "equipo";
+    const assigneeAvatarUrl = employeeAvatarUrlForEmail(
+      avatarUrlByEmpId.get(assigneeId) ?? null,
+      assigneeName,
+    );
+
+    const unblockedTasks = deps.map((d) => {
+      const pid = d.project_id as string;
+      const pn = projectNameById.get(pid) || "Proyecto";
+      const tn = (d.task_name as string) || "Tarea sin nombre";
+      const clId = projectClientIdByProjectId.get(pid) ?? null;
+      const clName = clId ? clientNameById.get(clId) ?? null : null;
+      return {
+        taskName: tn,
+        projectName: pn,
+        clientName: clName,
+      };
+    });
+
+    const { html, text } = dependencyUnblockEmailHtml({
+      agencyName,
+      recipientFirstName,
+      assigneeName,
+      closerName,
+      closerAvatarUrl,
+      assigneeAvatarUrl,
+      blockingTaskName,
+      blockingProjectName,
+      blockingClientName,
+      unblockedTasks,
+    });
+
+    const sendResult = await sendEmail({
+      to: [toEmail],
+      subject: `Tarea desbloqueada: ${subjectTask} · ${agencyName}`,
+      html,
+      text,
+    });
+
+    if (!sendResult.success) {
+      lastError = sendResult.error;
+      console.error("[process-event-notifications] send failed", toEmail, lastError);
+      break;
+    }
+    sentEmails.push(toEmail);
+  }
+
+  if (sentEmails.length === 0 || lastError) {
     return new Response(
-      JSON.stringify({ ok: false, error: sendResult.error }),
+      JSON.stringify({ ok: false, error: lastError || "send_failed" }),
       { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
@@ -319,7 +349,7 @@ serve(async (req) => {
       completed_allocation_id: completedAllocationId,
       dependent_allocation_ids: dependents.map((d) => d.id),
     },
-    recipient_emails: toList,
+    recipient_emails: sentEmails,
     resend_id: sendResult.id ?? null,
     success: true,
     error_message: null,
@@ -329,7 +359,7 @@ serve(async (req) => {
     console.error("[process-event-notifications] delivery insert", insErr);
   }
 
-  return new Response(JSON.stringify({ ok: true, sent: toList.length }), {
+  return new Response(JSON.stringify({ ok: true, sent: sentEmails.length }), {
     status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });

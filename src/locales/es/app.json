@@ -1257,7 +1257,7 @@
       "title": "Notificaciones por email",
       "description": "Define reglas por agencia (transferencias y revisiones programadas). El botón flotante «Guardar cambios» también guarda estas reglas.",
       "dependencyUnblockLabel": "Correo al desbloquear tareas dependientes",
-      "dependencyUnblockHint": "Se envía a quien tenía la tarea completada y a los asignados de las tareas que dependían de ella (si tienen email en su perfil).",
+      "dependencyUnblockHint": "Se envía un correo personalizado a cada asignado de una tarea que dependía de la completada (si tiene email en su perfil). No se notifica a quien cerró la tarea previa.",
       "rules": {
         "sectionTitle": "Reglas de envío",
         "sectionHint": "Con varias reglas, usa el desplegable para revisar cada una sin alargar la página.",

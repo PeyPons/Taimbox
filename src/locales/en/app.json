@@ -975,7 +975,7 @@
       "title": "Email notifications",
       "description": "Set per-agency rules (transfers and scheduled reviews). The floating “Save changes” button also saves these rules.",
       "dependencyUnblockLabel": "Email when dependent tasks unblock",
-      "dependencyUnblockHint": "Sent to whoever owned the completed task and assignees of tasks that depended on it (if they have an email on their profile).",
+      "dependencyUnblockHint": "Sends a personalized email to each assignee of a task that depended on the completed one (if they have an email on their profile). The person who completed the blocking task is not notified.",
       "rules": {
         "sectionTitle": "Delivery rules",
         "sectionHint": "With several rules, expand each panel to edit without scrolling a long page.",
