@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { getWorkingDaysInRange, getMonthlyCapacity, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { hoursCountedTowardLoad } from '@/utils/appMetrics';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
 
@@ -138,12 +139,8 @@ export default function TeamCapacityPage() {
                 return true;
             });
 
-            // Usar la misma lógica que el planificador: hoursActual para completadas, hoursAssigned para el resto
-            const hoursAssigned = periodAllocations.reduce((sum, a) => {
-                return sum + (a.status === 'completed' && (a.hoursActual || 0) > 0
-                    ? Number(a.hoursActual)
-                    : Number(a.hoursAssigned));
-            }, 0);
+            // Misma regla que `computeEmployeeLoadForWeek` (planificador)
+            const hoursAssigned = periodAllocations.reduce((sum, a) => sum + hoursCountedTowardLoad(a), 0);
             const pendingTasks = periodAllocations.filter(a => a.status === 'planned').length;
 
             const availableHours = Math.max(0, effectiveCapacity - hoursAssigned);
