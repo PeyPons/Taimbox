@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs grep *)",
+      "Bash(git -C \"C:/Users/alexa/OneDrive/Escritorio/Timeboxing/Timeboxing/.claude/worktrees/distracted-gould-a5dff6\" merge-base HEAD main)",
+      "Bash(git -C \"C:/Users/alexa/OneDrive/Escritorio/Timeboxing/Timeboxing/.claude/worktrees/distracted-gould-a5dff6\" rev-parse HEAD main)",
+      "Bash(kill bk5cear11 *)"
+    ]
+  }
+}

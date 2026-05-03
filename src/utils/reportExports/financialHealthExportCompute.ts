@@ -1,4 +1,4 @@
-import { format, endOfMonth, isSameMonth } from 'date-fns';
+import { format, isSameMonth } from 'date-fns';
 import type { Agency, Allocation, Client, Employee, Project } from '@/types';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { isAllocationInEffectiveMonth, getWorkingDaysInMonth, getWorkingDaysElapsedInMonth } from '@/utils/dateUtils';
@@ -179,12 +179,8 @@ export function computeBuildRentabilityDiagnosticParams(
     costMode === 'dynamic' && isViewingCurrentMonth && pctMonthElapsed < 25;
   const effectiveCostMode: 'standard' | 'dynamic' = dynamicCostFallbackActive ? 'standard' : costMode;
 
-  const accruedRatio = (() => {
-    if (!isViewingCurrentMonth) return 1;
-    const daysInMonth = endOfMonth(currentMonth).getDate();
-    const dayOfMonth = Math.min(new Date().getDate(), daysInMonth);
-    return dayOfMonth / daysInMonth;
-  })();
+  const accruedRatio =
+    !isViewingCurrentMonth || workingDaysInMonth <= 0 ? 1 : workingDaysElapsed / workingDaysInMonth;
 
   const projectDisplayFeeMap = new Map<string, number>();
   projectMetricsForView.forEach((p) => {
