@@ -91,6 +91,67 @@ export function getEffectiveBudget(
   return project.budgetHours || 0;
 }
 
+export type ProjectBudgetMonthFields = {
+  budgetHours: number;
+  projectType?: string;
+  deliverableStartDate?: string | null;
+  deliverableDueDate?: string | null;
+};
+
+/**
+ * Horas-presupuesto atribuidas al mes (rentabilidad).
+ * - Con `budgetOverride` en el deadline del mes: ese valor.
+ * - No Entregable: `budgetHours` total del proyecto.
+ * - Entregable con fase: prorrateo lineal del total de horas por días de fase (misma lógica que el fee mensual).
+ */
+export function getEffectiveBudgetForMonth(
+  project: ProjectBudgetMonthFields,
+  deadline: { budgetOverride?: number } | null | undefined,
+  month: Date
+): number {
+  if (deadline?.budgetOverride != null && deadline.budgetOverride >= 0) {
+    return deadline.budgetOverride;
+  }
+  const base = project.budgetHours || 0;
+  if (project.projectType !== PROJECT_TYPE_ENTREGABLE) {
+    return base;
+  }
+
+  const startStr = project.deliverableStartDate?.trim();
+  const dueStr = project.deliverableDueDate?.trim();
+  if (!startStr || !dueStr) {
+    return base;
+  }
+
+  let phaseStart: Date;
+  let phaseEnd: Date;
+  try {
+    phaseStart = parseISO(startStr);
+    phaseEnd = parseISO(dueStr);
+  } catch {
+    return base;
+  }
+  if (Number.isNaN(phaseStart.getTime()) || Number.isNaN(phaseEnd.getTime()) || phaseEnd < phaseStart) {
+    return base;
+  }
+
+  const ms = startOfMonth(month);
+  const me = endOfMonth(month);
+  const ovStart = phaseStart.getTime() > ms.getTime() ? phaseStart : ms;
+  const ovEnd = phaseEnd.getTime() < me.getTime() ? phaseEnd : me;
+  if (ovStart > ovEnd) {
+    return 0;
+  }
+
+  const phaseDays = differenceInCalendarDays(phaseEnd, phaseStart) + 1;
+  const overlapDays = differenceInCalendarDays(ovEnd, ovStart) + 1;
+  if (phaseDays <= 0 || overlapDays <= 0) {
+    return 0;
+  }
+
+  return round2((base * overlapDays) / phaseDays);
+}
+
 /**
  * Devuelve el minimum efectivo para un proyecto en un mes.
  * Si el budget fue overridden, el minimum no puede exceder el override.

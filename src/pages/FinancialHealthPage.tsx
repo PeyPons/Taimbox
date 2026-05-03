@@ -56,6 +56,7 @@ import {
     allocateCommonExpenses,
     collectCommonExpenseEntriesForMonth,
     normalizeCommonExpenseEntriesDepartments,
+    type AllocateCommonExpensesFailure,
 } from '@/utils/commonExpensesAllocation';
 import {
     CommonExpensesSettingsCard,
@@ -64,23 +65,12 @@ import {
 import { toast } from '@/lib/notify';
 import { usePermissions } from '@/hooks/usePermissions';
 import { buildRentabilityDiagnosticPayload } from '@/utils/reportExports/rentabilityDiagnostic';
-
-/** Capacidad teórica mensual: lo que trabajaría el empleado sin vacaciones (para modelo operativo). */
-const DEFAULT_MONTHLY_HOURS = 110;
-
-/** Horas base sobre las que se calcula el coste/h estándar (capacidad teórica del mes). */
-function getStandardMonthlyCapacity(emp: Employee | undefined): number {
-    if (!emp) return DEFAULT_MONTHLY_HOURS;
-    const monthly = (emp.defaultWeeklyCapacity || 0) * 4.33;
-    return monthly > 0 ? monthly : DEFAULT_MONTHLY_HOURS;
-}
-
-/** Coste hora estándar: nómina / capacidad teórica mensual (para modelo operativo). */
-function getStandardHourlyCost(emp: Employee | undefined): number {
-    if (!emp?.hourlyRate || emp.hourlyRate <= 0) return 0;
-    const denom = getStandardMonthlyCapacity(emp);
-    return emp.hourlyRate / denom;
-}
+import {
+    getRowCost,
+    getStandardHourlyCost,
+    getStandardMonthlyCapacity,
+    overheadShareForRow,
+} from '@/utils/profitabilityCost';
 
 /** Límite % margen para considerar "óptimo" (verde). Por debajo hasta 0% = ámbar; negativo = rojo. */
 const MARGIN_HEALTHY_PCT = 20;
@@ -90,32 +80,6 @@ function getMarginSemaphore(marginPct: number): { className: string; showAlert: 
     if (marginPct > MARGIN_HEALTHY_PCT) return { className: 'text-emerald-600 dark:text-emerald-400', showAlert: false };
     if (marginPct >= 0) return { className: 'text-amber-500', showAlert: false };
     return { className: 'text-red-600', showAlert: true };
-}
-
-/** Coste de una fila: según modo operativo (horas × coste/h estándar) o dinámico (prorrateo de nómina por horas del mes). */
-function getRowCost(
-    emp: Employee | undefined,
-    hoursDisplay: number,
-    totalHEmployeeInMode: number,
-    costMode: 'standard' | 'dynamic'
-): number {
-    const monthly = emp?.hourlyRate ?? 0;
-    if (costMode === 'standard') {
-        return hoursDisplay * getStandardHourlyCost(emp);
-    }
-    return totalHEmployeeInMode > 0 ? monthly * (hoursDisplay / totalHEmployeeInMode) : 0;
-}
-
-/** Prorrateo de overhead del empleado a una fila; denominador = horas globales del mes (agencia). */
-function overheadShareForRow(
-    employeeId: string,
-    hoursDisplay: number,
-    totalHoursGlobalForEmployee: number,
-    overheadByEmployee: ReadonlyMap<string, number>
-): number {
-    if (totalHoursGlobalForEmployee <= 0) return 0;
-    const oh = overheadByEmployee.get(employeeId) ?? 0;
-    return oh * (hoursDisplay / totalHoursGlobalForEmployee);
 }
 
 export default function FinancialHealthPage() {
@@ -374,7 +338,7 @@ export default function FinancialHealthPage() {
     const employeePayrollById = useMemo(() => {
         const map = new Map<string, number>();
         (employees ?? []).forEach(e => {
-            map.set(e.id, e.hourlyRate ?? 0);
+            map.set(e.id, e.monthlyCost ?? e.hourlyRate ?? 0);
         });
         return map;
     }, [employees]);
@@ -438,10 +402,8 @@ export default function FinancialHealthPage() {
     const effectiveCostMode = dynamicCostFallbackActive ? 'standard' : costMode;
     const accruedRatio = useMemo(() => {
         if (!isViewingCurrentMonth) return 1;
-        const daysInMonth = endOfMonth(currentMonth).getDate();
-        const dayOfMonth = Math.min(new Date().getDate(), daysInMonth);
-        return dayOfMonth / daysInMonth;
-    }, [currentMonth, isViewingCurrentMonth]);
+        return workingDaysInMonth > 0 ? workingDaysElapsed / workingDaysInMonth : 0;
+    }, [isViewingCurrentMonth, workingDaysInMonth, workingDaysElapsed]);
     const projectDisplayFeeMap = useMemo(() => {
         const map = new Map<string, number>();
         projectMetricsForView.forEach(p => {
@@ -486,18 +448,20 @@ export default function FinancialHealthPage() {
     const totalMonthlyCostView = useMemo(() => {
         return employeeMetricsForView.reduce((sum, em) => {
             const emp = employees.find(e => e.id === em.employeeId);
-            return sum + (emp?.hourlyRate ?? 0);
+            return sum + (emp?.monthlyCost ?? emp?.hourlyRate ?? 0);
         }, 0);
     }, [employeeMetricsForView, employees]);
 
-    const totalRealHoursForCost = totalsForView.totalComputed || totalsForView.totalActual || 0;
-    const avgHourlyCost = totalRealHoursForCost > 0 ? totalMonthlyCostView / totalRealHoursForCost : 0;
+    const totalHoursForCostDenominator =
+        hoursMode === 'computed' ? totalsForView.totalComputed : totalsForView.totalActual;
+    const avgHourlyCost =
+        totalHoursForCostDenominator > 0 ? totalMonthlyCostView / totalHoursForCostDenominator : 0;
 
     const usesLoadedCostForTarget =
         commonExpensesAlloc.ok && commonExpensesAlloc.totalConfiguredAmount > 0;
     const avgLoadedHourlyCost =
-        totalRealHoursForCost > 0
-            ? (totalMonthlyCostView + totalOverheadInView) / totalRealHoursForCost
+        totalHoursForCostDenominator > 0
+            ? (totalMonthlyCostView + totalOverheadInView) / totalHoursForCostDenominator
             : 0;
     const avgForTarget =
         usesLoadedCostForTarget && avgLoadedHourlyCost > 0 ? avgLoadedHourlyCost : avgHourlyCost;
@@ -615,7 +579,7 @@ export default function FinancialHealthPage() {
 
     const netMargin = totalRevenue - totalInternalCost;
     const marginIsPositive = netMargin >= 0;
-    const marginPercent = totalRevenue > 0 ? (netMargin / totalRevenue) * 100 : 0;
+    const marginPercent: number | null = totalRevenue > 0 ? (netMargin / totalRevenue) * 100 : null;
 
     // Desglose por empleado en proyecto. hoursDisplay = horas a mostrar según modo (reales/computadas); en modo reales se escalan para que la suma = horas reales del proyecto.
     const projectEmployeeAttributionMap = useMemo(() => {
@@ -708,6 +672,38 @@ export default function FinancialHealthPage() {
                 });
             }
         });
+
+        const NO_DEPT_ID = '__none__';
+        let revenueNone = 0;
+        let hoursNone = 0;
+        let payrollCostNone = 0;
+        let overheadCostNone = 0;
+        projectMetricsBillableWithActivity.forEach(pm => {
+            const proj = projectById.get(pm.projectId);
+            if (!proj || proj.responsibleDepartmentId) return;
+            const fee = projectDisplayFeeMap.get(pm.projectId) ?? pm.monthlyFee ?? 0;
+            revenueNone += fee;
+            hoursNone += hoursMode === 'computed' ? pm.computed : pm.actual;
+            const cm = projectCostAndMarginMap.get(pm.projectId);
+            payrollCostNone += cm?.payrollCost ?? 0;
+            overheadCostNone += cm?.overheadCost ?? 0;
+        });
+        const costNone = payrollCostNone + overheadCostNone;
+        const marginNone = revenueNone - costNone;
+        if (hoursNone > 0 && revenueNone > 0) {
+            records.push({
+                id: NO_DEPT_ID,
+                name: 'Sin departamento',
+                ehr: revenueNone / hoursNone,
+                revenue: revenueNone,
+                hours: hoursNone,
+                payrollCost: payrollCostNone,
+                overheadCost: overheadCostNone,
+                cost: costNone,
+                margin: marginNone,
+            });
+        }
+
         return {
             items: records.sort((a, b) => b.ehr - a.ehr),
         };
@@ -826,7 +822,7 @@ export default function FinancialHealthPage() {
                 });
             });
             const totalHoursDisplay = byProject.reduce((s, b) => s + b.hoursDisplay, 0);
-            const payrollMonthly = emp?.hourlyRate ?? 0;
+            const payrollMonthly = emp?.monthlyCost ?? emp?.hourlyRate ?? 0;
             const overheadTotalEmployee = overheadByEmployee.get(em.employeeId) ?? 0;
             /** Evita fila/total «No imputado» por ruido numérico: total mensual vs suma por proyecto suele diferir en centésimas de hora. */
             const UNATTRIBUTED_HOURS_EPS = 0.02;
@@ -886,7 +882,9 @@ export default function FinancialHealthPage() {
     }, [employeeMetricsForView, employees, projectTotalHoursFromBreakdown, projectByIdForAttr, hoursMode, effectiveCostMode, projectIdsWithActivity, employeeHoursGlobalById, overheadByEmployee]);
 
     const agencyTotalOverheadApplied = commonExpensesAlloc.ok ? commonExpensesAlloc.totalOverheadApplied : 0;
-    const commonExpensesAllocError = commonExpensesAlloc.ok ? null : commonExpensesAlloc;
+    const commonExpensesAllocError: AllocateCommonExpensesFailure | null = commonExpensesAlloc.ok
+        ? null
+        : commonExpensesAlloc;
     const commonExpensesBreakdown = useMemo(() => {
         const recurring = currentAgency?.settings?.commonExpensesRecurring ?? [];
         const recurringInMonth = recurring.filter(e => {
@@ -1516,7 +1514,11 @@ export default function FinancialHealthPage() {
                                                     : "border-red-300 bg-red-600/90 text-white"
                                             )}
                                         >
-                                            {totalRevenue > 0 ? `${marginPercent.toFixed(1)}% margen` : 'Sin facturación'}
+                                            {marginPercent != null
+                                                ? `${marginPercent.toFixed(1)}% margen`
+                                                : totalRevenue <= 0 && netMargin !== 0
+                                                  ? 'n/a margen (sin ingreso devengado)'
+                                                  : 'Sin facturación'}
                                         </Badge>
                                     </div>
                                 </CardContent>
@@ -1573,7 +1575,9 @@ export default function FinancialHealthPage() {
 
                         {(commonExpensesAllocError ||
                             agencyTotalOverheadApplied > 0 ||
-                            commonExpensesZeroHourWarningNames.length > 0) && (
+                            commonExpensesZeroHourWarningNames.length > 0 ||
+                            (commonExpensesAlloc.ok &&
+                                commonExpensesAlloc.unallocatedAmount > 0.009)) && (
                             <section aria-label={t('financialHealth.commonExpenses.title')}>
                                 <Card className="shadow-sm border border-slate-200 bg-white border-l-4 border-l-indigo-500 overflow-hidden">
                                     <CardHeader className="pb-2">
@@ -1597,6 +1601,20 @@ export default function FinancialHealthPage() {
                                                             ({t('agency.commonExpenses.errSplitSum')} — Σ={commonExpensesAllocError.splitSum.toFixed(2)}%)
                                                         </span>
                                                     )}
+                                            </p>
+                                        )}
+                                        {commonExpensesAlloc.ok && commonExpensesAlloc.unallocatedAmount > 0.009 && (
+                                            <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
+                                                {t(
+                                                    'financialHealth.commonExpenses.unallocated',
+                                                    'Parte de los gastos comunes no se ha podido imputar ({{amount}}). Revisa departamentos vacíos o líneas con 0 h en modo por horas.',
+                                                    {
+                                                        amount: commonExpensesAlloc.unallocatedAmount.toLocaleString('es-ES', {
+                                                            style: 'currency',
+                                                            currency: 'EUR',
+                                                        }),
+                                                    }
+                                                )}
                                             </p>
                                         )}
                                         {!commonExpensesAllocError && agencyTotalOverheadApplied > 0 && (
@@ -2365,7 +2383,7 @@ export default function FinancialHealthPage() {
                                                                                   })
                                                                             : costMode === 'standard'
                                                                               ? `Base: ${baseHoursStd.toFixed(0)} h (capacidad teórica del mes) · ${costPerHour.toFixed(2)} €/h`
-                                                                              : `Base: ${hEff.toFixed(0)} h (reales del mes) · Nómina: ${(empResumen?.hourlyRate ?? 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })} → ${costPerHour.toFixed(2)} €/h`
+                                                                              : `Base: ${hEff.toFixed(0)} h (reales del mes) · Nómina: ${(empResumen?.monthlyCost ?? empResumen?.hourlyRate ?? 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })} → ${costPerHour.toFixed(2)} €/h`
                                                                         : null;
                                                                 return (
                                                                     <tr key={ep.employeeId} className={cn("transition-colors", idx % 2 === 1 ? "bg-slate-50/50" : "bg-white", "hover:bg-slate-100/70")}>
@@ -3080,7 +3098,7 @@ export default function FinancialHealthPage() {
                                                                       })
                                                                 : costMode === 'standard'
                                                                   ? `Base: ${baseHoursStdTab.toFixed(0)} h (capacidad teórica del mes) · ${costPerHour.toFixed(2)} €/h`
-                                                                  : `Base: ${hEffTab.toFixed(0)} h (reales del mes) · Nómina: ${(empTab?.hourlyRate ?? 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })} → ${costPerHour.toFixed(2)} €/h`
+                                                                  : `Base: ${hEffTab.toFixed(0)} h (reales del mes) · Nómina: ${(empTab?.monthlyCost ?? empTab?.hourlyRate ?? 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })} → ${costPerHour.toFixed(2)} €/h`
                                                             : null;
                                                     return (
                                                         <Fragment key={ep.employeeId}>

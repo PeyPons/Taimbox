@@ -1,5 +1,10 @@
 import { parseISO } from 'date-fns';
-import { getEffectiveBudget, getEffectiveMinimum, getEffectiveMonthlyFee } from '@/utils/budgetUtils';
+import {
+  getEffectiveBudget,
+  getEffectiveBudgetForMonth,
+  getEffectiveMinimum,
+  getEffectiveMonthlyFee,
+} from '@/utils/budgetUtils';
 import { PROJECT_TYPE_ENTREGABLE } from '@/config/projectTypePresets';
 
 describe('getEffectiveMonthlyFee', () => {
@@ -81,5 +86,52 @@ describe('getEffectiveBudget', () => {
 describe('getEffectiveMinimum', () => {
   it('limita minimum al override cuando hay budgetOverride', () => {
     expect(getEffectiveMinimum({ budgetHours: 40, minimumHours: 30 }, { budgetOverride: 20 })).toBe(20);
+  });
+
+  it('sin deadline devuelve minimumHours o 0', () => {
+    expect(getEffectiveMinimum({ budgetHours: 40, minimumHours: 25 }, undefined)).toBe(25);
+    expect(getEffectiveMinimum({ budgetHours: 40 }, undefined)).toBe(0);
+  });
+
+  it('deadline sin budgetOverride no recorta', () => {
+    expect(getEffectiveMinimum({ budgetHours: 40, minimumHours: 30 }, {})).toBe(30);
+  });
+
+  it('budgetOverride 0 recorta el mínimo a 0', () => {
+    expect(getEffectiveMinimum({ budgetHours: 40, minimumHours: 30 }, { budgetOverride: 0 })).toBe(0);
+  });
+});
+
+describe('getEffectiveBudgetForMonth', () => {
+  it('no entregable usa budgetHours total', () => {
+    const month = parseISO('2026-01-15');
+    expect(getEffectiveBudgetForMonth({ budgetHours: 100, projectType: 'Mensual' }, undefined, month)).toBe(100);
+  });
+
+  it('entregable prorratea horas como el fee por días de fase', () => {
+    const month = parseISO('2026-01-15');
+    const project = {
+      budgetHours: 60,
+      projectType: PROJECT_TYPE_ENTREGABLE,
+      deliverableStartDate: '2026-01-01',
+      deliverableDueDate: '2026-03-31',
+    };
+    expect(getEffectiveBudgetForMonth(project, undefined, month)).toBe(20.67);
+  });
+
+  it('override del deadline tiene prioridad', () => {
+    const month = parseISO('2026-01-15');
+    expect(
+      getEffectiveBudgetForMonth(
+        {
+          budgetHours: 60,
+          projectType: PROJECT_TYPE_ENTREGABLE,
+          deliverableStartDate: '2026-01-01',
+          deliverableDueDate: '2026-03-31',
+        },
+        { budgetOverride: 12 },
+        month
+      )
+    ).toBe(12);
   });
 });

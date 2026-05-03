@@ -39,13 +39,14 @@ Si modificas una interface, revisa estos consumidores:
 | `dateUtils.ts` → `collectSelectableFutureWeekSlots()` | `useWeeklyCloseMutations.ts` (slots de destino), `WeeklyReportDialog.tsx`, `TaskPartialCloseDialog.tsx` |
 | `dateUtils.ts` → `isAllocationInEffectiveMonth()` | `AppContext.tsx`, `usePlannerData.ts`, `useProjectMetrics.ts`, `appMetrics.ts` |
 | `dateUtils.ts` → `parseDateStringLocal()` | `WeeklyReportDialog.tsx` (pestañas y filtro de semana); `MyDayView.tsx` (alcance semanal y «Retrasada»); parseo local de `YYYY-MM-DD` |
-| `budgetUtils.ts` → `getEffectiveBudget()` / `getEffectiveMonthlyFee()` | `DeadlinesPage`, `ClientsAndProjectsPage`, `useAllocationSheet`, `projectMetricsCompute` / `useProjectMetrics`, `FinancialHealthPage` |
+| `budgetUtils.ts` → `getEffectiveBudget()` / `getEffectiveBudgetForMonth()` / `getEffectiveMinimum()` / `getEffectiveMonthlyFee()` | `DeadlinesPage`, `ClientsAndProjectsPage`, `useAllocationSheet`, `projectMetricsCompute` / `useProjectMetrics`, exports rentabilidad; rentabilidad usa `getEffectiveBudgetForMonth` + `getEffectiveMinimum` dentro de `computeProjectMetricsForMonth` |
+| `profitabilityCost.ts` → coste/h estándar y reparto overhead en filas | `FinancialHealthPage`, `financialHealthExportCompute`, `rentabilityDiagnostic` |
 | `deadlineUtils.ts` → `fetchDeadlinesForMonth(monthKey, agencyId)` | `useDeadlines`, `DeadlinesPage`, `AllocationSheet`, `EmployeeDashboard`, `ClientsAndProjectsPage`, `PlanningInconsistenciesCard`, `MyWeekView`, `GlobalPlanningInconsistencies` |
 | `capacityUtils.ts` → `getDailyReduction()` | `getCapacityReductionInRange()`, `getCapacityReductionBreakdown()`, `AppContext.tsx`, `appMetrics.ts` |
 | `capacityUtils.ts` → `getScheduledHoursForDay()` | Todas las funciones de capacidad, `WeekCell.tsx` |
 | `taskPermissions.ts` → `canEditTask()` | `AllocationSheet.tsx`, cualquier UI de edición de tareas |
 | `permissions.ts` → `ROUTE_PERMISSIONS` | `App.tsx` (guards), `PermissionProtectedRoute.tsx`, `Sidebar.tsx` |
-| `commonExpensesAllocation.ts` (firma extendida con `getEmployeePayroll` para `distribution: byPayroll`) | `FinancialHealthPage.tsx` (coste cargado, desglose nómina/overhead por proyecto/empleado, KPI «Gastos comunes del mes», guardado y validación vía diálogo); `CommonExpensesSettingsCard.tsx` (selector de Reparto por línea); tests en `src/utils/__tests__/commonExpensesAllocation.test.ts` cubren 9 combos scope × distribution |
+| `commonExpensesAllocation.ts` (`byPayroll` sin `getEmployeePayroll` usa pesos por horas; éxito con `unallocatedAmount` / `unallocatedEntries`; aviso 0 h si **alguna** línea es `byHours`) | `FinancialHealthPage.tsx` (coste cargado, banner si hay importe no imputado); `financialHealthExportCompute`; `CommonExpensesSettingsCard.tsx`; tests en `src/utils/__tests__/commonExpensesAllocation.test.ts` |
 
 ### 8.4 Dependencias de Hooks
 
@@ -54,7 +55,7 @@ Si modificas una interface, revisa estos consumidores:
 | `usePermissions.ts` | `AllocationSheet.tsx`, `PlannerGrid.tsx`, `AgencySettingsPage.tsx`, cualquier componente con lógica condicional por permisos |
 | `useAllocationSheet.ts` | `AllocationSheet.tsx`, `EmployeeDashboard.tsx` |
 | `usePlannerData.ts` | `PlannerGrid.tsx` (datos compartidos con `MobilePlannerView` en móvil) |
-| `useProjectMetrics.ts` | `ProjectImpactSummary.tsx` y otros consumidores de métricas de proyecto |
+| `useProjectMetrics.ts` (absences/teamEvents → capacidad neta mensual por empleado) | `FinancialHealthPage`, `OperationsRadarPage`, `DataExportHubPage`, exports; otros consumidores de métricas de proyecto |
 | `useTaskTransfers.ts` | `AllocationSheet.tsx`, `TaskTransferComponents.tsx` |
 | `useAllocationActions.ts` | `AllocationSheet.tsx`, `AllocationFormDialog.tsx`, `MyDayView.tsx` (completar / cronómetro); coherencia con `timerReconcile.ts` y `time_entries` al marcar completada |
 | `useTaskTimer.ts` / `useActiveTimerForSidebar.ts` | `TaskTimer.tsx`, `Sidebar.tsx`, `TiemposPage.tsx`, `AllocationSheet.tsx`; ver `docs/07` (drift, BroadcastChannel, Real vs entradas) |

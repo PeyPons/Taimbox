@@ -27,9 +27,15 @@ export interface AllocateCommonExpensesParams {
   getEmployeeHours: (employeeId: string) => number;
   /**
    * Nómina mensual del empleado (€/mes). Usado por líneas con `distribution: 'byPayroll'`.
-   * Si no se proporciona, `byPayroll` se comporta como `byHours` (compatibilidad hacia atrás).
+   * Si no se proporciona, `byPayroll` usa los mismos pesos que `byHours` (horas del mes).
    */
   getEmployeePayroll?: (employeeId: string) => number;
+}
+
+export interface UnallocatedCommonExpenseEntry {
+  entryId: string;
+  amount: number;
+  reason: 'no_employees_in_dept' | 'all_zero_hours';
 }
 
 export interface AllocateCommonExpensesSuccess {
@@ -37,6 +43,9 @@ export interface AllocateCommonExpensesSuccess {
   overheadByEmployee: Map<string, number>;
   totalOverheadApplied: number;
   totalConfiguredAmount: number;
+  /** Importe configurado que no se pudo imputar a empleados (redondeo + huecos de reparto). */
+  unallocatedAmount: number;
+  unallocatedEntries: UnallocatedCommonExpenseEntry[];
   /** Con gasto configurado y al menos un empleado con horas > 0, empleados en agencia con 0 h. */
   employeeIdsZeroHoursWithPeersWorking: string[];
 }
@@ -204,7 +213,7 @@ export function allocateCommonExpenses(
   params: AllocateCommonExpensesParams
 ): AllocateCommonExpensesResult {
   const { entries, employees, departments, getEmployeeHours } = params;
-  const getPayrollFn = params.getEmployeePayroll ?? (() => 0);
+  const getPayrollFn = params.getEmployeePayroll ?? getEmployeeHours;
 
   const overheadByEmployee = new Map<string, number>();
   for (const e of employees) {
@@ -212,7 +221,10 @@ export function allocateCommonExpenses(
   }
 
   let totalConfiguredAmount = 0;
-  let allEntriesAreByHours = true;
+  let someEntryByHours = false;
+  const unallocatedEntries: UnallocatedCommonExpenseEntry[] = [];
+
+  const isByHoursMode = (mode: DistributionMode) => mode === 'byHours';
 
   for (const entry of entries) {
     if (entry.amount < 0) {
@@ -222,17 +234,29 @@ export function allocateCommonExpenses(
     if (entry.amount === 0) continue;
 
     const mode: DistributionMode = entry.distribution ?? 'byHours';
-    if (mode !== 'byHours') allEntriesAreByHours = false;
+    if (mode === 'byHours') someEntryByHours = true;
 
     const { allocation } = entry;
 
     if (allocation.type === 'global') {
+      if (isByHoursMode(mode) && !employees.some(e => getEmployeeHours(e.id) > 0)) {
+        unallocatedEntries.push({ entryId: entry.id, amount: entry.amount, reason: 'all_zero_hours' });
+        continue;
+      }
       distributeAmount(overheadByEmployee, entry.amount, employees, mode, getEmployeeHours, getPayrollFn);
       continue;
     }
 
     if (allocation.type === 'department') {
       const inDept = employeesInDepartment(allocation.departmentId, departments, employees);
+      if (inDept.length === 0) {
+        unallocatedEntries.push({ entryId: entry.id, amount: entry.amount, reason: 'no_employees_in_dept' });
+        continue;
+      }
+      if (isByHoursMode(mode) && !inDept.some(e => getEmployeeHours(e.id) > 0)) {
+        unallocatedEntries.push({ entryId: entry.id, amount: entry.amount, reason: 'all_zero_hours' });
+        continue;
+      }
       distributeAmount(overheadByEmployee, entry.amount, inDept, mode, getEmployeeHours, getPayrollFn);
       continue;
     }
@@ -249,7 +273,16 @@ export function allocateCommonExpenses(
       }
       const slices = splitAmountsByPercent(entry.amount, allocation.parts);
       for (const { departmentId, amount: slice } of slices) {
+        if (slice <= 0) continue;
         const inDept = employeesInDepartment(departmentId, departments, employees);
+        if (inDept.length === 0) {
+          unallocatedEntries.push({ entryId: entry.id, amount: slice, reason: 'no_employees_in_dept' });
+          continue;
+        }
+        if (isByHoursMode(mode) && !inDept.some(e => getEmployeeHours(e.id) > 0)) {
+          unallocatedEntries.push({ entryId: entry.id, amount: slice, reason: 'all_zero_hours' });
+          continue;
+        }
         distributeAmount(overheadByEmployee, slice, inDept, mode, getEmployeeHours, getPayrollFn);
       }
     }
@@ -261,12 +294,11 @@ export function allocateCommonExpenses(
   }
   totalOverheadApplied = Math.round(totalOverheadApplied * 100) / 100;
 
-  // Solo emitimos el aviso de "empleados con 0h recibiendo 0€" si todas las líneas usan `byHours`.
-  // Con `byHeadcount` o `byPayroll` ya se reparte sobre ellos, así que no hay hueco que avisar.
+  // Aviso de 0 h si al menos una línea usa `byHours` (en reparto mixto siguen existiendo empleados a 0 h en esa parte).
   const hasPositiveHours = employees.some(e => getEmployeeHours(e.id) > 0);
   const hasConfiguredExpenses = entries.some(e => e.amount > 0);
   const employeeIdsZeroHoursWithPeersWorking: string[] = [];
-  if (hasConfiguredExpenses && hasPositiveHours && allEntriesAreByHours) {
+  if (hasConfiguredExpenses && hasPositiveHours && someEntryByHours) {
     for (const e of employees) {
       if (getEmployeeHours(e.id) <= 0) {
         employeeIdsZeroHoursWithPeersWorking.push(e.id);
@@ -274,11 +306,16 @@ export function allocateCommonExpenses(
     }
   }
 
+  const unallocatedAmount =
+    Math.round((totalConfiguredAmount - totalOverheadApplied) * 100) / 100;
+
   return {
     ok: true,
     overheadByEmployee,
     totalOverheadApplied,
     totalConfiguredAmount,
+    unallocatedAmount,
+    unallocatedEntries,
     employeeIdsZeroHoursWithPeersWorking,
   };
 }

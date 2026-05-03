@@ -34,7 +34,7 @@ describe('validateSplitPercentParts', () => {
 });
 
 describe('allocateCommonExpenses', () => {
-  it('equipo sin horas: totalOverheadApplied 0 y no lanza', () => {
+  it('equipo sin horas: no aplica overhead y deja importe como no asignado', () => {
     const entries: CommonExpenseEntry[] = [
       {
         id: '1',
@@ -58,6 +58,8 @@ describe('allocateCommonExpenses', () => {
       expect(r.totalOverheadApplied).toBe(0);
       expect(r.overheadByEmployee.get('a')).toBe(0);
       expect(r.overheadByEmployee.get('b')).toBe(0);
+      expect(r.unallocatedAmount).toBe(5000);
+      expect(r.unallocatedEntries.some(e => e.reason === 'all_zero_hours')).toBe(true);
     }
   });
 
@@ -412,7 +414,7 @@ describe('allocateCommonExpenses · distribution modes', () => {
     }
   });
 
-  it('no levanta aviso de 0 h si alguna línea usa byHeadcount/byPayroll', () => {
+  it('mezcla byHours + byHeadcount: sigue avisando empleados a 0 h si hay línea byHours', () => {
     const entries: CommonExpenseEntry[] = [
       { id: '1', label: 'H', amount: 100, allocation: { type: 'global' }, distribution: 'byHours' },
       { id: '2', label: 'C', amount: 60, allocation: { type: 'global' }, distribution: 'byHeadcount' },
@@ -426,7 +428,50 @@ describe('allocateCommonExpenses · distribution modes', () => {
     });
     expect(r.ok).toBe(true);
     if (r.ok) {
-      expect(r.employeeIdsZeroHoursWithPeersWorking).toEqual([]);
+      expect(r.employeeIdsZeroHoursWithPeersWorking).toContain('c');
+    }
+  });
+
+  it('byPayroll sin getEmployeePayroll usa pesos por horas', () => {
+    const entries: CommonExpenseEntry[] = [
+      { id: '1', label: 'P', amount: 100, allocation: { type: 'global' }, distribution: 'byPayroll' },
+    ];
+    const r = allocateCommonExpenses({
+      entries,
+      employees,
+      departments: [deptDev, deptMkt],
+      getEmployeeHours: id => hours[id] ?? 0,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.overheadByEmployee.get('a')! + r.overheadByEmployee.get('b')! + r.overheadByEmployee.get('c')!).toBeCloseTo(
+        100,
+        0
+      );
+      expect(r.overheadByEmployee.get('a')!).toBeGreaterThan(r.overheadByEmployee.get('b')!);
+    }
+  });
+
+  it('departamento vacío: importe no asignado', () => {
+    const entries: CommonExpenseEntry[] = [
+      {
+        id: '1',
+        label: 'X',
+        amount: 400,
+        allocation: { type: 'department', departmentId: 'ghost' },
+      },
+    ];
+    const r = allocateCommonExpenses({
+      entries,
+      employees: [{ id: 'a', departmentId: 'dev' }],
+      departments: [deptDev],
+      getEmployeeHours: () => 10,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.totalOverheadApplied).toBe(0);
+      expect(r.unallocatedAmount).toBe(400);
+      expect(r.unallocatedEntries[0]?.reason).toBe('no_employees_in_dept');
     }
   });
 

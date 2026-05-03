@@ -8,43 +8,7 @@ import {
 } from '@/utils/commonExpensesAllocation';
 import { computeProjectMetricsForMonth, type ProjectMetricsDeadline } from '@/utils/projectMetricsCompute';
 import type { BuildRentabilityDiagnosticParams, RentabilityEmployeeProfitabilityRow } from '@/utils/reportExports/rentabilityDiagnostic';
-
-const DEFAULT_MONTHLY_HOURS = 110;
-
-function getStandardMonthlyCapacity(emp: Employee | undefined): number {
-  if (!emp) return DEFAULT_MONTHLY_HOURS;
-  const monthly = (emp.defaultWeeklyCapacity || 0) * 4.33;
-  return monthly > 0 ? monthly : DEFAULT_MONTHLY_HOURS;
-}
-
-function getStandardHourlyCost(emp: Employee | undefined): number {
-  if (!emp?.hourlyRate || emp.hourlyRate <= 0) return 0;
-  return emp.hourlyRate / getStandardMonthlyCapacity(emp);
-}
-
-function getRowCost(
-  emp: Employee | undefined,
-  hoursDisplay: number,
-  totalHEmployeeInMode: number,
-  costMode: 'standard' | 'dynamic'
-): number {
-  const monthly = emp?.hourlyRate ?? 0;
-  if (costMode === 'standard') {
-    return hoursDisplay * getStandardHourlyCost(emp);
-  }
-  return totalHEmployeeInMode > 0 ? monthly * (hoursDisplay / totalHEmployeeInMode) : 0;
-}
-
-function overheadShareForRow(
-  employeeId: string,
-  hoursDisplay: number,
-  totalHoursGlobalForEmployee: number,
-  overheadByEmployee: ReadonlyMap<string, number>
-): number {
-  if (totalHoursGlobalForEmployee <= 0) return 0;
-  const oh = overheadByEmployee.get(employeeId) ?? 0;
-  return oh * (hoursDisplay / totalHoursGlobalForEmployee);
-}
+import { getRowCost, getStandardHourlyCost, getStandardMonthlyCapacity, overheadShareForRow } from '@/utils/profitabilityCost';
 
 export interface FinancialHealthExportComputeInput {
   currentMonth: Date;
@@ -112,7 +76,6 @@ export function computeBuildRentabilityDiagnosticParams(
     month: currentMonth,
     hoursTrackingPreference: agency?.settings?.hoursTrackingPreference ?? null,
     deadlines: deadlinesForMonth,
-    pacingReferenceDate: isSameMonth(currentMonth, new Date()) ? undefined : endOfMonth(currentMonth),
   });
 
   const projectMetricsForView = (() => {
@@ -165,7 +128,7 @@ export function computeBuildRentabilityDiagnosticParams(
 
   const employeePayrollById = new Map<string, number>();
   (employees ?? []).forEach((e) => {
-    employeePayrollById.set(e.id, e.hourlyRate ?? 0);
+    employeePayrollById.set(e.id, e.monthlyCost ?? e.hourlyRate ?? 0);
   });
 
   const commonExpensesAlloc = allocateCommonExpenses({
@@ -248,14 +211,18 @@ export function computeBuildRentabilityDiagnosticParams(
 
   const totalMonthlyCostView = employeeMetricsForView.reduce((sum, em) => {
     const emp = employees.find((e) => e.id === em.employeeId);
-    return sum + (emp?.hourlyRate ?? 0);
+    return sum + (emp?.monthlyCost ?? emp?.hourlyRate ?? 0);
   }, 0);
 
-  const totalRealHoursForCost = totalsForView.totalComputed || totalsForView.totalActual || 0;
-  const avgHourlyCost = totalRealHoursForCost > 0 ? totalMonthlyCostView / totalRealHoursForCost : 0;
+  const totalHoursForCostDenominator =
+    hoursMode === 'computed' ? totalsForView.totalComputed : totalsForView.totalActual;
+  const avgHourlyCost =
+    totalHoursForCostDenominator > 0 ? totalMonthlyCostView / totalHoursForCostDenominator : 0;
   const usesLoadedCostForTarget = commonExpensesAlloc.ok && commonExpensesAlloc.totalConfiguredAmount > 0;
   const avgLoadedHourlyCost =
-    totalRealHoursForCost > 0 ? (totalMonthlyCostView + totalOverheadInView) / totalRealHoursForCost : 0;
+    totalHoursForCostDenominator > 0
+      ? (totalMonthlyCostView + totalOverheadInView) / totalHoursForCostDenominator
+      : 0;
   const avgForTarget =
     usesLoadedCostForTarget && avgLoadedHourlyCost > 0 ? avgLoadedHourlyCost : avgHourlyCost;
   const defaultEhrTarget = avgForTarget > 0 ? Math.max(avgForTarget, 75) : 75;
@@ -315,7 +282,7 @@ export function computeBuildRentabilityDiagnosticParams(
   );
 
   const netMargin = totalRevenue - totalInternalCost;
-  const marginPercent = totalRevenue > 0 ? (netMargin / totalRevenue) * 100 : 0;
+  const marginPercent: number | null = totalRevenue > 0 ? (netMargin / totalRevenue) * 100 : null;
 
   const projectIdsWithActivity = new Set(projectMetricsBillableWithActivity.map((p) => p.projectId));
 
@@ -372,7 +339,7 @@ export function computeBuildRentabilityDiagnosticParams(
     });
 
     const totalHoursDisplay = byProject.reduce((s, b) => s + b.hoursDisplay, 0);
-    const payrollMonthly = emp?.hourlyRate ?? 0;
+    const payrollMonthly = emp?.monthlyCost ?? emp?.hourlyRate ?? 0;
     const overheadTotalEmployee = overheadByEmployee.get(em.employeeId) ?? 0;
     const UNATTRIBUTED_HOURS_EPS = 0.02;
     const hoursNotAttributedRaw = Math.max(0, totalHEmployeeInMode - totalHoursDisplay);

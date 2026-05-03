@@ -89,14 +89,14 @@ Permite renombrar proyectos automáticamente según patrones configurables:
 Representa a los miembros del equipo.
 - `role`: Nombre del rol que determina los permisos.
 - `department`: ID (o nombre legacy) del departamento principal para filtrado en vistas por departamento.
-- `hourlyRate`: **Coste mensual (nómina)** en €. En la UI (Team, EmployeeDialog) se edita como "Coste mensual (nómina) €". Se persiste en BD en `hourly_rate`. En Rentabilidad (`FinancialHealthPage`) hay dos modelos de coste: **Operativo** (coste estándar: nómina / capacidad teórica mensual); **Dinámico** (reparte la nómina entre proyectos en proporción a las horas del empleado en el mes: coste en proyecto = coste mensual × (horas en proyecto / total horas del empleado)). Si la agencia usa un coste medio global, se aplica a ambos modelos.
+- `monthlyCost`: **Coste mensual (nómina)** en € (tipo TS; columna BD `hourly_rate`). En la UI se edita como "Coste mensual (nómina) €". `hourlyRate` en TS es alias **deprecated** rellenado en carga por compatibilidad. En Rentabilidad hay dos modelos de coste: **Operativo** (nómina / capacidad teórica mensual); **Dinámico** (reparte la nómina entre proyectos en proporción a las horas del empleado en el mes). Coste cargado: gastos comunes vía `commonExpensesAllocation`.
 - `defaultWeeklyCapacity`: Horas base de trabajo por semana; **se calcula automáticamente** a partir del horario por día (`workSchedule`). No existe campo editable "Capacidad (h/sem)" en la configuración de empleados: la capacidad se deriva de las horas por día (L–D). Utilidad: `getWeeklyHoursFromSchedule()` en `dateUtils.ts`.
 - `workSchedule`: Objeto que define las horas por día (`monday`: 8, `friday`: 6, etc.).
 - `user_id`: Enlace con `auth.users` de Supabase para autenticación.
 
 ### 2.3. Proyecto (`Project`)
 Contenedores de trabajo facturable o interno.
-- `budgetHours`: Horas máximas contratadas por el cliente al mes.
+- `budgetHours`: Horas presupuesto del proyecto (total contrato; en **Entregables** la rentabilidad por mes puede usar horas prorrateadas por fase salvo `budgetOverride` en el deadline del mes).
 - `minimumHours`: Suelo de horas que el equipo debe cumplir.
 - `monthlyFee`: Fee en euros usado por defecto en rentabilidad mensual (retainers: fee del mes; entregables: referencia mensual y, si no hay `deliverable_contract_fee`, **total del contrato** al prorratear ingreso por mes).
 - `projectType`: Opcional. Valores habituales en preset: `PPC`, `Entregable`, `Mensual`. Si es **`Entregable`**, opcionalmente `deliverable_contract_fee`, `deliverable_start_date` y `deliverable_due_date` definen el total y la ventana de la fase; el ingreso reconocido por mes en rentabilidad se calcula con solape de días de calendario (`getEffectiveMonthlyFee(project, mes)` en `budgetUtils.ts`).

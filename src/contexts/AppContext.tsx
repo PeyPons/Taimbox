@@ -635,7 +635,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       default_weekly_capacity: employee.defaultWeeklyCapacity,
       work_schedule: employee.workSchedule,
       is_active: employee.isActive,
-      hourly_rate: employee.hourlyRate || 0,
+      hourly_rate: employee.monthlyCost ?? employee.hourlyRate ?? 0,
       crm_user_id: employee.crmUserId
     }).select().single();
 
@@ -659,6 +659,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         email: data.email,
         user_id: data.user_id,
         departmentId: data.department_id ?? undefined,
+        monthlyCost: data.hourly_rate || 0,
         hourlyRate: data.hourly_rate || 0,
         crmUserId: data.crm_user_id,
         welcomeTourCompleted: data.welcome_tour_completed === true,
@@ -687,7 +688,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       default_weekly_capacity: employee.defaultWeeklyCapacity,
       work_schedule: employee.workSchedule,
       is_active: employee.isActive,
-      hourly_rate: employee.hourlyRate || 0,
+      hourly_rate: employee.monthlyCost ?? employee.hourlyRate ?? 0,
       crm_user_id: employee.crmUserId,
       welcome_tour_completed: employee.welcomeTourCompleted || false,
       deadlines_tour_completed: employee.deadlinesTourCompleted || false,

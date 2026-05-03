@@ -120,7 +120,7 @@ export interface CommonExpenseEntry {
    * Cómo se reparte el importe dentro del scope resuelto por `allocation`.
    *  - `byHours` (default, compat): proporcional a las horas del mes; excluye empleados con 0 h.
    *  - `byHeadcount`: a partes iguales entre todos los empleados del scope (incluye quien no usa Taimbox).
-   *  - `byPayroll`: proporcional a la nómina mensual (`Employee.hourlyRate`) dentro del scope.
+   *  - `byPayroll`: proporcional a la nómina mensual (`Employee.monthlyCost`) dentro del scope.
    * Omitido = `byHours` para no romper datos existentes.
    */
   distribution?: 'byHours' | 'byHeadcount' | 'byPayroll';
@@ -240,7 +240,11 @@ export interface Employee {
   workSchedule: WorkSchedule;
   department?: string;         // Legacy field, use departmentId
   departmentId?: string;       // FK to department_config
-  /** Coste mensual (n?mina) en ?. Se reparte a proyectos en proporci?n horas en proyecto / total horas del empleado. Persistido en API como hourly_rate. */
+  /** Coste mensual (nómina) en €. Se reparte a proyectos en proporción horas en proyecto / total horas del empleado. Persistido en API como `hourly_rate`. */
+  monthlyCost?: number;
+  /**
+   * @deprecated Usar `monthlyCost`. Alias histórico; en carga suele igualarse a `monthlyCost` por compatibilidad.
+   */
   hourlyRate?: number;
   isActive: boolean;
   user_id?: string;

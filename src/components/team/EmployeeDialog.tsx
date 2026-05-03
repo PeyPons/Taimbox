@@ -119,7 +119,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
           password: '',
           role: employeeToEdit.role || availableRoles[0] || '',
           department: departmentValue,
-          monthlyCost: employeeToEdit.hourlyRate || 0,
+          monthlyCost: employeeToEdit.monthlyCost ?? employeeToEdit.hourlyRate ?? 0,
           crmUserId: employeeToEdit.crmUserId || '',
           workSchedule: employeeToEdit.workSchedule || defaultSchedule,
         });
@@ -283,6 +283,7 @@ export function EmployeeDialog({ open, onOpenChange, employeeToEdit }: EmployeeD
         role: data.role,
         department: data.department,
         defaultWeeklyCapacity: getWeeklyHoursFromSchedule(data.workSchedule as WorkSchedule),
+        monthlyCost: data.monthlyCost,
         hourlyRate: data.monthlyCost,
         crmUserId: data.crmUserId !== '' ? Number(data.crmUserId) : undefined,
         workSchedule: data.workSchedule as WorkSchedule,

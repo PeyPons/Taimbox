@@ -321,7 +321,6 @@ export default function DataExportHubPage() {
           month: monthDate,
           hoursTrackingPreference: currentAgency?.settings?.hoursTrackingPreference ?? null,
           deadlines: deadlinesForMetrics,
-          pacingReferenceDate: isSameMonth(monthDate, new Date()) ? undefined : endOfMonth(monthDate),
         });
         radarPayload = buildOperationsRadarExportPayload({
           projectMetrics,
@@ -885,7 +884,6 @@ export default function DataExportHubPage() {
                   month: monthDate,
                   hoursTrackingPreference: currentAgency?.settings?.hoursTrackingPreference ?? null,
                   deadlines: deadlinesForMetrics,
-                  pacingReferenceDate: isSameMonth(monthDate, new Date()) ? new Date() : endOfMonth(monthDate),
                 });
                 return buildOperationsRadarExportPayload({
                   projectMetrics,

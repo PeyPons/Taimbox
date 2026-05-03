@@ -4,12 +4,17 @@ import {
   isAfter,
   startOfMonth,
   endOfMonth,
+  startOfDay,
   format,
   eachDayOfInterval,
   isWeekend,
 } from 'date-fns';
 import type { Allocation, Project, Employee, Client } from '@/types';
-import { getEffectiveBudget, getEffectiveMonthlyFee } from '@/utils/budgetUtils';
+import {
+  getEffectiveBudgetForMonth,
+  getEffectiveMinimum,
+  getEffectiveMonthlyFee,
+} from '@/utils/budgetUtils';
 import { getEffectiveAllocationHours } from '@/utils/hoursTracking';
 
 export interface ProjectMetrics {
@@ -63,10 +68,13 @@ export interface ComputeProjectMetricsParams {
   employeeId?: string;
   clientId?: string;
   /**
-   * Día de referencia para "isPacing" (progreso esperado del mes). Por defecto "hoy".
-   * Para exportes de meses cerrados puede pasarse fin de mes.
+   * Día de referencia para "isPacing" (progreso esperado del mes).
+   * Por defecto: hoy si `month` es el mes calendario actual; `endOfMonth(month)` si el mes ya terminó;
+   * `startOfMonth(month)` si el mes es futuro (progreso esperado 0 %). Override solo para casos especiales (p. ej. informes).
    */
   pacingReferenceDate?: Date;
+  /** Capacidad neta del mes (p. ej. calendario − ausencias − eventos). Si no se pasa, se usa capacidad teórica 4.33 × semanal. */
+  getEmployeeMonthlyCapacity?: (employee: Employee, month: Date) => number;
 }
 
 export interface ComputeProjectMetricsResult {
@@ -144,6 +152,7 @@ export function computeProjectMetricsForMonth(
     employeeId,
     clientId,
     pacingReferenceDate,
+    getEmployeeMonthlyCapacity,
   } = params;
 
   const preference =
@@ -151,11 +160,25 @@ export function computeProjectMetricsForMonth(
       ? hoursTrackingPreference
       : undefined;
 
-  const pacingRef = pacingReferenceDate ?? new Date();
+  const today = new Date();
   const monthEnd = endOfMonth(month);
   const monthKey = format(month, 'yyyy-MM');
 
   const monthStart = startOfMonth(month);
+  const expectedProgressMonth = (() => {
+    const daysInMonth = monthEnd.getDate();
+    if (pacingReferenceDate) {
+      return (pacingReferenceDate.getDate() / daysInMonth) * 100;
+    }
+    const dayT = startOfDay(today);
+    if (isBefore(dayT, monthStart)) {
+      return 0;
+    }
+    if (isAfter(dayT, monthEnd)) {
+      return 100;
+    }
+    return (dayT.getDate() / daysInMonth) * 100;
+  })();
   const monthAllocations = allocations.filter((a) => {
     const weekStart = parseISO(a.weekStartDate);
     const weekEnd = new Date(weekStart);
@@ -196,8 +219,8 @@ export function computeProjectMetricsForMonth(
     }
 
     const deadlineForMonth = deadlines?.find((d) => d.projectId === project.id && d.month === monthKey);
-    const budget = getEffectiveBudget(project, deadlineForMonth);
-    const minimum = project.minimumHours || 0;
+    const budget = getEffectiveBudgetForMonth(project, deadlineForMonth, month);
+    const minimum = getEffectiveMinimum(project, deadlineForMonth);
     const monthlyFee = getEffectiveMonthlyFee(project, month);
     const hourlyRate = budget > 0 ? monthlyFee / budget : 0;
     const hoursValue = totalComputed * hourlyRate;
@@ -205,10 +228,7 @@ export function computeProjectMetricsForMonth(
     const progressOperational = budget > 0 ? (totalComputed / budget) * 100 : 0;
     const progressBilling = monthlyFee > 0 ? (hoursValue / monthlyFee) * 100 : 0;
 
-    const dayOfMonth = pacingRef.getDate();
-    const daysInMonth = endOfMonth(month).getDate();
-    const expectedProgress = (dayOfMonth / daysInMonth) * 100;
-    const isPacing = progressOperational >= expectedProgress * 0.8;
+    const isPacing = progressOperational >= expectedProgressMonth * 0.8;
 
     projectMetricsMap.set(project.id, {
       projectId: project.id,
@@ -269,7 +289,9 @@ export function computeProjectMetricsForMonth(
       });
     }
 
-    const capacity = (employee.defaultWeeklyCapacity || 40) * 4.33;
+    const capacity =
+      getEmployeeMonthlyCapacity?.(employee, month) ??
+      (employee.defaultWeeklyCapacity || 40) * 4.33;
     const loadPercentage = capacity > 0 ? (totalComputed / capacity) * 100 : 0;
 
     let status: 'empty' | 'healthy' | 'warning' | 'overload' = 'empty';

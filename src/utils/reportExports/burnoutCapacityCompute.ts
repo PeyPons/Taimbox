@@ -29,6 +29,8 @@ export interface EmployeeConfigSnapshot {
   defaultWeeklyCapacity: number;
   workSchedule: Employee['workSchedule'];
   /** Coste mensual en € (sensible); incluido para informes financieros / burnout con contexto económico. */
+  monthlyCost?: number;
+  /** @deprecated Espejo histórico; igual que `monthlyCost`. */
   hourlyRate?: number;
 }
 
@@ -143,7 +145,8 @@ export function buildEmployeesConfigSnapshot(
       isActive: e.isActive,
       defaultWeeklyCapacity: e.defaultWeeklyCapacity,
       workSchedule: e.workSchedule,
-      hourlyRate: e.hourlyRate,
+      monthlyCost: e.monthlyCost ?? e.hourlyRate,
+      hourlyRate: e.monthlyCost ?? e.hourlyRate,
     })),
   };
 }
@@ -192,6 +195,8 @@ export function computeBurnoutCapacityForMonth(params: {
   const scopedEmployees = employees.filter((e) => employeeInScope(e, allowedEmployeeIds));
   const scopeIds = scopedEmployees.map((e) => e.id);
 
+  // D5: Informe mensual de burnout — forzamos fin de mes como referencia de pacing para que
+  // el snapshot sea estable (progreso esperado 100 % del mes) frente al default dinámico de compute.
   const { getEmployeeMetrics } = computeProjectMetricsForMonth({
     allocations,
     projects,

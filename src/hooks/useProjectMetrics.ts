@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
+import { endOfMonth, startOfMonth } from 'date-fns';
 import { useApp } from '../contexts/AppContext';
 import { useAgency } from '../contexts/AgencyContext';
 import {
@@ -8,6 +9,11 @@ import {
   type ProjectMetricsDeadline,
   type ComputeProjectMetricsParams,
 } from '@/utils/projectMetricsCompute';
+import type { Employee } from '@/types';
+import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
+import { getMonthlyCapacity } from '@/utils/dateUtils';
+import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
+import { round2 } from '@/utils/numbers';
 
 /**
  * Central metrics calculation hook.
@@ -22,7 +28,7 @@ export interface UseProjectMetricsOptions {
   projectId?: string;
   employeeId?: string;
   clientId?: string;
-  /** Si se pasa, se usa getEffectiveBudget(project, deadline) para el objetivo del mes (coherente con Deadlines/Coherencia) */
+  /** Si se pasa, se usa el presupuesto efectivo del mes (deadline / Entregable) coherente con Deadlines. */
   deadlines?: ProjectMetricsDeadline[];
 }
 
@@ -43,10 +49,32 @@ export interface UseProjectMetricsResult {
 }
 
 export function useProjectMetrics(options: UseProjectMetricsOptions): UseProjectMetricsResult {
-  const { allocations, projects, clients, employees, isLoading } = useApp();
+  const { allocations, projects, clients, employees, absences, teamEvents, isLoading } = useApp();
   const { currentAgency } = useAgency();
   const preference = currentAgency?.settings?.hoursTrackingPreference;
   const { month, projectId, employeeId, clientId, deadlines } = options;
+
+  const getEmployeeMonthlyCapacity = useCallback(
+    (employee: Employee, viewMonth: Date) => {
+      const year = viewMonth.getFullYear();
+      const monthIndex = viewMonth.getMonth();
+      const monthStart = startOfMonth(viewMonth);
+      const monthEnd = endOfMonth(viewMonth);
+      const base = getMonthlyCapacity(year, monthIndex, employee.workSchedule);
+      const empAbsences = absences.filter(a => a.employeeId === employee.id);
+      const absenceH = getAbsenceHoursInRange(monthStart, monthEnd, empAbsences, employee.workSchedule);
+      const eventH = getTeamEventHoursInRange(
+        monthStart,
+        monthEnd,
+        employee.id,
+        teamEvents,
+        employee.workSchedule,
+        empAbsences
+      );
+      return round2(Math.max(0, base - absenceH - eventH));
+    },
+    [absences, teamEvents]
+  );
 
   const result = useMemo(() => {
     const params: ComputeProjectMetricsParams = {
@@ -60,9 +88,22 @@ export function useProjectMetrics(options: UseProjectMetricsOptions): UseProject
       projectId,
       employeeId,
       clientId,
+      getEmployeeMonthlyCapacity,
     };
     return computeProjectMetricsForMonth(params);
-  }, [allocations, projects, clients, employees, month, projectId, employeeId, clientId, deadlines, preference]);
+  }, [
+    allocations,
+    projects,
+    clients,
+    employees,
+    month,
+    projectId,
+    employeeId,
+    clientId,
+    deadlines,
+    preference,
+    getEmployeeMonthlyCapacity,
+  ]);
 
   return {
     ...result,

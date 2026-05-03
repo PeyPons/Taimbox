@@ -206,6 +206,7 @@ export async function fetchInitialAppData({
         user_id: e.user_id,
         department: e.department,
         departmentId: e.department_id ?? undefined,
+        monthlyCost: e.hourly_rate || 0,
         hourlyRate: e.hourly_rate || 0,
         crmUserId: e.crm_user_id,
         welcomeTourCompleted: e.welcome_tour_completed === true,

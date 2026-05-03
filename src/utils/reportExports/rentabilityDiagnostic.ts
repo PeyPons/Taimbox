@@ -1,20 +1,7 @@
 import type { Employee } from '@/types';
 import type { ProjectMetrics } from '@/utils/projectMetricsCompute';
 import type { AllocateCommonExpensesResult } from '@/utils/commonExpensesAllocation';
-
-const DEFAULT_MONTHLY_HOURS = 110;
-
-function getStandardMonthlyCapacity(emp: Employee | undefined): number {
-  if (!emp) return DEFAULT_MONTHLY_HOURS;
-  const monthly = (emp.defaultWeeklyCapacity || 0) * 4.33;
-  return monthly > 0 ? monthly : DEFAULT_MONTHLY_HOURS;
-}
-
-function getStandardHourlyCost(emp: Employee | undefined): number {
-  if (!emp?.hourlyRate || emp.hourlyRate <= 0) return 0;
-  const denom = getStandardMonthlyCapacity(emp);
-  return emp.hourlyRate / denom;
-}
+import { getStandardHourlyCost, getStandardMonthlyCapacity } from '@/utils/profitabilityCost';
 
 export interface RentabilityEmployeeProfitabilityRow {
   employeeId: string;
@@ -69,7 +56,7 @@ export interface BuildRentabilityDiagnosticParams {
   totalHoursForView: number;
   effectiveHourlyRate: number;
   netMargin: number;
-  marginPercent: number;
+  marginPercent: number | null;
   totalInternalCost: number;
   totalOverheadInView: number;
   ehrTarget: number;
@@ -117,6 +104,8 @@ export function buildRentabilityDiagnosticPayload(params: BuildRentabilityDiagno
         ok: true as const,
         totalOverheadApplied: commonExpensesAlloc.totalOverheadApplied,
         totalConfiguredAmount: commonExpensesAlloc.totalConfiguredAmount,
+        unallocatedAmount: commonExpensesAlloc.unallocatedAmount,
+        unallocatedEntries: commonExpensesAlloc.unallocatedEntries,
         employeeIdsZeroHoursWithPeersWorking: commonExpensesAlloc.employeeIdsZeroHoursWithPeersWorking,
         overheadByEmployee: Object.fromEntries(commonExpensesAlloc.overheadByEmployee),
       }
@@ -144,13 +133,13 @@ export function buildRentabilityDiagnosticPayload(params: BuildRentabilityDiagno
       agencyName,
       containsPersonalData: true as const,
       noteEs:
-        'La nómina (hourlyRate) y la capacidad teórica (defaultWeeklyCapacity) son las de la ficha actual de cada empleado; en meses pasados pueden no coincidir con la realidad histórica.',
+        'La nómina (monthlyCost, columna BD hourly_rate) y la capacidad teórica (defaultWeeklyCapacity) son las de la ficha actual de cada empleado; en meses pasados pueden no coincidir con la realidad histórica.',
     },
     formulasBrief: {
       standardMonthlyCapacity: 'defaultWeeklyCapacity * 4.33 si > 0; si no 110 h',
-      standardHourlyCost: 'hourlyRate / standardMonthlyCapacity',
+      standardHourlyCost: 'monthlyCost / standardMonthlyCapacity',
       payrollStandardIdle:
-        'max(0, redondear(hourlyRate - standardHourlyCost * totalHoursGlobal, 2)) si effectiveCostMode === standard',
+        'max(0, redondear(monthlyCost - standardHourlyCost * totalHoursGlobal, 2)) si effectiveCostMode === standard',
       attributedRevenueRow:
         '(hoursDisplay / totalProjectHoursInMode) * monthlyFee en proyectos facturables',
     },
@@ -159,7 +148,7 @@ export function buildRentabilityDiagnosticPayload(params: BuildRentabilityDiagno
       totalHoursForView,
       effectiveHourlyRate,
       netMargin,
-      marginPercent: Math.round(marginPercent * 100) / 100,
+      marginPercent: marginPercent != null ? Math.round(marginPercent * 100) / 100 : null,
       totalInternalCost,
       totalOverheadInView,
       ehrTarget,
@@ -189,7 +178,7 @@ export function buildRentabilityDiagnosticPayload(params: BuildRentabilityDiagno
         displayName: ep.employeeName,
         master: emp
           ? {
-              hourlyRateMonthly: emp.hourlyRate ?? 0,
+              hourlyRateMonthly: emp.monthlyCost ?? emp.hourlyRate ?? 0,
               defaultWeeklyCapacity: emp.defaultWeeklyCapacity,
               standardMonthlyCapacity: getStandardMonthlyCapacity(emp),
               standardHourlyCost: getStandardHourlyCost(emp),
