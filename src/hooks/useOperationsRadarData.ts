@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import type { Allocation, Employee, Project } from '@/types';
 import { employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { deliverablePhaseOverlapsMonth, getDeliverablePhase } from '@/utils/deliverableLifecycle';
+import { PROJECT_TYPE_ENTREGABLE } from '@/config/projectTypePresets';
 
 export type RadarRiskLevel = 'critical' | 'high' | 'medium';
 export type RadarRiskType = 'overBudget' | 'lowProgress' | 'lowPace';
@@ -134,15 +136,32 @@ export function useOperationsRadarData(params: {
       selectedDepartmentId && departments.length
         ? departments.find(d => d.id === selectedDepartmentId || d.name === selectedDepartmentId)
         : null;
-    const byDept = projectIdsForDepartment && selectedDept
+    /** Incluye entregables activos en fase que solapan el mes aunque no tengan tareas del equipo en ese mes (p. ej. `responsibleDepartmentId` coincide). */
+    const projectIdsForDeptView = (() => {
+      if (!projectIdsForDepartment || !selectedDept) return projectIdsForDepartment;
+      const merged = new Set(projectIdsForDepartment);
+      for (const p of projects ?? []) {
+        if (p.status !== 'active' || p.projectType !== PROJECT_TYPE_ENTREGABLE) continue;
+        if (!getDeliverablePhase(p) || !deliverablePhaseOverlapsMonth(p, viewDate)) continue;
+        const rd = p.responsibleDepartmentId;
+        if (rd && (rd === selectedDept.id || rd === selectedDept.name)) {
+          merged.add(p.id);
+        } else if (!rd) {
+          merged.add(p.id);
+        }
+      }
+      return merged;
+    })();
+
+    const byDept = projectIdsForDeptView && selectedDept
       ? projectMetrics.filter(p => {
-          if (!projectIdsForDepartment.has(p.projectId)) return false;
+          if (!projectIdsForDeptView.has(p.projectId)) return false;
           const project = projects?.find(proj => proj.id === p.projectId);
           if (!project?.responsibleDepartmentId) return true;
           return project.responsibleDepartmentId === selectedDept.id || project.responsibleDepartmentId === selectedDept.name;
         })
-      : projectIdsForDepartment
-        ? projectMetrics.filter(p => projectIdsForDepartment.has(p.projectId))
+      : projectIdsForDeptView
+        ? projectMetrics.filter(p => projectIdsForDeptView.has(p.projectId))
         : projectMetrics;
 
     const riskMap = new Map(atRiskProjects.map(r => [r.projectId, r]));
@@ -170,7 +189,7 @@ export function useOperationsRadarData(params: {
       if (aOrder !== bOrder) return aOrder - bOrder;
       return (a.projectName || '').localeCompare(b.projectName || '');
     });
-  }, [projectMetrics, projectIdsForDepartment, atRiskProjects, selectedDepartmentId, departments, projects]);
+  }, [projectMetrics, projectIdsForDepartment, atRiskProjects, selectedDepartmentId, departments, projects, viewDate]);
 
   return {
     employeesForView,

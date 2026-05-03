@@ -7,7 +7,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
-import { Client, Project, OKR, Allocation } from '@/types';
+import { Client, Project, Allocation } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -44,10 +44,11 @@ import { supabase } from '@/lib/supabase';
 import { ClientsAndProjectsFilters, type ClientsAndProjectsFiltersValues, type FilterType, type StatusFilter } from '@/components/clients-projects/ClientsAndProjectsFilters';
 import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
-import { PROJECT_TYPE_PRESET_VALUES, PROJECT_TYPE_ENTREGABLE } from '@/config/projectTypePresets';
+import { PROJECT_TYPE_ENTREGABLE } from '@/config/projectTypePresets';
 import { useSearchParams, useLocation } from 'react-router-dom';
-import { parseDeliverableContractFeeInput } from '@/utils/deliverableProjectFields';
-import { PhaseDatePickerButton } from '@/components/projects/PhaseDatePickerButton';
+import { useDeliverableLifecycleBatch } from '@/hooks/useDeliverableLifecycleBatch';
+import { DeliverableLifecycleBadge } from '@/components/projects/DeliverableLifecycleBadge';
+import { ProjectMutateDialog } from '@/components/clients-projects/ProjectMutateDialog';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -118,7 +119,7 @@ export default function ClientsAndProjectsPage() {
   const {
     clients, projects, allocations, employees,
     addClient, updateClient, deleteClient,
-    addProject, updateProject, deleteProject,
+    updateProject, deleteProject,
     getClientTotalHoursForMonth, getProjectHoursForMonth,
     updateAllocation,
     ensureMonthLoaded,
@@ -175,64 +176,10 @@ export default function ClientsAndProjectsPage() {
   const [openEditTaskEmployee, setOpenEditTaskEmployee] = useState(false);
   const [openEditTaskDependency, setOpenEditTaskDependency] = useState(false);
   const [openEditTaskWeek, setOpenEditTaskWeek] = useState(false);
-  const [openFormStatus, setOpenFormStatus] = useState(false);
   const [monthDeadlines, setMonthDeadlines] = useState<Deadline[]>([]);
 
   // Custom project filters from agency settings
   const { activeFilters, filterProject, getFilterDisplayName } = useProjectFilters();
-
-  const projectFormSchema = z
-    .object({
-      name: z.string().min(1, t('clientsAndProjects.dialogs.newProject.nameRequired', 'El nombre es obligatorio')),
-      clientId: z.string().min(1, t('clientsAndProjects.dialogs.newProject.clientRequired', 'Debes seleccionar un cliente')),
-      budgetHours: z.coerce.number().min(0, t('clientsAndProjects.dialogs.newProject.budgetNonNegative', 'Las horas asignadas no pueden ser negativas')),
-      minimumHours: z.coerce.number().min(0, t('clientsAndProjects.dialogs.newProject.minHoursNonNegative', 'Las horas mínimas no pueden ser negativas')),
-      monthlyFee: z.coerce.number().min(0, t('clientsAndProjects.dialogs.newProject.feeNonNegative', 'El fee mensual no puede ser negativo')),
-      status: z.enum(['active', 'archived', 'completed']),
-      responsibleDepartmentId: z.string().optional().or(z.literal('')),
-      externalId: z.coerce.number().optional().or(z.literal('')),
-      okrs: z.array(z.object({
-        id: z.string(),
-        title: z.string(),
-        progress: z.number().min(0).max(100),
-      })).optional().default([]),
-      projectType: z.string().optional().default(''),
-      deliverableContractFee: z.string().optional().default(''),
-      deliverableStartDate: z.string().optional().default(''),
-      deliverableDueDate: z.string().optional().default(''),
-    })
-    .superRefine((data, ctx) => {
-      if (data.projectType !== PROJECT_TYPE_ENTREGABLE) return;
-      if (data.deliverableContractFee?.trim()) {
-        const parsed = parseDeliverableContractFeeInput(data.deliverableContractFee);
-        if (parsed == null) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: t('clientsAndProjects.dialogs.newProject.deliverableFeeInvalid', 'Importe total del contrato no válido'),
-            path: ['deliverableContractFee'],
-          });
-        }
-      }
-      const s = data.deliverableStartDate?.trim();
-      const e = data.deliverableDueDate?.trim();
-      if (s && e) {
-        try {
-          const ds = parseISO(s);
-          const de = parseISO(e);
-          if (!Number.isNaN(ds.getTime()) && !Number.isNaN(de.getTime()) && de < ds) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: t('clientsAndProjects.dialogs.newProject.deliverableDatesOrder', 'La fecha fin debe ser posterior o igual al inicio'),
-              path: ['deliverableDueDate'],
-            });
-          }
-        } catch {
-          /* ignore */
-        }
-      }
-    });
-
-  type ProjectFormValues = z.infer<typeof projectFormSchema>;
 
   // Cargar deadlines del mes (filtrados por agencia)
   useEffect(() => {
@@ -248,27 +195,6 @@ export default function ClientsAndProjectsPage() {
   useEffect(() => {
     void ensureMonthLoaded(currentMonth);
   }, [currentMonth, ensureMonthLoaded]);
-
-  const projectForm = useForm<ProjectFormValues>({
-    resolver: zodResolver(projectFormSchema),
-    defaultValues: {
-      name: '',
-      clientId: '',
-      budgetHours: 0,
-      minimumHours: 0,
-      monthlyFee: 0,
-      status: 'active',
-      responsibleDepartmentId: '',
-      externalId: '',
-      okrs: [],
-      projectType: '',
-      deliverableContractFee: '',
-      deliverableStartDate: '',
-      deliverableDueDate: '',
-    },
-  });
-
-  const [newOkrTitle, setNewOkrTitle] = useState('');
 
   // Mes anterior para comparación
   const prevMonth = subMonths(currentMonth, 1);
@@ -710,6 +636,22 @@ export default function ClientsAndProjectsPage() {
       });
   }, [clientsWithProjects, filterSnapshot, focusProjectIdFromUrl]);
 
+  /** Solo entregables de clientes expandidos: el badge solo se pinta ahí; evita N× fetch de fase para toda la agencia. */
+  const deliverableLifecycleBatchIds = useMemo(() => {
+    const ids: string[] = [];
+    for (const { client, stats } of filteredClients) {
+      if (!expandedClients.has(client.id)) continue;
+      for (const { project } of stats.projects) {
+        if (project.projectType === PROJECT_TYPE_ENTREGABLE) ids.push(project.id);
+      }
+    }
+    return ids;
+  }, [filteredClients, expandedClients]);
+
+  const { data: deliverableLifecycleByProjectId } = useDeliverableLifecycleBatch(deliverableLifecycleBatchIds, {
+    costModeOverride: 'standard',
+  });
+
   // Estadísticas globales
   const globalStats = useMemo(() => {
     const totalClients = filteredClients.length;
@@ -775,104 +717,11 @@ export default function ClientsAndProjectsPage() {
   const openNewProject = () => {
     setIsAddingProject(true);
     setEditingProject(null);
-    projectForm.reset({
-      name: '',
-      clientId: '',
-      budgetHours: 0,
-      minimumHours: 0,
-      monthlyFee: 0,
-      status: 'active',
-      responsibleDepartmentId: '',
-      externalId: '',
-      okrs: [],
-      projectType: '',
-      deliverableContractFee: '',
-      deliverableStartDate: '',
-      deliverableDueDate: '',
-    });
   };
 
   const openEditProject = (project: Project) => {
     setIsAddingProject(false);
     setEditingProject(project);
-    projectForm.reset({
-      name: project.name,
-      clientId: project.clientId,
-      budgetHours: project.budgetHours || 0,
-      minimumHours: project.minimumHours || 0,
-      monthlyFee: project.monthlyFee || 0,
-      status: project.status,
-      responsibleDepartmentId: project.responsibleDepartmentId ?? '',
-      externalId: project.externalId || '',
-      okrs: project.okrs || [],
-      projectType: project.projectType ?? '',
-      deliverableContractFee:
-        project.deliverableContractFee != null && Number.isFinite(project.deliverableContractFee)
-          ? String(project.deliverableContractFee)
-          : '',
-      deliverableStartDate: project.deliverableStartDate ?? '',
-      deliverableDueDate: project.deliverableDueDate ?? '',
-    });
-  };
-
-  const onSaveProject = async (data: ProjectFormValues) => {
-    try {
-      const pt = data.projectType?.trim() ? data.projectType.trim() : undefined;
-      const isEnt = pt === PROJECT_TYPE_ENTREGABLE;
-      const deliverableContractFee = isEnt ? parseDeliverableContractFeeInput(data.deliverableContractFee) : null;
-      const deliverableStartDate =
-        isEnt && data.deliverableStartDate?.trim() ? data.deliverableStartDate.trim() : null;
-      const deliverableDueDate =
-        isEnt && data.deliverableDueDate?.trim() ? data.deliverableDueDate.trim() : null;
-
-      if (isAddingProject) {
-        await addProject({
-          name: data.name,
-          clientId: data.clientId,
-          budgetHours: Number(data.budgetHours) || 0,
-          minimumHours: Number(data.minimumHours) || 0,
-          monthlyFee: Number(data.monthlyFee) || 0,
-          status: data.status,
-          responsibleDepartmentId: data.responsibleDepartmentId || undefined,
-          externalId: data.externalId !== '' ? Number(data.externalId) : undefined,
-          okrs: (data.okrs || []).map(o => ({ ...o, id: o.id || crypto.randomUUID() })) as OKR[],
-          agencyId: currentAgency?.id || '',
-          projectType: pt,
-          deliverableContractFee,
-          deliverableStartDate: deliverableStartDate ?? undefined,
-          deliverableDueDate: deliverableDueDate ?? undefined,
-        });
-        toast.success('Proyecto creado');
-      } else if (editingProject) {
-        await updateProject({
-          ...editingProject,
-          name: data.name,
-          clientId: data.clientId,
-          budgetHours: Number(data.budgetHours) || 0,
-          minimumHours: Number(data.minimumHours) || 0,
-          monthlyFee: Number(data.monthlyFee) || 0,
-          status: data.status,
-          responsibleDepartmentId: data.responsibleDepartmentId || undefined,
-          externalId: data.externalId !== '' ? Number(data.externalId) : undefined,
-          okrs: (data.okrs || []).map(o => ({ ...o, id: o.id || crypto.randomUUID() })) as OKR[],
-          projectType: pt,
-          deliverableContractFee,
-          deliverableStartDate: deliverableStartDate ?? undefined,
-          deliverableDueDate: deliverableDueDate ?? undefined,
-        });
-        toast.success('Proyecto actualizado');
-      }
-      setEditingProject(null);
-    } catch (error) {
-      console.error('Error guardando proyecto:', error);
-      const errorMessage = (error as Error)?.message || 'Error al guardar el proyecto';
-      toast.error(errorMessage);
-    }
-  };
-
-  const handleDeleteProject = async () => {
-    if (!editingProject) return;
-    setDeleteConfirmation({ type: 'project', id: editingProject.id, name: editingProject.name });
   };
 
   const openEditTask = (task: Allocation) => {
@@ -983,23 +832,6 @@ export default function ClientsAndProjectsPage() {
     setExpandedProjects(new Set());
   };
 
-  const addOkrToForm = () => {
-    if (!newOkrTitle.trim()) return;
-    const currentOkrs = projectForm.getValues('okrs') || [];
-    projectForm.setValue('okrs', [...currentOkrs, { id: crypto.randomUUID(), title: newOkrTitle, progress: 0 }]);
-    setNewOkrTitle('');
-  };
-
-  const updateOkrProgress = (id: string, val: number) => {
-    const currentOkrs = projectForm.getValues('okrs') || [];
-    projectForm.setValue('okrs', currentOkrs.map(o => o.id === id ? { ...o, progress: val } : o));
-  };
-
-  const removeOkr = (id: string) => {
-    const currentOkrs = projectForm.getValues('okrs') || [];
-    projectForm.setValue('okrs', currentOkrs.filter(o => o.id !== id));
-  };
-
   return (
     <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
@@ -1050,415 +882,31 @@ export default function ClientsAndProjectsPage() {
           </div>
 
           {/* Botón añadir proyecto */}
-          <Dialog open={isAddingProject || editingProject !== null} onOpenChange={(open) => {
-            if (!open) {
-              setIsAddingProject(false);
-              setEditingProject(null);
+          <Button
+            className="gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md"
+            onClick={openNewProject}
+          >
+            <Plus className="h-4 w-4" />
+            {t('clientsAndProjects.actions.newProject', 'Nuevo proyecto')}
+          </Button>
+
+          <ProjectMutateDialog
+            open={isAddingProject || editingProject !== null}
+            onOpenChange={(open) => {
+              if (!open) {
+                setIsAddingProject(false);
+                setEditingProject(null);
+              }
+            }}
+            mode={isAddingProject ? 'create' : 'edit'}
+            editingProject={editingProject}
+            clients={clients}
+            departmentOptions={departmentOptions}
+            isCrmExportEnabled={isCrmExportEnabled}
+            onRequestDelete={(proj) =>
+              setDeleteConfirmation({ type: 'project', id: proj.id, name: proj.name })
             }
-          }}>
-            <DialogTrigger asChild>
-              <Button
-                className="gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md"
-                onClick={openNewProject}
-              >
-                <Plus className="h-4 w-4" />
-                {t('clientsAndProjects.actions.newProject', 'Nuevo proyecto')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{isAddingProject ? t('clientsAndProjects.dialogs.newProject.title', 'Nuevo proyecto') : t('clientsAndProjects.dialogs.newProject.editTitle', 'Editar proyecto')}</DialogTitle>
-                <DialogDescription>
-                  {t('clientsAndProjects.dialogs.newProject.description', 'Configura los detalles del proyecto y presupuesto.')}
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...projectForm}>
-                <form onSubmit={projectForm.handleSubmit(onSaveProject)} className="space-y-4 py-4">
-                  <FormField
-                    control={projectForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('clientsAndProjects.dialogs.newProject.name', 'Nombre del proyecto')}</FormLabel>
-                        <FormControl>
-                          <Input placeholder={t('clientsAndProjects.dialogs.newProject.namePlaceholder', 'Ej: Mantenimiento WEB')} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={projectForm.control}
-                    name="clientId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('clientsAndProjects.dialogs.newProject.client', 'Cliente')}</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                role="combobox"
-                                className="w-full justify-between"
-                              >
-                                {field.value
-                                  ? (
-                                    <SensitiveText kind="account" id={field.value}>
-                                      {clients.find(c => c.id === field.value)?.name || 'Seleccionar cliente'}
-                                    </SensitiveText>
-                                  )
-                                  : "Seleccionar cliente"}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-full p-0" align="start">
-                            <Command>
-                              <CommandInput placeholder="Buscar cliente..." />
-                              <CommandList>
-                                <CommandEmpty>No se encontró el cliente.</CommandEmpty>
-                                <CommandGroup>
-                                  {clients.map(client => (
-                                    <CommandItem
-                                      key={client.id}
-                                      value={client.name}
-                                      onSelect={() => field.onChange(client.id)}
-                                    >
-                                      <SensitiveText kind="account" id={client.id}>{client.name}</SensitiveText>
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="grid grid-cols-3 gap-4">
-                    <FormField
-                      control={projectForm.control}
-                      name="budgetHours"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('clientsAndProjects.dialogs.newProject.budget', 'Horas asignadas (presupuesto)')}</FormLabel>
-                          <FormControl>
-                            <Input type="number" placeholder="0" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={projectForm.control}
-                      name="minimumHours"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('clientsAndProjects.dialogs.newProject.minHours', 'Horas mínimas (fee)')}</FormLabel>
-                          <FormControl>
-                            <Input type="number" placeholder="0" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={projectForm.control}
-                      name="monthlyFee"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('clientsAndProjects.dialogs.newProject.monthlyFee', 'Fee mensual (€)')}</FormLabel>
-                          <FormControl>
-                            <Input type="number" placeholder="0" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <FormField
-                    control={projectForm.control}
-                    name="projectType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('clientsAndProjects.dialogs.newProject.projectType', 'Tipo de proyecto')}</FormLabel>
-                        <FormControl>
-                          <select
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            value={field.value ?? ''}
-                            onChange={(e) => field.onChange(e.target.value)}
-                          >
-                            <option value="">{t('clientsAndProjects.dialogs.newProject.projectTypeNone', 'Sin tipo / mixto')}</option>
-                            {PROJECT_TYPE_PRESET_VALUES.map((v) => (
-                              <option key={v} value={v}>
-                                {v}
-                              </option>
-                            ))}
-                          </select>
-                        </FormControl>
-                        <FormDescription>
-                          {t(
-                            'clientsAndProjects.dialogs.newProject.projectTypeHelp',
-                            '«Entregable»: importe total y fechas de fase se configuran aquí; el ingreso por mes se prorratea en rentabilidad. Retainers suelen ser «Mensual».'
-                          )}
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {projectForm.watch('projectType') === PROJECT_TYPE_ENTREGABLE && (
-                    <div className="space-y-4 rounded-lg border border-border bg-muted/40 p-4">
-                      <p className="text-sm text-muted-foreground">
-                        {t(
-                          'clientsAndProjects.dialogs.newProject.deliverableBlockIntro',
-                          'Opcional: importe total del contrato distinto del fee mensual. Si lo dejas vacío, el fee mensual se usa como total al repartir entre meses. Las fechas acotan la fase (días de calendario).'
-                        )}
-                      </p>
-                      <FormField
-                        control={projectForm.control}
-                        name="deliverableContractFee"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>
-                              {t('clientsAndProjects.dialogs.newProject.deliverableTotalFee', 'Importe total contrato (€)')}
-                            </FormLabel>
-                            <FormControl>
-                              <Input type="text" inputMode="decimal" placeholder="Ej: 12000" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <FormField
-                          control={projectForm.control}
-                          name="deliverableStartDate"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>
-                                {t('clientsAndProjects.dialogs.newProject.deliverableStart', 'Inicio fase')}
-                              </FormLabel>
-                              <FormControl>
-                                <PhaseDatePickerButton
-                                  value={field.value ?? ''}
-                                  onChange={field.onChange}
-                                  placeholder={t(
-                                    'clientsAndProjects.dialogs.newProject.deliverableStartPh',
-                                    'Elegir inicio'
-                                  )}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={projectForm.control}
-                          name="deliverableDueDate"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>
-                                {t('clientsAndProjects.dialogs.newProject.deliverableDue', 'Fin previsto')}
-                              </FormLabel>
-                              <FormControl>
-                                <PhaseDatePickerButton
-                                  value={field.value ?? ''}
-                                  onChange={field.onChange}
-                                  placeholder={t(
-                                    'clientsAndProjects.dialogs.newProject.deliverableDuePh',
-                                    'Elegir fin'
-                                  )}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-                  )}
-                  <FormField
-                    control={projectForm.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Estado</FormLabel>
-                        <Popover open={openFormStatus} onOpenChange={setOpenFormStatus}>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button variant="outline" className="w-full justify-between font-normal">
-                                <span className="truncate">{field.value === 'active' ? 'Activo' : field.value === 'completed' ? 'Completado' : field.value === 'archived' ? 'Archivado' : 'Estado'}</span>
-                                <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                            <Command>
-                              <CommandList className="max-h-[280px]">
-                                <CommandGroup>
-                                  <CommandItem value="Activo" onSelect={() => { field.onChange('active'); setOpenFormStatus(false); }}>
-                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', field.value === 'active' ? 'opacity-100' : 'opacity-0')} />
-                                    Activo
-                                  </CommandItem>
-                                  <CommandItem value="Completado" onSelect={() => { field.onChange('completed'); setOpenFormStatus(false); }}>
-                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', field.value === 'completed' ? 'opacity-100' : 'opacity-0')} />
-                                    Completado
-                                  </CommandItem>
-                                  <CommandItem value="Archivado" onSelect={() => { field.onChange('archived'); setOpenFormStatus(false); }}>
-                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', field.value === 'archived' ? 'opacity-100' : 'opacity-0')} />
-                                    Archivado
-                                  </CommandItem>
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {departmentOptions.length > 0 && (
-                    <FormField
-                      control={projectForm.control}
-                      name="responsibleDepartmentId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Departamento responsable</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button variant="outline" className="w-full justify-between font-normal">
-                                  <span className="truncate">
-                                    {field.value
-                                      ? departmentOptions.find(d => d.id === field.value)?.name ?? 'Sin asignar'
-                                      : 'Sin asignar'}
-                                  </span>
-                                  <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                              <Command>
-                                <CommandList className="max-h-[280px]">
-                                  <CommandItem value="Sin asignar" onSelect={() => field.onChange('')}>
-                                    <Check className={cn('mr-2 h-4 w-4 shrink-0', !field.value ? 'opacity-100' : 'opacity-0')} />
-                                    Sin asignar
-                                  </CommandItem>
-                                  {departmentOptions.map(dept => (
-                                    <CommandItem key={dept.id} value={dept.name} onSelect={() => field.onChange(dept.id)}>
-                                      <Check className={cn('mr-2 h-4 w-4 shrink-0', field.value === dept.id ? 'opacity-100' : 'opacity-0')} />
-                                      <span className="h-3 w-3 rounded-full shrink-0 mr-2 border border-slate-300" style={{ backgroundColor: dept.color }} />
-                                      {dept.name}
-                                    </CommandItem>
-                                  ))}
-                                </CommandList>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-                  {/* Campo CRM Project ID */}
-                  {isCrmExportEnabled && (
-                    <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg space-y-2">
-                      <div className="flex items-center gap-2">
-                        <LinkIcon className="w-4 h-4 text-purple-600" />
-                        <span className="text-sm font-semibold text-purple-800">Integración CRM</span>
-                      </div>
-                      <FormField
-                        control={projectForm.control}
-                        name="externalId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-purple-700">ID Proyecto CRM</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                placeholder="Ej: 123"
-                                className="bg-white"
-                                {...field}
-                                value={field.value === '' ? '' : field.value}
-                                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : '')}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  )}
-                  {/* OKRs */}
-                  <div className="space-y-2">
-                    <Label>Objetivos (OKRs)</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={newOkrTitle}
-                        onChange={(e) => setNewOkrTitle(e.target.value)}
-                        placeholder="Añadir objetivo..."
-                        onKeyDown={(e) => e.key === 'Enter' && addOkrToForm()}
-                      />
-                      <Button type="button" onClick={addOkrToForm} variant="outline">
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    {(projectForm.watch('okrs') || []).length > 0 && (
-                      <div className="space-y-2 mt-2">
-                        {(projectForm.watch('okrs') || []).map(okr => (
-                          <div key={okr.id} className="flex items-center gap-2 p-2 bg-slate-50 rounded">
-                            <span className="flex-1 text-sm">{okr.title}</span>
-                            <Input
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={okr.progress}
-                              onChange={(e) => updateOkrProgress(okr.id, parseInt(e.target.value) || 0)}
-                              className="w-20"
-                            />
-                            <span className="text-xs text-muted-foreground">%</span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => removeOkr(okr.id)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <DialogFooter>
-                    {editingProject && (
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        onClick={() => {
-                          setDeleteConfirmation({ type: 'project', id: editingProject.id, name: editingProject.name });
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Eliminar
-                      </Button>
-                    )}
-                    <Button type="button" variant="outline" onClick={() => {
-                      setIsAddingProject(false);
-                      setEditingProject(null);
-                    }}>
-                      Cancelar
-                    </Button>
-                    <Button type="submit" className="bg-gradient-to-r from-indigo-500 to-purple-600">
-                      {isAddingProject ? 'Crear' : 'Guardar'}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+          />
 
           {/* Botón añadir cliente */}
           <Dialog open={isAddingClient} onOpenChange={setIsAddingClient}>
@@ -1765,6 +1213,14 @@ export default function ClientsAndProjectsPage() {
                                             {formatProjectName(project.name)}
                                           </SensitiveText>
                                         </p>
+                                        {deliverableLifecycleByProjectId.has(project.id) && (
+                                          <DeliverableLifecycleBadge
+                                            projectId={project.id}
+                                            lifecycle={deliverableLifecycleByProjectId.get(project.id)!}
+                                            disableAutoFetch
+                                            className="mt-0"
+                                          />
+                                        )}
 
                                         {/* Badges de estado del proyecto */}
                                         <TooltipProvider>

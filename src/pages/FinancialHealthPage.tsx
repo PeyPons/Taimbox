@@ -30,7 +30,8 @@ import {
     CheckCircle2,
     Landmark,
     Settings2,
-    Download
+    Download,
+    Layers,
 } from 'lucide-react';
 import { format, startOfMonth, subMonths, addMonths, endOfMonth, isSameMonth, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -71,16 +72,10 @@ import {
     getStandardMonthlyCapacity,
     overheadShareForRow,
 } from '@/utils/profitabilityCost';
-
-/** Límite % margen para considerar "óptimo" (verde). Por debajo hasta 0% = ámbar; negativo = rojo. */
-const MARGIN_HEALTHY_PCT = 20;
-
-/** Clase CSS y si mostrar icono de alerta para semáforo de margen (por %). */
-function getMarginSemaphore(marginPct: number): { className: string; showAlert: boolean } {
-    if (marginPct > MARGIN_HEALTHY_PCT) return { className: 'text-emerald-600 dark:text-emerald-400', showAlert: false };
-    if (marginPct >= 0) return { className: 'text-amber-500', showAlert: false };
-    return { className: 'text-red-600', showAlert: true };
-}
+import { getMarginSemaphore } from '@/utils/marginSemaphore';
+import { DeliverableLifecycleTable } from '@/components/financial/DeliverableLifecycleTable';
+import { deliverablePhaseOverlapsMonth, getDeliverablePhase } from '@/utils/deliverableLifecycle';
+import { PROJECT_TYPE_ENTREGABLE } from '@/config/projectTypePresets';
 
 export default function FinancialHealthPage() {
     const { t } = useTranslation('app');
@@ -88,6 +83,7 @@ export default function FinancialHealthPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [hoursMode, setHoursMode] = useState<'actual' | 'computed'>('computed');
     const [costMode, setCostMode] = useState<'standard' | 'dynamic'>('standard');
+    const [lifecycleCostMode, setLifecycleCostMode] = useState<'standard' | 'dynamic'>('standard');
     const [costHelpOpen, setCostHelpOpen] = useState(false);
     const [profitSettingsOpen, setProfitSettingsOpen] = useState(false);
     const [profitSettingsSaving, setProfitSettingsSaving] = useState(false);
@@ -269,15 +265,36 @@ export default function FinancialHealthPage() {
 
     const projectMetricsForView = useMemo(() => {
         if (!projectIdsForDepartment || !selectedDept) return projectMetrics;
-        return projectMetrics.filter(p => {
+        return projectMetrics.filter((p) => {
             // Proyectos internos (ingreso 0 €) siempre en vista: ver "Inversión interna" / pérdida
             if ((p.monthlyFee ?? 0) === 0) return true;
-            if (!projectIdsForDepartment.has(p.projectId)) return false;
-            const proj = projects?.find(pr => pr.id === p.projectId);
-            if (!proj?.responsibleDepartmentId) return true;
-            return proj.responsibleDepartmentId === selectedDept.id || proj.responsibleDepartmentId === selectedDept.name;
+            if (projectIdsForDepartment.has(p.projectId)) {
+                const proj = projects?.find((pr) => pr.id === p.projectId);
+                if (!proj?.responsibleDepartmentId) return true;
+                return proj.responsibleDepartmentId === selectedDept.id || proj.responsibleDepartmentId === selectedDept.name;
+            }
+            // Entregable activo en fase (solapa el mes) con área responsable = vista: aunque no haya imputaciones del equipo este mes
+            const proj = projects?.find((pr) => pr.id === p.projectId);
+            if (
+                proj &&
+                proj.status === 'active' &&
+                proj.projectType === PROJECT_TYPE_ENTREGABLE &&
+                getDeliverablePhase(proj) &&
+                deliverablePhaseOverlapsMonth(proj, currentMonth)
+            ) {
+                const rd = proj.responsibleDepartmentId;
+                if (rd && (rd === selectedDept.id || rd === selectedDept.name)) return true;
+                // Sin área responsable: el bloque anterior solo entraba si había imputaciones del dept; aquí mostramos el entregable en cualquier vista de dept (ingreso ya > 0).
+                if (!rd) return true;
+            }
+            return false;
         });
-    }, [projectMetrics, projectIdsForDepartment, selectedDept, projects]);
+    }, [projectMetrics, projectIdsForDepartment, selectedDept, projects, currentMonth]);
+
+    const lifecycleDepartmentProjectIds = useMemo(() => {
+        if (!selectedDepartmentId) return undefined;
+        return new Set(projectMetricsForView.map((p) => p.projectId));
+    }, [selectedDepartmentId, projectMetricsForView]);
 
     const clientById = useMemo(() => {
         const map = new Map<string, string>();
@@ -303,10 +320,22 @@ export default function FinancialHealthPage() {
         [projectMetricsFilteredBySearch]
     );
 
-    const projectMetricsBillableWithActivity = useMemo(
-        () => projectMetricsBillable.filter(p => (hoursMode === 'computed' ? p.computed : p.actual) > 0),
-        [projectMetricsBillable, hoursMode]
-    );
+    const projectMetricsBillableWithActivity = useMemo(() => {
+        const entregableOverlapIds = new Set(
+            (projects ?? [])
+                .filter(
+                    (p) =>
+                        p.status === 'active' &&
+                        p.projectType === PROJECT_TYPE_ENTREGABLE &&
+                        deliverablePhaseOverlapsMonth(p, currentMonth)
+                )
+                .map((p) => p.id)
+        );
+        return projectMetricsBillable.filter((p) => {
+            if ((hoursMode === 'computed' ? p.computed : p.actual) > 0) return true;
+            return entregableOverlapIds.has(p.projectId);
+        });
+    }, [projectMetricsBillable, hoursMode, projects, currentMonth]);
 
     const employeeMetricsForView = useMemo(() => {
         if (!selectedDepartmentId) return employeeMetrics;
@@ -1405,7 +1434,7 @@ export default function FinancialHealthPage() {
             <TooltipProvider delayDuration={300}>
                 <Tabs defaultValue="resumen" className="space-y-6">
                     <div className="space-y-1">
-                        <TabsList className="grid w-full max-w-lg grid-cols-3 h-11 bg-slate-100 p-1 rounded-lg">
+                        <TabsList className="grid w-full max-w-2xl grid-cols-2 sm:grid-cols-4 h-auto sm:h-11 bg-slate-100 p-1 rounded-lg gap-1">
                             <TabsTrigger value="resumen" className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md">
                                 <LayoutDashboard className="h-4 w-4 shrink-0" />
                                 Resumen
@@ -1414,12 +1443,23 @@ export default function FinancialHealthPage() {
                                 <FolderKanban className="h-4 w-4 shrink-0" />
                                 Proyectos
                             </TabsTrigger>
+                            <TabsTrigger value="deliverables-lifecycle" className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md leading-tight">
+                                <Layers className="h-4 w-4 shrink-0" />
+                                <span className="text-left sm:text-center">
+                                    {t('financialHealth.tabs.deliverablesLifecycle', 'Entregables (vida)')}
+                                </span>
+                            </TabsTrigger>
                             <TabsTrigger value="empleados" className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md">
                                 <UserCircle className="h-4 w-4 shrink-0" />
                                 Empleados
                             </TabsTrigger>
                         </TabsList>
-                        <p className="text-xs text-slate-500 px-0.5">Resumen · Tabla de proyectos · Rentabilidad por empleado en €</p>
+                        <p className="text-xs text-slate-500 px-0.5">
+                            {t(
+                                'financialHealth.tabs.subtitle',
+                                'Resumen · Proyectos (mes) · Entregables (ciclo de vida) · Empleados'
+                            )}
+                        </p>
                     </div>
 
                     <TabsContent value="resumen" className="space-y-8 mt-0">
@@ -2987,6 +3027,27 @@ export default function FinancialHealthPage() {
                                 </CardContent>
                             </Card>
                         )}
+                    </TabsContent>
+
+                    <TabsContent value="deliverables-lifecycle" className="space-y-6 mt-0">
+                        <div className="space-y-1">
+                            <h2 className="text-lg font-semibold text-slate-800">
+                                {t('financialHealth.deliverablesLifecycle.heading', 'Entregables — ciclo de vida')}
+                            </h2>
+                            <p className="text-sm text-slate-600">
+                                {t(
+                                    'financialHealth.deliverablesLifecycle.subtitle',
+                                    'Vista de ciclo de vida completo. Sin selector de mes.'
+                                )}
+                            </p>
+                        </div>
+                        <DeliverableLifecycleTable
+                            costMode={lifecycleCostMode}
+                            onCostModeChange={setLifecycleCostMode}
+                            hoursMode={hoursMode}
+                            departmentProjectIds={lifecycleDepartmentProjectIds}
+                            searchQuery={searchQuery}
+                        />
                     </TabsContent>
 
                     <TabsContent value="empleados" className="space-y-6 mt-0">

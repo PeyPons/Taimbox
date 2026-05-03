@@ -1894,8 +1894,8 @@ export default function OnboardingWizard() {
                       <div className="xl:col-span-2 space-y-4 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4">
                         <p className="text-xs text-slate-600 leading-relaxed">
                           {t(
-                            'onboarding.project.deliverableBlock',
-                            'Si es un contrato por fase, indica el importe total (opcional: si lo dejas vacío se usa el fee mensual) y las fechas; el ingreso se repartirá por meses en rentabilidad. Puedes dejarlo en blanco y completarlo luego en Clientes.'
+                            'clientsAndProjects.dialogs.newProject.deliverableBlockIntro',
+                            'Importe total del contrato y fechas de la fase. El sistema lo prorratea entre meses para mostrar el ingreso correspondiente en Rentabilidad y el avance en Seguimiento Operativo.'
                           )}
                         </p>
                         <FormField
@@ -1972,7 +1972,14 @@ export default function OnboardingWizard() {
                         )}
                       />
                     </div>
-                    <div className="xl:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div
+                      className={cn(
+                        'xl:col-span-2 grid gap-3',
+                        projectForm.watch('projectType') === PROJECT_TYPE_ENTREGABLE
+                          ? 'grid-cols-1'
+                          : 'grid-cols-1 sm:grid-cols-2'
+                      )}
+                    >
                       <FormField
                         control={projectForm.control}
                         name="minHours"
@@ -1992,25 +1999,27 @@ export default function OnboardingWizard() {
                           </FormItem>
                         )}
                       />
-                      <FormField
-                        control={projectForm.control}
-                        name="monthlyFee"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t('onboarding.project.monthlyFee', 'Fee mensual (€)')}</FormLabel>
-                            <p className="text-xs text-slate-500 -mt-1 mb-1">
-                              {t(
-                                'onboarding.project.monthlyFeeHint',
-                                'Importe total que paga el cliente por este proyecto al mes (no es precio por hora).'
-                              )}
-                            </p>
-                            <FormControl>
-                              <Input type="number" {...field} onChange={(e) => field.onChange(Number(e.target.value))} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      {projectForm.watch('projectType') !== PROJECT_TYPE_ENTREGABLE && (
+                        <FormField
+                          control={projectForm.control}
+                          name="monthlyFee"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t('onboarding.project.monthlyFee', 'Fee mensual (€)')}</FormLabel>
+                              <p className="text-xs text-slate-500 -mt-1 mb-1">
+                                {t(
+                                  'onboarding.project.monthlyFeeHint',
+                                  'Importe total que paga el cliente por este proyecto al mes (no es precio por hora).'
+                                )}
+                              </p>
+                              <FormControl>
+                                <Input type="number" {...field} onChange={(e) => field.onChange(Number(e.target.value))} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
                     </div>
                   </div>
                   <div className="flex justify-between pt-2 border-t border-slate-100">

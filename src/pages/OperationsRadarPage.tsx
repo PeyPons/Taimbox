@@ -4,8 +4,11 @@ import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Activity, ChevronDown, GitBranch } from 'lucide-react';
-import { GlobalPlanningInconsistencies } from '@/components/employee/GlobalPlanningInconsistencies';
+import { Activity, ChevronDown, GitBranch, FolderKanban, Pencil } from 'lucide-react';
+import {
+    GlobalPlanningInconsistencies,
+    type OperationsRadarStatusFilter,
+} from '@/components/employee/GlobalPlanningInconsistencies';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useProjectMetrics } from '@/hooks/useProjectMetrics';
@@ -20,8 +23,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
 import { useOperationsRadarMonthState } from '@/hooks/useOperationsRadarMonthState';
 import { useOperationsRadarData, type ProjectRowItem, type ProjectStatusType } from '@/hooks/useOperationsRadarData';
+import { useDeliverableLifecycleBatch } from '@/hooks/useDeliverableLifecycleBatch';
+import { getDeliverablePhase } from '@/utils/deliverableLifecycle';
+import { getLifecycleStatusClasses } from '@/utils/deliverableLifecycleStatus';
+import { PROJECT_TYPE_ENTREGABLE } from '@/config/projectTypePresets';
 import { round2 } from '@/utils/numbers';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
+import { useIntegration } from '@/hooks/useIntegration';
+import { ProjectMutateDialog } from '@/components/clients-projects/ProjectMutateDialog';
+import type { Project } from '@/types';
 
 export default function OperationsRadarPage() {
     const [searchParams] = useSearchParams();
@@ -31,8 +41,10 @@ export default function OperationsRadarPage() {
     const { selectedDepartmentId, setSelectedDepartmentId } = useDepartmentView();
     const { formatName: formatProjectName } = useProjectAliasing();
     const { t } = useAppTranslation();
+    const isCrmExportEnabled = useIntegration('crm_export');
 
     const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+    const [lifecycleProjectEdit, setLifecycleProjectEdit] = useState<Project | null>(null);
 
     const departments = useMemo(
         () => normalizeDepartments(currentAgency?.settings?.departments),
@@ -90,7 +102,23 @@ export default function OperationsRadarPage() {
         projects,
     });
 
-    const [statusFilter, setStatusFilter] = useState<'all' | ProjectStatusType>('all');
+    const [statusFilter, setStatusFilter] = useState<OperationsRadarStatusFilter>('all');
+
+    const LIFECYCLE_SECTION_LS = 'operations-radar-lifecycle-section-open';
+    const [lifecycleSectionOpen, setLifecycleSectionOpen] = useState(() => {
+        try {
+            return typeof localStorage !== 'undefined' && localStorage.getItem(LIFECYCLE_SECTION_LS) === 'true';
+        } catch {
+            return false;
+        }
+    });
+    useEffect(() => {
+        try {
+            localStorage.setItem(LIFECYCLE_SECTION_LS, lifecycleSectionOpen ? 'true' : 'false');
+        } catch {
+            /* ignore */
+        }
+    }, [lifecycleSectionOpen]);
 
     type ProjectDetail = {
         effectiveUsage: number;
@@ -166,17 +194,44 @@ export default function OperationsRadarPage() {
         });
     }, [allProjectsForView, projectDetailsByProjectId]);
 
+    const deliverableProjectIdsForBatch = useMemo(() => {
+        const ids = new Set<string>();
+        for (const row of rowsWithStatus) {
+            const p = projects?.find((x) => x.id === row.projectId);
+            if (p?.projectType === PROJECT_TYPE_ENTREGABLE) ids.add(row.projectId);
+        }
+        return [...ids];
+    }, [rowsWithStatus, projects]);
+
+    const { data: lifecycleByProjectId } = useDeliverableLifecycleBatch(deliverableProjectIdsForBatch, {
+        costModeOverride: 'standard',
+    });
+
     const filterCounts = useMemo(() => {
         const list = rowsWithStatus;
+        const lifecycleRisk = list.filter((row) => {
+            const lc = lifecycleByProjectId.get(row.projectId);
+            return lc != null && (lc.status === 'at-risk' || lc.status === 'over-budget');
+        }).length;
         return {
             all: list.length,
             'no-activity': list.filter(p => p.status === 'no-activity').length,
             'needs-planning': list.filter(p => p.status === 'needs-planning').length,
             'behind-schedule': list.filter(p => p.status === 'behind-schedule').length,
             'over-budget': list.filter(p => p.status === 'over-budget').length,
-            'in-rule': list.filter(p => p.status === 'in-rule').length
+            'in-rule': list.filter(p => p.status === 'in-rule').length,
+            'lifecycle-risk': lifecycleRisk,
         };
-    }, [rowsWithStatus]);
+    }, [rowsWithStatus, lifecycleByProjectId]);
+
+    const activeDeliverablesWithPhase = useMemo(() => {
+        return (projects ?? []).filter(
+            (p) =>
+                p.status === 'active' &&
+                p.projectType === PROJECT_TYPE_ENTREGABLE &&
+                getDeliverablePhase(p) != null
+        );
+    }, [projects]);
 
     /** Tareas del mes que bloquean a otras (no completadas y de las que depende al menos otra tarea). Respetan filtro por departamento. */
     const blockingTasksForView = useMemo(() => {
@@ -450,6 +505,132 @@ export default function OperationsRadarPage() {
                 </CollapsibleContent>
             </Collapsible>
 
+            {activeDeliverablesWithPhase.length > 0 && (
+                <Collapsible
+                    open={lifecycleSectionOpen}
+                    onOpenChange={setLifecycleSectionOpen}
+                    className="rounded-lg border border-slate-200 bg-white shadow-sm"
+                >
+                    <CollapsibleTrigger asChild>
+                        <button
+                            type="button"
+                            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 rounded-lg"
+                            aria-expanded={lifecycleSectionOpen}
+                        >
+                            <span className="flex items-center gap-2 text-sm font-medium text-slate-800">
+                                <FolderKanban className="h-4 w-4 text-violet-600 shrink-0" />
+                                {t('operationsRadar.lifecycleSectionTitle', 'Entregables')}
+                            </span>
+                            <ChevronDown
+                                className={cn(
+                                    'h-4 w-4 text-slate-400 shrink-0 transition-transform',
+                                    lifecycleSectionOpen && 'rotate-180'
+                                )}
+                            />
+                        </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                        <div className="px-4 pb-4 border-t border-slate-100 overflow-x-auto">
+                            <p className="text-[11px] text-slate-500 pt-3 pb-2">
+                                {t(
+                                    'operationsRadar.lifecycleSectionHint',
+                                    'Resumen del ciclo de vida completo; no usa el filtro de mes del radar.'
+                                )}
+                            </p>
+                            <table className="w-full text-xs text-left border-collapse">
+                                <thead>
+                                    <tr className="border-b text-slate-600">
+                                        <th className="py-2 pr-2 font-medium">
+                                            {t('operationsRadar.lifecycleColProject', 'Proyecto')}
+                                        </th>
+                                        <th className="py-2 pr-2 font-medium">
+                                            {t('operationsRadar.lifecycleColPhase', 'Fase')}
+                                        </th>
+                                        <th className="py-2 pr-2 font-medium">
+                                            {t('operationsRadar.lifecycleColHours', 'Horas')}
+                                        </th>
+                                        <th className="py-2 pr-2 font-medium">
+                                            {t('operationsRadar.lifecycleColStatus', 'Estado vida')}
+                                        </th>
+                                        <th className="py-2 font-medium">
+                                            {t('operationsRadar.lifecycleColDaysLeft', 'Días rest.')}
+                                        </th>
+                                        <th className="py-2 w-10 font-medium text-right">
+                                            <span className="sr-only">
+                                                {t('operationsRadar.lifecycleColActions', 'Acciones')}
+                                            </span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {activeDeliverablesWithPhase.map((p) => {
+                                        const lc = lifecycleByProjectId.get(p.id);
+                                        if (!lc || lc.status === 'no-phase') return null;
+                                        const ph = lc.phase;
+                                        const st = getLifecycleStatusClasses(lc.status);
+                                        return (
+                                            <tr key={p.id} className="border-b border-slate-100">
+                                                <td className="py-2 pr-2 font-medium text-slate-800">
+                                                    <SensitiveText kind="project" id={p.id}>
+                                                        {formatProjectName(p.name)}
+                                                    </SensitiveText>
+                                                </td>
+                                                <td className="py-2 pr-2 text-slate-600 whitespace-nowrap">
+                                                    {ph
+                                                        ? `${format(ph.start, 'd MMM', { locale: es })} – ${format(ph.due, 'd MMM yyyy', { locale: es })}`
+                                                        : '—'}
+                                                </td>
+                                                <td className="py-2 pr-2 tabular-nums">
+                                                    {lc.hours.computed} / {lc.hours.budget} h
+                                                </td>
+                                                <td className="py-2 pr-2">
+                                                    <span className={cn('inline-flex items-center gap-1', st.text)}>
+                                                        <span className={cn('h-1.5 w-1.5 rounded-full', st.dot)} />
+                                                        {st.label}
+                                                    </span>
+                                                </td>
+                                                <td className="py-2 tabular-nums">{lc.pacing.daysRemaining}</td>
+                                                <td className="py-2 text-right">
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-slate-500 hover:text-slate-900"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setLifecycleProjectEdit(p);
+                                                        }}
+                                                        aria-label={t(
+                                                            'operationsRadar.lifecycleEditProjectAria',
+                                                            'Editar proyecto'
+                                                        )}
+                                                    >
+                                                        <Pencil className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </CollapsibleContent>
+                </Collapsible>
+            )}
+
+            <ProjectMutateDialog
+                open={lifecycleProjectEdit !== null}
+                onOpenChange={(open) => {
+                    if (!open) setLifecycleProjectEdit(null);
+                }}
+                mode="edit"
+                editingProject={lifecycleProjectEdit}
+                clients={clients ?? []}
+                departmentOptions={departments}
+                isCrmExportEnabled={isCrmExportEnabled}
+                showDeleteButton={false}
+            />
+
             <GlobalPlanningInconsistencies
                 viewDate={viewDate}
                 searchQuery={globalSearchQuery}
@@ -461,6 +642,7 @@ export default function OperationsRadarPage() {
                     onStatusFilterChange: setStatusFilter,
                     filterCounts,
                     projectDetailsByProjectId,
+                    lifecycleByProjectId,
                 }}
             />
         </div>

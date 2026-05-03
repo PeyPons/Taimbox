@@ -28,6 +28,22 @@ describe('getEffectiveMonthlyFee', () => {
     ).toBe(800);
   });
 
+  it('entregable sin fechas completas y monthlyFee 0 usa deliverableContractFee como referencia mensual', () => {
+    const month = parseISO('2026-03-01');
+    expect(
+      getEffectiveMonthlyFee(
+        {
+          monthlyFee: 0,
+          projectType: PROJECT_TYPE_ENTREGABLE,
+          deliverableContractFee: 4800,
+          deliverableStartDate: '',
+          deliverableDueDate: '',
+        },
+        month
+      )
+    ).toBe(4800);
+  });
+
   it('entregable con fase contenida en un mes asigna el total a ese mes', () => {
     const jan = parseISO('2026-01-01');
     const feb = parseISO('2026-02-01');
@@ -57,7 +73,7 @@ describe('getEffectiveMonthlyFee', () => {
     ).toBe(3000);
   });
 
-  it('entregable con fin antes de inicio cae a monthlyFee', () => {
+  it('entregable con fin antes de inicio cae a fee sin prorrateo (monthlyFee o contrato)', () => {
     const jan = parseISO('2026-01-01');
     expect(
       getEffectiveMonthlyFee(
@@ -70,6 +86,18 @@ describe('getEffectiveMonthlyFee', () => {
         jan
       )
     ).toBe(400);
+    expect(
+      getEffectiveMonthlyFee(
+        {
+          monthlyFee: 0,
+          projectType: PROJECT_TYPE_ENTREGABLE,
+          deliverableContractFee: 900,
+          deliverableStartDate: '2026-02-01',
+          deliverableDueDate: '2026-01-15',
+        },
+        jan
+      )
+    ).toBe(900);
   });
 });
 

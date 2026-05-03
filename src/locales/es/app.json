@@ -459,6 +459,14 @@
       "error": "No se pudo generar el archivo"
     },
     "exportHubLink": "Más exportaciones",
+    "tabs": {
+      "deliverablesLifecycle": "Entregables (vida)",
+      "subtitle": "Resumen · Proyectos (mes) · Entregables (ciclo de vida) · Empleados"
+    },
+    "deliverablesLifecycle": {
+      "heading": "Entregables — ciclo de vida",
+      "subtitle": "Vista de ciclo de vida completo. Sin selector de mes."
+    },
     "commonExpenses": {
       "title": "Gastos comunes del mes",
       "description": "Prorrateo en costes de proyectos y empleados según la configuración (global, por departamento o porcentajes).",
@@ -588,6 +596,9 @@
       "deleteClient": {
         "title": "¿Eliminar cliente?",
         "description": "Esta acción eliminará al cliente y todos sus proyectos asociados. Esta acción no se puede deshacer."
+      },
+      "newProject": {
+        "deliverableBlockIntro": "Importe total del contrato y fechas de la fase. El sistema lo prorratea entre meses para mostrar el ingreso correspondiente en Rentabilidad y el avance en Seguimiento Operativo."
       }
     }
   },
@@ -739,6 +750,18 @@
     "tooltipOverBudget": "Proyectos que superan el presupuesto del mes",
     "tooltipInRule": "Al día, sin exceso y sin tareas pendientes de planificar",
     "noResults": "Ningún resultado con los filtros actuales.",
+    "noLifecycleRisk": "No hay entregables con riesgo de vida en este momento.",
+    "filterLifecycleRisk": "Riesgo vida (entreg.)",
+    "tooltipLifecycleRisk": "Entregables con consumo o proyección de riesgo a lo largo de la fase (no sustituye al estado del mes).",
+    "lifecycleSectionTitle": "Entregables",
+    "lifecycleColActions": "Acciones",
+    "lifecycleEditProjectAria": "Editar proyecto",
+    "lifecycleSectionHint": "Resumen del ciclo de vida completo; no usa el filtro de mes del radar.",
+    "lifecycleColProject": "Proyecto",
+    "lifecycleColPhase": "Fase",
+    "lifecycleColHours": "Horas",
+    "lifecycleColStatus": "Estado vida",
+    "lifecycleColDaysLeft": "Días rest.",
     "projectsFound_one": "{{count}} proyecto.",
     "projectsFound_other": "{{count}} proyectos.",
     "actionOverBudget": "{{hours}}h por encima del acuerdo.",
@@ -762,6 +785,22 @@
     "coherenceStatusFilterNote": "filtrado por estado operativo",
     "coherenceTasksButton": "Tareas",
     "coherenceTasksDialogSubtitle": "Tareas del mes en este proyecto",
+    "coherenceTasksDialogSubtitleDeliverable": "Mes en vista: coherencia con el deadline del mes. En «Meses anteriores» ves tareas de la fase antes de este mes.",
+    "coherenceTasksTabThisMonth": "Mes en vista",
+    "coherenceTasksTabPriorMonths": "Meses anteriores",
+    "coherenceTasksPriorHint": "Solo tareas con semana en la fase del entregable y en meses anteriores a {{month}}.",
+    "coherenceTasksNoPrior": "Sin tareas en meses anteriores dentro de esta fase.",
+    "coherenceTasksPhaseLoading": "Cargando tareas de la fase (solo este proyecto)…",
+    "coherenceTasksPhaseLoadError": "No se pudieron cargar las tareas de la fase.",
+    "coherenceTasksPhaseRetry": "Reintentar",
+    "coherencePhaseTotalsToggleShow": "Ver dedicación total en la fase",
+    "coherencePhaseTotalsToggleHide": "Ocultar dedicación total en la fase",
+    "coherencePhaseTotalsTitle": "Horas en la fase (por persona)",
+    "coherencePhaseTotalsFootnote": "«Operativas»: cerradas según la preferencia de seguimiento de la agencia; abiertas = estimadas asignadas.",
+    "coherencePhaseTotalsColEmployee": "Persona",
+    "coherencePhaseTotalsColEffective": "Operativas",
+    "coherencePhaseTotalsColPlanned": "Planif. (Σ est.)",
+    "coherencePhaseTotalsEmpty": "Sin horas en la fase.",
     "coherenceTasksScrollRegion": "Lista de tareas (desplazable)",
     "coherenceTasksTabPending": "Pendientes",
     "coherenceTasksTabCompleted": "Cerradas",
@@ -776,6 +815,59 @@
     "coherenceDeltaEmployeeVsDl": "Vs DL",
     "coherenceDeadlineDeltaTooltip": "No es lo mismo que «Por computar»: es (Plan + Comp del mes) menos las horas acordadas en el deadline. Negativo: margen por debajo del acuerdo; positivo: por encima del acuerdo.",
     "coherenceNoDeadlineSumTooltip": "No hay deadline de referencia este mes: es la suma de planificado + computado del equipo (alerta al no poder contrastar con Deadlines)."
+  },
+  "deliverableLifecycle": {
+    "tooltip": {
+      "consumedCap": "Consumido / Techo",
+      "expectedToday": "Esperado a hoy",
+      "projectedEnd": "Proyección a fin",
+      "daysLeft": "Días restantes",
+      "costToDate": "Coste hasta hoy",
+      "revenueAccrued": "Ingreso devengado",
+      "marginPct": "Margen %",
+      "unknownCost": "Coste subestimado: hay tareas asignadas a empleados eliminados"
+    },
+    "full": {
+      "consumed": "Consumido",
+      "expected": "Esperado",
+      "projected": "Proyección",
+      "daysLeft": "Días rest.",
+      "margin": "Margen %"
+    },
+    "exportOk": "CSV descargado",
+    "exportErr": "Error al exportar",
+    "costModeIndependent": "Modo de coste independiente del de la vista mensual. Por defecto, estándar.",
+    "bannerUnconfigured": "{{count}} entregables sin fechas configuradas. Configura inicio/fin para ver su consumo.",
+    "goConfigure": "Ir a proyectos",
+    "filterActive": "Activos",
+    "filterCompleted": "Completados",
+    "filterAll": "Todos",
+    "kpi": {
+      "count": "Entregables",
+      "hours": "Σ h / techo",
+      "contract": "Σ contrato",
+      "accrued": "Σ devengado",
+      "cost": "Σ coste",
+      "marginEur": "Margen €",
+      "marginPct": "Margen % pond."
+    },
+    "col": {
+      "project": "Proyecto",
+      "client": "Cliente",
+      "phase": "Fase",
+      "hours": "Horas",
+      "pacing": "Avance",
+      "cost": "Coste €",
+      "contract": "Contrato €",
+      "accrued": "Devengado €",
+      "marginEur": "Margen €",
+      "marginPct": "Margen %",
+      "status": "Estado"
+    },
+    "vsExpected": "vs esp.",
+    "emptyTitle": "Sin entregables en esta vista",
+    "emptyDesc": "Configura un proyecto tipo Entregable con fechas de fase o ajusta filtros.",
+    "ctaClients": "Configurar en Clientes y proyectos"
   },
   "sidebar": {
     "groups": {

@@ -245,7 +245,7 @@ export async function fetchInitialAppData({
             minimumHours: round2(p.minimum_hours || 0),
             monthlyFee: p.monthly_fee,
             externalId: p.external_id ? Number(p.external_id) : undefined,
-            projectType: p.project_type,
+            projectType: p.project_type?.trim() || undefined,
             deliverableContractFee: p.deliverable_contract_fee ?? undefined,
             deliverableStartDate: p.deliverable_start_date ?? undefined,
             deliverableDueDate: p.deliverable_due_date ?? undefined,

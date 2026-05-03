@@ -459,6 +459,14 @@
       "error": "Could not generate file"
     },
     "exportHubLink": "More exports",
+    "tabs": {
+      "deliverablesLifecycle": "Deliverables (lifecycle)",
+      "subtitle": "Summary · Projects (month) · Deliverables (lifecycle) · Employees"
+    },
+    "deliverablesLifecycle": {
+      "heading": "Deliverables — lifecycle",
+      "subtitle": "Full lifecycle view. No month selector."
+    },
     "commonExpenses": {
       "title": "Monthly common costs",
       "description": "Allocated to project and employee costs per your rules (global, one department, or percentage split).",
@@ -708,6 +716,9 @@
       "deleteClient": {
         "title": "Delete client?",
         "description": "This action will delete the client and all associated projects. This action cannot be undone."
+      },
+      "newProject": {
+        "deliverableBlockIntro": "Total contract amount and phase dates. The system prorates it across months to display the matching revenue in Profitability and progress in Operations Radar."
       }
     }
   },
@@ -1423,6 +1434,18 @@
     "tooltipOverBudget": "Projects exceeding this month's budget",
     "tooltipInRule": "Up to date, no excess and no tasks pending planning",
     "noResults": "No results with the current filters.",
+    "noLifecycleRisk": "No deliverables with lifecycle risk right now.",
+    "filterLifecycleRisk": "Lifecycle risk (deliv.)",
+    "tooltipLifecycleRisk": "Deliverables with consumption or projection risk across the phase (does not replace the monthly status).",
+    "lifecycleSectionTitle": "Deliverables",
+    "lifecycleColActions": "Actions",
+    "lifecycleEditProjectAria": "Edit project",
+    "lifecycleSectionHint": "Summary of the full lifecycle; it does not use the radar's month filter.",
+    "lifecycleColProject": "Project",
+    "lifecycleColPhase": "Phase",
+    "lifecycleColHours": "Hours",
+    "lifecycleColStatus": "Lifecycle status",
+    "lifecycleColDaysLeft": "Days left",
     "projectsFound_one": "{{count}} project.",
     "projectsFound_other": "{{count}} projects.",
     "actionOverBudget": "{{hours}}h over the agreement.",
@@ -1446,6 +1469,22 @@
     "coherenceStatusFilterNote": "filtered by operational status",
     "coherenceTasksButton": "Tasks",
     "coherenceTasksDialogSubtitle": "This project's tasks for the month",
+    "coherenceTasksDialogSubtitleDeliverable": "Month in view: aligned with this month's deadline. In “Prior months” you see phase tasks from before this month.",
+    "coherenceTasksTabThisMonth": "Month in view",
+    "coherenceTasksTabPriorMonths": "Prior months",
+    "coherenceTasksPriorHint": "Only tasks whose week falls in the deliverable phase and in months before {{month}}.",
+    "coherenceTasksNoPrior": "No tasks in prior months within this phase.",
+    "coherenceTasksPhaseLoading": "Loading phase tasks (this project only)…",
+    "coherenceTasksPhaseLoadError": "Could not load phase tasks.",
+    "coherenceTasksPhaseRetry": "Retry",
+    "coherencePhaseTotalsToggleShow": "Show total dedication in phase",
+    "coherencePhaseTotalsToggleHide": "Hide total dedication in phase",
+    "coherencePhaseTotalsTitle": "Hours in phase (per person)",
+    "coherencePhaseTotalsFootnote": "“Operational”: closed per agency tracking preference; open = assigned estimates.",
+    "coherencePhaseTotalsColEmployee": "Person",
+    "coherencePhaseTotalsColEffective": "Operational",
+    "coherencePhaseTotalsColPlanned": "Planned (Σ est.)",
+    "coherencePhaseTotalsEmpty": "No hours in phase.",
     "coherenceTasksScrollRegion": "Task list (scrollable)",
     "coherenceTasksTabPending": "Open",
     "coherenceTasksTabCompleted": "Closed",
@@ -1460,6 +1499,59 @@
     "coherenceDeltaEmployeeVsDl": "vs DL",
     "coherenceDeadlineDeltaTooltip": "Not the same as “To compute”: (month Plan + Computed) minus the hours agreed in Deadlines. Negative: headroom under the agreement; positive: above the agreement.",
     "coherenceNoDeadlineSumTooltip": "No deadline baseline this month: planned + computed team hours (flagged because there is nothing to compare in Deadlines)."
+  },
+  "deliverableLifecycle": {
+    "tooltip": {
+      "consumedCap": "Consumed / cap",
+      "expectedToday": "Expected to date",
+      "projectedEnd": "Projection at end",
+      "daysLeft": "Days remaining",
+      "costToDate": "Cost to date",
+      "revenueAccrued": "Accrued revenue",
+      "marginPct": "Margin %",
+      "unknownCost": "Cost underestimated: some tasks are assigned to deleted employees"
+    },
+    "full": {
+      "consumed": "Consumed",
+      "expected": "Expected",
+      "projected": "Projection",
+      "daysLeft": "Days left",
+      "margin": "Margin %"
+    },
+    "exportOk": "CSV downloaded",
+    "exportErr": "Export failed",
+    "costModeIndependent": "Cost mode is independent from the monthly view. Default is standard.",
+    "bannerUnconfigured": "{{count}} deliverables without phase dates. Set start/end to see consumption.",
+    "goConfigure": "Go to projects",
+    "filterActive": "Active",
+    "filterCompleted": "Completed",
+    "filterAll": "All",
+    "kpi": {
+      "count": "Deliverables",
+      "hours": "Σ h / cap",
+      "contract": "Σ contract",
+      "accrued": "Σ accrued",
+      "cost": "Σ cost",
+      "marginEur": "Margin €",
+      "marginPct": "Weighted margin %"
+    },
+    "col": {
+      "project": "Project",
+      "client": "Client",
+      "phase": "Phase",
+      "hours": "Hours",
+      "pacing": "Progress",
+      "cost": "Cost €",
+      "contract": "Contract €",
+      "accrued": "Accrued €",
+      "marginEur": "Margin €",
+      "marginPct": "Margin %",
+      "status": "Status"
+    },
+    "vsExpected": "vs exp.",
+    "emptyTitle": "No deliverables in this view",
+    "emptyDesc": "Configure a Deliverable project with phase dates or adjust filters.",
+    "ctaClients": "Configure in Clients & projects"
   },
   "sidebar": {
     "groups": {

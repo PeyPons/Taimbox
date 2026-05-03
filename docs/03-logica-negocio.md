@@ -30,4 +30,7 @@ Calcula el rendimiento financiero en tiempo real.
 - `isPacing`: Compara el avance operativo con el **progreso esperado del mes**: mes en curso → proporción de días calendario transcurridos; mes ya cerrado → 100 %; mes futuro → 0 %; se puede forzar con `pacingReferenceDate` (p. ej. informe burnout con fin de mes).
 - **Carga de empleado**: `useProjectMetrics` puede pasar capacidad neta del mes (calendario − ausencias − eventos de equipo), alineada con Deadlines.
 
+### 3.6. Ciclo de vida del entregable (vista agregada)
+Además de la vista **mensual** anterior, existe una vista de **fase completa** (consumo frente a `Project.budgetHours` total, ingreso devengado lineal por días de fase, coste y estados `on-track` / `at-risk` / `over-budget`). Detalle de fórmulas, asimetría días naturales vs laborables y coexistencia con el radar en **[docs/14-ciclo-vida-entregables.md](14-ciclo-vida-entregables.md)**.
+
 ---

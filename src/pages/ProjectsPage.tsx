@@ -38,6 +38,8 @@ import { SensitiveText } from '@/components/privacy/SensitiveText';
 import { PROJECT_TYPE_PRESET_VALUES, PROJECT_TYPE_ENTREGABLE } from '@/config/projectTypePresets';
 import { parseDeliverableContractFeeInput } from '@/utils/deliverableProjectFields';
 import { PhaseDatePickerButton } from '@/components/projects/PhaseDatePickerButton';
+import { useDeliverableLifecycleBatch } from '@/hooks/useDeliverableLifecycleBatch';
+import { DeliverableLifecycleBadge } from '@/components/projects/DeliverableLifecycleBadge';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -222,6 +224,17 @@ export default function ProjectsPage() {
       return a.project.name.localeCompare(b.project.name);
     });
   }, [projectsAnalysis, searchTerm, selectedEmployeeId, activeFilter]);
+
+  const deliverableLifecycleBatchIds = useMemo(
+    () =>
+      filteredProjects
+        .filter((row) => row.project.projectType === PROJECT_TYPE_ENTREGABLE)
+        .map((row) => row.project.id),
+    [filteredProjects]
+  );
+  const { data: deliverableLifecycleByProjectId } = useDeliverableLifecycleBatch(deliverableLifecycleBatchIds, {
+    costModeOverride: 'standard',
+  });
 
   const toggleProject = (id: string) => {
     setExpandedProjects(prev => {
@@ -791,6 +804,13 @@ export default function ProjectsPage() {
                               {formatProjectName(data.project.name)}
                             </SensitiveText>
                           </h3>
+                          {deliverableLifecycleByProjectId.has(data.project.id) && (
+                            <DeliverableLifecycleBadge
+                              projectId={data.project.id}
+                              lifecycle={deliverableLifecycleByProjectId.get(data.project.id)!}
+                              disableAutoFetch
+                            />
+                          )}
 
                           {/* Badges de estado con tooltips */}
                           <TooltipProvider>
@@ -1148,7 +1168,10 @@ export default function ProjectsPage() {
 
       {/* DIALOG EDITAR/CREAR */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent
+          className="max-w-2xl max-h-[90vh] overflow-y-auto"
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>{isCreating ? 'Nuevo proyecto' : 'Editar proyecto'}</DialogTitle>
             <DialogDescription>Configura los parámetros operativos y estratégicos.</DialogDescription>
@@ -1183,7 +1206,12 @@ export default function ProjectsPage() {
                 </Popover>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div
+              className={cn(
+                'grid gap-4',
+                formData.projectType === PROJECT_TYPE_ENTREGABLE ? 'grid-cols-2' : 'grid-cols-3'
+              )}
+            >
               <div className="space-y-2">
                 <Label>Horas asignadas</Label>
                 <Input type="number" value={formData.budgetHours} onChange={e => setFormData({ ...formData, budgetHours: e.target.value })} />
@@ -1192,10 +1220,12 @@ export default function ProjectsPage() {
                 <Label>Horas mínimas</Label>
                 <Input type="number" value={formData.minimumHours} onChange={e => setFormData({ ...formData, minimumHours: e.target.value })} />
               </div>
-              <div className="space-y-2">
-                <Label>Fee mensual (€)</Label>
-                <Input type="number" value={formData.monthlyFee} onChange={e => setFormData({ ...formData, monthlyFee: e.target.value })} />
-              </div>
+              {formData.projectType !== PROJECT_TYPE_ENTREGABLE && (
+                <div className="space-y-2">
+                  <Label>Fee mensual (€)</Label>
+                  <Input type="number" value={formData.monthlyFee} onChange={e => setFormData({ ...formData, monthlyFee: e.target.value })} />
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Tipo de proyecto</Label>
@@ -1216,7 +1246,10 @@ export default function ProjectsPage() {
             {formData.projectType === PROJECT_TYPE_ENTREGABLE && (
               <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/80 p-4">
                 <p className="text-xs text-slate-600">
-                  Importe total opcional (vacío = se usa el fee mensual como total del contrato al prorratear).
+                  {t(
+                    'clientsAndProjects.dialogs.newProject.deliverableBlockIntro',
+                    'Importe total del contrato y fechas de la fase. El sistema lo prorratea entre meses para mostrar el ingreso correspondiente en Rentabilidad y el avance en Seguimiento Operativo.'
+                  )}
                 </p>
                 <div className="space-y-2">
                   <Label>Importe total contrato (€)</Label>

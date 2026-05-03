@@ -15,14 +15,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   AlertTriangle, CheckCircle2, Users, TrendingUp, TrendingDown,
   Info, ChevronDown, ChevronUp, Filter, Check, Search,
-  Ban, CircleDashed, Clock, AlertOctagon, LayoutGrid, ListTodo, Pencil
+  Ban, CircleDashed, Clock, AlertOctagon, LayoutGrid, ListTodo, Pencil, Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CONSTANTS } from '@/config/constants';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import type { Allocation, Deadline } from '@/types';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
-import { format, parseISO, endOfWeek, isSameMonth, type Locale } from 'date-fns';
+import { format, parseISO, endOfWeek, isSameMonth, startOfMonth, isBefore, isAfter, subDays, type Locale } from 'date-fns';
 import { enUS, es } from 'date-fns/locale';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
@@ -30,6 +30,13 @@ import { usePrivacyDemo } from '@/contexts/PrivacyDemoContext';
 import { computeGlobalPlanningInconsistencies, filterInconsistenciesBySearch, type Inconsistency } from '@/utils/planningInconsistencies';
 import { round2 } from '@/utils/numbers';
 import type { ProjectRowItem, ProjectStatusType } from '@/hooks/useOperationsRadarData';
+import { getDeliverablePhase, type DeliverableLifecycle } from '@/utils/deliverableLifecycle';
+import { DeliverableLifecycleBadge } from '@/components/projects/DeliverableLifecycleBadge';
+import { PROJECT_TYPE_ENTREGABLE } from '@/config/projectTypePresets';
+import { getEffectiveCompletedHours } from '@/utils/hoursTracking';
+import { fetchAllocationsForDeliverablePhase } from '@/hooks/useDeliverableLifecycleCore';
+
+export type OperationsRadarStatusFilter = 'all' | ProjectStatusType | 'lifecycle-risk';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
 import { usePermissions } from '@/hooks/usePermissions';
 import { CoherenceAllocationEditDialog } from '@/components/employee/CoherenceAllocationEditDialog';
@@ -48,8 +55,8 @@ function formatTaskWeekCalendarSpan(weekStartIso: string, locale: Locale): strin
 
 export interface GlobalPlanningOperationsRadarBridge {
   rowsWithStatus: ProjectRowItem[];
-  statusFilter: 'all' | ProjectStatusType;
-  onStatusFilterChange: (v: 'all' | ProjectStatusType) => void;
+  statusFilter: OperationsRadarStatusFilter;
+  onStatusFilterChange: (v: OperationsRadarStatusFilter) => void;
   filterCounts: {
     all: number;
     'no-activity': number;
@@ -57,8 +64,11 @@ export interface GlobalPlanningOperationsRadarBridge {
     'behind-schedule': number;
     'over-budget': number;
     'in-rule': number;
+    'lifecycle-risk': number;
   };
   projectDetailsByProjectId: Map<string, { pendingTasks: Allocation[]; completedTasks: Allocation[] }>;
+  /** Ciclo de vida por proyecto (solo entregables con fase); listas usan batch en el padre */
+  lifecycleByProjectId: Map<string, DeliverableLifecycle>;
 }
 
 interface GlobalPlanningInconsistenciesProps {
@@ -98,7 +108,14 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
   const [openFilterProject, setOpenFilterProject] = useState(false);
   const [coherenceSearchQuery, setCoherenceSearchQuery] = useState('');
   const [tasksModalProjectId, setTasksModalProjectId] = useState<string | null>(null);
+  const [coherenceTasksDialogTab, setCoherenceTasksDialogTab] = useState<'month' | 'history'>('month');
+  const [showDeliverablePhaseTotals, setShowDeliverablePhaseTotals] = useState(false);
   const [coherenceEditTask, setCoherenceEditTask] = useState<Allocation | null>(null);
+  /** Tareas de la fase (entregable) cargadas bajo demanda: el contexto suele traer solo el mes en vista. */
+  const [phaseModalAllocations, setPhaseModalAllocations] = useState<Allocation[] | null>(null);
+  const [phaseModalLoading, setPhaseModalLoading] = useState(false);
+  const [phaseModalError, setPhaseModalError] = useState<Error | null>(null);
+  const [phaseModalRetryNonce, setPhaseModalRetryNonce] = useState(0);
   const listTopRef = useRef<HTMLDivElement>(null);
   const { formatName: formatProjectName } = useProjectAliasing();
   const { isActive: isPrivacyDemo, anonymizer: privacyAnonymizer } = usePrivacyDemo();
@@ -183,6 +200,139 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
     preference,
   ]);
 
+  useEffect(() => {
+    if (tasksModalProjectId === null) {
+      setCoherenceTasksDialogTab('month');
+      setShowDeliverablePhaseTotals(false);
+      setPhaseModalAllocations(null);
+      setPhaseModalLoading(false);
+      setPhaseModalError(null);
+    }
+  }, [tasksModalProjectId]);
+
+  /** Proyecto del modal de tareas (referencia puede rotar; ver fase memoizada por campos primitivos abajo). */
+  const modalProjectForTasksDialog = useMemo(() => {
+    if (!tasksModalProjectId) return null;
+    return projects.find((p) => p.id === tasksModalProjectId) ?? null;
+  }, [tasksModalProjectId, projects]);
+
+  /** Fase del entregable para el proyecto del modal de tareas (Seguimiento operativo). */
+  const deliverableModalPhase = useMemo(() => {
+    const project = modalProjectForTasksDialog;
+    if (!project || project.projectType !== PROJECT_TYPE_ENTREGABLE) return null;
+    return getDeliverablePhase(project);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- dedupe por fechas; `modalProjectForTasksDialog` rota con `projects`.
+  }, [
+    modalProjectForTasksDialog?.id,
+    modalProjectForTasksDialog?.projectType,
+    modalProjectForTasksDialog?.deliverableStartDate,
+    modalProjectForTasksDialog?.deliverableDueDate,
+  ]);
+
+  const agencyIdForPhaseFetch = currentAgency?.id;
+
+  useEffect(() => {
+    if (!tasksModalProjectId || !deliverableModalPhase) {
+      return;
+    }
+    if (!agencyIdForPhaseFetch) {
+      setPhaseModalAllocations(null);
+      setPhaseModalLoading(false);
+      setPhaseModalError(
+        new Error(
+          'No hay agencia activa; no se puede cargar la fase. Recarga la página o vuelve a entrar en la agencia.'
+        )
+      );
+      return;
+    }
+    let cancelled = false;
+    setPhaseModalAllocations(null);
+    setPhaseModalLoading(true);
+    setPhaseModalError(null);
+    fetchAllocationsForDeliverablePhase({
+      projectId: tasksModalProjectId,
+      phase: deliverableModalPhase,
+      agencyId: agencyIdForPhaseFetch,
+    })
+      .then(rows => {
+        if (cancelled) return;
+        setPhaseModalAllocations(rows);
+      })
+      .catch(e => {
+        if (cancelled) return;
+        setPhaseModalError(e instanceof Error ? e : new Error(String(e)));
+        setPhaseModalAllocations(null);
+      })
+      .finally(() => {
+        if (!cancelled) setPhaseModalLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tasksModalProjectId, deliverableModalPhase, phaseModalRetryNonce, agencyIdForPhaseFetch]);
+
+  /** Fusiona filas de fase con el contexto (misma tarea) para reflejar ediciones locales sin recargar. */
+  const mergedPhaseAllocationsForModal = useMemo(() => {
+    if (!tasksModalProjectId || !deliverableModalPhase || phaseModalAllocations == null) {
+      return null;
+    }
+    const overlay = new Map(
+      (allocations ?? []).filter(a => a.projectId === tasksModalProjectId).map(a => [a.id, a])
+    );
+    return phaseModalAllocations.map(a => overlay.get(a.id) ?? a);
+  }, [phaseModalAllocations, allocations, tasksModalProjectId, deliverableModalPhase]);
+
+  /** Tareas de meses anteriores al mes en vista, dentro de la fase (solo entregables con fase). */
+  const historicalTasksForModal = useMemo(() => {
+    if (!tasksModalProjectId || !deliverableModalPhase || mergedPhaseAllocationsForModal == null) {
+      return [];
+    }
+    const phase = deliverableModalPhase;
+    const viewMonthStart = startOfMonth(viewDate);
+    const weekMin = subDays(phase.start, 6);
+    return mergedPhaseAllocationsForModal
+      .filter(a => {
+        const ws = parseISO(a.weekStartDate);
+        if (Number.isNaN(ws.getTime())) return false;
+        if (!isBefore(startOfMonth(ws), viewMonthStart)) return false;
+        if (isBefore(ws, weekMin) || isAfter(ws, phase.due)) return false;
+        return true;
+      })
+      .sort((a, b) => b.weekStartDate.localeCompare(a.weekStartDate));
+  }, [tasksModalProjectId, deliverableModalPhase, mergedPhaseAllocationsForModal, viewDate]);
+
+  /** Totales por persona en toda la fase (operativo: cerradas según preferencia; abiertas = estimadas). */
+  const phaseTotalsByEmployee = useMemo(() => {
+    if (!tasksModalProjectId || !deliverableModalPhase || mergedPhaseAllocationsForModal == null) {
+      return [];
+    }
+    const phase = deliverableModalPhase;
+    const weekMin = subDays(phase.start, 6);
+    const list = mergedPhaseAllocationsForModal.filter(a => {
+      const ws = parseISO(a.weekStartDate);
+      if (Number.isNaN(ws.getTime())) return false;
+      if (isBefore(ws, weekMin) || isAfter(ws, phase.due)) return false;
+      return true;
+    });
+    const map = new Map<string, { effectiveH: number; plannedH: number }>();
+    for (const a of list) {
+      const eff =
+        a.status === 'completed' ? getEffectiveCompletedHours(a, preference) : a.hoursAssigned;
+      const cur = map.get(a.employeeId) ?? { effectiveH: 0, plannedH: 0 };
+      cur.effectiveH += eff;
+      cur.plannedH += a.hoursAssigned;
+      map.set(a.employeeId, cur);
+    }
+    return [...map.entries()]
+      .map(([employeeId, v]) => ({
+        employeeId,
+        effectiveH: round2(v.effectiveH),
+        plannedH: round2(v.plannedH),
+        name: employees?.find((e) => e.id === employeeId)?.name ?? '—',
+      }))
+      .sort((a, b) => b.effectiveH - a.effectiveH);
+  }, [tasksModalProjectId, deliverableModalPhase, mergedPhaseAllocationsForModal, preference, employees]);
+
   // Expandir todos solo si hay pocos; con muchos (ej. 100+) mantener colapsados para rendimiento
   useEffect(() => {
     if (inconsistencies.length > 0 && inconsistencies.length <= coherenceAutoExpandMax) {
@@ -217,6 +367,12 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
 
   const filteredCoherence = useMemo(() => {
     if (!operationsRadar || operationsRadar.statusFilter === 'all') return filteredBySearch;
+    if (operationsRadar.statusFilter === 'lifecycle-risk') {
+      return filteredBySearch.filter((inc) => {
+        const lc = operationsRadar.lifecycleByProjectId.get(inc.projectId);
+        return lc != null && (lc.status === 'at-risk' || lc.status === 'over-budget');
+      });
+    }
     return filteredBySearch.filter(inc => {
       const row = radarRowByProjectId.get(inc.projectId);
       const st = row?.status ?? 'in-rule';
@@ -575,6 +731,44 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                     <p className="text-xs">{t('operationsRadar.tooltipInRule')}</p>
                   </TooltipContent>
                 </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={operationsRadar.statusFilter === 'lifecycle-risk' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => operationsRadar.onStatusFilterChange('lifecycle-risk')}
+                      className={cn(
+                        'h-8 text-xs gap-1.5',
+                        operationsRadar.statusFilter === 'lifecycle-risk'
+                          ? 'bg-violet-600 hover:bg-violet-700'
+                          : 'bg-white border-violet-200 text-violet-800 hover:bg-violet-50'
+                      )}
+                    >
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      {t('operationsRadar.filterLifecycleRisk', 'Riesgo vida (entreg.)')}
+                      {operationsRadar.filterCounts['lifecycle-risk'] > 0 && (
+                        <Badge
+                          className={cn(
+                            'ml-1 h-5 px-1.5 text-[10px]',
+                            operationsRadar.statusFilter === 'lifecycle-risk'
+                              ? 'bg-violet-800'
+                              : 'bg-violet-100 text-violet-800'
+                          )}
+                        >
+                          {operationsRadar.filterCounts['lifecycle-risk']}
+                        </Badge>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-[240px] text-center">
+                    <p className="text-xs">
+                      {t(
+                        'operationsRadar.tooltipLifecycleRisk',
+                        'Entregables con consumo o proyección de riesgo a lo largo de la fase (no sustituye al estado del mes).'
+                      )}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
             </div>
           )}
@@ -585,7 +779,14 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
 
           {filteredCoherence.length === 0 && filteredBySearch.length > 0 && operationsRadar && operationsRadar.statusFilter !== 'all' ? (
             <div className="text-center py-4 space-y-2 border rounded-lg bg-slate-50 border-dashed">
-              <p className="text-sm text-slate-600">{t('operationsRadar.noResults')}</p>
+              <p className="text-sm text-slate-600">
+                {operationsRadar.statusFilter === 'lifecycle-risk'
+                  ? t(
+                      'operationsRadar.noLifecycleRisk',
+                      'No hay entregables con riesgo de vida en este momento.'
+                    )
+                  : t('operationsRadar.noResults')}
+              </p>
               <Button variant="outline" size="sm" onClick={() => operationsRadar.onStatusFilterChange('all')}>
                 {t('operationsRadar.showAll', 'Ver todos')}
               </Button>
@@ -671,19 +872,29 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                           </SensitiveText>
                         </div>
                         {operationsRadar && (
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              'shrink-0 text-[10px]',
-                              opStatus === 'over-budget' && 'bg-red-100 text-red-800 border-red-200',
-                              opStatus === 'behind-schedule' && 'bg-orange-100 text-orange-800 border-orange-200',
-                              opStatus === 'needs-planning' && 'bg-amber-100 text-amber-800 border-amber-200',
-                              opStatus === 'no-activity' && 'bg-slate-100 text-slate-700 border-slate-200',
-                              opStatus === 'in-rule' && 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          <>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                'shrink-0 text-[10px]',
+                                opStatus === 'over-budget' && 'bg-red-100 text-red-800 border-red-200',
+                                opStatus === 'behind-schedule' && 'bg-orange-100 text-orange-800 border-orange-200',
+                                opStatus === 'needs-planning' && 'bg-amber-100 text-amber-800 border-amber-200',
+                                opStatus === 'no-activity' && 'bg-slate-100 text-slate-700 border-slate-200',
+                                opStatus === 'in-rule' && 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              )}
+                            >
+                              {statusLabel}
+                            </Badge>
+                            {operationsRadar.lifecycleByProjectId.has(inc.projectId) && (
+                              <DeliverableLifecycleBadge
+                                projectId={inc.projectId}
+                                lifecycle={operationsRadar.lifecycleByProjectId.get(inc.projectId)!}
+                                disableAutoFetch
+                                className="shrink-0"
+                              />
                             )}
-                          >
-                            {statusLabel}
-                          </Badge>
+                          </>
                         )}
                       </div>
                       {(inc.budgetHours > 0 || inc.minimumHours > 0) && (
@@ -904,7 +1115,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
           if (!open) setTasksModalProjectId(null);
         }}
       >
-        <DialogContent className="flex max-h-[90vh] max-w-lg flex-col gap-0 overflow-hidden sm:max-w-lg">
+        <DialogContent className="flex max-h-[90vh] max-w-lg flex-col gap-0 overflow-hidden sm:max-w-xl">
           <DialogHeader className="shrink-0 space-y-1 pr-8 pb-3 text-left">
             <DialogTitle className="leading-snug">
               {tasksModalProjectId ? (
@@ -914,7 +1125,12 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
               ) : null}
             </DialogTitle>
             <p className="text-sm font-normal text-slate-500">
-              {t('operationsRadar.coherenceTasksDialogSubtitle', 'Tareas del mes en este proyecto')}
+              {deliverableModalPhase
+                ? t(
+                    'operationsRadar.coherenceTasksDialogSubtitleDeliverable',
+                    'Mes en vista: coherencia con el deadline del mes. En «Meses anteriores» ves tareas de la fase antes de este mes.'
+                  )
+                : t('operationsRadar.coherenceTasksDialogSubtitle', 'Tareas del mes en este proyecto')}
             </p>
           </DialogHeader>
           {tasksModalProjectId && operationsRadar ? (
@@ -927,7 +1143,9 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                 const detail = operationsRadar.projectDetailsByProjectId.get(tasksModalProjectId);
                 const pending = detail?.pendingTasks ?? [];
                 const completed = detail?.completedTasks ?? [];
-                return (
+                const isDelivPhase = deliverableModalPhase != null;
+
+                const monthInViewTabs = (
                   <Tabs defaultValue="pending" className="w-full pb-2">
                     <TabsList className="sticky top-0 z-[1] grid w-full grid-cols-2 bg-background pb-0 pt-0">
                       <TabsTrigger value="pending" className="text-xs">
@@ -1065,6 +1283,273 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                       )}
                     </TabsContent>
                   </Tabs>
+                );
+
+                return (
+                  <div className="space-y-3 pb-2">
+                    {isDelivPhase ? (
+                      <Tabs
+                        value={coherenceTasksDialogTab}
+                        onValueChange={v => setCoherenceTasksDialogTab(v as 'month' | 'history')}
+                        className="w-full"
+                      >
+                        <TabsList className="sticky top-0 z-[2] grid h-auto w-full grid-cols-2 gap-1 bg-background p-1">
+                          <TabsTrigger value="month" className="text-xs">
+                            {t('operationsRadar.coherenceTasksTabThisMonth', 'Mes en vista')}
+                          </TabsTrigger>
+                          <TabsTrigger value="history" className="text-xs">
+                            {t('operationsRadar.coherenceTasksTabPriorMonths', 'Meses anteriores')}
+                            {historicalTasksForModal.length > 0 ? ` (${historicalTasksForModal.length})` : ''}
+                          </TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="month" className="mt-0 focus-visible:outline-none">
+                          {monthInViewTabs}
+                        </TabsContent>
+                        <TabsContent value="history" className="mt-3 space-y-1.5 focus-visible:outline-none">
+                          {phaseModalLoading ? (
+                            <div className="flex flex-col items-center justify-center gap-2 py-10 text-sm text-slate-500">
+                              <Loader2 className="h-6 w-6 animate-spin text-slate-400" aria-hidden />
+                              <span>
+                                {t(
+                                  'operationsRadar.coherenceTasksPhaseLoading',
+                                  'Cargando tareas de la fase (solo este proyecto)…'
+                                )}
+                              </span>
+                            </div>
+                          ) : phaseModalError ? (
+                            <div className="space-y-3 py-6 text-center">
+                              <p className="text-sm text-red-600">
+                                {t('operationsRadar.coherenceTasksPhaseLoadError', 'No se pudieron cargar las tareas de la fase.')}
+                              </p>
+                              {phaseModalError.message ? (
+                                <p className="text-left text-xs text-slate-600 break-words font-mono leading-snug">
+                                  {phaseModalError.message}
+                                </p>
+                              ) : null}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="text-xs"
+                                onClick={() => setPhaseModalRetryNonce(n => n + 1)}
+                              >
+                                {t('operationsRadar.coherenceTasksPhaseRetry', 'Reintentar')}
+                              </Button>
+                            </div>
+                          ) : (
+                            <>
+                          <p className="text-[10px] text-slate-500 px-0.5">
+                            {t('operationsRadar.coherenceTasksPriorHint', {
+                              defaultValue:
+                                'Solo tareas con semana en la fase del entregable y en meses anteriores a {{month}}.',
+                              month: format(viewDate, 'MMMM yyyy', { locale: dateLocale }),
+                            })}
+                          </p>
+                          {historicalTasksForModal.length > 0 ? (
+                            historicalTasksForModal.map(task => {
+                              const emp = employees?.find(e => e.id === task.employeeId);
+                              const weekSpan = formatTaskWeekCalendarSpan(task.weekStartDate, dateLocale);
+                              const monthLbl = format(parseISO(task.weekStartDate), 'MMM yyyy', { locale: dateLocale });
+                              const isClosed = task.status === 'completed';
+                              const canEditThisTask =
+                                canAssignTasksToOthers || task.employeeId === currentUser?.id;
+                              return (
+                                <div
+                                  key={task.id}
+                                  className={cn(
+                                    'flex w-full min-w-0 items-start gap-2 border py-2 pl-2 pr-2 rounded-md text-xs',
+                                    isClosed ? 'bg-slate-50/80' : 'bg-white'
+                                  )}
+                                >
+                                  <div className="flex min-w-0 flex-1 items-start gap-2 overflow-hidden">
+                                    <Avatar className="mt-0.5 h-6 w-6 shrink-0 border">
+                                      <AvatarImage src={emp?.avatarUrl} />
+                                      <AvatarFallback
+                                        className={cn(
+                                          'text-[9px] font-bold',
+                                          isClosed ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                                        )}
+                                      >
+                                        {emp?.name?.substring(0, 2).toUpperCase() ?? '??'}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="min-w-0 flex-1 overflow-hidden">
+                                      <div className="flex flex-wrap items-center gap-1">
+                                        <Badge variant="outline" className="h-5 px-1.5 text-[9px] font-normal text-slate-600">
+                                          {monthLbl}
+                                        </Badge>
+                                        <Badge
+                                          variant="outline"
+                                          className={cn(
+                                            'h-5 px-1.5 text-[9px] font-normal',
+                                            isClosed ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'
+                                          )}
+                                        >
+                                          {isClosed
+                                            ? t('operationsRadar.coherenceTasksTabCompleted', 'Cerradas')
+                                            : t('operationsRadar.coherenceTasksTabPending', 'Pendientes')}
+                                        </Badge>
+                                      </div>
+                                      <p className="mt-1 line-clamp-2 min-w-0 break-words font-medium text-slate-800 sm:line-clamp-3">
+                                        <SensitiveText kind="task" id={task.id}>
+                                          {task.taskName || t('operationsRadar.unnamedTask', 'Tarea sin nombre')}
+                                        </SensitiveText>
+                                      </p>
+                                      <p className="mt-0.5 min-w-0 truncate text-[10px] text-slate-400" title={`${emp?.name ?? ''} · ${weekSpan}`}>
+                                        <SensitiveText kind="employee" id={task.employeeId}>{emp?.name ?? '—'}</SensitiveText>
+                                        <span className="text-slate-300"> · </span>
+                                        <span className="text-slate-500">{weekSpan}</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                  {canEditThisTask && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 shrink-0 text-slate-500 hover:text-slate-800"
+                                      onClick={() => setCoherenceEditTask(task)}
+                                      aria-label={t('operationsRadar.coherenceTasksEditAria', 'Editar tarea')}
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </Button>
+                                  )}
+                                  <div className="flex min-w-[7.25rem] shrink-0 flex-col items-end justify-start gap-0.5 text-right tabular-nums">
+                                    {isClosed ? (
+                                      <>
+                                        <span className="max-w-full whitespace-nowrap font-mono text-[10px] leading-tight text-slate-600">
+                                          {t('operationsRadar.taskEstShort', 'Est')}: {task.hoursAssigned ?? 0}h
+                                        </span>
+                                        <span className="max-w-full whitespace-nowrap font-mono text-[10px] leading-tight text-blue-600">
+                                          {t('operationsRadar.actualLabel', 'Real')}: {task.hoursActual ?? task.hoursAssigned ?? 0}h
+                                        </span>
+                                        <span className="max-w-full whitespace-nowrap font-mono text-[10px] leading-tight text-emerald-600">
+                                          {t('operationsRadar.computedLabel', 'Computado')}: {task.hoursComputed ?? task.hoursAssigned ?? 0}h
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <span className="whitespace-nowrap font-mono text-sm font-bold leading-tight text-slate-800">
+                                          {task.hoursAssigned ?? 0}h
+                                        </span>
+                                        <span className="whitespace-nowrap text-[10px] leading-tight text-slate-400">
+                                          {t('operationsRadar.estimated', 'estimadas')}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <p className="text-sm text-slate-500 text-center py-6 border border-dashed rounded-md bg-slate-50">
+                              {t(
+                                'operationsRadar.coherenceTasksNoPrior',
+                                'Sin tareas en meses anteriores dentro de esta fase.'
+                              )}
+                            </p>
+                          )}
+                            </>
+                          )}
+                        </TabsContent>
+                      </Tabs>
+                    ) : (
+                      monthInViewTabs
+                    )}
+
+                    {isDelivPhase && (
+                      <div className="space-y-2 border-t border-slate-200 pt-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-9 w-full text-xs"
+                          onClick={() => setShowDeliverablePhaseTotals(s => !s)}
+                        >
+                          {showDeliverablePhaseTotals
+                            ? t('operationsRadar.coherencePhaseTotalsToggleHide', 'Ocultar dedicación total en la fase')
+                            : t('operationsRadar.coherencePhaseTotalsToggleShow', 'Ver dedicación total en la fase')}
+                        </Button>
+                        {showDeliverablePhaseTotals && (
+                          <div className="rounded-md border border-slate-200 bg-slate-50/90 p-3 text-xs">
+                            <p className="mb-2 font-semibold text-slate-800">
+                              {t('operationsRadar.coherencePhaseTotalsTitle', 'Horas en la fase (por persona)')}
+                            </p>
+                            <p className="mb-2 text-[10px] leading-snug text-slate-500">
+                              {t(
+                                'operationsRadar.coherencePhaseTotalsFootnote',
+                                '«Operativas»: cerradas según la preferencia de seguimiento de la agencia; abiertas = estimadas asignadas.'
+                              )}
+                            </p>
+                            {phaseModalLoading ? (
+                              <div className="flex items-center gap-2 py-4 text-slate-500">
+                                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-slate-400" aria-hidden />
+                                <span>
+                                  {t(
+                                    'operationsRadar.coherenceTasksPhaseLoading',
+                                    'Cargando tareas de la fase (solo este proyecto)…'
+                                  )}
+                                </span>
+                              </div>
+                            ) : phaseModalError ? (
+                              <div className="space-y-2 py-2">
+                                <p className="text-sm text-red-600">
+                                  {t('operationsRadar.coherenceTasksPhaseLoadError', 'No se pudieron cargar las tareas de la fase.')}
+                                </p>
+                                {phaseModalError.message ? (
+                                  <p className="text-xs text-slate-600 break-words font-mono leading-snug">
+                                    {phaseModalError.message}
+                                  </p>
+                                ) : null}
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 text-xs"
+                                  onClick={() => setPhaseModalRetryNonce(n => n + 1)}
+                                >
+                                  {t('operationsRadar.coherenceTasksPhaseRetry', 'Reintentar')}
+                                </Button>
+                              </div>
+                            ) : phaseTotalsByEmployee.length > 0 ? (
+                              <table className="w-full border-collapse text-left text-[11px]">
+                                <thead>
+                                  <tr className="border-b border-slate-200 text-slate-600">
+                                    <th className="py-1.5 pr-2 font-medium">
+                                      {t('operationsRadar.coherencePhaseTotalsColEmployee', 'Persona')}
+                                    </th>
+                                    <th className="py-1.5 pr-2 text-right font-medium tabular-nums">
+                                      {t('operationsRadar.coherencePhaseTotalsColEffective', 'Operativas')}
+                                    </th>
+                                    <th className="py-1.5 text-right font-medium tabular-nums">
+                                      {t('operationsRadar.coherencePhaseTotalsColPlanned', 'Planif. (Σ est.)')}
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {phaseTotalsByEmployee.map(row => (
+                                    <tr key={row.employeeId} className="border-b border-slate-100 last:border-0">
+                                      <td className="py-1.5 pr-2">
+                                        <SensitiveText kind="employee" id={row.employeeId}>{row.name}</SensitiveText>
+                                      </td>
+                                      <td className="py-1.5 pr-2 text-right font-mono tabular-nums text-slate-800">
+                                        {row.effectiveH}h
+                                      </td>
+                                      <td className="py-1.5 text-right font-mono tabular-nums text-slate-600">
+                                        {row.plannedH}h
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            ) : (
+                              <p className="text-slate-500">{t('operationsRadar.coherencePhaseTotalsEmpty', 'Sin horas en la fase.')}</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 );
               })()}
             </div>

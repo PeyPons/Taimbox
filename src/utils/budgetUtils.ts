@@ -10,6 +10,23 @@ function round2(n: number): number {
   return Math.round((n + Number.EPSILON) * 100) / 100;
 }
 
+/** Entregable sin prorrateo por fase: fee mensual explícito o, si es 0, importe de contrato como referencia mensual. */
+function entregableMonthlyFeeWithoutPhase(project: ProjectFeeFields, base: number): number {
+  if (base > 0) {
+    return round2(base);
+  }
+  const contractOnly =
+    project.deliverableContractFee != null &&
+    Number.isFinite(project.deliverableContractFee) &&
+    project.deliverableContractFee >= 0
+      ? project.deliverableContractFee
+      : 0;
+  if (contractOnly > 0) {
+    return round2(contractOnly);
+  }
+  return 0;
+}
+
 /** Campos de proyecto usados para el fee mensual efectivo (entregables). */
 export type ProjectFeeFields = {
   monthlyFee?: number;
@@ -24,7 +41,9 @@ export type ProjectFeeFields = {
  * - Retainers y demás tipos: `monthlyFee` del proyecto.
  * - Entregable con inicio y fin: prorrateo lineal por **días de calendario** del total del contrato
  *   (`deliverableContractFee` si existe y ≥ 0; si no, `monthlyFee` como total del contrato).
- * - Entregable sin fechas completas: mismo que retainer (`monthlyFee` por mes).
+ * - Entregable sin fechas completas (o fechas inválidas): `monthlyFee` si > 0; si el formulario dejó fee mensual en 0 pero hay
+ *   `deliverableContractFee`, se usa ese importe como **referencia mensual** hasta definir la fase (sin prorrateo).
+ *   Si el importe es el total anual/largo, conviene completar fechas para prorrateo correcto.
  */
 export function getEffectiveMonthlyFee(project: ProjectFeeFields, month: Date): number {
   const base = project.monthlyFee ?? 0;
@@ -35,7 +54,7 @@ export function getEffectiveMonthlyFee(project: ProjectFeeFields, month: Date): 
   const startStr = project.deliverableStartDate?.trim();
   const dueStr = project.deliverableDueDate?.trim();
   if (!startStr || !dueStr) {
-    return base;
+    return entregableMonthlyFeeWithoutPhase(project, base);
   }
 
   let phaseStart: Date;
@@ -44,10 +63,10 @@ export function getEffectiveMonthlyFee(project: ProjectFeeFields, month: Date): 
     phaseStart = parseISO(startStr);
     phaseEnd = parseISO(dueStr);
   } catch {
-    return base;
+    return entregableMonthlyFeeWithoutPhase(project, base);
   }
   if (Number.isNaN(phaseStart.getTime()) || Number.isNaN(phaseEnd.getTime()) || phaseEnd < phaseStart) {
-    return base;
+    return entregableMonthlyFeeWithoutPhase(project, base);
   }
 
   const contractTotal =
