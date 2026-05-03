@@ -1,0 +1,359 @@
+{
+  "seo": {
+    "title": "Documentación API | Taimbox",
+    "description": "Documentación de la API de integración de Taimbox. Conecta tus herramientas con datos de planificación, equipo y proyectos."
+  },
+  "page": {
+    "navSheetTitle": "Navegación",
+    "home": "Inicio",
+    "guide": "Guía",
+    "apiDocsTitle": "API Docs",
+    "apiIntegrations": "API e integraciones",
+    "login": "Acceder",
+    "loginShort": "App",
+    "sectionTutorials": "Tutoriales",
+    "sectionSdkRest": "SDK y REST",
+    "sectionReference": "Referencia de recursos",
+    "footerGuide": "Guía de funcionalidades",
+    "footerHome": "Volver al inicio",
+    "sidebarAria": "Navegación de la documentación"
+  },
+  "toc": {
+    "content": "Contenido",
+    "expandAll": "Expandir todo",
+    "collapseAll": "Colapsar todo",
+    "groups": {
+      "overview": "Resumen",
+      "tutorials": "Tutoriales",
+      "sdkRest": "SDK y REST",
+      "reference": "Referencia de recursos"
+    },
+    "items": {
+      "intro": "Introducción",
+      "auth": "Autenticación y seguridad",
+      "baseUrl": "URL base y cabeceras",
+      "responses": "Respuestas y errores",
+      "changelog": "Changelog",
+      "tutorialQuickstart": "Primeros pasos",
+      "tutorialSyncTeam": "Sincronizar equipo",
+      "tutorialPlanning": "Automatizar planificación",
+      "tutorialReports": "Exportar informes",
+      "tutorialAbsences": "Gestionar ausencias",
+      "sdk": "SDK JavaScript",
+      "rest": "API REST (HTTP)",
+      "filtering": "Filtrado y paginación",
+      "realtime": "Suscripciones en tiempo real",
+      "resOrganizacion": "Organización",
+      "resPlanificacion": "Planificación",
+      "resTransferencias": "Transferencias",
+      "resAusencias": "Ausencias y eventos",
+      "resConfiguracion": "Configuración",
+      "resFeedback": "Feedback",
+      "resObjetivos": "Objetivos",
+      "resBloqueos": "Bloqueos de edición"
+    }
+  },
+  "search": {
+    "placeholder": "Buscar…",
+    "resourcePrefix": "Recurso:",
+    "fieldPrefix": "Campo",
+    "shortcut": "Ctrl K"
+  },
+  "reference": {
+    "expandAll": "Expandir todo",
+    "collapseAll": "Colapsar todo"
+  },
+  "resourceCard": {
+    "columns": "Columnas",
+    "responseExamples": "Ejemplos de respuesta",
+    "usageExamples": "Ejemplos de uso",
+    "typescript": "TypeScript",
+    "curl": "cURL",
+    "fetch": "Consultar",
+    "create": "Crear"
+  },
+  "paramTable": {
+    "field": "Campo",
+    "type": "Tipo",
+    "required": "Requerido",
+    "default": "Predeterminado",
+    "relation": "Relación",
+    "description": "Descripción",
+    "yes": "Sí",
+    "no": "No"
+  },
+  "responseExample": {
+    "label": "Respuesta",
+    "getList": "GET (lista)",
+    "getOne": "GET (uno)",
+    "post": "POST"
+  },
+  "endpointBlock": {
+    "sdkTab": "JavaScript SDK",
+    "curlTab": "cURL"
+  },
+  "headerBadge": "CABECERA",
+  "copyCodeTitle": "Copiar código",
+  "copySectionAria": "Copiar enlace a esta sección",
+  "toastLinkCopied": "Enlace copiado",
+  "toastLinkCopiedDesc": "Puedes pegarlo para compartir esta sección",
+  "toastCopyFailed": "No se pudo copiar",
+  "overview": {
+    "intro": {
+      "title": "API de integración",
+      "subtitle": "Integra los datos de planificación, equipo y proyectos de tu agencia en Taimbox directamente con tus herramientas internas.",
+      "tokenTitle": "Genera tu token API",
+      "tokenBody": "Los administradores de cada agencia pueden crear sus propios tokens de acceso desde la sección <strong>API e integraciones</strong> dentro de la app. Cada token está vinculado a tu <code>agency_id</code> y protegido por políticas RLS (Row Level Security).",
+      "tokenRls": "Todas las operaciones están limitadas a los datos de tu agencia. No es posible acceder a datos de otras agencias.",
+      "tokenCta": "Ir a API e integraciones",
+      "useCasesTitle": "Casos de uso",
+      "useCases": [
+        "Sincronizar proyectos y empleados con tu ERP o CRM",
+        "Consultar horas asignadas y reales por semana o mes",
+        "Crear ausencias y eventos del equipo automáticamente",
+        "Generar informes personalizados con datos de planificación",
+        "Automatizar la creación de asignaciones desde scripts",
+        "Recibir cambios en tiempo real mediante suscripciones Realtime"
+      ]
+    },
+    "auth": {
+      "title": "Autenticación y seguridad",
+      "intro": "Para usar la API necesitas dos valores en las cabeceras de cada petición:",
+      "apikeyBody": "La clave anónima (<code>ANON_KEY</code>) de tu instancia Supabase. Es la misma que usa la aplicación web. Se envía en la cabecera <code>apikey</code>.",
+      "authBody": "Token JWT generado desde <0>API e integraciones</0>. Contiene el <code>agency_id</code> de tu agencia. Se envía como <code>Bearer &lt;token&gt;</code>.",
+      "authLink": "API e integraciones",
+      "howToTitle": "Cómo obtener un token",
+      "steps": [
+        "Inicia sesión en Taimbox como administrador de tu agencia.",
+        "Ve a Configuración → API e integraciones en el menú lateral.",
+        "Pulsa Crear token, asigna un nombre descriptivo y elige los permisos (solo lectura o lectura/escritura). Los tokens de solo lectura devuelven 403 en POST, PATCH y DELETE.",
+        "Copia el JWT que se muestra. Solo se muestra una vez; guárdalo en un lugar seguro."
+      ],
+      "exampleTitle": "Ejemplo de petición autenticada",
+      "curlExample": "curl -X GET \\\n  'https://api.taimbox.com/rest/v1/employees?is_active=eq.true' \\\n  -H 'apikey: <ANON_KEY>' \\\n  -H 'Authorization: Bearer <TU_API_TOKEN>' \\\n  -H 'Content-Type: application/json'",
+      "securityTitle": "Buenas prácticas de seguridad",
+      "security": [
+        { "title": "No expongas tokens", "text": "Nunca incluyas tokens en repositorios públicos, registros o código front accesible." },
+        { "title": "Rota periódicamente", "text": "Revoca y regenera tokens cada cierto tiempo. Revoca de inmediato si sospechas un compromiso." },
+        { "title": "Permisos mínimos", "text": "Crea tokens solo con los permisos necesarios. Usa solo lectura si no necesitas escribir." },
+        { "title": "Usa caducidad", "text": "Al crear un token puedes definir días de caducidad. Los tokens sin caducidad son más arriesgados." }
+      ],
+      "rlsTitle": "Row Level Security (RLS):",
+      "rlsBody": "Las políticas RLS garantizan que solo puedes acceder a datos de tu agencia. El JWT contiene el <code>agency_id</code> y PostgREST lo aplica automáticamente.",
+      "rateTitle": "Limitación de ritmo:",
+      "rateBody": "Actualmente no hay límites estrictos de tasa, pero se recomienda no superar 100 peticiones/minuto. En versiones futuras podrían aplicarse límites formales."
+    },
+    "baseUrl": {
+      "title": "URL base y cabeceras",
+      "intro": "Todas las peticiones van a la URL de la API de Taimbox. Necesitas la <code>ANON_KEY</code> de tu instancia Supabase (la misma que usa la app) y un <code>API_TOKEN</code> que puedes generar en <strong>API e integraciones</strong>.",
+      "codeBlock": "# URL base de la API de Taimbox\nhttps://api.taimbox.com/rest/v1/\n\n# Cabeceras obligatorias en cada petición\napikey: <ANON_KEY>                      # Clave anónima de tu instancia Supabase\nAuthorization: Bearer <TU_API_TOKEN>    # Token generado en API e integraciones\nContent-Type: application/json\nPrefer: return=representation           # Para recibir el objeto creado o modificado",
+      "importantTitle": "Importante:",
+      "importantBody": "Tu token está vinculado a tu agencia mediante un JWT firmado. Solo podrás leer y escribir datos de tu propia agencia gracias a las políticas RLS. Si necesitas revocar un token, hazlo desde API e integraciones.",
+      "agencyIdTitle": "¿Cuándo necesito el ID de agencia?",
+      "agencyIdRead": "<strong>En lecturas (GET):</strong> Nunca. El token ya identifica tu agencia y RLS filtra automáticamente. No hace falta pasar <code>agency_id</code> en los filtros.",
+      "agencyIdWrite": "<strong>En inserciones (POST):</strong> Al crear empleados, clientes, proyectos u otros recursos que pertenecen a una agencia, el cuerpo debe incluir <code>agency_id</code>. Puedes copiarlo desde <strong>API e integraciones</strong> (apartado «Datos de conexión», campo «ID de agencia») u obtenerlo con <code>GET /agencies</code> (solo verás tu agencia)."
+    },
+    "responses": {
+      "title": "Respuestas y errores",
+      "intro": "Todas las respuestas son JSON. La API devuelve códigos HTTP estándar y errores estructurados. Comprueba siempre el campo <code>error</code> en la respuesta del SDK o el estado HTTP en peticiones directas.",
+      "empty200Title": "200 con cuerpo vacío:",
+      "empty200Body": "Una petición GET correcta (token válido) puede devolver <code>[]</code> con estado 200 cuando no hay filas que cumplan el filtro o cuando RLS no permite ver ninguna. Solo recibirás 401/403 si el token es inválido o no tienes permiso para el recurso. Trata 200 + array vacío como «sin resultados», no como error.",
+      "formatTitle": "Formato de datos",
+      "formatCards": [
+        { "title": "GET lista", "status": "200", "desc": "Devuelve un array JSON de objetos. Puede estar vacío si no hay resultados o si RLS no permite ver ninguna fila (mismo 200; no se distingue por seguridad)." },
+        { "title": "GET/POST/PATCH uno", "status": "200/201", "desc": "Devuelve un objeto JSON con Prefer: return=representation." },
+        { "title": "DELETE", "status": "204", "desc": "Sin cuerpo de respuesta. Verifica que el estado sea 204." }
+      ],
+      "codesTitle": "Códigos de estado",
+      "thCode": "Código",
+      "thStatus": "Estado",
+      "thDesc": "Descripción",
+      "errorFormatTitle": "Formato de error",
+      "errorFormatJson": "{\n  \"message\": \"new row violates row-level security policy\",\n  \"details\": null,\n  \"hint\": null,\n  \"code\": \"42501\"\n}",
+      "sdkPatternTitle": "Patrón recomendado (SDK)",
+      "sdkPatternCode": "const { data, error } = await timeboxing\n  .from('allocations')\n  .insert({ /* ... */ })\n  .select()\n  .single()\n\nif (error) {\n  // error.message  -> descripción legible\n  // error.code     -> código PostgreSQL\n  // error.details  -> detalles adicionales (puede ser null)\n  console.error(`Error [${error.code}]: ${error.message}`)\n  throw error\n}\n\n// data contiene el recurso creado"
+    },
+    "changelog": {
+      "title": "Changelog",
+      "intro": "Historial de cambios en la API. Consulta esta sección para conocer novedades, mejoras y posibles cambios que rompan compatibilidad.",
+      "empty": "No hay entradas en el changelog todavía. Los cambios se documentarán aquí.",
+      "types": {
+        "new": "Nuevo",
+        "improved": "Mejorado",
+        "deprecated": "Obsoleto",
+        "fixed": "Corregido"
+      },
+      "entries": [
+        {
+          "date": "2026-02-21",
+          "type": "improved",
+          "title": "Tablas de tiempos con agency_id y RPC documentadas",
+          "description": "Se añade agency_id a time_entries, active_timers y timer_sessions para poder filtrar por agencia en la API. Se documentan las tablas active_timers y timer_sessions en la referencia de recursos, y las RPC log_timer_hours (registrar horas al parar el cronómetro) y get_team_active_timers (listar cronómetros activos del equipo) en la sección API REST."
+        },
+        {
+          "date": "2026-02-17",
+          "type": "new",
+          "title": "Documentación API v1",
+          "description": "Primera versión de la documentación pública de la API de integración. Incluye referencia de recursos, tutoriales, SDK JavaScript, suscripciones Realtime, ejemplos de respuesta y permisos readonly/readwrite."
+        },
+        {
+          "date": "2026-02-15",
+          "type": "new",
+          "title": "Tokens API por agencia",
+          "description": "Los administradores pueden generar y revocar tokens JWT desde API e integraciones. Cada token está vinculado a un agency_id, admite permisos de solo lectura o lectura/escritura, y está protegido por políticas RLS."
+        }
+      ]
+    }
+  },
+  "filtering": {
+    "title": "Filtrado, paginación y ordenación",
+    "opsTitle": "Operadores de filtro",
+    "thOp": "Operador",
+    "thSdk": "SDK",
+    "thHttp": "HTTP",
+    "thDesc": "Descripción",
+    "paginationTitle": "Paginación",
+    "paginationCode": "// SDK: limit + offset (vía range)\nconst { data } = await timeboxing\n  .from('allocations')\n  .select('*', { count: 'exact' })  // recuento total de filas\n  .range(0, 24)                      // primeras 25 filas (índice 0)\n\n// HTTP: cabecera Range\n// Range: 0-24",
+    "orderTitle": "Ordenación",
+    "orderCode": "// SDK\nconst { data } = await timeboxing\n  .from('employees')\n  .select('*')\n  .order('name', { ascending: true })\n  .order('created_at', { ascending: false })\n\n// HTTP: order=name.asc,created_at.desc",
+    "fullTitle": "Ejemplo completo",
+    "fullIntro": "Obtener asignaciones de febrero de 2026 para un empleado, ordenadas por fecha:",
+    "fullCode": "const { data, error, count } = await timeboxing\n  .from('allocations')\n  .select('id, project_id, week_start_date, hours_assigned, task_name, status', { count: 'exact' })\n  .eq('employee_id', employeeId)\n  .gte('week_start_date', '2026-02-01')\n  .lte('week_start_date', '2026-02-28')\n  .eq('status', 'planned')\n  .order('week_start_date')\n  .range(0, 49)\n\n// count = número total de resultados (paginación)\n// data = array de asignaciones",
+    "ops": [
+      { "op": "Igual", "sdk": ".eq(col, val)", "http": "col=eq.val", "desc": "Coincidencia exacta" },
+      { "op": "Distinto", "sdk": ".neq(col, val)", "http": "col=neq.val", "desc": "No igual" },
+      { "op": "Mayor que", "sdk": ".gt(col, val)", "http": "col=gt.val", "desc": "Estrictamente mayor" },
+      { "op": "Mayor o igual", "sdk": ".gte(col, val)", "http": "col=gte.val", "desc": "Mayor o igual" },
+      { "op": "Menor que", "sdk": ".lt(col, val)", "http": "col=lt.val", "desc": "Estrictamente menor" },
+      { "op": "Menor o igual", "sdk": ".lte(col, val)", "http": "col=lte.val", "desc": "Menor o igual" },
+      { "op": "Contiene texto", "sdk": ".like(col, pattern)", "http": "col=like.%val%", "desc": "LIKE (sensible a mayúsculas)" },
+      { "op": "Contiene (sin mayúsc.)", "sdk": ".ilike(col, pattern)", "http": "col=ilike.%val%", "desc": "ILIKE (insensible a mayúsculas)" },
+      { "op": "En lista", "sdk": ".in(col, [a,b])", "http": "col=in.(a,b)", "desc": "IN (lista de valores)" },
+      { "op": "Es nulo", "sdk": ".is(col, null)", "http": "col=is.null", "desc": "IS NULL" }
+    ]
+  },
+  "realtime": {
+    "title": "Suscripciones en tiempo real",
+    "intro": "Recibe cambios en tiempo real sin hacer polling. Ideal para paneles que se actualizan solos cuando alguien modifica una asignación o crea una ausencia.",
+    "code": "// Escuchar cambios en asignaciones de un proyecto (requiere SDK)\nconst channel = timeboxing\n  .channel('project-allocations')\n  .on(\n    'postgres_changes',\n    {\n      event: '*',           // INSERT, UPDATE, DELETE (o uno concreto)\n      schema: 'public',\n      table: 'allocations',\n      filter: `project_id=eq.${projectId}`\n    },\n    (payload) => {\n      console.log('Cambio detectado:', payload.eventType, payload.new)\n      // payload.new = fila tras el cambio\n      // payload.old = fila antes del cambio (solo en UPDATE/DELETE)\n    }\n  )\n  .subscribe()\n\n// Cancelar suscripción cuando no haga falta\ntimeboxing.removeChannel(channel)",
+    "noteTitle": "Nota:",
+    "noteBody": "Realtime está habilitado en las tablas principales (allocations, employees, projects). Si necesitas suscripciones en otras tablas, contacta con nuestro equipo."
+  },
+  "sdk": {
+    "title": "SDK JavaScript (opcional)",
+    "intro": "Puedes integrar la API con peticiones HTTP estándar (ver sección REST) o, si usas JavaScript/TypeScript, con el SDK que simplifica la sintaxis.",
+    "install": "npm install @supabase/supabase-js",
+    "code": "import { createClient } from '@supabase/supabase-js'\n\n// URL de tu instancia Supabase + clave anónima (la misma que usa la app)\nconst SUPABASE_URL = 'https://api.taimbox.com'\nconst ANON_KEY = process.env.SUPABASE_ANON_KEY\n\n// Token API generado desde API e integraciones\nconst API_TOKEN = process.env.TIMEBOXING_API_TOKEN\n\nconst timeboxing = createClient(SUPABASE_URL, ANON_KEY, {\n  global: {\n    headers: { Authorization: `Bearer ${API_TOKEN}` }\n  }\n})\n\n// Ejemplo: listar empleados activos de tu agencia\n// (RLS filtra automáticamente por tu agency_id)\nconst { data: employees, error } = await timeboxing\n  .from('employees')\n  .select('id, name, role, email')\n  .eq('is_active', true)\n  .order('name')\n\nif (error) {\n  console.error('Error:', error.message)\n} else {\n  console.log('Empleados:', employees)\n}",
+    "noteTitle": "Nota:",
+    "noteBody": "No necesitas filtrar por agency_id en cada consulta: tu JWT incluye el agency_id y las políticas RLS lo aplican en base de datos."
+  },
+  "rest": {
+    "title": "API REST (HTTP)",
+    "intro": "Puedes hacer peticiones HTTP desde cualquier lenguaje. Todos los recursos siguen el mismo patrón REST.",
+    "getDesc": "Listar recursos con filtros opcionales. Soporta select, filtros, paginación y orden.",
+    "getPath": "/rest/v1/{recurso}?select=col1,col2&filtro=eq.valor",
+    "getCurl": "curl -X GET \\\n  'https://api.taimbox.com/rest/v1/employees?is_active=eq.true&order=name.asc' \\\n  -H 'apikey: <TU_API_KEY>' \\\n  -H 'Authorization: Bearer <TU_API_TOKEN>'",
+    "getSdk": "const { data, error } = await timeboxing\n  .from('employees')\n  .select('id, name, role')\n  .eq('is_active', true)\n  .order('name')",
+    "postDesc": "Crear un recurso. Envía el cuerpo como JSON.",
+    "postPath": "/rest/v1/{recurso}",
+    "postCurl": "curl -X POST \\\n  'https://api.taimbox.com/rest/v1/allocations' \\\n  -H 'apikey: <TU_API_KEY>' \\\n  -H 'Authorization: Bearer <TU_API_TOKEN>' \\\n  -H 'Content-Type: application/json' \\\n  -H 'Prefer: return=representation' \\\n  -d '{\"employee_id\":\"...\",\"project_id\":\"...\",\"week_start_date\":\"2026-02-17\",\"hours_assigned\":8}'",
+    "postSdk": "const { data, error } = await timeboxing\n  .from('allocations')\n  .insert({\n    employee_id: employeeId,\n    project_id: projectId,\n    week_start_date: '2026-02-17',\n    hours_assigned: 8\n  })\n  .select()\n  .single()",
+    "patchDesc": "Actualizar uno o varios campos de un recurso existente.",
+    "patchPath": "/rest/v1/{recurso}?id=eq.{uuid}",
+    "patchCurl": "curl -X PATCH \\\n  'https://api.taimbox.com/rest/v1/allocations?id=eq.<UUID>' \\\n  -H 'apikey: <TU_API_KEY>' \\\n  -H 'Authorization: Bearer <TU_API_TOKEN>' \\\n  -H 'Content-Type: application/json' \\\n  -H 'Prefer: return=representation' \\\n  -d '{\"hours_assigned\":16}'",
+    "patchSdk": "const { data, error } = await timeboxing\n  .from('allocations')\n  .update({ hours_assigned: 16 })\n  .eq('id', allocationId)\n  .select()\n  .single()",
+    "deleteDesc": "Eliminar un recurso. No se puede deshacer.",
+    "deletePath": "/rest/v1/{recurso}?id=eq.{uuid}",
+    "deleteCurl": "curl -X DELETE \\\n  'https://api.taimbox.com/rest/v1/allocations?id=eq.<UUID>' \\\n  -H 'apikey: <TU_API_KEY>' \\\n  -H 'Authorization: Bearer <TU_API_TOKEN>'",
+    "deleteSdk": "const { error } = await timeboxing\n  .from('allocations')\n  .delete()\n  .eq('id', allocationId)",
+    "rpcTitle": "Llamadas RPC (tiempos / cronómetro)",
+    "rpcIntro": "Para registrar horas desde un cronómetro o listar cronómetros activos del equipo se usan funciones RPC.",
+    "logTimerDesc": "Cierra el cronómetro y registra horas: UPSERT en time_entries, actualiza allocations.hours_actual, inserta en timer_sessions y borra de active_timers. Solo el empleado vinculado al usuario (auth.uid) puede invocarla. Parámetros: p_employee_id, p_allocation_id, p_hours, p_notes (opcional), p_date (opcional, por defecto hoy).",
+    "logTimerCurl": "curl -X POST \\\n  '<BASE_URL>/rest/v1/rpc/log_timer_hours' \\\n  -H 'apikey: <TU_API_KEY>' \\\n  -H 'Authorization: Bearer <TU_API_TOKEN>' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"p_employee_id\":\"<UUID>\",\"p_allocation_id\":\"<UUID>\",\"p_hours\":1.5,\"p_notes\":\"Revisión\"}'",
+    "logTimerSdk": "const { error } = await timeboxing.rpc('log_timer_hours', {\n  p_employee_id: employeeId,\n  p_allocation_id: allocationId,\n  p_hours: 1.5,\n  p_notes: 'Revisión'\n})",
+    "teamTimersDesc": "Lista los cronómetros activos de todos los empleados de la agencia del usuario. Devuelve: employee_id, employee_name, allocation_id, task_name, client_name, started_at. Sin parámetros.",
+    "teamTimersCurl": "curl -X POST \\\n  '<BASE_URL>/rest/v1/rpc/get_team_active_timers' \\\n  -H 'apikey: <TU_API_KEY>' \\\n  -H 'Authorization: Bearer <TU_API_TOKEN>' \\\n  -H 'Content-Type: application/json' \\\n  -d '{}'",
+    "teamTimersSdk": "const { data } = await timeboxing.rpc('get_team_active_timers')"
+  },
+  "tutorials": {
+    "quickStart": {
+      "title": "Primeros pasos",
+      "subtitle": "En menos de 5 minutos tendrás tu primera petición funcionando. Este tutorial cubre: obtener un token, configurar el cliente y verificar la conexión.",
+      "prereqTitle": "Requisitos previos",
+      "prereq1": "Cuenta de administrador en Taimbox",
+      "prereq2": "Node.js 18+ instalado (para el SDK) o cualquier cliente HTTP (cURL, Postman)",
+      "nextLabel": "Siguiente paso:",
+      "nextText": "Ahora que tienes la conexión funcionando, aprende a",
+      "nextLink": "sincronizar tu equipo",
+      "steps": [
+        { "title": "Genera tu token API", "description": "Accede a Configuración > API e integraciones en Taimbox y crea un token. Dale un nombre descriptivo como «Mi integración» y elige permisos de lectura.", "note": "El token solo se muestra una vez. Cópialo y guárdalo en un lugar seguro (p. ej. variable de entorno).", "code": null, "lang": null },
+        { "title": "Instala el SDK (opcional)", "description": "Si usas JavaScript/TypeScript, instala el SDK de Supabase para simplificar las consultas.", "note": null, "code": "npm install @supabase/supabase-js", "lang": "bash" },
+        { "title": "Configura el cliente", "description": "Crea un archivo de configuración con tus credenciales. Nunca incrustes tokens en el código fuente.", "note": "Si solo usas HTTP (cURL, Postman, Python requests, etc.), no necesitas este paso: usa la URL base y las cabeceras apikey y Authorization en cada petición. Puedes ir al paso 5 para ver un ejemplo con cURL.", "code": "import { createClient } from '@supabase/supabase-js'\n\nconst timeboxing = createClient(\n  'https://api.taimbox.com',\n  process.env.SUPABASE_ANON_KEY!,\n  {\n    global: {\n      headers: { Authorization: `Bearer ${process.env.TIMEBOXING_API_TOKEN}` }\n    }\n  }\n)", "lang": "typescript" },
+        { "title": "Haz tu primera petición", "description": "Verifica que todo funciona listando los empleados activos de tu agencia.", "note": "Si recibes un error 401, comprueba ANON_KEY y API_TOKEN. Si recibes un array vacío, puede que no haya empleados activos.", "code": "const { data, error } = await timeboxing\n  .from('employees')\n  .select('id, name, role')\n  .eq('is_active', true)\n  .limit(5)\n\nif (error) {\n  console.error('Error de conexión:', error.message)\n} else {\n  console.log('¡Conexión correcta! Empleados:', data)\n  // [{ id: \"...\", name: \"Ana García\", role: \"Diseñador\" }, ...]\n}", "lang": "typescript" },
+        { "title": "También funciona con cURL", "description": "Si no usas JavaScript, puedes comprobar la conexión con una petición HTTP directa.", "note": null, "code": "curl -s \\\n  'https://api.taimbox.com/rest/v1/employees?is_active=eq.true&limit=5&select=id,name,role' \\\n  -H 'apikey: TU_ANON_KEY' \\\n  -H 'Authorization: Bearer TU_API_TOKEN' | json_pp", "lang": "bash" }
+      ]
+    },
+    "syncTeam": {
+      "title": "Sincronizar equipo",
+      "subtitle": "Aprende a leer la lista de empleados, crear miembros nuevos y actualizar horarios desde tu sistema externo.",
+      "prereqTitle": "Requisitos previos",
+      "prereq1Before": "Cliente configurado (ver",
+      "prereq1Link": "Primeros pasos",
+      "prereq1After": ")",
+      "prereq2": "Token con permisos de lectura y escritura",
+      "nextLabel": "Siguiente paso:",
+      "nextText": "Con el equipo sincronizado, aprende a",
+      "nextLink": "automatizar la planificación",
+      "steps": [
+        { "title": "Leer todos los empleados", "description": "Obtén la lista completa de empleados activos con sus datos básicos.", "note": "RLS filtra automáticamente por tu agencia. No necesitas pasar agency_id en los filtros.", "code": "const { data: employees, error } = await timeboxing\n  .from('employees')\n  .select('id, name, email, role, default_weekly_capacity, work_schedule, is_active')\n  .eq('is_active', true)\n  .order('name')\n\n// Resultado: array de empleados\n// [{ id: \"e1-...\", name: \"Ana García\", email: \"ana@...\", role: \"Diseñador\", ... }]", "lang": "typescript" },
+        { "title": "Crear un empleado nuevo", "description": "Añade un miembro al equipo. Campos obligatorios: name, role, default_weekly_capacity, work_schedule y agency_id. El agency_id puedes copiarlo desde API e integraciones (Datos de conexión).", "note": null, "code": "const { data: newEmployee, error } = await timeboxing\n  .from('employees')\n  .insert({\n    name: 'Laura Martínez',\n    first_name: 'Laura',\n    last_name: 'Martínez',\n    email: 'laura@agencia.com',\n    role: 'Desarrollador',\n    default_weekly_capacity: 40,\n    work_schedule: {\n      monday: 8, tuesday: 8, wednesday: 8,\n      thursday: 8, friday: 8, saturday: 0, sunday: 0\n    },\n    agency_id: process.env.TIMEBOXING_AGENCY_ID\n  })\n  .select()\n  .single()\n\nif (error) {\n  console.error('Error al crear empleado:', error.message)\n} else {\n  console.log('Empleado creado:', newEmployee.id)\n}", "lang": "typescript" },
+        { "title": "Actualizar horario laboral", "description": "Modifica las horas semanales de un empleado existente. Útil para reflejar cambios de jornada.", "note": null, "code": "const { data, error } = await timeboxing\n  .from('employees')\n  .update({\n    default_weekly_capacity: 32,\n    work_schedule: {\n      monday: 8, tuesday: 8, wednesday: 8,\n      thursday: 8, friday: 0, saturday: 0, sunday: 0\n    }\n  })\n  .eq('id', employeeId)\n  .select()\n  .single()\n\n// El empleado pasa a 32 h/semana (lun–jue)", "lang": "typescript" },
+        { "title": "Desactivar un empleado", "description": "En lugar de borrar, es recomendable desactivar. Así se conserva el histórico de asignaciones.", "note": "Los empleados inactivos mantienen sus asignaciones históricas. No uses DELETE salvo que quieras eliminar todo rastro.", "code": "const { error } = await timeboxing\n  .from('employees')\n  .update({ is_active: false })\n  .eq('id', employeeId)\n\n// El empleado ya no aparece en planificación ni vistas activas", "lang": "typescript" }
+      ]
+    },
+    "planning": {
+      "title": "Automatizar planificación",
+      "subtitle": "Crea y gestiona asignaciones semanales por código. Ideal para preplanificar sprints o repartir horas automáticamente.",
+      "nextLabel": "Siguiente paso:",
+      "nextText": "Aprende a",
+      "nextLink": "exportar informes de rentabilidad",
+      "nextSuffix": " con los datos de planificación.",
+      "steps": [
+        { "title": "Leer asignaciones existentes", "description": "Consulta las tareas planificadas de un empleado en un rango de fechas.", "note": null, "code": "const { data: allocations } = await timeboxing\n  .from('allocations')\n  .select(`\n    id, employee_id, project_id, week_start_date,\n    hours_assigned, hours_actual, task_name, status\n  `)\n  .eq('employee_id', employeeId)\n  .gte('week_start_date', '2026-03-01')\n  .lte('week_start_date', '2026-03-31')\n  .order('week_start_date')\n\n// Resultado: array de asignaciones del mes", "lang": "typescript" },
+        { "title": "Crear una asignación", "description": "Asigna horas de un empleado a un proyecto para una semana concreta. week_start_date debe ser un lunes.", "note": "Si week_start_date no es lunes, la fila se crea igual, pero puede desalinear el planificador visual.", "code": "const { data: allocation, error } = await timeboxing\n  .from('allocations')\n  .insert({\n    employee_id: 'uuid-del-empleado',\n    project_id: 'uuid-del-proyecto',\n    week_start_date: '2026-03-02',\n    hours_assigned: 16,\n    task_name: 'Maquetación homepage',\n    status: 'planned'\n  })\n  .select()\n  .single()\n\nif (!error) {\n  console.log('Tarea creada:', allocation.id)\n}", "lang": "typescript" },
+        { "title": "Repartir horas entre semanas", "description": "Crea varias asignaciones en bloque para repartir un presupuesto mensual.", "note": null, "code": "const weeks = ['2026-03-02', '2026-03-09', '2026-03-16', '2026-03-23']\nconst hoursPerWeek = 10\n\nconst rows = weeks.map(week => ({\n  employee_id: employeeId,\n  project_id: projectId,\n  week_start_date: week,\n  hours_assigned: hoursPerWeek,\n  task_name: 'Campaña mensual',\n  status: 'planned'\n}))\n\nconst { data, error } = await timeboxing\n  .from('allocations')\n  .insert(rows)\n  .select()\n\nconsole.log(`Creadas ${data?.length} asignaciones`)", "lang": "typescript" },
+        { "title": "Actualizar horas reales", "description": "Cuando el empleado reporta horas trabajadas, actualiza hours_actual.", "note": null, "code": "const { error } = await timeboxing\n  .from('allocations')\n  .update({\n    hours_actual: 14,\n    status: 'completed'\n  })\n  .eq('id', allocationId)\n\n// La asignación queda completada con 14 h reales", "lang": "typescript" },
+        { "title": "Configurar objetivos mensuales (deadlines)", "description": "Define cuántas horas dedica cada empleado a un proyecto en un mes.", "note": "budget_override sustituye el presupuesto general del proyecto solo ese mes. Si es null, se usa project.budget_hours.", "code": "const { data: deadline } = await timeboxing\n  .from('deadlines')\n  .upsert({\n    project_id: projectId,\n    month: '2026-03',\n    employee_hours: {\n      [employeeId1]: 40,\n      [employeeId2]: 20\n    },\n    budget_override: 120\n  })\n  .select()\n  .single()\n\n// Objetivo: empleado1 40 h y empleado2 20 h en marzo", "lang": "typescript" }
+      ]
+    },
+    "reports": {
+      "title": "Exportar informes",
+      "subtitle": "Consulta datos de planificación para informes de horas, rentabilidad y ocupación del equipo.",
+      "nextLabel": "Siguiente paso:",
+      "nextText": "Aprende a",
+      "nextLink": "gestionar ausencias y eventos",
+      "nextSuffix": " para mantener la capacidad al día.",
+      "steps": [
+        { "title": "Obtener horas por proyecto y mes", "description": "Lee todas las asignaciones de un mes para sumar horas por proyecto.", "note": null, "code": "const { data: allocations } = await timeboxing\n  .from('allocations')\n  .select('project_id, hours_assigned, hours_actual, hours_computed')\n  .gte('week_start_date', '2026-02-01')\n  .lte('week_start_date', '2026-02-28')\n\nconst byProject = {}\nallocations?.forEach(a => {\n  if (!byProject[a.project_id]) {\n    byProject[a.project_id] = { planned: 0, actual: 0, computed: 0 }\n  }\n  byProject[a.project_id].planned += a.hours_assigned\n  byProject[a.project_id].actual += a.hours_actual\n  byProject[a.project_id].computed += a.hours_computed\n})\n\nconsole.log('Horas por proyecto:', byProject)", "lang": "typescript" },
+        { "title": "Calcular rentabilidad", "description": "Cruza horas con datos del proyecto (presupuesto, tarifa mensual) para métricas de rentabilidad.", "note": null, "code": "const { data: projects } = await timeboxing\n  .from('projects')\n  .select('id, name, budget_hours, monthly_fee')\n  .eq('status', 'active')\n\nconst report = projects?.map(p => {\n  const hours = byProject[p.id] || { planned: 0, actual: 0, computed: 0 }\n  const progress = p.budget_hours > 0\n    ? Math.round((hours.computed / p.budget_hours) * 100)\n    : 0\n  const hourValue = p.budget_hours > 0\n    ? (p.monthly_fee / p.budget_hours).toFixed(2)\n    : '0'\n\n  return {\n    project: p.name,\n    budgetHours: p.budget_hours,\n    hoursPlanned: hours.planned,\n    hoursActual: hours.actual,\n    progress: `${progress}%`,\n    hourValue: `${hourValue} EUR/h`\n  }\n})\n\nconsole.table(report)", "lang": "typescript" },
+        { "title": "Informe de ocupación del equipo", "description": "Calcula la carga de cada empleado para detectar sobrecargas o subuso.", "note": null, "code": "const { data: employees } = await timeboxing\n  .from('employees')\n  .select('id, name, default_weekly_capacity')\n  .eq('is_active', true)\n\nconst { data: monthAllocations } = await timeboxing\n  .from('allocations')\n  .select('employee_id, hours_assigned')\n  .gte('week_start_date', '2026-02-01')\n  .lte('week_start_date', '2026-02-28')\n\nconst occupancy = employees?.map(emp => {\n  const totalHours = monthAllocations\n    ?.filter(a => a.employee_id === emp.id)\n    .reduce((sum, a) => sum + a.hours_assigned, 0) || 0\n  const capacity = emp.default_weekly_capacity * 4\n  const load = capacity > 0 ? Math.round((totalHours / capacity) * 100) : 0\n\n  return { name: emp.name, totalHours, capacity, load: `${load}%` }\n})\n\nconsole.table(occupancy)", "lang": "typescript" },
+        { "title": "Exportar a CSV", "description": "Convierte los datos a CSV para Excel o Google Sheets.", "note": null, "code": "function toCSV(data, headers) {\n  const rows = [headers.join(',')]\n  data.forEach(row => {\n    rows.push(headers.map(h => JSON.stringify(row[h] ?? '')).join(','))\n  })\n  return rows.join('\\n')\n}\n\nconst csv = toCSV(report, ['project', 'budgetHours', 'hoursPlanned', 'hoursActual', 'progress', 'hourValue'])\n\n// Node: fs.writeFileSync('report.csv', csv)\n// Navegador: Blob + URL.createObjectURL", "lang": "typescript" }
+      ]
+    },
+    "absences": {
+      "title": "Gestionar ausencias",
+      "subtitle": "Registra vacaciones, bajas y eventos del equipo para que la capacidad disponible se ajuste automáticamente en la planificación.",
+      "doneLabel": "¡Listo!",
+      "doneText": "Ahora dominas los casos de uso principales de la API. Consulta la",
+      "doneLink": "referencia de recursos",
+      "doneSuffix": "para ver todos los campos y opciones de cada tabla.",
+      "steps": [
+        { "title": "Leer ausencias de un empleado", "description": "Consulta las ausencias registradas en un periodo.", "note": null, "code": "const { data: absences } = await timeboxing\n  .from('absences')\n  .select('id, employee_id, start_date, end_date, type, hours, description')\n  .eq('employee_id', employeeId)\n  .gte('end_date', '2026-03-01')\n  .order('start_date')\n\n// Vacaciones, bajas, permisos del empleado en marzo", "lang": "typescript" },
+        { "title": "Crear una ausencia (vacaciones)", "description": "Registra un periodo de vacaciones. La capacidad del empleado se reducirá automáticamente en el planificador.", "note": "Tipos habituales: «vacaciones», «baja», «permiso», «formación». Puedes usar cualquier texto.", "code": "const { data: absence, error } = await timeboxing\n  .from('absences')\n  .insert({\n    employee_id: employeeId,\n    start_date: '2026-04-06',\n    end_date: '2026-04-10',\n    type: 'vacaciones',\n    description: 'Semana Santa'\n  })\n  .select()\n  .single()\n\nif (!error) {\n  console.log('Ausencia registrada:', absence.id)\n}", "lang": "typescript" },
+        { "title": "Ausencia parcial (medio día)", "description": "Para ausencias que no cubren el día completo, usa el campo hours.", "note": null, "code": "const { data } = await timeboxing\n  .from('absences')\n  .insert({\n    employee_id: employeeId,\n    start_date: '2026-03-15',\n    end_date: '2026-03-15',\n    type: 'permiso',\n    hours: 4,\n    description: 'Cita médica por la mañana'\n  })\n  .select()\n  .single()\n\n// Solo se restan 4 h ese día", "lang": "typescript" },
+        { "title": "Crear un evento de equipo (festivo)", "description": "Los eventos afectan a varios empleados. Ideal para festivos o formaciones grupales.", "note": null, "code": "const { data: employees } = await timeboxing\n  .from('employees')\n  .select('id')\n  .eq('is_active', true)\n\nconst employeeIds = employees?.map(e => e.id) || []\n\nconst { data: event } = await timeboxing\n  .from('team_events')\n  .insert({\n    name: 'Día de Andalucía',\n    date: '2026-02-28',\n    hours_reduction: 8,\n    affected_employee_ids: employeeIds,\n    description: 'Festivo regional'\n  })\n  .select()\n  .single()\n\nconsole.log('Evento creado. Afecta a', employeeIds.length, 'empleados')", "lang": "typescript" },
+        { "title": "Calcular capacidad real", "description": "Cruza ausencias y eventos con el horario laboral para estimar la capacidad real de una semana.", "note": "Taimbox usa un cálculo diario más preciso; este ejemplo simplifica.", "code": "const weekStart = '2026-03-09'\nconst weekEnd = '2026-03-13'\n\nconst [{ data: absences }, { data: events }, { data: employee }] = await Promise.all([\n  timeboxing.from('absences')\n    .select('start_date, end_date, hours')\n    .eq('employee_id', empId)\n    .lte('start_date', weekEnd)\n    .gte('end_date', weekStart),\n  timeboxing.from('team_events')\n    .select('date, hours_reduction')\n    .gte('date', weekStart)\n    .lte('date', weekEnd),\n  timeboxing.from('employees')\n    .select('default_weekly_capacity')\n    .eq('id', empId)\n    .single()\n])\n\nconst baseCapacity = employee?.default_weekly_capacity || 40\nconst absenceHours = absences?.reduce((s, a) => s + (a.hours || 8), 0) || 0\nconst eventHours = events?.reduce((s, e) => s + e.hours_reduction, 0) || 0\nconst effectiveCapacity = Math.max(0, baseCapacity - Math.max(absenceHours, eventHours))\n\nconsole.log(`Capacidad real: ${effectiveCapacity}h / ${baseCapacity}h`)", "lang": "typescript" }
+      ]
+    }
+  }
+}

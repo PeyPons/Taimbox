@@ -1,0 +1,372 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Margen superior del main en móvil: header fijo (4rem) */
+@media (max-width: 1023px) {
+  .main-content-area {
+    margin-top: 4rem;
+  }
+}
+@media (min-width: 1024px) {
+  .main-content-area {
+    margin-top: 0;
+  }
+}
+
+
+@keyframes gradient {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) skewX(-12deg);
+  }
+  100% {
+    transform: translateX(200%) skewX(-12deg);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 3s infinite;
+}
+
+.animate-gradient {
+  animation: gradient 3s ease infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out;
+}
+
+@layer base {
+  html {
+    /* Reserva siempre el espacio de la scrollbar para evitar salto al abrir Select/Dialog (Radix) */
+    scrollbar-gutter: stable;
+  }
+  /* 100vw incluye el ancho bajo la barra vertical: al bloquear scroll (Radix) el viewport “crece” y el layout salta.
+     100% respecto al contenedor evita ese desplazamiento horizontal; scrollbar-gutter en html reserva hueco estable. */
+  html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+  #root {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 215 25% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 15%;
+
+    --primary: 239 84% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 20% 94%;
+    --secondary-foreground: 215 25% 25%;
+
+    --muted: 210 15% 92%;
+    --muted-foreground: 215 15% 50%;
+
+    --accent: 239 60% 92%;
+    --accent-foreground: 239 84% 35%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 38 92% 15%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 214 20% 88%;
+    --input: 214 20% 88%;
+    --ring: 239 84% 55%;
+
+    --radius: 0.625rem;
+
+    /* Load status colors */
+    --load-healthy: 142 71% 45%;
+    --load-warning: 38 92% 50%;
+    --load-overload: 0 84% 60%;
+    --load-empty: 210 15% 92%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(239 84% 55%), hsl(262 83% 58%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 20% 99%));
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(215 25% 15% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(215 25% 15% / 0.07), 0 2px 4px -2px hsl(215 25% 15% / 0.05);
+    --shadow-lg: 0 10px 15px -3px hsl(215 25% 15% / 0.08), 0 4px 6px -4px hsl(215 25% 15% / 0.05);
+    --shadow-glow: 0 0 20px hsl(239 84% 55% / 0.15);
+
+    --sidebar-background: 215 25% 12%;
+    --sidebar-foreground: 210 20% 90%;
+    --sidebar-primary: 239 84% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 25% 18%;
+    --sidebar-accent-foreground: 210 20% 90%;
+    --sidebar-border: 215 25% 20%;
+    --sidebar-ring: 239 84% 60%;
+  }
+
+  .dark {
+    --background: 215 25% 10%;
+    --foreground: 210 20% 95%;
+
+    --card: 215 25% 13%;
+    --card-foreground: 210 20% 95%;
+
+    --popover: 215 25% 13%;
+    --popover-foreground: 210 20% 95%;
+
+    --primary: 239 84% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 215 25% 18%;
+    --secondary-foreground: 210 20% 90%;
+
+    --muted: 215 20% 20%;
+    --muted-foreground: 215 15% 60%;
+
+    --accent: 239 40% 22%;
+    --accent-foreground: 239 84% 75%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 38 92% 10%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 215 25% 20%;
+    --input: 215 25% 20%;
+    --ring: 239 84% 60%;
+
+    --sidebar-background: 215 30% 8%;
+    --sidebar-foreground: 210 20% 90%;
+    --sidebar-primary: 239 84% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 25% 15%;
+    --sidebar-accent-foreground: 210 20% 95%;
+    --sidebar-border: 215 25% 15%;
+    --sidebar-ring: 239 84% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'DM Sans', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .load-healthy {
+    @apply bg-success/15 border-success/30 text-success;
+  }
+  
+  .load-warning {
+    background-color: hsl(var(--warning) / 0.15);
+    border-color: hsl(var(--warning) / 0.3);
+    color: hsl(var(--warning));
+  }
+  
+  .load-overload {
+    @apply bg-destructive/15 border-destructive/30 text-destructive;
+  }
+
+  .load-empty {
+    @apply bg-muted/50 border-muted text-muted-foreground;
+  }
+
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-sm border border-border/50;
+    box-shadow: var(--shadow-md);
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  /* Scrollbar fino y elegante para dropdowns (ej. buscador API docs) */
+  .scrollbar-slim {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(99 102 241 / 0.5) transparent; /* indigo-500/50 */
+  }
+  .scrollbar-slim::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-slim::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-slim::-webkit-scrollbar-thumb {
+    background: rgb(99 102 241 / 0.4);
+    border-radius: 9999px;
+  }
+  .scrollbar-slim::-webkit-scrollbar-thumb:hover {
+    background: rgb(99 102 241 / 0.6);
+  }
+  .scrollbar-slim::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes scaleIn {
+  from { 
+    opacity: 0; 
+    transform: scale(0.95); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+}
+
+/* Blog: reveal on scroll (artículo planificación proyectos) */
+@keyframes blogRevealUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.blog-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.blog-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+  animation: blogRevealUp 0.6s ease-out forwards;
+}
+.blog-reveal-delay-1 { transition-delay: 0.1s; }
+.blog-reveal-delay-2 { transition-delay: 0.2s; }
+.blog-reveal-delay-3 { transition-delay: 0.3s; }
+.blog-reveal-delay-4 { transition-delay: 0.4s; }
+
+/* Placeholder del editor de soporte (Tiptap) */
+.ProseMirror[data-placeholder]:before {
+  content: attr(data-placeholder);
+  float: left;
+  color: hsl(var(--muted-foreground));
+  pointer-events: none;
+  height: 0;
+}
+
+/*
+ * Radix (Dialog/Sheet/Select) → react-remove-scroll-bar inyecta una <style> SIN @layer.
+ * Las reglas en @layer base pierden siempre frente a esas inyectadas (cascade layers).
+ * Este bloque va FUERA de capas para anular padding/margin de compensación de scrollbar.
+ * `scrollbar-gutter: stable` en html ya reserva el hueco; no hace falta duplicar con padding-right.
+ */
+html.with-scroll-bars-hidden {
+  padding-right: 0 !important;
+}
+html body[data-scroll-locked] {
+  --removed-body-scroll-bar-size: 0 !important;
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+  margin-top: 0 !important;
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+  padding-top: 0 !important;
+  overflow-y: hidden !important;
+}
+html .right-scroll-bar-position {
+  right: 0 !important;
+}
+html .width-before-scroll-bar {
+  margin-right: 0 !important;
+}
+html .right-scroll-bar-position.right-scroll-bar-position {
+  right: 0 !important;
+}
+html .width-before-scroll-bar.width-before-scroll-bar {
+  margin-right: 0 !important;
+}

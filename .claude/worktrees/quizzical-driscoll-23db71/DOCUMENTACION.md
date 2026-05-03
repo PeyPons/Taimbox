@@ -1,0 +1,29 @@
+# Taimbox — Índice de documentación técnica
+
+**Taimbox** es una aplicación para planificación de equipos, proyectos y control operativo/financiero en agencias (SPA React + Supabase). Este archivo es el **índice**: el detalle técnico está modularizado en [`docs/`](docs/) para cargar solo el contexto necesario en el editor o en agentes de IA.
+
+**Agentes / Cursor:** actualiza el módulo `docs/*` que toque y esta tabla en el **mismo cambio** solo cuando cambie **comportamiento observable** o **contratos documentados** (API, Edge, datos descritos aquí); no por refactors internos ni fixes triviales. Ver skill **`.cursor/skills/actualizar-documentacion-taimbox/SKILL.md`** y regla **`.cursor/rules/documentacion-cambios-producto.mdc`** (activa con archivos `docs/*` / este índice, no con `alwaysApply` global para evitar ruido en el índice).
+
+## Contenido modular (`docs/`)
+
+| Documento | Qué encontrarás |
+|-----------|-----------------|
+| [docs/00-introduccion.md](docs/00-introduccion.md) | Título y propósito del documento técnico detallado original (incluye referencia al mapa de dependencias). |
+| [docs/01-arquitectura.md](docs/01-arquitectura.md) | Stack SPA, GTM y Consent Mode, i18n y rutas `/en`, reglas SEO y páginas públicas, convenciones del blog y API docs. |
+| [docs/02-entidades-modelos.md](docs/02-entidades-modelos.md) | Glosario de entidades (Agency, Employee con `monthlyCost`/BD `hourly_rate`, Project/presupuesto entregable, Deadline, Allocation), aliasing, tablas de componentes y reglas multi-tenant. |
+| [docs/03-logica-negocio.md](docs/03-logica-negocio.md) | Capacidad efectiva, split weeks, presupuesto efectivo/mínimo, prorrateo horas entregables en rentabilidad, pacing e ingreso devengado. |
+| [docs/04-contextos-realtime.md](docs/04-contextos-realtime.md) | AppContext (carga, upsert, `loadedMonthsRef` tras allocations OK, deduplicación de carga por mes), Realtime, canales unificados en Deadlines y bloqueos. |
+| [docs/05-integraciones-automatizacion.md](docs/05-integraciones-automatizacion.md) | Edge Functions (inventario, OAuth Google/Meta, emails, modo demo), notificaciones (`notify-task-transfer`, `process-event-notifications` por dependencias con correo HTML por destinatario y avatares, `process-notification-rules` con periodicidad/dedupe diario-semanal-mensual, `NOTIFICATIONS_CRON_SECRET`, cron en Raspberry/self-hosted), `delete-user`, `admin-delete-agency`, Stripe, variables de entorno, despliegue y troubleshooting. |
+| [docs/06-glosario-variables.md](docs/06-glosario-variables.md) | Tabla corta de términos técnicos (RLS, RBAC, micros, etc.). |
+| [docs/07-mantenimiento-extension.md](docs/07-mantenimiento-extension.md) | Cómo extender tablas, cronómetro (drift, eventos, **Real vs `time_entries`**, página Tiempos y `ModuleGuard`), RLS y API tokens, admin de plataforma (`admin_delete_agency`, borrado irreversible), operaciones, **rentabilidad (gastos comunes, no imputado, EHR, devengo laborable, rollup dept.)** y permisos; cierre parcial / rollover (incl. migración `20260413120000` para posponer con 0h reales). |
+| [docs/08-mapa-dependencias.md](docs/08-mapa-dependencias.md) | Mapa de impacto por types, contextos, hooks, utilidades (`commonExpensesAllocation`, **`profitabilityCost`**, `budgetUtils` rentabilidad), componentes y flujo de carga de mes. |
+| [docs/09-checklist-modificacion.md](docs/09-checklist-modificacion.md) | Checklist antes de tocar types, AppContext, fechas, permisos, Realtime, RLS, deadlines o aliasing. |
+| [docs/10-gotchas-y-contenido.md](docs/10-gotchas-y-contenido.md) | Patrones problemáticos en React/ datos, mantenimiento de copy, landings, notificaciones, tours y ortografía. |
+| [docs/11-notas-adicionales-readme.md](docs/11-notas-adicionales-readme.md) | Rescate del README histórico: inventario de páginas, pitch/outreach, `errorService`/`auditService`, `constants`/`integrations`, fragmentos de checklist (móvil, Popover+Command), **admin de plataforma e impersonación** (UX, `?agency=`, footer sesión). |
+| [docs/12-onboarding-registro.md](docs/12-onboarding-registro.md) | Flujo registro + `OnboardingWizard` (incl. primer proyecto con opciones Entregable), invitaciones con enlace de contraseña, `department_config`, correos Resend (`RESEND_*`, `SITE_URL`, `supabase/.env.example`) y Edge Functions relacionadas. |
+| [docs/13-esquema-base-datos.md](docs/13-esquema-base-datos.md) | Referencia del modelo relacional: multi-tenant, `user_agencies`, planificador/tiempo, Ads, `notification_rules` / `notification_deliveries`; enlace al DDL de contexto en `docs/sql/schema-snapshot-context.sql` (no sustituye a migraciones). |
+| [docs/14-ciclo-vida-entregables.md](docs/14-ciclo-vida-entregables.md) | Vista de ciclo de vida vs mensual: devengo, horas, coste, estados, radar; coexistencia con `budgetUtils` / métricas mensuales; **consultas `allocations` para fase (columnas del DDL, sin `agency_id`)**. |
+
+**Nota (mayo 2026):** Los módulos `docs/01`, `02`, `05`, `08` y `11` dejaron de citar páginas/hooks/utils retirados del repo (`ProjectsPage`, `ClientsPage`, `useDeadlines`, `taskPermissions`, `TaskPartialCloseDialog`). El §8 del mapa lista consumidores actuales de `deadlineUtils` y del cierre Weekly.
+
+Para una lectura continua equivalente al monolito antiguo, abre los archivos en orden numérico (`00` → `14`).

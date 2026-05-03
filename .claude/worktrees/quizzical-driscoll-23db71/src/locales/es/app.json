@@ -1,0 +1,1902 @@
+{
+  "planner": {
+    "metaTitle": "Taimbox",
+    "metaDescription": "Gestiona los recursos de tu equipo con el planificador visual de Taimbox"
+  },
+  "dashboard": {
+    "metaTitle": "Panel de control - Taimbox",
+    "metaDescription": "Visualiza en un solo panel cómo va la carga de trabajo, los proyectos y la rentabilidad de tu agencia.",
+    "tabMetrics": "Mis métricas"
+  },
+  "notFound": {
+    "title": "404",
+    "subtitle": "Página no encontrada",
+    "cta": "Volver al inicio"
+  },
+  "suspended": {
+    "title": "Esta cuenta ha sido suspendida",
+    "body": "Contacta con soporte para más información. Si crees que es un error, escríbenos.",
+    "logout": "Cerrar sesión"
+  },
+  "accountInactive": {
+    "title": "Tu usuario está desactivado en la agencia",
+    "body": "No puedes acceder a la aplicación. Si necesitas volver a entrar, pide a un administrador que reactive tu perfil. Tus datos históricos siguen contando en informes y deadlines del equipo.",
+    "logout": "Cerrar sesión"
+  },
+  "auth": {
+    "brand": "Taimbox",
+    "tagline": "Gestiona tu equipo y proyectos",
+    "tabs": {
+      "login": "Acceder",
+      "register": "Registrarse"
+    },
+    "login": {
+      "fields": {
+        "email": {
+          "label": "Email",
+          "placeholder": "usuario@empresa.com"
+        },
+        "password": {
+          "label": "Contraseña",
+          "placeholder": "••••••••"
+        }
+      },
+      "actions": {
+        "submit": "Acceder",
+        "submitting": "Entrando..."
+      },
+      "errors": {
+        "invalidEmail": "Email inválido",
+        "passwordRequired": "La contraseña es obligatoria"
+      },
+      "toast": {
+        "success": "¡Bienvenido!",
+        "error": "Error de acceso: {{message}}"
+      }
+    },
+    "forgotPassword": {
+      "link": "¿Olvidaste tu contraseña?",
+      "description": "Introduce tu email y te enviaremos un enlace para restablecer tu contraseña.",
+      "emailPlaceholder": "tu@empresa.com",
+      "actions": {
+        "cancel": "Cancelar",
+        "sending": "Enviando...",
+        "sendLink": "Enviar enlace"
+      },
+      "success": {
+        "title": "Revisa tu bandeja de entrada",
+        "body": "Si el email está registrado, recibirás un enlace para restablecer tu contraseña.",
+        "backToLogin": "Volver al inicio de sesión"
+      },
+      "toast": {
+        "missingEmail": "Introduce tu email",
+        "success": "Si el email existe en nuestro sistema, recibirás un enlace de recuperación."
+      }
+    },
+    "register": {
+      "fields": {
+        "name": {
+          "label": "Tu nombre",
+          "placeholder": "Juan García"
+        },
+        "email": {
+          "label": "Email",
+          "placeholder": "tu@empresa.com"
+        },
+        "password": {
+          "label": "Contraseña (mín 6)"
+        },
+        "confirmPassword": {
+          "label": "Confirmar"
+        },
+        "agencyName": {
+          "label": "Nombre de tu empresa",
+          "placeholder": "Mi Agencia"
+        }
+      },
+      "actions": {
+        "submit": "Crear cuenta gratis",
+        "submitting": "Creando cuenta..."
+      },
+      "footer": "Al registrarte, crearás una nueva empresa y serás el administrador,",
+      "errors": {
+        "nameTooShort": "El nombre debe tener al menos 2 caracteres",
+        "invalidEmail": "Email inválido",
+        "passwordTooShort": "La contraseña debe tener al menos 6 caracteres",
+        "confirmPasswordRequired": "Confirma tu contraseña",
+        "agencyNameRequired": "El nombre de la empresa es obligatorio",
+        "passwordsDontMatch": "Las contraseñas no coinciden",
+        "agencyAlreadyExists": "Esta empresa ya existe. Por favor, elige otro nombre."
+      },
+      "toast": {
+        "genericError": "Error al registrar",
+        "success": "¡Cuenta creada! Iniciando sesión...",
+        "loginAfterRegisterError": "Cuenta creada pero hubo un error al iniciar sesión. Por favor, inicia sesión manualmente.",
+        "unexpectedError": "Error inesperado. Por favor, inténtalo de nuevo."
+      }
+    },
+    "oauth": {
+      "common": {
+        "tryAgain": "Inténtalo de nuevo."
+      },
+      "google": {
+        "loadingTitle": "Vinculando con Google Ads...",
+        "loadingSubtitle": "Por favor, no cierres esta ventana.",
+        "denied": "No se pudo conectar con Google Ads. El usuario denegó el acceso.",
+        "invalidResponse": "Respuesta inválida de Google.",
+        "missingAgency": "No se pudo identificar la agencia. Vuelve a intentar desde Integraciones.",
+        "success": "¡Google Ads vinculado correctamente!",
+        "linkError": "Error al vincular la cuenta: {{message}}"
+      },
+      "meta": {
+        "loadingTitle": "Vinculando con Meta Ads...",
+        "loadingSubtitle": "Por favor, no cierres esta ventana.",
+        "denied": "No se pudo conectar con Meta. Acceso denegado.",
+        "genericError": "Error de Meta: {{error}}",
+        "invalidResponse": "Respuesta inválida de Meta.",
+        "missingAgency": "No se pudo identificar la agencia. Vuelve a intentar desde Integraciones.",
+        "success": "¡Meta Ads vinculado correctamente!",
+        "dnsError": "El servidor de integraciones no pudo resolver red/DNS (503). Revisa DNS del contenedor edge-functions o reintenta en unos segundos.",
+        "linkError": "Error al vincular Meta: {{message}}"
+      }
+    }
+  },
+  "support": {
+    "contact": {
+      "title": "Soporte",
+      "subtitle": "Envía solicitudes y sigue el estado de tus tickets para la agencia {{agency}}.",
+      "noAgencySelected": "Selecciona una agencia para contactar con soporte.",
+      "form": {
+        "title": "Nueva solicitud",
+        "description": "Describe tu consulta o incidencia. El equipo de soporte te responderá aquí.",
+        "subjectLabel": "Asunto",
+        "subjectPlaceholder": "Ej: Problema con la sincronización de anuncios",
+        "messageLabel": "Mensaje",
+        "messagePlaceholder": "Describe tu consulta o incidencia con el mayor detalle posible…",
+        "submit": "Enviar solicitud",
+        "submitting": "Enviando...",
+        "successTitle": "Solicitud enviada",
+        "successBody": "Puedes ver el estado y las respuestas en \"Mis tickets\".",
+        "successCta": "Enviar otra solicitud"
+      },
+      "tickets": {
+        "title": "Mis tickets",
+        "description": "Listado de tus solicitudes. Haz clic en \"Ver\" para ver detalle y responder.",
+        "empty": "No tienes ningún ticket.",
+        "columns": {
+          "subject": "Asunto",
+          "status": "Estado",
+          "createdAt": "Creado"
+        },
+        "view": "Ver"
+      },
+      "detail": {
+        "title": "Detalle del ticket",
+        "subjectLabel": "Asunto",
+        "initialMessageLabel": "Mensaje inicial",
+        "status": {
+          "createdAtPrefix": "Creado"
+        },
+        "conversationTitle": "Conversación",
+        "conversationEmpty": "Aún no hay respuestas. El equipo de soporte te responderá aquí.",
+        "replyPlaceholder": "Escribe tu respuesta…",
+        "replyButton": "Enviar respuesta",
+        "loadError": "No se pudo cargar el ticket."
+      },
+      "status": {
+        "open": "Abierto",
+        "inProgress": "En curso",
+        "closed": "Cerrado"
+      },
+      "author": {
+        "you": "Tú",
+        "support": "Soporte"
+      },
+      "toasts": {
+        "loadTicketsError": "Error al cargar tus tickets",
+        "agencyRequired": "Selecciona una agencia para enviar la solicitud.",
+        "subjectRequired": "El asunto es obligatorio.",
+        "messageRequired": "El mensaje es obligatorio.",
+        "createSuccess": "Solicitud enviada. Te responderemos lo antes posible.",
+        "createError": "Error al enviar la solicitud. Inténtalo de nuevo.",
+        "replyRequired": "Escribe un mensaje",
+        "replyError": "Error al enviar la respuesta",
+        "replySuccess": "Respuesta enviada"
+      }
+    }
+  },
+  "deadlines": {
+    "loading": "Cargando deadlines...",
+    "filters": {
+      "button": "Filtros"
+    },
+    "globalAssignments": {
+      "button": "Global"
+    },
+    "toasts": {
+      "globalAssignment": {
+        "updated": "Asignación global actualizada",
+        "created": "Asignación global creada",
+        "saveError": "Error al guardar asignación global"
+      },
+      "deadline": {
+        "deleted": "Deadline eliminado",
+        "deleteError": "Error al eliminar deadline"
+      },
+      "global": {
+        "deleted": "Asignación eliminada",
+        "deleteError": "Error eliminando asignación global",
+        "noUser": "No hay usuario autenticado",
+        "notFound": "Asignación no encontrada",
+        "notOwner": "Solo puedes eliminar tus propias asignaciones"
+      },
+      "month": {
+        "noDeadlinesToDelete": "No hay deadlines para eliminar en este mes",
+        "resetSuccess": "Mes reseteado correctamente",
+        "resetError": "Error al resetear el mes"
+      },
+      "previousMonth": {
+        "noDeadlines": "No hay deadlines en el mes anterior",
+        "copyError": "Error al copiar deadlines",
+        "checkError": "Error al verificar deadlines anteriores",
+        "copySuccess": "Se copiaron {{count}} deadlines"
+      },
+      "noConfigToDelete": "No hay configuración guardada para eliminar"
+    }
+  },
+  "times": {
+    "title": "Tiempos",
+    "subtitleDisabled": "Cronómetros del equipo.",
+    "disabledMessage": "El módulo de cronómetro no está activo en tu agencia. Actívalo en Configuración de agencia para ver quién está registrando tiempo.",
+    "subtitleActive": "Quién está registrando tiempo ahora y total del día.",
+    "emptyState": {
+      "title": "Nadie tiene el cronómetro en marcha",
+      "description": "Cuando alguien pulse Play en una tarea del planificador, aparecerá aquí.",
+      "yourTotalToday": "Tu total hoy"
+    },
+    "cards": {
+      "defaultEmployee": "Empleado",
+      "you": "Tú",
+      "defaultTask": "Tarea",
+      "todayTotal": "Hoy en total",
+      "stop": "Parar",
+      "yourTotalWithoutTimer": "Tu total hoy (sin cronómetro activo)"
+    },
+    "toast": {
+      "stoppedTitle": "Cronómetro parado",
+      "stoppedDescription": "El tiempo se ha guardado correctamente."
+    }
+  },
+  "weeklyForecast": {
+    "title": "Previsión mensual",
+    "subtitle": "Historial de cambios en tareas y redistribución de carga entre compañeros",
+    "monthCurrent": "Mes actual",
+    "tabs": {
+      "redistribute": "Redistribución",
+      "activity": "Historial"
+    },
+    "activityLogTitle": "Historial de cambios",
+    "activityRootCount": "{{count}} raíces",
+    "activityRelatedBranches": "Continuaciones y sub-tareas",
+    "allProjects": "Todos los proyectos",
+    "allEmployees": "Todos",
+    "searchProjectPlaceholder": "Buscar proyecto...",
+    "searchEmployeePlaceholder": "Buscar empleado...",
+    "noProjectsFound": "No se encontraron proyectos.",
+    "noEmployeesFound": "No se encontraron empleados.",
+    "weeklyOnlyToggle": "Solo cierre semanal",
+    "redistributeCardTitle": "Redistribución de horas",
+    "redistributeCardDesc": "Selecciona un proyecto y redistribuye horas entre compañeros",
+    "projectLabel": "Proyecto",
+    "selectProject": "Seleccionar proyecto...",
+    "noProjects": "No hay proyectos",
+    "delayedTasks": "Tareas retrasadas",
+    "tasksCount": "tarea(s)",
+    "unnamedTask": "Sin nombre",
+    "assigned": "Asignadas",
+    "done": "Realizadas",
+    "remaining": "Restantes",
+    "targetColleague": "Compañero destino",
+    "select": "Seleccionar",
+    "selectColleague": "Seleccionar compañero destino",
+    "targetWeek": "Semana destino",
+    "selectWeek": "Seleccionar semana",
+    "weekPick": "Sem {{n}} ({{date}})",
+    "destLoadTitle": "Carga del compañero destino",
+    "totalToMove": "Total a transferir:",
+    "currentLoad": "Carga actual:",
+    "newLoad": "Nueva carga:",
+    "excess": "exceso",
+    "redistributeButton": "Redistribuir horas",
+    "noDelayedTasks": "No hay tareas retrasadas en este proyecto."
+  },
+  "teamCapacity": {
+    "metaTitle": "Disponibilidad del equipo | Taimbox",
+    "title": "Disponibilidad del equipo",
+    "subtitle": "Balance de carga para",
+    "viewModes": {
+      "week": "Esta Semana",
+      "month": "Este Mes"
+    },
+    "stats": {
+      "highAvailability": "Alta disponibilidad",
+      "availableCapacity": "Capacidad disponible",
+      "globalOccupancy": "Ocupación global",
+      "overloaded": "En sobrecarga"
+    },
+    "sections": {
+      "highAvailability": {
+        "title": "Alta disponibilidad",
+        "subtitleWeek": "Miembros con +4h libres esta semana",
+        "subtitleMonth": "Miembros con +10h libres este mes",
+        "emptyState": "Todo el equipo está ocupado"
+      },
+      "moderate": "Disponibilidad moderada",
+      "persons": "personas",
+      "criticalLoad": {
+        "title": "Carga crítica",
+        "subtitle": "Miembros con poca o ninguna disponibilidad",
+        "overload": "Sobrecarga (≥100%)",
+        "busy": "Muy ocupado (85-99%)",
+        "emptyState": "Nadie está sobrecargado"
+      },
+      "away": "Ausencias actuales"
+    },
+    "status": {
+      "away": "Ausente",
+      "overloaded": "Sobrecarga",
+      "busy": "Ocupado",
+      "productive": "Productivo",
+      "available": "Disponible"
+    },
+    "card": {
+      "occupancy": "Ocupación",
+      "absences": "-{{hours}}h (ausencias/eventos)",
+      "pendingTasks": "{{count}} tareas planificadas",
+      "free": "Libres"
+    }
+  },
+  "teamCapacityDashboard": {
+    "title": "Capacidad de Equipo",
+    "subtitle": "Mapa de calor pasivo y análisis de cuellos de botella.",
+    "controls": {
+      "prevMonth": "Mes anterior",
+      "nextMonth": "Mes siguiente"
+    },
+    "kpis": {
+      "averageLoad": {
+        "title": "Ocupación Media (Mes)",
+        "subtitle": "Capacidad planificada vs disponible"
+      },
+      "bottlenecks": {
+        "title": "Cuellos de Botella",
+        "subtitle": "Tareas bloqueadas por dependencias"
+      }
+    },
+    "heatmap": {
+      "title": "Mapa de Calor Semanal",
+      "description": "Visualización rápida de quién está sobrecargado o disponible.",
+      "legend": {
+        "optimal": "Óptimo (50-80%)",
+        "high": "Alto (80-100%)",
+        "veryHigh": "Muy alto (100-120%)",
+        "overloaded": "Sobrecargado (+120%)",
+        "low": "Bajo (<50%)"
+      },
+      "emptyState": "No hay datos para mostrar",
+      "columns": {
+        "employee": "Empleado"
+      },
+      "tooltip": {
+        "assignedHours": "Horas asignadas:",
+        "weeklyCapacity": "Capacidad semanal:",
+        "occupancy": "Ocupación:",
+        "noAssignments": "Sin asignaciones esta semana",
+        "lowLoad": "Carga baja - Capacidad disponible",
+        "optimalLoad": "Carga óptima",
+        "highLoad": "Carga alta - Cerca del límite",
+        "moderateOverload": "⚠️ Sobrecarga moderada",
+        "criticalOverload": "🚨 Sobrecarga crítica"
+      }
+    },
+    "blockedTasks": {
+      "title": "Tareas bloqueadas por dependencias",
+      "subtitle": "Tareas que no pueden avanzar hasta que se complete su dependencia",
+      "waitingWeek": "semana esperando",
+      "waitingWeeks": "semanas esperando",
+      "moreBlocked": "+{{count}} tareas bloqueadas más"
+    }
+  },
+  "financialHealth": {
+    "title": "Rentabilidad",
+    "subtitle": "Precio hora efectivo, margen neto y rentabilidad por proyecto y empleado.",
+    "view": "Vista:",
+    "search": "Buscar proyecto o cliente...",
+    "controls": {
+      "prevMonth": "Mes anterior",
+      "nextMonth": "Mes siguiente",
+      "starterPlan": "Plan Starter: mes actual y anterior",
+      "currentMonth": "Mes en curso",
+      "closedMonth": "Mes cerrado"
+    },
+    "filters": {
+      "hours": "Horas:",
+      "actual": "Reales",
+      "computed": "Computadas",
+      "cost": "Coste:",
+      "operational": "Operativo",
+      "dynamic": "Dinámico",
+      "operationalHelp": "Aísla el coste del proyecto de vacaciones y tiempos muertos.",
+      "dynamicHelp": "Reparte la nómina entre las horas reales del mes (el total coincide con la nómina)."
+    },
+    "columns": {
+      "payrollImputed": "Nómina imput.",
+      "commonOverhead": "G. comunes",
+      "payrollImputedHelp": "Nómina cargada al proyecto según el modo de coste (operativo o dinámico).",
+      "commonOverheadHelp": "Gastos comunes del mes prorrateados a este proyecto según la configuración de reparto.",
+      "costTotal": "Coste (€)",
+      "costTotalHelp": "Nómina imputada más gastos comunes imputados (y en empleados: también no imputado y capacidad operativa si aplica).",
+      "departmentTableHelp": "Ingreso del mes (devengado si el mes está en curso), costes del mismo criterio que la tabla de proyectos y margen."
+    },
+    "costTooltip": {
+      "commonNote": "Incluye gastos comunes del mes prorrateados por horas. En modo operativo la nómina usa capacidad teórica; los gastos comunes usan las horas del mes (reales o computadas según el filtro).",
+      "fallbackIntro": "Cálculo dinámico en espera: aún no hay suficientes horas registradas en el mes para un prorrateo exacto de la nómina. Se muestra temporalmente el coste operativo.",
+      "fallbackCommon": "Los gastos comunes se siguen prorrateando con las horas registradas del mes en el modo elegido (reales o computadas).",
+      "standard": "Suma de horas × coste hora operativo (capacidad teórica del mes).",
+      "dynamic": "Suma de horas × coste hora prorrateado del mes. El total de nómina coincide con las nóminas."
+    },
+    "ehrTargetLoadedNote": "El objetivo por defecto incluye nómina y gastos comunes configurados para este mes (coste cargado), salvo que hayas fijado un objetivo manual aquí (Objetivo y gastos).",
+    "settings": {
+      "openButton": "Objetivo y gastos",
+      "dialogTitle": "Objetivo EHR y gastos comunes",
+      "dialogDescription": "Define el precio hora objetivo y los gastos que se prorratean en esta página (fijos por mes o puntuales).",
+      "ehrNote": "Mínimo 1 €/h. Si no guardas un valor explícito, se usará el coste cargado o 75 €/h según la lógica de la página.",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "saved": "Cambios guardados",
+      "saveError": "No se pudo guardar la configuración"
+    },
+    "exportDiagnostic": {
+      "button": "Diagnóstico JSON",
+      "tooltip": "Descarga un JSON con el mes, filtros activos, proyectos y rentabilidad por empleado (nombres e importes). Sirve para soporte o revisión; contiene datos sensibles—no lo publiques.",
+      "success": "Archivo JSON descargado",
+      "error": "No se pudo generar el archivo"
+    },
+    "exportHubLink": "Más exportaciones",
+    "tabs": {
+      "deliverablesLifecycle": "Entregables (vida)",
+      "subtitle": "Resumen · Proyectos (mes) · Entregables (ciclo de vida) · Empleados"
+    },
+    "deliverablesLifecycle": {
+      "heading": "Entregables — ciclo de vida",
+      "subtitle": "Vista de ciclo de vida completo. Sin selector de mes."
+    },
+    "commonExpenses": {
+      "title": "Gastos comunes del mes",
+      "description": "Prorrateo en costes de proyectos y empleados según la configuración (global, por departamento o porcentajes).",
+      "totalAgency": "Total aplicado (agencia)",
+      "inViewRows": "Imputado en filas de esta vista",
+      "diffNote": "Si hay filtro de búsqueda o proyectos ocultos, el imputado en filas puede ser menor que el total de agencia.",
+      "configure": "Configurar gastos comunes",
+      "allocError": "Error al calcular gastos comunes. Revisa porcentajes e importes en Objetivo y gastos.",
+      "zeroHourPeers": "Algunos empleados no tienen horas este mes y no reciben prorrateo de gastos comunes: {{names}}"
+    },
+    "costHour": {
+      "tooltipLoadedStd": "Base operativa (nómina): {{baseH}} h teóricas/mes. Nómina/h: {{p}} €/h; gastos comunes/h: {{o}} €/h; coste cargado/h: {{c}} €/h.",
+      "tooltipLoadedDyn": "Base del mes: {{baseH}} h. Nómina/h: {{p}} €/h; gastos comunes/h: {{o}} €/h; coste cargado/h: {{c}} €/h."
+    },
+    "costHelp": {
+      "commonCosts": "Los gastos comunes (Objetivo y gastos en esta página) se suman al coste por horas del mes. Con coste operativo, la nómina sigue la capacidad teórica; los gastos comunes siguen las horas registradas en el modo elegido."
+    },
+    "employee": {
+      "payrollInCostTooltip": "Suma la nómina cargada a proyectos (tarifa × horas), más horas no imputadas y, en modo Operativo, la parte de nómina que no entra en horas del mes (capacidad teórica > horas trabajadas). Debe coincidir con la nómina del mes salvo céntimos de redondeo.",
+      "standardIdleLabel": "Capacidad operativa (nómina)",
+      "standardIdleTooltip": "En modo Operativo la tarifa es nómina ÷ capacidad teórica. Si trabajas menos horas que esa capacidad, la diferencia hasta la nómina completa se muestra aquí: sigues pagando el salario íntegro.",
+      "standardIdleRowLabel": "Capacidad operativa",
+      "standardIdleRowTableTooltip": "Resto de nómina mensual no explicada por horas del mes × coste/h operativo. Sin ingreso atribuido; reduce el margen como coste fijo del mes.",
+      "expandMarginPerHour": "Margen/h",
+      "expandMarginPerHourTooltip": "Margen de la línea (ingreso atribuido menos nómina y gastos comunes imputados) entre sus horas. Con el reparto del fee proporcional a las horas, el ingreso atribuido por hora es siempre el EHR del proyecto; el margen/h muestra cuánto queda tras el coste cargado a esta persona.",
+      "projectExpandCostPerHour": "Coste/h",
+      "projectExpandCostPerHourTooltip": "Coste cargado a la persona en este proyecto (nómina + gastos comunes imputados) entre sus horas. Si es mayor que el EHR del proyecto, esa combinación horas–persona está por debajo del tipo de ingreso del contrato.",
+      "expandProjectEhr": "EHR proyecto",
+      "expandProjectEhrTooltip": "Fee mensual del proyecto entre las horas totales del proyecto en este mes (mismo criterio reales/computadas). Con el reparto por horas, es la tarifa de ingreso por hora que recibe cualquier imputación; compárala con el coste cargado por hora (nómina + gastos comunes en esa línea) vía la columna Margen/h.",
+      "payroll": "Nómina del mes",
+      "imputedCost": "Coste imputado",
+      "overheadShare": "Gastos comunes",
+      "unattributed": "No imputado",
+      "unattributedTooltipStd": "Horas en tareas internas o fuera de vista. En modo Operativo el coste se calcula sobre capacidad teórica y la suma puede no cuadrar exactamente con la nómina.",
+      "unattributedTooltipDyn": "Horas en tareas internas o proyectos fuera de la vista. Suma al coste para cuadrar con la nómina mensual."
+    },
+    "project": {
+      "costBreakdownTooltip": "Compuesto por nómina imputada + gastos comunes. Pasa el ratón por la cifra para ver el desglose."
+    }
+  },
+  "clientsAndProjects": {
+    "title": "Clientes y Proyectos",
+    "subtitle": "Gestión de clientes, presupuestos y seguimiento de proyectos.",
+    "stats": {
+      "totalClients": "Total clientes",
+      "hoursThisMonth": "Horas este mes",
+      "assignedHours": "de {{budget}}h asignadas",
+      "atRisk": "En riesgo",
+      "atRiskDescription": ">85% de horas contratadas",
+      "overBudget": "Excedidos",
+      "overBudgetDescription": ">100% de horas contratadas",
+      "contracted": "Contratadas",
+      "computed": "Computadas",
+      "toCompute": "Por computar",
+      "estimated": "Estimado",
+      "real": "Real"
+    },
+    "filters": {
+      "searchPlaceholder": "Buscar cliente o proyecto...",
+      "status": {
+        "all": "Todos los estados",
+        "active": "Solo activos",
+        "completed": "Solo completados",
+        "archived": "Solo archivados",
+        "hidden": "Solo ocultos"
+      },
+      "types": {
+        "all": "Todos los tipos",
+        "placeholder": "Tipo"
+      },
+      "employees": {
+        "all": "Todos los empleados",
+        "placeholder": "Seleccionar...",
+        "search": "Buscar..."
+      },
+      "quick": {
+        "label": "Filtros:",
+        "all": "Todos",
+        "noActivity": "Sin actividad",
+        "noActivityTooltip": "Proyectos sin tareas planificadas este mes",
+        "needsPlanning": "Falta planificar",
+        "needsPlanningTooltip": "Proyectos que no han planificado todas sus horas asignadas o mínimas",
+        "needsPlanningDetail": "Si tiene horas asignadas, debe planificar todas. Si solo tiene mínimas, debe planificar al menos esas.",
+        "behindSchedule": "Retrasados",
+        "behindScheduleTooltip": "Ejecución por debajo del progreso del mes",
+        "overBudget": "Exceso horas",
+        "overBudgetTooltip": "Proyectos con más horas planificadas que asignadas"
+      }
+    },
+    "actions": {
+      "newProject": "Nuevo proyecto",
+      "newClient": "Nuevo cliente",
+      "expandAll": "Expandir todos",
+      "collapseAll": "Colapsar todos",
+      "edit": "Editar",
+      "showProject": "Mostrar proyecto",
+      "hideProject": "Ocultar proyecto"
+    },
+    "clientList": {
+      "count_one": "{{count}} cliente",
+      "count_other": "{{count}} clientes",
+      "projects_one": "{{count}} proyecto",
+      "projects_other": "{{count}} proyectos",
+      "noResults": "No hay clientes con estos filtros",
+      "noResultsSub": "Prueba con otros criterios de búsqueda",
+      "activeProjects": "Proyectos activos",
+      "assignedTeamThisMonth": "Equipo asignado este mes",
+      "noProjects": "Sin proyectos activos",
+      "projects_plural": "Proyectos"
+    },
+    "projectCard": {
+      "unplanned": "Sin planificar",
+      "hoursOf": "{{used}}h de {{budget}}h"
+    },
+    "dialogs": {
+      "newClient": {
+        "title": "Nuevo cliente",
+        "description": "Crea un nuevo cliente para organizar tus proyectos.",
+        "name": "Nombre",
+        "namePlaceholder": "Nombre del cliente",
+        "color": "Color"
+      },
+      "editClient": {
+        "title": "Editar cliente",
+        "description": "Modifica la información del cliente."
+      },
+      "deleteClient": {
+        "title": "¿Eliminar cliente?",
+        "description": "Esta acción eliminará al cliente y todos sus proyectos asociados. Esta acción no se puede deshacer."
+      },
+      "newProject": {
+        "deliverableBlockIntro": "Importe total del contrato y fechas de la fase. El sistema lo prorratea entre meses para mostrar el ingreso correspondiente en Rentabilidad y el avance en Seguimiento Operativo."
+      }
+    }
+  },
+  "agencies": {
+    "title": "Mis Agencias",
+    "description": "Gestiona tus agencias o crea una nueva.",
+    "newAgency": "Nueva Agencia",
+    "hubIntro": "Elige la agencia activa si tienes varias. Los accesos de abajo enlazan con el mismo criterio que Configuración de agencia: rentabilidad (objetivo €/h), horas computadas frente a reales, Conexiones (Weekly, CRM, anuncios) y módulos del menú.",
+    "accessCount_one": "Tienes acceso a 1 agencia",
+    "accessCount_other": "Tienes acceso a {{count}} agencias",
+    "manageCurrent": "Gestiona tu agencia actual",
+    "createNew": "Crear nueva agencia",
+    "myAgency": "Mi Agencia",
+    "currentAgencyText": "Agencia actual",
+    "currentBadge": "Actual",
+    "guide": {
+      "title": "Qué encontrarás en cada sitio",
+      "lead": "Resumen alineado con la pantalla de configuración para que Weekly, CRM y el objetivo de precio hora no mezclen conceptos distintos.",
+      "settingsHeading": "Configuración de agencia",
+      "settingsLi1": "General y rentabilidad: nombre, slug y objetivo de precio hora efectivo (€/h) que usa la página Rentabilidad; solo valores positivos, coma o punto como decimal y máximo dos decimales.",
+      "settingsLi2": "Seguimiento de horas: eliges si el avance y la rentabilidad priorizan horas computadas (imputación comercial al cliente o presupuesto) o solo las horas reales dedicadas; no obliga a usar el cronómetro.",
+      "settingsLi3": "Conexiones — Weekly: el día de cierre define cuándo una semana queda cerrada para ediciones directas en el planificador; el cierre de pendientes se hace desde el flujo Weekly. Las cuentas Meta y Google Ads se configuran aquí si el módulo PPC está activo.",
+      "settingsLi4": "Conexiones — CRM: un solo interruptor para activar a la vez el ID de usuario en perfiles, el ID externo del proyecto en cada proyecto y la exportación mensual a CSV (tarea, IDs y horas).",
+      "settingsLi5": "Organización, equipo (roles y permisos del menú), proyectos (filtros y aliasing), funcionalidades visibles (OKRs, Deadlines, cronómetro…), apariencia y plan o facturación.",
+      "teamHeading": "Equipo",
+      "teamBody": "Personas, departamentos y datos operativos del staff en el día a día. No es la misma pantalla que los administradores con acceso a la agencia en Taimbox.",
+      "adminsHeading": "Administradores de la agencia",
+      "adminsBody": "Quién tiene acceso a esta agencia en la cuenta: invitar, quitar y, si aplica, traspasar titularidad. Los roles internos (qué ve cada rol en el menú) se configuran en la pestaña Equipo dentro de Configuración de agencia."
+    },
+    "buttons": {
+      "team": "Equipo",
+      "admins": "Administradores",
+      "settings": "Configuración de agencia",
+      "switchToThis": "Cambiar a esta agencia",
+      "switching": "Cambiando...",
+      "adminsShort": "Admins",
+      "settingsShort": "Agencia"
+    },
+    "toast": {
+      "switchSuccess": "Agencia cambiada correctamente",
+      "switchError": "Error al cambiar de agencia"
+    }
+  },
+  "layout": {
+    "departmentBanner": {
+      "viewing": "Estás viendo la vista filtrada de:",
+      "hidden": "El resto de datos están ocultos.",
+      "clear": "Borrar filtro"
+    },
+    "subscriptionBanner": {
+      "exceeds": "Tu agencia excede los límites del Plan Starter. Pasa a Pro o Business para volver a planificar.",
+      "viewPlans": "Ver planes"
+    },
+    "departmentSelector": {
+      "globalView": "Vista Global",
+      "byDepartment": "Vista por departamento"
+    }
+  },
+  "okrs": {
+    "title": "Objetivos y resultados clave (OKRs)",
+    "description": "Gestiona y monitoriza los objetivos estratégicos y el rendimiento del equipo.",
+    "newGoal": "Nuevo objetivo",
+    "tabs": {
+      "projects": "Proyectos",
+      "personal": "Mis objetivos"
+    },
+    "selectEmployee": "Seleccionar empleado...",
+    "searchEmployee": "Buscar empleado...",
+    "search": "Buscar...",
+    "internal": "Interno",
+    "global": "Global",
+    "strategicObjectives": "Objetivos estratégicos",
+    "status": {
+      "completed": "Completado",
+      "onTrack": "En buen camino",
+      "inProgress": "En progreso",
+      "started": "Iniciado"
+    },
+    "noDate": "Sin fecha",
+    "keyResults": "Resultados clave",
+    "generalProgress": "Progreso General",
+    "dialog": {
+      "editTitle": "Editar objetivo",
+      "createTitle": "Crear nuevo objetivo",
+      "projectDesc": "Objetivo asociado a un proyecto activo.",
+      "personalDesc": "Objetivo de desarrollo profesional.",
+      "projectLabel": "Proyecto",
+      "selectProject": "seleccionar proyecto...",
+      "mainObjective": "Objetivo principal",
+      "objectivePlaceholder": "Ej: mejorar skills de React...",
+      "deadline": "Fecha límite",
+      "trainingLink": "Enlace formación (opcional)",
+      "completedPrefix": "completado",
+      "check": "Check",
+      "numeric": "Numérico",
+      "descPlaceholder": "descripción del resultado...",
+      "checkPlaceholder": "Ej: Completar curso...",
+      "numericPlaceholder": "Ej: Completar módulos de curso..."
+    },
+    "delete": "Eliminar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "alert": {
+      "title": "¿Estás completamente seguro?",
+      "description": "Esta acción no se puede deshacer. Se eliminará el objetivo permanentemente."
+    }
+  },
+  "operationsRadar": {
+    "title": "Seguimiento operativo",
+    "description": "Revisión diaria de procesos en riesgo y desviaciones. La búsqueda y los filtros aplican al informe de coherencia.",
+    "searchPlaceholder": "Buscar proyecto o cliente...",
+    "searchAria": "Buscar en Seguimiento operativo (coherencia)",
+    "coherenceEmployeeFilterPlaceholder": "Filtrar por empleado...",
+    "coherenceEmployeeFilterAria": "Filtrar por empleado",
+    "coherenceExpandEmployees": "Desplegar detalle por empleado",
+    "coherenceCollapseEmployees": "Colapsar detalle por empleado",
+    "prevMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "blockingTasks_one": "{{count}} tarea bloquea al equipo",
+    "blockingTasks_other": "{{count}} tareas bloquean al equipo",
+    "noBlockingTasks": "Nada bloquea al equipo este mes",
+    "noBlockingDetails": "Todas las tareas de las que dependen otras están completadas o no hay dependencias este mes.",
+    "somebody": "Alguien",
+    "unnamedTask": "Tarea sin nombre",
+    "blocks": " bloquea a ",
+    "blockingCardProjectLabel": "Proyecto",
+    "otherTasks": "otras tareas",
+    "blockerTask": "Tarea bloqueadora:",
+    "blockedTask_one": "Tarea bloqueada:",
+    "blockedTask_other": "Tareas bloqueadas:",
+    "blockingCountInProject_one": "{{count}} bloqueo",
+    "blockingCountInProject_other": "{{count}} bloqueos",
+    "projectsStatus": "Estado de proyectos",
+    "projectsDesc": "Cómo van los proyectos este mes. Filtra por nivel de aviso si lo necesitas.",
+    "filteredView": "Vista filtrada por departamento: {{department}}",
+    "noProjectsForDepartment": "No hay proyectos para {{department}} este mes.",
+    "noProjects": "No hay proyectos este mes.",
+    "noFilteredProjects": "Ningún proyecto con los filtros actuales.",
+    "showAll": "Ver todos",
+    "filterAll": "Todos",
+    "filterNoActivity": "Sin actividad",
+    "filterNeedsPlanning": "Falta planificar",
+    "filterBehindSchedule": "Retrasados",
+    "filterOverBudget": "Exceso horas",
+    "filterInRule": "En regla",
+    "tooltipNoActivity": "Proyectos con objetivo pero sin tareas planificadas ni computadas este mes",
+    "tooltipNeedsPlanning": "Proyectos con tareas pendientes de completar este mes",
+    "tooltipBehindSchedule": "Por debajo del objetivo o poco avance (ritmo bajo / poco avance)",
+    "tooltipOverBudget": "Proyectos que superan el presupuesto del mes",
+    "tooltipInRule": "Al día, sin exceso y sin tareas pendientes de planificar",
+    "noResults": "Ningún resultado con los filtros actuales.",
+    "noLifecycleRisk": "No hay entregables con riesgo de vida en este momento.",
+    "filterLifecycleRisk": "Riesgo vida (entreg.)",
+    "tooltipLifecycleRisk": "Entregables con consumo o proyección de riesgo a lo largo de la fase (no sustituye al estado del mes).",
+    "lifecycleSectionTitle": "Entregables",
+    "lifecycleColActions": "Acciones",
+    "lifecycleEditProjectAria": "Editar proyecto",
+    "lifecycleSectionHint": "Resumen del ciclo de vida completo; no usa el filtro de mes del radar.",
+    "lifecycleColProject": "Proyecto",
+    "lifecycleColPhase": "Fase",
+    "lifecycleColHours": "Horas",
+    "lifecycleColStatus": "Estado vida",
+    "lifecycleColDaysLeft": "Días rest.",
+    "projectsFound_one": "{{count}} proyecto.",
+    "projectsFound_other": "{{count}} proyectos.",
+    "actionOverBudget": "{{hours}}h por encima del acuerdo.",
+    "actionLowProgress": "Faltan {{hours}}h para el objetivo del mes.",
+    "actionLowPace": "Ritmo bajo para llegar al objetivo.",
+    "actionInRule": "Objetivo: {{budget}}h. Faltan {{hours}}h por computar.",
+    "contracted": "Contratadas",
+    "computed": "Computadas",
+    "toCompute": "Por computar",
+    "pendingTasksCount": "{{count}} pendientes",
+    "projection": "proyección",
+    "estimated": "estimadas",
+    "missingHours": "(Faltan {{missing}}h de {{assigned}}h asignadas)",
+    "excessHours": "(+{{excess}}h de exceso)",
+    "assigned": "Asignadas:",
+    "estimateLabel": "Estimado",
+    "actualLabel": "Real",
+    "computedLabel": "Computado",
+    "pendingTeamTasks": "Tareas pendientes del equipo ({{count}})",
+    "coherenceStatusFiltersLabel": "Estado operativo del mes",
+    "coherenceStatusFilterNote": "filtrado por estado operativo",
+    "coherenceTasksButton": "Tareas",
+    "coherenceTasksDialogSubtitle": "Tareas del mes en este proyecto",
+    "coherenceTasksDialogSubtitleDeliverable": "Mes en vista: coherencia con el deadline del mes. En «Meses anteriores» ves tareas de la fase antes de este mes.",
+    "coherenceTasksTabThisMonth": "Mes en vista",
+    "coherenceTasksTabPriorMonths": "Meses anteriores",
+    "coherenceTasksPriorHint": "Solo tareas con semana en la fase del entregable y en meses anteriores a {{month}}.",
+    "coherenceTasksNoPrior": "Sin tareas en meses anteriores dentro de esta fase.",
+    "coherenceTasksPhaseLoading": "Cargando tareas de la fase (solo este proyecto)…",
+    "coherenceTasksPhaseLoadError": "No se pudieron cargar las tareas de la fase.",
+    "coherenceTasksPhaseRetry": "Reintentar",
+    "coherencePhaseTotalsToggleShow": "Ver dedicación total en la fase",
+    "coherencePhaseTotalsToggleHide": "Ocultar dedicación total en la fase",
+    "coherencePhaseTotalsTitle": "Horas en la fase (por persona)",
+    "coherencePhaseTotalsFootnote": "«Operativas»: cerradas según la preferencia de seguimiento de la agencia; abiertas = estimadas asignadas.",
+    "coherencePhaseTotalsColEmployee": "Persona",
+    "coherencePhaseTotalsColEffective": "Operativas",
+    "coherencePhaseTotalsColPlanned": "Planif. (Σ est.)",
+    "coherencePhaseTotalsEmpty": "Sin horas en la fase.",
+    "coherenceTasksScrollRegion": "Lista de tareas (desplazable)",
+    "coherenceTasksTabPending": "Pendientes",
+    "coherenceTasksTabCompleted": "Cerradas",
+    "coherenceTasksEditAria": "Editar tarea",
+    "coherenceNoPendingTasks": "Sin tareas pendientes este mes",
+    "coherenceNoCompletedTasks": "Sin tareas cerradas este mes",
+    "weekShort": "Sem.",
+    "taskEstShort": "Est.",
+    "coherenceNoDeadlineBanner": "Este proyecto no figura en el deadline del mes; la fila de abajo resume planificación y computo del equipo.",
+    "coherenceDeltaVsDeadline": "Vs deadline",
+    "coherenceDeltaPlanPlusComp": "Plan+Comp",
+    "coherenceDeltaEmployeeVsDl": "Vs DL",
+    "coherenceDeadlineDeltaTooltip": "No es lo mismo que «Por computar»: es (Plan + Comp del mes) menos las horas acordadas en el deadline. Negativo: margen por debajo del acuerdo; positivo: por encima del acuerdo.",
+    "coherenceNoDeadlineSumTooltip": "No hay deadline de referencia este mes: es la suma de planificado + computado del equipo (alerta al no poder contrastar con Deadlines)."
+  },
+  "deliverableLifecycle": {
+    "tooltip": {
+      "consumedCap": "Consumido / Techo",
+      "expectedToday": "Esperado a hoy",
+      "projectedEnd": "Proyección a fin",
+      "daysLeft": "Días restantes",
+      "costToDate": "Coste hasta hoy",
+      "revenueAccrued": "Ingreso devengado",
+      "marginPct": "Margen %",
+      "unknownCost": "Coste subestimado: hay tareas asignadas a empleados eliminados"
+    },
+    "full": {
+      "consumed": "Consumido",
+      "expected": "Esperado",
+      "projected": "Proyección",
+      "daysLeft": "Días rest.",
+      "margin": "Margen %"
+    },
+    "exportOk": "CSV descargado",
+    "exportErr": "Error al exportar",
+    "costModeIndependent": "Modo de coste independiente del de la vista mensual. Por defecto, estándar.",
+    "bannerUnconfigured": "{{count}} entregables sin fechas configuradas. Configura inicio/fin para ver su consumo.",
+    "goConfigure": "Ir a proyectos",
+    "filterActive": "Activos",
+    "filterCompleted": "Completados",
+    "filterAll": "Todos",
+    "kpi": {
+      "count": "Entregables",
+      "hours": "Σ h / techo",
+      "contract": "Σ contrato",
+      "accrued": "Σ devengado",
+      "cost": "Σ coste",
+      "marginEur": "Margen €",
+      "marginPct": "Margen % pond."
+    },
+    "col": {
+      "project": "Proyecto",
+      "client": "Cliente",
+      "phase": "Fase",
+      "hours": "Horas",
+      "pacing": "Avance",
+      "cost": "Coste €",
+      "contract": "Contrato €",
+      "accrued": "Devengado €",
+      "marginEur": "Margen €",
+      "marginPct": "Margen %",
+      "status": "Estado"
+    },
+    "vsExpected": "vs esp.",
+    "emptyTitle": "Sin entregables en esta vista",
+    "emptyDesc": "Configura un proyecto tipo Entregable con fechas de fase o ajusta filtros.",
+    "ctaClients": "Configurar en Clientes y proyectos"
+  },
+  "sidebar": {
+    "groups": {
+      "tracking": "Seguimiento",
+      "planning": "Planificación",
+      "team": "Equipo",
+      "portfolio": "Cartera",
+      "ppc": "PPC & medios",
+      "settings": "Configuración"
+    },
+    "menu": {
+      "mySpace": "Mi espacio",
+      "deadlines": "Deadlines",
+      "operations": "Seguimiento operativo",
+      "profitability": "Rentabilidad",
+      "teamCapacity": "Capacidad de Equipo",
+      "weeklyForecast": "Weekly Forecast",
+      "planner": "Planificador",
+      "members": "Miembros",
+      "times": "Tiempos",
+      "okrs": "Objetivos",
+      "clientsAndProjects": "Clientes y proyectos",
+      "googleAds": "Google Ads",
+      "metaAds": "Meta Ads",
+      "agencySettings": "Configuración de agencia",
+      "myAgencies": "Mis Agencias",
+      "apiIntegrations": "API & Integraciones",
+      "support": "Soporte",
+      "admin": "Administración"
+    },
+    "timer": {
+      "taskInProgress": "Tarea en curso",
+      "totalRegistered": "Total registrado",
+      "client": "Cliente:",
+      "stop": "Parar",
+      "todayTotal": "Hoy en total:"
+    },
+    "pitch": {
+      "welcome": "Bienvenido. Recuerda por qué tu equipo necesita esta disciplina.",
+      "viewVision": "Ver visión del sistema →"
+    },
+    "footer": {
+      "logout": "Cerrar sesión"
+    }
+  },
+  "agencyManagement": {
+    "title": "Gestión de Agencia",
+    "back": "Volver",
+    "buttons": {
+      "invite": "Invitar Usuario",
+      "transfer": "Transferir propiedad",
+      "delete": "Eliminar de la Agencia",
+      "deleting": "Eliminando...",
+      "transferring": "Transfiriendo..."
+    },
+    "stats": {
+      "agencyFallback": "Agencia",
+      "total": "Total miembros",
+      "active": "Activos",
+      "inactive": "Inactivos",
+      "admins": "Administradores"
+    },
+    "members": {
+      "title": "Miembros de la agencia",
+      "description": "Gestiona los miembros de la agencia y sus roles",
+      "empty": "No hay miembros en esta agencia"
+    },
+    "table": {
+      "name": "Nombre",
+      "email": "Email",
+      "role": "Rol",
+      "department": "Departamento",
+      "status": "Estado",
+      "actions": "Acciones",
+      "owner": "Owner",
+      "admin": "Admin",
+      "active": "Activo",
+      "inactive": "Inactivo"
+    },
+    "dialogs": {
+      "deleteTitle": "¿Eliminar miembro de la agencia?",
+      "deleteDesc": "Desvinculará a {{name}} de esta agencia. Si no pertenece a ninguna otra agencia en Taimbox, también se borrarán sus datos en esta agencia y su cuenta de acceso.",
+      "lastAdminWarning": "⚠️ Este es el último administrador. No puedes eliminarlo.",
+      "transferTitle": "Transferir propiedad de la agencia",
+      "transferDesc": "Selecciona el nuevo propietario de la agencia. El propietario actual perderá sus privilegios de propietario.",
+      "newOwnerLabel": "Nuevo propietario",
+      "selectMember": "Selecciona un miembro",
+      "warningTitle": "Advertencia",
+      "warningDesc": "Esta acción transferirá la propiedad de la agencia al miembro seleccionado."
+    },
+    "toast": {
+      "noPermission": "No tienes permisos para acceder a esta página",
+      "noAccess": "No tienes acceso a esta agencia",
+      "loadError": "Error al cargar los miembros",
+      "lastAdminError": "No puedes eliminar al último administrador de la agencia",
+      "userDeleted": "Miembro eliminado: datos en esta agencia y cuenta de acceso borrados (no tenía otras agencias)",
+      "userUnlinked": "Usuario desvinculado de esta agencia. Sigue existiendo la cuenta de acceso y puede tener datos en otras agencias.",
+      "deleteError": "Error al eliminar el miembro",
+      "transferSuccess": "Propiedad de la agencia transferida correctamente",
+      "transferError": "Error al transferir la propiedad"
+    }
+  },
+  "ads": {
+    "google": "Google Ads",
+    "meta": "Meta Ads",
+    "lastSync": "Última sincronización: {{time}}",
+    "noSync": "Sin sincronizar",
+    "daysRange": "Del 1 al {{days}}",
+    "dayProgress": "Día {{current}} de {{total}}",
+    "actions": {
+      "sync": "Sincronizar",
+      "syncing": "Sincronizando...",
+      "split": "Dividir",
+      "edit": "Configurar",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "delete": "Eliminar",
+      "close": "Cerrar"
+    },
+    "stats": {
+      "investment": "Inversión",
+      "clicks": "Clicks",
+      "conversions": "Conversiones",
+      "roas": "ROAS",
+      "dailyRecommended": "Diario recomendado",
+      "atRisk": "En riesgo",
+      "revenue": "Valor",
+      "daysRemaining": "Días restantes",
+      "of": "de",
+      "target": "Objetivo",
+      "acceptable": "Aceptable",
+      "below": "Por debajo",
+      "monthProgress": "{{percent}}% del mes",
+      "spent": "Invertido",
+      "ctr": "CTR",
+      "cpc": "CPC",
+      "cpa": "CPA"
+    },
+    "filters": {
+      "searchPlaceholder": "Buscar cuenta o campaña...",
+      "showHidden": "Ocultos",
+      "showZeroSpend": "Sin inversión (0 €)",
+      "accountsCount": "{{count}} cuentas"
+    },
+    "table": {
+      "campaign": "Campaña",
+      "spent": "Gasto",
+      "value": "Valor",
+      "roas": "ROAS",
+      "noCampaigns": "Sin campañas",
+      "account": "Cuenta",
+      "groupPct": "% Grupo",
+      "conv": "Conv",
+      "breakdown": "Desglose por Cuenta ({{count}})",
+      "active": "Activa",
+      "paused": "Pausada"
+    },
+    "pacing": {
+      "spentPct": "{{percent}}% gastado",
+      "forecast": "Proy: {{amount}}",
+      "forecastTitle": "Proyección fin de mes",
+      "totalBudget": "Presupuesto Total objetivo",
+      "monthlyBudget": "Presupuesto Mensual objetivo",
+      "available": "Disponible: {{amount}}",
+      "avgDaily": "Gasto medio diario",
+      "recommendedDaily": "Objetivo medio diario",
+      "avgDailySub": "en lo que va de mes",
+      "recommendedDailySub": "para cerrar el mes en el presupuesto",
+      "googleNote": "Taimbox calcula el presupuesto mensual sumando los límites diarios (x30.4) de tus campañas activas en Google Ads. Puedes <strong class=\"text-slate-600\">sobrescribir este presupuesto</strong> manualmente aquí para comparar con un objetivo distinto al de Google.",
+      "metaNote": "El límite de gasto en Meta Ads se configura en Facebook (campaña, conjunto o presupuesto compartido). Aquí defines el <strong class=\"text-slate-600\">presupuesto mensual objetivo</strong> en Taimbox para comparar ritmo real vs. objetivo.",
+      "paceWarningGoogle": "El ritmo de gasto va por encima del objetivo para no superar el presupuesto mensual. Revisa las campañas en Google Ads, esto suele ocurrir si los presupuestos diarios suman más que el objetivo mensual dividido por 30.",
+      "paceWarningMeta": "El ritmo de gasto va por encima del objetivo para no superar el presupuesto mensual. Revisa y ajusta los límites en Meta Ads según tu estructura (campaña, conjunto o cuenta publicitaria).",
+      "forecastTooltip": "Usa el gasto medio diario del mes (invertido ÷ días transcurridos) proyectado al calendario completo. Si cambiaste el ritmo recientemente, puede no coincidir con el objetivo medio diario; ese valor es el ritmo para cerrar en el presupuesto objetivo de Taimbox."
+    },
+    "dialogs": {
+      "configAccount": {
+        "title": "Configurar cuenta",
+        "groupName": "Nombre del grupo (Holding)",
+        "groupPlaceholder": "Ej: Grupo ABC",
+        "groupNote": "Las cuentas del mismo grupo se consolidan.",
+        "salesAccount": "Cuenta de ventas (ROAS)",
+        "salesAccountNote": "Mostrar conversiones",
+        "hideAccount": "Ocultar cuenta",
+        "hideAccountNote": "No aparecerá en la lista"
+      },
+      "splitAccounts": {
+        "title": "Dividir Cuentas",
+        "description": "Separa campañas por palabra clave en cuentas virtuales.",
+        "sourceAccount": "Cuenta Origen",
+        "selectAccount": "Selecciona...",
+        "ifContains": "Si contiene...",
+        "createAccount": "Crear cuenta...",
+        "activeRules": "Reglas Activas ({{count}})",
+        "noRules": "No hay reglas",
+        "ifContainsLabel": "Si contiene \"{{keyword}}\""
+      },
+      "sync": {
+        "title": "Sincronizando {{platform}}",
+        "connecting": "Conectando...",
+        "finished": "Finalizado",
+        "completed": "Sincronización completada",
+        "error": "Error en el proceso",
+        "initGoogle": "🚀 Iniciando conexión con Google Ads...",
+        "initMeta": "🚀 Conectando con Meta API..."
+      }
+    },
+    "status": {
+      "exceeded": "Excedido",
+      "risk": "En riesgo",
+      "low": "Bajo",
+      "ok": "OK",
+      "hidden": "Oculto",
+      "group": "GRUPO",
+      "noData": "Sin datos",
+      "syncPrompt": "Sincroniza para cargar cuentas"
+    }
+  },
+  "team": {
+    "title": "Equipo",
+    "subtitle": "Gestiona empleados, accesos y horarios.",
+    "newEmployee": "Nuevo empleado",
+    "editEmployee": "Editar empleado",
+    "departments": "Departamentos",
+    "roles": {
+      "admin": "Administrador",
+      "manager": "Responsable",
+      "employee": "Empleado"
+    },
+    "searchPlaceholder": "Buscar por nombre o rol...",
+    "noEmployees": "No se encontraron empleados.",
+    "holidays": "Festivos",
+    "manageEvents": "Gestión de eventos del equipo",
+    "eventsDescription": "Gestiona festivos, eventos y otras actividades que afectan a todo el equipo.",
+    "limits": {
+      "starterLimit": "Tu agencia supera el límite del Plan Starter. Pasa a Pro o Business para añadir más empleados.",
+      "planReached": "Has alcanzado el límite de empleados de tu plan. Actualiza tu plan en Plan y facturación."
+    },
+    "employeeCard": {
+      "deleteSuccess": "Empleado eliminado",
+      "deleteError": "No se pudo eliminar el empleado"
+    },
+    "pulse": {
+      "title": "Team Pulse",
+      "subtitle": "Resumen diario de progreso del equipo",
+      "dailySummary": "Resumen Diario",
+      "teamProgress": "Progreso del equipo hoy",
+      "update": "Actualizar",
+      "completedTasks": "{{count}} tareas completadas",
+      "dailyLog": "Log Hoy ({{count}})",
+      "queue": "Cola ({{count}})",
+      "nothingInQueue": "Nada en cola"
+    },
+    "dashboard": {
+      "welcome": "¡Bienvenido, {{name}}!",
+      "myTime": "Mi tiempo",
+      "myWeek": "Mi semana",
+      "myDay": "Mi día",
+      "myProjects": "Mis proyectos",
+      "upcomingHolidays": "Próximos festivos",
+      "hoursLogged": "Horas registradas",
+      "tabCoherence": "Control de planificación",
+      "tabDependencies": "Dependencias",
+      "tabProjects": "Mis proyectos",
+      "tabTeammates": "Compañeros",
+      "tabMetrics": "Métricas",
+      "weekly": "Weekly",
+      "addTasks": "Añadir tareas",
+      "internalTask": "Tarea interna",
+      "exportCrm": "Exportar a CRM",
+      "goals": "Objetivos",
+      "absences": "Ausencias",
+      "repeatTour": "Repetir tour",
+      "currentMonth": "Mes actual",
+      "calendar": "Calendario",
+      "addOtherRow": "Añadir otra fila",
+      "saveTasks": "Guardar tareas",
+      "addTasksDescription": "Planifica múltiples tareas para {{month}}.",
+      "taskList": "Listado de tareas",
+      "readyToSave": "Listo para guardar las filas completas.",
+      "registerInternal": "Registrar gestión interna",
+      "internalDescription": "Reuniones, formaciones, deadlines u otras tareas.",
+      "internalPlaceholder": "Ej: Reunión de equipo"
+    }
+  },
+  "common": {
+    "name": "Nombre",
+    "continue": "Continuar",
+    "back": "Atrás",
+    "skip": "Omitir",
+    "role": "Rol",
+    "department": "Departamento",
+    "color": "Color",
+    "hours": "Horas",
+    "cancel": "Cancelar",
+    "saving": "Guardando...",
+    "register": "Registrar",
+    "save": "Guardar",
+    "saveChanges": "Guardar cambios",
+    "more": "Más",
+    "discardChanges": "¿Descartar cambios?",
+    "discardDescription": "Tienes tareas pendientes por guardar. Si cierras ahora, perderás los datos introducidos.",
+    "keepEditing": "Seguir editando",
+    "yesDiscard": "Sí, descartar"
+  },
+  "settings": {
+    "title": "Configuración",
+    "agency": {
+      "title": "Configuración de Agencia",
+      "description": "Gestiona el nombre, roles, departamentos, módulos y branding de tu agencia."
+    },
+    "support": {
+      "title": "Contactar soporte",
+      "description": "Envía una solicitud de ayuda o reporta un problema. El equipo de soporte te responderá."
+    },
+    "adAccounts": {
+      "title": "Gestión de cuentas publicitarias",
+      "description": "Añade aquí los IDs de las cuentas de tus clientes para que el sistema las sincronice.",
+      "label": "ID de la cuenta de Meta Ads",
+      "placeholder": "Ej: act_123456789",
+      "note": "Nota importante:",
+      "metaNote": "Para Meta Ads: El ID debe incluir el prefijo (ej: act_147...).",
+      "googleNote": "Las cuentas de Google Ads se añaden automáticamente al sincronizar desde la API.",
+      "addAccount": "Añadir cuenta",
+      "alreadyRegistered": "Esta cuenta ya está registrada.",
+      "saveSuccess": "Cuenta de Meta Ads añadida. Sincroniza ahora para ver datos."
+    },
+    "systemStatus": {
+      "title": "Estado del sistema",
+      "ok": "Sistema operativo y conectado a base de datos."
+    }
+  },
+  "agency": {
+    "title": "Configuración de agencia",
+    "subtitle": "Elige una sección para ver y editar la configuración",
+    "activeSection": "Sección activa",
+    "tabs": {
+      "general": "General",
+      "organization": "Organización",
+      "team": "Equipo",
+      "projects": "Proyectos",
+      "features": "Funcionalidades",
+      "analytics": "Analítica",
+      "connections": "Conexiones",
+      "modules": "Funcionalidades",
+      "integrations": "Conexiones",
+      "departments": "Organización",
+      "appearance": "Apariencia",
+      "notifications": "Notificaciones",
+      "billing": "Plan y facturación"
+    },
+    "organization": {
+      "cardTitle": "Departamentos y áreas",
+      "cardDescription": "Define las áreas de tu equipo (ej: Marketing, Desarrollo). El color se usa en la barra de aviso al filtrar por departamento."
+    },
+    "analytics": {
+      "planningPrecisionTitle": "Precisión de planificación",
+      "planningPrecisionDesc": "Excluye proyectos o clientes del índice de fiabilidad (precisión de planificación). Útil para gestiones internas que no quieras ponderar.",
+      "excludeProjects": "Excluir proyectos",
+      "excludeClients": "Excluir clientes",
+      "noneSelected": "Ninguno seleccionado",
+      "nProjects": "{{count}} proyecto(s)",
+      "nClients": "{{count}} cliente(s)",
+      "searchProject": "Buscar proyecto...",
+      "searchClient": "Buscar cliente...",
+      "noProjectsMatch": "No hay proyectos o no coincide la búsqueda",
+      "noClientsMatch": "No hay clientes o no coincide la búsqueda",
+      "radarTitle": "Radar operativo",
+      "radarDesc": "Si el nombre del proyecto contiene alguna de estas palabras, no se marcará como riesgo «Poco avance» al final de mes. Ej.: off-page, linkbuilding.",
+      "keywordPlaceholder": "Añadir palabra clave (ej. off-page)",
+      "addKeyword": "Añadir",
+      "removeKeywordAria": "Quitar {{kw}}"
+    },
+    "general": {
+      "title": "Información general",
+      "description": "Datos básicos de tu agencia",
+      "name": "Nombre de la agencia",
+      "slug": "Identificador (slug)",
+      "slugNote": "El slug no se puede modificar",
+      "profitability": "Rentabilidad",
+      "profitabilityDesc": "Objetivo de precio hora efectivo usado en la página Rentabilidad para KPIs y alertas",
+      "ehrTarget": "Objetivo Precio Hora Efectivo (€/h)",
+      "ehrNote": "Solo valores positivos; mínimo 1 €/h. Puedes usar coma o punto como decimal (máx. 2 decimales). Por defecto 75 €/h.",
+      "tracking": "Preferencia de Seguimiento",
+      "trackingDesc": "Define si el avance y la rentabilidad se calculan con las horas imputadas al cliente/presupuesto (computadas) o solo con el tiempo real dedicado.",
+      "computed": "Horas Computadas",
+      "computedDesc": "En tareas completadas, informes y progreso usan sobre todo las horas computadas. Podéis mantenerlas distintas de las reales (ej. 1,5 h de trabajo y 2 h imputadas por complejidad o margen).",
+      "actual": "Horas Reales",
+      "actualDesc": "En tareas completadas, informes y progreso usan las horas reales; en la interfaz las computadas se igualan a las reales. No exige cronómetro: el tiempo puede registrarse a mano.",
+      "dataExportTitle": "Exportación para informes",
+      "dataExportDesc": "Descarga JSON por mes (deadlines, planificación, coherencia, radar, rentabilidad, ausencias) para análisis o informes externos.",
+      "dataExportButton": "Abrir hub de exportación"
+    },
+    "commonExpenses": {
+      "title": "Gastos comunes (Rentabilidad)",
+      "description": "Gastos fijos mensuales (desde un mes) más líneas puntuales por mes. Se prorratean en Rentabilidad según el reparto.",
+      "recurringTitle": "Gastos fijos mensuales",
+      "recurringDescription": "Mismo importe cada mes desde la fecha de inicio (y hasta la de fin, si la indicas). Se suman a las líneas solo del mes que elijas abajo.",
+      "recurringFrom": "Desde (mes)",
+      "recurringUntil": "Hasta (mes, opcional)",
+      "addRecurringLine": "Añadir gasto fijo",
+      "emptyRecurring": "No hay gastos fijos. Añade alquiler, software u otros costes recurrentes.",
+      "monthOnlySection": "Solo para un mes concreto",
+      "monthOnlySectionDesc": "Líneas adicionales que cuentan únicamente en el mes seleccionado (histórico o extras puntuales).",
+      "addMonthLine": "Añadir línea al mes",
+      "errRecurringFrom": "Cada gasto fijo debe tener un mes de inicio válido (AAAA-MM).",
+      "errRecurringUntil": "Si indicas mes fin, debe tener formato AAAA-MM.",
+      "errRecurringRange": "El mes fin debe ser igual o posterior al mes de inicio.",
+      "month": "Mes",
+      "copyPrev": "Copiar del mes anterior",
+      "copyEmpty": "No hay datos en el mes anterior para copiar.",
+      "addLine": "Añadir línea",
+      "emptyMonth": "No hay líneas para este mes. Añade gastos o cópialos del mes anterior.",
+      "label": "Concepto",
+      "labelPh": "Ej. Alquiler",
+      "amount": "Importe (€)",
+      "allocation": "Reparto",
+      "scope": "Alcance",
+      "distribution": {
+        "label": "Reparto",
+        "byHours": "Por horas del mes",
+        "byHeadcount": "A partes iguales (por empleado)",
+        "byPayroll": "Proporcional a la nómina",
+        "helpHours": "Proporcional a las horas del mes. Empleados con 0 h no reciben parte.",
+        "helpHeadcount": "Parte igual entre todos los empleados del alcance, incluidos los que no usan Taimbox este mes.",
+        "helpPayroll": "Proporcional a la nómina mensual: quienes cobran más cargan con más gasto común."
+      },
+      "typeGlobal": "Global (toda la agencia)",
+      "typeDept": "Un departamento",
+      "typeSplit": "Porcentajes entre departamentos",
+      "department": "Departamento",
+      "pickDept": "Elegir…",
+      "splitParts": "Reparto (%) — debe sumar 100",
+      "addSplitRow": "Añadir departamento",
+      "remove": "Eliminar",
+      "splitShort": "Faltan {{n}} puntos porcentuales.",
+      "splitLong": "Sobran {{n}} puntos porcentuales.",
+      "copyConfirmTitle": "¿Sobrescribir el mes actual?",
+      "copyConfirmDesc": "Este mes ya tiene líneas. Copiar desde el mes anterior las reemplazará.",
+      "copyConfirm": "Copiar y reemplazar",
+      "errNegativeAmount": "Cada importe debe ser mayor o igual que 0.",
+      "errDeptRequired": "Selecciona un departamento en todas las líneas de tipo «Departamento».",
+      "errDeptUnknown": "Hay un departamento no válido. Elige uno de la lista.",
+      "errSplitDept": "Completa el departamento en cada fila del reparto porcentual.",
+      "errSplitSum": "La suma de porcentajes de una línea debe estar entre 99,5 y 100,5.",
+      "cancelDialog": "Cancelar"
+    },
+    "modules": {
+      "title": "Funcionalidades activas",
+      "description": "Activa o desactiva áreas del producto visibles en el menú. Las conexiones con terceros están en Conexiones.",
+      "seoReservedNote": "El antiguo interruptor «SEO» de agencia no está enlazado a ninguna pantalla en esta versión; el valor se conserva en datos por compatibilidad.",
+      "seo": "Módulo SEO",
+      "seoDesc": "Auditorías, rankings y kpis de posicionamiento orgánico.",
+      "ppc": "PPC (Ads)",
+      "ppcDesc": "Google/Meta Ads e informes de inversión.",
+      "ppcEffect": "Afecta a: entradas Google Ads / Meta Ads y rutas /ads, /meta-ads (además de permisos de rol).",
+      "weeklyFeedback": "Weekly Feedback",
+      "weeklyFeedbackDesc": "Previsión semanal y cierre en planificador; con la integración Weekly activa en Conexiones, las semanas ya cerradas no se retocan a mano en el calendario.",
+      "professionalGoals": "Objetivos profesionales (OKRs)",
+      "professionalGoalsDesc": "Metas por empleado en la vista Objetivos.",
+      "professionalGoalsEffect": "Afecta a: entrada Objetivos y ruta /okrs (además del permiso de rol).",
+      "deadlines": "Deadlines mensuales",
+      "deadlinesDesc": "Objetivos de horas por proyecto y persona cada mes, página Deadlines y coherencia con la planificación.",
+      "deadlinesEffect": "Afecta a: entrada Deadlines y ruta /deadlines (además del permiso de rol).",
+      "timeTracker": "Cronómetro de tareas",
+      "timeTrackerDesc": "Cronómetro en tiempo real para imputación exacta.",
+      "timeTrackerEffect": "Afecta a: entrada Tiempos y ruta /tiempos (además del permiso de rol y plan).",
+      "maxHours": "Máximo de horas por tarea",
+      "maxHoursDesc": "Límite de seguridad para evitar errores al detener el tracker."
+    },
+    "appearance": {
+      "title": "Personalización",
+      "description": "Personaliza la apariencia de tu agencia",
+      "primaryColor": "Color Principal",
+      "preview": "Vista previa"
+    },
+    "notifications": {
+      "eventsTitle": "Avisos por dependencias",
+      "eventsDescription": "Modelo híbrido: activo por defecto para que nadie pierda el aviso cuando una tarea bloqueante se completa. Puedes desactivarlo aquí para toda la agencia.",
+      "title": "Notificaciones por email",
+      "description": "Define reglas por agencia (transferencias y revisiones programadas). El botón flotante «Guardar cambios» también guarda estas reglas.",
+      "dependencyUnblockLabel": "Correo al desbloquear tareas dependientes",
+      "dependencyUnblockHint": "Se envía un correo personalizado a cada asignado de una tarea que dependía de la completada (si tiene email en su perfil). No se notifica a quien cerró la tarea previa.",
+      "rules": {
+        "sectionTitle": "Reglas de envío",
+        "sectionHint": "Con varias reglas, usa el desplegable para revisar cada una sin alargar la página.",
+        "intro": "Aquí eliges cuándo y a quién enviamos avisos por correo (el mismo canal que invitaciones o recuperar contraseña). Las reglas programadas se revisan solas según la frecuencia y la hora que indiques. Si alojáis Taimbox en servidores propios, quien mantenga la instalación debe tener activada la revisión periódica en segundo plano; en el servicio gestionado no hace falta configurar nada extra aquí.",
+        "addRule": "Añadir regla",
+        "loading": "Cargando reglas…",
+        "empty": "No hay reglas todavía. Añade una para avisar por correo (por ejemplo al solicitar una transferencia de tarea).",
+        "cardFootnote": "El envío es seguro: aquí solo configuras criterios y destinatarios.",
+        "deleteRule": "Eliminar regla",
+        "deleteConfirm": "¿Eliminar esta regla?",
+        "newRuleDefault": "Nueva regla",
+        "unnamedRule": "Regla sin nombre",
+        "utcBadgeTitle": "Hora universal (UTC). Suma el desfase de tu zona horaria para obtener la hora local.",
+        "utcShort": "{{hour}}:00 UTC",
+        "badgeActive": "Activa",
+        "badgeInactive": "Inactiva",
+        "badgeScheduled": "Programada",
+        "badgeTransfer": "Transferencia",
+        "ruleName": "Nombre de la regla",
+        "namePlaceholder": "Ej. Aviso transferencias",
+        "enabled": "Activa",
+        "trigger": "Disparador",
+        "triggerTransfer": "Al solicitar transferencia de tarea",
+        "triggerScheduled": "Programada (revisiones periódicas de proyectos)",
+        "frequency": "Frecuencia de envío",
+        "periodicityDaily": "Diaria",
+        "periodicityWeekly": "Semanal",
+        "periodicityMonthly": "Mensual",
+        "weekday": "Día de la semana",
+        "weekday1": "Lunes",
+        "weekday2": "Martes",
+        "weekday3": "Miércoles",
+        "weekday4": "Jueves",
+        "weekday5": "Viernes",
+        "weekday6": "Sábado",
+        "weekday7": "Domingo",
+        "hourUtc": "Hora preferida (UTC, 0–23)",
+        "hourPlaceholder": "Cualquier hora",
+        "hourHelp": "Si indicas una hora, solo en esa franja (UTC) comprobamos si hay que enviar el aviso. Si la dejas vacía, el sistema puede comprobarla en cada pasada automática (habitualmente una vez por hora). Para hora local, suma el desfase respecto a UTC.",
+        "clientsOptional": "Clientes (opcional)",
+        "projectsOptional": "Proyectos (opcional)",
+        "allClients": "Todos los clientes",
+        "allProjects": "Todos los proyectos",
+        "nClients": "{{count}} cliente(s)",
+        "nProjects": "{{count}} proyecto(s)",
+        "searchClient": "Buscar cliente…",
+        "searchProject": "Buscar proyecto…",
+        "noCommandResults": "Sin resultados.",
+        "clearClientFilter": "Quitar filtro de clientes",
+        "clearProjectFilter": "Quitar filtro de proyectos",
+        "clientFilterHint": "Si eliges uno o más, solo cuentan proyectos de esos clientes.",
+        "projectFilterHint": "Si eliges proyectos concretos, la regla solo los evalúa.",
+        "evalType": "Tipo de revisión programada",
+        "evalHealth": "Indicadores del mes (presupuesto, ritmo y planificación)",
+        "evalCoherence": "Coherencia con deadlines (misma lógica que en Operaciones)",
+        "evalCoherenceHelp": "Con coherencia, el correo incluye por proyecto el resumen del mes y, si aplica, una fila por persona con su parte del objetivo y las horas planificadas o imputadas.",
+        "conditionsLabel": "Avisar si se cumple alguna de estas condiciones",
+        "thresholdLabel": "Umbral mínimo (horas)",
+        "thresholdHelp": "Solo se avisa si el total del proyecto o algún empleado se desvía al menos estas horas respecto al deadline.",
+        "coherenceStates": "Estados operativos a incluir",
+        "deliveryLabel": "Envío",
+        "deliveryPerProject": "Un correo por proyecto (asunto con el estado)",
+        "deliveryDigest": "Un solo resumen con varios proyectos (máx. configurable)",
+        "digestMax": "Máx. proyectos en el resumen",
+        "recipients": "Destinatarios",
+        "roleNameLabel": "Nombre del rol (como en Equipo)",
+        "rolePlaceholder": "Ej. Project Manager",
+        "extraEmails": "Correos adicionales (opcional)",
+        "extraEmailsPlaceholder": "uno@empresa.com, otro@empresa.com",
+        "preview": "Vista previa del correo",
+        "saveRule": "Guardar regla",
+        "saving": "Guardando…",
+        "toastErrorTitle": "Error",
+        "toastLoadError": "No se pudieron cargar las reglas de notificación.",
+        "toastSaveRulesError": "Error al guardar reglas de notificación",
+        "toastRuleCreated": "Regla creada",
+        "toastSaved": "Guardado",
+        "toastDeleted": "Regla eliminada",
+        "toastPreviewError": "No se pudo generar la vista previa del correo.",
+        "flags": {
+          "needs_planning": "Falta planificación",
+          "behind_schedule": "Ritmo bajo (vs avance del mes)",
+          "over_budget": "Sobre presupuesto planificado",
+          "no_activity": "Sin actividad con presupuesto"
+        },
+        "coherence": {
+          "over-budget": "Exceso horas",
+          "behind-schedule": "Retrasados (ritmo)",
+          "needs-planning": "Falta planificar",
+          "no-activity": "Sin actividad",
+          "in-rule": "En regla (solo si quieres avisos incluso OK)"
+        },
+        "recipientTransfer": {
+          "transfer_target": "Quien recibe la tarea",
+          "transfer_source": "Quien envía la solicitud",
+          "all_with_hours_in_month": "Todos con horas en el proyecto (mes)",
+          "role_name": "Por nombre de rol",
+          "agency_admins": "Perfiles con acceso a configuración de agencia",
+          "custom_emails": "Solo correos adicionales"
+        },
+        "recipientScheduled": {
+          "all_with_hours_in_month": "Todos con horas en el proyecto (mes)",
+          "role_name": "Por nombre de rol",
+          "agency_admins": "Perfiles con acceso a configuración de agencia",
+          "custom_emails": "Solo correos adicionales"
+        },
+        "previewDialog": {
+          "title": "Vista previa del correo",
+          "subjectLabel": "Asunto:",
+          "footerHint": "Vista aproximada del mensaje que recibirán los destinatarios. Gmail, Outlook u otros pueden mostrar pequeñas diferencias de formato.",
+          "generating": "Generando vista previa…",
+          "noContent": "Sin contenido.",
+          "iframeTitle": "Vista previa del correo"
+        }
+      }
+    },
+    "team": {
+      "title": "Gestión de Roles",
+      "description": "Configura los permisos y accesos predeterminados para cada rol de tu agencia.",
+      "addRole": "Añadir nuevo rol",
+      "roleName": "Nombre del rol",
+      "permissions": "Permisos",
+      "permissionsSaveHint": "Los cambios en permisos se aplican al guardar la configuración de la agencia.",
+      "organizationHint": "Las áreas (nombre y color) se configuran en Organización, la pestaña anterior en este menú.",
+      "goToOrganization": "Ir a Organización",
+      "deleteConfirm": "¿Eliminar rol?",
+      "deleteDesc": "Esta acción no se puede deshacer y puede afectar a los usuarios asignados."
+    },
+    "projects": {
+      "filtersTitle": "Filtros de proyectos",
+      "filtersDesc": "Configura cómo se filtran los proyectos en las diferentes vistas",
+      "addFilter": "Añadir filtro",
+      "addFirstFilter": "Añadir el primer filtro",
+      "howItWorks": "¿Cómo funcionan los filtros?",
+      "includePatterns": "Patrones de inclusión",
+      "includeNote": "El nombre del proyecto debe contener AL MENOS UNO de estos términos",
+      "excludePatterns": "Patrones de exclusión",
+      "excludeNote": "El nombre del proyecto NO puede contener NINGUNO de estos términos",
+      "includeTooltip": "Términos separados por coma. El proyecto debe contener AL MENOS UNO para aparecer.",
+      "excludeTooltip": "Términos separados por coma. El proyecto NO puede contener NINGUNO para aparecer.",
+      "emptyNote": "Si dejas vacío \"Patrones de inclusión\", se incluyen todos los proyectos por defecto",
+      "filterName": "Nombre del filtro",
+      "noFilters": "No hay filtros configurados",
+      "aliasingTitle": "Aliasing de proyectos",
+      "aliasingDesc": "Configura reglas para renombrar proyectos automáticamente (ej: Kit Digital → KD:)",
+      "aliasingInstruction": "Define patrones para detectar y renombrar proyectos especiales",
+      "newRule": "Nueva regla",
+      "ruleName": "Nombre de la regla",
+      "detectBy": "Detectar por texto",
+      "matchNote": "Si el proyecto contiene alguno de estos términos (insensible a mayúsculas)",
+      "applyPrefix": "Aplicar prefijo",
+      "prefixNote": "Texto que se añadirá al inicio del nombre del proyecto",
+      "groupAsClient": "Agrupar bajo un cliente virtual",
+      "clientName": "Nombre del cliente",
+      "noRules": "No hay reglas de aliasing configuradas",
+      "addFirst": "Añadir la primera regla"
+    },
+    "integrations": {
+      "title": "Conexiones",
+      "description": "Funciones opcionales (Weekly, CRM, demo) y cuentas publicitarias. El módulo PPC controla si se muestran las rutas de anuncios.",
+      "optionalFeaturesTitle": "Funciones opcionales",
+      "optionalFeaturesDesc": "Activar o desactivar flujos (Weekly, CRM, privacidad en demo). No sustituyen al módulo PPC: las cuentas publicitarias van más abajo.",
+      "adsPlatformsTitle": "Cuentas publicitarias",
+      "adsPlatformsDesc": "OAuth y cuentas Meta / Google Ads. Requiere tener activado el módulo PPC y permisos de rol para ver las pantallas de anuncios.",
+      "workflow": "Workflow",
+      "crm": "CRM",
+      "other": "Privacidad y demostración",
+      "weeklyCloseDay": "Día de cierre semanal",
+      "weeklyCloseDayDesc": "Último día de la semana operativa (desde el lunes de cada semana). Pasada esa fecha, las tareas de esa semana dejan de editarse en el planificador y solo se gestionan con el flujo Weekly.",
+      "selectDay": "Selecciona un día",
+      "dependencyWarning": "Esta integración requiere dependencias activas",
+      "dependencyError": "Para activar \"{{name}}\", primero debes activar: {{deps}}",
+      "crmUserIdWarning": "Si desactivas \"ID Usuario CRM\", también se desactivará \"Exportación de Tareas al CRM\"",
+      "crmPackTitle": "Integración CRM (exportación CSV)",
+      "crmPackDescription": "Activa el enlace con tu CRM u otro sistema: cada miembro puede indicar su ID de usuario en su perfil y, en cada proyecto, el ID externo del proyecto. Quien tenga permiso podrá exportar las tareas del mes a CSV (tarea, ID de usuario CRM, ID de proyecto externo y horas).",
+      "crmPackLegacyHint": "Solo tenías activado el ID de usuario en perfiles. Activa el interruptor para completar la integración (exportación e ID de proyecto en fichas).",
+      "items": {
+        "weekly_feedback": {
+          "name": "Weekly",
+          "description": "Bloquea la edición directa en el planificador cuando la semana ya ha cerrado; el equipo resuelve pendientes desde Weekly (completar horas, posponer, transferir, desglosar…)."
+        },
+        "crm_export": {
+          "name": "Exportación de Tareas al CRM",
+          "description": "Exporta la planificación a CSV y activa en cada proyecto el campo de ID externo del proyecto (CRM) para cruzarlo con tu sistema."
+        },
+        "crm_user_id": {
+          "name": "ID Usuario CRM",
+          "description": "Muestra en el perfil de cada miembro del equipo un campo para su ID en el CRM u otro sistema externo. Necesario para la exportación."
+        },
+        "anonymize_ads_for_video": {
+          "name": "Modo demostración (ocultar datos sensibles)",
+          "description": "En toda la aplicación, sustituye visualmente nombres de personas, clientes, proyectos y tareas por etiquetas genéricas."
+        }
+      },
+      "weekly": {
+        "title": "Cierre semanal (Weekly)",
+        "description": "El cierre lo hace cada persona desde el planificador (botón Weekly). El día de cierre define cuándo una semana queda cerrada para ediciones directas.",
+        "sendDay": "Día de envío",
+        "sendTime": "Hora de envío"
+      },
+      "adsConfig": "Configuración de Plataformas de Anuncios",
+      "googleAds": {
+        "title": "Google Ads",
+        "description": "Importa inversión y métricas de campañas de Google Ads.",
+        "connected": "Conectado",
+        "notConnected": "No conectado",
+        "connect": "Conectar con Google",
+        "connectDesc": "Se abrirá la pantalla de consentimiento de Google. Al autorizar, podrás seleccionar tu cuenta.",
+        "reconnect": "Re-vincular",
+        "disconnect": "Desvincular",
+        "selectAccount": "Cuenta de Google Ads",
+        "selectAccountPlaceholder": "Selecciona una cuenta...",
+        "selectAccountDesc": "Selecciona la cuenta principal o MCC para sincronizar.",
+        "loading": "Cargando...",
+        "connectFirst": "Conecta primero con Google para ver tus cuentas disponibles.",
+        "configError": "Error de configuración: Falta el ID de cliente de la agencia.",
+        "linked": "Vinculado",
+        "updateSuccess": "Cuenta de Google Ads actualizada. Sincroniza de nuevo para cargar los datos.",
+        "disconnectSuccess": "Cuenta de Google Ads desvinculada"
+      },
+      "metaAds": {
+        "title": "Meta Ads",
+        "description": "Importa inversión y métricas de Facebook e Instagram Ads.",
+        "connected": "Conectado",
+        "notConnected": "No conectado",
+        "connect": "Conectar con Meta",
+        "connectDesc": "Se abrirá el inicio de sesión de Meta. Tras autorizar, se importarán las cuentas publicitarias disponibles.",
+        "reconnect": "Re-vincular",
+        "disconnect": "Desvincular",
+        "selectAccount": "Seleccionar cuenta publicitaria",
+        "syncing": "Sincronizando...",
+        "noAccounts": "No hay cuentas conectadas.",
+        "linkAccount": "Vincular cuenta pub.",
+        "tokenConfigured": "Token configurado",
+        "importTitle": "Importar cuentas desde Meta",
+        "importAction": "Actualizar lista de cuentas",
+        "importDesc": "Llama a la API de Meta y registra las cuentas en \"Cuentas conectadas\".",
+        "connectedAccounts": "Cuentas conectadas ({{count}})",
+        "disconnectSuccess": "Meta Ads desvinculado",
+        "syncSuccess": "Cuentas actualizadas ({{count}} desde Meta)."
+      }
+    },
+    "billing": {
+      "title": "Suscripción y Facturación"
+    },
+    "saveChanges": "Guardar Cambios",
+    "saving": "Guardando..."
+  },
+  "onboarding": {
+    "loading": "Cargando configuración...",
+    "done": "¡Configuración completada!",
+    "finish": "Completar",
+    "footer": "Todo lo que ves aquí lo puedes editar después en Configuración de agencia (nombre, módulos, departamentos, conexiones…).",
+    "wizard": {
+      "stepProgress": "{{current}}/{{total}}",
+      "stepProgressAria": "Paso {{current}} de {{total}}",
+      "timeAndReadyFirst": "Suele tardar poco. Si cerráis, guardamos el paso y podéis seguir después."
+    },
+    "common": {
+      "moreDetails": "Más detalles"
+    },
+    "errors": {
+      "save": "Error al guardar",
+      "team": "Error al procesar el equipo",
+      "client": "Error al crear el cliente",
+      "noClient": "No hay cliente",
+      "project": "Error al crear el proyecto"
+    },
+    "steps": {
+      "agencyProfile": {
+        "title": "Cómo trabaja tu agencia",
+        "desc": "Define tu referencia económica, cómo contáis el tiempo y qué partes de Taimbox queréis usar."
+      },
+      "integrations": {
+        "title": "Conexiones con tu forma de trabajar",
+        "desc": "Opcional: integración Weekly (bloqueo de semanas pasadas en el planificador + cierre desde Weekly), CRM y más. Puedes dejarlo apagado y configurarlo luego en Conexiones."
+      },
+      "departments": {
+        "title": "Departamentos",
+        "desc": "Equipos o áreas (SEO, diseño, cuentas…). Sirven para filtrar el planificador y asignar responsables."
+      },
+      "roles": {
+        "title": "Roles",
+        "desc": "Etiquetas como «Account» o «Diseñador». Luego podrás afinar permisos en la gestión de agencia."
+      },
+      "employees": {
+        "title": "Equipo",
+        "desc": "Invita por email (sin contraseña aquí): recibirán un enlace para entrar. Puedes saltarte este paso."
+      },
+      "client": {
+        "title": "Primer cliente",
+        "desc": "La empresa o marca a la que facturáis. Los proyectos van «dentro» de un cliente."
+      },
+      "project": {
+        "title": "Primer proyecto",
+        "desc": "Un encargo concreto (campaña, retainer, web…). Aquí defines horas previstas y fee mensual."
+      }
+    },
+    "ehr": {
+      "label": "Objetivo precio hora efectivo (€/h)",
+      "calloutTitle": "Qué es este valor",
+      "calloutBullets": [
+        "Media objetivo ingresos ÷ horas para seguir rentabilidad (Salud financiera).",
+        "No es el precio que cobras en cada proyecto.",
+        "Solo valores positivos; coma o punto decimal; máximo dos decimales."
+      ],
+      "learnMore": "¿Qué es el precio hora efectivo?",
+      "whatIs": "Es el precio por hora «objetivo» que quieres sacar de media (ingresos ÷ horas) para cubrir costes y margen. Taimbox lo usa en paneles de salud financiera y avisos; no es lo que cobras al cliente en cada proyecto.",
+      "placeholderHint": "Revisa o ajusta el valor; si lo dejas vacío usaremos la sugerencia del placeholder."
+    },
+    "hours": {
+      "label": "¿Cómo tratáis las horas en Taimbox?",
+      "computed": "Horas computadas frente a reales",
+      "computedHelp": "Podéis registrar por separado lo dedicado y lo que imputáis al cliente o al presupuesto: por ejemplo 1,5 h de trabajo y 2 h «computadas» por complejidad o rentabilidad. Útil cuando ese ajuste comercial es habitual.",
+      "computedBullets": [
+        "Dos cifras: dedicadas e imputadas al cliente o presupuesto.",
+        "Ej.: 1,5 h trabajadas y 2 h computadas por margen o complejidad.",
+        "Ideal si ese ajuste comercial es habitual."
+      ],
+      "actual": "Solo horas reales",
+      "actualHelp": "El dato principal es el tiempo efectivamente dedicado; las horas computadas se igualan a las reales. No obliga a usar el cronómetro: podéis anotarlas a mano. Elegid esto si no necesitáis ese desglose comercial.",
+      "actualBullets": [
+        "Una cifra: el tiempo efectivamente dedicado.",
+        "Las computadas se igualan a las reales.",
+        "Sin cronómetro obligatorio; podéis anotar a mano."
+      ]
+    },
+    "modules": {
+      "title": "Funciones del producto",
+      "sectionIntroShort": "Cada interruptor muestra u oculta una entrada del menú. Podrás cambiarlo después en Configuración de agencia.",
+      "sectionIntro": "Cada opción activa una sección en el menú. Si desactivas algo, el equipo no lo verá hasta que lo enciendas en Configuración de agencia.",
+      "deadlinesTitle": "Deadlines (entregas con fecha)",
+      "deadlinesSummary": "Tareas con fecha límite y seguimiento por cliente o proyecto (en paralelo al planificador).",
+      "deadlinesHelp": "Listas de tareas con fecha límite: ver qué vence, reordenar y hacer seguimiento del trabajo por cliente o proyecto. No sustituye al planificador de horas; va en paralelo.",
+      "trackerSummary": "Cronómetro por tarea para registrar tiempo real frente a lo planificado.",
+      "trackerHelp": "Cada persona puede iniciar y parar un contador por tarea para registrar tiempo real. Útil si facturáis o analizáis horas reales frente a lo planificado.",
+      "okrsTitle": "OKRs (objetivos del equipo)",
+      "okrsSummary": "Objetivos medibles por persona o equipo (marco OKR en el menú).",
+      "okrsHelp": "Objetivos y resultados medibles por persona o equipo (metas trimestrales, hitos, etc.). Es la sección «OKRs» del menú; si no trabajáis con ese marco, puedes dejarla apagada.",
+      "ppcDetailsTrigger": "Detalles sobre PPC e integraciones",
+      "ppcLater": "Se activa después en agencia",
+      "ppcLead": "Los informes y enlaces oficiales con Google Ads y Meta son una parte avanzada de Taimbox, con coste de API e implicación técnica.",
+      "ppcBody": "Por diseño no forma parte del alta inicial: cuando lo necesitéis, lo habilitáis con tranquilidad en Configuración de agencia → Conexiones, con la vinculación OAuth que exigen las plataformas.",
+      "ppcReassurance": "No tienes que decidir nada ahora: el planificador, clientes y el resto de módulos funcionan sin PPC.",
+      "ppcPlanNote": "Tu plan actual no incluye este módulo."
+    },
+    "tracker": {
+      "max": "Límite por tarea (cronómetro)",
+      "maxShort": "Máx. por sesión",
+      "maxInfoLabel": "Qué hace este límite",
+      "maxHint": "Las sesiones de más de este tiempo se detienen solas; evita cronómetros olvidados encendidos."
+    },
+    "integrations": {
+      "needsDeps": "Activa antes: {{list}}",
+      "deps": "Requiere dependencias activas",
+      "calloutTitle": "Conexiones opcionales",
+      "calloutBullets": [
+        "Todo es opcional; lo mismo está en Configuración de agencia → Conexiones.",
+        "Weekly: al cerrar la semana, el planificador deja de admitir retoques manuales en esa semana.",
+        "CRM: un interruptor para IDs en perfiles y proyectos más exportación CSV mensual."
+      ],
+      "weeklyCardHelp": "Con Weekly activo, las semanas cerradas no se reescriben a mano en el calendario: los cambios pasan por el flujo Weekly. Si preferís libertad total, déjalo apagado.",
+      "weeklyCloseHelpShort": "Último día de la semana operativa (desde el lunes). Pasada esa fecha, esa semana queda cerrada para edición directa en el planificador.",
+      "crmPackShort": "Un interruptor: ID de usuario en perfiles, ID externo en proyectos y exportación CSV mensual (tarea, IDs y horas).",
+      "intro": "Puedes dejarlo para más adelante: en Conexiones (configuración de agencia) lo activarás cuando conozcas mejor el flujo.",
+      "introAccordion": "Conexiones opcionales",
+      "weeklyExtra": "Activa un modo más disciplinado: el planificador no permite reescribir a mano semanas ya cerradas; los movimientos pasan por el cierre Weekly. Si preferís editar el pasado con libertad, déjalo apagado.",
+      "crmGroup": "CRM",
+      "skip": "Omitir y continuar sin cambios",
+      "skipToast": "Podrás configurar esto en Conexiones cuando quieras.",
+      "weeklyCloseHelp": "Fin de la semana operativa (desde el lunes de cada semana). Pasada esa fecha, esa semana ya no admite ediciones directas en el planificador: hay que usar Weekly. No tiene por qué ser viernes.",
+      "crmIntro": "Un solo interruptor: perfiles con ID de usuario CRM, proyectos con ID externo y exportación mensual a CSV con tarea, ID de usuario, ID de proyecto y horas."
+    },
+    "departments": {
+      "calloutTitle": "Departamentos",
+      "calloutBullets": [
+        "Área o equipo para filtrar el planificador y asignar responsable de proyecto.",
+        "Necesitas al menos uno para continuar el asistente."
+      ],
+      "addHintShort": "Nombre y color; luego ajusta la vista del planificador en cada ficha.",
+      "stepIntro": "Un departamento es un grupo de personas o un área de negocio. Sirve para colorear y filtrar en el planificador y para decir quién «posee» un proyecto.",
+      "stepIntroAccordion": "¿Qué es un departamento?",
+      "placeholder": "Nombre del departamento",
+      "max": "Máximo 5 departamentos",
+      "duplicate": "Ese nombre ya existe",
+      "needOne": "Añade al menos un departamento",
+      "addTitle": "Añadir departamento",
+      "addHint": "Crea al menos uno para organizar el planificador y asignar responsables.",
+      "addButton": "Añadir departamento",
+      "mustCreate": "Añade al menos un departamento para continuar.",
+      "listTitle": "Tus departamentos"
+    },
+    "dept": {
+      "viewWeekly": "Mi semana",
+      "viewDaily": "Mi día",
+      "viewExplainTitle": "Vista por defecto en planificador",
+      "viewWeeklyHelp": "Ves la carga por semanas en el calendario (planificación conjunta).",
+      "viewDailyHelp": "Enfocado en un día: tareas y bloques del día actual.",
+      "strict": "Vista estricta",
+      "strictHelp": "Si está activa, este departamento no puede cambiar libremente de vista en el planificador."
+    },
+    "roles": {
+      "calloutTitle": "Roles",
+      "calloutBullets": [
+        "Etiqueta por persona (Account, Creativo…).",
+        "«Administrador» puede gestionar la agencia; el resto lo personalizas.",
+        "Los permisos del menú se afinan después en Configuración de agencia → Equipo."
+      ],
+      "intro": "Los roles son etiquetas que asignas a cada persona (p. ej. Account, Creativo). «Administrador» puede gestionar la agencia; el resto son personalizables. Los permisos finos se ajustan después en la gestión de equipo.",
+      "introAccordion": "Sobre los roles",
+      "newPlaceholder": "Nombre del nuevo rol…",
+      "needOne": "Define al menos un rol",
+      "max": "Máximo 10 roles",
+      "reserved": "Nombre reservado"
+    },
+    "team": {
+      "calloutTitle": "Invitaciones",
+      "calloutBullets": [
+        "Paso opcional: invita ahora o más tarde desde Equipo.",
+        "Sin pulsar «Añadir a la lista», lo escrito no se guarda ni se envía correo.",
+        "Si continúas con personas en la lista, el asistente envía las invitaciones."
+      ],
+      "noPasswordShort": "Solo email: cada persona crea su contraseña desde el enlace del correo.",
+      "introAccordion": "Cómo funcionan las invitaciones",
+      "stepTitle": "Invitar al equipo",
+      "hintShort": "Este paso es opcional. Si rellenas datos, debes pulsar el botón principal abajo para añadir a esa persona a la lista; al continuar el asistente se envían las invitaciones.",
+      "hint": "Opcional: añade compañeros ahora o más tarde. Les llegará un correo con enlace para crear su contraseña (no hace falta que les des una clave aquí). El horario por día sirve para calcular la capacidad semanal en el planificador.",
+      "listLabel": "Personas en la lista (invitación al pulsar Continuar)",
+      "formTitle": "Datos de la nueva persona",
+      "noPassword": "Aquí no hay campo de contraseña: solo el email. Cada uno creará su clave desde el enlace del correo de invitación.",
+      "namePh": "Ej. Ana López",
+      "emailLabel": "Email de trabajo",
+      "emailPh": "correo@empresa.com",
+      "addCta": "Añadir a la lista y preparar invitación",
+      "addHelper": "Si no pulsas este botón, lo que has escrito arriba no se guarda: no se envía ningún correo hasta que añadas a la lista y luego des a Continuar.",
+      "skipExplainer": "«Omitir» significa seguir solo tú por ahora. Podrás invitar gente después desde Equipo. No se envía ningún email en este paso si no hay nadie en la lista.",
+      "scheduleHelp": "Cuántas horas suele trabajar esa persona cada día (no es el calendario de vacaciones). Se suman para la capacidad semanal.",
+      "nameEmail": "Nombre y email obligatorios",
+      "duplicateEmail": "Ese email ya está en la lista",
+      "selfEmail": "No puedes invitarte a ti mismo aquí",
+      "fullName": "Nombre completo",
+      "schedule": "Horas disponibles por día",
+      "add": "Añadir",
+      "continue": "Continuar",
+      "invited": "Invitaciones enviadas"
+    },
+    "client": {
+      "calloutTitle": "Cliente",
+      "calloutBullets": [
+        "Marca o empresa que os paga.",
+        "Varios proyectos pueden colgar del mismo cliente.",
+        "El color es solo visual en tablas y planificador."
+      ],
+      "intro": "El cliente es la marca o empresa que os paga. Debajo del mismo cliente podréis tener varios proyectos (campañas, meses, entregas…). El color ayuda a reconocerlo en tablas y en el planificador.",
+      "introAccordion": "¿Qué es un cliente?",
+      "name": "Nombre del cliente",
+      "nameHelp": "Nombre comercial o fiscal tal como lo reconoce el equipo.",
+      "namePh": "Ej. Acme Retail",
+      "colorHelp": "Solo visual: barras y etiquetas donde aparezca este cliente."
+    },
+    "project": {
+      "calloutTitle": "Proyecto",
+      "calloutBullets": [
+        "Encargo concreto (campaña, retainer, web…).",
+        "Horas mensuales = previsión de carga.",
+        "Fee mensual = lo que paga el cliente ese mes por el proyecto (no es precio por hora)."
+      ],
+      "intro": "El proyecto es el encargo concreto (por ejemplo «SEO Q2» o «Mantenimiento web»). Las horas mensuales son la previsión de carga; el fee mensual es lo que el cliente paga por ese proyecto en un mes.",
+      "introAccordion": "¿Qué es un proyecto?",
+      "name": "Nombre del proyecto",
+      "nameHelp": "Un nombre que entienda todo el equipo; puede incluir cliente o mes si os ayuda.",
+      "namePh": "Ej. Contenidos blog — marzo",
+      "dept": "Departamento responsable",
+      "deptHelp": "Qué área «lidera» el proyecto en informes y filtros. Podéis dejarlo sin asignar si aún no aplica.",
+      "deptPh": "Seleccionar",
+      "deptNone": "Sin asignar",
+      "type": "Tipo (opcional)",
+      "typeNone": "Ninguno",
+      "typeHint": "Etiqueta interna del proyecto; la lista es común a todas las agencias (se puede ampliar en el futuro desde configuración).",
+      "types": {
+        "PPC": "PPC (campañas de pago)",
+        "Entregable": "Por entrega / proyecto cerrado",
+        "Mensual": "Retainer o fee mensual fijo"
+      },
+      "budget": "Horas mensuales (objetivo)",
+      "budgetHelp": "Horas que planeáis dedicar a este proyecto en un mes de media. Sirve para comparar con lo planificado y lo real en informes.",
+      "minH": "Mínimo de horas (opcional)",
+      "minHHelp": "Suelo mínimo mensual que garantizáis al cliente; puede ser 0 si no aplica.",
+      "fee": "Fee / hora (€)",
+      "monthlyFee": "Fee mensual (€)",
+      "monthlyFeeHint": "Importe total que paga el cliente por este proyecto al mes (no es precio por hora)."
+    }
+  },
+  "dataExportHub": {
+    "title": "Exportación de datos para informes",
+    "subtitle": "Descargas JSON por bloque y mes. Incluye datos personales y laborales: trata el archivo con cuidado.",
+    "historyLimit": "Tu plan limita histórico desde {{date}}",
+    "monthsTitle": "Meses",
+    "selectAll": "Todos",
+    "clear": "Ninguno",
+    "scopeTitle": "Alcance",
+    "scopeHint": "Usa el mismo criterio que Rentabilidad / Operaciones: departamento vacío = agencia completa.",
+    "scopeAgency": "Agencia completa",
+    "finanzasOptions": "Opciones rentabilidad",
+    "hoursMode": "Horas",
+    "hoursComputed": "Computadas",
+    "hoursActual": "Reales",
+    "costMode": "Coste",
+    "costStandard": "Operativo (estándar)",
+    "costDynamic": "Dinámico",
+    "downloadBundle": "JSON único (todos los bloques y meses)",
+    "downloadZip": "Descargar ZIP completo (desglosado por mes y tipo)",
+    "zipExplain": "El ZIP incluye configuración de horarios por empleado, planificación, deadlines, ausencias, eventos, feedback, rentabilidad, radar, coherencia y un archivo de ocupación/burnout por mes. Con más de 45 personas sin filtrar por departamento, los JSON por empleado se omiten (sigue el agregado burnout-by-employee.json).",
+    "zipSuccess": "ZIP descargado",
+    "zipError": "Error generando el ZIP",
+    "noMonths": "Selecciona al menos un mes",
+    "bundleSuccess": "Bundle descargado",
+    "bundleError": "Error generando el bundle",
+    "sectionSuccess": "{{label}}: archivos descargados",
+    "sectionError": "Error al exportar: {{label}}",
+    "backAgency": "Configuración de agencia",
+    "needPermissionDeadlines": "Necesitas permiso de Deadlines",
+    "needPermissionPlanner": "Necesitas permiso del planificador",
+    "needPermissionCoherence": "Necesitas permisos de Operaciones y Deadlines",
+    "needPermissionOperations": "Necesitas permiso de Seguimiento operativo",
+    "needPermissionFinanzas": "Necesitas permiso de Rentabilidad",
+    "needPermissionTeam": "Necesitas permiso de Equipo",
+    "block": {
+      "deadlines": "Deadlines",
+      "globalAssignments": "Asignaciones globales (Deadlines)",
+      "planning": "Planificación (allocations del mes)",
+      "coherence": "Coherencia / control de planificación global",
+      "radar": "Seguimiento operativo (radar)",
+      "rentability": "Rentabilidad (diagnóstico JSON)",
+      "absences": "Ausencias, eventos de equipo y feedback semanal",
+      "burnout": "Burnout y capacidad (por empleado)"
+    }
+  },
+  "clients": {
+    "search": "Buscar cliente...",
+    "empty": "No se encontraron clientes",
+    "emptySub": "Prueba con otro término de búsqueda o crea tu primer cliente para empezar",
+    "count": "{{filtered}} de {{total}} clientes"
+  }
+}

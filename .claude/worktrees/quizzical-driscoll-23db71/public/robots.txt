@@ -1,0 +1,31 @@
+User-agent: *
+Allow: /
+
+# Desactivar indexacion de rutas internas, sistema de sesion y dashboard protegido
+Disallow: /admin/
+Disallow: /login
+Disallow: /onboarding
+Disallow: /suspended
+Disallow: /google-callback
+Disallow: /dashboard
+Disallow: /planner
+Disallow: /deadlines
+Disallow: /team
+Disallow: /tiempos
+Disallow: /team-capacity
+Disallow: /clients
+Disallow: /projects
+Disallow: /okrs
+Disallow: /reports
+Disallow: /informes-clientes
+Disallow: /settings
+Disallow: /agency
+Disallow: /agencies
+Disallow: /ads
+Disallow: /meta-ads
+Disallow: /weekly-forecast
+Disallow: /api-keys
+Disallow: /soporte
+Disallow: /pitch
+
+Sitemap: https://taimbox.com/sitemap.xml
