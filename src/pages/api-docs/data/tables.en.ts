@@ -618,6 +618,7 @@ export const TABLE_GROUPS_EN: TableGroup[] = [
           { name: 'agency_id', type: 'uuid', required: true, fk: 'agencies(id)', description: 'Agencia.' },
           { name: 'requested_at', type: 'timestamptz', required: false, default: 'now()', description: 'Request timestamp. Auto-generated.' },
           { name: 'responded_at', type: 'timestamptz', required: false, description: 'Response timestamp.' },
+          { name: 'result_allocation_ids', type: 'uuid[]', required: false, default: "'{}'", description: 'Child allocation IDs (e.g. distribute) or continuation (rollover). Atomic acceptance uses accept_task_transfer RPC.' },
         ],
         examples: {
           select: `const { data } = await timeboxing

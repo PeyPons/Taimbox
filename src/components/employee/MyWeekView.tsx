@@ -107,7 +107,8 @@ export const MyWeekView = memo(function MyWeekView({ employeeId, viewDate }: MyW
   // Allocations del mes para este empleado
   const monthlyAllocations = allocations.filter(a =>
     a.employeeId === employeeId &&
-    isAllocationInEffectiveMonth(a.weekStartDate, viewDate)
+    isAllocationInEffectiveMonth(a.weekStartDate, viewDate) &&
+    !(a.isLocked && round2(Number(a.hoursAssigned)) === 0)
   );
 
   // Métricas globales del mes

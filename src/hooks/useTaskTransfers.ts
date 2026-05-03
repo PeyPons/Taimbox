@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { addDays, format, parseISO, startOfMonth } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useApp } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
@@ -11,12 +12,25 @@ import { TaskTransfer, TransferStatus } from '@/types';
 // Re-export types for compatibility
 export type { TaskTransfer, TransferStatus };
 
+/** Opciones para `acceptTransfer` (semana destino en `move`, semanas hijas en `distribute`, refetch explícito). */
+export interface AcceptTransferOptions {
+    targetWeek?: string;
+    distributionWeekStarts?: string[];
+    /** Lunes ISO (yyyy-MM-dd) de semanas cuyo mes debe recargarse tras la RPC (p. ej. `transfer.originalWeek`). */
+    refetchWeekStarts?: string[];
+}
+
 export interface UseTaskTransfersResult {
     pendingTransfers: TaskTransfer[];
     outgoingTransfers: TaskTransfer[];
     isLoading: boolean; // This now refers to action loading
     requestTransfer: (params: RequestTransferParams & { fromEmployeeId?: string }) => Promise<boolean>;
-    acceptTransfer: (transferId: string, acceptanceMode?: 'keep' | 'move' | 'distribute' | 'rollover', resultAllocationIds?: string[]) => Promise<boolean>;
+    acceptTransfer: (
+        transferId: string,
+        acceptanceMode?: 'keep' | 'move' | 'distribute' | 'rollover',
+        resultAllocationIds?: string[],
+        options?: AcceptTransferOptions
+    ) => Promise<boolean>;
     rejectTransfer: (transferId: string, reason?: string) => Promise<boolean>;
     cancelTransfer: (transferId: string) => Promise<boolean>;
     fetchTransfers: () => Promise<void>; // Exposed from context for manual refresh
@@ -34,7 +48,7 @@ export interface RequestTransferParams {
 // Hook
 // ================================================================
 export function useTaskTransfers(): UseTaskTransfersResult {
-    const { currentUser, pendingTransfers, outgoingTransfers, fetchTransfers } = useApp();
+    const { currentUser, pendingTransfers, outgoingTransfers, fetchTransfers, refetchMonthData } = useApp();
     const { toast } = useToast();
     const [isActionLoading, setIsActionLoading] = useState(false);
 
@@ -95,37 +109,45 @@ export function useTaskTransfers(): UseTaskTransfersResult {
     const acceptTransfer = async (
         transferId: string,
         acceptanceMode: 'keep' | 'move' | 'distribute' | 'rollover' = 'keep',
-        resultAllocationIds: string[] = []
+        resultAllocationIds: string[] = [],
+        options?: AcceptTransferOptions
     ): Promise<boolean> => {
         setIsActionLoading(true);
         try {
             const transfer = (pendingTransfers || []).find(t => t.id === transferId);
             if (!transfer) return false;
 
-            // Update transfer status with acceptance details
-            const { error: updateError } = await supabase
-                .from('task_transfers')
-                .update({
-                    status: 'accepted',
-                    responded_at: new Date().toISOString(),
-                    acceptance_mode: acceptanceMode,
-                    result_allocation_ids: resultAllocationIds
-                })
-                .eq('id', transferId);
+            const { error } = await supabase.rpc('accept_task_transfer', {
+                p_transfer_id: transferId,
+                p_acceptance_mode: acceptanceMode,
+                p_result_allocation_ids: resultAllocationIds,
+                p_target_week: acceptanceMode === 'move' ? options?.targetWeek ?? null : null
+            });
+            if (error) throw error;
 
-            if (updateError) throw updateError;
+            const weekStarts = new Set<string>();
+            for (const w of options?.refetchWeekStarts ?? []) {
+                if (w) weekStarts.add(w);
+            }
+            if (transfer.originalWeek) weekStarts.add(transfer.originalWeek);
+            if (acceptanceMode === 'move' && options?.targetWeek) weekStarts.add(options.targetWeek);
+            if (acceptanceMode === 'rollover' && transfer.originalWeek) {
+                weekStarts.add(format(addDays(parseISO(transfer.originalWeek), 7), 'yyyy-MM-dd'));
+            }
+            if (acceptanceMode === 'distribute' && options?.distributionWeekStarts?.length) {
+                for (const w of options.distributionWeekStarts) {
+                    if (w) weekStarts.add(w);
+                }
+            }
 
-            // Update allocation to new employee
-            const { error: allocError } = await supabase
-                .from('allocations')
-                .update({
-                    employee_id: transfer.toEmployeeId,
-                    transfer_source_employee_id: transfer.fromEmployeeId,
-                    original_transferred_task_name: transfer.taskName
-                })
-                .eq('id', transfer.allocationId);
-
-            if (allocError) throw allocError;
+            const months = new Map<string, Date>();
+            for (const ws of weekStarts) {
+                const m = startOfMonth(parseISO(ws));
+                months.set(format(m, 'yyyy-MM'), m);
+            }
+            for (const monthDate of months.values()) {
+                await refetchMonthData(monthDate);
+            }
 
             await fetchTransfers();
             return true;

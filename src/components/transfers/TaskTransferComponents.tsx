@@ -299,7 +299,6 @@ export function TransferRequestDialog({
     const { requestTransfer } = useTaskTransfers();
 
     const [selectedEmployee, setSelectedEmployee] = useState<string>('');
-    const [hours, setHours] = useState(currentHours);
     const [reason, setReason] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
@@ -323,7 +322,7 @@ export function TransferRequestDialog({
         const success = await requestTransfer({
             allocationId,
             toEmployeeId: selectedEmployee,
-            hoursTransferred: hours,
+            hoursTransferred: currentHours,
             reason: reason || undefined,
             fromEmployeeId: sourceId // Pass the real source
         });

@@ -872,6 +872,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       patch.status === 'completed' && previousAllocation.status !== 'completed';
 
     const snakeMap: Record<string, string> = {
+      employeeId: 'employee_id',
       projectId: 'project_id',
       weekStartDate: 'week_start_date',
       hoursAssigned: 'hours_assigned',

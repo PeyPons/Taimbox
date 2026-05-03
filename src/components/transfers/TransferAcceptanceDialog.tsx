@@ -17,7 +17,7 @@ import { format, addDays, parseISO, startOfWeek, addMonths, getWeekOfMonth } fro
 import { es } from 'date-fns/locale';
 import { toast } from '@/lib/notify';
 import { cn } from '@/lib/utils';
-import { getWeeksForMonth, getStorageKey } from '@/utils/dateUtils';
+import { getWeeksForMonth } from '@/utils/dateUtils';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
@@ -32,7 +32,7 @@ type AcceptanceMode = 'keep' | 'move' | 'distribute' | 'rollover';
 
 export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSuccess }: TransferAcceptanceDialogProps) {
     const { acceptTransfer, rejectTransfer } = useTaskTransfers();
-    const { updateAllocation, deleteAllocation, addAllocation, addWeeklyFeedback, allocations } = useApp();
+    const { addAllocation, addWeeklyFeedback } = useApp();
 
     const [mode, setMode] = useState<AcceptanceMode>('keep');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -104,12 +104,8 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
     };
 
     const handleDistributeChange = (id: string, field: keyof typeof distributionRows[0], value: string) => {
-        console.log('Changing row', id, field, value);
         setDistributionRows(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r));
     };
-
-    // DEBUG: Log available weeks
-    console.log('Available Weeks:', availableWeeks);
 
     const handleReject = async () => {
         if (!rejectReason.trim()) {
@@ -137,36 +133,30 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
 
         try {
             const allocationId = transfer.allocationId;
+            const baseWeek = transfer.originalWeek || format(new Date(), 'yyyy-MM-dd');
 
             if (mode === 'keep') {
-                // Accept directly with 'keep' mode
-                const success = await acceptTransfer(transfer.id, 'keep', []);
+                const success = await acceptTransfer(transfer.id, 'keep', [], {
+                    refetchWeekStarts: [baseWeek]
+                });
                 if (!success) throw new Error("Error al aceptar la transferencia base");
 
                 toast.success("Tarea aceptada correctamente");
                 onOpenChange(false);
                 onSuccess();
-                setTimeout(() => window.location.reload(), 500);
                 return;
             }
 
             if (mode === 'move') {
-                // First accept with 'move' mode
-                const success = await acceptTransfer(transfer.id, 'move', []);
+                const success = await acceptTransfer(transfer.id, 'move', [], {
+                    targetWeek: targetWeekDate,
+                    refetchWeekStarts: [baseWeek, targetWeekDate]
+                });
                 if (!success) throw new Error("Error al aceptar la transferencia base");
-
-                // Update week
-                await updateAllocation({
-                    id: allocationId,
-                    employeeId: transfer.toEmployeeId,
-                    projectId: transfer.projectId,
-                    weekStartDate: targetWeekDate,
-                    status: 'planned',
-                } as any);
 
                 await addWeeklyFeedback({
                     employeeId: transfer.toEmployeeId,
-                    weekStartDate: transfer.originalWeek || format(new Date(), 'yyyy-MM-dd'),
+                    weekStartDate: baseWeek,
                     projectId: transfer.projectId,
                     allocationId: allocationId,
                     reason: 'other',
@@ -184,9 +174,6 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                 const validRows = distributionRows.filter(r => r.taskName.trim() && parseFloat(r.hours) > 0);
                 if (validRows.length === 0) throw new Error("Añade al menos una tarea válida");
 
-                console.log('DEBUG: Distributing rows payload:', JSON.stringify(validRows, null, 2));
-
-                // Create child allocations and collect their IDs
                 const createdAllocations = await Promise.all(validRows.map(row =>
                     addAllocation({
                         employeeId: transfer.toEmployeeId,
@@ -201,62 +188,46 @@ export function TransferAcceptanceDialog({ open, onOpenChange, transfer, onSucce
                     })
                 ));
 
-                // Extract IDs from created allocations
                 const childIds = createdAllocations
                     .filter((alloc): alloc is NonNullable<typeof alloc> => alloc !== null)
                     .map(alloc => alloc.id);
 
-                // Now accept the transfer with distribute mode and child IDs
-                const success = await acceptTransfer(transfer.id, 'distribute', childIds);
+                const distWeeks = [...new Set(validRows.map(r => r.weekDate))];
+                const success = await acceptTransfer(transfer.id, 'distribute', childIds, {
+                    distributionWeekStarts: distWeeks,
+                    refetchWeekStarts: [baseWeek, ...distWeeks]
+                });
                 if (!success) throw new Error("Error al aceptar la transferencia");
 
                 await addWeeklyFeedback({
                     employeeId: transfer.toEmployeeId,
-                    weekStartDate: transfer.originalWeek || format(new Date(), 'yyyy-MM-dd'),
+                    weekStartDate: baseWeek,
                     projectId: transfer.projectId,
                     allocationId: allocationId,
                     reason: 'other',
                     comments: `Transferencia recibida y distribuida en ${validRows.length} tareas.`
                 });
 
-                // Soft-delete original: 0 hours and locked
-                await updateAllocation({
-                    id: allocationId,
-                    hoursAssigned: 0,
-                    status: 'planned',
-                    isLocked: true
-                } as any);
-
                 toast.success("Tarea aceptada y distribuida");
             }
 
             if (mode === 'rollover') {
-                // Accept with 'rollover' mode
-                const success = await acceptTransfer(transfer.id, 'rollover', []);
+                const nextWeekStr = format(addDays(parseISO(baseWeek), 7), 'yyyy-MM-dd');
+                const success = await acceptTransfer(transfer.id, 'rollover', [], {
+                    refetchWeekStarts: [baseWeek, nextWeekStr]
+                });
                 if (!success) throw new Error("Error al aceptar la transferencia");
-
-                // Move to next week
-                const nextWeek = addDays(parseISO(transfer.originalWeek || format(new Date(), 'yyyy-MM-dd')), 7);
-                const nextWeekStr = getStorageKey(nextWeek, new Date());
-
-                await updateAllocation({
-                    id: allocationId,
-                    employeeId: transfer.toEmployeeId,
-                    projectId: transfer.projectId,
-                    weekStartDate: nextWeekStr,
-                    status: 'planned',
-                } as any);
 
                 await addWeeklyFeedback({
                     employeeId: transfer.toEmployeeId,
-                    weekStartDate: transfer.originalWeek || format(new Date(), 'yyyy-MM-dd'),
+                    weekStartDate: baseWeek,
                     projectId: transfer.projectId,
                     allocationId: allocationId,
                     reason: 'other',
-                    comments: `Transferencia recibida y pasada a la siguiente semana (Rollover)`
+                    comments: `Transferencia recibida: copia planificada en la semana siguiente (rollover).`
                 });
 
-                toast.success("Tarea aceptada y movida a la siguiente semana");
+                toast.success("Tarea aceptada: copia en la semana siguiente");
             }
 
             onOpenChange(false);
