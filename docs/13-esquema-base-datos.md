@@ -37,7 +37,8 @@ Si el código o una migración **contradice** el snapshot, **prevalece el códig
 - **`ad_accounts_config`**, **`ads_sync_logs`**, **`meta_sync_logs`**, **`google_ads_campaigns`**, **`meta_ads_campaigns`**, **`google_ads_changes`**, **`segmentation_rules`**.
 - **`api_tokens`**: tokens de integración por agencia.
 - **`notification_rules`**, **`notification_deliveries`**: reglas de avisos por email por agencia y registro/dedupe de envíos (ver `docs/05`, Edge `notify-task-transfer`, `process-event-notifications`, `process-notification-rules`).
-- **`audit_logs`**: auditoría (usuario, agencia, recurso).
+- **`audit_logs`**: auditoría (usuario, agencia, recurso); se elimina al purgar la agencia.
+- **`platform_audit_logs`**: auditoría **a nivel plataforma** (sin `agency_id`); sobrevive al purge. Evento típico `agency_purged` con payload (slug, conteos, `had_stripe_subscription`, `by_user_id`). RLS: solo `platform_admins` pueden `SELECT`; inserción desde RPC `admin_delete_agency` (SECURITY DEFINER). Migración `20260503120000_platform_audit_logs.sql`.
 - **`platform_admins`**: acceso al panel `/admin`.
 
 ## 13.6. Soporte

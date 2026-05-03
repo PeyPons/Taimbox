@@ -138,7 +138,15 @@ Todos los componentes re-renderizan
 
 ---
 
-### 8.8 Flujo de Carga de Mes
+### 8.8 Purge de agencia (admin plataforma)
+
+| Pieza | Impacto |
+|-------|---------|
+| Edge `admin-delete-agency` | Stripe `cancel`; errores recuperables solo `resource_missing`; RPC con cliente **anon + JWT** (`supabaseUser.rpc`), nunca service role para `admin_delete_agency`. Post-RPC: `deleteUser` best-effort. |
+| RPC `admin_delete_agency` | Inserta `platform_audit_logs` (`agency_purged`); `DELETE google_ads_changes` por clientes de la agencia; resto del purge sin cambios funcionales respecto a la migración `20260414130000`. |
+| `platform_audit_logs` | Nueva tabla; RLS lectura solo `platform_admins`. |
+
+### 8.9 Flujo de Carga de Mes
 
 ```
 Usuario navega a otro mes

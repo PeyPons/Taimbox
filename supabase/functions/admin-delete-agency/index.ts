@@ -1,5 +1,7 @@
 // Edge Function: borrado irreversible de agencia (solo platform admin).
 // Cancela suscripción Stripe si existe; luego RPC admin_delete_agency.
+// Tras éxito, best-effort: elimina usuarios de Auth que solo pertenecían a esta agencia.
+// RPC debe invocarse con JWT del admin (supabaseUser), no service role, para auth.uid() en SECURITY DEFINER.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "npm:stripe@14.21.0";
@@ -87,12 +89,43 @@ serve(async (req) => {
       );
     }
 
+    const { data: candidates, error: candErr } = await supabaseAdmin
+      .from("user_agencies")
+      .select("user_id")
+      .eq("agency_id", agencyId);
+
+    if (candErr) {
+      console.warn("admin-delete-agency: no se pudieron listar candidatos auth", candErr);
+    }
+    const userIds = [...new Set((candidates ?? []).map((c) => c.user_id as string))];
+
+    if (!stripeSecret && agency.stripe_subscription_id) {
+      return new Response(
+        JSON.stringify({
+          error: "Falta STRIPE_SECRET_KEY pero la agencia tiene suscripción activa.",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 503 }
+      );
+    }
+
     if (stripeSecret && agency.stripe_subscription_id) {
       try {
         const stripe = new Stripe(stripeSecret, { apiVersion: "2024-11-20.acacia" });
         await stripe.subscriptions.cancel(agency.stripe_subscription_id);
-      } catch (e) {
-        console.warn("admin-delete-agency: Stripe cancel (continuando)", e);
+      } catch (e: unknown) {
+        const isStripeErr = e instanceof Stripe.errors.StripeError;
+        const code = isStripeErr ? e.code : undefined;
+        if (code !== "resource_missing") {
+          console.error("admin-delete-agency: Stripe cancel falló — abortando", e);
+          return new Response(
+            JSON.stringify({
+              error:
+                "No se pudo cancelar la suscripción en Stripe. Inténtalo más tarde, o cancélala manualmente desde Stripe antes de eliminar.",
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 502 }
+          );
+        }
+        console.warn("admin-delete-agency: Stripe subscription ya inexistente, continúo", e);
       }
     }
 
@@ -106,6 +139,37 @@ serve(async (req) => {
         JSON.stringify({ error: delErr.message || "Error al eliminar la agencia" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
       );
+    }
+
+    for (const uid of userIds) {
+      try {
+        const { count, error: remErr } = await supabaseAdmin
+          .from("user_agencies")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", uid);
+
+        if (remErr) {
+          console.warn("admin-delete-agency: chequeo huérfanos falló para", uid, remErr);
+          continue;
+        }
+
+        if ((count ?? 0) > 0) continue;
+
+        const { data: paRow } = await supabaseAdmin
+          .from("platform_admins")
+          .select("user_id")
+          .eq("user_id", uid)
+          .maybeSingle();
+
+        if (paRow) continue;
+
+        const { error: delAuthErr } = await supabaseAdmin.auth.admin.deleteUser(uid);
+        if (delAuthErr) {
+          console.warn("admin-delete-agency: deleteUser falló para", uid, delAuthErr);
+        }
+      } catch (orphanErr) {
+        console.warn("admin-delete-agency: cleanup auth users (best-effort)", orphanErr);
+      }
     }
 
     return new Response(JSON.stringify({ success: true }), {

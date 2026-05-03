@@ -26,7 +26,7 @@ Al eliminar un empleado **debe borrarse todo rastro en la base de datos**. No se
 - **Flujo equipo**: `purgeEmployeeRowAndRelatedData` en `src/utils/employeeDeletionUtils.ts` ejecuta el RPC y luego `DELETE` en `employees`. `AppContext.deleteEmployee` solo llama a `delete-user` (Edge) si el usuario **no** tiene más filas en `employees` ni en `user_agencies`.
 - **Gestión de agencia**: Si el miembro **no** tiene otra agencia, `removeUserFromAgencyUtil` desvincula, purga empleado e invoca `delete-user`. Si tiene otras agencias, solo desactiva y quita `user_agencies` para esa agencia.
 - **Estado local**: Tras el borrado se actualizan `employees`, `allocations`, `absences`, `weeklyFeedback`, `userRoutines` y `teamEvents` en contexto.
-- **Agencias (admin plataforma)**: RPC `admin_delete_agency(p_agency_id)` borra datos de la agencia; la Edge Function `admin-delete-agency` cancela suscripción Stripe si existe y luego llama al RPC. **Irreversible.**
+- **Agencias (admin plataforma)**: RPC `admin_delete_agency(p_agency_id)` borra datos de la agencia y registra el purge en `platform_audit_logs`. La Edge Function `admin-delete-agency` cancela Stripe si existe (fallo real → 502 y no purga; `resource_missing` → continúa), exige `STRIPE_SECRET_KEY` si hay `stripe_subscription_id` (503 si falta), llama al RPC con JWT del admin y hace limpieza best-effort de usuarios Auth sin más agencias. **Irreversible.**
 
 ### 10.4 Informe de coherencia (GlobalPlanningInconsistencies)
 - **Un empleado, una fila por proyecto**: La lista "Empleados afectados" se construye con un `Map` por `employeeId` por proyecto, de modo que cada persona aparece como máximo una vez por proyecto (evita duplicados donde en una fila salía "en deadline" y en otra "no en deadline").
