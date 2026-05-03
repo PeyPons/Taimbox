@@ -11,7 +11,7 @@ Si modificas una interface, revisa estos consumidores:
 |---------------------|-------------------|
 | `Allocation` | `AppContext.tsx`, `useAllocationSheet.ts`, `AllocationSheet.tsx`, `PlannerGrid.tsx`, `MobilePlannerView.tsx`, `WeekCell.tsx`, `useProjectMetrics.ts`, `useTaskTransfers.ts` |
 | `Employee` | `AppContext.tsx`, `AgencyContext.tsx`, `EmployeeRow.tsx`, `TeamPage.tsx`, `usePermissions.ts`, `capacityUtils.ts` |
-| `Project` | `AppContext.tsx`, `ProjectsPage.tsx`, `ClientsAndProjectsPage.tsx`, `useAllocationSheet.ts`, `useProjectMetrics.ts` |
+| `Project` | `AppContext.tsx`, `ClientsAndProjectsPage.tsx`, `useAllocationSheet.ts`, `useProjectMetrics.ts` |
 | `Agency` / `AgencySettings` (incl. `commonExpensesByMonth`, `commonExpensesRecurring`, tipos `CommonExpense*` con `distribution` byHours/byHeadcount/byPayroll) | `AgencyContext.tsx`, `CommonExpensesSettingsCard.tsx`, `FinancialHealthPage.tsx`, `commonExpensesAllocation.ts`, `usePermissions.ts` |
 | `WorkSchedule` | `capacityUtils.ts`, `dateUtils.ts`, `AppContext.tsx` |
 | `Absence` / `TeamEvent` | `capacityUtils.ts`, `AppContext.tsx`, `AbsencesSheet.tsx` |
@@ -36,15 +36,14 @@ Si modificas una interface, revisa estos consumidores:
 |-----------------|-------------------|
 | `dateUtils.ts` → `isAllocationWeekPastForWeekly()` | `PlannerTaskContextMenu`, `AllocationSheet` (coherencia con bloqueo Weekly en vista semanal) |
 | `dateUtils.ts` → `getWeeksForMonth()` | `AppContext.tsx`, `usePlannerData.ts`, `useAllocationSheet.ts`, `AllocationSheet.tsx`, `appMetrics.ts` |
-| `dateUtils.ts` → `collectSelectableFutureWeekSlots()` | `useWeeklyCloseMutations.ts` (slots de destino), `WeeklyReportDialog.tsx`, `TaskPartialCloseDialog.tsx` |
+| `dateUtils.ts` → `collectSelectableFutureWeekSlots()` | `useWeeklyCloseMutations.ts` (slots de destino), `WeeklyReportDialog.tsx` |
 | `dateUtils.ts` → `isAllocationInEffectiveMonth()` | `AppContext.tsx`, `usePlannerData.ts`, `useProjectMetrics.ts`, `appMetrics.ts` |
 | `dateUtils.ts` → `parseDateStringLocal()` | `WeeklyReportDialog.tsx` (pestañas y filtro de semana); `MyDayView.tsx` (alcance semanal y «Retrasada»); parseo local de `YYYY-MM-DD` |
 | `budgetUtils.ts` → `getEffectiveBudget()` / `getEffectiveBudgetForMonth()` / `getEffectiveMinimum()` / `getEffectiveMonthlyFee()` | `DeadlinesPage`, `ClientsAndProjectsPage`, `useAllocationSheet`, `projectMetricsCompute` / `useProjectMetrics`, exports rentabilidad; rentabilidad usa `getEffectiveBudgetForMonth` + `getEffectiveMinimum` dentro de `computeProjectMetricsForMonth` |
 | `profitabilityCost.ts` → coste/h estándar y reparto overhead en filas | `FinancialHealthPage`, `financialHealthExportCompute`, `rentabilityDiagnostic` |
-| `deadlineUtils.ts` → `fetchDeadlinesForMonth(monthKey, agencyId)` | `useDeadlines`, `DeadlinesPage`, `AllocationSheet`, `EmployeeDashboard`, `ClientsAndProjectsPage`, `PlanningInconsistenciesCard`, `MyWeekView`, `GlobalPlanningInconsistencies` |
+| `deadlineUtils.ts` → `fetchDeadlinesForMonth(monthKey, agencyId)` | `DeadlinesPage`, `useDeadlinesPageData`, `useAllocationSheetMonthData` (p. ej. vía `AllocationSheet`), `EmployeeDashboard`, `ClientsAndProjectsPage`, `PlanningInconsistenciesCard`, `MyWeekView`, `GlobalPlanningInconsistencies`, `FinancialHealthPage`, `DataExportHubPage`, `useOperationsRadarMonthState`, `buildNotificationEmailPreview` |
 | `capacityUtils.ts` → `getDailyReduction()` | `getCapacityReductionInRange()`, `getCapacityReductionBreakdown()`, `AppContext.tsx`, `appMetrics.ts` |
 | `capacityUtils.ts` → `getScheduledHoursForDay()` | Todas las funciones de capacidad, `WeekCell.tsx` |
-| `taskPermissions.ts` → `canEditTask()` | `AllocationSheet.tsx`, cualquier UI de edición de tareas |
 | `permissions.ts` → `ROUTE_PERMISSIONS` | `App.tsx` (guards), `PermissionProtectedRoute.tsx`, `Sidebar.tsx` |
 | `commonExpensesAllocation.ts` (`byPayroll` sin `getEmployeePayroll` usa pesos por horas; éxito con `unallocatedAmount` / `unallocatedEntries`; aviso 0 h si **alguna** línea es `byHours`) | `FinancialHealthPage.tsx` (coste cargado, banner si hay importe no imputado); `financialHealthExportCompute`; `CommonExpensesSettingsCard.tsx`; tests en `src/utils/__tests__/commonExpensesAllocation.test.ts` |
 
@@ -60,9 +59,8 @@ Si modificas una interface, revisa estos consumidores:
 | `useAllocationActions.ts` | `AllocationSheet.tsx`, `AllocationFormDialog.tsx`, `MyDayView.tsx` (completar / cronómetro); coherencia con `timerReconcile.ts` y `time_entries` al marcar completada |
 | `useTaskTimer.ts` / `useActiveTimerForSidebar.ts` | `TaskTimer.tsx`, `Sidebar.tsx`, `TiemposPage.tsx`, `AllocationSheet.tsx`; ver `docs/07` (drift, BroadcastChannel, Real vs entradas) |
 | `timerReconcile.ts` / `timerDisplay.ts` | `useAllocationActions.ts`, planificador (`AllocationSheet`, `AllocationTaskRow`); solo completar + formato HH:MM |
-| `useWeeklyCloseMutations.ts` | `WeeklyReportDialog.tsx`, `TaskPartialCloseDialog.tsx` (mutaciones compartidas de cierre Weekly / parcial; exporta `WEEKLY_SLOT_EXTRA_MONTHS`, reexporta `parseWeeklyCloseHours`, `normalizeWeeklyHourInput` desde `weeklyCloseShared.ts`; `applyRollover` → RPC `partial_close_rollover` + `logUpdate`/`logCreate` en `auditService` para no perder historial) |
-| `weeklyCloseShared.ts` | `useWeeklyCloseMutations.ts`, `TaskPartialCloseDialog.tsx` (validación y parse de horas para posponer / completar) |
-| `useDeadlines.ts` | Acepta `{ agencyId }`; usado donde se cargan deadlines. Componentes que cargan deadlines usan `fetchDeadlinesForMonth(monthKey, currentAgency?.id)` directamente o vía hook. |
+| `useWeeklyCloseMutations.ts` | `WeeklyReportDialog.tsx` (mutaciones de cierre Weekly / parcial; exporta `WEEKLY_SLOT_EXTRA_MONTHS`, reexporta `parseWeeklyCloseHours`, `normalizeWeeklyHourInput` desde `weeklyCloseShared.ts`; `applyRollover` → RPC `partial_close_rollover` + `logUpdate`/`logCreate` en `auditService` para no perder historial) |
+| `weeklyCloseShared.ts` | `useWeeklyCloseMutations.ts` (validación y parse de horas para posponer / completar) |
 | `useDeliverableLifecycle.ts` / `useDeliverableLifecycleBatch.ts` + [`useDeliverableLifecycleCore.ts`](../src/hooks/useDeliverableLifecycleCore.ts) | Fetch de allocations por rango de fase para métricas de ciclo de vida. **El `select` solo puede incluir columnas que existan en `allocations`** (no `agency_id`). Ver [14-ciclo-vida-entregables.md](14-ciclo-vida-entregables.md) § «Consultas Supabase». |
 
 ### 8.5 Dependencias de Componentes Complejos (Team)
@@ -98,7 +96,7 @@ Todos los componentes re-renderizan
 |---------|-----------|--------------------|
 | `src/utils/logger.ts` | Sistema de logging estructurado | Usado en `PlannerGrid` y otros |
 | `src/hooks/useTasksImpact.ts` | Pre-cálculo de impacto de nuevas tareas | `useAllocationSheet`, `ProjectBudgetStatus` |
-| `src/hooks/useWeeklyCloseMutations.ts` | Mutaciones de cierre Weekly (`applyMove` solo si otro flujo lo necesita; en UI masiva/parcial el posponer usa `applyRollover`), transfer, justify, keep, rollover, distribute | `WeeklyReportDialog`, `TaskPartialCloseDialog`; usa `collectSelectableFutureWeekSlots` desde `viewDate` |
+| `src/hooks/useWeeklyCloseMutations.ts` | Mutaciones de cierre Weekly (`applyMove` solo si otro flujo lo necesita; en UI masiva/parcial el posponer usa `applyRollover`), transfer, justify, keep, rollover, distribute | `WeeklyReportDialog`; usa `collectSelectableFutureWeekSlots` desde `viewDate` |
 | `src/hooks/use-mobile.tsx` | Detección de dispositivo móvil (breakpoint 768px) | UI responsiva: `AppLayout` (ya no bloquea móvil), `PlannerGrid` → `MobilePlannerView`, `AllocationSheet` (vista semanal/mensual en cards, toggles Semana/Mes ≥44px), `AllocationTaskRow` (isMobile), `DeadlinesPage` y `DeadlinesFilters` (filtros/edición en Sheet), `Sidebar` |
 | `src/components/deadlines/DeadlinesFilters.tsx` | Filtros de Deadlines con estado local (búsqueda, tipo, empleado, orden, ocultos, sin asignar) | Usado solo por `DeadlinesPage`; notifica valores vía `onFiltersChange`; no crea suscripciones Realtime |
 | `src/components/deadlines/GlobalAssignmentDialog.tsx` | Dialog crear/editar asignaciones globales (nombre, horas, afecta a todos o empleados seleccionados) | Usado solo por `DeadlinesPage`; estado del formulario interno; no Realtime |
@@ -116,7 +114,7 @@ Todos los componentes re-renderizan
 | `src/components/clients-projects/ClientsAndProjectsFilters.tsx` | Filtros de Clientes y Proyectos con estado local (búsqueda, estado, tipo proyecto, empleado, filtros de análisis: todos/sin actividad/falta planificar/retrasados/exceso horas) | Usado solo por `ClientsAndProjectsPage`; notifica valores vía `onFiltersChange`; debounce 300 ms en búsqueda |
 | `src/hooks/useProjectAliasing.ts` | Formateo de nombres de proyectos según reglas de agencia | `AgencyContext`, `formatProjectName`, usado en 15+ componentes |
 | `AgencyContext` selectores (`useAgencySettings`, `useAgencyModules`, `useUserAgencies`) | Lectura segmentada de agencia/config sin consumir todo `useAgency()` | Configuración y pantallas con consumo parcial de settings/agencias |
-| `src/utils/deadlineUtils.ts` | Carga de deadlines por mes filtrando por agencia (multi-tenant) | `fetchDeadlinesForMonth(monthKey, agencyId)`; join con `projects.agency_id`. Usado por `useDeadlines`, DeadlinesPage, AllocationSheet, EmployeeDashboard, ClientsAndProjectsPage, PlanningInconsistenciesCard, MyWeekView, GlobalPlanningInconsistencies |
+| `src/utils/deadlineUtils.ts` | Carga de deadlines por mes filtrando por agencia (multi-tenant) | `fetchDeadlinesForMonth(monthKey, agencyId)`; join con `projects.agency_id`. Usado por `useDeadlinesPageData`, DeadlinesPage, `useAllocationSheetMonthData` / AllocationSheet, EmployeeDashboard, ClientsAndProjectsPage, PlanningInconsistenciesCard, MyWeekView, GlobalPlanningInconsistencies, FinancialHealthPage, DataExportHubPage, useOperationsRadarMonthState, buildNotificationEmailPreview |
 | `src/utils/planningInconsistencies.ts` | Cálculo puro de incoherencias globales por proyecto/empleado y filtro por búsqueda (proyecto/cliente) | Usado por `GlobalPlanningInconsistencies` para separar lógica de datos del render |
 | `src/utils/permissionsUtils.ts` | Utilidades puras de permisos (resolver permisos por rol, checks `canAccess`/`hasPermission`, fallback restringido) | `usePermissions` |
 | `src/utils/numbers.ts` | Utilidades numéricas compartidas (`round2`) para evitar duplicación de redondeos | `AppContext`, `appDataLoader`, `appMetrics`, `planningInconsistencies`, `Weekly/Radar/Planner` |
@@ -127,7 +125,6 @@ Todos los componentes re-renderizan
 | `src/hooks/useWeeklyForecastRedistribution.ts` | Tareas retrasadas por empleado y redistribución (completar original + crear tarea transferida en semana destino) | Usado por `WeeklyForecastPage` |
 | `src/hooks/useAllocationSheetMonthData.ts` | Carga mensual de AllocationSheet (cache local por mes + deadlines del mes para presupuesto efectivo) | Usado por `AllocationSheet` |
 | `AppContext` selectores (`useAppAllocationActions`, `useAppWeeklyFeedback`) | Lectura segmentada sin consumir `useApp()` completo | `AllocationSheet` usa ambos; otras pantallas solo los que necesitan (p. ej. `WeeklyForecastPage` importa `useAppAllocationActions`, no `useAppWeeklyFeedback`) |
-| `src/hooks/useDeadlines.ts` | Carga y estado de deadlines; opción `agencyId` para filtrar por agencia | `deadlineUtils.fetchDeadlinesForMonth` |
 | `src/hooks/useDeadlinesRedistribution.ts` | Cálculo de tips de redistribución (desequilibrio de carga), suggestionDonors, suggestionsByEmployeeAndProject, suggestionsByEmployee; condicionantes (excludedDonorIds, maxReceiverLoadPct, minSenderLoadPct) | Usado solo por `DeadlinesPage` |
 
 **Criterio de recomendaciones (quién sale en “Recomendaciones”)**: Aparecen como receptores **todos** los compañeros con **carga por debajo de la media** (porcentaje de horas asignadas / disponibles menor que media − umbral; si no hay nadie con el umbral estricto se usa umbral relajado de 5%). Los proyectos desde los que pueden recibir son los de los sobrecargados (aunque el receptor no tenga horas aún). No se exige compartir proyecto. como “sobrecargado”. Por tanto, un compañero con muchas horas libres pero que no trabaja en ningún proyecto en común con los sobrecargados **solo se generan tips si hay al menos 2 empleados activos y el rango de carga (máx − mín) es ≥ 5%. Lógica en `getRedistributionTips` (useDeadlinesRedistribution.ts).
@@ -137,7 +134,7 @@ Todos los componentes re-renderizan
 
 **Refactor Deadlines (auditoría)**: Tras reducir DeadlinesPage de ~1120 a ~670 líneas con hooks y componentes extraídos, se auditaron: encaje de props entre página → DeadlinesProjectList / DeadlinesProjectEditSheet / DeadlinesSidebar; tipos InlineFormData y getProjectDeadline compatibles; useDeadlinesPageData (Realtime deadlines, global_assignments, project_editing_locks, broadcast lock-released) y useDeadlinesEditing (locks, autoSave, cleanup); build y lints OK. No hay tests unitarios de Deadlines; se recomienda prueba manual: edición inline desktop, Sheet móvil, locks entre usuarios, cambio de mes, cerrar pestaña con edición abierta.
 
-**Auditoría legacy (2026-03-15)**: `TaskPartialCloseDialog` no tiene consumidores activos en producción (búsqueda de referencias sin imports/uso). Se mantiene explícitamente como **componente de referencia** para flujos parciales; el flujo vigente del planificador usa `WeeklyReportDialog` desde `PlannerTaskContextMenu` con `focusAllocationId`.
+**Cierre parcial / Weekly (2026-05)**: El componente `TaskPartialCloseDialog` se eliminó del repo. El flujo único en planificador y dashboard es `WeeklyReportDialog` (menú ⋯ / Mi día) con `focusAllocationId` y `useWeeklyCloseMutations`.
 
 ---
 

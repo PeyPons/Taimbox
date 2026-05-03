@@ -24,4 +24,6 @@
 | [docs/13-esquema-base-datos.md](docs/13-esquema-base-datos.md) | Referencia del modelo relacional: multi-tenant, `user_agencies`, planificador/tiempo, Ads, `notification_rules` / `notification_deliveries`; enlace al DDL de contexto en `docs/sql/schema-snapshot-context.sql` (no sustituye a migraciones). |
 | [docs/14-ciclo-vida-entregables.md](docs/14-ciclo-vida-entregables.md) | Vista de ciclo de vida vs mensual: devengo, horas, coste, estados, radar; coexistencia con `budgetUtils` / métricas mensuales; **consultas `allocations` para fase (columnas del DDL, sin `agency_id`)**. |
 
+**Nota (mayo 2026):** Los módulos `docs/01`, `02`, `05`, `08` y `11` dejaron de citar páginas/hooks/utils retirados del repo (`ProjectsPage`, `ClientsPage`, `useDeadlines`, `taskPermissions`, `TaskPartialCloseDialog`). El §8 del mapa lista consumidores actuales de `deadlineUtils` y del cierre Weekly.
+
 Para una lectura continua equivalente al monolito antiguo, abre los archivos en orden numérico (`00` → `14`).

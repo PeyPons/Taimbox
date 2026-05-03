@@ -500,7 +500,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
         } else if (action === 'keep') {
           const hours = keepTaskHours[task.id];
           const actual = hours ? parseHours(hours.actual) : (task.hoursActual || task.hoursAssigned);
-          // Modo agencia "solo reales": computed = actual a propósito (no es bug). Ver CloseTasksDialog y getPlanningDeltaHours para desviación est. vs real en UI.
+          // Modo agencia "solo reales": computed = actual a propósito (no es bug). Ver getPlanningDeltaHours para desviación est. vs real en UI.
           const computed = preference === 'actual' ? actual : (hours ? parseHours(hours.computed) : (task.hoursComputed || actual));
           await applyKeep(task, employeeId, actual, computed, taskComments[task.id]);
         } else if (action === 'postpone') {

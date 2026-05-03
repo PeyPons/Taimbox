@@ -1,5 +1,5 @@
 /**
- * Métricas mensuales por proyecto (misma lógica que ProjectsPage y que `_shared/project-notification-metrics.ts` en Edge).
+ * Métricas mensuales por proyecto (misma lógica que `ClientsAndProjectsPage` y que `_shared/project-notification-metrics.ts` en Edge).
  * Uso opcional en UI o tests; el worker programado evalúa en Deno.
  */
 

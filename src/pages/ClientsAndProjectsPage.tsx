@@ -210,7 +210,7 @@ export default function ClientsAndProjectsPage() {
     return Math.round((currentDay / daysInMonth) * 100);
   }, [currentMonth]);
 
-  // Análisis de proyectos con métricas detalladas (similar a ProjectsPage)
+  // Análisis de proyectos con métricas detalladas
   const projectsAnalysis = useMemo(() => {
     return projects.map(project => {
       const client = clients.find(c => c.id === project.clientId);

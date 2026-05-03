@@ -14,7 +14,7 @@ export type NotificationIssueFlag =
   | 'over_budget'
   | 'no_activity';
 
-/** Salud mensual tipo ProjectsPage vs coherencia deadlines / radar operativo */
+/** Salud mensual (vista análisis en Clientes y Proyectos) vs coherencia deadlines / radar operativo */
 export type NotificationEvaluationMode = 'project_month_health' | 'deadline_coherence';
 
 export type CoherenceDeliveryMode = 'per_project' | 'digest';

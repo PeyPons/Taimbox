@@ -22,9 +22,7 @@ Todas las páginas principales de la aplicación.
 ### Clientes y Proyectos
 | Página | Tamaño | Descripción |
 |--------|--------|-------------|
-| `ClientsAndProjectsPage.tsx` | ~2280 líneas | Gestión dual cliente/proyecto. **Filtros** en `ClientsAndProjectsFilters.tsx` (búsqueda, estado, tipo, empleado, análisis); página usa `filterSnapshot` vía `onFiltersChange`. |
-| `ProjectsPage.tsx` | 58KB | Gestión de proyectos con OKRs |
-| `ClientsPage.tsx` | 38KB | CRUD de clientes |
+| `ClientsAndProjectsPage.tsx` | ~2280 líneas | Gestión dual cliente/proyecto; rutas **`/clients`** y **`/projects`** apuntan aquí. **Filtros** en `ClientsAndProjectsFilters.tsx` (búsqueda, estado, tipo, empleado, análisis); página usa `filterSnapshot` vía `onFiltersChange`. Las páginas legacy `ClientsPage` / `ProjectsPage` se retiraron del repo. |
 | `OkrsPage.tsx` | 41KB | Objetivos y resultados clave |
 
 ### Reportes y Analytics

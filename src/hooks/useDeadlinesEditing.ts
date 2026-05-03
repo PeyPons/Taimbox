@@ -294,12 +294,82 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
           budget_override: formData.budgetOverride ?? null,
         };
 
+        const patchLocalDeadline = (id: string) => {
+          setDeadlines((prev) =>
+            prev.map((d) =>
+              d.id === id
+                ? {
+                    ...d,
+                    projectId,
+                    month: selectedMonth,
+                    notes: formData.notes,
+                    employeeHours: { ...formData.employeeHours },
+                    isHidden: formData.isHidden,
+                    budgetOverride: formData.budgetOverride,
+                  }
+                : d
+            )
+          );
+        };
+
         if (existingDeadline) {
           const { error } = await supabase.from('deadlines').update(deadlineData).eq('id', existingDeadline.id);
           if (error) throw error;
+          patchLocalDeadline(existingDeadline.id);
         } else {
-          const { error } = await supabase.from('deadlines').insert(deadlineData).select().single();
-          if (error) throw error;
+          const { data, error } = await supabase.from('deadlines').insert(deadlineData).select().single();
+          if (error) {
+            const pgCode =
+              typeof error === 'object' && error && 'code' in error
+                ? String((error as { code: string }).code)
+                : '';
+            const status =
+              typeof error === 'object' && error && 'status' in error
+                ? Number((error as { status?: number }).status)
+                : NaN;
+            // Fila ya creada (p. ej. segundo auto-guardado antes de refrescar estado, u otro cliente)
+            if (pgCode === '23505' || status === 409) {
+              const { data: row, error: selErr } = await supabase
+                .from('deadlines')
+                .select('*')
+                .eq('project_id', projectId)
+                .eq('month', selectedMonth)
+                .maybeSingle();
+              if (selErr || !row) throw error;
+              const { error: upErr } = await supabase.from('deadlines').update(deadlineData).eq('id', row.id);
+              if (upErr) throw upErr;
+              setDeadlines((prev) => {
+                const merged = {
+                  id: row.id,
+                  projectId,
+                  month: selectedMonth,
+                  notes: formData.notes,
+                  employeeHours: { ...formData.employeeHours },
+                  isHidden: formData.isHidden,
+                  budgetOverride: formData.budgetOverride,
+                };
+                if (prev.some((d) => d.id === row.id)) {
+                  return prev.map((d) => (d.id === row.id ? merged : d));
+                }
+                return [...prev, merged];
+              });
+            } else {
+              throw error;
+            }
+          } else if (data) {
+            setDeadlines((prev) => [
+              ...prev,
+              {
+                id: data.id,
+                projectId: data.project_id,
+                month: data.month,
+                notes: data.notes ?? undefined,
+                employeeHours: (data.employee_hours as Record<string, number>) || {},
+                isHidden: data.is_hidden ?? false,
+                budgetOverride: data.budget_override ?? undefined,
+              },
+            ]);
+          }
         }
 
         if (formData.isHidden) {
@@ -319,7 +389,7 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
         toast.error('Error al guardar');
       }
     },
-    [selectedMonth, getProjectDeadline, setHiddenProjects]
+    [selectedMonth, getProjectDeadline, setDeadlines, setHiddenProjects]
   );
 
   const handleFormPatch = useCallback(

@@ -1,5 +1,5 @@
 /**
- * Métricas mensuales por proyecto alineadas con ProjectsPage (detección de problemas).
+ * Métricas mensuales por proyecto alineadas con la vista de análisis en Clientes y Proyectos (`ClientsAndProjectsPage`) (detección de problemas).
  * Usado en Edge Functions para reglas `scheduled`.
  */
 
