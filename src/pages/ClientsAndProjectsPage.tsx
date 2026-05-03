@@ -31,14 +31,16 @@ import {
 import { cn, matchesAliasingRule } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { toast } from '@/lib/notify';
-import { format, subMonths, addMonths, isSameMonth, parseISO, getDaysInMonth, getDate } from 'date-fns';
+import { format, subMonths, addMonths, isSameMonth, parseISO, getDaysInMonth, getDate, startOfMonth } from 'date-fns';
 import { isAllocationInEffectiveMonth, getWeeksForMonth } from '@/utils/dateUtils';
 import { es } from 'date-fns/locale';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { useIntegration } from '@/hooks/useIntegration';
-import { Deadline } from '@/types';
+import { Deadline, GlobalAssignment } from '@/types';
 import { getEffectiveBudget } from '@/utils/budgetUtils';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
+import { fetchGlobalAssignmentsForMonth } from '@/utils/globalAssignmentsUtils';
+import { filterEmployeesForOperationalMonthDate } from '@/utils/employeeAssignmentVisibility';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { supabase } from '@/lib/supabase';
 import { ClientsAndProjectsFilters, type ClientsAndProjectsFiltersValues, type FilterType, type StatusFilter } from '@/components/clients-projects/ClientsAndProjectsFilters';
@@ -177,6 +179,7 @@ export default function ClientsAndProjectsPage() {
   const [openEditTaskDependency, setOpenEditTaskDependency] = useState(false);
   const [openEditTaskWeek, setOpenEditTaskWeek] = useState(false);
   const [monthDeadlines, setMonthDeadlines] = useState<Deadline[]>([]);
+  const [monthGlobalAssignments, setMonthGlobalAssignments] = useState<GlobalAssignment[]>([]);
 
   // Custom project filters from agency settings
   const { activeFilters, filterProject, getFilterDisplayName } = useProjectFilters();
@@ -188,9 +191,23 @@ export default function ClientsAndProjectsPage() {
       const selectedMonthStr = format(currentMonth, 'yyyy-MM');
       const { data, error } = await fetchDeadlinesForMonth(selectedMonthStr, currentAgency?.id);
       if (!error && data) setMonthDeadlines(data);
+      else if (error) setMonthDeadlines([]);
+      const gRes = await fetchGlobalAssignmentsForMonth(selectedMonthStr, currentAgency.id);
+      if (!gRes.error) setMonthGlobalAssignments(gRes.data ?? []);
+      else setMonthGlobalAssignments([]);
     };
     load();
   }, [currentMonth, currentAgency?.id]);
+
+  const employeesAssignableInMonth = useMemo(
+    () =>
+      filterEmployeesForOperationalMonthDate(employeesForView, startOfMonth(currentMonth), {
+        deadlines: monthDeadlines,
+        globalAssignments: monthGlobalAssignments,
+        allocations,
+      }),
+    [employeesForView, currentMonth, monthDeadlines, monthGlobalAssignments, allocations]
+  );
 
   useEffect(() => {
     void ensureMonthLoaded(currentMonth);
@@ -1010,7 +1027,7 @@ export default function ClientsAndProjectsPage() {
       {/* Filtros: estado interno en ClientsAndProjectsFilters; página usa filterSnapshot vía onFiltersChange */}
       <ClientsAndProjectsFilters
         activeFilters={activeFilters}
-        employees={employeesForView}
+        employees={employeesAssignableInMonth}
         onFiltersChange={setFilterSnapshot}
       />
 
@@ -1816,7 +1833,7 @@ export default function ClientsAndProjectsPage() {
                     <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                       <Command>
                         <CommandList className="max-h-[280px]">
-                          {employeesForView.filter(e => e.isActive).map(emp => (
+                          {employeesAssignableInMonth.map(emp => (
                             <CommandItem key={emp.id} value={emp.name || emp.first_name || 'Sin nombre'} onSelect={() => { setEditTaskEmployeeId(emp.id); setOpenEditTaskEmployee(false); }}>
                               <Check className={cn('mr-2 h-4 w-4 shrink-0', editTaskEmployeeId === emp.id ? 'opacity-100' : 'opacity-0')} />
                               {emp.name || emp.first_name || t('common.no_name', 'Sin nombre')}

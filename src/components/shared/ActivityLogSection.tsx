@@ -34,7 +34,8 @@ import {
     Plus, Pencil, Trash2, Clock, RefreshCw, ChevronDown, ChevronRight,
     Activity, FolderOpen, User, ArrowRight, GitBranch, CheckCircle2, CornerDownRight, Check, Search, CalendarSync
 } from 'lucide-react';
-import { format, formatDistanceToNow, parseISO } from 'date-fns';
+import { format, formatDistanceToNow, parseISO, startOfMonth } from 'date-fns';
+import { filterEmployeesForOperationalMonthDate } from '@/utils/employeeAssignmentVisibility';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -791,7 +792,13 @@ export function ActivityLogSection({ currentMonth, maxItems = 200 }: ActivityLog
         );
     }
 
-    const activeEmployees = (selectedDepartmentId ? employeesForView : (employees ?? [])).filter(e => e.isActive).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    const viewMonthForEmployees = currentMonth ?? startOfMonth(new Date());
+    const employeeScope = selectedDepartmentId ? employeesForView : (employees ?? []);
+    const activeEmployees = filterEmployeesForOperationalMonthDate(employeeScope, viewMonthForEmployees, {
+      deadlines: [],
+      globalAssignments: [],
+      allocations: allocations ?? [],
+    }).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     const activeProjects = (selectedDepartmentId ? filteredProjectsForView : (projects ?? [])).filter(p => p.status === 'active').sort((a, b) => a.name.localeCompare(b.name));
 
     return (

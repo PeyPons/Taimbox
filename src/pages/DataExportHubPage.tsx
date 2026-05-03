@@ -271,7 +271,9 @@ export default function DataExportHubPage() {
       }
 
       let globalsData: Awaited<ReturnType<typeof fetchGlobalAssignmentsForMonth>>['data'] = [];
-      if (inc.globalAssignments) {
+      const needGlobalsFetch =
+        inc.globalAssignments || inc.radar || inc.rentability || inc.burnout;
+      if (needGlobalsFetch) {
         const globalsRes = await fetchGlobalAssignmentsForMonth(monthKey, currentAgency?.id);
         if (globalsRes.error) throw globalsRes.error;
         globalsData = globalsRes.data;
@@ -313,6 +315,10 @@ export default function DataExportHubPage() {
 
       let radarPayload: ReturnType<typeof buildOperationsRadarExportPayload> | null = null;
       if (inc.radar) {
+        const deadlinesEmployeeVisibility = deadlinesRows.map((d) => ({
+          month: d.month,
+          employeeHours: d.employeeHours,
+        }));
         const { projectMetrics } = computeProjectMetricsForMonth({
           allocations: allocations ?? [],
           projects,
@@ -321,6 +327,8 @@ export default function DataExportHubPage() {
           month: monthDate,
           hoursTrackingPreference: currentAgency?.settings?.hoursTrackingPreference ?? null,
           deadlines: deadlinesForMetrics,
+          deadlinesEmployeeVisibility,
+          globalAssignmentsEmployeeVisibility: globalsData,
         });
         radarPayload = buildOperationsRadarExportPayload({
           projectMetrics,
@@ -345,6 +353,11 @@ export default function DataExportHubPage() {
           clients,
           employees: employees ?? [],
           deadlinesForMonth: deadlinesForMetrics,
+          deadlinesRows: deadlinesRows.map((d) => ({
+            month: d.month,
+            employeeHours: d.employeeHours,
+          })),
+          globalAssignmentsForMonth: globalsData,
           selectedDepartmentId,
           agency: currentAgency
             ? { id: currentAgency.id, name: currentAgency.name, settings: currentAgency.settings }
@@ -564,7 +577,7 @@ export default function DataExportHubPage() {
 
           const sub = folder.folder('by-employee');
           for (const emp of employeesForView) {
-            if (!emp.isActive) continue;
+            if (!emp.isActive && !rowById.has(emp.id)) continue;
             const mini = buildEmployeeMonthMiniExport({
               monthKey: mk,
               employee: emp,
@@ -871,10 +884,16 @@ export default function DataExportHubPage() {
               async (mk, _absencesPool) => {
                 const monthDate = monthKeyToDate(mk);
                 const { data: dlRaw } = await fetchDeadlinesForMonth(mk, currentAgency?.id);
-                const deadlinesForMetrics = (dlRaw ?? []).map((d) => ({
+                const { data: gRaw } = await fetchGlobalAssignmentsForMonth(mk, currentAgency?.id);
+                const dl = dlRaw ?? [];
+                const deadlinesForMetrics = dl.map((d) => ({
                   projectId: d.projectId,
                   month: d.month,
                   budgetOverride: d.budgetOverride,
+                }));
+                const deadlinesEmployeeVisibility = dl.map((d) => ({
+                  month: d.month,
+                  employeeHours: d.employeeHours,
                 }));
                 const { projectMetrics } = computeProjectMetricsForMonth({
                   allocations: allocations ?? [],
@@ -884,6 +903,8 @@ export default function DataExportHubPage() {
                   month: monthDate,
                   hoursTrackingPreference: currentAgency?.settings?.hoursTrackingPreference ?? null,
                   deadlines: deadlinesForMetrics,
+                  deadlinesEmployeeVisibility,
+                  globalAssignmentsEmployeeVisibility: gRaw ?? [],
                 });
                 return buildOperationsRadarExportPayload({
                   projectMetrics,
@@ -914,7 +935,9 @@ export default function DataExportHubPage() {
               async (mk, _absencesPool) => {
                 const monthDate = monthKeyToDate(mk);
                 const { data: dlRaw } = await fetchDeadlinesForMonth(mk, currentAgency?.id);
-                const deadlinesForMetrics = (dlRaw ?? []).map((d) => ({
+                const { data: gRaw } = await fetchGlobalAssignmentsForMonth(mk, currentAgency?.id);
+                const dl = dlRaw ?? [];
+                const deadlinesForMetrics = dl.map((d) => ({
                   projectId: d.projectId,
                   month: d.month,
                   budgetOverride: d.budgetOverride,
@@ -926,6 +949,8 @@ export default function DataExportHubPage() {
                   clients,
                   employees: employees ?? [],
                   deadlinesForMonth: deadlinesForMetrics,
+                  deadlinesRows: dl.map((d) => ({ month: d.month, employeeHours: d.employeeHours })),
+                  globalAssignmentsForMonth: gRaw ?? [],
                   selectedDepartmentId,
                   agency: currentAgency
                     ? { id: currentAgency.id, name: currentAgency.name, settings: currentAgency.settings }

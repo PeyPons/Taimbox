@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { Allocation, Employee, Project } from '@/types';
 import { employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { filterEmployeesForOperationalMonthDate } from '@/utils/employeeAssignmentVisibility';
 
 interface DepartmentOption {
   id: string;
@@ -25,6 +26,16 @@ export function useWeeklyForecastFilters(params: {
     return (employees ?? []).filter(e => employeeBelongsToDepartment(e.department, dept.id, dept.name));
   }, [employees, selectedDepartmentId, departments]);
 
+  const employeesForOperationalMonth = useMemo(
+    () =>
+      filterEmployeesForOperationalMonthDate(employeesForView, currentMonth, {
+        allocations,
+        deadlines: [],
+        globalAssignments: [],
+      }),
+    [employeesForView, currentMonth, allocations]
+  );
+
   const filteredProjectsForView = useMemo(() => {
     if (!selectedDepartmentId || !(projects ?? []).length) return projects ?? [];
     const byResponsible = (projects ?? []).filter(p => p.responsibleDepartmentId === selectedDepartmentId);
@@ -39,6 +50,7 @@ export function useWeeklyForecastFilters(params: {
 
   return {
     employeesForView,
+    employeesForOperationalMonth,
     filteredProjectsForView,
   };
 }

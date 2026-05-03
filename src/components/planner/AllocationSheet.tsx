@@ -1953,6 +1953,7 @@ export function AllocationSheet({ open, onOpenChange, employeeId, weekStart, vie
           allocationId={transferTask.id}
           taskName={transferTask.taskName || ''}
           currentHours={transferTask.hoursAssigned}
+          allocationWeekStartDate={transferTask.weekStartDate}
         />
       )}
     </>

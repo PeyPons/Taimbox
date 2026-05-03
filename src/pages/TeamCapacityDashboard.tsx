@@ -14,6 +14,7 @@ import { getWeeksForMonth, isAllocationInEffectiveMonth } from '@/utils/dateUtil
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
 import { WorkSchedule, Allocation, Employee } from '@/types';
+import { filterEmployeesForOperationalMonthDate } from '@/utils/employeeAssignmentVisibility';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -91,7 +92,11 @@ export default function TeamCapacityDashboard() {
         // Obtener todas las semanas del mes actual
         const weeks = getWeeksForMonth(currentMonth);
 
-        return (employees ?? []).filter(e => e.isActive).map(emp => {
+        return filterEmployeesForOperationalMonthDate(employees ?? [], currentMonth, {
+            allocations: allocations || [],
+            deadlines: [],
+            globalAssignments: [],
+        }).map(emp => {
             // Obtener ausencias del empleado para el mes actual
             const employeeAbsences = (absences || []).filter(a => a.employeeId === emp.id);
 

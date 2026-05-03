@@ -18,6 +18,11 @@
     "body": "Contact support for more information. If you think this is a mistake, get in touch with us.",
     "logout": "Log out"
   },
+  "accountInactive": {
+    "title": "Your user is deactivated for this agency",
+    "body": "You cannot access the app. Ask an admin to reactivate your profile if you need access again. Your historical data still counts in team reports and deadlines.",
+    "logout": "Log out"
+  },
   "auth": {
     "brand": "Taimbox",
     "tagline": "Manage your team and projects",

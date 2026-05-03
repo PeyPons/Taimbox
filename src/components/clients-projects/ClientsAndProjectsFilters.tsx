@@ -233,7 +233,7 @@ export function ClientsAndProjectsFilters({
                   >
                     {t('clientsAndProjects.filters.employees.all', 'Todos los empleados')}
                   </CommandItem>
-                  {employees.filter((e) => e.isActive !== false).map((e) => (
+                  {employees.map((e) => (
                     <CommandItem
                       key={e.id}
                       onSelect={() => {

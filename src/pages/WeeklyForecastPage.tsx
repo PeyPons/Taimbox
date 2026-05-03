@@ -45,7 +45,7 @@ export default function WeeklyForecastPage() {
     isGlobalLoading,
   });
 
-  const { employeesForView, filteredProjectsForView } = useWeeklyForecastFilters({
+  const { employeesForView, employeesForOperationalMonth, filteredProjectsForView } = useWeeklyForecastFilters({
     selectedDepartmentId,
     departments,
     employees: employees ?? [],
@@ -299,7 +299,7 @@ export default function WeeklyForecastPage() {
                             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                               <Command>
                                 <CommandList className="max-h-[280px]">
-                                  {employeesForView.filter(e => e.isActive).map(emp => (
+                                  {employeesForOperationalMonth.map(emp => (
                                     <CommandItem
                                       key={emp.id}
                                       value={emp.name || ''}

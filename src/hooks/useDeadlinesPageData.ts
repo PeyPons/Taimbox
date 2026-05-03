@@ -8,7 +8,8 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { toast } from '@/lib/notify';
 import { supabase } from '@/lib/supabase';
 import { fetchGlobalAssignmentsForMonth } from '@/utils/globalAssignmentsUtils';
-import { Deadline, GlobalAssignment, Project, Client, Employee, Absence, TeamEvent } from '@/types';
+import { Deadline, GlobalAssignment, Project, Client, Employee, Absence, TeamEvent, Allocation } from '@/types';
+import { filterEmployeesForOperationalMonth } from '@/utils/employeeAssignmentVisibility';
 import { getEffectiveBudget } from '@/utils/budgetUtils';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { matchesAliasingRule } from '@/lib/utils';
@@ -35,6 +36,8 @@ export interface UseDeadlinesPageDataParams {
   clients: Client[];
   employees: Employee[] | null;
   employeesForView: Employee[];
+  /** Allocations cargadas en App (mes en contexto); para listar inactivos con planificación efectiva en el mes. */
+  allocations: Allocation[];
   absences: Absence[];
   teamEvents: TeamEvent[];
   currentUser: { id: string } | null;
@@ -50,6 +53,7 @@ export function useDeadlinesPageData(params: UseDeadlinesPageDataParams) {
     clients,
     employees,
     employeesForView,
+    allocations,
     absences,
     teamEvents,
     currentUser,
@@ -356,13 +360,14 @@ export function useDeadlinesPageData(params: UseDeadlinesPageDataParams) {
     };
   }, []);
 
-  const activeEmployees = useMemo(
-    () =>
-      employeesForView
-        .filter((e) => e.isActive)
-        .sort((a, b) => (a.first_name || a.name).localeCompare(b.first_name || b.name)),
-    [employeesForView]
-  );
+  const activeEmployees = useMemo(() => {
+    const list = filterEmployeesForOperationalMonth(employeesForView, selectedMonth, {
+      deadlines,
+      globalAssignments,
+      allocations,
+    });
+    return list.sort((a, b) => (a.first_name || a.name).localeCompare(b.first_name || b.name));
+  }, [employeesForView, selectedMonth, deadlines, globalAssignments, allocations]);
 
   const getMonthlyCapacity = (employeeId: string): MonthlyCapacityResult => {
     const employee = (employees ?? []).find((e) => e.id === employeeId);

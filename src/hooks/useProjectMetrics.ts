@@ -9,7 +9,7 @@ import {
   type ProjectMetricsDeadline,
   type ComputeProjectMetricsParams,
 } from '@/utils/projectMetricsCompute';
-import type { Employee } from '@/types';
+import type { Employee, GlobalAssignment } from '@/types';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getMonthlyCapacity } from '@/utils/dateUtils';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
@@ -30,6 +30,9 @@ export interface UseProjectMetricsOptions {
   clientId?: string;
   /** Si se pasa, se usa el presupuesto efectivo del mes (deadline / Entregable) coherente con Deadlines. */
   deadlines?: ProjectMetricsDeadline[];
+  /** Horas por empleado en Deadlines (mismo mes) para no ocultar inactivos con carga. */
+  deadlinesEmployeeVisibility?: Array<{ month: string; employeeHours: Record<string, number> }>;
+  globalAssignmentsEmployeeVisibility?: GlobalAssignment[];
 }
 
 export interface UseProjectMetricsResult {
@@ -52,7 +55,15 @@ export function useProjectMetrics(options: UseProjectMetricsOptions): UseProject
   const { allocations, projects, clients, employees, absences, teamEvents, isLoading } = useApp();
   const { currentAgency } = useAgency();
   const preference = currentAgency?.settings?.hoursTrackingPreference;
-  const { month, projectId, employeeId, clientId, deadlines } = options;
+  const {
+    month,
+    projectId,
+    employeeId,
+    clientId,
+    deadlines,
+    deadlinesEmployeeVisibility,
+    globalAssignmentsEmployeeVisibility,
+  } = options;
 
   const getEmployeeMonthlyCapacity = useCallback(
     (employee: Employee, viewMonth: Date) => {
@@ -89,6 +100,8 @@ export function useProjectMetrics(options: UseProjectMetricsOptions): UseProject
       employeeId,
       clientId,
       getEmployeeMonthlyCapacity,
+      deadlinesEmployeeVisibility,
+      globalAssignmentsEmployeeVisibility,
     };
     return computeProjectMetricsForMonth(params);
   }, [
@@ -101,6 +114,8 @@ export function useProjectMetrics(options: UseProjectMetricsOptions): UseProject
     employeeId,
     clientId,
     deadlines,
+    deadlinesEmployeeVisibility,
+    globalAssignmentsEmployeeVisibility,
     preference,
     getEmployeeMonthlyCapacity,
   ]);

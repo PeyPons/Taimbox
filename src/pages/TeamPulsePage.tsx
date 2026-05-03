@@ -7,6 +7,7 @@ import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/depar
 import { supabase } from '@/lib/supabase';
 import { Allocation } from '@/types';
 import { format, startOfWeek, isSameDay } from 'date-fns';
+import { filterEmployeesForOperationalMonth } from '@/utils/employeeAssignmentVisibility';
 import { es } from 'date-fns/locale';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -59,11 +60,16 @@ export default function TeamPulsePage() {
     const today = new Date();
     const weekStart = startOfWeek(today, { weekStartsOn: 1 });
     const weekStartStr = format(weekStart, 'yyyy-MM-dd');
+    const weekMonthKey = format(weekStart, 'yyyy-MM');
 
     // Agrupar datos por empleado (respeta vista por departamento)
     const employeeColumns = useMemo(() => {
-        return filteredEmployees
-            .filter(e => e.isActive && e.role !== 'admin') // Filtrar admins si se desea, o inactivos
+        return filterEmployeesForOperationalMonth(filteredEmployees ?? [], weekMonthKey, {
+            allocations: realtimeAllocations,
+            deadlines: [],
+            globalAssignments: [],
+        })
+            .filter(e => e.role !== 'admin')
             .sort((a, b) => a.name.localeCompare(b.name)) // Orden alfabético
             .map(employee => {
                 // Tareas de este empleado para esta semana
@@ -95,7 +101,7 @@ export default function TeamPulsePage() {
                     status: activeTask ? 'busy' : 'idle'
                 };
             });
-    }, [filteredEmployees, realtimeAllocations, weekStartStr]);
+    }, [filteredEmployees, realtimeAllocations, weekStartStr, weekMonthKey]);
 
     const getProjectName = (projectId: string) => {
         const p = projects.find(pr => pr.id === projectId);

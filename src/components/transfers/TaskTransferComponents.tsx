@@ -27,7 +27,8 @@ import {
     Bell
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, startOfMonth, parseISO } from 'date-fns';
+import { filterEmployeesForOperationalMonthDate } from '@/utils/employeeAssignmentVisibility';
 import { es } from 'date-fns/locale';
 
 // ================================================================
@@ -281,6 +282,8 @@ interface TransferRequestDialogProps {
     taskName: string;
     currentHours: number;
     fromEmployeeId?: string; // Nuevo prop para soportar transfers desde otros (Admin)
+    /** Semana de la tarea (lunes ISO); determina el mes para listar inactivos con carga. */
+    allocationWeekStartDate?: string;
 }
 
 export function TransferRequestDialog({
@@ -289,9 +292,10 @@ export function TransferRequestDialog({
     allocationId,
     taskName,
     currentHours,
-    fromEmployeeId
+    fromEmployeeId,
+    allocationWeekStartDate,
 }: TransferRequestDialogProps) {
-    const { employees, currentUser } = useApp();
+    const { employees, currentUser, allocations } = useApp();
     const { requestTransfer } = useTaskTransfers();
 
     const [selectedEmployee, setSelectedEmployee] = useState<string>('');
@@ -303,9 +307,14 @@ export function TransferRequestDialog({
     // Use fallback to currentUser.id if fromEmployeeId is missing (backward compatibility)
     const sourceId = fromEmployeeId || currentUser?.id;
 
-    const eligibleEmployees = employees.filter(e =>
-        e.isActive && e.id !== sourceId
-    );
+    const transferMonth = allocationWeekStartDate
+        ? startOfMonth(parseISO(allocationWeekStartDate))
+        : startOfMonth(new Date());
+    const eligibleEmployees = filterEmployeesForOperationalMonthDate(employees ?? [], transferMonth, {
+        allocations: allocations ?? [],
+        deadlines: [],
+        globalAssignments: [],
+    }).filter((e) => e.id !== sourceId);
 
     const handleSubmit = async () => {
         if (!selectedEmployee) return;

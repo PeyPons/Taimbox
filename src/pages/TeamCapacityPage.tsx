@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { getWorkingDaysInRange, getMonthlyCapacity, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { filterEmployeesForOperationalMonthDate } from '@/utils/employeeAssignmentVisibility';
 import { hoursCountedTowardLoad } from '@/utils/appMetrics';
 import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
@@ -102,7 +103,11 @@ export default function TeamCapacityPage() {
 
     // Calcular capacidad de cada empleado con ausencias y eventos (respeta vista por departamento)
     const teamCapacity = useMemo(() => {
-        const activeEmployees = employeesForView.filter(e => e.isActive);
+        const activeEmployees = filterEmployeesForOperationalMonthDate(employeesForView, startOfMonth(today), {
+            allocations,
+            deadlines: [],
+            globalAssignments: [],
+        });
 
         return activeEmployees.map(emp => {
             const schedule = emp.workSchedule || {};

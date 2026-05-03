@@ -7,6 +7,8 @@ import { useDepartmentView } from '@/contexts/DepartmentViewContext';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useProjectMetrics, type ProjectMetricsDeadline } from '@/hooks/useProjectMetrics';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
+import { fetchGlobalAssignmentsForMonth } from '@/utils/globalAssignmentsUtils';
+import { filterEmployeesForOperationalMonthDate } from '@/utils/employeeAssignmentVisibility';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -48,7 +50,7 @@ import {
     sanitizePositiveDecimalInput,
 } from '@/utils/positiveDecimalInput';
 import { isAllocationInEffectiveMonth, getWorkingDaysInMonth, getWorkingDaysElapsedInMonth } from '@/utils/dateUtils';
-import type { Project, Employee, CommonExpenseEntry } from '@/types';
+import type { Project, Employee, CommonExpenseEntry, Deadline, GlobalAssignment } from '@/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
@@ -91,7 +93,8 @@ export default function FinancialHealthPage() {
     const [commonExpensesDraft, setCommonExpensesDraft] = useState<Record<string, CommonExpenseEntry[]>>({});
     const [commonExpensesRecurringDraft, setCommonExpensesRecurringDraft] = useState<CommonExpenseEntry[]>([]);
     const profitSettingsHydratedRef = useRef(false);
-    const [deadlinesForMonth, setDeadlinesForMonth] = useState<ProjectMetricsDeadline[]>([]);
+    const [deadlinesRows, setDeadlinesRows] = useState<Deadline[]>([]);
+    const [globalAssignmentsForMonth, setGlobalAssignmentsForMonth] = useState<GlobalAssignment[]>([]);
     const { projects, clients, employees, allocations, ensureMonthLoaded } = useApp();
     const { currentAgency, updateSettings } = useAgency();
     const { selectedDepartmentId } = useDepartmentView();
@@ -109,25 +112,44 @@ export default function FinancialHealthPage() {
         ensureMonthLoaded(currentMonth);
     }, [currentMonth, ensureMonthLoaded]);
 
-    // Cargar deadlines del mes para que las horas/presupuesto mostrados respeten budgetOverride (ajustes en Deadlines).
+    // Cargar deadlines y globales del mes (presupuesto + visibilidad de inactivos con carga).
     useEffect(() => {
         const monthKey = format(currentMonth, 'yyyy-MM');
         let cancelled = false;
         fetchDeadlinesForMonth(monthKey, currentAgency?.id).then(({ data, error }) => {
             if (cancelled || error) {
                 if (!cancelled && error) console.error('Error cargando deadlines en Rentabilidad:', error);
+                if (!cancelled) setDeadlinesRows([]);
                 return;
             }
-            setDeadlinesForMonth(
-                (data || []).map(d => ({
-                    projectId: d.projectId,
-                    month: d.month,
-                    budgetOverride: d.budgetOverride,
-                }))
-            );
+            setDeadlinesRows(data || []);
+        });
+        fetchGlobalAssignmentsForMonth(monthKey, currentAgency?.id).then(({ data, error }) => {
+            if (cancelled) return;
+            if (error) {
+                console.error('Error cargando asignaciones globales en Rentabilidad:', error);
+                setGlobalAssignmentsForMonth([]);
+                return;
+            }
+            setGlobalAssignmentsForMonth(data ?? []);
         });
         return () => { cancelled = true; };
     }, [currentMonth, currentAgency?.id]);
+
+    const deadlinesForMonth = useMemo<ProjectMetricsDeadline[]>(
+        () =>
+            deadlinesRows.map((d) => ({
+                projectId: d.projectId,
+                month: d.month,
+                budgetOverride: d.budgetOverride,
+            })),
+        [deadlinesRows]
+    );
+
+    const deadlinesEmployeeVisibility = useMemo(
+        () => deadlinesRows.map((d) => ({ month: d.month, employeeHours: d.employeeHours })),
+        [deadlinesRows]
+    );
 
     const departments = useMemo(
         () => normalizeDepartments(currentAgency?.settings?.departments),
@@ -255,7 +277,9 @@ export default function FinancialHealthPage() {
         totals
     } = useProjectMetrics({
         month: currentMonth,
-        deadlines: deadlinesForMonth
+        deadlines: deadlinesForMonth,
+        deadlinesEmployeeVisibility,
+        globalAssignmentsEmployeeVisibility: globalAssignmentsForMonth,
     });
 
     const selectedDept = useMemo(() => {
@@ -373,13 +397,15 @@ export default function FinancialHealthPage() {
     }, [employees]);
 
     const commonExpensesAlloc = useMemo(() => {
-        const empRows = (employees ?? [])
-            .filter(e => e.isActive)
-            .map(e => ({
-                id: e.id,
-                department: e.department,
-                departmentId: e.departmentId,
-            }));
+        const empRows = filterEmployeesForOperationalMonthDate(employees ?? [], currentMonth, {
+            deadlines: deadlinesRows,
+            globalAssignments: globalAssignmentsForMonth,
+            allocations: allocations ?? [],
+        }).map((e) => ({
+            id: e.id,
+            department: e.department,
+            departmentId: e.departmentId,
+        }));
         return allocateCommonExpenses({
             entries: mergedCommonExpenseEntries,
             employees: empRows,
@@ -387,7 +413,17 @@ export default function FinancialHealthPage() {
             getEmployeeHours: id => employeeHoursGlobalById.get(id) ?? 0,
             getEmployeePayroll: id => employeePayrollById.get(id) ?? 0,
         });
-    }, [mergedCommonExpenseEntries, employees, departments, employeeHoursGlobalById, employeePayrollById]);
+    }, [
+        mergedCommonExpenseEntries,
+        employees,
+        departments,
+        employeeHoursGlobalById,
+        employeePayrollById,
+        currentMonth,
+        deadlinesRows,
+        globalAssignmentsForMonth,
+        allocations,
+    ]);
 
     const overheadByEmployee = useMemo((): ReadonlyMap<string, number> => {
         if (commonExpensesAlloc.ok) return commonExpensesAlloc.overheadByEmployee;

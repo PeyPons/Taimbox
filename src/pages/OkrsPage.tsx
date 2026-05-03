@@ -27,6 +27,8 @@ import { Check } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
+import { startOfMonth } from 'date-fns';
+import { filterEmployeesForOperationalMonthDate } from '@/utils/employeeAssignmentVisibility';
 
 interface KeyResultItem {
     id: string;
@@ -54,6 +56,16 @@ export default function OkrsPage() {
         if (!dept) return employees ?? [];
         return (employees ?? []).filter(e => employeeBelongsToDepartment(e.department, dept.id, dept.name));
     }, [employees, selectedDepartmentId, departments]);
+
+    const employeesForOkrsSelectors = useMemo(
+        () =>
+            filterEmployeesForOperationalMonthDate(employeesForView, startOfMonth(new Date()), {
+                allocations: allocations ?? [],
+                deadlines: [],
+                globalAssignments: [],
+            }),
+        [employeesForView, allocations]
+    );
 
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState('projects');
@@ -392,7 +404,7 @@ export default function OkrsPage() {
                                     <CommandInput placeholder={t('okrs.searchEmployee', "Buscar empleado...")} />
                                     <CommandList>
                                         <CommandGroup>
-                                            {employeesForView.filter(e => e.isActive).map((employee) => (
+                                            {employeesForOkrsSelectors.map((employee) => (
                                                 <CommandItem key={employee.id} value={employee.name} onSelect={() => setAdminSelectedEmployeeId(employee.id)}>
                                                     <Check className={cn("mr-2 h-4 w-4", adminSelectedEmployeeId === employee.id ? "opacity-100" : "opacity-0")} />
                                                     {employee.name}

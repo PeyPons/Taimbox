@@ -18,6 +18,11 @@
     "body": "Contacta con soporte para más información. Si crees que es un error, escríbenos.",
     "logout": "Cerrar sesión"
   },
+  "accountInactive": {
+    "title": "Tu usuario está desactivado en la agencia",
+    "body": "No puedes acceder a la aplicación. Si necesitas volver a entrar, pide a un administrador que reactive tu perfil. Tus datos históricos siguen contando en informes y deadlines del equipo.",
+    "logout": "Cerrar sesión"
+  },
   "auth": {
     "brand": "Taimbox",
     "tagline": "Gestiona tu equipo y proyectos",

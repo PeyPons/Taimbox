@@ -9,7 +9,8 @@ import {
   eachDayOfInterval,
   isWeekend,
 } from 'date-fns';
-import type { Allocation, Project, Employee, Client } from '@/types';
+import type { Allocation, Project, Employee, Client, GlobalAssignment } from '@/types';
+import { employeeIdsWithOperationalWorkloadInMonth } from '@/utils/employeeAssignmentVisibility';
 import {
   getEffectiveBudgetForMonth,
   getEffectiveMinimum,
@@ -75,6 +76,12 @@ export interface ComputeProjectMetricsParams {
   pacingReferenceDate?: Date;
   /** Capacidad neta del mes (p. ej. calendario − ausencias − eventos). Si no se pasa, se usa capacidad teórica 4.33 × semanal. */
   getEmployeeMonthlyCapacity?: (employee: Employee, month: Date) => number;
+  /**
+   * Incluir filas de empleado inactivo si tienen carga en Deadlines / globales / planificador este mes.
+   * Si no se pasa `deadlinesEmployeeVisibility`, solo cuentan allocations (y globales vacías).
+   */
+  deadlinesEmployeeVisibility?: Array<{ month: string; employeeHours: Record<string, number> }>;
+  globalAssignmentsEmployeeVisibility?: GlobalAssignment[];
 }
 
 export interface ComputeProjectMetricsResult {
@@ -153,6 +160,8 @@ export function computeProjectMetricsForMonth(
     clientId,
     pacingReferenceDate,
     getEmployeeMonthlyCapacity,
+    deadlinesEmployeeVisibility,
+    globalAssignmentsEmployeeVisibility,
   } = params;
 
   const preference =
@@ -184,6 +193,13 @@ export function computeProjectMetricsForMonth(
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 6);
     return !isAfter(weekStart, monthEnd) && !isBefore(weekEnd, monthStart);
+  });
+
+  const workloadEmployeeIds = employeeIdsWithOperationalWorkloadInMonth(monthKey, {
+    deadlines: deadlinesEmployeeVisibility ?? [],
+    globalAssignments: globalAssignmentsEmployeeVisibility ?? [],
+    allocations: monthAllocations,
+    limitToEmployeeIds: new Set(employees.map((e) => e.id)),
   });
 
   let filteredAllocations = monthAllocations;
@@ -253,8 +269,9 @@ export function computeProjectMetricsForMonth(
 
   const employeeMetricsMap = new Map<string, EmployeeMetrics>();
 
-  for (const employee of employees.filter((e) => e.isActive)) {
+  for (const employee of employees) {
     if (employeeId && employee.id !== employeeId) continue;
+    if (!employee.isActive && !workloadEmployeeIds.has(employee.id)) continue;
 
     const empAllocations = filteredAllocations.filter((a) => a.employeeId === employee.id);
 

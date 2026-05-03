@@ -14,6 +14,10 @@ import { useAgency } from '@/contexts/AgencyContext';
 import { employeeBelongsToDepartment, normalizeDepartments } from '@/utils/departmentUtils';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
 import { Employee } from '@/types';
+import {
+  employeeIdsWithOperationalWorkloadInMonth,
+  filterEmployeesForOperationalMonth,
+} from '@/utils/employeeAssignmentVisibility';
 
 interface WeekData {
     weekStart: Date;
@@ -99,6 +103,18 @@ export function usePlannerData(options: UsePlannerDataOptions = {}) {
     const weeks = useMemo(() => getWeeksForMonth(currentMonth), [currentMonth]);
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
+    const monthKey = format(currentMonth, 'yyyy-MM');
+
+    const workloadEmployeeIds = useMemo(
+      () =>
+        employeeIdsWithOperationalWorkloadInMonth(monthKey, {
+          allocations: allocations ?? [],
+          deadlines: [],
+          globalAssignments: [],
+          limitToEmployeeIds: new Set((employees ?? []).map((e) => e.id)),
+        }),
+      [monthKey, allocations, employees]
+    );
 
     // Index of employees by project for filtering
     const employeesByProject = useMemo(() => {
@@ -138,7 +154,7 @@ export function usePlannerData(options: UsePlannerDataOptions = {}) {
             }
             return true;
         });
-    }, [employees, options.showOnlyMe, options.selectedEmployeeId, options.selectedProjectId, employeesByProject, currentUser, selectedDepartmentId, departments, isPlatformAdmin]);
+    }, [employees, options.showOnlyMe, options.selectedEmployeeId, options.selectedProjectId, employeesByProject, currentUser, selectedDepartmentId, departments, isPlatformAdmin, workloadEmployeeIds]);
 
     // Sorted lists for dropdowns
     const sortedProjects = useMemo(() =>
@@ -146,9 +162,14 @@ export function usePlannerData(options: UsePlannerDataOptions = {}) {
         [projects]
     );
 
-    const sortedEmployees = useMemo(() =>
-        [...(employees || [])].filter(e => e.isActive).sort((a, b) => a.name.localeCompare(b.name)),
-        [employees]
+    const sortedEmployees = useMemo(
+        () =>
+            filterEmployeesForOperationalMonth(employees ?? [], monthKey, {
+                allocations: allocations ?? [],
+                deadlines: [],
+                globalAssignments: [],
+            }).sort((a, b) => a.name.localeCompare(b.name)),
+        [employees, monthKey, allocations]
     );
 
     const monthAllocations = useMemo(() =>

@@ -20,8 +20,10 @@ import {
 import { cn } from '@/lib/utils';
 import { CONSTANTS } from '@/config/constants';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
-import type { Allocation, Deadline } from '@/types';
+import type { Allocation, Deadline, GlobalAssignment } from '@/types';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
+import { fetchGlobalAssignmentsForMonth } from '@/utils/globalAssignmentsUtils';
+import { filterEmployeesForOperationalMonth } from '@/utils/employeeAssignmentVisibility';
 import { format, parseISO, endOfWeek, isSameMonth, startOfMonth, isBefore, isAfter, subDays, type Locale } from 'date-fns';
 import { enUS, es } from 'date-fns/locale';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
@@ -100,6 +102,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
   const { t, i18n } = useAppTranslation();
   const dateLocale = i18n.language?.toLowerCase().startsWith('en') ? enUS : es;
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
+  const [globalAssignments, setGlobalAssignments] = useState<GlobalAssignment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>('all');
@@ -162,6 +165,9 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
         const { data, error } = await fetchDeadlinesForMonth(monthKey, currentAgency?.id);
         if (error) throw error;
         setDeadlines(data ?? []);
+        const gRes = await fetchGlobalAssignmentsForMonth(monthKey, currentAgency?.id);
+        if (!gRes.error) setGlobalAssignments(gRes.data ?? []);
+        else setGlobalAssignments([]);
       } catch (error) {
         console.error('Error cargando deadlines:', error);
       } finally {
@@ -170,6 +176,16 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
     };
     loadDeadlines();
   }, [monthKey, currentAgency?.id]);
+
+  const employeesForCoherenceFilter = useMemo(
+    () =>
+      filterEmployeesForOperationalMonth(employeesForView, monthKey, {
+        deadlines,
+        globalAssignments,
+        allocations,
+      }),
+    [employeesForView, monthKey, deadlines, globalAssignments, allocations]
+  );
 
   const inconsistencies = useMemo(() => {
     if (isLoading) return [];
@@ -545,7 +561,7 @@ export const GlobalPlanningInconsistencies = memo(function GlobalPlanningInconsi
                             <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedEmployeeId === 'all' ? 'opacity-100' : 'opacity-0')} />
                             Todos los empleados
                           </CommandItem>
-                          {employees.filter(e => e.isActive).map(emp => (
+                          {employeesForCoherenceFilter.map(emp => (
                             <CommandItem key={emp.id} value={emp.name || ''} className="py-2.5" onSelect={() => { setSelectedEmployeeId(emp.id); setOpenFilterEmployee(false); }}>
                               <Check className={cn('mr-2 h-4 w-4 shrink-0', selectedEmployeeId === emp.id ? 'opacity-100' : 'opacity-0')} />
                               <SensitiveText kind="employee" id={emp.id}>{emp.name}</SensitiveText>

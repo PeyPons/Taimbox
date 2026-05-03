@@ -9,6 +9,7 @@ import { Project, Employee, Allocation, NewTaskRow, Client, Deadline } from '@/t
 import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { useState, useMemo } from 'react';
 import { findWeekIndexForTaskWeekDate, formatPlannerWeekWorkingRangeLabel, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
+import { filterEmployeesForOperationalMonth } from '@/utils/employeeAssignmentVisibility';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 
 interface BatchTaskRowProps {
@@ -79,6 +80,19 @@ export function BatchTaskRow({
     const sortedProjectsForSelector = useMemo(
         () => [...projectsWithDeadline, ...projectsWithoutDeadline],
         [projectsWithDeadline, projectsWithoutDeadline]
+    );
+
+    const monthKeyForAssignable = viewDate
+        ? format(startOfMonth(viewDate), 'yyyy-MM')
+        : format(startOfMonth(new Date()), 'yyyy-MM');
+    const assignableEmployees = useMemo(
+        () =>
+            filterEmployeesForOperationalMonth(employees, monthKeyForAssignable, {
+                deadlines,
+                globalAssignments: [],
+                allocations,
+            }),
+        [employees, monthKeyForAssignable, deadlines, allocations]
     );
 
     // Calcular si esta tarea excede las horas contratadas
@@ -369,7 +383,7 @@ export function BatchTaskRow({
                                     <CommandList>
                                         <CommandEmpty>No se encontró empleado.</CommandEmpty>
                                         <CommandGroup>
-                                            {employees.filter(e => e.isActive).map((emp) => (
+                                            {assignableEmployees.map((emp) => (
                                                 <CommandItem
                                                     key={emp.id}
                                                     value={`${emp.name} ${emp.first_name || ''} ${emp.last_name || ''}`}

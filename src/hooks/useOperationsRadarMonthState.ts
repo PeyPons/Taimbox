@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { addMonths, endOfMonth, format, getDate, isSameMonth, parseISO, startOfMonth, subMonths } from 'date-fns';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
-import type { Deadline } from '@/types';
+import { fetchGlobalAssignmentsForMonth } from '@/utils/globalAssignmentsUtils';
+import type { Deadline, GlobalAssignment } from '@/types';
 
 export function parseMonthFromSearchParams(searchParams: URLSearchParams): Date {
   const mes = searchParams.get('mes');
@@ -26,6 +27,7 @@ export function useOperationsRadarMonthState(params: UseOperationsRadarMonthStat
   const { searchParams, navigate, ensureMonthLoaded, currentAgencyId } = params;
   const [viewDate, setViewDate] = useState<Date>(() => parseMonthFromSearchParams(searchParams));
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
+  const [globalAssignments, setGlobalAssignments] = useState<GlobalAssignment[]>([]);
 
   useEffect(() => {
     setViewDate(prev => {
@@ -44,6 +46,10 @@ export function useOperationsRadarMonthState(params: UseOperationsRadarMonthStat
     fetchDeadlinesForMonth(monthKey, currentAgencyId).then(({ data, error }) => {
       if (!cancelled && !error && data) setDeadlines(data);
       if (!cancelled && error) setDeadlines([]);
+    });
+    fetchGlobalAssignmentsForMonth(monthKey, currentAgencyId).then(({ data, error }) => {
+      if (!cancelled && !error && data) setGlobalAssignments(data);
+      if (!cancelled && error) setGlobalAssignments([]);
     });
     return () => {
       cancelled = true;
@@ -82,6 +88,7 @@ export function useOperationsRadarMonthState(params: UseOperationsRadarMonthStat
   return {
     viewDate,
     deadlines,
+    globalAssignments,
     isCurrentMonth,
     currentWeekOfMonth,
     isEndOfMonth,

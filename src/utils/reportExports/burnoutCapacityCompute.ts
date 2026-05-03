@@ -15,6 +15,7 @@ import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { computeEmployeeMonthlyLoad } from '@/utils/appMetrics';
 import { getMonthlyCapacity } from '@/utils/dateUtils';
 import { computeProjectMetricsForMonth, type ProjectMetricsDeadline } from '@/utils/projectMetricsCompute';
+import { filterEmployeesForOperationalMonth } from '@/utils/employeeAssignmentVisibility';
 import { round2 } from '@/utils/numbers';
 import { getTeamEventHoursInRange } from '@/utils/teamEventUtils';
 
@@ -87,12 +88,6 @@ const NOTES: string[] = [
   'plannerHoursProratedEffective sigue la preferencia de horas de la agencia y semanas que cruzan meses (métricas / rentabilidad).',
 ];
 
-function employeeInScope(emp: Employee, allowedEmployeeIds: Set<string> | null): boolean {
-  if (!emp.isActive) return false;
-  if (!allowedEmployeeIds) return true;
-  return allowedEmployeeIds.has(emp.id);
-}
-
 function sumDeadlineClientHours(employeeId: string, deadlines: Deadline[]): {
   total: number;
   projectCount: number;
@@ -131,7 +126,7 @@ export function buildEmployeesConfigSnapshot(
   employees: Employee[],
   allowedEmployeeIds: Set<string> | null
 ): { schemaVersion: 1; exportedAt: string; employees: EmployeeConfigSnapshot[] } {
-  const list = employees.filter((e) => employeeInScope(e, allowedEmployeeIds));
+  const list = employees.filter((e) => !allowedEmployeeIds || allowedEmployeeIds.has(e.id));
   return {
     schemaVersion: 1,
     exportedAt: new Date().toISOString(),
@@ -192,8 +187,21 @@ export function computeBurnoutCapacityForMonth(params: {
   const monthIndex = month.getMonth();
   const monthKey = format(month, 'yyyy-MM');
 
-  const scopedEmployees = employees.filter((e) => employeeInScope(e, allowedEmployeeIds));
+  const universe =
+    allowedEmployeeIds != null
+      ? employees.filter((e) => allowedEmployeeIds.has(e.id))
+      : employees;
+  const scopedEmployees = filterEmployeesForOperationalMonth(universe, monthKey, {
+    deadlines,
+    globalAssignments,
+    allocations,
+  });
   const scopeIds = scopedEmployees.map((e) => e.id);
+
+  const deadlinesEmployeeVisibility = deadlines.map((d) => ({
+    month: d.month,
+    employeeHours: d.employeeHours,
+  }));
 
   // D5: Informe mensual de burnout — forzamos fin de mes como referencia de pacing para que
   // el snapshot sea estable (progreso esperado 100 % del mes) frente al default dinámico de compute.
@@ -206,6 +214,8 @@ export function computeBurnoutCapacityForMonth(params: {
     hoursTrackingPreference: hoursTrackingPreference ?? undefined,
     deadlines: deadlinesForMetrics,
     pacingReferenceDate: monthEnd,
+    deadlinesEmployeeVisibility,
+    globalAssignmentsEmployeeVisibility: globalAssignments,
   });
 
   const rows: BurnoutEmployeeMonthRow[] = [];

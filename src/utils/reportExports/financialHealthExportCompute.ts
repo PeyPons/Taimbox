@@ -1,5 +1,6 @@
 import { format, isSameMonth } from 'date-fns';
-import type { Agency, Allocation, Client, Employee, Project } from '@/types';
+import type { Agency, Allocation, Client, Employee, GlobalAssignment, Project } from '@/types';
+import { filterEmployeesForOperationalMonthDate } from '@/utils/employeeAssignmentVisibility';
 import { normalizeDepartments, employeeBelongsToDepartment } from '@/utils/departmentUtils';
 import { isAllocationInEffectiveMonth, getWorkingDaysInMonth, getWorkingDaysElapsedInMonth } from '@/utils/dateUtils';
 import {
@@ -17,6 +18,9 @@ export interface FinancialHealthExportComputeInput {
   clients: Client[];
   employees: Employee[];
   deadlinesForMonth: ProjectMetricsDeadline[];
+  /** Filas completas de Deadlines (horas por empleado) para métricas y reparto de gastos con inactivos con carga. */
+  deadlinesRows?: Array<{ month: string; employeeHours: Record<string, number> }>;
+  globalAssignmentsForMonth?: GlobalAssignment[];
   selectedDepartmentId: string | null;
   agency: Pick<Agency, 'id' | 'name' | 'settings'> | null;
   hoursMode: 'actual' | 'computed';
@@ -34,6 +38,8 @@ export function computeBuildRentabilityDiagnosticParams(
     clients,
     employees,
     deadlinesForMonth,
+    deadlinesRows,
+    globalAssignmentsForMonth,
     selectedDepartmentId,
     agency,
     hoursMode,
@@ -68,6 +74,10 @@ export function computeBuildRentabilityDiagnosticParams(
     return departments.find((d) => d.id === selectedDepartmentId || d.name === selectedDepartmentId) ?? null;
   })();
 
+  const deadlinesEmployeeVisibility =
+    deadlinesRows ??
+    deadlinesForMonth.map((d) => ({ month: d.month, employeeHours: {} as Record<string, number> }));
+
   const { projectMetrics, employeeMetrics } = computeProjectMetricsForMonth({
     allocations,
     projects,
@@ -76,6 +86,8 @@ export function computeBuildRentabilityDiagnosticParams(
     month: currentMonth,
     hoursTrackingPreference: agency?.settings?.hoursTrackingPreference ?? null,
     deadlines: deadlinesForMonth,
+    deadlinesEmployeeVisibility,
+    globalAssignmentsEmployeeVisibility: globalAssignmentsForMonth ?? [],
   });
 
   const projectMetricsForView = (() => {
@@ -133,13 +145,15 @@ export function computeBuildRentabilityDiagnosticParams(
 
   const commonExpensesAlloc = allocateCommonExpenses({
     entries: mergedCommonExpenseEntries,
-    employees: (employees ?? [])
-      .filter((e) => e.isActive)
-      .map((e) => ({
-        id: e.id,
-        department: e.department,
-        departmentId: e.departmentId,
-      })),
+    employees: filterEmployeesForOperationalMonthDate(employees ?? [], currentMonth, {
+      deadlines: deadlinesEmployeeVisibility,
+      globalAssignments: globalAssignmentsForMonth ?? [],
+      allocations,
+    }).map((e) => ({
+      id: e.id,
+      department: e.department,
+      departmentId: e.departmentId,
+    })),
     departments,
     getEmployeeHours: (id) => employeeHoursGlobalById.get(id) ?? 0,
     getEmployeePayroll: (id) => employeePayrollById.get(id) ?? 0,

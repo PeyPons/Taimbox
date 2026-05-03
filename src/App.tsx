@@ -23,6 +23,7 @@ import { PermissionProtectedRoute } from "./components/auth/PermissionProtectedR
 import { PlatformAdminRoute } from "./components/auth/PlatformAdminRoute";
 import { AdminLayout } from "./components/layout/AdminLayout";
 import SuspendedPage from "./pages/SuspendedPage";
+import AccountInactivePage from "./pages/AccountInactivePage";
 import AdminAgenciesPage from "./pages/admin/AdminAgenciesPage";
 import AdminAdminsPage from "./pages/admin/AdminAdminsPage";
 import AdminSupportPage from "./pages/admin/AdminSupportPage";
@@ -244,6 +245,7 @@ const App = () => (
 
                           {/* Suspended: fuera de AppLayout, solo sesión */}
                           <Route path="/suspended" element={<SuspendedPage />} />
+                          <Route path="/account-inactive" element={<AccountInactivePage />} />
 
                           {/* Google OAuth Callback (sin AppLayout, página de transición) */}
                           <Route path="/google-callback" element={<Suspense fallback={<PageLoader />}><GoogleCallbackPage /></Suspense>} />

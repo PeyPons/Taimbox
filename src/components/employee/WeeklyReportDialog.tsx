@@ -15,6 +15,7 @@ import { CheckCircle2, AlertCircle, AlertTriangle, Plus, Clock, Trash2, Search }
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from '@/lib/notify';
 import { getStorageKey, getWeeksForMonth, isAllocationInEffectiveMonth, getWeekEndDate, parseDateStringLocal } from '@/utils/dateUtils';
+import { filterEmployeesForOperationalMonthDate } from '@/utils/employeeAssignmentVisibility';
 import { useWeeklyCloseDay } from '@/hooks/useWeeklyCloseDay';
 import {
   useWeeklyCloseMutations,
@@ -57,6 +58,16 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
   const weeklyCloseDay = useWeeklyCloseDay();
   const { formatName: formatProjectName } = useProjectAliasing();
   const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
+
+  const employeesForWeeklyTransfer = useMemo(
+    () =>
+      filterEmployeesForOperationalMonthDate(employees ?? [], startOfMonth(viewDate), {
+        allocations,
+        deadlines: [],
+        globalAssignments: [],
+      }),
+    [employees, viewDate, allocations]
+  );
 
   const {
     preference,
@@ -960,7 +971,7 @@ export function WeeklyReportDialog({ open, onOpenChange, employeeId, viewDate, f
                                     <Select value={moveToEmployee[selectedTask.id]} onValueChange={(val) => setMoveToEmployee(prev => ({ ...prev, [selectedTask.id]: val }))}>
                                       <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Seleccionar persona" /></SelectTrigger>
                                       <SelectContent className="max-h-[min(240px,50vh)]">
-                                        {employees.filter(e => e.isActive && e.id !== employeeId).map(e => {
+                                        {employeesForWeeklyTransfer.filter(e => e.id !== employeeId).map(e => {
                                           const loads = tSlots.map(slot => getEmployeeLoadForWeek(e.id, slot.storageKey, undefined, undefined, slot.viewMonth));
                                           const avail = round2(loads.reduce((s, l) => s + (l?.capacity || 0), 0) - loads.reduce((s, l) => s + (l?.hours || 0), 0));
                                           return (

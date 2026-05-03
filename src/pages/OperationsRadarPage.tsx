@@ -54,6 +54,7 @@ export default function OperationsRadarPage() {
     const {
         viewDate,
         deadlines,
+        globalAssignments,
         isCurrentMonth,
         currentWeekOfMonth,
         isEndOfMonth,
@@ -83,10 +84,20 @@ export default function OperationsRadarPage() {
         }
     }, [searchParams, departments, selectedDepartmentId, setSelectedDepartmentId]);
 
+    const deadlinesForMetrics = useMemo(
+        () => deadlines.map((d) => ({ projectId: d.projectId, month: d.month, budgetOverride: d.budgetOverride })),
+        [deadlines]
+    );
+    const deadlinesEmployeeVisibility = useMemo(
+        () => deadlines.map((d) => ({ month: d.month, employeeHours: d.employeeHours })),
+        [deadlines]
+    );
 
     const { projectMetrics } = useProjectMetrics({
         month: viewDate,
-        deadlines
+        deadlines: deadlinesForMetrics,
+        deadlinesEmployeeVisibility,
+        globalAssignmentsEmployeeVisibility: globalAssignments,
     });
 
 

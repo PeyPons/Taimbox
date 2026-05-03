@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useAppAbsencesAndEvents, useAppEmployees, useAppProjects } from '@/contexts/AppContext';
+import { useAppAbsencesAndEvents, useAppAllocations, useAppEmployees, useAppProjects } from '@/contexts/AppContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useDepartmentView } from '@/contexts/DepartmentViewContext';
@@ -53,6 +53,7 @@ export default function DeadlinesPage() {
   const { t } = useAppTranslation();
   const { projects, clients } = useAppProjects();
   const { employees, currentUser } = useAppEmployees();
+  const { allocations } = useAppAllocations();
   const { absences, teamEvents } = useAppAbsencesAndEvents();
   const { canAccess } = usePermissions();
   const isManager = canAccess('/planner') || canAccess('/reports') || canAccess('/operaciones') || canAccess('/finanzas');
@@ -91,6 +92,7 @@ export default function DeadlinesPage() {
     clients,
     employees,
     employeesForView,
+    allocations: allocations ?? [],
     absences,
     teamEvents,
     currentUser,
