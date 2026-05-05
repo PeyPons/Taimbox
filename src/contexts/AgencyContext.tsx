@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext';
 import {
   getAgencyMembersUtil,
   mapSupabaseAgency,
+  fetchAgencyRowForAppClient,
   removeUserFromAgencyUtil,
   transferAgencyOwnershipUtil,
 } from '@/utils/agencyUtils';
@@ -228,11 +229,7 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
               if (selectedAgencyId) {
                 const storageKey = `selected_agency_${user.id}`;
                 localStorage.setItem(storageKey, selectedAgencyId);
-                const { data: agencyData, error: agencyErr } = await supabase
-                  .from('agencies')
-                  .select('*')
-                  .eq('id', selectedAgencyId)
-                  .single();
+                const { data: agencyData, error: agencyErr } = await fetchAgencyRowForAppClient(selectedAgencyId);
                 if (!agencyErr && agencyData) {
                   const agency = await mapSupabaseAgency(agencyData);
                   const { data: agenciesList } = await supabase
@@ -383,15 +380,11 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // 2. Obtener la agencia por el agency_id a cargar
-      const { data: agencyData, error: agencyError } = await supabase
-        .from('agencies')
-        .select('*')
-        .eq('id', agencyIdToLoad)
-        .single();
+      // 2. Obtener la agencia por el agency_id a cargar (RPC: sanea secretos según rol)
+      const { data: agencyData, error: agencyError } = await fetchAgencyRowForAppClient(agencyIdToLoad);
 
       if (agencyError || !agencyData) {
-        console.error('[AgencyContext] Error obteniendo agencia:', agencyError);
+        console.error('[AgencyContext] Error obteniendo agencia:', agencyError?.message ?? agencyError);
         setError('No se pudo cargar la información de la agencia');
         setCurrentAgency(null);
         if (isInitialLoad) {

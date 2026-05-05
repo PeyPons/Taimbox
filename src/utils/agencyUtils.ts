@@ -25,6 +25,25 @@ interface SupabaseAgency {
   trial_used_at?: string | null;
 }
 
+/**
+ * Carga la fila `agencies` vía RPC `get_agency_for_app_client` (Postgres): evita enviar
+ * tokens Ads/Meta, secretos en `settings.integrations` e IDs Stripe a roles sin
+ * `can_access_agency_settings`. Requiere migración aplicada en Supabase.
+ */
+export async function fetchAgencyRowForAppClient(agencyId: string): Promise<{
+  data: SupabaseAgency | null;
+  error: { message: string } | null;
+}> {
+  const { data, error } = await supabase.rpc('get_agency_for_app_client', { p_agency_id: agencyId });
+  if (error) {
+    return { data: null, error: { message: error.message } };
+  }
+  if (data == null || typeof data !== 'object' || Array.isArray(data)) {
+    return { data: null, error: { message: 'Respuesta de agencia inválida' } };
+  }
+  return { data: data as unknown as SupabaseAgency, error: null };
+}
+
 const checkAdminPermission = (roleName: string | null, settings: AgencySettings): boolean => {
   if (!roleName) return false;
   const roleConfig = settings.roles?.find(r => r.name.toLowerCase() === roleName.toLowerCase());
@@ -130,17 +149,13 @@ export async function getAgencyMembersUtil(agencyId: string): Promise<AgencyMemb
     return [];
   }
 
-  const { data: agencyData, error: agencyError } = await supabase
-    .from('agencies')
-    .select('settings')
-    .eq('id', agencyId)
-    .single();
+  const { data: agencyPayload, error: agencyRpcError } = await fetchAgencyRowForAppClient(agencyId);
 
-  if (agencyError) {
-    console.error('[AgencyUtils] Error obteniendo settings de agencia:', agencyError);
+  if (agencyRpcError) {
+    console.error('[AgencyUtils] Error obteniendo agencia (RPC):', agencyRpcError.message);
   }
 
-  const agencySettings = (agencyData?.settings || {}) as AgencySettings;
+  const agencySettings = ((agencyPayload?.settings ?? {}) || {}) as AgencySettings;
 
   const userIds = employees.filter(e => e.user_id).map(e => e.user_id);
   let userAgenciesData: Array<{ user_id: string; is_primary: boolean }> = [];

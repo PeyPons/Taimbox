@@ -61,6 +61,8 @@
 
   **Tabla `agencies` (solo lectura vía API)**: Para impedir que integradores creen agencias por API, conviene revocar `INSERT` en `public.agencies` para los roles `anon` y `authenticated`. La creación de agencias debe hacerse desde la app (registro/onboarding) o con service_role.
 
+  **Carga de agencia en la SPA (no filtra solo RLS)**: Las políticas RLS suelen permitir `SELECT` de la fila `agencies` a cualquier miembro del tenant; eso exponía en red y en memoria tokens OAuth (columnas y JSON `settings.integrations`), IDs Stripe, etc. La app usa la RPC **`get_agency_for_app_client(p_agency_id)`** (`SECURITY DEFINER`, migración `20260505140000`): comprueba membresía (`user_agencies` o `employees`), devuelve la fila completa solo si el rol del empleado tiene `can_access_agency_settings` o si el usuario es **platform admin**; en caso contrario devuelve el mismo shape con secretos y campos de facturación sensibles redactados. **`AgencyContext`** y **`getAgencyMembersUtil`** consumen esta RPC en lugar de `select('*')` sobre `agencies`.
+
   **Funciones y `search_path`**: Las funciones en `public` deben tener `search_path` fijado (`pg_catalog`, `public`) para evitar "search path hijacking".
 
   **Índices**: Las claves foráneas sin índice pueden generar "Unindexed foreign keys" en auditorías; conviene añadir índices donde haga falta. Revisar también índices duplicados por tabla.
