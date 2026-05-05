@@ -604,13 +604,133 @@
       },
       "newProject": {
         "deliverableBlockIntro": "Importe total del contrato y fechas de la fase. El sistema lo prorratea entre meses para mostrar el ingreso correspondiente en Rentabilidad y el avance en Seguimiento Operativo."
+      },
+      "agencies": {
+        "title": "Agencias",
+        "description": "Gestiona tus agencias o crea una nueva.",
+        "newAgency": "Nueva agencia"
+      },
+      "ads": {
+        "google": "Google Ads",
+        "meta": "Meta Ads",
+        "lastSync": "Última sincronización: {{time}}",
+        "noSync": "Sin sincronizar",
+        "daysRange": "Del 1 al {{days}}",
+        "dayProgress": "Día {{current}} de {{total}}",
+        "actions": {
+          "sync": "Sincronizar",
+          "syncing": "Sincronizando...",
+          "split": "Dividir",
+          "edit": "Configurar",
+          "save": "Guardar",
+          "cancel": "Cancelar",
+          "delete": "Eliminar",
+          "close": "Cerrar"
+        },
+        "stats": {
+          "investment": "Inversión",
+          "clicks": "Clicks",
+          "conversions": "Conversiones",
+          "roas": "ROAS",
+          "dailyRecommended": "Diario recomendado",
+          "atRisk": "En riesgo",
+          "revenue": "Valor",
+          "daysRemaining": "Días restantes",
+          "of": "de",
+          "target": "Objetivo",
+          "acceptable": "Aceptable",
+          "below": "Por debajo",
+          "monthProgress": "{{percent}}% del mes",
+          "spent": "Invertido",
+          "ctr": "CTR",
+          "cpc": "CPC",
+          "cpa": "CPA"
+        },
+        "filters": {
+          "searchPlaceholder": "Buscar cuenta o campaña...",
+          "showHidden": "Ocultos",
+          "showZeroSpend": "Sin inversión (0 €)",
+          "accountsCount": "{{count}} cuentas"
+        },
+        "table": {
+          "campaign": "Campaña",
+          "spent": "Gasto",
+          "value": "Valor",
+          "roas": "ROAS",
+          "noCampaigns": "Sin campañas",
+          "account": "Cuenta",
+          "groupPct": "% Grupo",
+          "conv": "Conv",
+          "breakdown": "Desglose por Cuenta ({{count}})",
+          "active": "Activa",
+          "paused": "Pausada"
+        },
+        "pacing": {
+          "spentPct": "{{percent}}% gastado",
+          "forecast": "Proy: {{amount}}",
+          "forecastTitle": "Proyección fin de mes",
+          "totalBudget": "Presupuesto Total objetivo",
+          "monthlyBudget": "Presupuesto Mensual objetivo",
+          "available": "Disponible: {{amount}}",
+          "avgDaily": "Gasto medio diario",
+          "recommendedDaily": "Objetivo medio diario",
+          "avgDailySub": "en lo que va de mes",
+          "recommendedDailySub": "para cerrar el mes en el presupuesto",
+          "googleNote": "Taimbox calcula el presupuesto mensual sumando los límites diarios (x30.4) de tus campañas activas en Google Ads. Puedes <strong class=\"text-slate-600\">sobrescribir este presupuesto</strong> manualmente aquí para comparar con un objetivo distinto al de Google.",
+          "metaNote": "El límite de gasto en Meta Ads se configura en Facebook (campaña, conjunto o presupuesto compartido). Aquí defines el <strong class=\"text-slate-600\">presupuesto mensual objetivo</strong> en Taimbox para comparar ritmo real vs. objetivo.",
+          "paceWarningGoogle": "El ritmo de gasto va por encima del objetivo para no superar el presupuesto mensual. Revisa las campañas en Google Ads, esto suele ocurrir si los presupuestos diarios suman más que el objetivo mensual dividido por 30.",
+          "paceWarningMeta": "El ritmo de gasto va por encima del objetivo para no superar el presupuesto mensual. Revisa y ajusta los límites en Meta Ads según tu estructura (campaña, conjunto o cuenta publicitaria).",
+          "forecastTooltip": "Usa el gasto medio diario del mes (invertido ÷ días transcurridos) proyectado al calendario completo. Si cambiaste el ritmo recientemente, puede no coincidir con el objetivo medio diario; ese valor es el ritmo para cerrar en el presupuesto objetivo de Taimbox."
+        },
+        "dialogs": {
+          "configAccount": {
+            "title": "Configurar cuenta",
+            "groupName": "Nombre del grupo (Holding)",
+            "groupPlaceholder": "Ej: Grupo ABC",
+            "groupNote": "Las cuentas del mismo grupo se consolidan.",
+            "salesAccount": "Cuenta de ventas (ROAS)",
+            "salesAccountNote": "Mostrar conversiones",
+            "hideAccount": "Ocultar cuenta",
+            "hideAccountNote": "No aparecerá en la lista"
+          },
+          "splitAccounts": {
+            "title": "Dividir Cuentas",
+            "description": "Separa campañas por palabra clave en cuentas virtuales.",
+            "sourceAccount": "Cuenta Origen",
+            "selectAccount": "Selecciona...",
+            "ifContains": "Si contiene...",
+            "createAccount": "Crear cuenta...",
+            "activeRules": "Reglas Activas ({{count}})",
+            "noRules": "No hay reglas",
+            "ifContainsLabel": "Si contiene \"{{keyword}}\""
+          },
+          "sync": {
+            "title": "Sincronizando {{platform}}",
+            "connecting": "Conectando...",
+            "finished": "Finalizado",
+            "completed": "Sincronización completada",
+            "error": "Error en el proceso",
+            "initGoogle": "🚀 Iniciando conexión con Google Ads...",
+            "initMeta": "🚀 Conectando con Meta API..."
+          }
+        },
+        "status": {
+          "exceeded": "Excedido",
+          "risk": "En riesgo",
+          "low": "Bajo",
+          "ok": "OK",
+          "hidden": "Oculto",
+          "group": "GRUPO",
+          "noData": "Sin datos",
+          "syncPrompt": "Sincroniza para cargar cuentas"
+        }
       }
     }
   },
   "agencies": {
     "title": "Mis Agencias",
     "description": "Gestiona tus agencias o crea una nueva.",
-    "newAgency": "Nueva Agencia",
+    "newAgency": "Nueva agencia",
     "hubIntro": "Elige la agencia activa si tienes varias. Los accesos de abajo enlazan con el mismo criterio que Configuración de agencia: rentabilidad (objetivo €/h), horas computadas frente a reales, Conexiones (Weekly, CRM, anuncios) y módulos del menú.",
     "accessCount_one": "Tienes acceso a 1 agencia",
     "accessCount_other": "Tienes acceso a {{count}} agencias",
@@ -1115,7 +1235,7 @@
       "deleteError": "No se pudo eliminar el empleado"
     },
     "pulse": {
-      "title": "Team Pulse",
+      "title": "Pulso del equipo",
       "subtitle": "Resumen diario de progreso del equipo",
       "dailySummary": "Resumen Diario",
       "teamProgress": "Progreso del equipo hoy",
@@ -1138,7 +1258,7 @@
       "tabProjects": "Mis proyectos",
       "tabTeammates": "Compañeros",
       "tabMetrics": "Métricas",
-      "weekly": "Weekly",
+      "weekly": "Semanal",
       "addTasks": "Añadir tareas",
       "internalTask": "Tarea interna",
       "exportCrm": "Exportar a CRM",
@@ -1897,6 +2017,8 @@
     "search": "Buscar cliente...",
     "empty": "No se encontraron clientes",
     "emptySub": "Prueba con otro término de búsqueda o crea tu primer cliente para empezar",
-    "count": "{{filtered}} de {{total}} clientes"
+    "count": "{{filtered}} de {{total}} clientes",
+    "title": "Clientes",
+    "subtitle": "Gestiona tus clientes y el consumo de sus horas"
   }
 }

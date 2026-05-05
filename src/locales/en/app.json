@@ -1329,7 +1329,9 @@
     "toast": {
       "switchSuccess": "Agency switched successfully",
       "switchError": "Error switching agency"
-    }
+    },
+    "description": "Manage your agencies or create a new one.",
+    "newAgency": "New Agency"
   },
   "layout": {
     "departmentBanner": {
@@ -1902,6 +1904,121 @@
       "fee": "Fee / hour (€)",
       "monthlyFee": "Monthly fee (€)",
       "monthlyFeeHint": "Total amount the client pays per month for this project (not an hourly rate)."
+    }
+  },
+  "ads": {
+    "google": "Google Ads",
+    "meta": "Meta Ads",
+    "lastSync": "Last sync: {{time}}",
+    "noSync": "Never synced",
+    "daysRange": "From 1 to {{days}}",
+    "dayProgress": "Day {{current}} of {{total}}",
+    "actions": {
+      "sync": "Sync",
+      "syncing": "Syncing...",
+      "split": "Split",
+      "edit": "Configure",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "close": "Close"
+    },
+    "stats": {
+      "investment": "Investment",
+      "clicks": "Clicks",
+      "conversions": "Conversions",
+      "roas": "ROAS",
+      "dailyRecommended": "Recommended daily",
+      "atRisk": "At risk",
+      "revenue": "Value",
+      "daysRemaining": "Days remaining",
+      "of": "of",
+      "target": "Target",
+      "acceptable": "Acceptable",
+      "below": "Below",
+      "monthProgress": "{{percent}}% of month",
+      "spent": "Spent",
+      "ctr": "CTR",
+      "cpc": "CPC",
+      "cpa": "CPA"
+    },
+    "filters": {
+      "searchPlaceholder": "Search account or campaign...",
+      "showHidden": "Hidden",
+      "showZeroSpend": "Zero spend (0 €)",
+      "accountsCount": "{{count}} accounts"
+    },
+    "table": {
+      "campaign": "Campaign",
+      "spent": "Spend",
+      "value": "Value",
+      "roas": "ROAS",
+      "noCampaigns": "No campaigns",
+      "account": "Account",
+      "groupPct": "% Group",
+      "conv": "Conv",
+      "breakdown": "Account Breakdown ({{count}})",
+      "active": "Active",
+      "paused": "Paused"
+    },
+    "pacing": {
+      "spentPct": "{{percent}}% spent",
+      "forecast": "Proj: {{amount}}",
+      "forecastTitle": "End of month projection",
+      "totalBudget": "Total target budget",
+      "monthlyBudget": "Monthly target budget",
+      "available": "Available: {{amount}}",
+      "avgDaily": "Avg daily spend",
+      "recommendedDaily": "Avg daily target",
+      "avgDailySub": "so far this month",
+      "recommendedDailySub": "to close the month on budget",
+      "googleNote": "Taimbox calculates the monthly budget by summing the daily limits (x30.4) of your active campaigns in Google Ads. You can <strong class=\"text-slate-600\">override this budget</strong> manually here to compare against a different target.",
+      "metaNote": "The spending limit in Meta Ads is configured in Facebook (campaign, set or shared budget). Here you define the <strong class=\"text-slate-600\">monthly target budget</strong> in Taimbox to compare real pace vs. target.",
+      "paceWarningGoogle": "Spending pace is above the target to not exceed the monthly budget. Review campaigns in Google Ads, this usually happens if daily budgets sum more than the monthly target divided by 30.",
+      "paceWarningMeta": "Spending pace is above the target to not exceed the monthly budget. Review and adjust limits in Meta Ads according to your structure (campaign, set or ad account).",
+      "forecastTooltip": "Uses the average daily spend of the month (spent ÷ days elapsed) projected to the full calendar. If you recently changed the pace, it may not match the average daily target; that value is the pace to close within Taimbox's target budget."
+    },
+    "dialogs": {
+      "configAccount": {
+        "title": "Configure account",
+        "groupName": "Group Name (Holding)",
+        "groupPlaceholder": "E.g.: Group ABC",
+        "groupNote": "Accounts from the same group are consolidated.",
+        "salesAccount": "Sales Account (ROAS)",
+        "salesAccountNote": "Show conversions",
+        "hideAccount": "Hide account",
+        "hideAccountNote": "Will not appear in the list"
+      },
+      "splitAccounts": {
+        "title": "Split Accounts",
+        "description": "Separate campaigns by keyword into virtual accounts.",
+        "sourceAccount": "Source Account",
+        "selectAccount": "Select...",
+        "ifContains": "If contains...",
+        "createAccount": "Create account...",
+        "activeRules": "Active Rules ({{count}})",
+        "noRules": "No rules",
+        "ifContainsLabel": "If contains \"{{keyword}}\""
+      },
+      "sync": {
+        "title": "Syncing {{platform}}",
+        "connecting": "Connecting...",
+        "finished": "Finished",
+        "completed": "Sync completed",
+        "error": "Error in process",
+        "initGoogle": "🚀 Starting connection with Google Ads...",
+        "initMeta": "🚀 Connecting with Meta API..."
+      }
+    },
+    "status": {
+      "exceeded": "Exceeded",
+      "risk": "At risk",
+      "low": "Low",
+      "ok": "OK",
+      "hidden": "Hidden",
+      "group": "GROUP",
+      "noData": "No data",
+      "syncPrompt": "Sync to load accounts"
     }
   }
 }

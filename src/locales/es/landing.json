@@ -724,6 +724,30 @@
       }
     },
     "content": {
+      "tiempos": {
+        "introTitle": "Qué es Tiempos",
+        "introBody": "El módulo Tiempos te permite registrar las horas reales trabajadas en cada tarea con un cronómetro integrado. Puedes ver en qué está cada persona ahora mismo desde la página Tiempos (menú Equipo) y parar tu propio cronómetro desde la barra lateral o esa página. Tu total del día siempre está visible.",
+        "introExample": "María lleva 1h 23m en «Diseño landing» (Acme). Desde Tiempos ves al equipo completo; si es tu cronómetro el que corre, puedes pararlo con un clic sin volver al planificador.",
+        "whereTitle": "Dónde está",
+        "wherePlannerTitle": "Planificador",
+        "wherePlannerDescription": "Cronómetro por tarea en vistas semanal y mensual. Solo ves y controlas tu propio tiempo.",
+        "whereMyDayTitle": "Mi día",
+        "whereMyDayDescription": "En el panel personal, cada tarea de tu día puede tener su propio cronómetro para registrar horas reales.",
+        "whereSidebarTitle": "Barra lateral",
+        "whereSidebarDescription": "Cuando tienes un cronómetro en marcha, el bloque muestra tarea, cliente, tiempo transcurrido y un botón Parar. También muestra tu total del día.",
+        "whereTimesPageTitle": "Página Tiempos",
+        "whereTimesPageDescription": "En Equipo → Tiempos ves qué hace cada persona: tarea, cliente y tiempo transcurrido. Puedes parar tu propio cronómetro desde ahí.",
+        "whereTip": "La página Tiempos y el cronómetro solo aparecen si tu agencia tiene activado el módulo «Cronómetro de tareas» en Configuración.",
+        "howTitle": "Cómo usarlo",
+        "howStartTitle": "Iniciar",
+        "howStartDescription": "En el planificador o Mi día, pulsa Reproducir en la tarea que quieras medir. Solo puede haber un cronómetro activo por persona.",
+        "howStopTitle": "Detener",
+        "howStopDescription": "Pulsa Detener en la misma tarea, en la barra lateral o en la página Tiempos. Las horas se guardan con precisión de segundo en time_entries.",
+        "howChangeTitle": "Cambiar de tarea",
+        "howChangeDescription": "Si inicias el cronómetro en otra tarea, la anterior se cierra automáticamente y sus horas quedan registradas antes de empezar la nueva.",
+        "howTotalTitle": "Total del día",
+        "howTotalDescription": "La barra lateral y cada cronómetro muestran las horas registradas hoy para esa tarea (base + sesión en curso, si la hay)."
+      },
       "planificador": {
         "intro": {
           "title": "Qué es el Planificador",
