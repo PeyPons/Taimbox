@@ -322,6 +322,7 @@ export function DeadlinesProjectList({
                               <span className="text-xs text-slate-500">Ajuste:</span>
                               <Input
                                 type="number"
+                                step={0.5}
                                 placeholder="0"
                                 value={
                                   inlineFormData.budgetOverride !== undefined

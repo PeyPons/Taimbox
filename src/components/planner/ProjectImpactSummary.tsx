@@ -1,13 +1,16 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Project, Allocation, NewTaskRow, Deadline, Employee } from '@/types';
 import { ProjectBudgetStatus } from '@/hooks/useAllocationSheet';
 import { format, startOfMonth } from 'date-fns';
 import { findWeekIndexForTaskWeekDate, formatPlannerWeekWorkingRangeLabel, isAllocationInEffectiveMonth } from '@/utils/dateUtils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
+import { budgetAdjustmentDelta, hasActiveBudgetAdjustment } from '@/utils/budgetUtils';
 
 const round2 = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
@@ -38,6 +41,7 @@ export function ProjectImpactSummary({
   employees = [],
   variant = 'horizontal'
 }: ProjectImpactSummaryProps) {
+  const { t } = useTranslation('app');
   // Hook para formatear nombres de proyectos
   const { formatName: formatProjectName } = useProjectAliasing();
 
@@ -278,6 +282,35 @@ export function ProjectImpactSummary({
   const hasWeekExcesses = weekImpact.some(w => w.exceeds);
   const hasAnyExcess = hasProjectExcesses || hasWeekExcesses;
 
+  const renderBudgetOverrideBadge = (projectId: string) => {
+    const proj = projects.find(pr => pr.id === projectId);
+    const catalogBudget = proj?.budgetHours ?? 0;
+    const deadline = monthDeadlines.find(d => d.projectId === projectId);
+    if (!hasActiveBudgetAdjustment(catalogBudget, deadline)) return null;
+    const delta = budgetAdjustmentDelta(catalogBudget, deadline);
+    if (delta == null) return null;
+    const hoursLabel = Math.abs(delta).toFixed(1);
+    const tooltip =
+      delta > 0
+        ? t('planner.budgetOverrideTooltipMore', { hours: hoursLabel })
+        : t('planner.budgetOverrideTooltipLess', { hours: hoursLabel });
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge
+            variant="outline"
+            className="h-4 px-1 text-[9px] border-amber-200 text-amber-700 bg-amber-50 font-normal shrink-0 cursor-help"
+          >
+            {t('planner.overrideBadge')}
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="text-xs max-w-[240px]">
+          {tooltip}
+        </TooltipContent>
+      </Tooltip>
+    );
+  };
+
   if (projectImpact.length === 0 && weekImpact.length === 0) {
     if (variant === 'vertical') {
       return (
@@ -291,6 +324,7 @@ export function ProjectImpactSummary({
 
   if (variant === 'vertical') {
     return (
+      <TooltipProvider delayDuration={300}>
       <div className="flex flex-col gap-6 h-full">
         <div>
           <h3 className="font-semibold text-sm text-slate-700 mb-1">Impacto Previsto</h3>
@@ -316,27 +350,19 @@ export function ProjectImpactSummary({
                   </div>
 
                   {/* Presupuesto del proyecto */}
-                  <div className="flex justify-between items-center mt-2">
+                  <div className="flex justify-between items-center gap-2 mt-2">
                     <span className="text-slate-400 text-[10px]">Presupuesto</span>
-                    {p.current.budgetMax > 0 ? (
-                      <span className={cn("font-medium", p.exceeds ? "text-red-600" : "text-emerald-600")}>
-                        {p.newTotal.toFixed(1)} / {p.current.budgetMax}h
-                        {p.exceeds && <AlertTriangle className="h-3 w-3 inline ml-1 text-red-500" />}
-                      </span>
-                    ) : (
-                      <span className="text-slate-400 italic">Sin límite</span>
-                    )}
-                    {(() => {
-                      const deadline = monthDeadlines.find(d => d.projectId === p.id);
-                      if (deadline?.budgetOverride != null && deadline.budgetOverride >= 0) {
-                        return (
-                          <Badge variant="outline" className="ml-2 h-4 px-1 text-[9px] border-amber-200 text-amber-700 bg-amber-50 font-normal shrink-0">
-                            Override
-                          </Badge>
-                        );
-                      }
-                      return null;
-                    })()}
+                    <div className="flex items-center gap-2 min-w-0 justify-end">
+                      {p.current.budgetMax > 0 ? (
+                        <span className={cn("font-medium", p.exceeds ? "text-red-600" : "text-emerald-600")}>
+                          {p.newTotal.toFixed(1)} / {p.current.budgetMax}h
+                          {p.exceeds && <AlertTriangle className="h-3 w-3 inline ml-1 text-red-500" />}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 italic">Sin límite</span>
+                      )}
+                      {renderBudgetOverrideBadge(p.id)}
+                    </div>
                   </div>
                   {p.current.budgetMax > 0 && (
                     <div className="mt-1 h-1 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -478,10 +504,12 @@ export function ProjectImpactSummary({
           )}
         </div>
       </div>
+      </TooltipProvider>
     );
   }
 
   return (
+    <TooltipProvider delayDuration={300}>
     <div className={cn(
       "flex items-center gap-3 text-xs px-3 py-2 rounded-lg w-full flex-wrap",
       hasAnyExcess ? "bg-amber-50 border border-amber-200" : "bg-emerald-50 border border-emerald-200"
@@ -498,6 +526,7 @@ export function ProjectImpactSummary({
           <span className={cn("font-medium truncate max-w-[120px]", p.exceeds ? "text-amber-700" : "text-emerald-700")}>
             <SensitiveText kind="project" id={p.id}>{formatProjectName(p.name)}</SensitiveText>
           </span>
+          {renderBudgetOverrideBadge(p.id)}
           <span className={cn("tabular-nums", p.exceeds ? "text-amber-600" : "text-emerald-600")}>
             +{p.adding}h
           </span>
@@ -537,5 +566,6 @@ export function ProjectImpactSummary({
         </div>
       ))}
     </div>
+    </TooltipProvider>
   );
 }

@@ -40,10 +40,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { NewTaskRow, Deadline } from '@/types';
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
-} from "@/components/ui/dropdown-menu";
-import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, CheckCircle2, Plus, X, Check, ListPlus, AlertTriangle, HelpCircle, RotateCcw, FileDown, CheckSquare, AlertCircle, Trash2, MoreHorizontal, Sun } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, Calendar, Clock, CheckCircle2, Plus, X, Check, ListPlus, AlertTriangle, HelpCircle, RotateCcw, FileDown, CheckSquare, AlertCircle, Trash2, Sun } from 'lucide-react';
 import { startOfMonth, endOfMonth, format, isSameMonth, parseISO, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from '@/lib/notify';
@@ -96,7 +94,6 @@ export default function EmployeeDashboard() {
   const [weeklyFocusAllocationId, setWeeklyFocusAllocationId] = useState<string | null>(null);
   // Default to "coherence" (Control de planificación) to match the workflow
   const [activeTab, setActiveTab] = useState('coherence');
-  const [actionsDropdownOpen, setActionsDropdownOpen] = useState(false);
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
   const [dialogDeadlines, setDialogDeadlines] = useState<Deadline[]>([]);
   const [showConfirmClose, setShowConfirmClose] = useState(false);
@@ -596,39 +593,62 @@ export default function EmployeeDashboard() {
           <Button size="sm" onClick={() => setIsAddingExtra(true)} variant="outline" className="gap-1.5 shrink-0 text-xs font-medium border-slate-200 bg-white hover:bg-slate-50" data-tour="internal-tasks">
             <Clock className="h-3.5 w-3.5 text-slate-500" /> {t('team.dashboard.internalTask', 'Tarea interna')}
           </Button>
+
+          <div className="h-6 w-px bg-slate-200/80 shrink-0 mx-0.5" aria-hidden />
+
+          {isCrmExportEnabled && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleExportCRM}
+              disabled={!myEmployeeProfile?.crmUserId}
+              className="gap-1.5 shrink-0 text-xs font-medium border-slate-200 bg-white hover:bg-slate-50"
+              data-tour="crm-export"
+            >
+              <FileDown className="h-3.5 w-3.5 text-purple-600" /> {t('team.dashboard.exportCrm', 'Exportar a CRM')}
+            </Button>
+          )}
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowGoals(true)}
+            className="gap-1.5 shrink-0 text-xs font-medium border-slate-200 bg-white hover:bg-slate-50"
+            data-tour="goals"
+          >
+            <TrendingUp className="h-3.5 w-3.5 text-emerald-600" /> {t('team.dashboard.goals', 'Objetivos')}
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowAbsences(true)}
+            className="gap-1.5 shrink-0 text-xs font-medium border-slate-200 bg-white hover:bg-slate-50"
+            data-tour="absences"
+          >
+            <Calendar className="h-3.5 w-3.5 text-amber-600" /> {t('team.dashboard.absences', 'Ausencias')}
+          </Button>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={resetTour}
+                className="h-8 w-8 p-0 shrink-0 border-slate-200 bg-white hover:bg-slate-50"
+                aria-label={t('team.dashboard.repeatTour', 'Repetir tour')}
+                data-tour="repeat-tour"
+              >
+                <RotateCcw className="h-3.5 w-3.5 text-slate-600" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{t('team.dashboard.repeatTour', 'Repetir tour')}</TooltipContent>
+          </Tooltip>
         </div>
 
         {/* Right: Secondary actions */}
         <div className="flex items-center gap-1 shrink-0">
-          <DropdownMenu open={actionsDropdownOpen} onOpenChange={setActionsDropdownOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 px-2 gap-1.5 text-xs text-slate-500 hover:text-slate-700" data-tour="actions-dropdown">
-                <MoreHorizontal className="h-4 w-4" />
-                {!isMobile && <span>{t('common.more', 'Más')}</span>}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              {isCrmExportEnabled && (
-                <>
-                  <DropdownMenuItem onClick={handleExportCRM} disabled={!myEmployeeProfile?.crmUserId} className="gap-2 text-sm" data-tour="crm-export">
-                    <FileDown className="h-4 w-4 text-purple-600" /> {t('team.dashboard.exportCrm', 'Exportar a CRM')}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                </>
-              )}
-              <DropdownMenuItem onClick={() => setShowGoals(true)} className="gap-2 text-sm" data-tour="goals">
-                <TrendingUp className="h-4 w-4 text-emerald-600" /> {t('team.dashboard.goals', 'Objetivos')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowAbsences(true)} className="gap-2 text-sm" data-tour="absences">
-                <Calendar className="h-4 w-4 text-amber-600" /> {t('team.dashboard.absences', 'Ausencias')}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={resetTour} className="gap-2 text-sm">
-                <RotateCcw className="h-4 w-4" /> {t('team.dashboard.repeatTour', 'Repetir tour')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
           <EmployeeSettings employeeId={myEmployeeProfile.id} />
         </div>
       </div>
@@ -1017,15 +1037,7 @@ export default function EmployeeDashboard() {
           focusAllocationId={weeklyFocusAllocationId}
         />
       )}
-      <WelcomeTour
-        forceShow={showTour}
-        onTabChange={setActiveTab}
-        onDropdownOpen={(dropdownId, isOpen) => {
-          if (dropdownId === 'actions-dropdown') {
-            setActionsDropdownOpen(isOpen);
-          }
-        }}
-      />
+      <WelcomeTour forceShow={showTour} onTabChange={setActiveTab} />
       <AlertDialog open={showConfirmClose} onOpenChange={setShowConfirmClose}>
         <AlertDialogContent>
           <AlertDialogHeader>

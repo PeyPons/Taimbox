@@ -1,7 +1,10 @@
 {
   "planner": {
     "metaTitle": "Taimbox",
-    "metaDescription": "Manage your team's resources with Taimbox's visual planner"
+    "metaDescription": "Manage your team's resources with Taimbox's visual planner",
+    "overrideBadge": "Override",
+    "budgetOverrideTooltipMore": "This month the project cap is {{hours}} h above the project budget.",
+    "budgetOverrideTooltipLess": "This month the project cap is {{hours}} h below the project budget."
   },
   "dashboard": {
     "metaTitle": "Dashboard - Taimbox",
@@ -208,7 +211,7 @@
   "deadlines": {
     "loading": "Loading deadlines...",
     "projectList": {
-      "monthRangeHint": "The min/max shown apply to this month (deliverable proration or saved adjustment), not always the catalog project values."
+      "monthRangeHint": "The min/max shown apply to this month (deliverable proration or saved adjustment), not always the project budget before monthly proration or overrides."
     },
     "filters": {
       "button": "Filters"

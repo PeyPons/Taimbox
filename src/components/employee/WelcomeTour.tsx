@@ -11,8 +11,6 @@ import {
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { useApp } from '@/contexts/AppContext';
-import { useIsMobile } from '@/hooks/use-mobile';
-
 interface TourStep {
   id: string;
   target: string;
@@ -23,7 +21,6 @@ interface TourStep {
   highlight?: boolean;
   customContent?: boolean;
   tab?: string; // Tab value to switch to
-  openDropdown?: string; // Dropdown ID to open (e.g., 'actions-dropdown')
 }
 
 const tourSteps: TourStep[] = [
@@ -60,8 +57,7 @@ const tourSteps: TourStep[] = [
     description: 'Una vez planificadas tus tareas, puedes exportarlas al CRM con un solo clic. Se generará un archivo CSV listo para importar. Necesitas tener configurado tu ID de usuario del CRM.',
     icon: <FileDown className="w-6 h-6 text-purple-500" />,
     position: 'bottom',
-    highlight: true,
-    openDropdown: 'actions-dropdown'
+    highlight: true
   },
   {
     id: 'internal-tasks',
@@ -79,8 +75,7 @@ const tourSteps: TourStep[] = [
     description: 'Aquí puedes ver y gestionar tus objetivos profesionales (OKRs). Mantén el foco en lo que importa para tu crecimiento.',
     icon: <TrendingUp className="w-6 h-6 text-emerald-500" />,
     position: 'bottom',
-    highlight: true,
-    openDropdown: 'actions-dropdown'
+    highlight: true
   },
   {
     id: 'absences',
@@ -89,8 +84,7 @@ const tourSteps: TourStep[] = [
     description: 'Registra tus vacaciones, bajas o permisos para que el planificador tenga en cuenta tu disponibilidad real. Tu capacidad se ajustará automáticamente.',
     icon: <Calendar className="w-6 h-6 text-amber-500" />,
     position: 'bottom',
-    highlight: true,
-    openDropdown: 'actions-dropdown'
+    highlight: true
   },
   {
     id: 'calendar',
@@ -193,12 +187,10 @@ interface WelcomeTourProps {
   onComplete?: () => void;
   forceShow?: boolean;
   onTabChange?: (tab: string) => void;
-  onDropdownOpen?: (dropdownId: string, isOpen: boolean) => void;
 }
 
-export function WelcomeTour({ onComplete, forceShow = false, onTabChange, onDropdownOpen }: WelcomeTourProps) {
+export function WelcomeTour({ onComplete, forceShow = false, onTabChange }: WelcomeTourProps) {
   const { currentUser, updateEmployee } = useApp();
-  const isMobile = useIsMobile();
   const [isVisible, setIsVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [highlightPos, setHighlightPos] = useState<HighlightPosition | null>(null);
@@ -388,7 +380,7 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange, onDrop
     }, 200);
   }, [currentStep]);
 
-  // Cambiar de tab y abrir dropdowns si el paso lo requiere
+  // Cambiar de tab si el paso lo requiere
   useEffect(() => {
     if (!isVisible) return;
     const step = tourSteps[currentStep];
@@ -401,19 +393,7 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange, onDrop
       });
     }
     
-    if (step.openDropdown && onDropdownOpen) {
-      requestAnimationFrame(() => {
-        onDropdownOpen(step.openDropdown!, true);
-      });
-    } else if (onDropdownOpen && currentStep > 0) {
-      const prevStep = tourSteps[currentStep - 1];
-      if (prevStep?.openDropdown) {
-        requestAnimationFrame(() => {
-          onDropdownOpen('actions-dropdown', false);
-        });
-      }
-    }
-  }, [currentStep, isVisible, onTabChange, onDropdownOpen, isMobile]);
+  }, [currentStep, isVisible, onTabChange]);
 
   // Actualizar posiciones cuando cambia el paso
   useEffect(() => {
@@ -427,16 +407,16 @@ export function WelcomeTour({ onComplete, forceShow = false, onTabChange, onDrop
       return;
     }
 
-    // Para elementos en dropdowns o tabs, esperar más tiempo para que se rendericen
+    // Tabs: esperar más para que el contenido condicional se renderice
     // Tabs necesitan más tiempo porque el contenido se renderiza condicionalmente
-    const delay = step.openDropdown && isMobile ? 600 : (step.tab ? 500 : 200);
+    const delay = step.tab ? 500 : 200;
 
     const timeoutId = setTimeout(() => {
       calculatePositions();
     }, delay);
 
     return () => clearTimeout(timeoutId);
-  }, [currentStep, isVisible, calculatePositions, isMobile]);
+  }, [currentStep, isVisible, calculatePositions]);
 
   // Recalcular en resize/scroll
   useEffect(() => {

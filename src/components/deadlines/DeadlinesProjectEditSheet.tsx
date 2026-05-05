@@ -128,6 +128,7 @@ export function DeadlinesProjectEditSheet({
             <Label className="text-slate-600 mb-1.5 block">Ajuste presupuesto (h)</Label>
             <Input
               type="number"
+              step={0.5}
               placeholder="0"
               value={
                 formData.budgetOverride !== undefined

@@ -1,7 +1,10 @@
 {
   "planner": {
     "metaTitle": "Taimbox",
-    "metaDescription": "Gestiona los recursos de tu equipo con el planificador visual de Taimbox"
+    "metaDescription": "Gestiona los recursos de tu equipo con el planificador visual de Taimbox",
+    "overrideBadge": "Override",
+    "budgetOverrideTooltipMore": "Este mes el tope del proyecto está {{hours}} h por encima del presupuesto del proyecto.",
+    "budgetOverrideTooltipLess": "Este mes el tope del proyecto está {{hours}} h por debajo del presupuesto del proyecto."
   },
   "dashboard": {
     "metaTitle": "Panel de control - Taimbox",
@@ -208,7 +211,7 @@
   "deadlines": {
     "loading": "Cargando deadlines...",
     "projectList": {
-      "monthRangeHint": "Los mínimos y máximos mostrados son los aplicables a este mes (prorrateo del contrato o ajuste guardado), no siempre los del proyecto en catálogo."
+      "monthRangeHint": "Los mínimos y máximos mostrados son los aplicables a este mes (prorrateo del contrato o ajuste guardado), no siempre el presupuesto del proyecto antes de prorrateos o ajustes mensuales."
     },
     "filters": {
       "button": "Filtros"
