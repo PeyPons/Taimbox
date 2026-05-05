@@ -1,9 +1,13 @@
 import { parseISO } from 'date-fns';
 import {
+  budgetAdjustmentDelta,
+  budgetsNearlyEqual,
   getEffectiveBudget,
   getEffectiveBudgetForMonth,
   getEffectiveMinimum,
+  getEffectiveMinimumForMonth,
   getEffectiveMonthlyFee,
+  hasActiveBudgetAdjustment,
 } from '@/utils/budgetUtils';
 import { PROJECT_TYPE_ENTREGABLE } from '@/config/projectTypePresets';
 
@@ -111,6 +115,31 @@ describe('getEffectiveBudget', () => {
   });
 });
 
+describe('hasActiveBudgetAdjustment / budgetAdjustmentDelta', () => {
+  it('no hay ajuste si override es null/undefined', () => {
+    expect(hasActiveBudgetAdjustment(40, undefined)).toBe(false);
+    expect(hasActiveBudgetAdjustment(40, { budgetOverride: undefined })).toBe(false);
+    expect(budgetAdjustmentDelta(40, undefined)).toBeNull();
+  });
+
+  it('no hay ajuste si override coincide con el presupuesto del proyecto', () => {
+    expect(hasActiveBudgetAdjustment(40, { budgetOverride: 40 })).toBe(false);
+    expect(budgetAdjustmentDelta(40, { budgetOverride: 40 })).toBeNull();
+  });
+
+  it('hay ajuste y delta si override distinto', () => {
+    expect(hasActiveBudgetAdjustment(40, { budgetOverride: 28 })).toBe(true);
+    expect(budgetAdjustmentDelta(40, { budgetOverride: 28 })).toBe(-12);
+  });
+});
+
+describe('budgetsNearlyEqual', () => {
+  it('trata valores casi iguales como iguales', () => {
+    expect(budgetsNearlyEqual(10, 10.0000001)).toBe(true);
+    expect(budgetsNearlyEqual(10, 10.1)).toBe(false);
+  });
+});
+
 describe('getEffectiveMinimum', () => {
   it('limita minimum al override cuando hay budgetOverride', () => {
     expect(getEffectiveMinimum({ budgetHours: 40, minimumHours: 30 }, { budgetOverride: 20 })).toBe(20);
@@ -161,5 +190,26 @@ describe('getEffectiveBudgetForMonth', () => {
         month
       )
     ).toBe(12);
+  });
+});
+
+describe('getEffectiveMinimumForMonth', () => {
+  it('recorta el mínimo al tope prorrateado del mes cuando el mínimo contractual supera ese tope', () => {
+    const month = parseISO('2026-01-15');
+    const project = {
+      budgetHours: 60,
+      minimumHours: 30,
+      projectType: PROJECT_TYPE_ENTREGABLE,
+      deliverableStartDate: '2026-01-01',
+      deliverableDueDate: '2026-03-31',
+    };
+    const cap = getEffectiveBudgetForMonth(project, undefined, month);
+    expect(cap).toBeLessThan(project.minimumHours ?? 0);
+    expect(getEffectiveMinimumForMonth(project, undefined, month)).toBe(cap);
+  });
+
+  it('sin mínimo definido devuelve 0', () => {
+    const month = parseISO('2026-01-15');
+    expect(getEffectiveMinimumForMonth({ budgetHours: 40, projectType: 'Mensual' }, undefined, month)).toBe(0);
   });
 });

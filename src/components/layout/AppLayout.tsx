@@ -36,7 +36,7 @@ export function AppLayout() {
         />
 
         <main className={cn(
-          "flex-1 min-w-0 min-h-screen transition-all duration-300 overflow-x-hidden max-w-full w-full",
+          "flex-1 min-w-0 min-h-screen transition-all duration-300 max-w-full w-full",
           "lg:ml-64",
           "main-content-area" // En móvil: offset del header fijo (index.css)
         )}>

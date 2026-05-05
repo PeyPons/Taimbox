@@ -101,12 +101,15 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
 
     const totalPercentage = employeeLoads.reduce((sum, e) => sum + e.percentage, 0);
     const averageLoad = Math.round(totalPercentage / employeeLoads.length);
-    const maxLoad = Math.max(...employeeLoads.map((e) => e.percentage));
-    const minLoad = Math.min(...employeeLoads.map((e) => e.percentage));
-    const range = maxLoad - minLoad;
 
-    const cap = Math.min(100, Math.max(0, maxReceiverLoadPct));
-    const below = employeeLoads.filter((e) => e.percentage < cap);
+    /** Receptores potenciales: margen real bajo el tope % (no solo % redondeado < tope). */
+    const capPct = Math.min(100, Math.max(0, maxReceiverLoadPct));
+    const below = employeeLoads.filter((e) => {
+      const capData = getMonthlyCapacity(e.id);
+      const assigned = getEmployeeAssignedHours(e.id);
+      const maxAssignable = capData.available * (capPct / 100);
+      return maxAssignable - assigned > 0.01;
+    });
     const minSenderPct = Math.min(100, Math.max(0, minSenderLoadPct));
     const donors = employeeLoads.filter(
       (e) => e.percentage >= minSenderPct && e.projects.length > 0
@@ -193,21 +196,14 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
 
     const active = activeEmployees ?? [];
     if (active.length === 0) return [];
-    let totalPercentage = 0;
-    active.forEach((emp) => {
-      const capacityData = getMonthlyCapacity(emp.id);
-      const assigned = getEmployeeAssignedHours(emp.id);
-      const pct = capacityData.available > 0 ? (assigned / capacityData.available) * 100 : 0;
-      totalPercentage += pct;
-    });
-    const averageLoad = totalPercentage / active.length;
-    const targetLoadPct = Math.min(averageLoad, maxReceiverLoadPct);
 
+    /** Margen hasta el % máximo de carga del receptor (coherente con condicionantes), no hasta la media del equipo. */
     const getShortfall = (toId: string) => {
       const cap = getMonthlyCapacity(toId);
       const assigned = getEmployeeAssignedHours(toId);
-      const targetHours = cap.available * (targetLoadPct / 100);
-      return Math.max(0, targetHours - assigned);
+      const capPct = Math.min(100, Math.max(0, maxReceiverLoadPct));
+      const maxAssignable = cap.available * (capPct / 100);
+      return Math.max(0, maxAssignable - assigned);
     };
 
     const byEmployee = new Map<string, Map<string, ProjectRecommendation>>();
@@ -229,7 +225,7 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
         const fromAssigned = getEmployeeAssignedHours(tip.fromId);
         const minSenderHours = fromCap * (minSenderLoadPct / 100);
         const maxHoursFromSender = Math.max(0, fromAssigned - minSenderHours);
-        const suggestedHours = Math.round(Math.min(hoursOnProject, shortfall, maxHoursFromSender) * 2) / 2;
+        const suggestedHours = Math.min(hoursOnProject, shortfall, maxHoursFromSender);
         if (!proj.transfers.some((t) => t.fromId === tip.fromId)) {
           proj.transfers.push({
             fromId: tip.fromId,
@@ -243,10 +239,25 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
       });
     });
 
+    /** Quien tiene margen para recibir pero no entró en ningún tip (p. ej. filtros de proyecto). */
+    active.forEach((emp) => {
+      const sf = getShortfall(emp.id);
+      if (sf <= 0.01) return;
+      if (!byEmployee.has(emp.id)) {
+        byEmployee.set(emp.id, new Map());
+        shortfallByToId.set(emp.id, sf);
+      }
+    });
+
     const rawGroups = Array.from(byEmployee.entries())
       .map(([employeeId, byProject]) => {
         const emp = (employees ?? []).find((e) => e.id === employeeId);
-        const rawProjects = Array.from(byProject.values()).filter((p) => p.transfers.length > 0);
+        const rawProjects = Array.from(byProject.values())
+          .map((p) => ({
+            ...p,
+            transfers: p.transfers.filter((t) => t.suggestedHours > 0.1),
+          }))
+          .filter((p) => p.transfers.length > 0);
         const shortfall = shortfallByToId.get(employeeId) ?? 0;
         const totalSuggested = rawProjects.reduce(
           (sum, p) => sum + p.transfers.reduce((s, t) => s + t.suggestedHours, 0),
@@ -258,7 +269,7 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
             ...p,
             transfers: p.transfers.map((t) => ({
               ...t,
-              suggestedHours: factor === 1 ? t.suggestedHours : Math.round(t.suggestedHours * factor * 2) / 2,
+              suggestedHours: factor === 1 ? t.suggestedHours : t.suggestedHours * factor,
             })),
           }))
           .sort((a, b) => b.transfers.length - a.transfers.length);
@@ -270,7 +281,7 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
           projects: projectList,
         };
       })
-      .filter((g) => g.employeeName !== 'Desconocido' && g.projects.length > 0);
+      .filter((g) => g.employeeName !== 'Desconocido' && (g.projects.length > 0 || g.deficitHours > 0));
 
     const totalGivenByDonor = new Map<string, number>();
     rawGroups.forEach((group) => {
@@ -295,7 +306,7 @@ export function useDeadlinesRedistribution(params: UseDeadlinesRedistributionPar
       group.projects.forEach((p) => {
         p.transfers.forEach((t) => {
           const f = donorFactor.get(t.fromId) ?? 1;
-          t.suggestedHours = Math.round(t.suggestedHours * f * 2) / 2;
+          t.suggestedHours = Math.round(t.suggestedHours * f * 10) / 10;
         });
       });
     });

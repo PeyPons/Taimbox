@@ -7,6 +7,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from '@/lib/notify';
 import { supabase } from '@/lib/supabase';
 import type { Deadline } from '@/types';
+import { budgetsNearlyEqual } from '@/utils/budgetUtils';
 
 export type InlineFormData = {
   employeeHours: Record<string, number>;
@@ -30,6 +31,8 @@ export interface UseDeadlinesEditingParams {
   setEditingLocks: SetEditingLocks;
   broadcastChannelRef: React.RefObject<ChannelRef>;
   setExpandedProjects: React.Dispatch<React.SetStateAction<Set<string>>>;
+  /** Presupuesto catálogo del proyecto (para normalizar overrides redundantes). */
+  getProject?: (projectId: string) => { budgetHours: number } | undefined;
 }
 
 export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
@@ -45,6 +48,7 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
     setEditingLocks,
     broadcastChannelRef,
     setExpandedProjects,
+    getProject,
   } = params;
 
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
@@ -88,23 +92,19 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
     [currentUser, selectedMonth, setEditingLocks, broadcastChannelRef]
   );
 
+  /** Una sola petición: borra todos los locks del usuario en el mes y devuelve los project_id afectados (para broadcast). */
   const releaseAllMyLocks = useCallback(async () => {
     if (!currentUser) return;
     try {
-      const { data: myLocks } = await supabase
-        .from('project_editing_locks')
-        .select('project_id')
-        .eq('employee_id', currentUser.id)
-        .eq('month', selectedMonth) as { data: { project_id: string }[] | null };
-
-      await supabase
+      const { data: deletedRows } = await supabase
         .from('project_editing_locks')
         .delete()
         .eq('employee_id', currentUser.id)
-        .eq('month', selectedMonth);
+        .eq('month', selectedMonth)
+        .select('project_id');
 
-      if (myLocks?.length && broadcastChannelRef.current) {
-        const projectIds = myLocks.map((l) => l.project_id);
+      const projectIds = (deletedRows ?? []).map((r) => r.project_id).filter(Boolean);
+      if (projectIds.length > 0 && broadcastChannelRef.current) {
         broadcastChannelRef.current.send({
           type: 'broadcast',
           event: 'lock-released',
@@ -127,9 +127,12 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
     async (projectId: string): Promise<boolean> => {
       if (!currentUser) return false;
       try {
+        // Solo filas expiradas de este proyecto/mes (evita DELETE masivo en toda la tabla en cada clic).
         await supabase
           .from('project_editing_locks')
           .delete()
+          .eq('project_id', projectId)
+          .eq('month', selectedMonth)
           .lt('expires_at', new Date().toISOString());
 
         const { data: existingLock } = await supabase
@@ -227,9 +230,10 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
   const startEditingProject = useCallback(
     async (projectId: string) => {
       if (!canEditDeadlines || editingProjectId === projectId) return;
-      await releaseAllMyLocks();
 
-      if (editingProjectId) {
+      const previousEditingId = editingProjectId;
+
+      if (previousEditingId) {
         if (lockRefreshIntervalRef.current) {
           clearInterval(lockRefreshIntervalRef.current);
           lockRefreshIntervalRef.current = null;
@@ -241,6 +245,14 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
         }
       }
 
+      // Cambio A→B: solo liberar el lock anterior (antes se hacía SELECT+DELETE de todos los del mes siempre).
+      // Primera edición en la sesión: una sola DELETE devolviendo filas (huérfanos / otras pestañas).
+      if (previousEditingId && previousEditingId !== projectId) {
+        await releaseEditLock(previousEditingId);
+      } else if (!previousEditingId) {
+        await releaseAllMyLocks();
+      }
+
       const lockAcquired = await acquireEditLock(projectId);
       if (!lockAcquired) {
         setEditingProjectId(null);
@@ -248,12 +260,27 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
       }
 
       const deadline = getProjectDeadline(projectId);
+      const proj = getProject?.(projectId);
+      const rawOverride = deadline?.budgetOverride;
+      const budgetOverride =
+        proj != null &&
+        rawOverride != null &&
+        Number.isFinite(Number(rawOverride)) &&
+        budgetsNearlyEqual(Number(rawOverride), proj.budgetHours || 0)
+          ? undefined
+          : rawOverride;
+      const employeeHours = deadline?.employeeHours
+        ? Object.fromEntries(
+            Object.entries(deadline.employeeHours).filter(([, h]) => (Number(h) || 0) > 0)
+          )
+        : {};
+
       setEditingProjectId(projectId);
       setInlineFormData({
-        employeeHours: deadline?.employeeHours ? { ...deadline.employeeHours } : {},
+        employeeHours,
         notes: deadline?.notes ?? '',
         isHidden: deadline?.isHidden ?? hiddenProjects.has(projectId),
-        budgetOverride: deadline?.budgetOverride,
+        budgetOverride,
       });
       setExpandedProjects((prev) => new Set([...prev, projectId]));
 
@@ -272,6 +299,7 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
       releaseAllMyLocks,
       acquireEditLock,
       getProjectDeadline,
+      getProject,
       hiddenProjects,
       setExpandedProjects,
       renewEditLock,
@@ -285,13 +313,22 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
       setAutoSaveStatus('saving');
       try {
         const existingDeadline = getProjectDeadline(projectId);
+        const proj = getProject?.(projectId);
+        const normalizedOverride =
+          formData.budgetOverride == null
+            ? null
+            : proj != null && budgetsNearlyEqual(formData.budgetOverride, proj.budgetHours || 0)
+              ? null
+              : formData.budgetOverride;
+        const budgetOverrideLocal = normalizedOverride ?? undefined;
+
         const deadlineData = {
           project_id: projectId,
           month: selectedMonth,
           notes: formData.notes || null,
           employee_hours: formData.employeeHours,
           is_hidden: formData.isHidden,
-          budget_override: formData.budgetOverride ?? null,
+          budget_override: normalizedOverride,
         };
 
         const patchLocalDeadline = (id: string) => {
@@ -305,7 +342,7 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
                     notes: formData.notes,
                     employeeHours: { ...formData.employeeHours },
                     isHidden: formData.isHidden,
-                    budgetOverride: formData.budgetOverride,
+                    budgetOverride: budgetOverrideLocal,
                   }
                 : d
             )
@@ -346,7 +383,7 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
                   notes: formData.notes,
                   employeeHours: { ...formData.employeeHours },
                   isHidden: formData.isHidden,
-                  budgetOverride: formData.budgetOverride,
+                  budgetOverride: budgetOverrideLocal,
                 };
                 if (prev.some((d) => d.id === row.id)) {
                   return prev.map((d) => (d.id === row.id ? merged : d));
@@ -389,7 +426,7 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
         toast.error('Error al guardar');
       }
     },
-    [selectedMonth, getProjectDeadline, setDeadlines, setHiddenProjects]
+    [selectedMonth, getProjectDeadline, getProject, setDeadlines, setHiddenProjects]
   );
 
   const handleFormPatch = useCallback(
@@ -413,12 +450,16 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
 
   const updateInlineEmployeeHours = useCallback(
     (employeeId: string, hours: number, projectId: string, immediate = false) => {
+      const nextEmployeeHours = { ...inlineFormData.employeeHours };
+      const safe = hours >= 0 ? hours : 0;
+      if (safe > 0) {
+        nextEmployeeHours[employeeId] = safe;
+      } else {
+        delete nextEmployeeHours[employeeId];
+      }
       const newFormData: InlineFormData = {
         ...inlineFormData,
-        employeeHours: {
-          ...inlineFormData.employeeHours,
-          [employeeId]: hours >= 0 ? hours : 0,
-        },
+        employeeHours: nextEmployeeHours,
       };
       setInlineFormData(newFormData);
 
@@ -458,13 +499,22 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
       setIsSaving(true);
       try {
         const existingDeadline = getProjectDeadline(projectId);
+        const proj = getProject?.(projectId);
+        const normalizedOverride =
+          inlineFormData.budgetOverride == null
+            ? null
+            : proj != null && budgetsNearlyEqual(inlineFormData.budgetOverride, proj.budgetHours || 0)
+              ? null
+              : inlineFormData.budgetOverride;
+        const budgetOverrideLocal = normalizedOverride ?? undefined;
+
         const deadlineData = {
           project_id: projectId,
           month: selectedMonth,
           notes: inlineFormData.notes || null,
           employee_hours: inlineFormData.employeeHours,
           is_hidden: inlineFormData.isHidden,
-          budget_override: inlineFormData.budgetOverride ?? null,
+          budget_override: normalizedOverride,
         };
 
         if (existingDeadline) {
@@ -480,7 +530,7 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
                     notes: inlineFormData.notes,
                     employeeHours: inlineFormData.employeeHours,
                     isHidden: inlineFormData.isHidden,
-                    budgetOverride: inlineFormData.budgetOverride,
+                    budgetOverride: budgetOverrideLocal,
                   }
                 : d
             )
@@ -520,7 +570,7 @@ export function useDeadlinesEditing(params: UseDeadlinesEditingParams) {
         setIsSaving(false);
       }
     },
-    [selectedMonth, getProjectDeadline, inlineFormData, setDeadlines, setHiddenProjects]
+    [selectedMonth, getProjectDeadline, getProject, inlineFormData, setDeadlines, setHiddenProjects]
   );
 
   useEffect(() => {

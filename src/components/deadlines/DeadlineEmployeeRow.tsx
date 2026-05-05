@@ -58,6 +58,8 @@ export function DeadlineEmployeeRow({
     );
   }
 
+  const displayValue = value === '' || value === 0 ? '' : value;
+
   return (
     <div className="flex items-center gap-2 bg-white border rounded-lg px-2.5 py-1.5">
       <Avatar className="h-6 w-6">
@@ -71,10 +73,11 @@ export function DeadlineEmployeeRow({
         type="number"
         min={0}
         step={0.5}
-        value={value}
+        value={displayValue}
         onChange={(e) =>
           onHoursChange?.(employee.id, parseFloat(e.target.value) || 0, projectId)
         }
+        onFocus={(e) => (e.target as HTMLInputElement).select()}
         onBlur={() => {
           const h = typeof value === 'number' ? value : parseFloat(String(value)) || 0;
           onHoursChange?.(employee.id, h, projectId, true);

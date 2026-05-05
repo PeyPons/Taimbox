@@ -357,7 +357,7 @@ export default function OnboardingWizard() {
         title: t('onboarding.steps.departments.title', 'Departamentos'),
         description: t(
           'onboarding.steps.departments.desc',
-          'Equipos o áreas (SEO, diseño, cuentas…). Sirven para filtrar el planificador y asignar responsables.'
+          'Equipos o áreas (diseño, cuentas, creatividad…). Sirven para filtrar el planificador y asignar responsables.'
         ),
         icon: <Layers className="h-5 w-5" />,
       },

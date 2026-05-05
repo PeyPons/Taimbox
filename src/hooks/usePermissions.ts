@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useAgency } from '@/contexts/AgencyContext';
-import { UserPermissions, ROUTE_PERMISSIONS, DEFAULT_PERMISSIONS } from '@/types/permissions';
+import { UserPermissions, ROUTE_PERMISSIONS } from '@/types/permissions';
 import { canAccessRoute, hasPermissionFlag, resolveUserPermissions } from '@/utils/permissionsUtils';
 
 /**
@@ -15,7 +15,6 @@ export function usePermissions() {
     return resolveUserPermissions({
       currentUserRole: currentUser?.role,
       agencyRoles: currentAgency?.settings?.roles,
-      defaultPermissions: DEFAULT_PERMISSIONS,
     });
   }, [currentUser, currentAgency]);
 

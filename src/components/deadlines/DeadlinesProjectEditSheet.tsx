@@ -42,6 +42,8 @@ export interface DeadlinesProjectEditSheetProps {
   onOpenChange: (open: boolean) => void;
   project: ProjectForEdit;
   deadline: DeadlineForEdit | null;
+  /** Tope de horas del mes (prorrateo / override); si no se pasa, override o budget del proyecto. */
+  effectiveBudgetCap?: number;
   formData: InlineFormData;
   employees: EmployeeOption[];
   formatProjectName: (name: string) => string;
@@ -56,6 +58,7 @@ export function DeadlinesProjectEditSheet({
   onOpenChange,
   project,
   deadline,
+  effectiveBudgetCap,
   formData,
   employees,
   formatProjectName,
@@ -65,8 +68,9 @@ export function DeadlinesProjectEditSheet({
   onClose,
 }: DeadlinesProjectEditSheetProps) {
   const totalAssigned = (Object.values(formData.employeeHours) as number[]).reduce((sum, h) => sum + (h || 0), 0);
-  const isOverBudget = totalAssigned > (project.budgetHours || 0);
-  const budgetDisplay = deadline?.budgetOverride ?? project.budgetHours;
+  const budgetCap = effectiveBudgetCap ?? deadline?.budgetOverride ?? project.budgetHours ?? 0;
+  const isOverBudget = totalAssigned > budgetCap;
+  const budgetDisplay = budgetCap;
 
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
@@ -96,10 +100,14 @@ export function DeadlinesProjectEditSheet({
                   type="number"
                   min={0}
                   step={0.5}
-                  value={formData.employeeHours[emp.id] ?? ''}
+                  value={(() => {
+                    const h = formData.employeeHours[emp.id];
+                    return h == null || h === 0 ? '' : h;
+                  })()}
                   onChange={(e) =>
                     onEmployeeHoursChange(emp.id, parseFloat(e.target.value) || 0, project.id)
                   }
+                  onFocus={(e) => (e.target as HTMLInputElement).select()}
                   onBlur={() => {
                     const h = formData.employeeHours[emp.id] || 0;
                     onEmployeeHoursChange(emp.id, h, project.id, true);
@@ -126,6 +134,7 @@ export function DeadlinesProjectEditSheet({
                 const newBudget = adjustment !== undefined ? base + adjustment : undefined;
                 onFormPatch({ budgetOverride: newBudget }, 800);
               }}
+              onFocus={(e) => (e.target as HTMLInputElement).select()}
               className="h-11 font-mono"
             />
           </div>

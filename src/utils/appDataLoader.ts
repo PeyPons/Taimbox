@@ -187,7 +187,7 @@ export async function fetchInitialAppData({
         id: e.id,
         agencyId: e.agency_id,
         name: e.name,
-        role: (e.role || 'SEO') as EmployeeRole,
+        role: (e.role ?? '') as EmployeeRole,
         avatarUrl: e.avatar_url,
         defaultWeeklyCapacity: e.default_weekly_capacity,
         workSchedule: (e.work_schedule || {

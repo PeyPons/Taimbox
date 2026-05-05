@@ -63,8 +63,8 @@ export function DeadlinesSidebar({
   onDeleteGlobal,
 }: DeadlinesSidebarProps) {
   return (
-    <div className="w-64 flex-shrink-0">
-      <div className="sticky top-6 space-y-4">
+    <div className="w-64 flex-shrink-0 self-start sticky top-4 md:top-6 h-[calc(100vh-1.5rem)]">
+      <div className="h-full overflow-y-auto overflow-x-clip space-y-4 pb-2 [scrollbar-gutter:stable]">
         <DeadlinesAvailabilityCard
           employees={employees}
           getMonthlyCapacity={getMonthlyCapacity}

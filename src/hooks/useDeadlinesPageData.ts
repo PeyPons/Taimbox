@@ -4,12 +4,15 @@
  * Usado solo por DeadlinesPage. Expone broadcastChannelRef para que la página envíe lock-released.
  */
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { toast } from '@/lib/notify';
 import { supabase } from '@/lib/supabase';
 import { fetchGlobalAssignmentsForMonth } from '@/utils/globalAssignmentsUtils';
 import { Deadline, GlobalAssignment, Project, Client, Employee, Absence, TeamEvent, Allocation } from '@/types';
-import { filterEmployeesForOperationalMonth } from '@/utils/employeeAssignmentVisibility';
+import {
+  filterEmployeesForOperationalMonth,
+  employeeIdsWithDeadlineProjectHoursInMonth,
+} from '@/utils/employeeAssignmentVisibility';
 import { getEffectiveBudget } from '@/utils/budgetUtils';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
 import { matchesAliasingRule } from '@/lib/utils';
@@ -369,88 +372,135 @@ export function useDeadlinesPageData(params: UseDeadlinesPageDataParams) {
     return list.sort((a, b) => (a.first_name || a.name).localeCompare(b.first_name || b.name));
   }, [employeesForView, selectedMonth, deadlines, globalAssignments, allocations]);
 
-  const getMonthlyCapacity = (employeeId: string): MonthlyCapacityResult => {
-    const employee = (employees ?? []).find((e) => e.id === employeeId);
-    if (!employee)
-      return {
-        total: 0,
-        absenceHours: 0,
-        eventHours: 0,
-        available: 0,
-        absenceDetails: [],
-        eventDetails: [],
-      };
+  /** Solo filas/avatares en vista lectura: quienes tienen horas en algún proyecto este mes (sin globales). */
+  const employeesForProjectDisplay = useMemo(() => {
+    const withProjectHours = employeeIdsWithDeadlineProjectHoursInMonth(
+      selectedMonth,
+      deadlines,
+      hiddenProjects
+    );
+    return activeEmployees.filter((e) => withProjectHours.has(e.id));
+  }, [activeEmployees, selectedMonth, deadlines, hiddenProjects]);
+
+  const emptyCapacity: MonthlyCapacityResult = useMemo(
+    () => ({
+      total: 0,
+      absenceHours: 0,
+      eventHours: 0,
+      available: 0,
+      absenceDetails: [],
+      eventDetails: [],
+    }),
+    []
+  );
+
+  const monthlyCapacityByEmployee = useMemo(() => {
+    const map = new Map<string, MonthlyCapacityResult>();
+    const staff = employees ?? [];
+    if (staff.length === 0) return map;
 
     const [year, month] = selectedMonth.split('-').map(Number);
     const monthStart = startOfMonth(new Date(year, month - 1));
     const monthEnd = endOfMonth(new Date(year, month - 1));
     const daysInMonth = getDaysInMonth(new Date(year, month - 1));
-    const workSchedule = employee.workSchedule;
 
-    let baseHours = 0;
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month - 1, day);
-      const dayOfWeek = date.getDay();
-      const dayKey = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dayOfWeek];
-      baseHours += workSchedule[dayKey as keyof typeof workSchedule] || 0;
+    const absencesByEmployee = new Map<string, Absence[]>();
+    absences.forEach((a) => {
+      const list = absencesByEmployee.get(a.employeeId) ?? [];
+      list.push(a);
+      absencesByEmployee.set(a.employeeId, list);
+    });
+
+    for (const employee of staff) {
+      const workSchedule = employee.workSchedule;
+
+      let baseHours = 0;
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month - 1, day);
+        const dayOfWeek = date.getDay();
+        const dayKey = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][dayOfWeek];
+        baseHours += workSchedule[dayKey as keyof typeof workSchedule] || 0;
+      }
+
+      const employeeAbsences = absencesByEmployee.get(employee.id) ?? [];
+      const absenceHours = getAbsenceHoursInRange(monthStart, monthEnd, employeeAbsences, workSchedule);
+
+      const absenceDetails = employeeAbsences
+        .filter((a) => {
+          const start = new Date(a.startDate);
+          const end = new Date(a.endDate);
+          return start <= monthEnd && end >= monthStart;
+        })
+        .map((a) => ({
+          type: a.type,
+          startDate: a.startDate,
+          endDate: a.endDate,
+          hours: getAbsenceHoursInRange(monthStart, monthEnd, [a], workSchedule),
+        }))
+        .filter((a) => a.hours > 0);
+
+      const eventHours = getTeamEventHoursInRange(
+        monthStart,
+        monthEnd,
+        employee.id,
+        teamEvents,
+        workSchedule,
+        employeeAbsences
+      );
+      const eventDetailsRaw = getTeamEventDetailsInRange(
+        monthStart,
+        monthEnd,
+        employee.id,
+        teamEvents,
+        workSchedule,
+        employeeAbsences
+      );
+      const eventDetails = eventDetailsRaw.map((e) => ({ name: e.name, hours: e.hours }));
+      const available = Math.max(0, baseHours - absenceHours - eventHours);
+
+      map.set(employee.id, { total: baseHours, absenceHours, eventHours, available, absenceDetails, eventDetails });
     }
 
-    const employeeAbsences = absences.filter((a) => a.employeeId === employeeId);
-    const absenceHours = getAbsenceHoursInRange(monthStart, monthEnd, employeeAbsences, workSchedule);
+    return map;
+  }, [employees, selectedMonth, absences, teamEvents]);
 
-    const absenceDetails = employeeAbsences
-      .filter((a) => {
-        const start = new Date(a.startDate);
-        const end = new Date(a.endDate);
-        return start <= monthEnd && end >= monthStart;
-      })
-      .map((a) => ({
-        type: a.type,
-        startDate: a.startDate,
-        endDate: a.endDate,
-        hours: getAbsenceHoursInRange(monthStart, monthEnd, [a], workSchedule),
-      }))
-      .filter((a) => a.hours > 0);
+  const assignedHoursByEmployee = useMemo(() => {
+    const totals = new Map<string, number>();
+    const add = (employeeId: string, hours: number) => {
+      if (!employeeId || !Number.isFinite(hours) || hours === 0) return;
+      totals.set(employeeId, (totals.get(employeeId) ?? 0) + hours);
+    };
 
-    const eventHours = getTeamEventHoursInRange(
-      monthStart,
-      monthEnd,
-      employeeId,
-      teamEvents,
-      workSchedule,
-      employeeAbsences
-    );
-    const eventDetailsRaw = getTeamEventDetailsInRange(
-      monthStart,
-      monthEnd,
-      employeeId,
-      teamEvents,
-      workSchedule,
-      employeeAbsences
-    );
-    const eventDetails = eventDetailsRaw.map((e) => ({ name: e.name, hours: e.hours }));
-    const available = Math.max(0, baseHours - absenceHours - eventHours);
-
-    return { total: baseHours, absenceHours, eventHours, available, absenceDetails, eventDetails };
-  };
-
-  const getEmployeeAssignedHours = (employeeId: string) => {
-    let total = 0;
     deadlines.forEach((deadline) => {
-      if (!hiddenProjects.has(deadline.projectId) && !deadline.isHidden) {
-        total += deadline.employeeHours[employeeId] || 0;
-      }
+      if (hiddenProjects.has(deadline.projectId) || deadline.isHidden) return;
+      Object.entries(deadline.employeeHours ?? {}).forEach(([employeeId, raw]) => {
+        add(employeeId, Number(raw) || 0);
+      });
     });
+
+    const allVisibleEmployeeIds = employeesForView.map((e) => e.id);
     globalAssignments.forEach((assignment) => {
-      if (
-        assignment.affectsAll ||
-        (assignment.affectedEmployeeIds ?? []).includes(employeeId)
-      ) {
-        total += assignment.hours;
+      const hours = Number(assignment.hours) || 0;
+      if (hours === 0) return;
+      if (assignment.affectsAll) {
+        allVisibleEmployeeIds.forEach((id) => add(id, hours));
+      } else {
+        (assignment.affectedEmployeeIds ?? []).forEach((id) => add(id, hours));
       }
     });
-    return total;
-  };
+
+    return totals;
+  }, [deadlines, hiddenProjects, globalAssignments, employeesForView]);
+
+  const getMonthlyCapacity = useCallback(
+    (employeeId: string): MonthlyCapacityResult => monthlyCapacityByEmployee.get(employeeId) ?? emptyCapacity,
+    [monthlyCapacityByEmployee, emptyCapacity]
+  );
+
+  const getEmployeeAssignedHours = useCallback(
+    (employeeId: string) => assignedHoursByEmployee.get(employeeId) ?? 0,
+    [assignedHoursByEmployee]
+  );
 
   const filteredProjects = useMemo(() => {
     const { searchTerm, filterId, showHidden, showUnassignedOnly, filterByEmployee, sortBy } =
@@ -571,6 +621,7 @@ export function useDeadlinesPageData(params: UseDeadlinesPageDataParams) {
     editingLocks,
     setEditingLocks,
     activeEmployees,
+    employeesForProjectDisplay,
     filteredProjects,
     projectsByClient,
     getMonthlyCapacity,

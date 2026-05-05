@@ -39,6 +39,7 @@ import { toast } from '@/lib/notify';
 import { supabase } from '@/lib/supabase';
 import { Deadline, GlobalAssignment } from '@/types';
 import { fetchDeadlinesForMonth } from '@/utils/deadlineUtils';
+import { getEffectiveBudgetForMonth } from '@/utils/budgetUtils';
 import { cn } from '@/lib/utils';
 import { useProjectAliasing } from '@/hooks/useProjectAliasing';
 import { format, addMonths, subMonths } from 'date-fns';
@@ -73,6 +74,10 @@ export default function DeadlinesPage() {
   const { formatName: formatProjectName } = useProjectAliasing();
 
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
+  const selectedMonthStart = useMemo(() => {
+    const [y, m] = selectedMonth.split('-').map(Number);
+    return new Date(y, m - 1, 1);
+  }, [selectedMonth]);
   const [filterSnapshot, setFilterSnapshot] = useState<DeadlinesFiltersValues>({
     searchTerm: '',
     filterId: 'all',
@@ -112,6 +117,7 @@ export default function DeadlinesPage() {
     editingLocks,
     setEditingLocks,
     activeEmployees,
+    employeesForProjectDisplay,
     filteredProjects,
     projectsByClient,
     getMonthlyCapacity,
@@ -128,6 +134,10 @@ export default function DeadlinesPage() {
     currentUser,
     employees: employees ?? [],
     getProjectDeadline,
+    getProject: (projectId) => {
+      const p = projects.find((x) => x.id === projectId);
+      return p ? { budgetHours: p.budgetHours } : undefined;
+    },
     hiddenProjects,
     setHiddenProjects,
     setDeadlines,
@@ -606,6 +616,7 @@ export default function DeadlinesPage() {
           editingLocks={editingLocks}
           currentUserId={currentUser?.id}
           employees={activeEmployees}
+          employeesForDisplayChips={employeesForProjectDisplay}
           formatProjectName={formatProjectName}
           isMobile={isMobile}
           startEditingProject={startEditingProject}
@@ -623,6 +634,7 @@ export default function DeadlinesPage() {
               toast.info(t('deadlines.toasts.noConfigToDelete'));
             }
           }}
+          monthAnchor={selectedMonthStart}
         />
       </div>
 
@@ -645,6 +657,7 @@ export default function DeadlinesPage() {
                 ? { budgetOverride: deadline.budgetOverride }
                 : null
             }
+            effectiveBudgetCap={getEffectiveBudgetForMonth(project, deadline ?? null, selectedMonthStart)}
             formData={inlineFormData}
             employees={activeEmployees}
             formatProjectName={formatProjectName}

@@ -175,11 +175,6 @@ export function DeadlinesAvailabilityCard({
           );
         })}
       </div>
-      {!compact && employees.some((emp) => (getMonthlyCapacity(emp.id).absenceHours > 0 || getMonthlyCapacity(emp.id).eventHours > 0)) && (
-        <p className="text-[10px] text-slate-400 mt-2 pt-2 border-t border-slate-100">
-          * Ausencias o eventos este mes (no indica rol ni administrador).
-        </p>
-      )}
     </div>
   );
 }

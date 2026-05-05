@@ -11,6 +11,13 @@ import { ChevronDown, ChevronRight, Edit, EyeOff, Trash2, CheckCircle2 } from 'l
 import { cn } from '@/lib/utils';
 import { DeadlineEmployeeRow } from '@/components/deadlines/DeadlineEmployeeRow';
 import { SensitiveText } from '@/components/privacy/SensitiveText';
+import { useAppTranslation } from '@/hooks/useAppTranslation';
+import {
+  budgetAdjustmentDelta,
+  budgetsNearlyEqual,
+  getEffectiveBudgetForMonth,
+  getEffectiveMinimumForMonth,
+} from '@/utils/budgetUtils';
 export interface InlineFormData {
   employeeHours: Record<string, number>;
   notes: string;
@@ -26,6 +33,8 @@ export interface ProjectItem {
   clientId?: string;
   projectType?: string;
   monthlyFee?: number;
+  deliverableStartDate?: string | null;
+  deliverableDueDate?: string | null;
 }
 
 export interface ClientItem {
@@ -68,6 +77,8 @@ export interface DeadlinesProjectListProps {
   editingLocks: Record<string, EditLock>;
   currentUserId: string | undefined;
   employees: EmployeeItem[];
+  /** Vista lectura: chips por empleado; si se omite, se usa `employees`. La edición usa siempre `employees`. */
+  employeesForDisplayChips?: EmployeeItem[];
   formatProjectName: (name: string) => string;
   isMobile: boolean;
   startEditingProject: (projectId: string) => void;
@@ -77,6 +88,8 @@ export interface DeadlinesProjectListProps {
   autoSaveStatus: 'idle' | 'saving' | 'saved';
   cancelEditingProject: () => void;
   onRequestDeleteDeadline: (project: ProjectItem) => void;
+  /** Primer día del mes seleccionado (prorrateo entregable / límites efectivos). */
+  monthAnchor: Date;
 }
 
 export function DeadlinesProjectList({
@@ -91,6 +104,7 @@ export function DeadlinesProjectList({
   editingLocks,
   currentUserId,
   employees,
+  employeesForDisplayChips,
   formatProjectName,
   isMobile,
   startEditingProject,
@@ -100,7 +114,10 @@ export function DeadlinesProjectList({
   autoSaveStatus,
   cancelEditingProject,
   onRequestDeleteDeadline,
+  monthAnchor,
 }: DeadlinesProjectListProps) {
+  const { t } = useAppTranslation();
+  const displayEmployees = employeesForDisplayChips ?? employees;
   const clientEntries = Object.entries(projectsByClient);
 
   if (clientEntries.length === 0) {
@@ -152,11 +169,19 @@ export function DeadlinesProjectList({
                     (sum, h) => sum + (h || 0),
                     0
                   );
-                  const isOverBudget = totalAssigned > (project.budgetHours || 0);
-                  const isUnderMin =
-                    project.minimumHours != null &&
-                    project.minimumHours > 0 &&
-                    totalAssigned < project.minimumHours;
+                  const catalogBudget = project.budgetHours || 0;
+                  const effMax = getEffectiveBudgetForMonth(project, deadline, monthAnchor);
+                  const effMin = getEffectiveMinimumForMonth(project, deadline, monthAnchor);
+                  const adjDelta = budgetAdjustmentDelta(catalogBudget, deadline);
+                  const isOverBudget = totalAssigned > effMax;
+                  const isUnderMin = effMin > 0 && totalAssigned < effMin;
+                  const monthRangeHint =
+                    (project.minimumHours != null &&
+                      project.minimumHours > 0 &&
+                      effMin < project.minimumHours) ||
+                    !budgetsNearlyEqual(effMax, catalogBudget)
+                      ? t('deadlines.projectList.monthRangeHint')
+                      : undefined;
                   const isHidden = isEditing
                     ? inlineFormData.isHidden
                     : hiddenProjects.has(project.id);
@@ -201,35 +226,26 @@ export function DeadlinesProjectList({
                                 </Badge>
                               )}
                           </div>
-                          <div className="text-[11px] text-slate-400 font-mono mt-0.5">
-                            {project.minimumHours != null && project.minimumHours > 0 && (
-                              <span className="text-orange-500 mr-1">
-                                mín {project.minimumHours}h ·
-                              </span>
+                          <div
+                            className="text-[11px] text-slate-400 font-mono mt-0.5"
+                            title={monthRangeHint}
+                          >
+                            {effMin > 0 && (
+                              <span className="text-orange-500 mr-1">mín {effMin}h ·</span>
                             )}
                             <span>
-                              máx{' '}
-                              {deadline?.budgetOverride != null
-                                ? deadline.budgetOverride
-                                : project.budgetHours}
-                              h
-                              {deadline?.budgetOverride != null &&
-                                (deadline.budgetOverride - (project.budgetHours || 0)) !== 0 && (
-                                  <span
-                                    className={cn(
-                                      'ml-1 font-bold',
-                                      (deadline.budgetOverride - (project.budgetHours || 0)) > 0
-                                        ? 'text-emerald-600'
-                                        : 'text-red-500'
-                                    )}
-                                  >
-                                    (
-                                    {(deadline.budgetOverride - (project.budgetHours || 0)) > 0
-                                      ? '+'
-                                      : ''}
-                                    {deadline.budgetOverride - (project.budgetHours || 0)}h)
-                                  </span>
-                                )}
+                              máx {effMax}h
+                              {adjDelta != null && (
+                                <span
+                                  className={cn(
+                                    'ml-1 font-bold',
+                                    adjDelta > 0 ? 'text-emerald-600' : 'text-red-500'
+                                  )}
+                                >
+                                  ({adjDelta > 0 ? '+' : ''}
+                                  {adjDelta}h)
+                                </span>
+                              )}
                             </span>
                           </div>
                           {projectNotes && !isEditing && (
@@ -241,7 +257,7 @@ export function DeadlinesProjectList({
 
                         <div className="flex-1 flex items-center gap-1.5 flex-wrap">
                           {!isEditing &&
-                            employees.map((emp) => (
+                            displayEmployees.map((emp) => (
                               <DeadlineEmployeeRow
                                 key={emp.id}
                                 employee={emp}
@@ -270,7 +286,7 @@ export function DeadlinesProjectList({
                             >
                               {totalAssigned}h
                             </span>
-                            <span className="text-xs text-slate-400">/{project.budgetHours}h</span>
+                            <span className="text-xs text-slate-400">/{effMax}h</span>
                           </div>
                         </div>
                       </div>
@@ -314,14 +330,19 @@ export function DeadlinesProjectList({
                                 className={cn(
                                   'h-7 w-16 text-center font-mono text-xs px-1',
                                   inlineFormData.budgetOverride !== undefined &&
-                                    inlineFormData.budgetOverride - (project.budgetHours || 0) !==
-                                      0 &&
+                                    !budgetsNearlyEqual(
+                                      inlineFormData.budgetOverride,
+                                      project.budgetHours || 0
+                                    ) &&
                                     'bg-amber-50 border-amber-200 text-amber-700 font-bold'
                                 )}
+                                onFocus={(e) => (e.target as HTMLInputElement).select()}
                               />
                               {inlineFormData.budgetOverride !== undefined &&
-                                inlineFormData.budgetOverride - (project.budgetHours || 0) !==
-                                  0 && (
+                                !budgetsNearlyEqual(
+                                  inlineFormData.budgetOverride,
+                                  project.budgetHours || 0
+                                ) && (
                                   <span className="text-[10px] text-slate-400 font-mono">
                                     = {inlineFormData.budgetOverride}h
                                   </span>

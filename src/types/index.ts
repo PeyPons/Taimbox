@@ -56,8 +56,8 @@ export interface AgencyBranding {
 // Custom project filter configuration
 export interface CustomProjectFilter {
   id: string;
-  name: string;           // Internal name: "SEO", "PPC", etc.
-  displayName: string;    // UI display: "Proyectos SEO"
+  name: string;           // Internal name: e.g. channel or department slug
+  displayName: string;    // UI display label
   enabled: boolean;       // If filter is active for this agency
   includePatterns: string[];  // Keywords to INCLUDE (OR logic)
   excludePatterns: string[];  // Keywords to EXCLUDE (AND logic)

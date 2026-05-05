@@ -207,6 +207,9 @@
   },
   "deadlines": {
     "loading": "Cargando deadlines...",
+    "projectList": {
+      "monthRangeHint": "Los mínimos y máximos mostrados son los aplicables a este mes (prorrateo del contrato o ajuste guardado), no siempre los del proyecto en catálogo."
+    },
     "filters": {
       "button": "Filtros"
     },
@@ -1360,8 +1363,8 @@
       "noProjectsMatch": "No hay proyectos o no coincide la búsqueda",
       "noClientsMatch": "No hay clientes o no coincide la búsqueda",
       "radarTitle": "Radar operativo",
-      "radarDesc": "Si el nombre del proyecto contiene alguna de estas palabras, no se marcará como riesgo «Poco avance» al final de mes. Ej.: off-page, linkbuilding.",
-      "keywordPlaceholder": "Añadir palabra clave (ej. off-page)",
+      "radarDesc": "Si el nombre del proyecto contiene alguna de estas palabras, no se marcará como riesgo «Poco avance» al final de mes. Ej.: piloto, mantenimiento.",
+      "keywordPlaceholder": "Añadir palabra (ej. piloto)",
       "addKeyword": "Añadir",
       "removeKeywordAria": "Quitar {{kw}}"
     },

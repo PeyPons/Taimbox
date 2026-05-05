@@ -60,12 +60,13 @@ export function findRoleConfigByName(roles: unknown[], userRoleName: string): Ro
 export function resolveUserPermissions(params: {
   currentUserRole?: string | null;
   agencyRoles?: unknown[];
-  defaultPermissions: UserPermissions;
 }): UserPermissions {
-  const { currentUserRole, agencyRoles = [], defaultPermissions } = params;
+  const { currentUserRole, agencyRoles = [] } = params;
 
-  if (!currentUserRole) {
-    return defaultPermissions;
+  // Sin rol en empleado (null, vacío o solo espacios): mismo criterio que rol desconocido — acceso mínimo.
+  // No usar defaultPermissions aquí: DEFAULT_PERMISSIONS habilita toda la app, incl. configuración de agencia.
+  if (!normalizeRoleName(currentUserRole)) {
+    return RESTRICTED_PERMISSIONS;
   }
 
   const roleConfig = findRoleConfigByName(agencyRoles, currentUserRole);

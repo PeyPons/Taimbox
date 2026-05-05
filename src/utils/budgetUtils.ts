@@ -10,6 +10,36 @@ function round2(n: number): number {
   return Math.round((n + Number.EPSILON) * 100) / 100;
 }
 
+/** Tolerancia para comparar presupuestos guardados vs catálogo (evita “ajuste fantasma” por redondeo). */
+const BUDGET_NUMERIC_EPS = 1e-6;
+
+export function budgetsNearlyEqual(a: number, b: number): boolean {
+  return Math.abs(a - b) < BUDGET_NUMERIC_EPS;
+}
+
+/**
+ * True si el deadline tiene un `budgetOverride` distinto al `budgetHours` del proyecto (catálogo).
+ * Si coinciden numéricamente, se considera sin ajuste (p. ej. tras cambiar el proyecto o datos legacy).
+ */
+export function hasActiveBudgetAdjustment(
+  projectBudgetHours: number,
+  deadline: { budgetOverride?: number | null } | null | undefined
+): boolean {
+  const o = deadline?.budgetOverride;
+  if (o == null || !Number.isFinite(Number(o))) return false;
+  const base = projectBudgetHours || 0;
+  return !budgetsNearlyEqual(Number(o), base);
+}
+
+/** Delta en horas respecto al presupuesto del proyecto, o null si no hay ajuste activo. */
+export function budgetAdjustmentDelta(
+  projectBudgetHours: number,
+  deadline: { budgetOverride?: number | null } | null | undefined
+): number | null {
+  if (!hasActiveBudgetAdjustment(projectBudgetHours, deadline)) return null;
+  return Number(deadline!.budgetOverride) - (projectBudgetHours || 0);
+}
+
 /** Entregable sin prorrateo por fase: fee mensual explícito o, si es 0, importe de contrato como referencia mensual. */
 function entregableMonthlyFeeWithoutPhase(project: ProjectFeeFields, base: number): number {
   if (base > 0) {
@@ -172,8 +202,23 @@ export function getEffectiveBudgetForMonth(
 }
 
 /**
- * Devuelve el minimum efectivo para un proyecto en un mes.
- * Si el budget fue overridden, el minimum no puede exceder el override.
+ * Mínimo de horas aplicable en un mes: no puede superar el tope de horas de ese mes
+ * (prorrateo entregable y/o ajuste en el deadline).
+ */
+export function getEffectiveMinimumForMonth(
+  project: ProjectBudgetMonthFields & { minimumHours?: number },
+  deadline: { budgetOverride?: number } | null | undefined,
+  month: Date
+): number {
+  const cap = getEffectiveBudgetForMonth(project, deadline, month);
+  const minimum = project.minimumHours || 0;
+  if (minimum <= 0) return 0;
+  return Math.min(minimum, cap);
+}
+
+/**
+ * Mínimo contractual recortado por un `budgetOverride` del deadline (sin prorrateo por calendario).
+ * Para límites en un mes concreto, usar `getEffectiveMinimumForMonth`.
  */
 export function getEffectiveMinimum(
   project: { budgetHours: number; minimumHours?: number },

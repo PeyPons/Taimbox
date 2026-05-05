@@ -578,7 +578,21 @@ function ResumenPropuesto({
     if (projectItems.length) byProject.push({ projectId: p.projectId, projectName: p.projectName, items: projectItems });
   });
   if (totalToReceptor <= 0) {
-    if (!compact) return <div className="text-sm text-slate-500 py-4">Sin horas sugeridas para este empleado con la opción actual.</div>;
+    if (!compact) {
+      const rCap = getMonthlyCapacity(group.employeeId).available;
+      const rAssigned = getEmployeeAssignedHours(group.employeeId);
+      const rPct = rCap > 0 ? Math.round((rAssigned / rCap) * 100) : 0;
+      return (
+        <div className="text-sm text-slate-600 py-4 space-y-2">
+          <p>Sin transferencias sugeridas con los condicionantes actuales.</p>
+          {group.deficitHours > 0 && (
+            <p className="text-xs text-slate-500">
+              Margen bajo el tope configurado: ~{Math.round(group.deficitHours * 2) / 2}h · Carga actual ~{rPct}%
+            </p>
+          )}
+        </div>
+      );
+    }
     return null;
   }
   const receptorCap = getMonthlyCapacity(group.employeeId).available;
@@ -871,7 +885,9 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-slate-900 truncate">{group.employeeName}</p>
                     <p className="text-xs text-slate-500">
-                      Puede recibir horas en {group.projects.length} {group.projects.length === 1 ? 'proyecto' : 'proyectos'}
+                      {group.projects.length > 0
+                        ? `Puede recibir horas en ${group.projects.length} ${group.projects.length === 1 ? 'proyecto' : 'proyectos'}`
+                        : 'Tiene margen para recibir; no hay proyectos sugeridos con los filtros actuales'}
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -894,6 +910,12 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="border-t border-slate-100 bg-slate-50/30 px-2 pb-2 pt-1 space-y-2">
+                  {group.projects.length === 0 ? (
+                    <div className="px-2 py-4 text-center text-sm text-slate-600">
+                      Prueba a relajar el % mínimo de quien cede, subir el tope del receptor o revisar proyectos incluidos /
+                      «solo en común».
+                    </div>
+                  ) : null}
                   {group.projects.map((proj) => {
                     const projectKey = `${group.employeeId}-${proj.projectId}`;
                     const isProjectOpen = expandedProjects.has(projectKey);
@@ -1004,7 +1026,7 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
 
   const selectedGroup = suggestionsByEmployeeAndProject.find((g) => expandedEmployees.has(g.employeeId));
   const rightPanel = (
-    <div className="hidden lg:flex flex-col min-h-0 overflow-y-auto overflow-x-hidden bg-slate-50/50 rounded-lg border border-slate-200 p-3">
+    <div className="hidden lg:flex flex-col min-h-0 lg:max-h-[min(85vh,calc(100vh-8rem))] overflow-y-auto overflow-x-hidden bg-slate-50/50 rounded-lg border border-slate-200 p-3">
       {!selectedGroup ? (
         <div className="flex flex-col items-center justify-center gap-2 text-slate-500 py-8 px-4">
           <PanelRight className="h-10 w-10 text-slate-300" />
@@ -1034,11 +1056,15 @@ export function DeadlinesSuggestionsPanel(props: DeadlinesSuggestionsPanelProps)
           </DialogDescription>
         </DialogHeader>
         <CondicionantesBlock {...condicionantesProps} />
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr,minmax(320px,400px)] gap-4 min-h-0">
-          <div className="overflow-y-auto min-h-0 py-1 space-y-3 pr-1 border-r-0 lg:border-r lg:border-slate-200 lg:pr-4">
-            {listContent}
+        <div className="flex-1 min-h-0 min-w-0 overflow-y-auto overscroll-contain">
+          <div className="flex flex-col lg:flex-row gap-4 lg:items-start min-w-0">
+            <div className="flex-1 min-w-0 overflow-x-auto py-1 space-y-3 pr-1 border-r-0 lg:border-r lg:border-slate-200 lg:pr-4">
+              {listContent}
+            </div>
+            <div className="w-full lg:w-[minmax(280px,400px)] lg:flex-shrink-0 lg:sticky lg:top-0 lg:self-start min-w-0">
+              {rightPanel}
+            </div>
           </div>
-          {rightPanel}
         </div>
       </DialogContent>
     </Dialog>

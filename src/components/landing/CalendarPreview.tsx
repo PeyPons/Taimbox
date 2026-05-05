@@ -94,7 +94,7 @@ export function CalendarPreview() {
           </Avatar>
           <div>
             <div className="font-bold text-slate-900 text-sm sm:text-base">María González</div>
-            <div className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wide">SEO Specialist</div>
+            <div className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wide">{t('demo.profileRole')}</div>
           </div>
         </div>
       </div>

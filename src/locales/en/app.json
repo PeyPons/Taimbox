@@ -207,6 +207,9 @@
   },
   "deadlines": {
     "loading": "Loading deadlines...",
+    "projectList": {
+      "monthRangeHint": "The min/max shown apply to this month (deliverable proration or saved adjustment), not always the catalog project values."
+    },
     "filters": {
       "button": "Filters"
     },
@@ -877,8 +880,8 @@
       "noProjectsMatch": "No projects or no match",
       "noClientsMatch": "No clients or no match",
       "radarTitle": "Operations radar",
-      "radarDesc": "If the project name contains any of these words, it will not be flagged as “Low progress” risk at month end. E.g. off-page, link building.",
-      "keywordPlaceholder": "Add keyword (e.g. off-page)",
+      "radarDesc": "If the project name contains any of these words, it will not be flagged as “Low progress” risk at month end. E.g. pilot, maintenance.",
+      "keywordPlaceholder": "Add word (e.g. pilot)",
       "addKeyword": "Add",
       "removeKeywordAria": "Remove {{kw}}"
     },

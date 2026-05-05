@@ -239,7 +239,7 @@ export function MockDeadlines() {
     const projects = [
         { name: 'Web Acme Corp', deadline: '40h', planned: '38h', pct: 95, ok: true },
         { name: 'App Beta Inc', deadline: '25h', planned: '30h', pct: 120, ok: false },
-        { name: 'SEO Gamma', deadline: '15h', planned: '12h', pct: 80, ok: true },
+        { name: 'Relanzamiento Gamma', deadline: '15h', planned: '12h', pct: 80, ok: true },
     ];
     return (
         <div className="rounded-2xl border border-white/10 bg-slate-900/80 p-4 sm:p-5 shadow-2xl backdrop-blur-sm w-full max-w-sm">

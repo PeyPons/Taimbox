@@ -82,6 +82,26 @@ export function filterEmployeesForOperationalMonth(
   return employees.filter((e) => e.isActive || withWorkload.has(e.id));
 }
 
+/**
+ * Empleados con al menos una asignación > 0 en algún deadline del mes (solo horas de proyecto),
+ * excluyendo proyectos ocultos en la vista. No cuenta asignaciones globales ni planificador.
+ */
+export function employeeIdsWithDeadlineProjectHoursInMonth(
+  monthKey: string,
+  deadlines: Deadline[],
+  hiddenProjectIds: Set<string>
+): Set<string> {
+  const ids = new Set<string>();
+  for (const d of deadlines) {
+    if (d.month !== monthKey) continue;
+    if (hiddenProjectIds.has(d.projectId) || d.isHidden) continue;
+    for (const [empId, raw] of Object.entries(d.employeeHours ?? {})) {
+      if ((Number(raw) || 0) > 0) ids.add(empId);
+    }
+  }
+  return ids;
+}
+
 /** Variante cuando el mes viene como `Date` (p. ej. rentabilidad). */
 export function filterEmployeesForOperationalMonthDate(
   employees: Employee[],
