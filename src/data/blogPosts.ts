@@ -14,6 +14,23 @@ export interface BlogPost {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: "capacidad-calendario-vs-capacidad-productiva-equipo",
+    slugEn: "calendar-capacity-vs-shippable-team-capacity",
+    title:
+      "Capacidad calendario vs capacidad productiva: por qué un equipo ocupado no siempre entrega",
+    titleEn:
+      "Calendar capacity vs productive capacity: why a busy team still misses deliverables",
+    description:
+      "Cómo distinguir horas visibles de capacidad útil en agencias: señales observables, checklist semanal, anti-patrones y reglas para evitar prometer fechas con un calendario engañoso.",
+    descriptionEn:
+      "How to separate visible hours from productive capacity in agency teams: observable signals, a weekly checklist, anti-patterns, and planning rules that avoid false delivery promises.",
+    date: "2026-05-06",
+    href: "/blog/capacidad-calendario-vs-capacidad-productiva-equipo",
+    hrefEn: "/en/blog/calendar-capacity-vs-shippable-team-capacity",
+    readingMinutes: 11,
+    relatedSlug: "planificacion-proyectos-cronograma-recursos",
+  },
+  {
     slug: "por-que-tu-agencia-pierde-rentabilidad-equipo-ocupado",
     slugEn: "why-agency-loses-profitability-busy-team",
     title: "Por qué tu agencia pierde rentabilidad aunque el equipo esté siempre ocupado",

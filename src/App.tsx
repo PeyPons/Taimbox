@@ -41,6 +41,7 @@ import LeyParkinsonPage from "./pages/blog/LeyParkinsonPage";
 import KpisAgenciasMarketingPage from "./pages/blog/KpisAgenciasMarketingPage";
 import PlantillaPlanificacionRecursosPage from "./pages/blog/PlantillaPlanificacionRecursosPage";
 import GestionCargaTrabajoEquipoPage from "./pages/blog/GestionCargaTrabajoEquipoPage";
+import CapacidadCalendarioVsProductivaPage from "./pages/blog/CapacidadCalendarioVsProductivaPage";
 import PorQueAgenciaPierdeRentabilidadPage from "./pages/blog/PorQueAgenciaPierdeRentabilidadPage";
 import ComoMedirRentabilidadProyectoPage from "./pages/blog/ComoMedirRentabilidadProyectoPage";
 import EmployeeDashboardLandingPage from "./pages/EmployeeDashboardLandingPage";
@@ -173,6 +174,7 @@ const App = () => (
                         <Route path="/blog/por-que-tu-agencia-pierde-rentabilidad-equipo-ocupado" element={<PorQueAgenciaPierdeRentabilidadPage />} />
                         <Route path="/blog/como-medir-rentabilidad-proyecto-agencia-dejar-vender-horas" element={<ComoMedirRentabilidadProyectoPage />} />
                         <Route path="/blog/gestion-carga-trabajo-equipo-sin-burnout" element={<GestionCargaTrabajoEquipoPage />} />
+                        <Route path="/blog/capacidad-calendario-vs-capacidad-productiva-equipo" element={<CapacidadCalendarioVsProductivaPage />} />
                         {/* Redirección 301: URL antigua del artículo */}
                         <Route path="/que-es-timeboxing" element={<Navigate to="/blog/que-es-timeboxing" replace />} />
 
@@ -215,6 +217,7 @@ const App = () => (
                         <Route path="/en/blog/why-agency-loses-profitability-busy-team" element={<PorQueAgenciaPierdeRentabilidadPage />} />
                         <Route path="/en/blog/measure-project-profitability-stop-selling-hours" element={<ComoMedirRentabilidadProyectoPage />} />
                         <Route path="/en/blog/workload-management-without-burnout" element={<GestionCargaTrabajoEquipoPage />} />
+                        <Route path="/en/blog/calendar-capacity-vs-shippable-team-capacity" element={<CapacidadCalendarioVsProductivaPage />} />
                         <Route path="/en/employee-dashboard" element={<EmployeeDashboardLandingPage />} />
                         <Route path="/en/resource-planner" element={<PlannerLandingPage />} />
                         <Route path="/en/team-management" element={<TeamLandingPage />} />

@@ -1829,6 +1829,209 @@
         "desc": "Agency resource and time planner. Timeboxing, hourly schedule, and profitability reports."
       }
     },
+    "capacidadCalendarioVsProductiva": {
+      "badge": "Planning and execution",
+      "title": "Calendar capacity vs productive capacity: why a busy team still misses deliverables",
+      "intro": {
+        "p1": "You have probably seen this in agency life: Monday looks tidy on the calendar, Tuesday brings two urgent requests, Wednesday gets swallowed by \"just 30-minute\" meetings, and by Friday you are renegotiating a date that looked safe three days earlier. This is not a commitment issue. It is a planning issue: <strong>calendar capacity is not the same as productive capacity</strong>.",
+        "p2": "This guide breaks it down in practical terms: what part of your week is visible busyness, what part truly moves named deliverables, which early signals point to hidden overload, and which low-effort changes you can make this week to stop promising against a misleading picture.",
+        "callout": {
+          "prefix": "If you want one shared language for dates, budget, and people, start with",
+          "linkPlan": "project planning with schedule and resources",
+          "mid": ". If your issue is already silent overload,",
+          "linkCarga": "workload management without burnout",
+          "suffix": "gives you early warning signs and practical framing."
+        }
+      },
+      "sections": {
+        "map": {
+          "title": "1. Quick map (so you can scan fast)",
+          "p1": "This article is meant to be applied, not just read. If you only have ten minutes, jump straight to section 5 and run the checklist.",
+          "table": {
+            "headers": {
+              "0": "Section",
+              "1": "What it clarifies",
+              "2": "Practical outcome"
+            },
+            "row0": {
+              "c0": "2. Why the calendar lies",
+              "c1": "The gap between visible free slots and usable focus blocks.",
+              "c2": "You stop committing based on fictional hours."
+            },
+            "row1": {
+              "c0": "3. Deliverables vs busyness",
+              "c1": "How to separate activity from genuine forward motion.",
+              "c2": "You bring observable signals into status reviews."
+            },
+            "row2": {
+              "c0": "4. Net capacity on Monday",
+              "c1": "Four lightweight decisions to reshape the week.",
+              "c2": "You recover focus without new tools or a big reorg."
+            },
+            "row3": {
+              "c0": "5. Weekly checklist and anti-patterns",
+              "c1": "A manager script plus common traps that drain teams.",
+              "c2": "You replace fuzzy updates with concrete agreements."
+            }
+          }
+        },
+        "calendarLie": {
+          "title": "2. Why a \"green\" calendar is not a delivery promise",
+          "p1": "Calendars track <strong>commitments</strong>. Delivery work needs <strong>continuity</strong>. A two-hour slot between meetings can shrink to twenty useful minutes once you account for prep, context switching, urgent pings, and decision leftovers from prior calls. That hidden tax rarely appears in planning views, but it always appears in missed dates.",
+          "p2": "The signal is not only operational, it is human. You see it when quality drops, replies turn terse, and the team stays in reaction mode. If your planning logic trusts empty slots alone, you are measuring availability theatre, not productive capacity."
+        },
+        "deliverables": {
+          "title": "3. The uncomfortable question: what deliverable moved today?",
+          "p1": "A fully booked day can still end with zero tangible progress. Change the review question from \"Were we busy?\" to \"Which deliverable moved in a visible way?\" If you cannot point to a concrete change in an active deliverable, that capacity did not exist for planning purposes.",
+          "p2": "This wording shift prevents a classic mistake: treating meetings, chats, and coordination as progress by default. Coordination matters, but it cannot consume the week while leaving no trace in what the client will actually receive.",
+          "table": {
+            "headers": {
+              "0": "Calendar signal",
+              "1": "Optimistic reading",
+              "2": "Operational reading"
+            },
+            "row0": {
+              "c0": "Six 30-minute meetings in one day",
+              "c1": "\"Only three hours\"",
+              "c2": "The day gets fragmented and deep work is pushed late."
+            },
+            "row1": {
+              "c0": "A 45-minute focus block",
+              "c1": "\"It is protected\"",
+              "c2": "Without interruption rules, that block is symbolic."
+            },
+            "row2": {
+              "c0": "A light week of external calls",
+              "c1": "\"We have breathing room\"",
+              "c2": "Rework, unplanned reviews, and scope tweaks fill the gap."
+            }
+          }
+        },
+        "monday": {
+          "title": "4. Net capacity: what you can change on Monday without buying anything",
+          "p1": "Before introducing another tool, make four visible decisions in the system your team already uses:",
+          "li1": "<strong>Explicit buffer</strong>: nobody should be planned at 100% calendar load. No cushion means planned delays.",
+          "li2": "<strong>Meeting rule</strong>: define coordination windows and protect long execution blocks on key days.",
+          "li3": "<strong>Timeboxing for deliverables</strong>: deep-work blocks must be tied to a deliverable, not generic \"misc\".",
+          "li4": "<strong>One weekly metric</strong>: how many hours were true build time and which deliverable moved because of them.",
+          "p2": "When someone says \"this is too much process\", ask one question: how many dates moved last month without scope changes? That usually resets the conversation."
+        },
+        "checklist": {
+          "title": "5. Weekly checklist and anti-patterns that drain real capacity",
+          "p1": "Run this checklist every Monday in twenty minutes. If two or more items are red, you do not need a motivation speech; you need a workload adjustment.",
+          "p2": "The goal is not control for its own sake. It is to catch friction early, before it turns into chronic delays or team burnout.",
+          "step1": "<strong>Long focus blocks</strong>: does each critical role have at least two 90-minute execution blocks this week?",
+          "step2": "<strong>Deliverables with ownership</strong>: does every commitment have one owner and a clear definition of done?",
+          "step3": "<strong>Meeting limits</strong>: are any days above your agreed coordination threshold?",
+          "step4": "<strong>Visible contingency buffer</strong>: is it explicitly reserved or silently outsourced to overtime?",
+          "step5": "<strong>Early risk signal</strong>: do you already know which date breaks first if one more urgent item lands?",
+          "antiTable": {
+            "headers": {
+              "0": "Anti-pattern",
+              "1": "How it shows up",
+              "2": "How to fix it"
+            },
+            "row0": {
+              "c0": "100% calendar booking",
+              "c1": "Everyone looks busy, nobody can absorb surprises.",
+              "c2": "Add role-based buffers and reduce committed load before taking more work."
+            },
+            "row1": {
+              "c0": "Symbolic focus blocks",
+              "c1": "Focus time exists in calendars but gets broken every day.",
+              "c2": "Set interruption rules and one escalation path for true urgencies."
+            },
+            "row2": {
+              "c0": "Status updates without deliverables",
+              "c1": "Plenty of \"in progress\", very little shipped.",
+              "c2": "Request weekly evidence by deliverable, not by scattered task count."
+            },
+            "row3": {
+              "c0": "Default optimism with clients",
+              "c1": "Dates are promised before net capacity is validated.",
+              "c2": "Separate external commitment from internal capacity and communicate realistic ranges."
+            }
+          }
+        },
+        "readMore": {
+          "title": "6. Related reads to close the loop",
+          "p1": "Go deeper based on the bottleneck that hurts most in your current operating model.",
+          "linkTimeboxing": "What is timeboxing",
+          "descTimeboxing": "how to constrain scope inside a fixed time box without burning people out.",
+          "linkParkinson": "Parkinson's law",
+          "descParkinson": "why work expands when you do not set clear limits.",
+          "linkKpis": "Agency KPIs",
+          "descKpis": "the metrics that actually predict operational health and margin."
+        }
+      },
+      "faq": {
+        "title": "Frequently asked questions",
+        "q1": {
+          "q": "What is the practical difference between calendar capacity and productive capacity?",
+          "a": "Calendar capacity is time that appears free in scheduling views. Productive capacity is uninterrupted execution time that can move deliverables forward. For reliable planning, productive capacity is the one that matters."
+        },
+        "q2": {
+          "q": "What early signal tells me we are overpromising?",
+          "a": "When \"in progress\" items pile up while completed deliverables stay flat week after week. It usually comes with repeated date shifts and deep work pushed into late hours."
+        },
+        "q3": {
+          "q": "How do I estimate realistic net capacity per person?",
+          "a": "Start from contracted hours and subtract recurring meetings, admin, support, coordination, and a contingency buffer. What remains must include long execution blocks; if only short slots are left, your plan is overloaded."
+        },
+        "q4": {
+          "q": "My client asks for a hard date upfront. How should I handle it?",
+          "a": "You can commit externally, but validate internal capacity first. If margin is thin, offer a date range or agree which scope leaves the sprint. Selling certainty without capacity usually ends in rework and trust erosion."
+        },
+        "q5": {
+          "q": "Can a planning tool solve this by itself?",
+          "a": "No. Tools improve visibility, but results come from shared operating rules: meeting limits, clear deliverables, explicit buffers, and priority decisions when urgency appears."
+        }
+      },
+      "cta": {
+        "p1": "If you want sales, operations, and delivery teams to work from the same picture of real capacity, Taimbox helps you turn these principles into weekly execution habits.",
+        "button": "Explore the planner"
+      },
+      "meta": {
+        "headline": "Calendar capacity vs productive capacity: why a busy team still misses deliverables",
+        "description": "Practical agency guide with observable signals, a weekly checklist, and anti-patterns to separate visible busyness from real output and set more credible delivery dates.",
+        "seoTitle": "Calendar vs productive capacity: practical agency guide"
+      },
+      "toc": {
+        "mapa": "1. Quick map",
+        "calendario": "2. Why the calendar lies",
+        "entregables": "3. Deliverables vs busyness",
+        "lunes": "4. Net capacity on Monday",
+        "checklist": "5. Weekly checklist and anti-patterns",
+        "leerMas": "6. Related reads",
+        "faq": "Frequently asked questions"
+      },
+      "faqItems": [
+        {
+          "q": "What is the practical difference between calendar capacity and productive capacity?",
+          "a": "Calendar capacity is time that appears free in scheduling views. Productive capacity is uninterrupted execution time that can move deliverables forward. For reliable planning, productive capacity is the one that matters."
+        },
+        {
+          "q": "What early signal tells me we are overpromising?",
+          "a": "When \"in progress\" items pile up while completed deliverables stay flat week after week. It usually comes with repeated date shifts and deep work pushed into late hours."
+        },
+        {
+          "q": "How do I estimate realistic net capacity per person?",
+          "a": "Start from contracted hours and subtract recurring meetings, admin, support, coordination, and a contingency buffer. What remains must include long execution blocks; if only short slots are left, your plan is overloaded."
+        },
+        {
+          "q": "My client asks for a hard date upfront. How should I handle it?",
+          "a": "You can commit externally, but validate internal capacity first. If margin is thin, offer a date range or agree which scope leaves the sprint. Selling certainty without capacity usually ends in rework and trust erosion."
+        },
+        {
+          "q": "Can a planning tool solve this by itself?",
+          "a": "No. Tools improve visibility, but results come from shared operating rules: meeting limits, clear deliverables, explicit buffers, and priority decisions when urgency appears."
+        }
+      ],
+      "software": {
+        "name": "Taimbox",
+        "desc": "Resource planning for agencies: useful capacity, deliverables, and profitability in one operational view."
+      }
+    },
     "comoMedirRentabilidadProyecto": {
       "toc": {
         "techoHoras": "1. Ceiling of selling hours",

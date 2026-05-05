@@ -23,6 +23,7 @@ import {
 import type { BlogPost } from '@/data/blogPosts';
 
 function getPostIcon(slug: string) {
+  if (slug.includes('capacidad-calendario')) return Calendar;
   if (slug.includes('rentabilidad')) return LineChart;
   if (slug.includes('burnout') || slug.includes('carga-trabajo')) return HeartPulse;
   if (slug.includes('kpis')) return BarChart3;
@@ -45,6 +46,7 @@ type BlogCategory = 'todos' | 'plantillas' | 'kpis' | 'planificacion' | 'product
 function getPostCategory(slug: string): Exclude<BlogCategory, 'todos'> {
   if (slug.includes('plantilla')) return 'plantillas';
   if (slug.includes('kpis')) return 'kpis';
+  if (slug.includes('capacidad-calendario')) return 'planificacion';
   if (slug.includes('planificacion') || slug.includes('cronograma')) return 'planificacion';
   if (slug.includes('timeboxing') || slug.includes('parkinson')) return 'productividad';
   return 'gestion';
@@ -73,11 +75,10 @@ export default function BlogPage() {
   );
 
   const featuredPost = sortedPosts[0];
-  const restPosts = sortedPosts.slice(1);
 
   const filteredPosts = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return restPosts.filter((post) => {
+    return sortedPosts.filter((post) => {
       const categoryMatch =
         category === 'todos' || getPostCategory(post.slug) === category;
       const loc = getBlogPostLocaleFields(post, i18n.language);
@@ -87,7 +88,7 @@ export default function BlogPage() {
         loc.description.toLowerCase().includes(needle);
       return categoryMatch && textMatch;
     });
-  }, [restPosts, category, query, i18n.language]);
+  }, [sortedPosts, category, query, i18n.language]);
 
   const categoryOptions: BlogCategory[] = [
     'todos',
@@ -309,7 +310,7 @@ export default function BlogPage() {
                 <li key={post.slug}>
                   <RevealOnScroll delay={index === 0 ? 0 : 1}>
                     <Link
-                      to={post.href}
+                      to={loc.href}
                       className={`block h-full rounded-2xl border-2 ${borderClass} bg-white/5 backdrop-blur-sm p-5 sm:p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl ${glowClass} hover:bg-white/[0.08] group`}
                     >
                       <div className="flex flex-col h-full">

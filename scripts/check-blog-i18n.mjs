@@ -91,6 +91,14 @@ function expandCompKey(content, compKey) {
 const allKeys = new Set();
 
 const files = [
+  {
+    path: 'src/components/landing/blog/CapacidadCalendarioVsProductivaArticle.tsx',
+    expand: () =>
+      expandPostKeyTemplates(
+        fs.readFileSync(path.join(root, 'src/components/landing/blog/CapacidadCalendarioVsProductivaArticle.tsx'), 'utf8'),
+        'capacidadCalendarioVsProductiva',
+      ),
+  },
   { path: 'src/components/landing/blog/GestionCargaTrabajoEquipoArticle.tsx', expand: () => expandPostKeyTemplates(
       fs.readFileSync(path.join(root, 'src/components/landing/blog/GestionCargaTrabajoEquipoArticle.tsx'), 'utf8'),
       'gestionCargaTrabajoEquipo',

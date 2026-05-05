@@ -1829,6 +1829,209 @@
         "desc": "Planificador de recursos y tiempo para agencias. Timeboxing, cronograma por horas y reportes de rentabilidad."
       }
     },
+    "capacidadCalendarioVsProductiva": {
+      "badge": "Planificación y ejecución",
+      "title": "Capacidad calendario vs capacidad productiva: por qué un equipo ocupado no siempre entrega",
+      "intro": {
+        "p1": "La escena se repite en muchas agencias: el lunes todo parece encajar en el calendario, el martes aparecen dos urgencias, el miércoles se encadenan reuniones de «solo 30 minutos» y el viernes acabas negociando una fecha que el lunes dabas por cerrada. No es falta de compromiso; es que <strong>la capacidad que ves en el calendario no es la capacidad que realmente construye entregables</strong>.",
+        "p2": "Aquí vamos a separar capas, sin humo: qué parte del tiempo es solo ocupación visible, qué parte sí mueve trabajo con nombre y apellidos, qué señales puedes observar antes de que el equipo se queme y qué decisiones prácticas puedes tomar esta misma semana para dejar de prometer con una foto engañosa.",
+        "callout": {
+          "prefix": "Si quieres alinear fechas, presupuesto y personas en una misma conversación, empieza por la guía de",
+          "linkPlan": "planificación de proyectos con cronograma y recursos",
+          "mid": ". Y si tu problema ya es la sobrecarga silenciosa, la guía de",
+          "linkCarga": "carga de trabajo sin burnout",
+          "suffix": "te da señales tempranas y lenguaje para actuar a tiempo."
+        }
+      },
+      "sections": {
+        "map": {
+          "title": "1. Mapa rápido (para no perderte)",
+          "p1": "Este artículo está pensado para escanear y aplicar. Si solo puedes leer una parte hoy, entra por la checklist del punto 5 y vuelve luego al resto.",
+          "table": {
+            "headers": {
+              "0": "Sección",
+              "1": "Qué aclara",
+              "2": "Resultado práctico"
+            },
+            "row0": {
+              "c0": "2. Por qué el calendario miente",
+              "c1": "Diferencia entre hueco visible y bloque útil de ejecución.",
+              "c2": "Dejas de prometer fechas apoyándote en horas ficticias."
+            },
+            "row1": {
+              "c0": "3. Entregables frente a ocupación",
+              "c1": "Cómo distinguir actividad de avance real.",
+              "c2": "Instalas señales observables en la reunión de seguimiento."
+            },
+            "row2": {
+              "c0": "4. Capacidad neta el lunes",
+              "c1": "Cuatro decisiones simples para ordenar la semana.",
+              "c2": "Recuperas foco sin comprar herramientas ni reorganizar media empresa."
+            },
+            "row3": {
+              "c0": "5. Checklist y anti-patrones",
+              "c1": "Guion semanal para managers y errores que se repiten.",
+              "c2": "Conviertes una charla difusa en acuerdos concretos."
+            }
+          }
+        },
+        "calendarLie": {
+          "title": "2. Por qué el calendario «verde» no es promesa de entrega",
+          "p1": "El calendario registra <strong>compromisos</strong>; el trabajo real exige <strong>continuidad</strong>. Un bloque de dos horas entre reuniones puede quedarse en veinte minutos útiles cuando sumas preparación, cambios de contexto, mensajes urgentes y decisiones pendientes de otra llamada. Ese coste rara vez aparece en la vista semanal, pero sí aparece en los retrasos.",
+          "p2": "La señal de alerta no es solo operativa: también es humana. Lo notas cuando alguien empieza a entregar tarde y con menos criterio, cuando el canal del proyecto se vuelve seco y cuando el equipo vive en modo reacción. Si planificas solo con huecos visibles, estás midiendo escaparate; no capacidad productiva."
+        },
+        "deliverables": {
+          "title": "3. La pregunta incómoda: ¿qué entregable avanzó hoy?",
+          "p1": "Un día lleno de actividad puede cerrar en cero avance real. Por eso conviene cambiar la pregunta de seguimiento: no «¿estuvimos ocupados?», sino «¿qué entregable se movió de forma observable?». Si no puedes señalar un cambio concreto en un activo del proyecto, esa supuesta capacidad no existió para planificación.",
+          "p2": "Este cambio de lenguaje evita una trampa clásica: confundir reuniones, mensajes y coordinación con progreso. Coordinar es necesario, pero no puede comerse toda la semana sin dejar rastro en lo que el cliente va a recibir.",
+          "table": {
+            "headers": {
+              "0": "Señal en el calendario",
+              "1": "Lectura optimista",
+              "2": "Lectura operativa real"
+            },
+            "row0": {
+              "c0": "Seis reuniones de 30 minutos en un día",
+              "c1": "«Solo son tres horas»",
+              "c2": "Se fragmenta la jornada y el trabajo profundo se desplaza a última hora."
+            },
+            "row1": {
+              "c0": "Bloque de foco de 45 minutos",
+              "c1": "«Ya está protegido»",
+              "c2": "Sin reglas de interrupción, ese bloque es decorativo."
+            },
+            "row2": {
+              "c0": "Semana ligera de reuniones externas",
+              "c1": "«Tenemos aire»",
+              "c2": "El aire se lo comen retrabajos, revisiones no previstas y cambios de alcance."
+            }
+          }
+        },
+        "monday": {
+          "title": "4. Capacidad neta: qué puedes cambiar el lunes sin comprar nada",
+          "p1": "Antes de abrir otro tablero, toma cuatro decisiones visibles en la herramienta que ya usa el equipo:",
+          "li1": "<strong>Buffer explícito</strong>: nadie debería planificarse al 100 % de su agenda. Si no hay colchón, estás planificando retrasos.",
+          "li2": "<strong>Regla de reuniones</strong>: fija ventanas para coordinación y protege bloques largos de ejecución en días clave.",
+          "li3": "<strong>Timeboxing de entregables</strong>: cada bloque de trabajo profundo debe tener entregable, no un «misc» genérico.",
+          "li4": "<strong>Métrica mínima semanal</strong>: cuántas horas fueron de construcción real y qué entregable se movió con ellas.",
+          "p2": "Cuando alguien diga «esto es demasiado proceso», devuelve una sola pregunta: ¿cuántas fechas movimos el último mes sin cambiar alcance? Esa cifra suele ordenar la conversación."
+        },
+        "checklist": {
+          "title": "5. Checklist semanal y anti-patrones que drenan capacidad",
+          "p1": "Usa esta checklist en 20 minutos cada lunes. Si dos o más puntos salen en rojo, no necesitas motivación extra: necesitas ajustar carga.",
+          "p2": "La idea no es controlar por controlar, sino detectar fricción antes de que se convierta en retrasos crónicos o desgaste del equipo.",
+          "step1": "<strong>Revisión de bloques largos</strong>: ¿cada perfil crítico tiene al menos dos bloques de 90 minutos esta semana?",
+          "step2": "<strong>Entregables con dueño</strong>: ¿todo compromiso de la semana tiene responsable y definición de «hecho»?",
+          "step3": "<strong>Topes de reuniones</strong>: ¿hay días que superan el límite pactado de coordinación?",
+          "step4": "<strong>Colchón de imprevistos</strong>: ¿está reservado y visible o está «fiado» al esfuerzo extra?",
+          "step5": "<strong>Riesgos tempranos</strong>: ¿ya sabes qué fecha puede romperse si entra una urgencia adicional?",
+          "antiTable": {
+            "headers": {
+              "0": "Anti-patrón",
+              "1": "Qué lo delata",
+              "2": "Cómo corregirlo"
+            },
+            "row0": {
+              "c0": "Calendario al 100 %",
+              "c1": "Todo el mundo «ocupado» y ninguna capacidad de respuesta.",
+              "c2": "Introduce buffers por rol y baja carga comprometida antes de aceptar más trabajo."
+            },
+            "row1": {
+              "c0": "Bloques de foco simbólicos",
+              "c1": "Hay bloques en agenda, pero siempre se rompen por urgencias internas.",
+              "c2": "Define reglas de interrupción y un canal único para escalados reales."
+            },
+            "row2": {
+              "c0": "Seguimiento sin entregables",
+              "c1": "Muchos estados «en progreso», pocos artefactos terminados.",
+              "c2": "Pide evidencia semanal de avance por entregable, no por tarea suelta."
+            },
+            "row3": {
+              "c0": "Optimismo por defecto con clientes",
+              "c1": "Se prometen fechas sin validar capacidad neta.",
+              "c2": "Separa compromiso externo de capacidad interna y comunica rangos realistas."
+            }
+          }
+        },
+        "readMore": {
+          "title": "6. Lecturas para cerrar el círculo",
+          "p1": "Si quieres profundizar, entra por el punto que más te está costando sostener en tu operación diaria.",
+          "linkTimeboxing": "Qué es el timeboxing",
+          "descTimeboxing": "cómo acotar alcance dentro de una caja de tiempo sin quemar al equipo.",
+          "linkParkinson": "Ley de Parkinson",
+          "descParkinson": "por qué el trabajo se expande cuando no pones límites claros.",
+          "linkKpis": "KPIs para agencias",
+          "descKpis": "qué números sí predicen margen y salud operativa."
+        }
+      },
+      "faq": {
+        "title": "Preguntas frecuentes",
+        "q1": {
+          "q": "¿Qué diferencia real hay entre capacidad calendario y capacidad productiva?",
+          "a": "La capacidad calendario es el tiempo que parece libre en agenda. La capacidad productiva es el tiempo continuo que realmente permite avanzar entregables sin interrupciones críticas. Para planificar bien, manda la segunda."
+        },
+        "q2": {
+          "q": "¿Qué señal temprana indica que estamos sobreprometiendo?",
+          "a": "Cuando el equipo acumula estados «en progreso» pero no cierra entregables semana tras semana. Suele venir acompañado de fechas que se mueven por «detalles» y de trabajo profundo desplazado a última hora."
+        },
+        "q3": {
+          "q": "¿Cómo calculo una capacidad neta realista por persona?",
+          "a": "Parte de horas contratadas y resta reuniones recurrentes, administración, soporte, coordinación y un colchón de imprevistos. Lo que queda debe incluir bloques largos de ejecución; si solo quedan huecos cortos, la planificación está inflada."
+        },
+        "q4": {
+          "q": "Mi cliente exige una fecha cerrada desde el inicio. ¿Cómo lo gestiono?",
+          "a": "Puedes comprometer fecha externa, pero valida primero capacidad interna. Si no hay margen, ofrece rango o plantea qué alcance sale del sprint. Prometer por presión comercial suele acabar en retrabajo, desgaste y pérdida de credibilidad."
+        },
+        "q5": {
+          "q": "¿Una herramienta de planificación arregla esto por sí sola?",
+          "a": "No. La herramienta da visibilidad, pero el cambio real llega con reglas compartidas: límites de reuniones, definición de entregable, buffers y decisiones de prioridad cuando entra una urgencia."
+        }
+      },
+      "cta": {
+        "p1": "Si quieres que ventas, operaciones y equipo técnico trabajen con la misma foto de capacidad útil, el planificador de recursos de Taimbox te ayuda a aterrizar estos acuerdos en la semana real.",
+        "button": "Explorar el planificador"
+      },
+      "meta": {
+        "headline": "Capacidad calendario vs capacidad productiva: por qué un equipo ocupado no siempre entrega",
+        "description": "Guía práctica para agencias: señales observables, checklist semanal y anti-patrones para diferenciar ocupación de avance real y planificar fechas con más credibilidad.",
+        "seoTitle": "Capacidad calendario vs productiva: guía práctica para agencias"
+      },
+      "toc": {
+        "mapa": "1. Mapa rápido",
+        "calendario": "2. Por qué el calendario miente",
+        "entregables": "3. Entregables frente a ocupación",
+        "lunes": "4. Capacidad neta el lunes",
+        "checklist": "5. Checklist semanal y anti-patrones",
+        "leerMas": "6. Lecturas relacionadas",
+        "faq": "Preguntas frecuentes"
+      },
+      "faqItems": [
+        {
+          "q": "¿Qué diferencia real hay entre capacidad calendario y capacidad productiva?",
+          "a": "La capacidad calendario es el tiempo que parece libre en agenda. La capacidad productiva es el tiempo continuo que realmente permite avanzar entregables sin interrupciones críticas. Para planificar bien, manda la segunda."
+        },
+        {
+          "q": "¿Qué señal temprana indica que estamos sobreprometiendo?",
+          "a": "Cuando el equipo acumula estados «en progreso» pero no cierra entregables semana tras semana. Suele venir acompañado de fechas que se mueven por «detalles» y de trabajo profundo desplazado a última hora."
+        },
+        {
+          "q": "¿Cómo calculo una capacidad neta realista por persona?",
+          "a": "Parte de horas contratadas y resta reuniones recurrentes, administración, soporte, coordinación y un colchón de imprevistos. Lo que queda debe incluir bloques largos de ejecución; si solo quedan huecos cortos, la planificación está inflada."
+        },
+        {
+          "q": "Mi cliente exige una fecha cerrada desde el inicio. ¿Cómo lo gestiono?",
+          "a": "Puedes comprometer fecha externa, pero valida primero capacidad interna. Si no hay margen, ofrece rango o plantea qué alcance sale del sprint. Prometer por presión comercial suele acabar en retrabajo, desgaste y pérdida de credibilidad."
+        },
+        {
+          "q": "¿Una herramienta de planificación arregla esto por sí sola?",
+          "a": "No. La herramienta da visibilidad, pero el cambio real llega con reglas compartidas: límites de reuniones, definición de entregable, buffers y decisiones de prioridad cuando entra una urgencia."
+        }
+      ],
+      "software": {
+        "name": "Taimbox",
+        "desc": "Planificador de recursos para agencias: capacidad útil, entregables y rentabilidad en una sola vista operativa."
+      }
+    },
     "comoMedirRentabilidadProyecto": {
       "toc": {
         "techoHoras": "1. Techo de vender horas",

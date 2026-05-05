@@ -14,6 +14,7 @@ export const PUBLIC_PATH_ES_TO_EN: Record<string, string> = {
   "/blog/por-que-tu-agencia-pierde-rentabilidad-equipo-ocupado": "/en/blog/why-agency-loses-profitability-busy-team",
   "/blog/como-medir-rentabilidad-proyecto-agencia-dejar-vender-horas": "/en/blog/measure-project-profitability-stop-selling-hours",
   "/blog/gestion-carga-trabajo-equipo-sin-burnout": "/en/blog/workload-management-without-burnout",
+  "/blog/capacidad-calendario-vs-capacidad-productiva-equipo": "/en/blog/calendar-capacity-vs-shippable-team-capacity",
   "/dashboard-empleado": "/en/employee-dashboard",
   "/planificador-recursos": "/en/resource-planner",
   "/gestion-equipos": "/en/team-management",
