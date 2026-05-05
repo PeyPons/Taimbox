@@ -50,6 +50,7 @@ export interface DeadlinesProjectEditSheetProps {
   onEmployeeHoursChange: (employeeId: string, hours: number, projectId: string, triggerSave?: boolean) => void;
   onFormPatch: (patch: Partial<InlineFormData>, saveAfterMs?: number) => void;
   saveStatus: 'idle' | 'saving' | 'saved';
+  isLockAcquiring?: boolean;
   onClose: () => void;
 }
 
@@ -65,6 +66,7 @@ export function DeadlinesProjectEditSheet({
   onEmployeeHoursChange,
   onFormPatch,
   saveStatus,
+  isLockAcquiring = false,
   onClose,
 }: DeadlinesProjectEditSheetProps) {
   const totalAssigned = (Object.values(formData.employeeHours) as number[]).reduce((sum, h) => sum + (h || 0), 0);
@@ -87,6 +89,9 @@ export function DeadlinesProjectEditSheet({
         <div className="space-y-4 text-sm">
           <div className="space-y-3">
             <Label className="text-slate-600">Horas por empleado</Label>
+            {isLockAcquiring && (
+              <p className="text-xs text-slate-500 animate-pulse">Verificando bloqueo de edición...</p>
+            )}
             {employees.map((emp) => (
               <div key={emp.id} className="flex items-center gap-3 bg-slate-50 rounded-lg px-3 py-2.5">
                 <Avatar className="h-8 w-8 shrink-0">
@@ -114,6 +119,7 @@ export function DeadlinesProjectEditSheet({
                   }}
                   className="h-11 w-24 text-center font-mono text-base"
                   placeholder="0"
+                  disabled={isLockAcquiring}
                 />
               </div>
             ))}
@@ -136,6 +142,7 @@ export function DeadlinesProjectEditSheet({
               }}
               onFocus={(e) => (e.target as HTMLInputElement).select()}
               className="h-11 font-mono"
+              disabled={isLockAcquiring}
             />
           </div>
           <div>
@@ -145,6 +152,7 @@ export function DeadlinesProjectEditSheet({
               value={formData.notes}
               onChange={(e) => onFormPatch({ notes: e.target.value }, 800)}
               className="min-h-[80px] text-sm"
+              disabled={isLockAcquiring}
             />
           </div>
           <div className="flex items-center justify-between py-2">
@@ -152,6 +160,7 @@ export function DeadlinesProjectEditSheet({
             <Switch
               checked={formData.isHidden}
               onCheckedChange={(checked) => onFormPatch({ isHidden: checked })}
+              disabled={isLockAcquiring}
             />
           </div>
           <div className="flex gap-2 pt-2">

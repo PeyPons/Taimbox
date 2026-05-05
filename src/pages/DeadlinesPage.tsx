@@ -141,6 +141,7 @@ export default function DeadlinesPage() {
     hiddenProjects,
     setHiddenProjects,
     setDeadlines,
+    editingLocks,
     setEditingLocks,
     broadcastChannelRef,
     setExpandedProjects,
@@ -150,6 +151,7 @@ export default function DeadlinesPage() {
     editingProjectId,
     inlineFormData,
     autoSaveStatus,
+    isLockAcquiring,
     startEditingProject,
     updateInlineEmployeeHours,
     handleFormPatch,
@@ -624,6 +626,7 @@ export default function DeadlinesPage() {
           onFormPatch={handleFormPatch}
           autoSaveDeadline={autoSaveDeadline}
           autoSaveStatus={autoSaveStatus}
+          isLockAcquiring={isLockAcquiring}
           cancelEditingProject={cancelEditingProject}
           onRequestDeleteDeadline={(project) => {
             const deadline = deadlines.find(d => d.projectId === project.id && d.month === selectedMonth);
@@ -664,6 +667,7 @@ export default function DeadlinesPage() {
             onEmployeeHoursChange={updateInlineEmployeeHours}
             onFormPatch={handleFormPatch}
             saveStatus={autoSaveStatus}
+            isLockAcquiring={isLockAcquiring}
             onClose={cancelEditingProject}
           />
         );

@@ -21,6 +21,18 @@ import { getAbsenceHoursInRange } from '@/utils/absenceUtils';
 import { getTeamEventHoursInRange, getTeamEventDetailsInRange } from '@/utils/teamEventUtils';
 import type { DeadlinesFiltersValues } from '@/components/deadlines/DeadlinesFilters';
 
+const PERF_DEBUG = import.meta.env.DEV;
+const perfNow = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+const logPerf = (label: string, start: number, meta?: unknown) => {
+  if (!PERF_DEBUG) return;
+  const ms = perfNow() - start;
+  if (meta !== undefined) {
+    console.debug(`[perf][deadlines] ${label}: ${ms.toFixed(1)}ms`, meta);
+  } else {
+    console.debug(`[perf][deadlines] ${label}: ${ms.toFixed(1)}ms`);
+  }
+};
+
 export type EditingLock = { employeeId: string; employeeName: string; lockedAt: string };
 
 export type MonthlyCapacityResult = {
@@ -74,6 +86,7 @@ export function useDeadlinesPageData(params: UseDeadlinesPageDataParams) {
   const lockCleanupIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadDeadlines = async () => {
+    const t0 = perfNow();
     setIsLoading(true);
     try {
       const { data, error } = await fetchDeadlinesForMonth(selectedMonth, currentAgency?.id);
@@ -95,16 +108,20 @@ export function useDeadlinesPageData(params: UseDeadlinesPageDataParams) {
       toast.error((error as Error)?.message || 'Error al cargar deadlines');
     } finally {
       setIsLoading(false);
+      logPerf('loadDeadlines', t0, { month: selectedMonth });
     }
   };
 
   const loadGlobalAssignments = async () => {
+    const t0 = perfNow();
     try {
       const { data, error } = await fetchGlobalAssignmentsForMonth(selectedMonth, currentAgency?.id);
       if (error) throw error;
       setGlobalAssignments(data);
     } catch (error) {
       console.error('Error cargando asignaciones globales:', error);
+    } finally {
+      logPerf('loadGlobalAssignments', t0, { month: selectedMonth });
     }
   };
 

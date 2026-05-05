@@ -86,6 +86,7 @@ export interface DeadlinesProjectListProps {
   onFormPatch: (patch: Partial<InlineFormData>, saveAfterMs?: number) => void;
   autoSaveDeadline: (projectId: string, formData: InlineFormData) => void;
   autoSaveStatus: 'idle' | 'saving' | 'saved';
+  isLockAcquiring?: boolean;
   cancelEditingProject: () => void;
   onRequestDeleteDeadline: (project: ProjectItem) => void;
   /** Primer día del mes seleccionado (prorrateo entregable / límites efectivos). */
@@ -112,6 +113,7 @@ export function DeadlinesProjectList({
   onFormPatch,
   autoSaveDeadline,
   autoSaveStatus,
+  isLockAcquiring = false,
   cancelEditingProject,
   onRequestDeleteDeadline,
   monthAnchor,
@@ -293,9 +295,15 @@ export function DeadlinesProjectList({
 
                       {isEditing && !isMobile && (
                         <div
-                          className="px-4 py-3 bg-slate-50 border-t"
+                          className={cn('px-4 py-3 bg-slate-50 border-t', isLockAcquiring && 'opacity-80')}
                           data-tour="inline-editing"
                         >
+                          {isLockAcquiring && (
+                            <div className="mb-2 text-xs text-slate-500 animate-pulse">
+                              Verificando bloqueo de edición...
+                            </div>
+                          )}
+                          <div className={cn(isLockAcquiring && 'pointer-events-none select-none')}>
                           <div className="flex flex-wrap gap-2 mb-3">
                             {employees.map((emp) => (
                               <DeadlineEmployeeRow
@@ -305,6 +313,7 @@ export function DeadlinesProjectList({
                                 value={inlineFormData.employeeHours[emp.id] ?? ''}
                                 projectId={project.id}
                                 onHoursChange={updateInlineEmployeeHours}
+                                disabled={isLockAcquiring}
                               />
                             ))}
                           </div>
@@ -337,6 +346,7 @@ export function DeadlinesProjectList({
                                     'bg-amber-50 border-amber-200 text-amber-700 font-bold'
                                 )}
                                 onFocus={(e) => (e.target as HTMLInputElement).select()}
+                                disabled={isLockAcquiring}
                               />
                               {inlineFormData.budgetOverride !== undefined &&
                                 !budgetsNearlyEqual(
@@ -363,6 +373,7 @@ export function DeadlinesProjectList({
                                 }
                               }}
                               className="h-7 text-xs flex-1 min-w-[150px]"
+                              disabled={isLockAcquiring}
                             />
                             <label className="flex items-center gap-1.5 text-xs cursor-pointer">
                               <Switch
@@ -371,6 +382,7 @@ export function DeadlinesProjectList({
                                   onFormPatch({ isHidden: checked })
                                 }
                                 className="scale-75"
+                                disabled={isLockAcquiring}
                               />
                               <span className="text-slate-500">Ocultar</span>
                             </label>
@@ -401,6 +413,7 @@ export function DeadlinesProjectList({
                                 variant="ghost"
                                 className="h-7 w-7 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50"
                                 title="Eliminar deadline (Resetear mes)"
+                                disabled={isLockAcquiring}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   onRequestDeleteDeadline(project);
@@ -409,6 +422,7 @@ export function DeadlinesProjectList({
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </div>
+                          </div>
                           </div>
                         </div>
                       )}

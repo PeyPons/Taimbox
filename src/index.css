@@ -76,13 +76,14 @@
     scrollbar-gutter: stable;
   }
   /* 100vw incluye el ancho bajo la barra vertical: al bloquear scroll (Radix) el viewport “crece” y el layout salta.
-     100% respecto al contenedor evita ese desplazamiento horizontal; scrollbar-gutter en html reserva hueco estable. */
+     100% respecto al contenedor evita ese desplazamiento horizontal; scrollbar-gutter en html reserva hueco estable.
+     overflow-x: clip (no hidden) evita el desbordamiento sin crear un contenedor de scroll que rompa position:sticky en hijos. */
   html, body {
-    overflow-x: hidden;
+    overflow-x: clip;
     max-width: 100%;
   }
   #root {
-    overflow-x: hidden;
+    overflow-x: clip;
     max-width: 100%;
   }
 

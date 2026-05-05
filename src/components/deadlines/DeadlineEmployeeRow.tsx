@@ -30,6 +30,8 @@ export interface DeadlineEmployeeRowProps {
     projectId: string,
     triggerSave?: boolean
   ) => void;
+  /** Deshabilitar edición (p. ej. mientras se valida lock remoto). */
+  disabled?: boolean;
 }
 
 export function DeadlineEmployeeRow({
@@ -39,6 +41,7 @@ export function DeadlineEmployeeRow({
   value = '',
   projectId = '',
   onHoursChange,
+  disabled = false,
 }: DeadlineEmployeeRowProps) {
   const displayName = employee.first_name || employee.name;
 
@@ -92,6 +95,7 @@ export function DeadlineEmployeeRow({
         }}
         className="h-7 w-20 text-center font-mono text-sm px-2"
         placeholder="0"
+        disabled={disabled}
       />
     </div>
   );
