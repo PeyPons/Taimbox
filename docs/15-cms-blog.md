@@ -89,6 +89,29 @@ Rutas:
 
 Recordatorio: ejecutar `npm run sitemap:blog` antes de cada despliegue tras cambios de slugs/altas/bajas; idealmente en el pipeline de release.
 
+## Decomposición de los 8 posts legacy
+
+[`scripts/migrate-blog-content.mjs`](../scripts/migrate-blog-content.mjs) (`npm run migrate:blog-content`) lee [`src/locales/{es,en}/blog.json`](../src/locales/es/blog.json) y emite [`supabase/migrations/20260507120000_blog_posts_decompose.sql`](../supabase/migrations/20260507120000_blog_posts_decompose.sql) con `UPDATE blog_posts SET blocks_es=…, blocks_en=…, json_ld_es=…, json_ld_en=…` por slug. Reemplaza el bloque `visualRef` único de cada post por bloques granulares editables (`paragraph`, `heading`, `callout`, `list`, `table`, `faq`, `toc`, `cta`, `relatedPost`, más `visualRef inline` para gráficos custom como `ParkinsonLawVisual`, `OcupacionVsRentabilidadChart`, `CargaTrabajoFrameworkVisual`, `SenalesCargaAlertaVisual`, `ScopeProtocoloInfographic`).
+
+- El UPDATE es **idempotente**: re-correr el script regenera el SQL desde el `blog.json` actual; aplicarlo múltiples veces produce el mismo estado.
+- Cada post produce 30–105 bloques (`que-es-timeboxing` → 63, `plantilla-planificacion-recursos-agencia` → 104, `capacidad-calendario-vs-capacidad-productiva-equipo` → 31, etc.).
+- El JSON-LD se autogenera con `@graph` Article + FAQPage opcional + SoftwareApplication opcional.
+- Tras aplicar este UPDATE, los `BlockRenderer` granulares toman el render del cuerpo, así que los `*Article.tsx` legacy y las traducciones de `blog.json` quedan **desreferenciados** (puedes retirarlos en una limpieza posterior). El `*Page.tsx` legacy ya no se monta vía `visualRef fullPage`.
+- La paridad visual no es 100% pixel-perfect: cards complejas se aplanan a `heading + paragraph`, "capsules" pasan a `callout + cta`, los iconos lucide hardcodeados desaparecen. El contenido textual se preserva al 100%; el resto se ajusta desde el editor en `/admin/blog`.
+
+Aplicar:
+
+```bash
+# 1. Aplicar la migración inicial (crea tabla + seed con visualRef)
+supabase db push   # 20260506120000_blog_posts.sql
+
+# 2. (opcional) Regenerar SQL si has cambiado blog.json
+npm run migrate:blog-content
+
+# 3. Aplicar la decomposición a bloques granulares
+supabase db push   # 20260507120000_blog_posts_decompose.sql
+```
+
 ## Riesgos y consideraciones
 
 - **XSS**: cualquier campo `html` de bloque se sanitiza con DOMPurify (`sanitizeInlineHtml` o `sanitizeHtml` según el bloque). Los `visualRef` referencian componentes del bundle, no se evalúa código de la BD.
