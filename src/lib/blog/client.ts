@@ -212,27 +212,39 @@ function inputToRow(input: UpsertBlogPostInput) {
   };
 }
 
+// PostgREST self-hosted devuelve 406 cuando se combina UPDATE/INSERT con
+// `return=representation` + Accept singular si las RLS de SELECT no encuentran
+// la fila tras la mutacion. Separamos mutacion y SELECT para evitar el problema.
+
 export async function createPost(input: UpsertBlogPostInput): Promise<BlogPostRecord> {
-  const { data, error } = await supabase
+  const { data: inserted, error: insertError } = await supabase
     .from("blog_posts")
     .insert(inputToRow(input))
-    .select(FULL_COLUMNS)
+    .select("id")
     .single();
-  if (error) throw error;
-  return rowToRecord(data as BlogPostRow);
+  if (insertError) throw insertError;
+  if (!inserted) throw new Error("No se devolvio el id tras INSERT");
+  const created = await getPostBySlug(input.slug);
+  if (!created) throw new Error(`Post creado pero no se pudo recuperar (slug=${input.slug})`);
+  return created;
 }
 
 export async function updatePost(
   id: string,
   input: UpsertBlogPostInput,
 ): Promise<BlogPostRecord> {
-  const { data, error } = await supabase
+  const { error: updateError } = await supabase
     .from("blog_posts")
     .update(inputToRow(input))
-    .eq("id", id)
+    .eq("id", id);
+  if (updateError) throw updateError;
+  const { data, error: selectError } = await supabase
+    .from("blog_posts")
     .select(FULL_COLUMNS)
-    .single();
-  if (error) throw error;
+    .eq("id", id)
+    .maybeSingle();
+  if (selectError) throw selectError;
+  if (!data) throw new Error(`Post actualizado pero no se pudo recuperar (id=${id})`);
   return rowToRecord(data as BlogPostRow);
 }
 
