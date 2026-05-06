@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { LandingFooter } from '@/components/landing/LandingFooter';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { RevealOnScroll } from '@/components/landing/blog/RevealOnScroll';
-import { blogPosts, getBlogPostLocaleFields } from '@/data/blogPosts';
+import { usePublishedPostSummaries } from '@/hooks/useBlogPosts';
+import { getLocaleSummaryFields } from '@/lib/blog/types';
+import type { BlogPostSummary } from '@/lib/blog/types';
 import { SeoTags } from '@/seo/SeoTags';
 import {
   Calendar,
@@ -20,7 +22,6 @@ import {
   HeartPulse,
   LineChart,
 } from 'lucide-react';
-import type { BlogPost } from '@/data/blogPosts';
 
 function getPostIcon(slug: string) {
   if (slug.includes('capacidad-calendario')) return Calendar;
@@ -66,12 +67,14 @@ export default function BlogPage() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<BlogCategory>('todos');
 
-  const sortedPosts = useMemo(
+  const { data: posts, isLoading } = usePublishedPostSummaries();
+
+  const sortedPosts = useMemo<BlogPostSummary[]>(
     () =>
-      [...blogPosts].sort(
+      [...(posts ?? [])].sort(
         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
       ),
-    [],
+    [posts],
   );
 
   const featuredPost = sortedPosts[0];
@@ -81,7 +84,7 @@ export default function BlogPage() {
     return sortedPosts.filter((post) => {
       const categoryMatch =
         category === 'todos' || getPostCategory(post.slug) === category;
-      const loc = getBlogPostLocaleFields(post, i18n.language);
+      const loc = getLocaleSummaryFields(post, i18n.language);
       const textMatch =
         needle.length === 0 ||
         loc.title.toLowerCase().includes(needle) ||
@@ -105,7 +108,7 @@ export default function BlogPage() {
   );
 
   const featuredLoc =
-    featuredPost != null ? getBlogPostLocaleFields(featuredPost, i18n.language) : null;
+    featuredPost != null ? getLocaleSummaryFields(featuredPost, i18n.language) : null;
 
   return (
     <>
@@ -185,7 +188,7 @@ export default function BlogPage() {
               </p>
               <RevealOnScroll>
                 <Link
-                  to={featuredLoc.href}
+                  to={featuredLoc.path}
                   className="block rounded-2xl border-2 border-indigo-400/35 hover:border-indigo-300/60 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 backdrop-blur-sm p-6 sm:p-8 transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl hover:shadow-indigo-500/25 group"
                 >
                   <div className="flex flex-col lg:flex-row lg:items-center gap-6">
@@ -266,7 +269,11 @@ export default function BlogPage() {
           </section>
 
           {/* Lista de artículos */}
-          {filteredPosts.length === 0 ? (
+          {isLoading ? (
+            <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-8 text-center">
+              <p className="text-indigo-100/80 text-sm m-0">{t('index.loading', 'Cargando...')}</p>
+            </div>
+          ) : filteredPosts.length === 0 ? (
             <div className="rounded-2xl border border-white/15 bg-white/[0.04] p-8 text-center">
               <p className="text-white text-lg font-semibold m-0 mb-2">
                 {t('index.emptyTitle')}
@@ -277,13 +284,12 @@ export default function BlogPage() {
             </div>
           ) : (
             <ul className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {filteredPosts.map((post: BlogPost, index: number) => {
-              const loc = getBlogPostLocaleFields(post, i18n.language);
+              {filteredPosts.map((post: BlogPostSummary, index: number) => {
+              const loc = getLocaleSummaryFields(post, i18n.language);
               const Icon = getPostIcon(post.slug);
               const accent = getPostAccent(post.slug);
               const isIndigo = accent === 'indigo';
               const isEmerald = accent === 'emerald';
-              const isPurple = accent === 'purple';
               const borderClass = isIndigo
                 ? 'border-indigo-500/30 hover:border-indigo-400/50'
                 : isEmerald
@@ -310,7 +316,7 @@ export default function BlogPage() {
                 <li key={post.slug}>
                   <RevealOnScroll delay={index === 0 ? 0 : 1}>
                     <Link
-                      to={loc.href}
+                      to={loc.path}
                       className={`block h-full rounded-2xl border-2 ${borderClass} bg-white/5 backdrop-blur-sm p-5 sm:p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl ${glowClass} hover:bg-white/[0.08] group`}
                     >
                       <div className="flex flex-col h-full">

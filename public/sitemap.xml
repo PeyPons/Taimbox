@@ -12,6 +12,7 @@
     <priority>0.9</priority>
   </url>
   <!-- Blog (índice y artículos; enlazado desde footer) -->
+  <!-- BLOG-AUTO-START-ES -->
   <url>
     <loc>https://taimbox.com/blog</loc>
     <changefreq>weekly</changefreq>
@@ -62,6 +63,7 @@
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
+  <!-- BLOG-AUTO-END-ES -->
   <url>
     <loc>https://taimbox.com/dashboard-empleado</loc>
     <changefreq>monthly</changefreq>
@@ -196,6 +198,7 @@
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
+  <!-- BLOG-AUTO-START-EN -->
   <url>
     <loc>https://taimbox.com/en/blog</loc>
     <changefreq>weekly</changefreq>
@@ -246,6 +249,7 @@
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
+  <!-- BLOG-AUTO-END-EN -->
   <url>
     <loc>https://taimbox.com/en/employee-dashboard</loc>
     <changefreq>monthly</changefreq>
