@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Building2, ArrowLeft, MessageSquare, BarChart3, FileText, Shield } from "lucide-react";
+import { Building2, ArrowLeft, MessageSquare, BarChart3, FileText, Shield, Newspaper } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { useAppTranslation } from "@/hooks/useAppTranslation";
@@ -64,6 +64,16 @@ export function AdminLayout() {
             <Link to="/admin/metrics" className="gap-1">
               <BarChart3 className="h-4 w-4" />
               {t('common.metrics', 'Métricas')}
+            </Link>
+          </Button>
+          <Button
+            variant={location.pathname.startsWith("/admin/blog") ? "secondary" : "ghost"}
+            size="sm"
+            asChild
+          >
+            <Link to="/admin/blog" className="gap-1">
+              <Newspaper className="h-4 w-4" />
+              {t('admin.layout.blog', 'Blog')}
             </Link>
           </Button>
           <Button

@@ -29,21 +29,15 @@ import AdminAdminsPage from "./pages/admin/AdminAdminsPage";
 import AdminSupportPage from "./pages/admin/AdminSupportPage";
 import AdminMetricsPage from "./pages/admin/AdminMetricsPage";
 import AdminDocsPage from "./pages/admin/AdminDocsPage";
+import AdminBlogPage from "./pages/admin/AdminBlogPage";
+import AdminBlogEditorPage from "./pages/admin/AdminBlogEditorPage";
 
 // Página principal (carga inmediata para mejor UX)
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import LandingPage from "./pages/LandingPage";
 import ArticlePage from "./pages/ArticlePage";
-import WhatIsTimeboxingPage from "./pages/WhatIsTimeboxingPage";
 import BlogPage from "./pages/BlogPage";
-import PlanificacionProyectosCronogramaRecursosPage from "./pages/blog/PlanificacionProyectosCronogramaRecursosPage";
-import LeyParkinsonPage from "./pages/blog/LeyParkinsonPage";
-import KpisAgenciasMarketingPage from "./pages/blog/KpisAgenciasMarketingPage";
-import PlantillaPlanificacionRecursosPage from "./pages/blog/PlantillaPlanificacionRecursosPage";
-import GestionCargaTrabajoEquipoPage from "./pages/blog/GestionCargaTrabajoEquipoPage";
-import CapacidadCalendarioVsProductivaPage from "./pages/blog/CapacidadCalendarioVsProductivaPage";
-import PorQueAgenciaPierdeRentabilidadPage from "./pages/blog/PorQueAgenciaPierdeRentabilidadPage";
-import ComoMedirRentabilidadProyectoPage from "./pages/blog/ComoMedirRentabilidadProyectoPage";
+import BlogArticleDynamicPage from "./pages/BlogArticleDynamicPage";
 import EmployeeDashboardLandingPage from "./pages/EmployeeDashboardLandingPage";
 import PlannerLandingPage from "./pages/PlannerLandingPage";
 import TeamLandingPage from "./pages/TeamLandingPage";
@@ -66,6 +60,7 @@ import { ScrollToTop } from "./components/ScrollToTop";
 import { AgencySearchParamSync } from "./components/agency/AgencySearchParamSync";
 import { CookieBanner } from "./components/landing/CookieBanner";
 import { PublicLocaleSync } from "@/i18n/PublicLocaleSync";
+import { BlogPathSync } from "@/i18n/BlogPathSync";
 
 // Loading fallback para páginas lazy
 const PageLoader = () => (
@@ -152,6 +147,7 @@ const App = () => (
                     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                     <AgencySearchParamSync />
                     <PublicLocaleSync />
+                    <BlogPathSync />
                     <Toaster />
                     <NotificationProvider>
                       <NotificationEngineHost />
@@ -164,17 +160,9 @@ const App = () => (
                         {/* Artículo: por qué Taimbox (página pública) */}
                         <Route path="/por-que-timeboxing" element={<ArticlePage />} />
 
-                        {/* Blog (índice y artículos; solo enlazado desde footer) */}
+                        {/* Blog (índice + artículos dinámicos resueltos desde Supabase). */}
                         <Route path="/blog" element={<BlogPage />} />
-                        <Route path="/blog/que-es-timeboxing" element={<WhatIsTimeboxingPage />} />
-                        <Route path="/blog/planificacion-proyectos-cronograma-recursos" element={<PlanificacionProyectosCronogramaRecursosPage />} />
-                        <Route path="/blog/ley-parkinson" element={<LeyParkinsonPage />} />
-                        <Route path="/blog/kpis-agencias-marketing-2026" element={<KpisAgenciasMarketingPage />} />
-                        <Route path="/blog/plantilla-planificacion-recursos-agencia" element={<PlantillaPlanificacionRecursosPage />} />
-                        <Route path="/blog/por-que-tu-agencia-pierde-rentabilidad-equipo-ocupado" element={<PorQueAgenciaPierdeRentabilidadPage />} />
-                        <Route path="/blog/como-medir-rentabilidad-proyecto-agencia-dejar-vender-horas" element={<ComoMedirRentabilidadProyectoPage />} />
-                        <Route path="/blog/gestion-carga-trabajo-equipo-sin-burnout" element={<GestionCargaTrabajoEquipoPage />} />
-                        <Route path="/blog/capacidad-calendario-vs-capacidad-productiva-equipo" element={<CapacidadCalendarioVsProductivaPage />} />
+                        <Route path="/blog/:slug" element={<BlogArticleDynamicPage />} />
                         {/* Redirección 301: URL antigua del artículo */}
                         <Route path="/que-es-timeboxing" element={<Navigate to="/blog/que-es-timeboxing" replace />} />
 
@@ -209,15 +197,7 @@ const App = () => (
                         <Route path="/en" element={<LandingPage />} />
                         <Route path="/en/why-taimbox" element={<ArticlePage />} />
                         <Route path="/en/blog" element={<BlogPage />} />
-                        <Route path="/en/blog/what-is-timeboxing" element={<WhatIsTimeboxingPage />} />
-                        <Route path="/en/blog/project-planning-schedule-resources" element={<PlanificacionProyectosCronogramaRecursosPage />} />
-                        <Route path="/en/blog/parkinsons-law" element={<LeyParkinsonPage />} />
-                        <Route path="/en/blog/marketing-agency-kpis-2026" element={<KpisAgenciasMarketingPage />} />
-                        <Route path="/en/blog/agency-resource-planning-template" element={<PlantillaPlanificacionRecursosPage />} />
-                        <Route path="/en/blog/why-agency-loses-profitability-busy-team" element={<PorQueAgenciaPierdeRentabilidadPage />} />
-                        <Route path="/en/blog/measure-project-profitability-stop-selling-hours" element={<ComoMedirRentabilidadProyectoPage />} />
-                        <Route path="/en/blog/workload-management-without-burnout" element={<GestionCargaTrabajoEquipoPage />} />
-                        <Route path="/en/blog/calendar-capacity-vs-shippable-team-capacity" element={<CapacidadCalendarioVsProductivaPage />} />
+                        <Route path="/en/blog/:slug" element={<BlogArticleDynamicPage />} />
                         <Route path="/en/employee-dashboard" element={<EmployeeDashboardLandingPage />} />
                         <Route path="/en/resource-planner" element={<PlannerLandingPage />} />
                         <Route path="/en/team-management" element={<TeamLandingPage />} />
@@ -265,6 +245,9 @@ const App = () => (
                               <Route path="support" element={<Suspense fallback={<PageLoader />}><AdminSupportPage /></Suspense>} />
                               <Route path="metrics" element={<Suspense fallback={<PageLoader />}><AdminMetricsPage /></Suspense>} />
                               <Route path="docs" element={<Suspense fallback={<PageLoader />}><AdminDocsPage /></Suspense>} />
+                              <Route path="blog" element={<Suspense fallback={<PageLoader />}><AdminBlogPage /></Suspense>} />
+                              <Route path="blog/new" element={<Suspense fallback={<PageLoader />}><AdminBlogEditorPage /></Suspense>} />
+                              <Route path="blog/edit/:id" element={<Suspense fallback={<PageLoader />}><AdminBlogEditorPage /></Suspense>} />
                             </Route>
                           </Route>
 

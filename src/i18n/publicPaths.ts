@@ -1,6 +1,11 @@
 /**
  * Mapa de rutas públicas ES → EN (prefijo /en en inglés).
  * Panel autenticado y callbacks no tienen versión /en.
+ *
+ * Las rutas del blog quedan aquí como fallback estático para SEO/hreflang
+ * mientras la BD no esté disponible. En runtime, el cache de Supabase
+ * (poblado por BlogPathSync) tiene prioridad y permite que admin renombre
+ * o añada posts sin desplegar.
  */
 export const PUBLIC_PATH_ES_TO_EN: Record<string, string> = {
   "/": "/en",
@@ -36,6 +41,23 @@ const EN_TO_ES: Record<string, string> = Object.fromEntries(
   Object.entries(PUBLIC_PATH_ES_TO_EN).map(([es, en]) => [en, es]),
 ) as Record<string, string>;
 
+// Cache runtime del blog poblado desde Supabase. Tiene prioridad sobre el mapa
+// estatico para que cambios desde /admin/blog se propaguen sin redeploy.
+let blogEsToEn = new Map<string, string>();
+let blogEnToEs = new Map<string, string>();
+
+/** Llamado por BlogPathSync cuando llegan los datos del blog. */
+export function setBlogPathCache(pairs: { pathEs: string; pathEn: string }[]): void {
+  const es = new Map<string, string>();
+  const en = new Map<string, string>();
+  for (const p of pairs) {
+    es.set(p.pathEs, p.pathEn);
+    en.set(p.pathEn, p.pathEs);
+  }
+  blogEsToEn = es;
+  blogEnToEs = en;
+}
+
 /** Normaliza pathname (sin query) para lookup. */
 export function normalizePathname(pathname: string): string {
   if (!pathname || pathname === "") return "/";
@@ -50,6 +72,10 @@ export function pathEsToEn(pathEs: string): string {
   const p = normalizePathname(pathEs);
   if (p === "/guia") return "/en/guide";
   if (p.startsWith("/guia/")) return `/en/guide/${p.slice("/guia/".length)}`;
+  if (p.startsWith("/blog/")) {
+    const fromCache = blogEsToEn.get(p);
+    if (fromCache != null) return fromCache;
+  }
   return PUBLIC_PATH_ES_TO_EN[p] ?? `/en${p === "/" ? "" : p}`;
 }
 
@@ -57,6 +83,10 @@ export function pathEnToEs(pathEn: string): string {
   const p = normalizePathname(pathEn);
   if (p === "/en/guide") return "/guia";
   if (p.startsWith("/en/guide/")) return `/guia/${p.slice("/en/guide/".length)}`;
+  if (p.startsWith("/en/blog/")) {
+    const fromCache = blogEnToEs.get(p);
+    if (fromCache != null) return fromCache;
+  }
   return EN_TO_ES[p] ?? (p.startsWith("/en") ? p.slice(3) || "/" : p);
 }
 
