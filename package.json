@@ -15,7 +15,8 @@
     "generate:plantilla": "node scripts/generate-plantilla-xlsx.mjs",
     "check:blog-i18n": "node scripts/check-blog-i18n.mjs",
     "informe:html": "node scripts/informe-md-to-html.mjs",
-    "sitemap:blog": "node scripts/generate-blog-sitemap.mjs"
+    "sitemap:blog": "node scripts/generate-blog-sitemap.mjs",
+    "migrate:blog-content": "node scripts/migrate-blog-content.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
