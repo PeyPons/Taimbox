@@ -197,7 +197,7 @@ export function computeBuildRentabilityDiagnosticParams(
     !isViewingCurrentMonth || workingDaysInMonth <= 0 ? 1 : workingDaysElapsed / workingDaysInMonth;
 
   const projectDisplayFeeMap = new Map<string, number>();
-  projectMetricsForView.forEach((p) => {
+  projectMetricsFilteredBySearch.forEach((p) => {
     const fee = p.monthlyFee ?? 0;
     if (!isViewingCurrentMonth) {
       projectDisplayFeeMap.set(p.projectId, fee);
@@ -251,7 +251,7 @@ export function computeBuildRentabilityDiagnosticParams(
   });
 
   const projectByIdForAttr = new Map<string, { actual: number; monthlyFee: number }>();
-  projectMetricsForView.forEach((p) =>
+  projectMetricsFilteredBySearch.forEach((p) =>
     projectByIdForAttr.set(p.projectId, { actual: p.actual, monthlyFee: p.monthlyFee || 0 })
   );
 
@@ -267,7 +267,7 @@ export function computeBuildRentabilityDiagnosticParams(
       const totalInMode = hoursMode === 'computed' ? em.totalComputed : em.totalActual;
       employeeTotalsByMode.set(em.employeeId, totalInMode);
     });
-    projectMetricsForView.forEach((p) => {
+    projectMetricsFilteredBySearch.forEach((p) => {
       const breakdown = projectEmployeesMap.get(p.projectId) || [];
       let payrollCost = 0;
       let overheadCost = 0;
@@ -431,7 +431,7 @@ export function computeBuildRentabilityDiagnosticParams(
     totalInternalCost,
     totalOverheadInView,
     ehrTarget,
-    projectMetricsForView,
+    projectMetricsForView: projectMetricsFilteredBySearch,
     projectCostAndMarginMap,
     employeeProfitabilityList,
     employees,
