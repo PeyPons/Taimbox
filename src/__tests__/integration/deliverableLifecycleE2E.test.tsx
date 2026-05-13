@@ -1,4 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+/** Evita `createClient` con URL vacía al cargar hooks que importan `@/lib/supabase`. */
+vi.mock('@/lib/supabase', () => ({
+    supabase: { from: vi.fn() },
+}));
+
 import type { ReactElement } from 'react';
 import { render, screen } from '@testing-library/react';
 import { DeliverableLifecycleBadge } from '@/components/projects/DeliverableLifecycleBadge';
