@@ -70,6 +70,44 @@
   animation: fade-in 0.6s ease-out;
 }
 
+/* === Landing literal: efectos de hover/ambient sobre el HTML volcado ====================
+   El HTML volcado captura solo el estado post-animación. Estos selectores reviven
+   interactividad sin tocar los blobs literales. Se limitan a `[data-landing-below-section]`
+   y al hero (`section.min-h-[calc(100vh-68px)]`) para no afectar al resto de la app. */
+@media (prefers-reduced-motion: no-preference) {
+  /* Tarjetas mockup (los "browsers" con barra de tres puntos) -> lift suave en hover */
+  [data-landing-below-section] .rounded-2xl.bg-white,
+  [data-landing-below-section] .rounded-3xl.bg-white {
+    transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  [data-landing-below-section] .rounded-2xl.bg-white:hover,
+  [data-landing-below-section] .rounded-3xl.bg-white:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 30px 70px -28px rgba(99, 102, 241, 0.36),
+      0 14px 32px -18px rgba(15, 23, 42, 0.18);
+  }
+  /* Chips/pills inferiores de cada sección -> levitan en hover */
+  [data-landing-below-section] .inline-flex.rounded-full {
+    transition: transform 220ms ease, box-shadow 220ms ease;
+  }
+  [data-landing-below-section] .inline-flex.rounded-full:hover {
+    transform: translateY(-2px) scale(1.015);
+  }
+  /* Hero: los chips orbitales (Ana/Carlos/Sugerencia) reaccionan al puntero */
+  section .pointer-events-auto .inline-flex.rounded-2xl {
+    transition: transform 220ms ease, box-shadow 220ms ease;
+  }
+  section .pointer-events-auto .inline-flex.rounded-2xl:hover {
+    transform: scale(1.04);
+  }
+  /* Gradient-text del título y CTAs -> respiración sutil del fondo gradiente */
+  section .bg-gradient-to-r.bg-clip-text.text-transparent {
+    background-size: 200% 200%;
+    animation: gradient 9s ease infinite;
+  }
+}
+
 @layer base {
   html {
     /* Reserva siempre el espacio de la scrollbar para evitar salto al abrir Select/Dialog (Radix) */

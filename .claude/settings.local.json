@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(ls \"C:\\\\Users\\\\alexa\\\\OneDrive\\\\Escritorio\\\\Timeboxing\\\\\" 2>&1 | head -20)",
+      "Bash(grep -E \"\\\\.md$|docs\")",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npx tsc *)",
+      "PowerShell($content = Get-Content \"C:\\\\Users\\\\alexa\\\\OneDrive\\\\Escritorio\\\\Taimbox\\\\Timeboxing\\\\src\\\\components\\\\landing\\\\below\\\\LandingBelowSection05.tsx\" -Raw; $spanOpens = \\([regex]::Matches\\($content, '<span[^/]'\\)\\).Count; $spanCloses = \\([regex]::Matches\\($content, '</span>'\\)\\).Count; $sectionOpens = \\([regex]::Matches\\($content, '<section'\\)\\).Count; $sectionCloses = \\([regex]::Matches\\($content, '</section>'\\)\\).Count; $svgOpens = \\([regex]::Matches\\($content, '<svg'\\)\\).Count; $svgCloses = \\([regex]::Matches\\($content, '</svg>'\\)\\).Count; \"Spans: $spanOpens open, $spanCloses close; Sections: $sectionOpens/$sectionCloses; SVGs: $svgOpens/$svgCloses\")",
+      "PowerShell(npx swc \"C:\\\\Users\\\\alexa\\\\OneDrive\\\\Escritorio\\\\Taimbox\\\\Timeboxing\\\\src\\\\components\\\\landing\\\\below\\\\LandingBelowSection05.tsx\" --config-file \"C:\\\\Users\\\\alexa\\\\OneDrive\\\\Escritorio\\\\Taimbox\\\\Timeboxing\\\\.swcrc\" 2>&1)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp"
     ]
   }
 }

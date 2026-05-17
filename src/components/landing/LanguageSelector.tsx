@@ -1,12 +1,18 @@
 import { useTranslation } from "react-i18next";
-import { useLocation } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { pathEsToEn, pathEnToEs } from "@/i18n/publicPaths";
 import { Globe, ChevronDown, Check } from "lucide-react";
 
-export function LanguageSelector() {
+export type LanguageSelectorSurface = "dark" | "light";
+
+type LanguageSelectorProps = {
+    surface?: LanguageSelectorSurface;
+};
+
+export function LanguageSelector({ surface = "dark" }: LanguageSelectorProps) {
     const { i18n } = useTranslation();
+    const light = surface === "light";
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const currentLang = i18n.language.startsWith("en") ? "en" : "es";
@@ -44,17 +50,19 @@ export function LanguageSelector() {
         { code: "en", label: "English", flag: "🇺🇸" }, // Using US flag for English as it's often preferred in B2B if not specifically UK
     ];
 
-    const currentLanguage = languages.find(l => l.code === currentLang);
-
     return (
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
                     "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border",
-                    isOpen
-                        ? "bg-white/15 border-white/30 text-white"
-                        : "bg-white/[0.05] border-white/10 text-white/70 hover:text-white hover:bg-white/[0.08]"
+                    light
+                        ? isOpen
+                            ? "bg-slate-100 border-slate-300 text-slate-900"
+                            : "bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:border-slate-300"
+                        : isOpen
+                          ? "bg-white/15 border-white/30 text-white"
+                          : "bg-white/[0.05] border-white/10 text-white/70 hover:text-white hover:bg-white/[0.08]"
                 )}
                 aria-expanded={isOpen}
                 aria-haspopup="true"
@@ -65,7 +73,14 @@ export function LanguageSelector() {
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-40 rounded-2xl border border-white/15 bg-slate-900/95 backdrop-blur-2xl shadow-2xl shadow-black/50 overflow-hidden z-[60] animate-in fade-in zoom-in-95 duration-100">
+                <div
+                    className={cn(
+                        "absolute right-0 mt-2 w-40 rounded-2xl border overflow-hidden z-[60] animate-in fade-in zoom-in-95 duration-100 backdrop-blur-2xl",
+                        light
+                            ? "border-slate-200 bg-white shadow-xl shadow-slate-900/10"
+                            : "border-white/15 bg-slate-900/95 shadow-2xl shadow-black/50",
+                    )}
+                >
                     <div className="p-1.5">
                         {languages.map((lang) => (
                             <button
@@ -73,16 +88,22 @@ export function LanguageSelector() {
                                 onClick={() => handleLanguageChange(lang.code)}
                                 className={cn(
                                     "w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-all duration-200",
-                                    currentLang === lang.code
-                                        ? "bg-white/10 text-white font-semibold"
-                                        : "text-white/60 hover:text-white hover:bg-white/5"
+                                    light
+                                        ? currentLang === lang.code
+                                            ? "bg-violet-50 text-violet-900 font-semibold"
+                                            : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                        : currentLang === lang.code
+                                          ? "bg-white/10 text-white font-semibold"
+                                          : "text-white/60 hover:text-white hover:bg-white/5"
                                 )}
                             >
                                 <div className="flex items-center gap-2.5">
                                     <span className="text-base">{lang.flag}</span>
                                     <span>{lang.label}</span>
                                 </div>
-                                {currentLang === lang.code && <Check className="h-4 w-4 text-indigo-400" />}
+                                {currentLang === lang.code && (
+                                    <Check className={cn("h-4 w-4", light ? "text-violet-600" : "text-indigo-400")} />
+                                )}
                             </button>
                         ))}
                     </div>

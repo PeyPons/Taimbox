@@ -1,0 +1,446 @@
+{
+  "s09": {
+    "badge": "Empieza con 4 personas y un proyecto",
+    "titleLine1": "Mide a fin de mes.",
+    "titleLine2": "Si no es lo prometido, te ayudamos a salir.",
+    "ctaPrimary": "Empezar gratis",
+    "ctaSecondary": "El coste de no medir",
+    "trust1": "14 días Business gratis",
+    "trust2": "Sin tarjeta de crédito",
+    "trust3": "Export en cualquier momento"
+  },
+  "s08": {
+    "kicker": "Antes de probar",
+    "title": "Lo que probablemente",
+    "titleHighlight": "te preguntas",
+    "ctaPrimary": "Empezar gratis",
+    "ctaSales": "Hablar con ventas"
+  },
+  "s02": {
+    "kicker": "Por qué Taimbox",
+    "title": "Tres ideas que separan agencias rentables de agencias",
+    "titleEmphasis": "\"ocupadas\"",
+    "cards": [
+      {
+        "step": "01 · Principio",
+        "heading": "Ocupación ≠ rentabilidad",
+        "body": "Ver al equipo al 86% no significa cobrar el 86%. Mide la brecha real entre capacidad usada e ingreso devengado, mes a mes."
+      },
+      {
+        "step": "02 · Principio",
+        "heading": "Flujo integrado",
+        "body": "Planificar, ejecutar, medir y predecir en una sola superficie. Sin Excel paralelo, sin Slack para encontrar quién hace qué."
+      },
+      {
+        "step": "03 · Principio",
+        "heading": "Datos al céntimo",
+        "body": "Fórmulas auditables F1–F4 + EHR. Cada euro devengado tiene su trazabilidad — exportable a Excel, CSV o vía API."
+      }
+    ]
+  },
+  "s03": {
+    "kicker": "Para todo el equipo",
+    "title": "Cada perfil tiene su",
+    "titleHighlight": "propia entrada",
+    "subtitle": "No es un PM tool más. Cada rol abre la herramienta justo en lo que necesita.",
+    "roles": [
+      {
+        "label": "Directores",
+        "badgeText": "Para directores",
+        "heading": "Todas las horas, un solo grid",
+        "description": "El planificador te enseña qué pasa antes de guardar: impacto, dependencias, ausencias y costes que se parten entre meses.",
+        "bullets": [
+          "Asignación con cálculo de impacto y asistente de redistribución",
+          "Bloqueos y dependencias visibles antes de que escalen",
+          "Coste real cuando una semana parte entre dos meses (al céntimo)"
+        ],
+        "linkText": "Ver planificador de recursos",
+        "linkHref": "/planificador-recursos"
+      },
+      {
+        "label": "Empleados",
+        "badgeText": "Para empleados",
+        "heading": "Tu día, en una sola pantalla",
+        "description": "Cronómetro por tarea, prioridades visibles y un cierre semanal que se valida en dos minutos sin perseguir links de Slack.",
+        "bullets": [
+          "Cronómetro por tarea, en sidebar y página Tiempos",
+          "Prioridades del día y bloqueos sin perseguir Slacks",
+          "Weekly de cierre rápido: 2 minutos por persona"
+        ],
+        "linkText": "Ver dashboard de empleado",
+        "linkHref": "/dashboard-empleado"
+      },
+      {
+        "label": "Project Managers",
+        "badgeText": "Para project managers",
+        "heading": "Pacing y entregas sin saltar a Excel",
+        "description": "Avance real por proyecto, sobrecargas detectadas antes del lunes y sugerencias automáticas de redistribución de carga.",
+        "bullets": [
+          "Ingreso devengado y pacing en vivo por proyecto",
+          "Sobrecargas detectadas antes de que escalen",
+          "Weekly Forecast con redistribución sugerida"
+        ],
+        "linkText": "Ver control de proyectos",
+        "linkHref": "/control-proyectos"
+      },
+      {
+        "label": "RRHH",
+        "badgeText": "Para RRHH",
+        "heading": "Capacidad, ausencias y cargas al detalle",
+        "description": "Ausencias planificadas, capacidad efectiva real (no teórica) y desviaciones por persona y departamento, mes a mes.",
+        "bullets": [
+          "Ausencias y vacaciones integradas en el planificador",
+          "Capacidad efectiva real por persona y equipo",
+          "Reportes de carga y horas exportables a nómina"
+        ],
+        "linkText": "Ver gestión de equipos",
+        "linkHref": "/gestion-equipos"
+      },
+      {
+        "label": "Finanzas",
+        "badgeText": "Para finanzas",
+        "heading": "Salud financiera con fórmulas auditables",
+        "description": "A mitad de mes ya sabes ingreso devengado, EHR, pacing y margen por proyecto — fórmulas F1–F4 transparentes y exportables.",
+        "bullets": [
+          "Fórmulas F1–F4 y EHR transparentes, no caja negra",
+          "Ingreso devengado al céntimo, salud por proyecto y agencia",
+          "Export Excel/CSV/JSON o vía API"
+        ],
+        "linkText": "Ver reportes de rentabilidad",
+        "linkHref": "/reportes-rentabilidad"
+      }
+    ]
+  },
+  "s01": {
+    "titlePrefix": "Tu agencia en",
+    "titleHighlight": "un solo grid",
+    "subtitle": "Planifica, ejecuta, mide y predice sin saltar entre Excel, Slack y un dashboard distinto por cada cosa.",
+    "primaryCta": "Empezar gratis",
+    "secondaryCta": "El coste de no medir (3 min)",
+    "mockDomain": "taimbox.com",
+    "plannerKicker": "Planificador · Marzo",
+    "plannerMeta": "4 personas · 16 semanas-persona",
+    "overloadBadge": "2 sobrecargas",
+    "weekCols": ["S1", "S2", "S3", "S4"],
+    "people": [
+      { "initials": "MG", "name": "María", "cells": ["92%", "88%", "98%", "90%"] },
+      { "initials": "CR", "name": "Carlos", "cells": ["118%", "96%", "112%", "88%"] },
+      { "initials": "AM", "name": "Ana", "cells": ["78%", "84%", "—", "82%"] },
+      { "initials": "LF", "name": "Luis", "cells": ["86%", "94%", "95%", "90%"] }
+    ],
+    "legend": [
+      { "label": "Disponible", "variant": "available" },
+      { "label": "Ocupado", "variant": "busy" },
+      { "label": "Sobrecarga", "variant": "overload" },
+      { "label": "Ausencia", "variant": "absence" }
+    ],
+    "capacityLabel": "Capacidad efectiva",
+    "capacityPct": "93%",
+    "capacityHours": "612h / 672h base",
+    "pills": [
+      "Ingreso devengado al céntimo",
+      "Sobrecargas detectadas antes del lunes",
+      "Forecast + sugerencias automáticas",
+      "Cierre semanal validado por proyecto"
+    ]
+  },
+  "s05": {
+    "kicker": "Conectado, no encerrado",
+    "title": "Tu pipeline real,",
+    "titleHighlight": "leído por nosotros",
+    "subtitle": "OAuth solo lectura para Ads, API REST y exports completos. Tus datos siguen siendo tuyos.",
+    "integrations": [
+      {
+        "title": "Google Ads",
+        "desc": "OAuth solo lectura. Pacing por cuenta y campaña sincronizado."
+      },
+      {
+        "title": "Meta Ads",
+        "desc": "Presupuesto mensual objetivo y desviaciones en vivo."
+      },
+      {
+        "title": "API REST",
+        "desc": "Endpoints documentados, SDK JS, autenticación con tokens."
+      },
+      {
+        "title": "Cronómetro",
+        "desc": "Tiempo trackeado dentro de Taimbox. Validación en el cierre semanal."
+      },
+      {
+        "title": "Weekly Forecast",
+        "desc": "Cierre semanal y forecast con redistribución sugerida."
+      },
+      {
+        "title": "Exports",
+        "desc": "Excel, CSV y JSON. Tus datos siempre tuyos, en tu modelo."
+      }
+    ],
+    "ppcKicker": "Monitor PPC en vivo",
+    "ppcTitle": "Tus campañas Meta y Google,",
+    "ppcTitleHighlight": "leídas dentro de Taimbox",
+    "ppcBody": "Conecta una vez con OAuth solo lectura. Taimbox sincroniza spend, ROAS, CPL y conversiones cada hora, agrupa cuentas por cliente y proyecta el cierre de mes. Si una campaña va a pasarse del budget, lo sabes el día 12, no el último.",
+    "ppcBullet1Prefix": "Estados",
+    "ppcBullet1Suffix": "por cuenta y campaña.",
+    "ppcBullets": [
+      "Agrupación de cuentas en clientes virtuales (reglas por palabra clave).",
+      "Forecast automático: cuánto cerrarás el mes con el ritmo actual."
+    ],
+    "ppcBulletStatuses": {
+      "ok": "ok",
+      "risk": "risk",
+      "under": "under",
+      "over": "over"
+    },
+    "mockDomain": "taimbox.com",
+    "monitorKicker": "Monitor PPC · Mayo",
+    "monitorMeta": "3 cuentas · ROAS 2.6×",
+    "googleAdsTitle": "Google Ads",
+    "metaAdsTitle": "Meta Ads",
+    "campaigns": [
+      {
+        "platform": "google",
+        "name": "TechCorp · Conv",
+        "status": "OK",
+        "spend": "€4.8k/6k",
+        "roas": "3.4× ROAS",
+        "cpl": "€18 CPL",
+        "widthPct": 80,
+        "variant": "ok"
+      },
+      {
+        "platform": "meta",
+        "name": "StartupHub · Awar.",
+        "status": "Bajo",
+        "spend": "€2.1k/4k",
+        "roas": "1.9× ROAS",
+        "cpl": "€34 CPL",
+        "widthPct": 60,
+        "variant": "under"
+      },
+      {
+        "platform": "google",
+        "name": "LocalBiz · Lead",
+        "status": "Sobre",
+        "spend": "€5.8k/5k",
+        "roas": "2.6× ROAS",
+        "cpl": "€22 CPL",
+        "widthPct": 100,
+        "variant": "over"
+      }
+    ],
+    "forecastLabel": "Forecast fin de mes",
+    "forecastAlert": "+€1.4k sobre presupuesto · pausar 2 ad-sets",
+    "integrationsLink": "Ver todas las integraciones",
+    "integrationsHref": "/integraciones"
+  },
+  "s06": {
+    "badge": "Seguridad por diseño",
+    "title": "Datos de tu cliente.",
+    "titleHighlight": "Cifrados, en UE",
+    "titleSuffix": ", nunca cruzados.",
+    "subtitle": "Aislamiento RLS de Postgres en la base — no en la aplicación. OAuth solo lectura para Ads. PCI delegado a Stripe. Backups diarios cifrados.",
+    "cards": [
+      {
+        "title": "Aislamiento por agencia (RLS)",
+        "body": "Cada fila de cada tabla pertenece a tu agency_id. Postgres rechaza por diseño cualquier consulta que intente cruzarla — no es una capa de aplicación, está en la base."
+      },
+      {
+        "title": "TLS 1.3 + AES-256 en reposo",
+        "body": "Tránsito cifrado con TLS 1.3 y datos en reposo con AES-256 en discos gestionados. Backups diarios cifrados con la misma política."
+      },
+      {
+        "title": "OAuth scopes solo lectura para Ads",
+        "body": "Conectas Google Ads y Meta con tokens de solo lectura. No tocamos tu cuenta: leemos pacing, gasto y campañas sin permisos de escritura."
+      },
+      {
+        "title": "Datos en UE, PCI delegado a Stripe",
+        "body": "Tu información en regiones de la UE. Pagos delegados a Stripe (PCI DSS Level 1) — Taimbox nunca toca números de tarjeta. DPO disponible."
+      }
+    ],
+    "trustStrip": [
+      "RLS Postgres",
+      "TLS 1.3",
+      "AES-256",
+      "EU Region",
+      "Stripe PCI L1",
+      "Data Export · GDPR",
+      "Audit logs"
+    ],
+    "securityLink": "Ver detalle completo de seguridad",
+    "securityHref": "/seguridad"
+  },
+  "s07": {
+    "kicker": "Planes",
+    "title": "Empieza con cuatro personas.",
+    "titleHighlight": "Crece a tu ritmo.",
+    "subtitle": "Early Adopter activo: las primeras agencias mantienen el 50% lifetime antes de aplicar tarifas oficiales.",
+    "plans": [
+      {
+        "id": "starter",
+        "name": "Starter",
+        "desc": "Para probar Taimbox con tu equipo pequeño.",
+        "price": "0€",
+        "priceSuffix": "/mes · siempre gratis",
+        "features": [
+          "Hasta 5 personas",
+          "Planificador, Dashboard del Empleado",
+          "Histórico mes actual + anterior",
+          "Exports CSV / Excel",
+          "Sin tarjeta"
+        ],
+        "cta": "Empezar gratis",
+        "ctaHref": "/login?tab=register",
+        "featured": false
+      },
+      {
+        "id": "pro",
+        "name": "Pro",
+        "desc": "Para agencias que ya viven en hojas de cálculo.",
+        "priceWas": "99€/mes",
+        "price": "49€",
+        "priceSuffix": "/mes",
+        "discountBadge": "−50%",
+        "features": [
+          "Hasta 20 personas",
+          "Histórico ilimitado",
+          "Weekly Forecast + redistribución",
+          "Matriz de Fiabilidad",
+          "EHR (Effective Hourly Rate)",
+          "Soporte prioritario"
+        ],
+        "cta": "Empezar 14 días Pro",
+        "ctaHref": "/login?tab=register",
+        "featured": true
+      },
+      {
+        "id": "business",
+        "name": "Business",
+        "desc": "Para agencias con PPC, deadlines y consejo financiero.",
+        "priceWas": "249€/mes",
+        "price": "149€",
+        "priceSuffix": "/mes",
+        "features": [
+          "Hasta 50 personas",
+          "Monitor PPC + Google/Meta Ads",
+          "Radar de Hemorragias",
+          "API REST + Webhooks",
+          "OKRs + Deadlines + Coherencia",
+          "Onboarding asistido"
+        ],
+        "cta": "Empezar 14 días Business",
+        "ctaHref": "/login?tab=register",
+        "featured": false
+      },
+      {
+        "id": "enterprise",
+        "name": "Enterprise",
+        "desc": "Para holdings y agencias > 50 personas con SLA.",
+        "price": "A medida",
+        "features": [
+          "Personas sin límite",
+          "SLA y soporte dedicado",
+          "Integraciones a medida",
+          "Facturación personalizada",
+          "Single Sign-On",
+          "Cuenta técnica asignada"
+        ],
+        "cta": "Hablar con ventas",
+        "ctaHref": "/contacto",
+        "featured": false
+      }
+    ],
+    "compareLink": "Ver comparativa completa de planes",
+    "compareHref": "/precios"
+  },
+  "s04": {
+    "kicker": "El sistema operativo",
+    "title": "De planificar a predecir",
+    "titleHighlight": "sin saltar entre apps",
+    "mockupAria": "Vistas del producto en Taimbox",
+    "ctaPrimary": "Probar el flujo completo",
+    "ctaGuide": "Ver guía detallada",
+    "phases": [
+      {
+        "number": "01",
+        "label": "Planificar",
+        "heading": "Asigna con impacto visible",
+        "description": "El grid del planificador te enseña qué pasa antes de guardar. Asignación con impacto, dependencias visibles, ausencias respetadas y costes que se parten entre meses.",
+        "bullets": [
+          "Asignación con cálculo de impacto en vivo",
+          "Dependencias y bloqueos antes de que escalen",
+          "Costes prorrateados al céntimo cuando una semana parte entre dos meses"
+        ]
+      },
+      {
+        "number": "02",
+        "label": "Ejecutar",
+        "heading": "Cierra la semana en dos minutos",
+        "description": "El día del empleado deja de ser cuatro pestañas. Cronómetro por tarea, dependencias claras, y un weekly que se cierra en dos minutos sin perseguir links de Slack.",
+        "bullets": [
+          "Cronómetro por tarea, en sidebar y página Tiempos",
+          "Dependencias y prioridades del día visibles de un vistazo",
+          "Weekly de cierre rápido: 2 minutos por persona"
+        ]
+      },
+      {
+        "number": "03",
+        "label": "Medir",
+        "heading": "Radar de salud sin caja negra",
+        "description": "A mitad de mes ya sabes el ingreso devengado y el pacing por proyecto. Salud Financiera te muestra dónde sangra el margen, con fórmulas auditables.",
+        "bullets": [
+          "Ingreso devengado y pacing por proyecto, en vivo",
+          "Fórmulas F1–F4 y EHR transparentes",
+          "Salud Financiera de la agencia y export Excel/CSV/JSON o vía API"
+        ]
+      },
+      {
+        "number": "04",
+        "label": "Predecir",
+        "heading": "Redistribuye antes de que Excel avise",
+        "description": "El Weekly Forecast redistribuye carga antes de que el Excel te avise. Deadlines mensuales con sugerencias entre quien comparte proyectos, OKRs y control de coherencia.",
+        "bullets": [
+          "Weekly Forecast con redistribución entre quien comparte proyectos",
+          "Deadlines mensuales con límites de carga y desviación",
+          "Control de coherencia: avisa antes del comité"
+        ]
+      }
+    ]
+  },
+  "hero": {
+    "overloads": "sobrecargas detectadas",
+    "statusHoursTracked": "horas con rentabilidad visible",
+    "statusRedistributions": "redistribuciones sugeridas hoy",
+    "statusCapacity": "capacidad equilibrada",
+    "statusBudget": "proyectos dentro de margen",
+    "live": "tu equipo · en vivo",
+    "orbitKicker": "Equipo · esta semana",
+    "plannedSuffix": "de 200h planif.",
+    "balancedCapacity": "Capacidad balanceada",
+    "tickerLive": "En directo",
+    "suggestionKicker": "Sugerencia · Asistente",
+    "suggestionText": "Reasignar 4h: Carlos → Ana",
+    "ticker": [
+      { "time": "09:14", "name": "María", "tone": "emerald", "verb": "cerró tarea", "detail": "— Web corporativa · 3.5h" },
+      { "time": "09:32", "name": "Luis", "tone": "indigo", "verb": "inició cronómetro", "detail": "— Diseño Retainer global" },
+      { "time": "09:48", "name": "Planning", "tone": "violet", "verb": "borrador próxima semana", "detail": "— 160h asignadas a 4 personas" },
+      { "time": "10:05", "name": "Carlos", "tone": "amber", "verb": "añadió bloqueador", "detail": "— Pendiente revisión cliente" },
+      { "time": "10:22", "name": "Asistente", "tone": "pink", "verb": "redistribución sugerida", "detail": "— 4h de Carlos → Ana" },
+      { "time": "10:51", "name": "Ana", "tone": "emerald", "verb": "planificación marzo", "detail": "— 32h / 40h objetivo" },
+      { "time": "11:08", "name": "Aviso", "tone": "rose", "verb": "TechCorp al 92% del presupuesto", "detail": "— 258h / 280h mensuales" },
+      { "time": "11:34", "name": "Carlos", "tone": "cyan", "verb": "añadió ausencia", "detail": "— vacaciones · 14–16 mayo" },
+      { "time": "12:01", "name": "Luis", "tone": "emerald", "verb": "desbloqueó tarea", "detail": "— Diseño aprobado por cliente" },
+      { "time": "12:18", "name": "Equipo", "tone": "violet", "verb": "capacidad mensual", "detail": "— 548h / 640h · 86%" },
+      { "time": "12:42", "name": "María", "tone": "indigo", "verb": "cierre semanal", "detail": "— 39h reportadas vs 40h planificadas" },
+      { "time": "13:05", "name": "Hito", "tone": "pink", "verb": "entrega LocalBiz", "detail": "— lunes 19 mayo · en 3 días" }
+    ],
+    "tickerToneClass": {
+      "emerald": "text-emerald-700",
+      "indigo": "text-indigo-700",
+      "violet": "text-violet-700",
+      "amber": "text-amber-700",
+      "pink": "text-pink-700",
+      "rose": "text-rose-700",
+      "cyan": "text-cyan-700"
+    }
+  }
+}

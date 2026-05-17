@@ -4,6 +4,8 @@ import LanguageDetector from "i18next-browser-languagedetector";
 
 import esLanding from "../locales/es/landing.json";
 import enLanding from "../locales/en/landing.json";
+import esHomeLiteral from "../locales/es/homeLiteral.json";
+import enHomeLiteral from "../locales/en/homeLiteral.json";
 import esBlog from "../locales/es/blog.json";
 import enBlog from "../locales/en/blog.json";
 import esApp from "../locales/es/app.json";
@@ -34,13 +36,19 @@ void i18n
     ns: ["landing", "blog", "app", "apiDocs"],
     resources: {
       es: {
-        landing: esLanding,
+        landing: {
+          ...esLanding,
+          home: { ...esLanding.home, literal: esHomeLiteral },
+        },
         blog: esBlog,
         app: esApp,
         apiDocs: esApiDocs,
       },
       en: {
-        landing: enLanding,
+        landing: {
+          ...enLanding,
+          home: { ...enLanding.home, literal: enHomeLiteral },
+        },
         blog: enBlog,
         app: enApp,
         apiDocs: enApiDocs,

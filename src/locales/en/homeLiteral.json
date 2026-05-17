@@ -1,0 +1,446 @@
+{
+  "s09": {
+    "badge": "Start with 4 people and one project",
+    "titleLine1": "Measure at month-end.",
+    "titleLine2": "If it's not what we promised, we'll help you leave.",
+    "ctaPrimary": "Start free",
+    "ctaSecondary": "The cost of not tracking",
+    "trust1": "14 days Business free",
+    "trust2": "No credit card",
+    "trust3": "Export anytime"
+  },
+  "s08": {
+    "kicker": "Before you try it",
+    "title": "What you're probably",
+    "titleHighlight": "wondering",
+    "ctaPrimary": "Start free",
+    "ctaSales": "Talk to sales"
+  },
+  "s02": {
+    "kicker": "Why Taimbox",
+    "title": "Three ideas that separate profitable agencies from",
+    "titleEmphasis": "\"busy\"",
+    "cards": [
+      {
+        "step": "01 · Principle",
+        "heading": "Utilization ≠ profitability",
+        "body": "Seeing the team at 86% doesn't mean billing 86%. Measure the real gap between used capacity and accrued revenue, month after month."
+      },
+      {
+        "step": "02 · Principle",
+        "heading": "Integrated flow",
+        "body": "Plan, execute, measure, and forecast on one surface. No parallel Excel, no Slack to find who's doing what."
+      },
+      {
+        "step": "03 · Principle",
+        "heading": "Data to the cent",
+        "body": "Auditable F1–F4 formulas + EHR. Every euro of accrued revenue is traceable — exportable to Excel, CSV, or via API."
+      }
+    ]
+  },
+  "s03": {
+    "kicker": "For the whole team",
+    "title": "Every role gets its",
+    "titleHighlight": "own entry point",
+    "subtitle": "Not another PM tool. Each role opens exactly what they need.",
+    "roles": [
+      {
+        "label": "Leaders",
+        "badgeText": "For leaders",
+        "heading": "All hours, one grid",
+        "description": "The planner shows impact before you save: dependencies, absences, and costs split across months.",
+        "bullets": [
+          "Assignment with impact calculation and redistribution assistant",
+          "Blockers and dependencies visible before they escalate",
+          "Real cost when a week spans two months (to the cent)"
+        ],
+        "linkText": "See resource planner",
+        "linkHref": "/planificador-recursos"
+      },
+      {
+        "label": "Team members",
+        "badgeText": "For team members",
+        "heading": "Your day on one screen",
+        "description": "Per-task timer, clear priorities, and a weekly close validated in two minutes without chasing Slack links.",
+        "bullets": [
+          "Per-task timer in sidebar and Time page",
+          "Today's priorities and blockers without Slack chasing",
+          "Fast weekly close: 2 minutes per person"
+        ],
+        "linkText": "See employee dashboard",
+        "linkHref": "/dashboard-empleado"
+      },
+      {
+        "label": "Project managers",
+        "badgeText": "For project managers",
+        "heading": "Pacing and delivery without Excel",
+        "description": "Real progress per project, overloads caught before Monday, and automatic load redistribution suggestions.",
+        "bullets": [
+          "Accrued revenue and live pacing per project",
+          "Overload detected before it escalates",
+          "Weekly Forecast with suggested redistribution"
+        ],
+        "linkText": "See project control",
+        "linkHref": "/control-proyectos"
+      },
+      {
+        "label": "HR",
+        "badgeText": "For HR",
+        "heading": "Capacity, absences, and load in detail",
+        "description": "Planned absences, real effective capacity (not theoretical), and deviations by person and department, month by month.",
+        "bullets": [
+          "Absences and holidays integrated in the planner",
+          "Real effective capacity per person and team",
+          "Load and hours reports exportable for payroll"
+        ],
+        "linkText": "See team management",
+        "linkHref": "/gestion-equipos"
+      },
+      {
+        "label": "Finance",
+        "badgeText": "For finance",
+        "heading": "Financial health with auditable formulas",
+        "description": "Mid-month you already know accrued revenue, EHR, pacing, and margin per project — transparent F1–F4 formulas and exports.",
+        "bullets": [
+          "Transparent F1–F4 and EHR, not a black box",
+          "Accrued revenue to the cent, health per project and agency",
+          "Export Excel/CSV/JSON or via API"
+        ],
+        "linkText": "See profitability reports",
+        "linkHref": "/reportes-rentabilidad"
+      }
+    ]
+  },
+  "s01": {
+    "titlePrefix": "Your agency in",
+    "titleHighlight": "one grid",
+    "subtitle": "Plan, execute, measure, and forecast without jumping between Excel, Slack, and a different dashboard for each thing.",
+    "primaryCta": "Start free",
+    "secondaryCta": "The cost of not tracking (3 min)",
+    "mockDomain": "taimbox.com",
+    "plannerKicker": "Planner · March",
+    "plannerMeta": "4 people · 16 person-weeks",
+    "overloadBadge": "2 overloads",
+    "weekCols": ["W1", "W2", "W3", "W4"],
+    "people": [
+      { "initials": "MG", "name": "María", "cells": ["92%", "88%", "98%", "90%"] },
+      { "initials": "CR", "name": "Carlos", "cells": ["118%", "96%", "112%", "88%"] },
+      { "initials": "AM", "name": "Ana", "cells": ["78%", "84%", "—", "82%"] },
+      { "initials": "LF", "name": "Luis", "cells": ["86%", "94%", "95%", "90%"] }
+    ],
+    "legend": [
+      { "label": "Available", "variant": "available" },
+      { "label": "Busy", "variant": "busy" },
+      { "label": "Overload", "variant": "overload" },
+      { "label": "Absence", "variant": "absence" }
+    ],
+    "capacityLabel": "Effective capacity",
+    "capacityPct": "93%",
+    "capacityHours": "612h / 672h base",
+    "pills": [
+      "Accrued revenue to the cent",
+      "Overload caught before Monday",
+      "Forecast + automatic suggestions",
+      "Weekly close validated per project"
+    ]
+  },
+  "s05": {
+    "kicker": "Connected, not locked in",
+    "title": "Your real pipeline,",
+    "titleHighlight": "read by us",
+    "subtitle": "Read-only OAuth for Ads, REST API, and full exports. Your data stays yours.",
+    "integrations": [
+      {
+        "title": "Google Ads",
+        "desc": "Read-only OAuth. Pacing synced per account and campaign."
+      },
+      {
+        "title": "Meta Ads",
+        "desc": "Monthly budget target and live deviations."
+      },
+      {
+        "title": "REST API",
+        "desc": "Documented endpoints, JS SDK, token authentication."
+      },
+      {
+        "title": "Timer",
+        "desc": "Time tracked inside Taimbox. Validated in the weekly close."
+      },
+      {
+        "title": "Weekly Forecast",
+        "desc": "Weekly close and forecast with suggested redistribution."
+      },
+      {
+        "title": "Exports",
+        "desc": "Excel, CSV, and JSON. Your data, always yours, in your model."
+      }
+    ],
+    "ppcKicker": "Live PPC monitor",
+    "ppcTitle": "Your Meta and Google campaigns,",
+    "ppcTitleHighlight": "read inside Taimbox",
+    "ppcBody": "Connect once with read-only OAuth. Taimbox syncs spend, ROAS, CPL, and conversions hourly, groups accounts by client, and projects month-end. If a campaign will blow the budget, you know on day 12, not the last day.",
+    "ppcBullet1Prefix": "States",
+    "ppcBullet1Suffix": "per account and campaign.",
+    "ppcBullets": [
+      "Account grouping into virtual clients (keyword rules).",
+      "Automatic forecast: where you'll land this month at the current pace."
+    ],
+    "ppcBulletStatuses": {
+      "ok": "ok",
+      "risk": "risk",
+      "under": "under",
+      "over": "over"
+    },
+    "mockDomain": "taimbox.com",
+    "monitorKicker": "PPC Monitor · May",
+    "monitorMeta": "3 accounts · ROAS 2.6×",
+    "googleAdsTitle": "Google Ads",
+    "metaAdsTitle": "Meta Ads",
+    "campaigns": [
+      {
+        "platform": "google",
+        "name": "TechCorp · Conv",
+        "status": "OK",
+        "spend": "€4.8k/6k",
+        "roas": "3.4× ROAS",
+        "cpl": "€18 CPL",
+        "widthPct": 80,
+        "variant": "ok"
+      },
+      {
+        "platform": "meta",
+        "name": "StartupHub · Awar.",
+        "status": "Under",
+        "spend": "€2.1k/4k",
+        "roas": "1.9× ROAS",
+        "cpl": "€34 CPL",
+        "widthPct": 60,
+        "variant": "under"
+      },
+      {
+        "platform": "google",
+        "name": "LocalBiz · Lead",
+        "status": "Over",
+        "spend": "€5.8k/5k",
+        "roas": "2.6× ROAS",
+        "cpl": "€22 CPL",
+        "widthPct": 100,
+        "variant": "over"
+      }
+    ],
+    "forecastLabel": "Month-end forecast",
+    "forecastAlert": "+€1.4k over budget · pause 2 ad sets",
+    "integrationsLink": "See all integrations",
+    "integrationsHref": "/integraciones"
+  },
+  "s06": {
+    "badge": "Security by design",
+    "title": "Your client's data.",
+    "titleHighlight": "Encrypted, in the EU",
+    "titleSuffix": ", never crossed.",
+    "subtitle": "Postgres RLS isolation in the database — not in the app. Read-only OAuth for Ads. PCI delegated to Stripe. Encrypted daily backups.",
+    "cards": [
+      {
+        "title": "Per-agency isolation (RLS)",
+        "body": "Every row in every table belongs to your agency_id. Postgres rejects by design any query that tries to cross it — not an app layer, it's in the database."
+      },
+      {
+        "title": "TLS 1.3 + AES-256 at rest",
+        "body": "Transit encrypted with TLS 1.3 and data at rest with AES-256 on managed disks. Daily backups encrypted with the same policy."
+      },
+      {
+        "title": "Read-only OAuth scopes for Ads",
+        "body": "Connect Google Ads and Meta with read-only tokens. We don't touch your account: we read pacing, spend, and campaigns without write permissions."
+      },
+      {
+        "title": "EU data, PCI delegated to Stripe",
+        "body": "Your information in EU regions. Payments delegated to Stripe (PCI DSS Level 1) — Taimbox never touches card numbers. DPO available."
+      }
+    ],
+    "trustStrip": [
+      "Postgres RLS",
+      "TLS 1.3",
+      "AES-256",
+      "EU Region",
+      "Stripe PCI L1",
+      "Data Export · GDPR",
+      "Audit logs"
+    ],
+    "securityLink": "See full security details",
+    "securityHref": "/seguridad"
+  },
+  "s07": {
+    "kicker": "Plans",
+    "title": "Start with four people.",
+    "titleHighlight": "Grow at your pace.",
+    "subtitle": "Early Adopter active: the first agencies keep 50% lifetime before official pricing applies.",
+    "plans": [
+      {
+        "id": "starter",
+        "name": "Starter",
+        "desc": "To try Taimbox with your small team.",
+        "price": "€0",
+        "priceSuffix": "/mo · always free",
+        "features": [
+          "Up to 5 people",
+          "Planner, Employee Dashboard",
+          "Current + previous month history",
+          "CSV / Excel exports",
+          "No card required"
+        ],
+        "cta": "Start free",
+        "ctaHref": "/login?tab=register",
+        "featured": false
+      },
+      {
+        "id": "pro",
+        "name": "Pro",
+        "desc": "For agencies already living in spreadsheets.",
+        "priceWas": "€99/mo",
+        "price": "€49",
+        "priceSuffix": "/mo",
+        "discountBadge": "−50%",
+        "features": [
+          "Up to 20 people",
+          "Unlimited history",
+          "Weekly Forecast + redistribution",
+          "Reliability Matrix",
+          "EHR (Effective Hourly Rate)",
+          "Priority support"
+        ],
+        "cta": "Start 14-day Pro",
+        "ctaHref": "/login?tab=register",
+        "featured": true
+      },
+      {
+        "id": "business",
+        "name": "Business",
+        "desc": "For agencies with PPC, deadlines, and finance oversight.",
+        "priceWas": "€249/mo",
+        "price": "€149",
+        "priceSuffix": "/mo",
+        "features": [
+          "Up to 50 people",
+          "PPC Monitor + Google/Meta Ads",
+          "Bleed Radar",
+          "REST API + Webhooks",
+          "OKRs + Deadlines + Coherence",
+          "Assisted onboarding"
+        ],
+        "cta": "Start 14-day Business",
+        "ctaHref": "/login?tab=register",
+        "featured": false
+      },
+      {
+        "id": "enterprise",
+        "name": "Enterprise",
+        "desc": "For holdings and agencies > 50 people with SLA.",
+        "price": "Custom",
+        "features": [
+          "Unlimited people",
+          "SLA and dedicated support",
+          "Custom integrations",
+          "Custom billing",
+          "Single Sign-On",
+          "Assigned technical account"
+        ],
+        "cta": "Talk to sales",
+        "ctaHref": "/contacto",
+        "featured": false
+      }
+    ],
+    "compareLink": "See full plan comparison",
+    "compareHref": "/precios"
+  },
+  "s04": {
+    "kicker": "The operating system",
+    "title": "From planning to forecasting",
+    "titleHighlight": "without switching apps",
+    "mockupAria": "Product views in Taimbox",
+    "ctaPrimary": "Try the full flow",
+    "ctaGuide": "See detailed guide",
+    "phases": [
+      {
+        "number": "01",
+        "label": "Plan",
+        "heading": "Assign with visible impact",
+        "description": "The planner grid shows what happens before you save. Impact assignment, visible dependencies, respected absences, and costs split across months.",
+        "bullets": [
+          "Live impact calculation on assignment",
+          "Dependencies and blockers before they escalate",
+          "Prorated costs to the cent when a week spans two months"
+        ]
+      },
+      {
+        "number": "02",
+        "label": "Execute",
+        "heading": "Close the week in two minutes",
+        "description": "The employee day stops being four tabs. Per-task timer, clear dependencies, and a weekly close in two minutes without Slack links.",
+        "bullets": [
+          "Per-task timer in sidebar and Time page",
+          "Dependencies and daily priorities at a glance",
+          "Fast weekly close: 2 minutes per person"
+        ]
+      },
+      {
+        "number": "03",
+        "label": "Measure",
+        "heading": "Health radar without a black box",
+        "description": "Mid-month you know accrued revenue and pacing per project. Financial Health shows where margin bleeds, with auditable formulas.",
+        "bullets": [
+          "Accrued revenue and live pacing per project",
+          "Transparent F1–F4 and EHR",
+          "Agency Financial Health and Excel/CSV/JSON or API export"
+        ]
+      },
+      {
+        "number": "04",
+        "label": "Forecast",
+        "heading": "Rebalance before Excel warns you",
+        "description": "Weekly Forecast redistributes load before Excel does. Monthly deadlines with suggestions among people who share projects, OKRs, and coherence checks.",
+        "bullets": [
+          "Weekly Forecast redistribution among shared projects",
+          "Monthly deadlines with load limits and deviation",
+          "Coherence check: warns before the committee"
+        ]
+      }
+    ]
+  },
+  "hero": {
+    "overloads": "overloads detected",
+    "statusHoursTracked": "hours with visible profitability",
+    "statusRedistributions": "redistributions suggested today",
+    "statusCapacity": "balanced capacity",
+    "statusBudget": "projects within margin",
+    "live": "your team · live",
+    "orbitKicker": "Team · this week",
+    "plannedSuffix": "of 200h planned",
+    "balancedCapacity": "Balanced capacity",
+    "tickerLive": "Live",
+    "suggestionKicker": "Suggestion · Assistant",
+    "suggestionText": "Reassign 4h: Carlos → Ana",
+    "ticker": [
+      { "time": "09:14", "name": "María", "tone": "emerald", "verb": "closed task", "detail": "— Corporate site · 3.5h" },
+      { "time": "09:32", "name": "Luis", "tone": "indigo", "verb": "started timer", "detail": "— Global retainer design" },
+      { "time": "09:48", "name": "Planning", "tone": "violet", "verb": "next-week draft", "detail": "— 160h assigned to 4 people" },
+      { "time": "10:05", "name": "Carlos", "tone": "amber", "verb": "added blocker", "detail": "— Pending client review" },
+      { "time": "10:22", "name": "Assistant", "tone": "pink", "verb": "suggested redistribution", "detail": "— 4h from Carlos → Ana" },
+      { "time": "10:51", "name": "Ana", "tone": "emerald", "verb": "March planning", "detail": "— 32h / 40h target" },
+      { "time": "11:08", "name": "Alert", "tone": "rose", "verb": "TechCorp at 92% of budget", "detail": "— 258h / 280h monthly" },
+      { "time": "11:34", "name": "Carlos", "tone": "cyan", "verb": "added absence", "detail": "— holiday · May 14–16" },
+      { "time": "12:01", "name": "Luis", "tone": "emerald", "verb": "unblocked task", "detail": "— Design approved by client" },
+      { "time": "12:18", "name": "Team", "tone": "violet", "verb": "monthly capacity", "detail": "— 548h / 640h · 86%" },
+      { "time": "12:42", "name": "María", "tone": "indigo", "verb": "weekly close", "detail": "— 39h reported vs 40h planned" },
+      { "time": "13:05", "name": "Milestone", "tone": "pink", "verb": "LocalBiz delivery", "detail": "— Monday May 19 · in 3 days" }
+    ],
+    "tickerToneClass": {
+      "emerald": "text-emerald-700",
+      "indigo": "text-indigo-700",
+      "violet": "text-violet-700",
+      "amber": "text-amber-700",
+      "pink": "text-pink-700",
+      "rose": "text-rose-700",
+      "cyan": "text-cyan-700"
+    }
+  }
+}

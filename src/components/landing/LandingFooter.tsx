@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Calendar, FileText, Code, HelpCircle, Mail, BookOpen, PlayCircle, LayoutDashboard, CalendarRange, Users, BarChart3, FolderKanban, Plug, Presentation, Shield, Scale, Newspaper, Tag } from 'lucide-react';
 import { localizedHashPath, localizedPathFromEs } from '@/i18n/publicPaths';
+import { cn } from '@/lib/utils';
 
 const PRODUCT_LINKS = [
   { hrefEs: '/precios', linkKey: 'pricing' as const, icon: Tag },
@@ -18,29 +19,45 @@ const PRODUCT_LINKS = [
   { hrefEs: '/api-docs', linkKey: 'api' as const, icon: Code },
 ] as const;
 
-export function LandingFooter() {
+export type LandingFooterVariant = 'dark' | 'light';
+
+export type LandingFooterProps = {
+  variant?: LandingFooterVariant;
+};
+
+export function LandingFooter({ variant = 'dark' }: LandingFooterProps) {
   const { t, i18n } = useTranslation('landing');
   const currentYear = new Date().getFullYear();
+  const light = variant === 'light';
 
-  const linkClass = 'text-sm text-indigo-200/80 hover:text-white flex items-center gap-2 transition-colors';
+  const linkClass = cn(
+    'text-sm flex items-center gap-2 transition-colors',
+    light ? 'text-slate-600 hover:text-violet-700' : 'text-indigo-200/80 hover:text-white',
+  );
   return (
-    <footer className="relative z-10 border-t border-white/10 bg-indigo-950/80 backdrop-blur-xl">
+    <footer className={cn(
+      'relative z-10 border-t backdrop-blur-xl',
+      light ? 'border-slate-200 bg-slate-50/95' : 'border-white/10 bg-indigo-950/80',
+    )}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           {/* Brand */}
           <div className="lg:col-span-1">
-            <Link to={localizedPathFromEs('/', i18n.language)} className="inline-flex items-center gap-2 text-white font-bold text-lg hover:text-indigo-200 transition-colors">
-              <Calendar className="h-5 w-5 text-indigo-400" />
+            <Link to={localizedPathFromEs('/', i18n.language)} className={cn(
+              'inline-flex items-center gap-2 font-bold text-lg transition-colors',
+              light ? 'text-slate-900 hover:text-violet-700' : 'text-white hover:text-indigo-200',
+            )}>
+              <Calendar className={cn('h-5 w-5', light ? 'text-violet-600' : 'text-indigo-400')} />
               Taimbox
             </Link>
-            <p className="mt-2 text-xs text-indigo-200/80 max-w-xs leading-snug">
+            <p className={cn('mt-2 text-xs max-w-xs leading-snug', light ? 'text-slate-600' : 'text-indigo-200/80')}>
               {t('footer.tagline')}
             </p>
           </div>
 
           {/* Producto: 2 columnas internas para no alargar */}
           <div className="lg:col-span-1">
-            <h4 className="text-white font-semibold text-sm mb-3">{t('footer.productTitle')}</h4>
+            <h4 className={cn('font-semibold text-sm mb-3', light ? 'text-slate-900' : 'text-white')}>{t('footer.productTitle')}</h4>
             <ul className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
               {PRODUCT_LINKS.map(({ hrefEs, linkKey, icon: Icon }) => (
                 <li key={hrefEs}>
@@ -59,7 +76,7 @@ export function LandingFooter() {
 
           {/* Soporte y Seguridad */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-3">{t('footer.companyTitle')}</h4>
+            <h4 className={cn('font-semibold text-sm mb-3', light ? 'text-slate-900' : 'text-white')}>{t('footer.companyTitle')}</h4>
             <ul className="space-y-1.5">
               <li>
                 <Link to={localizedPathFromEs('/seguridad', i18n.language)} className={linkClass}>
@@ -90,50 +107,50 @@ export function LandingFooter() {
 
           {/* CTA principal: registro para nuevos usuarios */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-3">{t('footer.ctaTitle')}</h4>
+            <h4 className={cn('font-semibold text-sm mb-3', light ? 'text-slate-900' : 'text-white')}>{t('footer.ctaTitle')}</h4>
             <Link
               to="/login?tab=register"
               className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-semibold rounded-lg transition-all shadow-lg"
             >
               {t('footer.ctaButton')}
             </Link>
-            <p className="mt-2 text-xs text-indigo-200/60">
+            <p className={cn('mt-2 text-xs', light ? 'text-slate-500' : 'text-indigo-200/60')}>
               {t('footer.ctaTrial')}
             </p>
-            <p className="mt-2 text-xs text-indigo-200/70">
+            <p className={cn('mt-2 text-xs', light ? 'text-slate-600' : 'text-indigo-200/70')}>
               {t('footer.ctaPitchLead')}{' '}
-              <Link to={localizedPathFromEs('/pitch', i18n.language)} className="text-white font-medium hover:underline underline-offset-2">
+              <Link to={localizedPathFromEs('/pitch', i18n.language)} className={cn('font-medium hover:underline underline-offset-2', light ? 'text-violet-700 hover:text-violet-900' : 'text-white')}>
                 {t('footer.ctaPitch')}
               </Link>
             </p>
           </div>
         </div>
 
-        <div className="mt-6 pt-5 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-3">
-          <p className="text-xs text-indigo-200/60">
+        <div className={cn('mt-6 pt-5 flex flex-col sm:flex-row justify-between items-center gap-3 border-t', light ? 'border-slate-200' : 'border-white/10')}>
+          <p className={cn('text-xs', light ? 'text-slate-500' : 'text-indigo-200/60')}>
             {t('footer.copyright', { year: currentYear })}
           </p>
-          <div className="flex flex-wrap gap-4 text-xs text-indigo-200/60 justify-center sm:justify-end">
-            <Link to={localizedPathFromEs('/privacidad', i18n.language)} className="hover:text-white flex items-center gap-1.5 transition-colors">
+          <div className={cn('flex flex-wrap gap-4 text-xs justify-center sm:justify-end', light ? 'text-slate-500' : 'text-indigo-200/60')}>
+            <Link to={localizedPathFromEs('/privacidad', i18n.language)} className={cn('flex items-center gap-1.5 transition-colors', light ? 'hover:text-violet-700' : 'hover:text-white')}>
               <Shield className="h-3.5 w-3.5" />
               {t('footer.privacy')}
             </Link>
-            <Link to={localizedPathFromEs('/condiciones', i18n.language)} className="hover:text-white flex items-center gap-1.5 transition-colors">
+            <Link to={localizedPathFromEs('/condiciones', i18n.language)} className={cn('flex items-center gap-1.5 transition-colors', light ? 'hover:text-violet-700' : 'hover:text-white')}>
               <Scale className="h-3.5 w-3.5" />
               {t('footer.terms')}
             </Link>
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent("open-cookie-preferences"))}
-              className="hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer bg-transparent border-none"
+              className={cn('flex items-center gap-1.5 transition-colors cursor-pointer bg-transparent border-none', light ? 'hover:text-violet-700' : 'hover:text-white')}
             >
               {t('footer.cookies')}
             </button>
-            <Link to={localizedPathFromEs('/api-docs', i18n.language)} className="hover:text-white flex items-center gap-1.5 transition-colors">
+            <Link to={localizedPathFromEs('/api-docs', i18n.language)} className={cn('flex items-center gap-1.5 transition-colors', light ? 'hover:text-violet-700' : 'hover:text-white')}>
               <Code className="h-3.5 w-3.5" />
               {t('header.api')}
             </Link>
-            <Link to={localizedPathFromEs('/guia', i18n.language)} className="hover:text-white flex items-center gap-1.5 transition-colors">
+            <Link to={localizedPathFromEs('/guia', i18n.language)} className={cn('flex items-center gap-1.5 transition-colors', light ? 'hover:text-violet-700' : 'hover:text-white')}>
               <FileText className="h-3.5 w-3.5" />
               {t('header.guide')}
             </Link>
