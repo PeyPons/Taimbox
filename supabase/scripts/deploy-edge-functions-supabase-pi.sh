@@ -56,10 +56,32 @@ if [ ! -d "$FUNCTIONS_SOURCE/add-platform-admin" ]; then
   echo "  O haz git pull en ~/Timeboxing si el repo está actualizado." >&2
 fi
 
-mkdir -p "$VOLUMES_FUNCTIONS"
-echo "[deploy] Copiando funciones..."
+mkdir -p "$VOLUMES_FUNCTIONS" 2>/dev/null || sudo mkdir -p "$VOLUMES_FUNCTIONS"
+
+# El volumen suele ser propiedad de root (creado por Docker). Sin esto, rsync falla en _shared/.
+RSYNC_EXTRA=()
+if [ -n "${USE_SUDO:-}" ] || [ ! -w "$VOLUMES_FUNCTIONS" ]; then
+  if [ -z "${USE_SUDO:-}" ] && [ -w "$VOLUMES_FUNCTIONS" ]; then
+    :
+  else
+    echo "[deploy] Sin permiso de escritura en $VOLUMES_FUNCTIONS (normal si lo creó Docker)."
+    if [ -z "${FIX_VOLUME_OWNERSHIP:-}" ] && [ "$(id -u)" -ne 0 ]; then
+      echo "[deploy] Opción A (recomendada, una sola vez):"
+      echo "  sudo chown -R $(whoami):$(whoami) $VOLUMES_FUNCTIONS"
+      echo "[deploy] Opción B: este script usará sudo rsync (export USE_SUDO=1)."
+      if ! sudo -n true 2>/dev/null; then
+        echo "[deploy] Ejecuta con sudo o arregla ownership y vuelve a lanzar el deploy."
+      fi
+    fi
+    RSYNC_CMD=(sudo rsync)
+    RSYNC_EXTRA=(--no-owner --no-group)
+  fi
+fi
+RSYNC_CMD="${RSYNC_CMD:-rsync}"
+RSYNC_EXTRA+=(-rlpt --no-times)
 # Sin --delete para no borrar una posible carpeta "main" que use el runtime
-rsync -a "$FUNCTIONS_SOURCE/" "$VOLUMES_FUNCTIONS/"
+echo "[deploy] Copiando funciones..."
+"$RSYNC_CMD" "${RSYNC_EXTRA[@]}" "$FUNCTIONS_SOURCE/" "$VOLUMES_FUNCTIONS/"
 echo "[deploy] Copia terminada."
 
 echo "[deploy] Reiniciando $SERVICE_NAME..."
