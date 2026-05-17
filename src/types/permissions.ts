@@ -7,16 +7,20 @@ export interface UserPermissions {
   can_access_clients?: boolean;
   can_access_team?: boolean;
   can_access_team_capacity?: boolean;
+  /** Legacy: /reports redirige a /operaciones; hereda a operaciones/rentabilidad si no están definidos. */
   can_access_reports?: boolean;
   can_access_operations_radar?: boolean;
   can_access_financial_health?: boolean;
+  /** Sin ruta activa en la app (reservado). */
   can_access_client_reports?: boolean;
   can_access_google_ads?: boolean;
   can_access_meta_ads?: boolean;
+  /** Sin ruta activa en la app (reservado / informes automatizados futuros). */
   can_access_ads_reports?: boolean;
   can_access_deadlines?: boolean;
   can_access_okrs?: boolean;
   can_access_weekly_forecast?: boolean;
+  /** Obsoleto en UI: usar can_access_weekly_forecast. Se conserva en JSON antiguo. */
   can_access_weekly?: boolean;
   can_access_settings?: boolean;
   can_access_agency_settings?: boolean;

@@ -320,7 +320,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       {t('sidebar.menu.teamCapacity', 'Capacidad de Equipo')}
                     </NavLink>
                   )}
-                  {canAccess('/team-capacity') && (
+                  {canAccess('/weekly-forecast') && (
                     <NavLink to="/weekly-forecast" icon={FileText} active={location.pathname === '/weekly-forecast'}>
                       {t('sidebar.menu.weeklyForecast', 'Weekly Forecast')}
                     </NavLink>

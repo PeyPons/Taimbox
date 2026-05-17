@@ -26,7 +26,9 @@ import { AVAILABLE_INTEGRATIONS } from '@/config/integrations';
 import { CustomProjectFilter, RolePermissions, ProjectAliasingRule, DepartmentDefinition } from '@/types';
 import { normalizeDepartments } from '@/utils/departmentUtils';
 import { DEFAULT_FILTERS } from '@/hooks/useProjectFilters';
-import { UserPermissions, PERMISSION_LABELS, DEFAULT_PERMISSIONS } from '@/types/permissions';
+import { UserPermissions, DEFAULT_PERMISSIONS } from '@/types/permissions';
+import { normalizeRolesForSave } from '@/utils/agencySettingsPermissions';
+import { RolePermissionsEditor } from '@/components/agency/RolePermissionsEditor';
 import {
   Tooltip,
   TooltipContent,
@@ -316,10 +318,11 @@ export default function AgencySettingsPage() {
   const [selectedDeptForConfig, setSelectedDeptForConfig] = useState<string>('');
   const { configs: departmentConfigs, getConfigForDepartment } = useDepartmentConfigs();
 
-  // Sync state when agency loads
+  // Sync state when agency loads (no pisar el formulario mientras guarda)
   useEffect(() => {
-    if (currentAgency) {
-      setAgencyName(currentAgency.name || '');
+    if (!currentAgency || saving) return;
+
+    setAgencyName(currentAgency.name || '');
       setModules(currentAgency.settings?.modules || {
         seo: true,
         ppc: true,
@@ -358,8 +361,7 @@ export default function AgencySettingsPage() {
       setRadarLowProgressExcludeKeywords(currentAgency.settings?.radarLowProgressExcludeKeywords ?? []);
       setDependencyUnblockEmailsEnabled(currentAgency.settings?.dependencyUnblockEmailsEnabled !== false);
       fetchConnectedAccounts();
-    }
-  }, [currentAgency]);
+  }, [currentAgency, saving]);
 
   const fetchConnectedAccounts = async () => {
     if (!currentAgency?.id) return;
@@ -444,9 +446,11 @@ export default function AgencySettingsPage() {
 
     setSaving(true);
     try {
+      const rolesToSave = normalizeRolesForSave(roles);
+
       await updateSettings({
         modules,
-        roles,
+        roles: rolesToSave,
         departments,
         branding: {
           ...currentAgency.settings?.branding,
@@ -475,6 +479,7 @@ export default function AgencySettingsPage() {
         return;
       }
 
+      setRoles(rolesToSave);
       toast.success('Configuración de agencia guardada');
     } catch (error) {
       console.error('Error guardando agencia:', error);
@@ -887,71 +892,12 @@ export default function AgencySettingsPage() {
 
                       {/* Permissions Area */}
                       {expandedRoleIndex === index && (
-                        <div className="p-3 border-t bg-slate-50/50 space-y-4">
-                          <div className="space-y-2">
-                            <Label className="text-xs font-semibold text-slate-500 uppercase">{t('common.management', 'Gestión')}</Label>
-                            {(['can_access_planner', 'can_access_projects', 'can_access_clients', 'can_access_team', 'can_access_settings'] as const).map(p => (
-                              <div key={p} className="flex items-center justify-between py-1 px-2 rounded hover:bg-white">
-                                <Label htmlFor={`role-${index}-${p}`} className="text-sm font-normal cursor-pointer flex-1">{PERMISSION_LABELS[p]}</Label>
-                                <Switch
-                                  id={`role-${index}-${p}`}
-                                  checked={role.name === 'Administrador' ? true : (role.permissions && role.permissions[p] !== false)}
-                                  disabled={role.name === 'Administrador'}
-                                  onCheckedChange={(checked) => toggleRolePermission(index, p, checked)}
-                                  className="scale-75"
-                                />
-                              </div>
-                            ))}
-                          </div>
-                          <Separator />
-                          <div className="space-y-2">
-                            <Label className="text-xs font-semibold text-slate-500 uppercase">{t('common.ppcAds', 'PPC & Ads')}</Label>
-                            {(['can_access_google_ads', 'can_access_meta_ads', 'can_access_ads_reports'] as const).map(p => (
-                              <div key={p} className="flex items-center justify-between py-1 px-2 rounded hover:bg-white">
-                                <Label htmlFor={`role-${index}-${p}`} className="text-sm font-normal cursor-pointer flex-1">{PERMISSION_LABELS[p]}</Label>
-                                <Switch
-                                  id={`role-${index}-${p}`}
-                                  checked={role.name === 'Administrador' ? true : (role.permissions && role.permissions[p] !== false)}
-                                  disabled={role.name === 'Administrador'}
-                                  onCheckedChange={(checked) => toggleRolePermission(index, p, checked)}
-                                  className="scale-75"
-                                />
-                              </div>
-                            ))}
-                          </div>
-                          <Separator />
-                          <div className="space-y-2">
-                            <Label className="text-xs font-semibold text-slate-500 uppercase">{t('common.others', 'Otros')}</Label>
-                            {(['can_access_reports', 'can_access_operations_radar', 'can_access_financial_health', 'can_access_client_reports', 'can_access_deadlines', 'can_access_okrs', 'can_access_team_capacity', 'can_assign_tasks_to_others', 'can_access_weekly_forecast'] as const).map(p => (
-                              <div key={p} className="flex items-center justify-between py-1 px-2 rounded hover:bg-white">
-                                <Label htmlFor={`role-${index}-${p}`} className="text-sm font-normal cursor-pointer flex-1">{PERMISSION_LABELS[p]}</Label>
-                                <Switch
-                                  id={`role-${index}-${p}`}
-                                  checked={role.name === 'Administrador' ? true : (role.permissions && role.permissions[p] !== false)}
-                                  disabled={role.name === 'Administrador'}
-                                  onCheckedChange={(checked) => toggleRolePermission(index, p, checked)}
-                                  className="scale-75"
-                                />
-                              </div>
-                            ))}
-                          </div>
-                          <Separator />
-                          <div className="space-y-2">
-                            <Label className="text-xs font-semibold text-slate-500 uppercase">{t('common.configSupport', 'Configuración y soporte')}</Label>
-                            {(['can_access_agency_settings', 'can_access_api_keys', 'can_access_support'] as const).map(p => (
-                              <div key={p} className="flex items-center justify-between py-1 px-2 rounded hover:bg-white">
-                                <Label htmlFor={`role-${index}-${p}`} className="text-sm font-normal cursor-pointer flex-1">{PERMISSION_LABELS[p]}</Label>
-                                <Switch
-                                  id={`role-${index}-${p}`}
-                                  checked={role.name === 'Administrador' ? true : (role.permissions && role.permissions[p] !== false)}
-                                  disabled={role.name === 'Administrador'}
-                                  onCheckedChange={(checked) => toggleRolePermission(index, p, checked)}
-                                  className="scale-75"
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
+                        <RolePermissionsEditor
+                          role={role}
+                          roleIndex={index}
+                          onToggle={toggleRolePermission}
+                          t={t}
+                        />
                       )}
                     </div>
                   ))}

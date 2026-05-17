@@ -275,7 +275,7 @@ const App = () => (
                             {/* Ruta legacy /reports redirige a Seguimiento operativo */}
                             <Route path="/reports" element={<Navigate to="/operaciones" replace />} />
                             {/* Weekly Forecast: cierre semanal y redistribución (acceso restaurado) */}
-                            <Route path="/weekly-forecast" element={<Suspense fallback={<PageLoader />}><PlanGuard><PermissionProtectedRoute requiredPermission="/team-capacity"><WeeklyForecastPage /></PermissionProtectedRoute></PlanGuard></Suspense>} />
+                            <Route path="/weekly-forecast" element={<Suspense fallback={<PageLoader />}><PlanGuard><PermissionProtectedRoute requiredPermission="/weekly-forecast"><WeeklyForecastPage /></PermissionProtectedRoute></PlanGuard></Suspense>} />
                             <Route path="/settings" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/settings"><SettingsPage /></PermissionProtectedRoute></Suspense>} />
                             <Route path="/agency" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/agency"><AgencySettingsPage /></PermissionProtectedRoute></Suspense>} />
                             <Route path="/exportacion-informes" element={<Suspense fallback={<PageLoader />}><PermissionProtectedRoute requiredPermission="/exportacion-informes"><DataExportHubPage /></PermissionProtectedRoute></Suspense>} />

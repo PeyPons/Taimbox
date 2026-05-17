@@ -597,19 +597,40 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       if (!currentAgency?.id) return;
 
       const newSettings = { ...currentAgency.settings, ...settings };
-      const { error } = await supabase
-        .from('agencies')
-        .update({ settings: newSettings })
-        .eq('id', currentAgency.id);
 
-      if (error) throw error;
+      const { data: savedSettings, error: rpcError } = await supabase.rpc(
+        'update_agency_settings_for_client',
+        { p_agency_id: currentAgency.id, p_settings: newSettings },
+      );
 
-      // Actualizar estado local inmediatamente para evitar parpadeos y loaders innecesarios
-      setCurrentAgency(prev => prev ? { ...prev, settings: newSettings } : null);
+      if (rpcError) {
+        const { data: updated, error: directError } = await supabase
+          .from('agencies')
+          .update({ settings: newSettings })
+          .eq('id', currentAgency.id)
+          .select('settings')
+          .maybeSingle();
 
-      // Opcional: refrescar en segundo plano sin bloquear
-      fetchAgencyForUser().catch(console.error);
-    }
+        if (directError || !updated?.settings) {
+          const hint =
+            rpcError.code === '42883' || rpcError.message?.includes('update_agency_settings_for_client')
+              ? ' Aplica la migración 20260522130000_agency_settings_update_permission en Supabase.'
+              : '';
+          throw new Error(
+            (directError?.message || rpcError.message || 'No se pudo guardar la configuración de la agencia.') +
+              hint,
+          );
+        }
+
+        const merged = updated.settings as AgencySettings;
+        setCurrentAgency((prev) => (prev ? { ...prev, settings: merged } : null));
+      } else {
+        const merged = (savedSettings as AgencySettings | null) ?? newSettings;
+        setCurrentAgency((prev) => (prev ? { ...prev, settings: merged } : null));
+      }
+
+      await fetchAgencyForUser().catch(console.error);
+    },
   };
 
   return <AgencyContext.Provider value={value}>{children}</AgencyContext.Provider>;

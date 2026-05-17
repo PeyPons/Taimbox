@@ -93,27 +93,10 @@ export async function migrateIntegrations(agencyId: string, settings: AgencySett
     console.debug('[AgencyUtils] No se pudo verificar empleados con CRM (opcional):', err);
   }
 
-  const migratedSettings = {
+  return {
     ...settings,
     enabledIntegrations,
   };
-
-  try {
-    const { error: updateError } = await supabase
-      .from('agencies')
-      .update({ settings: migratedSettings })
-      .eq('id', agencyId);
-
-    if (updateError) {
-      console.warn('[AgencyUtils] No se pudo guardar migración en BD (continuando en memoria):', updateError);
-      return migratedSettings;
-    }
-  } catch (err) {
-    console.warn('[AgencyUtils] Error guardando migración (continuando en memoria):', err);
-    return migratedSettings;
-  }
-
-  return migratedSettings;
 }
 
 /** La RPC get_agency_for_app_client ya redacta secretos; esto evita fugas si el payload viniera completo. */
