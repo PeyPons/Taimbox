@@ -54,6 +54,23 @@ interface AgencyRow {
   trial_ends_at?: string | null;
 }
 
+/** Mensaje legible cuando invoke devuelve 4xx/5xx (el body va en error.context, no en data). */
+function parseEdgeFunctionError(e: unknown, fallback: string): string {
+  if (e && typeof e === "object" && "context" in e) {
+    const ctx = (e as { context?: { body?: unknown; status?: number } }).context;
+    if (ctx?.body) {
+      try {
+        const body =
+          typeof ctx.body === "string" ? JSON.parse(ctx.body) : (ctx.body as Record<string, unknown>);
+        if (typeof body?.error === "string") return body.error;
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  return e instanceof Error ? e.message : fallback;
+}
+
 export default function AdminAgenciesPage() {
   const { t } = useAppTranslation();
   const navigate = useNavigate();
@@ -135,8 +152,9 @@ export default function AdminAgenciesPage() {
       void fetchAgencies();
     } catch (e: unknown) {
       console.error("[AdminAgenciesPage] Error setting plan:", e);
-      const msg = e instanceof Error ? e.message : t("admin.agencies.errPlan", "Error al cambiar plan");
-      toast.error(msg);
+      toast.error(
+        parseEdgeFunctionError(e, t("admin.agencies.errPlan", "Error al cambiar plan")),
+      );
     } finally {
       setSettingPlanId(null);
     }

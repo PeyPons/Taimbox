@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
               `Hay suscripción activa en Stripe pero falta STRIPE_PRICE_ID_${paidPlan.toUpperCase()} en el servidor. ` +
               "Configúrala en el contenedor de Edge Functions y vuelve a intentar.",
           },
-          503,
+          400,
         );
       }
 
