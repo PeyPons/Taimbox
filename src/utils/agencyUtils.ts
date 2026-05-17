@@ -116,6 +116,14 @@ export async function migrateIntegrations(agencyId: string, settings: AgencySett
   return migratedSettings;
 }
 
+/** La RPC get_agency_for_app_client ya redacta secretos; esto evita fugas si el payload viniera completo. */
+function redactIntegrationSecrets(settings: AgencySettings): AgencySettings {
+  if (!settings.integrations) return settings;
+  const { googleClientSecret: _s, googleAdsDevToken: _d, googleRefreshToken: _r, metaAccessToken: _m, ...safe } =
+    settings.integrations;
+  return { ...settings, integrations: safe };
+}
+
 export async function mapSupabaseAgency(data: SupabaseAgency): Promise<Agency> {
   const settings = data.settings || {};
   const migratedSettings = await migrateIntegrations(data.id, settings);
@@ -123,18 +131,22 @@ export async function mapSupabaseAgency(data: SupabaseAgency): Promise<Agency> {
   const status = (data.status === 'suspended' ? 'suspended' : 'active') as Agency['status'];
   const planId = (data.plan_id === 'pro' || data.plan_id === 'business' ? data.plan_id : 'starter') as Agency['planId'];
 
+  const isIntegrationAdmin =
+    Boolean(data.google_ads_refresh_token) ||
+    Boolean(data.meta_ads_access_token);
+
   return {
     id: data.id,
     name: data.name,
     slug: data.slug,
-    settings: migratedSettings,
+    settings: isIntegrationAdmin ? migratedSettings : redactIntegrationSecrets(migratedSettings),
     setupCompleted: data.setup_completed ?? true,
     status,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
-    google_ads_refresh_token: data.google_ads_refresh_token ?? undefined,
+    google_ads_refresh_token: isIntegrationAdmin ? (data.google_ads_refresh_token ?? undefined) : undefined,
     google_ads_customer_id: data.google_ads_customer_id ?? undefined,
-    meta_ads_access_token: data.meta_ads_access_token ?? undefined,
+    meta_ads_access_token: isIntegrationAdmin ? (data.meta_ads_access_token ?? undefined) : undefined,
     planId,
     subscriptionStatus: data.subscription_status ?? undefined,
     stripeCustomerId: data.stripe_customer_id ?? undefined,

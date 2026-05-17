@@ -1,4 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import {
+    AgencyAccessError,
+    assertAgencyPermission,
+    getBearerToken,
+} from '../_shared/agency-access.ts'
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -12,10 +17,19 @@ Deno.serve(async (req) => {
 
     try {
         const supabaseUrl = Deno.env.get('SUPABASE_URL') || Deno.env.get('VITE_SUPABASE_URL')
+        const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-        if (!supabaseUrl || !supabaseKey) {
-            throw new Error('Faltan variables de entorno SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY')
+        if (!supabaseUrl || !supabaseKey || !supabaseAnonKey) {
+            throw new Error('Faltan variables de entorno SUPABASE_URL, SUPABASE_ANON_KEY o SUPABASE_SERVICE_ROLE_KEY')
+        }
+
+        const bearer = getBearerToken(req)
+        if (!bearer) {
+            return new Response(JSON.stringify({ error: 'No autorizado.' }), {
+                status: 401,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            })
         }
 
         // Credenciales GLOBALES de la plataforma (modelo SaaS)
@@ -44,6 +58,15 @@ Deno.serve(async (req) => {
         console.log(`[list-google-accounts] Request for agency: ${agency_id}`)
 
         if (!agency_id) throw new Error('Falta el agency_id')
+
+        await assertAgencyPermission({
+            supabaseUrl,
+            supabaseAnonKey,
+            supabaseServiceKey: supabaseKey,
+            token: bearer,
+            agencyId: agency_id,
+            permission: 'can_access_agency_settings',
+        })
 
         // 2. Obtener refresh token de la agencia
         const { data: agency, error: agencyError } = await supabase
@@ -204,10 +227,17 @@ Deno.serve(async (req) => {
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
         )
 
-    } catch (error: any) {
-        console.error('[list-google-accounts] Error:', error.message)
+    } catch (error: unknown) {
+        if (error instanceof AgencyAccessError) {
+            return new Response(JSON.stringify({ error: error.message }), {
+                status: error.status,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            })
+        }
+        const message = error instanceof Error ? error.message : 'Error desconocido'
+        console.error('[list-google-accounts] Error:', message)
         return new Response(
-            JSON.stringify({ error: error.message }),
+            JSON.stringify({ error: message }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }

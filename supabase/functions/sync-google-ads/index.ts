@@ -1,4 +1,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import {
+    AgencyAccessError,
+    assertAgencyPermission,
+    assertPlatformAdmin,
+    getBearerToken,
+} from '../_shared/agency-access.ts'
 
 // Configuración de CORS
 const corsHeaders = {
@@ -15,6 +21,7 @@ Deno.serve(async (req) => {
     try {
         // 2. Inicializar cliente Supabase (usando variables de entorno del Edge Runtime)
         const supabaseUrl = Deno.env.get('SUPABASE_URL') || Deno.env.get('VITE_SUPABASE_URL')
+        const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
         // Fallback para secrets locales en self-hosted
@@ -28,14 +35,22 @@ Deno.serve(async (req) => {
 
         const getSecret = (key: string) => Deno.env.get(key) || Deno.env.get(`VITE_${key}`) || localSecrets[key];
 
-        if (!supabaseUrl || !supabaseKey) {
-            throw new Error('Faltan variables de entorno SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY')
+        if (!supabaseUrl || !supabaseKey || !supabaseAnonKey) {
+            throw new Error('Faltan variables de entorno SUPABASE_URL, SUPABASE_ANON_KEY o SUPABASE_SERVICE_ROLE_KEY')
+        }
+
+        const bearer = getBearerToken(req)
+        if (!bearer) {
+            return new Response(JSON.stringify({ error: 'No autorizado.' }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 401,
+            })
         }
 
         const supabase = createClient(supabaseUrl, supabaseKey)
 
-        // 3. Parsear body para obtener agency_id (opcional - si viene vacío procesa todo)
-        let requestData = {}
+        // 3. Parsear body (agency_id obligatorio salvo platform admin)
+        let requestData: { agency_id?: string; job_id?: string } = {}
         try {
             requestData = await req.json()
         } catch (e) {
@@ -43,6 +58,19 @@ Deno.serve(async (req) => {
         }
 
         const { agency_id, job_id } = requestData
+
+        if (!agency_id) {
+            await assertPlatformAdmin({ supabaseUrl, supabaseAnonKey, token: bearer })
+        } else {
+            await assertAgencyPermission({
+                supabaseUrl,
+                supabaseAnonKey,
+                supabaseServiceKey: supabaseKey,
+                token: bearer,
+                agencyId: agency_id,
+                permission: 'can_access_google_ads',
+            })
+        }
         const logId = job_id || `edge-${Date.now()}`;
 
         // Función de log helper
@@ -470,8 +498,15 @@ Deno.serve(async (req) => {
             status: 200,
         })
 
-    } catch (error: any) {
-        return new Response(JSON.stringify({ error: error.message }), {
+    } catch (error: unknown) {
+        if (error instanceof AgencyAccessError) {
+            return new Response(JSON.stringify({ error: error.message }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: error.status,
+            })
+        }
+        const message = error instanceof Error ? error.message : 'Error interno'
+        return new Response(JSON.stringify({ error: message }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 500,
         })
