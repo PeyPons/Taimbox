@@ -44,6 +44,19 @@ export async function fetchAgencyRowForAppClient(agencyId: string): Promise<{
   return { data: data as unknown as SupabaseAgency, error: null };
 }
 
+/** Listado id + nombre de agencias del usuario (sin settings ni tokens). */
+export async function listMyAgenciesDirectory(): Promise<{ agencyId: string; agencyName: string }[]> {
+  const { data, error } = await supabase.rpc('list_my_agencies_directory');
+  if (error) {
+    console.error('[AgencyUtils] list_my_agencies_directory:', error);
+    return [];
+  }
+  return (data ?? []).map((row: { id: string; name: string }) => ({
+    agencyId: row.id,
+    agencyName: row.name,
+  }));
+}
+
 const checkAdminPermission = (roleName: string | null, settings: AgencySettings): boolean => {
   if (!roleName) return false;
   const roleConfig = settings.roles?.find(r => r.name.toLowerCase() === roleName.toLowerCase());
@@ -326,16 +339,12 @@ export async function transferAgencyOwnershipUtil(newOwnerId: string, agencyId: 
     throw new Error('Error al establecer nuevo propietario');
   }
 
-  const { data: agencyRow, error: agencyFetchError } = await supabase
-    .from('agencies')
-    .select('settings')
-    .eq('id', agencyId)
-    .single();
+  const { data: agencyRow, error: agencyFetchError } = await fetchAgencyRowForAppClient(agencyId);
 
-  if (agencyFetchError) {
+  if (agencyFetchError || !agencyRow) {
     console.error('[AgencyUtils] Error leyendo settings para ownerUserId:', agencyFetchError);
   } else {
-    const prevSettings = (agencyRow?.settings || {}) as AgencySettings;
+    const prevSettings = (agencyRow.settings || {}) as AgencySettings;
     const nextSettings: AgencySettings = { ...prevSettings, ownerUserId: newOwnerId };
     const { error: settingsError } = await supabase
       .from('agencies')

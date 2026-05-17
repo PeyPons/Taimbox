@@ -33,9 +33,30 @@ const PURIFY_CONFIG_FULL: DOMPurify.Config = {
   ALLOWED_ATTR,
 };
 
+const GESTION_CAPSULE_HREFS: Record<string, string> = {
+  "1": "/blog/planificacion-proyectos-cronograma-recursos",
+  "2": "/blog/kpis-agencias-marketing-2026",
+  "3": "/blog/ley-parkinson",
+};
+
+/** Convierte marcadores legacy de i18n (<Link>, <LocaleLinkN>) a enlaces HTML antes de sanitizar. */
+function normalizeLegacyBlogHtml(input: string): string {
+  return input
+    .replace(/<Link\s+to="([^"]+)"/gi, '<a href="$1"')
+    .replace(/<\/Link>/gi, "</a>")
+    .replace(
+      /<LocaleLink(\d*)>([\s\S]*?)<\/Link\d*>/gi,
+      (_m, num: string, label: string) => {
+        const href = GESTION_CAPSULE_HREFS[num] ?? "#";
+        return `<a href="${href}">${label}</a>`;
+      },
+    )
+    .replace(/<LocaleLink>([\s\S]*?)<\/LocaleLink>/gi, '<a href="#">$1</a>');
+}
+
 /** Sanitiza HTML inline (parrafos, items de lista, callouts): solo formato basico + enlaces. */
 export function sanitizeInlineHtml(input: string): string {
-  return DOMPurify.sanitize(input, PURIFY_CONFIG_INLINE) as string;
+  return DOMPurify.sanitize(normalizeLegacyBlogHtml(input), PURIFY_CONFIG_INLINE) as string;
 }
 
 /** Sanitiza HTML libre (bloque html): permite estructura mas amplia, sigue sin scripts ni event handlers. */

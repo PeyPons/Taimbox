@@ -1,14 +1,9 @@
 #!/usr/bin/env node
-// Decompone los 8 posts seedeados (que hoy son un unico bloque visualRef -> *Article.tsx)
-// en bloques granulares editables desde /admin/blog. Lee blog.json es/en, aplica un
-// mapper especifico por slug y emite un archivo SQL con UPDATEs idempotentes.
-//
+// Genera bloques granulares editables desde /admin/blog (blog.json + visualRef inline).
 // Uso:
 //   node scripts/migrate-blog-content.mjs
-//     -> escribe supabase/migrations/20260507120000_blog_posts_decompose.sql
-//
-// El SQL solo hace UPDATE sobre blog_posts (no INSERT), asi que es seguro re-correrlo
-// y se aplica con `supabase db push` igual que el resto.
+//     -> supabase/migrations/20260520120000_blog_posts_cms_content.sql
+// Aplicar: node scripts/apply-sql-parts.mjs supabase/migrations/20260520120000_blog_posts_cms_content.sql
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
@@ -67,11 +62,63 @@ function joinParts(input) {
   return html;
 }
 
+const GESTION_CAPSULE_HREFS = {
+  1: "/blog/planificacion-proyectos-cronograma-recursos",
+  2: "/blog/kpis-agencias-marketing-2026",
+  3: "/blog/ley-parkinson",
+};
+
+/** Convierte <LocaleLinkN>…</LinkN> y <Link to="…"> del JSON a HTML de enlace. */
+function localeMarkersToHtml(s) {
+  if (!s || typeof s !== "string") return s ?? "";
+  return s
+    .replace(/<Link\s+to="([^"]+)"/gi, '<a href="$1"')
+    .replace(/<\/Link>/gi, "</a>")
+    .replace(
+      /<LocaleLink(\d*)>([\s\S]*?)<\/Link\d*>/gi,
+      (_m, num, label) => {
+        const href = GESTION_CAPSULE_HREFS[num] ?? "#";
+        return `<a href="${href}">${label}</a>`;
+      },
+    )
+    .replace(/<LocaleLink>([\s\S]*?)<\/LocaleLink>/gi, "<a href=\"#\">$1</a>");
+}
+
 /** Acepta string o objeto (con joinParts). */
 function asHtml(v) {
   if (v == null) return "";
-  if (typeof v === "string") return v;
-  return joinParts(v);
+  if (typeof v === "string") return localeMarkersToHtml(v);
+  return localeMarkersToHtml(joinParts(v));
+}
+
+/** Elimina bloques vacios o con campos obligatorios en blanco (evita fallo Zod global). */
+function compactBlocks(blocks) {
+  return blocks.filter((b) => {
+    switch (b.type) {
+      case "paragraph":
+      case "html":
+        return Boolean(b.html?.trim());
+      case "heading":
+        return Boolean(b.text?.trim());
+      case "callout":
+        return Boolean(b.html?.trim());
+      case "list":
+        return Array.isArray(b.items) && b.items.some((i) => i?.trim());
+      case "table":
+        return Array.isArray(b.headers) && b.headers.length > 0 && Array.isArray(b.rows) && b.rows.length > 0;
+      case "faq":
+        return Array.isArray(b.items) && b.items.length > 0;
+      case "cta":
+        return Boolean(b.text?.trim()) && Boolean(b.href?.trim());
+      case "visualRef":
+        return Boolean(b.visualId?.trim());
+      case "toc":
+      case "relatedPost":
+        return true;
+      default:
+        return true;
+    }
+  });
 }
 
 /** Detecta tabla en distintos formatos y devuelve { headers: string[], rows: string[][] } o null. */
@@ -283,7 +330,7 @@ function mapCapacidadCalendario(p) {
     if (p.cta.button) blocks.push(block("cta", { text: asHtml(p.cta.button), href: "/planificador-recursos", variant: "primary" }));
   }
   blocks.push(block("relatedPost", { slug: "planificacion-proyectos-cronograma-recursos" }));
-  return blocks;
+  return compactBlocks(blocks);
 }
 
 function mapWhatIsTimeboxing(p) {
@@ -420,7 +467,7 @@ function mapWhatIsTimeboxing(p) {
     if (p.cta.note) blocks.push(block("paragraph", { html: `<em>${asHtml(p.cta.note)}</em>` }));
   }
   blocks.push(block("relatedPost", { slug: "planificacion-proyectos-cronograma-recursos" }));
-  return blocks;
+  return compactBlocks(blocks);
 }
 
 function mapLeyParkinson(p) {
@@ -484,9 +531,14 @@ function mapLeyParkinson(p) {
     }
   };
 
-  // Visual ParkinsonLawVisual antes de la primera seccion conceptual
-  sec("whatIs", "que-es-ley-parkinson");
-  blocks.push(block("visualRef", { visualId: "ParkinsonLawVisual" }));
+  const whatIs = s.whatIs;
+  if (whatIs) {
+    blocks.push(block("heading", { level: 2, text: asHtml(whatIs.title), anchorId: "que-es-ley-parkinson" }));
+    if (whatIs.paragraph1) blocks.push(block("paragraph", { html: joinParts(whatIs.paragraph1) }));
+    if (whatIs.paragraph2) blocks.push(block("paragraph", { html: joinParts(whatIs.paragraph2) }));
+    blocks.push(block("visualRef", { visualId: "ParkinsonLawVisual" }));
+    if (whatIs.paragraph3) blocks.push(block("paragraph", { html: joinParts(whatIs.paragraph3) }));
+  }
   sec("formulation", "formulacion-origen");
   sec("origin", "origen-burocracia");
   sec("secondLaw", "segunda-ley");
@@ -516,7 +568,7 @@ function mapLeyParkinson(p) {
   }
 
   blocks.push(block("relatedPost", { slug: "que-es-timeboxing" }));
-  return blocks;
+  return compactBlocks(blocks);
 }
 
 function mapPlanificacionProyectos(p) {
@@ -532,30 +584,11 @@ function mapPlanificacionProyectos(p) {
     for (const k of ["p1", "p2", "p3"]) {
       if (sx[k]) blocks.push(block("paragraph", { html: asHtml(sx[k]) }));
     }
-    // Patron section1: fases (phaseStartTitle, phaseStartText, etc)
     if (sx.phasesTitle) {
-      blocks.push(block("heading", { level: 3, text: asHtml(sx.phasesTitle) }));
-      for (const stub of ["Start", "Planning", "Execution", "Close"]) {
-        const t = sx[`phase${stub}Title`];
-        const tx = sx[`phase${stub}Text`];
-        if (t) {
-          blocks.push(block("heading", { level: 4, text: asHtml(t) }));
-          if (tx) blocks.push(block("paragraph", { html: asHtml(tx) }));
-        }
-      }
+      blocks.push(block("visualRef", { visualId: "PlanificacionFasesVisual", mode: "inline" }));
     }
-    // section2: comparison
     if (sx.compareTitle) {
-      blocks.push(block("heading", { level: 3, text: asHtml(sx.compareTitle) }));
-      if (sx.compareIntro) blocks.push(block("paragraph", { html: asHtml(sx.compareIntro) }));
-      if (sx.onlyTasksTitle) {
-        blocks.push(block("heading", { level: 4, text: asHtml(sx.onlyTasksTitle) }));
-        blocks.push(block("paragraph", { html: asHtml(sx.onlyTasksText) }));
-      }
-      if (sx.tasksResourcesTitle) {
-        blocks.push(block("heading", { level: 4, text: asHtml(sx.tasksResourcesTitle) }));
-        blocks.push(block("paragraph", { html: asHtml(sx.tasksResourcesText) }));
-      }
+      blocks.push(block("visualRef", { visualId: "PlanificacionGanttCompareVisual", mode: "inline" }));
       if (sx.limitationTitle) {
         blocks.push(block("callout", {
           tone: "warning",
@@ -563,38 +596,16 @@ function mapPlanificacionProyectos(p) {
         }));
       }
     }
-    // section3: triangulo (scope, time, cost)
     if (sx.triangleTitle) {
-      blocks.push(block("heading", { level: 3, text: asHtml(sx.triangleTitle) }));
-      for (const stub of ["Scope", "Time", "Cost"]) {
-        const t = sx[`triangle${stub}Title`];
-        const tx = sx[`triangle${stub}Text`];
-        if (t) {
-          blocks.push(block("heading", { level: 4, text: asHtml(t) }));
-          if (tx) blocks.push(block("paragraph", { html: asHtml(tx) }));
-        }
-      }
-      if (sx.triangleNote) blocks.push(block("paragraph", { html: `<em>${asHtml(sx.triangleNote)}</em>` }));
+      blocks.push(block("visualRef", { visualId: "PlanificacionTriangleVisual", mode: "inline" }));
     }
-    // section4
-    if (sx.noVisibilityTitle) {
-      blocks.push(block("heading", { level: 3, text: asHtml(sx.noVisibilityTitle) }));
-      blocks.push(block("paragraph", { html: asHtml(sx.noVisibilityText) }));
-    }
-    if (sx.capacityPlanningTitle) {
-      blocks.push(block("heading", { level: 3, text: asHtml(sx.capacityPlanningTitle) }));
-      blocks.push(block("paragraph", { html: asHtml(sx.capacityPlanningText) }));
+    if (sx.noVisibilityTitle && sx.capacityPlanningTitle) {
+      blocks.push(block("visualRef", { visualId: "PlanificacionCapacityCardsVisual", mode: "inline" }));
     }
     if (sx.timeboxingLink) blocks.push(block("paragraph", { html: asHtml(sx.timeboxingLink) }));
     if (sx.summaryText) blocks.push(block("paragraph", { html: `<strong>${asHtml(sx.summaryText)}</strong>` }));
-    // section5: KPIs
-    for (const stub of ["Progress", "Hours", "Margin"]) {
-      const t = sx[`kpi${stub}Title`];
-      const tx = sx[`kpi${stub}Text`];
-      if (t) {
-        blocks.push(block("heading", { level: 3, text: asHtml(t) }));
-        if (tx) blocks.push(block("paragraph", { html: asHtml(tx) }));
-      }
+    if (sx.kpiProgressTitle) {
+      blocks.push(block("visualRef", { visualId: "PlanificacionKpiCardsVisual", mode: "inline" }));
     }
     // section6: tools
     if (sx.toolsTitle) blocks.push(block("heading", { level: 3, text: asHtml(sx.toolsTitle) }));
@@ -648,7 +659,7 @@ function mapPlanificacionProyectos(p) {
   }
 
   blocks.push(block("relatedPost", { slug: "que-es-timeboxing" }));
-  return blocks;
+  return compactBlocks(blocks);
 }
 
 function mapKpisAgenciasMarketing(p) {
@@ -729,7 +740,7 @@ function mapKpisAgenciasMarketing(p) {
   }
 
   blocks.push(block("relatedPost", { slug: "planificacion-proyectos-cronograma-recursos" }));
-  return blocks;
+  return compactBlocks(blocks);
 }
 
 function mapPlantillaPlanificacionRecursos(p) {
@@ -873,7 +884,7 @@ function mapPlantillaPlanificacionRecursos(p) {
   }
 
   blocks.push(block("relatedPost", { slug: "planificacion-proyectos-cronograma-recursos" }));
-  return blocks;
+  return compactBlocks(blocks);
 }
 
 function mapGestionCargaTrabajo(p) {
@@ -881,32 +892,33 @@ function mapGestionCargaTrabajo(p) {
   if (p.intro?.p1) blocks.push(block("paragraph", { html: asHtml(p.intro.p1) }));
   if (p.intro?.p2) blocks.push(block("paragraph", { html: asHtml(p.intro.p2) }));
   if (p.intro?.capsule) blocks.push(block("callout", { tone: "info", html: asHtml(p.intro.capsule) }));
-  blocks.push(block("toc", {}));
 
   const s = p.sections || {};
   if (s.map) {
-    blocks.push(block("heading", { level: 2, text: asHtml(s.map.title), anchorId: "mapa-carga" }));
+    blocks.push(block("heading", { level: 2, text: asHtml(s.map.title), anchorId: "lo-que-aprenderas" }));
     if (s.map.p1) blocks.push(block("paragraph", { html: asHtml(s.map.p1) }));
     const t = tableBlock(s.map.table);
     if (t) blocks.push(t);
   }
+  blocks.push(block("toc", {}));
+
   const sec = (key, anchor) => {
     const sk = s[key];
     if (!sk) return;
     blocks.push(block("heading", { level: 2, text: asHtml(sk.title), anchorId: anchor }));
     if (sk.p1) blocks.push(block("paragraph", { html: asHtml(sk.p1) }));
   };
-  sec("whatIs", "que-es-carga");
-  sec("causes", "causas-burnout");
-  sec("signals", "senales-riesgo");
+  sec("whatIs", "que-es-carga-trabajo");
+  sec("causes", "causas-burnout-equipos");
+  sec("signals", "senales-equipo-riesgo");
   blocks.push(block("visualRef", { visualId: "SenalesCargaAlertaVisual" }));
-  sec("framework", "framework-6-pasos");
+  sec("framework", "framework-gestion-sostenible");
   blocks.push(block("visualRef", { visualId: "CargaTrabajoFrameworkVisual" }));
-  sec("manager", "rol-manager");
+  sec("manager", "rol-manager-equipo");
   sec("installed", "burnout-instalado");
-  sec("metrics", "metricas-carga");
+  sec("metrics", "metricas-carga-equipo");
   sec("tools", "herramientas-workload");
-  sec("conclusion", "conclusion");
+  sec("conclusion", "conclusion-gestion-carga");
 
   if (p.faq) {
     blocks.push(block("heading", { level: 2, text: asHtml(p.faq.title), anchorId: "preguntas-frecuentes" }));
@@ -920,7 +932,7 @@ function mapGestionCargaTrabajo(p) {
   }
 
   blocks.push(block("relatedPost", { slug: "kpis-agencias-marketing-2026" }));
-  return blocks;
+  return compactBlocks(blocks);
 }
 
 function mapComoMedirRentabilidad(p) {
@@ -1011,7 +1023,7 @@ function mapComoMedirRentabilidad(p) {
   }
 
   blocks.push(block("relatedPost", { slug: "planificacion-proyectos-cronograma-recursos" }));
-  return blocks;
+  return compactBlocks(blocks);
 }
 
 function mapPorQueAgenciaPierde(p) {
@@ -1026,38 +1038,38 @@ function mapPorQueAgenciaPierde(p) {
   if (p.intro?.p2) blocks.push(block("paragraph", { html: joinParts(p.intro.p2) }));
   blocks.push(block("toc", {}));
 
-  const renderSec = (key, anchor) => {
+  const renderSec = (key, anchor, opts = {}) => {
     const sx = p[key];
     if (!sx) return;
     blocks.push(block("heading", { level: 2, text: asHtml(sx.title), anchorId: anchor }));
     for (const k of ["p1", "p2", "p3", "p4"]) {
-      if (sx[k]) blocks.push(block("paragraph", { html: typeof sx[k] === "string" ? sx[k] : joinParts(sx[k]) }));
+      if (sx[k]) blocks.push(block("paragraph", { html: typeof sx[k] === "string" ? asHtml(sx[k]) : asHtml(sx[k]) }));
     }
     for (const subKey of ["sub1", "sub2", "sub3", "sub4"]) {
       const sub = sx[subKey];
       if (!sub) continue;
       if (sub.title) blocks.push(block("heading", { level: 3, text: asHtml(sub.title) }));
-      // p1, p2 subnivel
-      if (sub.p1) blocks.push(block("paragraph", { html: typeof sub.p1 === "string" ? sub.p1 : joinParts(sub.p1) }));
-      if (sub.p2) blocks.push(block("paragraph", { html: typeof sub.p2 === "string" ? sub.p2 : joinParts(sub.p2) }));
-      // li1..li5 -> list
+      if (sub.p1) blocks.push(block("paragraph", { html: typeof sub.p1 === "string" ? asHtml(sub.p1) : asHtml(sub.p1) }));
+      if (opts.chartAfterSub4P1 && subKey === "sub4" && sub.p1) {
+        blocks.push(block("visualRef", { visualId: "OcupacionVsRentabilidadChart" }));
+      }
+      if (sub.p2) blocks.push(block("paragraph", { html: typeof sub.p2 === "string" ? asHtml(sub.p2) : asHtml(sub.p2) }));
       const items = [];
       for (let i = 1; i <= 10; i++) {
         const li = sub["li" + i];
         if (!li) break;
-        items.push(typeof li === "string" ? li : joinParts(li));
+        items.push(typeof li === "string" ? asHtml(li) : asHtml(li));
       }
       if (items.length > 0) {
         const lb = listBlock(items);
         if (lb) blocks.push(lb);
       }
     }
-    // tabla
     const t = tableBlock(sx.table);
     if (t) blocks.push(t);
   };
 
-  renderSec("section1", "trampa-ocupacion");
+  renderSec("section1", "trampa-ocupacion", { chartAfterSub4P1: true });
   renderSec("section2", "context-switching");
   renderSec("section3", "presencialismo-digital");
   renderSec("section4", "horas-no-facturables");
@@ -1072,7 +1084,7 @@ function mapPorQueAgenciaPierde(p) {
   }
 
   blocks.push(block("relatedPost", { slug: "kpis-agencias-marketing-2026" }));
-  return blocks;
+  return compactBlocks(blocks);
 }
 
 // ---------------------------------------------------------------------------
@@ -1161,9 +1173,9 @@ function jsonbLiteral(obj) {
 
 function generateSql() {
   const lines = [];
-  lines.push("-- Decompone los 8 posts seedeados desde un unico bloque visualRef a bloques granulares editables.");
-  lines.push("-- Generado por scripts/migrate-blog-content.mjs leyendo src/locales/{es,en}/blog.json.");
-  lines.push("-- Idempotente: solo UPDATE; re-correr regenera con la version actual de blog.json.");
+  lines.push("-- Contenido CMS del blog: bloques granulares + visualRef inline (mockups).");
+  lines.push("-- Generado por scripts/migrate-blog-content.mjs desde src/locales/{es,en}/blog.json.");
+  lines.push("-- Idempotente: solo UPDATE; re-ejecutar tras cambios en blog.json o mappers.");
   lines.push("");
   for (const post of POSTS) {
     const pEs = ES.posts[post.postKey];
@@ -1196,7 +1208,7 @@ function generateSql() {
 const sql = generateSql();
 const outDir = resolve(ROOT, "supabase/migrations");
 mkdirSync(outDir, { recursive: true });
-const outPath = resolve(outDir, "20260507120000_blog_posts_decompose.sql");
+const outPath = resolve(outDir, "20260520120000_blog_posts_cms_content.sql");
 writeFileSync(outPath, sql, "utf8");
 console.log(`\nSQL escrito en: ${outPath}`);
 console.log("Aplicar con:  supabase db push");

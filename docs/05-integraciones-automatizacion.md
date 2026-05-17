@@ -284,6 +284,38 @@ VITE_META_APP_ID=<identificador_de_la_aplicacion_meta>
 
 **Dónde van en Docker:** las variables del bloque “contenedor `supabase-edge-functions`” se definen donde ya tienes `GOOGLE_CLIENT_ID` (por ejemplo `.env` junto al `docker-compose` de Supabase, o `environment:` del servicio `functions`). Ahí añade `META_APP_ID`, `META_APP_SECRET` y reinicia ese contenedor. `VITE_META_APP_ID` no se pone en Docker de funciones: va en el `.env` local/CI del **proyecto Vite** y se inyecta al hacer `npm run build`.
 
+#### Acceso a la base de datos desde Cursor (MCP)
+
+El workspace incluye un servidor MCP para **consultar y auditar** la instancia Supabase self-hosted sin abrir el SQL Editor a mano en cada revisión.
+
+**Configuración en el repo:** [`.cursor/mcp.json`](../.cursor/mcp.json)
+
+```json
+{
+  "mcpServers": {
+    "supabase-self-hosted": {
+      "url": "http://localhost:8080/api/mcp"
+    }
+  }
+}
+```
+
+**Requisito local:** el proxy MCP debe estar activo (`localhost:8080`) y enlazado al Postgres del stack self-hosted (misma máquina o túnel que uses para administrar Supabase). En Cursor, habilita el servidor MCP del proyecto si no aparece en la lista de herramientas.
+
+**Qué puede hacer el agente / desarrollador vía MCP:**
+
+| Herramienta | Uso recomendado |
+|-------------|-----------------|
+| `execute_sql` | Lecturas: columnas, políticas, huérfanos FK, comprobación de RPC |
+| `get_advisors` | Avisos de seguridad (RLS, `search_path`) y rendimiento (índices, `auth.uid()` en políticas) |
+| `list_migrations` | Ver qué migraciones registra la BD (en self-hosted puede estar **vacío** si el esquema se aplicó fuera de `supabase db push`) |
+| `apply_migration` | Aplicar **DDL** versionado (preferir frente a SQL ad hoc en `execute_sql`) |
+| `list_tables` / `list_extensions` | Inventario (dependen del usuario read-only del proxy; si fallan auth, usar `execute_sql` contra `pg_catalog`) |
+
+**Criterio para agentes de IA:** ante dudas de esquema o estado de la BD, **usar MCP** y citar `supabase/migrations/` — no asumir columnas por memoria. Regla Cursor: [`.cursor/rules/supabase-mcp-database.mdc`](../.cursor/rules/supabase-mcp-database.mdc).
+
+**Limitaciones conocidas (mayo 2026):** sin tabla `supabase_migrations.schema_migrations`, el historial MCP no sustituye al diff contra `supabase/migrations/*.sql`. Algunas herramientas de metadatos (`list_tables`) pueden fallar por credenciales del usuario `supabase_read_only_user` del proxy; `execute_sql` y `get_advisors` suelen funcionar igual.
+
 #### Despliegue de Edge Functions (self-hosted)
 
 El entorno usa Supabase self-hosted con Docker. El contenedor `supabase-edge-functions` lee las funciones desde un volumen montado. Rutas: repo Taimbox `/home/alex/Timeboxing`, volumen de funciones `/home/alex/supabase-pi/supabase/docker/volumes/functions/`.

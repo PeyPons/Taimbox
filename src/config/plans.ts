@@ -31,12 +31,12 @@ export const PLAN_MODULES: Record<PlanId, { weeklyFeedback?: boolean; profession
   enterprise: { weeklyFeedback: true, professionalGoals: true, deadlines: true, timeTracker: true, ppc: true },
 };
 
-/** Rutas que requieren plan Pro o superior (Weekly, OKRs) */
+/** Rutas que requieren plan Pro o superior (Weekly, OKRs, seguimiento operativo) */
 // NOTA: /tiempos ya NO requiere Pro — Starter tiene acceso al cronómetro
-export const ROUTES_REQUIRE_PRO: string[] = ['/weekly-forecast', '/okrs'];
+export const ROUTES_REQUIRE_PRO: string[] = ['/weekly-forecast', '/okrs', '/operaciones'];
 
-/** Rutas que requieren plan Business (Radar hemorragias, Ads, API) */
-export const ROUTES_REQUIRE_BUSINESS: string[] = ['/operaciones', '/ads', '/meta-ads', '/api-keys'];
+/** Rutas que requieren plan Business (Ads, API) */
+export const ROUTES_REQUIRE_BUSINESS: string[] = ['/ads', '/meta-ads', '/api-keys'];
 
 export function getPlanLimit(planId: PlanId): PlanLimits {
   return PLAN_LIMITS[planId] ?? PLAN_LIMITS.starter;
@@ -64,9 +64,9 @@ export function planIncludesWeekly(planId: PlanId): boolean {
   return planId !== 'starter';
 }
 
-/** Si el plan incluye Radar de Hemorragias (Operaciones) */
+/** Si el plan incluye seguimiento operativo (radar) */
 export function planIncludesRadar(planId: PlanId): boolean {
-  return planId === 'business' || planId === 'enterprise';
+  return planId === 'pro' || planId === 'business' || planId === 'enterprise';
 }
 
 /** Si el plan incluye API */

@@ -6,6 +6,7 @@ import {
   getAgencyMembersUtil,
   mapSupabaseAgency,
   fetchAgencyRowForAppClient,
+  listMyAgenciesDirectory,
   removeUserFromAgencyUtil,
   transferAgencyOwnershipUtil,
 } from '@/utils/agencyUtils';
@@ -232,11 +233,10 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
                 const { data: agencyData, error: agencyErr } = await fetchAgencyRowForAppClient(selectedAgencyId);
                 if (!agencyErr && agencyData) {
                   const agency = await mapSupabaseAgency(agencyData);
-                  const { data: agenciesList } = await supabase
-                    .from('agencies')
-                    .select('id, name')
-                    .in('id', agencyIds);
-                  setAvailableAgencies((agenciesList || []).map(a => ({ agencyId: a.id, agencyName: a.name })));
+                  const agenciesList = await listMyAgenciesDirectory();
+                  setAvailableAgencies(
+                    agenciesList.filter(a => agencyIds.includes(a.agencyId)),
+                  );
                   setCurrentAgency(agency);
                   if (isInitialLoad) setIsLoading(false);
                   return;
@@ -264,16 +264,9 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
         const uniqueAgencyIds = [...new Set(allEmployees.map(emp => emp.agency_id))];
         const unionAgencyIds = [...new Set([...uniqueAgencyIds, ...membershipAgencyIds])];
 
-        const { data: agenciesData } = await supabase
-          .from('agencies')
-          .select('id, name')
-          .in('id', unionAgencyIds);
-
-        const agenciesList = (agenciesData || []).map(ag => ({
-          agencyId: ag.id,
-          agencyName: ag.name
-        }));
-
+        const agenciesList = (await listMyAgenciesDirectory()).filter(a =>
+          unionAgencyIds.includes(a.agencyId),
+        );
         setAvailableAgencies(agenciesList);
 
         const storageKey = `selected_agency_${user.id}`;
@@ -305,13 +298,10 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         if (membershipAgencyIds.length > 1) {
-          const { data: agenciesData } = await supabase
-            .from('agencies')
-            .select('id, name')
-            .in('id', membershipAgencyIds);
-          setAvailableAgencies(
-            (agenciesData || []).map(ag => ({ agencyId: ag.id, agencyName: ag.name }))
+          const agenciesList = (await listMyAgenciesDirectory()).filter(a =>
+            membershipAgencyIds.includes(a.agencyId),
           );
+          setAvailableAgencies(agenciesList);
         } else {
           setAvailableAgencies([]);
         }
@@ -366,16 +356,14 @@ export function AgencyProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (primaryAgencyId && !allEmployees.some(emp => emp.agency_id === primaryAgencyId)) {
-        const { data: primaryAgencyData } = await supabase
-          .from('agencies')
-          .select('id, name')
-          .eq('id', primaryAgencyId)
-          .single();
-        if (primaryAgencyData) {
+        const primaryFromDirectory = (await listMyAgenciesDirectory()).find(
+          a => a.agencyId === primaryAgencyId,
+        );
+        if (primaryFromDirectory) {
           setAvailableAgencies(prev => {
             const has = prev.some(a => a.agencyId === primaryAgencyId);
             if (has) return prev;
-            return [...prev, { agencyId: primaryAgencyData.id, agencyName: primaryAgencyData.name }];
+            return [...prev, primaryFromDirectory];
           });
         }
       }

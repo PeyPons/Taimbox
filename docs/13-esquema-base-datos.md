@@ -8,6 +8,7 @@ Este módulo documenta una **foto del modelo relacional** útil para agentes, on
 |--------|-----|
 | **`supabase/migrations/*.sql`** | Lo que realmente se aplica al crear o actualizar una instancia. |
 | **[`docs/sql/schema-snapshot-context.sql`](sql/schema-snapshot-context.sql)** | DDL agregado como **contexto** (orden de tablas y dependencias puede no ser aplicable tal cual). Útil para búsqueda rápida de columnas y FK. |
+| **MCP Supabase (Cursor)** | Inspección **en vivo** de la instancia self-hosted (`execute_sql`, `get_advisors`). Ver [05-integraciones-automatizacion.md](05-integraciones-automatizacion.md) (§ MCP) y [`.cursor/mcp.json`](../.cursor/mcp.json). No sustituye migraciones versionadas. |
 
 Si el código o una migración **contradice** el snapshot, **prevalece el código y las migraciones**.
 
@@ -52,6 +53,7 @@ Si el código o una migración **contradice** el snapshot, **prevalece el códig
 
 ## 13.8. Lectura relacionada
 
+- [05-integraciones-automatizacion.md](05-integraciones-automatizacion.md) — MCP, Edge Functions, despliegue self-hosted.
 - [02-entidades-modelos.md](02-entidades-modelos.md) — glosario funcional.
 - [07-mantenimiento-extension.md](07-mantenimiento-extension.md) — RLS, `user_agency_ids`, extensión de tablas.
 - [12-onboarding-registro.md](12-onboarding-registro.md) — registro, invitaciones, `user_agencies`.

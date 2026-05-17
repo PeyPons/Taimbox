@@ -8,7 +8,7 @@ interface PlanGuardProps {
 
 /**
  * Redirige a Plan y facturación si la ruta actual requiere un plan superior al del usuario.
- * Usar envolviendo rutas que requieren Pro o Business (operaciones, ads, api-keys, weekly-forecast, okrs, tiempos).
+ * Usar envolviendo rutas que requieren Pro o Business (operaciones/Pro; ads, api-keys/Business; weekly-forecast, okrs/Pro).
  */
 export function PlanGuard({ children, redirectTo = '/agency?tab=billing' }: PlanGuardProps) {
   const location = useLocation();

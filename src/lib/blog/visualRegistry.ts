@@ -30,6 +30,14 @@ const inline = (
   mode: "inline",
 });
 
+/** lazy() requiere default export; los visuales del blog usan export nombrado. */
+function inlineNamed<
+  T extends Record<string, ComponentType<Record<string, unknown>>>,
+  K extends keyof T,
+>(importer: () => Promise<T>, name: K): VisualRegistryEntry {
+  return inline(() => importer().then((m) => ({ default: m[name] })));
+}
+
 /**
  * Para mantener paridad visual durante la migracion inicial, cada post seedeado
  * referencia el Page.tsx existente como un componente `fullPage`. Asi conservamos
@@ -61,20 +69,45 @@ export const blogVisualRegistry: Record<string, VisualRegistryEntry> = {
   ),
 
   // Visuales reutilizables disponibles como bloques inline (graficos/infografias).
-  CargaTrabajoFrameworkVisual: inline(
+  CargaTrabajoFrameworkVisual: inlineNamed(
     () => import("@/components/landing/blog/CargaTrabajoFrameworkVisual"),
+    "CargaTrabajoFrameworkVisual",
   ),
-  ParkinsonLawVisual: inline(
+  ParkinsonLawVisual: inlineNamed(
     () => import("@/components/landing/blog/ParkinsonLawVisual"),
+    "ParkinsonLawVisual",
   ),
-  OcupacionVsRentabilidadChart: inline(
+  OcupacionVsRentabilidadChart: inlineNamed(
     () => import("@/components/landing/blog/OcupacionVsRentabilidadChart"),
+    "OcupacionVsRentabilidadChart",
   ),
-  ScopeProtocoloInfographic: inline(
+  ScopeProtocoloInfographic: inlineNamed(
     () => import("@/components/landing/blog/ScopeProtocoloInfographic"),
+    "ScopeProtocoloInfographic",
   ),
-  SenalesCargaAlertaVisual: inline(
+  SenalesCargaAlertaVisual: inlineNamed(
     () => import("@/components/landing/blog/SenalesCargaAlertaVisual"),
+    "SenalesCargaAlertaVisual",
+  ),
+  PlanificacionFasesVisual: inlineNamed(
+    () => import("@/components/landing/blog/PlanificacionFasesVisual"),
+    "PlanificacionFasesVisual",
+  ),
+  PlanificacionGanttCompareVisual: inlineNamed(
+    () => import("@/components/landing/blog/PlanificacionGanttCompareVisual"),
+    "PlanificacionGanttCompareVisual",
+  ),
+  PlanificacionTriangleVisual: inlineNamed(
+    () => import("@/components/landing/blog/PlanificacionTriangleVisual"),
+    "PlanificacionTriangleVisual",
+  ),
+  PlanificacionCapacityCardsVisual: inlineNamed(
+    () => import("@/components/landing/blog/PlanificacionCapacityCardsVisual"),
+    "PlanificacionCapacityCardsVisual",
+  ),
+  PlanificacionKpiCardsVisual: inlineNamed(
+    () => import("@/components/landing/blog/PlanificacionKpiCardsVisual"),
+    "PlanificacionKpiCardsVisual",
   ),
 };
 

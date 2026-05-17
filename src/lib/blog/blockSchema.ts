@@ -119,13 +119,22 @@ export const BLOCK_TYPES_ORDERED: BlogBlockType[] = [
   "visualRef",
 ];
 
+/** Omite bloques invalidos en lugar de vaciar todo el articulo. */
 export function safeParseBlocks(input: unknown): BlogBlock[] {
-  const parsed = BlogBlocksSchema.safeParse(input);
-  if (!parsed.success) {
-    if (import.meta.env.DEV) {
-      console.warn("[blog] blocks parse failed", parsed.error.flatten());
+  if (!Array.isArray(input)) {
+    if (import.meta.env.DEV && input != null) {
+      console.warn("[blog] blocks: se esperaba un array");
     }
     return [];
   }
-  return parsed.data;
+  const out: BlogBlock[] = [];
+  for (let i = 0; i < input.length; i++) {
+    const parsed = BlogBlockSchema.safeParse(input[i]);
+    if (parsed.success) {
+      out.push(parsed.data);
+    } else if (import.meta.env.DEV) {
+      console.warn(`[blog] bloque ${i} invalido`, parsed.error.flatten());
+    }
+  }
+  return out;
 }

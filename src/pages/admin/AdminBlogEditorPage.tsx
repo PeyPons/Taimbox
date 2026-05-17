@@ -3,13 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAppTranslation } from "@/hooks/useAppTranslation";
 import { useCreatePost, useUpdatePost, blogQueryKeys } from "@/hooks/useBlogPosts";
-import { getPostBySlug } from "@/lib/blog/client";
-import { supabase } from "@/lib/supabase";
+import { getPostById } from "@/lib/blog/client";
 import { BlogBlocksSchema } from "@/lib/blog/blockSchema";
 import type { BlogBlock } from "@/lib/blog/blockSchema";
 import type { BlogPostRecord, BlogPostStatus } from "@/lib/blog/types";
 import { listVisualIds } from "@/lib/blog/visualRegistry";
 import { BlockRenderer } from "@/components/landing/blog/BlockRenderer";
+import { BlogBlocksEditor } from "@/components/admin/BlogBlocksEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -141,14 +141,7 @@ export default function AdminBlogEditorPage() {
     queryKey: id != null ? ["blog", "by-id", id] : ["blog", "by-id", "__noop"],
     queryFn: async () => {
       if (id == null) return null;
-      const { data, error } = await supabase
-        .from("blog_posts")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-      if (error) throw error;
-      if (!data) return null;
-      return getPostBySlug((data as { slug: string }).slug);
+      return getPostById(id);
     },
     enabled: id != null,
   });
@@ -219,7 +212,7 @@ export default function AdminBlogEditorPage() {
       metaDescriptionEs: form.metaDescriptionEs.trim() || null,
       metaDescriptionEn: form.metaDescriptionEn.trim() || null,
       date: form.date,
-      readingMinutes: form.readingMinutes,
+      readingMinutes: Math.min(239, Math.max(1, form.readingMinutes || 1)),
       relatedSlug: form.relatedSlug.trim() || null,
       blocksEs: blocksEsResult as BlogBlock[],
       blocksEn: blocksEnResult as BlogBlock[],
@@ -468,21 +461,65 @@ export default function AdminBlogEditorPage() {
                     </div>
                     <div className="grid gap-2">
                       <Label>
-                        {t("admin.blog.blocks", "Bloques de contenido (JSON)")} ({lng.toUpperCase()})
+                        {t("admin.blog.blocks", "Contenido del artículo")} ({lng.toUpperCase()})
                       </Label>
-                      <Textarea
-                        rows={16}
-                        className="font-mono text-xs"
-                        value={lng === "es" ? form.blocksEsRaw : form.blocksEnRaw}
-                        onChange={(e) =>
-                          setForm({
-                            ...form,
-                            ...(lng === "es"
-                              ? { blocksEsRaw: e.target.value }
-                              : { blocksEnRaw: e.target.value }),
-                          })
-                        }
-                      />
+                      {!(lng === "es" ? blocksEsError : blocksEnError) &&
+                      Array.isArray(lng === "es" ? blocksEsResult : blocksEnResult) ? (
+                        <BlogBlocksEditor
+                          blocks={(lng === "es" ? blocksEsResult : blocksEnResult) as BlogBlock[]}
+                          visualIds={visualIds}
+                          onChange={(next) =>
+                            setForm({
+                              ...form,
+                              ...(lng === "es"
+                                ? { blocksEsRaw: JSON.stringify(next, null, 2) }
+                                : { blocksEnRaw: JSON.stringify(next, null, 2) }),
+                            })
+                          }
+                          labels={{
+                            addBlock: t("admin.blog.addBlock", "Añadir bloque…"),
+                            block: t("admin.blog.block", "Bloque"),
+                            remove: t("common.delete", "Eliminar"),
+                            moveUp: t("admin.blog.moveUp", "Subir"),
+                            moveDown: t("admin.blog.moveDown", "Bajar"),
+                            type: t("admin.blog.blockType", "Tipo"),
+                            html: t("admin.blog.html", "HTML"),
+                            text: t("admin.blog.text", "Texto"),
+                            level: t("admin.blog.level", "Nivel"),
+                            anchorId: t("admin.blog.anchorId", "anchorId (TOC)"),
+                            tone: t("admin.blog.tone", "Tono"),
+                            ordered: t("admin.blog.orderedList", "Lista numerada"),
+                            items: t("admin.blog.items", "Ítems"),
+                            headers: t("admin.blog.tableHeaders", "Cabeceras"),
+                            rows: t("admin.blog.tableRows", "Filas"),
+                            question: t("admin.blog.faqQ", "Pregunta"),
+                            answer: t("admin.blog.faqA", "Respuesta"),
+                            slug: t("admin.blog.relatedSlugField", "Slug relacionado"),
+                            href: t("admin.blog.href", "Enlace"),
+                            variant: t("admin.blog.variant", "Variante"),
+                            visualId: t("admin.blog.visualId", "Infografía"),
+                            addItem: t("admin.blog.addItem", "Añadir ítem"),
+                            tocHint: t(
+                              "admin.blog.tocHint",
+                              "El índice se genera automáticamente desde los títulos con anchorId.",
+                            ),
+                          }}
+                        />
+                      ) : (
+                        <Textarea
+                          rows={16}
+                          className="font-mono text-xs"
+                          value={lng === "es" ? form.blocksEsRaw : form.blocksEnRaw}
+                          onChange={(e) =>
+                            setForm({
+                              ...form,
+                              ...(lng === "es"
+                                ? { blocksEsRaw: e.target.value }
+                                : { blocksEnRaw: e.target.value }),
+                            })
+                          }
+                        />
+                      )}
                       {(lng === "es" ? blocksEsError : blocksEnError) != null && (
                         <p className="text-xs text-red-600 inline-flex items-start gap-1">
                           <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
@@ -491,19 +528,21 @@ export default function AdminBlogEditorPage() {
                       )}
                       <details className="text-xs text-slate-500">
                         <summary className="cursor-pointer">
-                          {t("admin.blog.blocksHelp", "Tipos de bloque disponibles")}
+                          {t("admin.blog.blocksJsonAdvanced", "Edición JSON avanzada")}
                         </summary>
-                        <pre className="mt-2 p-2 bg-slate-50 rounded text-[10px] overflow-x-auto">{`paragraph     { type, html }
-heading       { type, level: 2|3|4, text, anchorId? }
-callout       { type, tone: info|warning|success|highlight, html }
-list          { type, ordered, items[] }
-table         { type, headers[], rows[][] }
-faq           { type, items: [{q,a}] }
-toc           { type }                         (auto desde headings con anchorId)
-relatedPost   { type, slug }
-html          { type, html }                   (sanitizado con DOMPurify)
-cta           { type, text, href, variant: primary|secondary }
-visualRef     { type, visualId, props? }       (componentes registrados)`}</pre>
+                        <Textarea
+                          rows={10}
+                          className="font-mono text-[10px] mt-2"
+                          value={lng === "es" ? form.blocksEsRaw : form.blocksEnRaw}
+                          onChange={(e) =>
+                            setForm({
+                              ...form,
+                              ...(lng === "es"
+                                ? { blocksEsRaw: e.target.value }
+                                : { blocksEnRaw: e.target.value }),
+                            })
+                          }
+                        />
                       </details>
                     </div>
                     <div className="grid gap-2">

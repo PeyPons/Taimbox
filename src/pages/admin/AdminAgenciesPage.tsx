@@ -94,20 +94,49 @@ export default function AdminAgenciesPage() {
   const setAgencyPlan = async (agencyId: string, planId: "starter" | "pro" | "business") => {
     setSettingPlanId(agencyId);
     try {
-      const { error } = await supabase.rpc("admin_set_agency_plan", {
-        p_agency_id: agencyId,
-        p_plan_id: planId,
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        toast.error(t("admin.agencies.errAuth", "Debes iniciar sesión"));
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("admin-set-agency-plan", {
+        body: { agency_id: agencyId, plan_id: planId },
+        headers: { Authorization: `Bearer ${token}` },
       });
+
       if (error) throw error;
-      toast.success(`Plan actualizado a ${planId}`);
+      if (data?.error) throw new Error(String(data.error));
+
+      const appliedPlan = (data?.plan_id as string | undefined) ?? planId;
+      if (data?.warning) {
+        toast.warning(String(data.warning));
+      }
+      toast.success(
+        data?.stripe_synced
+          ? `Plan ${appliedPlan} (sincronizado con Stripe)`
+          : `Plan actualizado a ${appliedPlan}`,
+      );
+
       setAgencies((prev) =>
         prev.map((a) =>
-          a.id === agencyId ? { ...a, plan_id: planId, subscription_status: planId === "starter" ? "active" : a.subscription_status, trial_ends_at: planId === "starter" ? null : a.trial_ends_at } : a
-        )
+          a.id === agencyId
+            ? {
+                ...a,
+                plan_id: appliedPlan,
+                subscription_status:
+                  appliedPlan === "starter" ? "active" : a.subscription_status,
+                trial_ends_at: appliedPlan === "starter" ? null : a.trial_ends_at,
+              }
+            : a,
+        ),
       );
+      void fetchAgencies();
     } catch (e: unknown) {
       console.error("[AdminAgenciesPage] Error setting plan:", e);
-      toast.error(t("admin.agencies.errPlan", "Error al cambiar plan"));
+      const msg = e instanceof Error ? e.message : t("admin.agencies.errPlan", "Error al cambiar plan");
+      toast.error(msg);
     } finally {
       setSettingPlanId(null);
     }

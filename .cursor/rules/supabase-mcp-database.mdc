@@ -1,0 +1,38 @@
+---
+description: Usar el MCP de Supabase self-hosted para revisar o consultar la base de datos en lugar de suponer el esquema
+alwaysApply: true
+---
+
+# Base de datos vía MCP (Cursor)
+
+Este proyecto tiene **acceso a PostgreSQL de producción/staging self-hosted** desde Cursor mediante MCP.
+
+## Configuración
+
+- Archivo del workspace: [`.cursor/mcp.json`](../mcp.json) — servidor `supabase-self-hosted` → `http://localhost:8080/api/mcp`.
+- El proxy MCP debe estar en marcha en la máquina del desarrollador (mismo host que el stack Supabase self-hosted).
+
+## Cuándo usarlo
+
+Ante preguntas de **esquema, RLS, migraciones, salud de BD, advisors de seguridad/rendimiento** o comprobación de que una columna/RPC existe:
+
+1. **Usa las herramientas MCP** del servidor `project-0-Timeboxing-supabase-self-hosted` (o el nombre que muestre Cursor para `supabase-self-hosted`).
+2. **No inventes** columnas ni políticas: confirma con `execute_sql`, `get_advisors` o la documentación en [`docs/05-integraciones-automatizacion.md`](../../docs/05-integraciones-automatizacion.md) (§ MCP) y [`docs/13-esquema-base-datos.md`](../../docs/13-esquema-base-datos.md).
+
+## Herramientas habituales
+
+| Herramienta | Uso |
+|-------------|-----|
+| `execute_sql` | Consultas de lectura, comprobaciones de columnas/FK, conteos |
+| `get_advisors` | Linter de seguridad y rendimiento (`security` / `performance`) |
+| `list_migrations` | Historial en BD (puede estar vacío si el esquema no se aplicó vía CLI) |
+| `apply_migration` | **DDL** — preferir frente a `execute_sql` para cambios de esquema |
+| `list_tables` | Inventario de tablas (puede fallar si el usuario read-only del proxy no está configurado) |
+
+## Precauciones
+
+- **Fuente de verdad del esquema versionado:** `supabase/migrations/*.sql` y el código de la app.
+- **No** commitear secretos; `.cursor/mcp.json` solo apunta al proxy local.
+- Cambios destructivos o DDL: coordinar con el usuario; usar `apply_migration` y alinear el repo.
+
+Detalle operativo: [docs/05-integraciones-automatizacion.md](../../docs/05-integraciones-automatizacion.md) (subsección *Acceso a la base de datos desde Cursor*).

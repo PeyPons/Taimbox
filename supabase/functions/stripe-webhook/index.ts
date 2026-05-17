@@ -3,6 +3,10 @@
 // Eventos: customer.subscription.created, customer.subscription.updated, customer.subscription.deleted
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "npm:stripe@14.21.0";
+import {
+  readStripePlanEnv,
+  resolvePlanIdFromSubscriptionAsync,
+} from "../_shared/stripe-plan.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,13 +39,13 @@ Deno.serve(async (req) => {
 
   const rawBody = await req.text();
   let event: Stripe.Event;
+  const stripe = new Stripe(stripeSecret, { apiVersion: "2024-11-20.acacia" });
   try {
-    const stripe = new Stripe(stripeSecret, { apiVersion: "2024-11-20.acacia" });
     event = await stripe.webhooks.constructEventAsync(
       rawBody,
       signature,
       webhookSecret,
-      undefined
+      undefined,
     );
   } catch (err) {
     console.error("Webhook signature verification failed:", err);
@@ -52,33 +56,11 @@ Deno.serve(async (req) => {
   }
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-  /** Alineado con create-checkout-session: Business si metadata o precio Stripe coinciden. */
-  function resolvePlanId(sub: Stripe.Subscription): "business" | "pro" {
-    const meta = sub.metadata?.plan_id;
-    const firstItem = sub.items?.data?.[0];
-    const rawPrice = firstItem?.price;
-    const priceId =
-      typeof rawPrice === "string" ? rawPrice : (rawPrice as Stripe.Price | undefined)?.id;
-
-    const priceBusiness = Deno.env.get("STRIPE_PRICE_ID_BUSINESS");
-    const pricePro = Deno.env.get("STRIPE_PRICE_ID_PRO");
-
-    if (priceId && priceBusiness && priceId === priceBusiness) {
-      return "business";
-    }
-    if (priceId && pricePro && priceId === pricePro) {
-      return "pro";
-    }
-
-    if (meta === "business") return "business";
-    return "pro";
-  }
+  const planEnv = readStripePlanEnv();
 
   if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated") {
     const sub = event.data.object as Stripe.Subscription;
     const agencyId = sub.metadata?.agency_id;
-    const planId = resolvePlanId(sub);
     if (!agencyId) {
       console.warn("Subscription event without agency_id in metadata:", sub.id);
       return new Response(JSON.stringify({ received: true }), {
@@ -86,6 +68,8 @@ Deno.serve(async (req) => {
         status: 200,
       });
     }
+
+    const planId = await resolvePlanIdFromSubscriptionAsync(stripe, sub, planEnv);
     const status = sub.status;
     const trialEnd = sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null;
     const periodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null;
@@ -99,14 +83,10 @@ Deno.serve(async (req) => {
       subscription_cancel_at_period_end: cancelAtPeriodEnd,
       updated_at: new Date().toISOString(),
     };
-    // Marcar que esta agencia ya usó el trial (una sola vez por agencia)
     if (status === "trialing") {
       updates.trial_used_at = new Date().toISOString();
     }
-    const { error } = await supabase
-      .from("agencies")
-      .update(updates)
-      .eq("id", agencyId);
+    const { error } = await supabase.from("agencies").update(updates).eq("id", agencyId);
     if (error) {
       console.error("Error updating agency subscription:", error);
       return new Response(JSON.stringify({ error: "Update failed" }), {

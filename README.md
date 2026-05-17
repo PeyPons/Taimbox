@@ -12,7 +12,7 @@ Repositorio **interno**; arranque local, scripts y variables de entorno no se do
 ---
 
 > [!IMPORTANT]
-> **IA y desarrollo:** Arquitectura, reglas de negocio, integraciones y checklists en **[`DOCUMENTACION.md`](./DOCUMENTACION.md)** y **[`docs/`](./docs/)** (módulos numerados).
+> **IA y desarrollo:** Arquitectura, reglas de negocio, integraciones y checklists en **[`DOCUMENTACION.md`](./DOCUMENTACION.md)** y **[`docs/`](./docs/)** (módulos numerados). **Cursor** puede consultar la base de datos Supabase self-hosted vía **MCP** (`.cursor/mcp.json` → proxy en `localhost:8080`; detalle en [`docs/05-integraciones-automatizacion.md`](./docs/05-integraciones-automatizacion.md)).
 
 ## Stack principal
 

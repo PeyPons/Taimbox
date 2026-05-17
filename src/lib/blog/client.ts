@@ -137,6 +137,18 @@ export async function getPostByPath(pathname: string): Promise<BlogPostRecord | 
   return rowToRecord(data as BlogPostRow);
 }
 
+/** Busca post por id (admin: incluye drafts; requiere is_platform_admin en RLS). */
+export async function getPostById(id: string): Promise<BlogPostRecord | null> {
+  const { data, error } = await supabase
+    .from("blog_posts")
+    .select(FULL_COLUMNS)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return rowToRecord(data as BlogPostRow);
+}
+
 /** Busca post por slug (admin: incluye drafts). */
 export async function getPostBySlug(slug: string): Promise<BlogPostRecord | null> {
   const { data, error } = await supabase
