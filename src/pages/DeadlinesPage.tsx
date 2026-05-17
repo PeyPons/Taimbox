@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useAppAbsencesAndEvents, useAppAllocations, useAppEmployees, useAppProjects } from '@/contexts/AppContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAgency } from '@/contexts/AgencyContext';
@@ -89,6 +89,7 @@ export default function DeadlinesPage() {
   const { activeFilters, filterProject } = useProjectFilters();
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
+  const editingProjectIdRef = useRef<string | null>(null);
 
   const data = useDeadlinesPageData({
     selectedMonth,
@@ -103,6 +104,7 @@ export default function DeadlinesPage() {
     currentUser,
     filterSnapshot,
     filterProject,
+    editingProjectIdRef,
   });
 
   const {
@@ -145,6 +147,7 @@ export default function DeadlinesPage() {
     setEditingLocks,
     broadcastChannelRef,
     setExpandedProjects,
+    editingProjectIdRef,
   });
 
   const {
@@ -155,7 +158,7 @@ export default function DeadlinesPage() {
     startEditingProject,
     updateInlineEmployeeHours,
     handleFormPatch,
-    autoSaveDeadline,
+    flushAutoSave,
     toggleProjectExpanded,
     cancelEditingProject,
   } = editing;
@@ -624,7 +627,7 @@ export default function DeadlinesPage() {
           startEditingProject={startEditingProject}
           updateInlineEmployeeHours={updateInlineEmployeeHours}
           onFormPatch={handleFormPatch}
-          autoSaveDeadline={autoSaveDeadline}
+          flushAutoSave={flushAutoSave}
           autoSaveStatus={autoSaveStatus}
           isLockAcquiring={isLockAcquiring}
           cancelEditingProject={cancelEditingProject}

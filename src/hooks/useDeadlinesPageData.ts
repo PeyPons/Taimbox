@@ -58,6 +58,8 @@ export interface UseDeadlinesPageDataParams {
   currentUser: { id: string } | null;
   filterSnapshot: DeadlinesFiltersValues;
   filterProject: (project: Project, filterId: string) => boolean;
+  /** Proyecto en edición local: no sobrescribir su deadline con Realtime hasta cerrar. */
+  editingProjectIdRef?: React.MutableRefObject<string | null>;
 }
 
 export function useDeadlinesPageData(params: UseDeadlinesPageDataParams) {
@@ -74,6 +76,7 @@ export function useDeadlinesPageData(params: UseDeadlinesPageDataParams) {
     currentUser,
     filterSnapshot,
     filterProject,
+    editingProjectIdRef,
   } = params;
 
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
@@ -157,7 +160,9 @@ export function useDeadlinesPageData(params: UseDeadlinesPageDataParams) {
         (payload) => {
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             const newDeadline = payload.new as Record<string, unknown>;
-            if (!projects.find((p) => p.id === newDeadline.project_id)) return;
+            const projectId = newDeadline.project_id as string;
+            if (!projects.find((p) => p.id === projectId)) return;
+            if (editingProjectIdRef?.current === projectId) return;
 
             setDeadlines((prev) => {
               const existing = prev.find((d) => d.id === newDeadline.id);
@@ -317,7 +322,7 @@ export function useDeadlinesPageData(params: UseDeadlinesPageDataParams) {
       broadcastChannelRef.current = null;
       supabase.removeChannel(channel);
     };
-  }, [selectedMonth, currentAgency?.id, projects, currentUser?.id, employees]);
+  }, [selectedMonth, currentAgency?.id, projects, currentUser?.id, employees, editingProjectIdRef]);
 
   useEffect(() => {
     const loadEditingLocks = async () => {

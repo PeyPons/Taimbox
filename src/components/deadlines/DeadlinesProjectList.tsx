@@ -84,7 +84,7 @@ export interface DeadlinesProjectListProps {
   startEditingProject: (projectId: string) => void;
   updateInlineEmployeeHours: (employeeId: string, hours: number, projectId: string, triggerSave?: boolean) => void;
   onFormPatch: (patch: Partial<InlineFormData>, saveAfterMs?: number) => void;
-  autoSaveDeadline: (projectId: string, formData: InlineFormData) => void;
+  flushAutoSave: (projectId: string) => void;
   autoSaveStatus: 'idle' | 'saving' | 'saved';
   isLockAcquiring?: boolean;
   cancelEditingProject: () => void;
@@ -111,7 +111,7 @@ export function DeadlinesProjectList({
   startEditingProject,
   updateInlineEmployeeHours,
   onFormPatch,
-  autoSaveDeadline,
+  flushAutoSave,
   autoSaveStatus,
   isLockAcquiring = false,
   cancelEditingProject,
@@ -365,11 +365,11 @@ export function DeadlinesProjectList({
                               onChange={(e) =>
                                 onFormPatch({ notes: e.target.value }, 800)
                               }
-                              onBlur={() => autoSaveDeadline(project.id, inlineFormData)}
+                              onBlur={() => flushAutoSave(project.id)}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                   e.preventDefault();
-                                  autoSaveDeadline(project.id, inlineFormData);
+                                  flushAutoSave(project.id);
                                   (e.target as HTMLInputElement).blur();
                                 }
                               }}

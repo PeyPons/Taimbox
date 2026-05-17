@@ -6,7 +6,6 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useAgency } from '@/contexts/AgencyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlatformAdmin } from '@/hooks/usePlatformAdmin';
-import { AgencySelectorCompact } from '@/components/agencies/AgencySelectorCompact';
 import { DepartmentViewSelector } from '@/components/layout/DepartmentViewSelector';
 import { useAppTranslation } from '@/hooks/useAppTranslation';
 import {
@@ -91,7 +90,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const { currentUser, employees, projects, isLoading: isAppDataLoading } = useApp();
   const { canAccess, hasPermission } = usePermissions();
-  const { currentAgency, availableAgencies, isLoading: isAgencyLoading } = useAgency();
+  const { currentAgency, isLoading: isAgencyLoading } = useAgency();
   const { t } = useAppTranslation();
 
   const showPitchBanner = useMemo(() => {
@@ -126,7 +125,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       setPitchBannerDismissed(true);
     }
   };
-  const hasMultipleAgencies = (availableAgencies?.length || 0) > 1;
   const hasAgencyPaths = location.pathname === '/agency' || location.pathname === '/agencies' || location.pathname.startsWith('/agencies/');
   const searchParams = new URLSearchParams(location.search || '');
   const isAgenciesCreate = location.pathname === '/agencies' && searchParams.get('action') === 'create';
@@ -497,7 +495,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   {currentUser.first_name || currentUser.name}
                 </SensitiveText>
               </span>
-              {hasMultipleAgencies && <AgencySelectorCompact inline />}
               <DepartmentViewSelector inline />
               <button
                 onClick={handleLogout}
@@ -523,7 +520,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   </span>
                 ) : null}
               </span>
-              {hasMultipleAgencies && <AgencySelectorCompact inline />}
               <DepartmentViewSelector inline />
               <button
                 onClick={handleLogout}
