@@ -1,4 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import {
+    AgencyAccessError,
+    assertAgencyPermission,
+    getBearerToken,
+} from '../_shared/agency-access.ts'
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -20,10 +25,19 @@ Deno.serve(async (req) => {
 
     try {
         const supabaseUrl = Deno.env.get('SUPABASE_URL') || Deno.env.get('VITE_SUPABASE_URL')
+        const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-        if (!supabaseUrl || !supabaseKey) {
-            throw new Error('Faltan variables de entorno SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY')
+        if (!supabaseUrl || !supabaseKey || !supabaseAnonKey) {
+            throw new Error('Faltan variables de entorno SUPABASE_URL, SUPABASE_ANON_KEY o SUPABASE_SERVICE_ROLE_KEY')
+        }
+
+        const bearer = getBearerToken(req)
+        if (!bearer) {
+            return new Response(JSON.stringify({ error: 'No autorizado.' }), {
+                status: 401,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            })
         }
 
         const { clientId, clientSecret } = getAppCredentials()
@@ -47,6 +61,15 @@ Deno.serve(async (req) => {
 
         if (!code) throw new Error('Falta el código de autorización')
         if (!agency_id) throw new Error('Falta el agency_id')
+
+        await assertAgencyPermission({
+            supabaseUrl,
+            supabaseAnonKey,
+            supabaseServiceKey: supabaseKey,
+            token: bearer,
+            agencyId: agency_id,
+            permission: 'can_access_agency_settings',
+        })
 
         const finalRedirectUri = redirect_uri || (
             (req.headers.get('origin') || '').includes('localhost')
@@ -148,6 +171,12 @@ Deno.serve(async (req) => {
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
         )
     } catch (error: unknown) {
+        if (error instanceof AgencyAccessError) {
+            return new Response(JSON.stringify({ error: error.message }), {
+                status: error.status,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            })
+        }
         const message = error instanceof Error ? error.message : String(error)
         console.error('[oauth-meta] Error:', message)
         return new Response(

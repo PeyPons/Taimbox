@@ -34,7 +34,12 @@ function roleHasPermission(
     const perms = "permissions" in entry
       ? (entry as { permissions?: Record<string, boolean> }).permissions
       : undefined;
-    if (perms?.[permission] === true) return true;
+    if (permission === "can_access_agency_settings") {
+      return perms?.[permission] === true;
+    }
+    // Rutas de producto (Ads, etc.): opt-out como en usePermissions
+    if (perms?.[permission] === false) return false;
+    return true;
   }
   return false;
 }
@@ -80,7 +85,8 @@ export async function assertAgencyPermission(params: {
     .eq("agency_id", agencyId)
     .maybeSingle();
 
-  const roleName = (ua?.role ?? emp?.role ?? "").trim();
+  // Prioridad employees.role (igual que get_agency_for_app_client y user_has_agency_role_permission)
+  const roleName = (emp?.role ?? ua?.role ?? "").trim();
   if (!roleName) {
     throw new AgencyAccessError(403, "Sin acceso a esta agencia.");
   }
